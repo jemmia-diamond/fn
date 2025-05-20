@@ -5,7 +5,7 @@
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"name": "fn",
-	"main": "src/index.ts",
+	"main": "src/index.js",
 	"compatibility_date": "2025-05-20",
 	"assets": {
 		"binding": "ASSETS",
