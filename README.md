@@ -1,21 +1,52 @@
-```txt
-npm install
-npm run dev
+# FN - Hono-based Cloudflare Workers Function
+
+A serverless function project built with Cloudflare Workers.
+
+## Prerequisites
+
+- [Node.js](https://nodejs.org/) (LTS version recommended)
+- [pnpm](https://pnpm.io/) package manager
+
+## Installation
+
+### Install pnpm
+
+If you don't have pnpm installed, you can install it using:
+
+```bash
+curl -fsSL https://get.pnpm.io/install.sh | sh -
 ```
 
-```txt
-npm run deploy
+Alternatively, visit the [official pnpm documentation](https://pnpm.io/installation) for other installation methods.
+
+### Install dependencies
+
+```bash
+pnpm install
 ```
 
-[For generating/synchronizing types based on your Worker configuration run](https://developers.cloudflare.com/workers/wrangler/commands/#types):
+## Development
 
-```txt
-npm run cf-typegen
+Start the development server with:
+
+```bash
+pnpm run dev
 ```
 
-Pass the `CloudflareBindings` as generics when instantiation `Hono`:
+This will start a local development server using Wrangler.
 
-```ts
-// src/index.ts
-const app = new Hono<{ Bindings: CloudflareBindings }>()
-```
+## Deployment
+
+Push to Github to trigger the deployment process.
+
+## Project Structure
+
+- `src/index.js` - Main worker entry point with Highlight integration
+- `public/` - Static assets directory
+- `wrangler.jsonc` - Cloudflare Workers configuration
+
+## Technologies
+
+- [Cloudflare Workers](https://workers.cloudflare.com/)
+- [Hono](https://hono.dev/) - Lightweight web framework
+- [Wrangler](https://developers.cloudflare.com/workers/wrangler/) - CLI for Cloudflare Workers
