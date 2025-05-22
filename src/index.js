@@ -1,9 +1,11 @@
 import { Hono } from "hono";
+import { sentry } from "@hono/sentry";
 
 const app = new Hono();
 
-app.get("/message", (c) => {
-  return c.text("Hello Hono!");
+app.use("*", sentry());
+app.get("/sentry", (_c) => {
+  throw new Error('test');
 });
 
 export default app;

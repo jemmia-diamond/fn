@@ -50,3 +50,4 @@ Push to Github to trigger the deployment process.
 - [Cloudflare Workers](https://workers.cloudflare.com/) - Serverless platform
 - [Wrangler](https://developers.cloudflare.com/workers/wrangler/) - CLI for Cloudflare Workers
 - [Hono](https://hono.dev/) - Lightweight web framework
+- [Sentry](https://sentry.io/) - Error tracking

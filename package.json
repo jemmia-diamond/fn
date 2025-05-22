@@ -5,6 +5,7 @@
 		"deploy": "wrangler deploy --minify"
 	},
 	"dependencies": {
+		"@hono/sentry": "^1.2.1",
 		"hono": "^4.7.10"
 	},
 	"devDependencies": {
