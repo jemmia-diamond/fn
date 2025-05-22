@@ -5,8 +5,8 @@ const app = new Hono();
 
 // Add release and dist information for sourcemap matching
 app.use("*", sentry({
-  release: process.env.SENTRY_RELEASE || "1.0.0", // Should match the release name in your upload script
-  dist: process.env.SENTRY_DIST || "1" // Optional distribution identifier
+  release: "1.0.0", // Fixed version instead of process.env
+  dist: "1" // Fixed version instead of process.env
 }));
 app.get("/xxx", (_c) => {
   return c.text("Hello Hono!");
