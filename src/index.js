@@ -3,7 +3,11 @@ import { sentry } from "@hono/sentry";
 
 const app = new Hono();
 
-app.use("*", sentry());
+// Add release and dist information for sourcemap matching
+app.use("*", sentry({
+  release: process.env.SENTRY_RELEASE || "1.0.0", // Should match the release name in your upload script
+  dist: process.env.SENTRY_DIST || "1" // Optional distribution identifier
+}));
 app.get("/xxx", (_c) => {
   return c.text("Hello Hono!");
 });
