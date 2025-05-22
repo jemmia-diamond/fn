@@ -17,6 +17,8 @@ app.get("/zzz", (_c) => {
 app.get("/sentry", (_c) => {
   randomError(0.33, "0.33 error");
   randomError(0.5, "0.5 error");
+
+  return c.text("You're lucky!");
 });
 
 // Write a function that return error randomly
