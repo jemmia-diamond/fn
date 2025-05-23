@@ -3,7 +3,6 @@ import { sentry } from "@hono/sentry";
 
 const app = new Hono();
 
-// Add release and dist information for sourcemap matching
 app.use("*", sentry());
 app.get("/xxx", (_c) => {
   return c.text("Hello Hono!");
