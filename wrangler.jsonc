@@ -15,6 +15,5 @@
       "pattern": "fn.jemmia.vn",
       "custom_domain": true
     }
-  ],
-  "upload_source_maps": true
+  ]
 }
