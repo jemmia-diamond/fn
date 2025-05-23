@@ -1,5 +1,4 @@
 {
-  "upload_source_maps": true,
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "fn",
   "main": "src/index.js",
