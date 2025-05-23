@@ -2,7 +2,7 @@
   "name": "fn",
   "scripts": {
     "dev": "wrangler dev",
-    "deploy": "wrangler deploy --outdir dist && pnpm sentry:sourcemaps",
+    "deploy": "wrangler deploy --outdir dist",
     "sentry:sourcemaps": "sentry-cli sourcemaps inject --org jemmia --project jemmia-fn ./dist && sentry-cli sourcemaps upload --org jemmia --project jemmia-fn --release=1.0.0 --dist=1 ./dist"
   },
   "dependencies": {
