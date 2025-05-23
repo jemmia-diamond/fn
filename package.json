@@ -9,7 +9,7 @@
     "hono": "^4.7.10"
   },
   "devDependencies": {
-    "wrangler": "^4.16.0"
+    "wrangler": "^4.16.1"
   },
   "packageManager": "pnpm@10.11.0"
 }
