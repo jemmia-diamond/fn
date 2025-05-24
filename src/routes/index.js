@@ -1,6 +1,6 @@
 // TODO: Make this import dynamic, so that we can add new controllers without repeating ourselves.
 import Namespace from "../controllers/namespace";
-import anotherNamespace from "../controllers/anotherNamespace";
+import anotherNamespace from "../controllers/another-namespace";
 
 export default class Routes {
   static register(api) {
