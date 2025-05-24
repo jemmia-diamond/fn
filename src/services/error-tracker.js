@@ -8,8 +8,8 @@ export default async (c, next) => {
     const sentryMiddleware = sentry();
     await sentryMiddleware(c, async () => {});
   }
-}
+};
 
 const is4xxError = (res) => {
   return res && res.status >= 400 && res.status < 500;
-}
+};

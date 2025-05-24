@@ -2,13 +2,17 @@
   "name": "fn",
   "scripts": {
     "dev": "wrangler dev",
-    "deploy": "wrangler deploy --minify"
+    "deploy": "wrangler deploy --minify",
+    "eslint": "eslint src"
   },
   "dependencies": {
     "@hono/sentry": "^1.2.1",
     "hono": "^4.7.10"
   },
   "devDependencies": {
+    "eslint": "^9.27.0",
+    "eslint-plugin-unused-imports": "^4.1.4",
+    "globals": "^16.1.0",
     "wrangler": "^4.16.1"
   },
   "packageManager": "pnpm@10.11.0"
