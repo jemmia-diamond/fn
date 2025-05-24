@@ -3,7 +3,7 @@
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy --minify",
-    "eslint": "eslint src"
+    "lint": "eslint src"
   },
   "dependencies": {
     "@hono/sentry": "^1.2.1",
