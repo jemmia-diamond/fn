@@ -24,7 +24,8 @@ export default function getBaseConfig() {
         }
       ],
       "no-debugger": "error",
-      "eol-last": ["error", "always"]
+      "eol-last": ["error", "always"],
+      "no-console": ["error", { "allow": ["warn", "error"] }]
     }
   };
 }
