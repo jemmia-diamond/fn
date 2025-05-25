@@ -17,7 +17,7 @@ api.use("*", bearerAuth({
   }
 }));
 
-// Register routes
+// Routes registration
 Routes.register(api);
 
 export default app;
