@@ -1,15 +1,11 @@
 import { Hono } from "hono";
 import { bearerAuth } from "hono/bearer-auth";
-import { logger } from "hono/logger";
 
 import Routes from "./routes";
 import errorTracker from "./services/error-tracker";
 
 const app = new Hono();
 const api = app.basePath("/api");
-
-// Logging
-app.use(logger());
 
 // Error tracking
 app.use("*", errorTracker);
