@@ -3,7 +3,7 @@ import FrappeClient from "../../frappe/frappe-client";
 
 export default class AddressService {
     constructor(env) {
-        this.env;
+        this.env = env;
         this.frappeClient = new FrappeClient(
             {
                 url: env.JEMMIA_ERP_BASE_URL,
