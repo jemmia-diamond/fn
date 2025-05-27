@@ -1,13 +1,13 @@
-import frappeClient from "../../frappe/frappe-client";
-import addressService from "./address";
-import contactService from "./contact";
-import customerService from "./customer";
+import FrappeClient from "../../frappe/frappe-client";
+import AddressService from "./address";
+import ContactService from "./contact";
+import CustomerService from "./customer";
 
 
-export default class orderService {
+export default class OrderService {
     constructor(env) {
         this.env = env;
-        this.frappeClient = new frappeClient(
+        this.frappeClient = new FrappeClient(
             {
                 url: env.JEMMIA_ERP_BASE_URL,
                 apiKey: env.JEMMIA_ERP_API_KEY,
@@ -18,19 +18,19 @@ export default class orderService {
 
     async processHaravanOrder(haravanOrderData) {
         // Initialize services
-        const addressSer = new addressService(this.env);
-        const contactSer = new contactService(this.env);
-        const customerSer = new customerService(this.env);
+        const addressService = new AddressService(this.env);
+        const contactService = new ContactService(this.env);
+        const customerService = new CustomerService(this.env);
 
-        const billingAddress = await addressSer.processHaravanAddress(haravanOrderData.billing_address);
-        const customerAddresses = await Promise.all(haravanOrderData.customer.addresses.map(address => addressSer.processHaravanAddress(address)));
-        const customerDefaultAdress = customerAddresses[0]
+        await addressService.processHaravanAddress(haravanOrderData.billing_address);
+        const customerAddresses = await Promise.all(haravanOrderData.customer.addresses.map(address => addressService.processHaravanAddress(address)));
+        const customerDefaultAdress = customerAddresses[0];
 
-        const contact = await contactSer.processHaravanContact(haravanOrderData.customer, undefined, customerDefaultAdress);
-        const customer = await customerSer.processHaravanCustomer(haravanOrderData.customer, contact, customerDefaultAdress);
+        const contact = await contactService.processHaravanContact(haravanOrderData.customer, undefined, customerDefaultAdress);
+        const customer = await customerService.processHaravanCustomer(haravanOrderData.customer, contact, customerDefaultAdress);
 
-        await addressSer.processHaravanAddress(haravanOrderData.billing_address, customer);
-        await Promise.all(haravanOrderData.customer.addresses.map(address => addressSer.processHaravanAddress(address, customer)));
+        await addressService.processHaravanAddress(haravanOrderData.billing_address, customer);
+        await Promise.all(haravanOrderData.customer.addresses.map(address => addressService.processHaravanAddress(address, customer)));
 
         const mappedOrderData = {
             doctype: "Sales Order",
@@ -51,17 +51,17 @@ export default class orderService {
             payment_records: haravanOrderData.transactions.filter(transaction => transaction.kind === "capture").map(paymentRecordFieldsMapper),
             contact_person: contact.name,
             customer_address: customerDefaultAdress.name
-        }
+        };
         const order = await this.frappeClient.upsert(mappedOrderData, "haravan_order_id");
         return order;
     }
 
     static async decodeOrderQueue(batch, env) {
-        const orderSer = new orderService(env);
+        const orderService = new OrderService(env);
         const messages = batch.messages;
         for (const message of messages) {
             const orderData = JSON.parse(message.body.body);
-            await orderSer.processHaravanOrder(orderData);
+            await orderService.processHaravanOrder(orderData);
         }
     }
 }
@@ -128,8 +128,8 @@ function formatDate(isoString, type = "date") {
     if (type === "date")
         return date.toISOString().split("T")[0];
 
-    const pad = (num, size = 2) => String(num).padStart(size, '0');
-    const padMicro = (num) => String(num).padEnd(6, '0');
+    const pad = (num, size = 2) => String(num).padStart(size, "0");
+    const padMicro = (num) => String(num).padEnd(6, "0");
     const year = date.getFullYear();
     const month = pad(date.getMonth() + 1);
     const day = pad(date.getDate());

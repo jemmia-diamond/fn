@@ -1,10 +1,10 @@
-import frappeClient from "../../frappe/frappe-client";
+import FrappeClient from "../../frappe/frappe-client";
 
 
-export default class addressService {
+export default class AddressService {
     constructor(env) {
         this.env;
-        this.frappeClient = new frappeClient(
+        this.frappeClient = new FrappeClient(
             {
                 url: env.JEMMIA_ERP_BASE_URL,
                 apiKey: env.JEMMIA_ERP_API_KEY,
@@ -24,11 +24,11 @@ export default class addressService {
             ward: addressData.ward,
             address_line1: addressData.address1 || "No Entry",
             address_line2: addressData.address2
-        }
+        };
         if (customer) {
-            mappedAddressData.links = [{ "link_doctype": "Customer", "link_name": customer.name }]
+            mappedAddressData.links = [{ "link_doctype": "Customer", "link_name": customer.name }];
         };
         const address = await this.frappeClient.upsert(mappedAddressData, "haravan_id");
-        return address
-    }
+        return address;
+    };
 };

@@ -1,10 +1,10 @@
-import frappeClient from "../../frappe/frappe-client";
+import FrappeClient from "../../frappe/frappe-client";
 
 
-export default class customerService {
+export default class CustomerService {
     constructor(env) {
         this.env;
-        this.frappeClient = new frappeClient(
+        this.frappeClient = new FrappeClient(
             {
                 url: env.JEMMIA_ERP_BASE_URL,
                 apiKey: env.JEMMIA_ERP_API_KEY,

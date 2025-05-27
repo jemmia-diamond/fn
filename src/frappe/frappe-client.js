@@ -1,7 +1,7 @@
 // FrappeClient.js
-const DEFAULT_HEADERS = { Accept: 'application/json' };
+const DEFAULT_HEADERS = { Accept: "application/json" };
 
-export default class frappeClient {
+export default class FrappeClient {
   constructor({ url, username, password, apiKey, apiSecret, verify = true }) {
     this.url = url;
     this.verify = verify;
@@ -10,7 +10,7 @@ export default class frappeClient {
 
     if (apiKey && apiSecret) {
       const token = btoa(`${apiKey}:${apiSecret}`);
-      this.headers['Authorization'] = `Basic ${token}`;
+      this.headers["Authorization"] = `Basic ${token}`;
     }
 
     if (username && password) {
@@ -19,20 +19,20 @@ export default class frappeClient {
   }
 
   async login(username, password) {
-    const res = await this.postRequest('', {
-      cmd: 'login',
+    const res = await this.postRequest("", {
+      cmd: "login",
       usr: username,
       pwd: password
     });
-    if (res !== 'Logged In') throw new Error('Authentication failed');
+    if (res !== "Logged In") throw new Error("Authentication failed");
   }
 
   async logout() {
-    await this.getRequest('', { cmd: 'logout' });
+    await this.getRequest("", { cmd: "logout" });
   }
 
   async getList(doctype, {
-    fields = ['*'],
+    fields = ["*"],
     filters = null,
     limit_start = 0,
     limit_page_length = 0,
@@ -47,7 +47,7 @@ export default class frappeClient {
 
     const url = `${this.url}/api/resource/${encodeURIComponent(doctype)}`;
     const res = await fetch(`${url}?${new URLSearchParams(params)}`, {
-      method: 'GET',
+      method: "GET",
       headers: this.headers
     });
     return this.postProcess(res);
@@ -55,16 +55,16 @@ export default class frappeClient {
 
   async insert(doc) {
     const res = await fetch(`${this.url}/api/resource/${encodeURIComponent(doc.doctype)}`, {
-      method: 'POST',
-      headers: { ...this.headers, 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { ...this.headers, "Content-Type": "application/json" },
       body: JSON.stringify({ data: JSON.stringify(doc) })
     });
     return this.postProcess(res);
   }
 
   async insertMany(docs) {
-    return this.postRequest('', {
-      cmd: 'frappe.client.insert_many',
+    return this.postRequest("", {
+      cmd: "frappe.client.insert_many",
       docs: JSON.stringify(docs)
     });
   }
@@ -72,8 +72,8 @@ export default class frappeClient {
   async update(doc) {
     const url = `${this.url}/api/resource/${encodeURIComponent(doc.doctype)}/${encodeURIComponent(doc.name)}`;
     const res = await fetch(url, {
-      method: 'PUT',
-      headers: { ...this.headers, 'Content-Type': 'application/json' },
+      method: "PUT",
+      headers: { ...this.headers, "Content-Type": "application/json" },
       body: JSON.stringify({ data: JSON.stringify(doc) })
     });
     return this.postProcess(res);
@@ -84,7 +84,7 @@ export default class frappeClient {
     if (documents.length > 1) {
       throw new Error(`Multiple ${doc.doctype} found for ${key} ${doc[key]}`);
     } else if (documents.length === 1) {
-      doc.name = documents[0].name
+      doc.name = documents[0].name;
       return this.update(doc);
     } else {
       return this.insert(doc);
@@ -92,23 +92,23 @@ export default class frappeClient {
   }
 
   async bulkUpdate(docs) {
-    return this.postRequest('', {
-      cmd: 'frappe.client.bulk_update',
+    return this.postRequest("", {
+      cmd: "frappe.client.bulk_update",
       docs: JSON.stringify(docs)
     });
   }
   // --- Utility methods ---
 
-  async postRequest(path = '', data = {}) {
+  async postRequest(path = "", data = {}) {
     const res = await fetch(`${this.url}${path}`, {
-      method: 'POST',
-      headers: { ...this.headers, 'Content-Type': 'application/x-www-form-urlencoded' },
+      method: "POST",
+      headers: { ...this.headers, "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams(data)
     });
     return this.postProcess(res);
   }
 
-  async getRequest(path = '', params = {}) {
+  async getRequest(path = "", params = {}) {
     const url = `${this.url}${path}?${new URLSearchParams(params)}`;
     const res = await fetch(url, { headers: this.headers });
     return this.postProcess(res);

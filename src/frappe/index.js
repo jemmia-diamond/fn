@@ -1,5 +1,5 @@
-import frappeClient from "./frappe-client";
+import FrappeClient from "./frappe-client";
 
 export default {
-    frappeClient: frappeClient
+    frappeClient: FrappeClient
 };

@@ -1,10 +1,10 @@
-import frappeClient from "../../frappe/frappe-client";
+import FrappeClient from "../../frappe/frappe-client";
 
 
-export default class contactService {
+export default class ContactService {
     constructor(env) {
         this.env;
-        this.frappeClient = new frappeClient(
+        this.frappeClient = new FrappeClient(
             {
                 url: env.JEMMIA_ERP_BASE_URL,
                 apiKey: env.JEMMIA_ERP_API_KEY,
@@ -31,10 +31,10 @@ export default class contactService {
         };
 
         if (customer) {
-            mappedContactData.links = [{ "link_doctype": "Customer", "link_name": customer.name }]
+            mappedContactData.links = [{ "link_doctype": "Customer", "link_name": customer.name }];
         };
 
-        const contacts = await this.frappeClient.getList('Contact', { filters: [["Contact Phone", "phone", "=", customerData["phone"]]] })
+        const contacts = await this.frappeClient.getList("Contact", { filters: [["Contact Phone", "phone", "=", customerData["phone"]]] });
         if (contacts.length > 0) {
             mappedContactData.name = contacts[0].name;
             const contact = await this.frappeClient.update(mappedContactData);

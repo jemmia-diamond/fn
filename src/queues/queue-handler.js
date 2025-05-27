@@ -1,4 +1,4 @@
-import orderService from "../services/jemmia_erp/order";
+import orderService from "../services/erp/order";
 
 export default {
     queue : async (batch, env) => {
@@ -10,4 +10,4 @@ export default {
                 break;
         }
     }
-}
+};
