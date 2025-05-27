@@ -3,10 +3,9 @@ import orderService from "../../services/jemmia_erp/order";
 export default class orderController {
     static async haravanWebhook(ctx) {
         // Receives the order events from haravan and sends them to the order queue
-        const environment = ctx.env.ENV === "dev" ? "_DEV" : "";
         const data = await ctx.req.json();
         try {
-            await ctx.env[`ORDER_QUEUE${environment}`].send(data);
+            await ctx.env["ORDER_QUEUE"].send(data);
             return ctx.json({ message: 'Message sent to queue', status: 200 });
         } catch (e) {
             console.error(e);
