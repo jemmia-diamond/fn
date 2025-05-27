@@ -1,0 +1,34 @@
+import frappeClient from "../../frappe/frappe-client";
+
+
+export default class addressService {
+    constructor(env) {
+        this.env;
+        this.frappeClient = new frappeClient(
+            {
+                url: env.JEMMIA_ERP_BASE_URL,
+                apiKey: env.JEMMIA_ERP_API_KEY,
+                apiSecret: env.JEMMIA_ERP_API_SECRET
+            }
+        );
+    };
+
+    async processHaravanAddress(addressData, customer) {
+        const nameParts = [addressData.last_name, addressData.first_name].filter(Boolean);
+        const mappedAddressData = {
+            doctype: "Address",
+            address_name: nameParts.join(" "),
+            haravan_id: String(addressData.id),
+            province: addressData.province,
+            district: addressData.district,
+            ward: addressData.ward,
+            address_line1: addressData.address1 || "No Entry",
+            address_line2: addressData.address2
+        }
+        if (customer) {
+            mappedAddressData.links = [{ "link_doctype": "Customer", "link_name": customer.name }]
+        };
+        const address = await this.frappeClient.upsert(mappedAddressData, "haravan_id");
+        return address
+    }
+};

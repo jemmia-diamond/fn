@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "@hono/sentry": "^1.2.1",
+    "crypto-js": "^4.2.0",
     "hono": "^4.7.10"
   },
   "devDependencies": {

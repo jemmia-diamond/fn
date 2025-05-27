@@ -1,0 +1,46 @@
+import frappeClient from "../../frappe/frappe-client";
+
+
+export default class contactService {
+    constructor(env) {
+        this.env;
+        this.frappeClient = new frappeClient(
+            {
+                url: env.JEMMIA_ERP_BASE_URL,
+                apiKey: env.JEMMIA_ERP_API_KEY,
+                apiSecret: env.JEMMIA_ERP_API_SECRET
+            }
+        );
+    };
+
+    async processHaravanContact(customerData, customer, address) {
+        const nameParts = [customerData.last_name, customerData.first_name].filter(Boolean);
+        const mappedContactData = {
+            doctype: "Contact",
+            first_name: nameParts.join(" "),
+            phone_nos: [
+                {
+                    "phone": customerData["phone"],
+                    "is_primary_phone": 1
+                }
+            ]
+        };
+
+        if (address) {
+            mappedContactData.address = address.name;
+        };
+
+        if (customer) {
+            mappedContactData.links = [{ "link_doctype": "Customer", "link_name": customer.name }]
+        };
+
+        const contacts = await this.frappeClient.getList('Contact', { filters: [["Contact Phone", "phone", "=", customerData["phone"]]] })
+        if (contacts.length > 0) {
+            mappedContactData.name = contacts[0].name;
+            const contact = await this.frappeClient.update(mappedContactData);
+            return contact;
+        };
+        const contact = await this.frappeClient.insert(mappedContactData);
+        return contact;
+    }
+}
