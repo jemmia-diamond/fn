@@ -3,7 +3,7 @@ import FrappeClient from "../../frappe/frappe-client";
 
 export default class ContactService {
   constructor(env) {
-    this.env;
+    this.env = env;
     this.doctype = "Contact";
     this.frappeClient = new FrappeClient(
       {
