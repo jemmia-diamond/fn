@@ -79,12 +79,16 @@ export default class FrappeClient {
     return this.postProcess(res);
   }
 
-  async upsert(doc, key) {
+  async upsert(doc, key, ignoredFields = []) {
     const documents = await this.getList(doc.doctype, {filters:[[key, "=", doc[key]]]});
     if (documents.length > 1) {
       throw new Error(`Multiple ${doc.doctype} found for ${key} ${doc[key]}`);
     } else if (documents.length === 1) {
       doc.name = documents[0].name;
+      // Remove ignored fields before update
+      for (const field of ignoredFields) {
+        delete doc[field];
+      }
       return this.update(doc);
     } else {
       return this.insert(doc);

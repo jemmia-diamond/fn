@@ -74,7 +74,7 @@ export default class OrderService {
       contact_person: contact.name,
       customer_address: customerDefaultAdress.name
     };
-    const order = await this.frappeClient.upsert(mappedOrderData, "haravan_order_id");
+    const order = await this.frappeClient.upsert(mappedOrderData, "haravan_order_id", ["items"]);
     return order;
   }
 
