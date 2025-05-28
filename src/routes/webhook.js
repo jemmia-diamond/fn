@@ -1,7 +1,7 @@
 // TODO: Make this import dynamic, so that we can add new controllers without repeating ourselves.
 import ERP from "../controllers/erp";
 
-export default class WebhookRoutes {
+export default class WebhookRoute {
   static register(webhook) {
     /*
     /webhook/namespace/resources

@@ -4,6 +4,7 @@ import FrappeClient from "../../frappe/frappe-client";
 export default class ContactService {
     constructor(env) {
         this.env;
+        this.doctype = "Contact";
         this.frappeClient = new FrappeClient(
             {
                 url: env.JEMMIA_ERP_BASE_URL,
@@ -16,7 +17,7 @@ export default class ContactService {
     async processHaravanContact(customerData, customer, address) {
         const nameParts = [customerData.last_name, customerData.first_name].filter(Boolean);
         const mappedContactData = {
-            doctype: "Contact",
+            doctype: this.doctype,
             first_name: nameParts.join(" "),
             phone_nos: [
                 {
@@ -31,7 +32,7 @@ export default class ContactService {
         };
 
         if (customer) {
-            mappedContactData.links = [{ "link_doctype": "Customer", "link_name": customer.name }];
+            mappedContactData.links = [{ "link_doctype": customer.doctype, "link_name": customer.name }];
         };
 
         const contacts = await this.frappeClient.getList("Contact", { filters: [["Contact Phone", "phone", "=", customerData["phone"]]] });

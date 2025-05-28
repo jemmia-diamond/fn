@@ -3,7 +3,7 @@ import Namespace from "../controllers/namespace";
 import anotherNamespace from "../controllers/another-namespace";
 import ERP from "../controllers/erp";
 
-export default class APIRoutes {
+export default class APIRoute {
   
   static register(api) {
     /* 

@@ -4,6 +4,7 @@ import FrappeClient from "../../frappe/frappe-client";
 export default class AddressService {
     constructor(env) {
         this.env = env;
+        this.doctype = "Address";
         this.frappeClient = new FrappeClient(
             {
                 url: env.JEMMIA_ERP_BASE_URL,
@@ -16,7 +17,7 @@ export default class AddressService {
     async processHaravanAddress(addressData, customer) {
         const nameParts = [addressData.last_name, addressData.first_name].filter(Boolean);
         const mappedAddressData = {
-            doctype: "Address",
+            doctype: this.doctype,
             address_name: nameParts.join(" "),
             haravan_id: String(addressData.id),
             province: addressData.province,
@@ -26,7 +27,7 @@ export default class AddressService {
             address_line2: addressData.address2
         };
         if (customer) {
-            mappedAddressData.links = [{ "link_doctype": "Customer", "link_name": customer.name }];
+            mappedAddressData.links = [{ "link_doctype": customer.doctype, "link_name": customer.name }];
         };
         const address = await this.frappeClient.upsert(mappedAddressData, "haravan_id");
         return address;

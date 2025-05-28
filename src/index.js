@@ -25,8 +25,8 @@ api.use("*",
 webhook.use("*", verifyHaravanWebhook);
 
 // Routes registration
-routes.APIRoutes.register(api);
-routes.WebhookRoutes.register(webhook);
+routes.APIRoute.register(api);
+routes.WebhookRoute.register(webhook);
 
 // Cron trigger and Queue Integrations
 export default {

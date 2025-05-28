@@ -4,6 +4,7 @@ import FrappeClient from "../../frappe/frappe-client";
 export default class CustomerService {
     constructor(env) {
         this.env;
+        this.doctype = "Customer";
         this.frappeClient = new FrappeClient(
             {
                 url: env.JEMMIA_ERP_BASE_URL,
@@ -16,7 +17,7 @@ export default class CustomerService {
     async processHaravanCustomer(customerData, contact, address) {
         const nameParts = [customerData.last_name, customerData.first_name].filter(Boolean);
         const mappedCustomerData = {
-            doctype: "Customer",
+            doctype: this.doctype,
             customer_name: nameParts.join(" "),
             haravan_id: String(customerData.id),
             customer_type: "Individual",
