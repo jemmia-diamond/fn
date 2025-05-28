@@ -1,5 +1,5 @@
 // TODO: Make this import dynamic, so that we can add new controllers without repeating ourselves.
-import ERP from "../controllers/erp";
+import Webhook from "../webhooks";
 
 export default class WebhookRoute {
   static register(webhook) {
@@ -7,6 +7,6 @@ export default class WebhookRoute {
     /webhook/namespace/resources
     */
     const jemmiaERPNamespaceApi = webhook.basePath("/erp");
-    jemmiaERPNamespaceApi.post("/orders", ERP.OrderWebhookController.create);
+    jemmiaERPNamespaceApi.post("/orders", Webhook.ERP.Order.create);
   };
 };

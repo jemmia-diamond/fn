@@ -1,4 +1,4 @@
-export default class OrderWebhookController {
+export default class Order {
     static async create(ctx) {
         // Receives the order events from haravan and sends them to the order queue
         const data = await ctx.req.json();

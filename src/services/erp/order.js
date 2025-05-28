@@ -70,7 +70,7 @@ export default class OrderService {
             transaction_date: formatDate(haravanOrderData.created_at, "date"),
             haravan_created_at: formatDate(haravanOrderData.created_at, "datetime"),
             total: haravanOrderData.total_line_items_price,
-            payment_records: haravanOrderData.transactions.filter(transaction => transaction.kind === "capture").map(this.mapPaymentRecordFields),
+            payment_records: haravanOrderData.transactions.filter(transaction => transaction.kind.toLowerCase() === "capture").map(this.mapPaymentRecordFields),
             contact_person: contact.name,
             customer_address: customerDefaultAdress.name
         };
@@ -87,7 +87,7 @@ export default class OrderService {
         }
     }
 
-    mapPaymentRecordFields(hrvTransactionData) {
+    mapPaymentRecordFields = (hrvTransactionData) => {
         return {
             doctype: this.linkedTableDoctype.paymentRecords,
             date: formatDate(hrvTransactionData["created_at"]),
@@ -98,7 +98,7 @@ export default class OrderService {
         };
     };
 
-    mapLineItemsFields(lineItemData) {
+    mapLineItemsFields = (lineItemData) => {
         return {
             doctype: this.linkedTableDoctype.lineItems,
             haravan_variant_id: lineItemData.variant_id,
