@@ -15,11 +15,11 @@ app.use("*", errorTracker);
 
 // Authentication
 api.use("*",
-    bearerAuth({
-        verifyToken: async (token, c) => {
-            return token === c.env.BEARER_TOKEN;
-        }
-    })
+  bearerAuth({
+    verifyToken: async (token, c) => {
+      return token === c.env.BEARER_TOKEN;
+    }
+  })
 );
 
 webhook.use("*", verifyHaravanWebhook);
@@ -30,7 +30,7 @@ routes.WebhookRoute.register(webhook);
 
 // Cron trigger and Queue Integrations
 export default {
-    fetch: app.fetch,
-    scheduled: scheduleHandler.scheduled,
-    queue: queueHandler.queue
+  fetch: app.fetch,
+  scheduled: scheduleHandler.scheduled,
+  queue: queueHandler.queue
 };

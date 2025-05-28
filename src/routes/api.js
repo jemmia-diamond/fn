@@ -4,7 +4,6 @@ import anotherNamespace from "../controllers/another-namespace";
 import ERP from "../controllers/erp";
 
 export default class APIRoute {
-  
   static register(api) {
     /* 
     /api/namespace/resources

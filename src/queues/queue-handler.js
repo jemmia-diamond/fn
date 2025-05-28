@@ -1,13 +1,13 @@
 import orderService from "../services/erp/order";
 
 export default {
-    queue : async (batch, env) => {
-        switch (batch.queue) {
-            case "order":
-                await orderService.decodeOrderQueue(batch, env);
-                break;
-            default:
-                break;
-        }
+  queue: async (batch, env) => {
+    switch (batch.queue) {
+      case "order":
+        await orderService.decodeOrderQueue(batch, env);
+        break;
+      default:
+        break;
     }
+  }
 };

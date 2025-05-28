@@ -5,8 +5,8 @@ import CustomerService from "./customer";
 
 
 export default {
-    orderService: OrderService,
-    addressService: AddressService,
-    contactService: ContactService,
-    customerService: CustomerService
+  orderService: OrderService,
+  addressService: AddressService,
+  contactService: ContactService,
+  customerService: CustomerService
 };
