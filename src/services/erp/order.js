@@ -1,5 +1,5 @@
 import FrappeClient from "../../frappe/frappe-client";
-import { formatDate } from "../../frappe/utils/datetime";
+import { convertIsoToDatetime } from "../../frappe/utils/datetime";
 
 import AddressService from "./address";
 import ContactService from "./contact";
@@ -67,8 +67,8 @@ export default class OrderService {
       financial_status: this.financialStatusMapper[haravanOrderData.financial_status],
       fulfillment_status: this.fulfillmentStatusMapper[haravanOrderData.fulfillment_status],
       cancelled_status: this.cancelledStatusMapper[haravanOrderData.cancelled_status],
-      transaction_date: formatDate(haravanOrderData.created_at, "date"),
-      haravan_created_at: formatDate(haravanOrderData.created_at, "datetime"),
+      transaction_date: convertIsoToDatetime(haravanOrderData.created_at, "date"),
+      haravan_created_at: convertIsoToDatetime(haravanOrderData.created_at, "datetime"),
       total: haravanOrderData.total_line_items_price,
       payment_records: haravanOrderData.transactions.filter(transaction => transaction.kind.toLowerCase() === "capture").map(this.mapPaymentRecordFields),
       contact_person: contact.name,
@@ -90,7 +90,7 @@ export default class OrderService {
   mapPaymentRecordFields = (hrvTransactionData) => {
     return {
       doctype: this.linkedTableDoctype.paymentRecords,
-      date: formatDate(hrvTransactionData["created_at"]),
+      date: convertIsoToDatetime(hrvTransactionData["created_at"]),
       amount: hrvTransactionData["amount"],
       gateway: hrvTransactionData["gateway"],
       kind: hrvTransactionData["kind"],
