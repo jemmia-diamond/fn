@@ -10,7 +10,7 @@ dayjs.extend(utc);
  * @typedef {('date'|'datetime')} FormatType
  */
 
-export function formatDate(isoString, type) {
+export function convertIsoToDatetime(isoString, type) {
   /** @type {FormatType} */
   type = type;
   if (!isoString || typeof isoString !== "string") return null;
