@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { bearerAuth } from "hono/bearer-auth";
 import verifyHaravanWebhook from "./auth/haravan-auth";
-import routes from "./routes";
+import Routes from "./routes";
 import errorTracker from "./services/error-tracker";
 import scheduleHandler from "./schedules/schedule-handler";
 import queueHandler from "./queues/queue-handler";
@@ -25,8 +25,8 @@ api.use("*",
 webhook.use("*", verifyHaravanWebhook);
 
 // Routes registration
-routes.APIRoute.register(api);
-routes.WebhookRoute.register(webhook);
+Routes.APIRoutes.register(api);
+Routes.WebhookRoutes.register(webhook);
 
 // Cron trigger and Queue Integrations
 export default {

@@ -1,7 +1,7 @@
 // TODO: Make this import dynamic, so that we can add new controllers without repeating ourselves.
-import Webhook from "../webhooks";
+import Webhook from "../controllers/webhooks";
 
-export default class WebhookRoute {
+export default class WebhookRoutes {
   static register(webhook) {
     /*
     /webhook/namespace/resources

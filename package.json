@@ -16,7 +16,7 @@
     "eslint": "^9.27.0",
     "eslint-plugin-unused-imports": "^4.1.4",
     "globals": "^16.1.0",
-    "wrangler": "^4.16.1"
+    "wrangler": "^4.17.0"
   },
   "packageManager": "pnpm@10.11.0"
 }
