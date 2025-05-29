@@ -84,6 +84,9 @@ export default class FrappeClient {
     if (documents.length > 1) {
       throw new Error(`Multiple ${doc.doctype} found for ${key} ${doc[key]}`);
     } else if (documents.length === 1) {
+      if (documents[0].docstatus === 2) {
+        return documents[0];
+      };
       doc.name = documents[0].name;
       // Remove ignored fields before update
       for (const field of ignoredFields) {

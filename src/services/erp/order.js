@@ -46,7 +46,10 @@ export default class OrderService {
 
     // Create billing address and customer's addresses
     await addressService.processHaravanAddress(haravanOrderData.billing_address);
-    const customerAddresses = await Promise.all(haravanOrderData.customer.addresses.map(address => addressService.processHaravanAddress(address)));
+    let customerAddresses = [];
+    for (const address of haravanOrderData.customer.addresses) {
+      customerAddresses.push(await addressService.processHaravanAddress(address));
+    }
     const customerDefaultAdress = customerAddresses[0];
 
     // Create contact and customer with default address
@@ -56,12 +59,12 @@ export default class OrderService {
     // Update the customer back to his contact and address
     await contactService.processHaravanContact(haravanOrderData.customer, customer, customerDefaultAdress);
     await addressService.processHaravanAddress(haravanOrderData.billing_address, customer);
-    await Promise.all(haravanOrderData.customer.addresses.map(address => addressService.processHaravanAddress(address, customer)));
+    for (const address of haravanOrderData.customer.addresses) {
+      await addressService.processHaravanAddress(address, customer);
+    }
 
     const paymentTransactions = haravanOrderData.transactions.filter(transaction => transaction.kind.toLowerCase() === "capture");
     const paidAmount = paymentTransactions.reduce((total, transaction) => total + transaction.amount, 0);
-
-
 
     const mappedOrderData = {
       doctype: this.doctype,
