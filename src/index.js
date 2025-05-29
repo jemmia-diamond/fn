@@ -3,7 +3,6 @@ import { bearerAuth } from "hono/bearer-auth";
 import verifyHaravanWebhook from "./auth/haravan-auth";
 import Routes from "./routes";
 import errorTracker from "./services/error-tracker";
-import scheduleHandler from "./schedules/schedule-handler";
 import queueHandler from "./queues/queue-handler";
 
 const app = new Hono();
@@ -31,6 +30,5 @@ Routes.WebhookRoutes.register(webhook);
 // Cron trigger and Queue Integrations
 export default {
   fetch: app.fetch,
-  scheduled: scheduleHandler.scheduled,
   queue: queueHandler.queue
 };
