@@ -44,15 +44,24 @@ export default class OrderService {
     const contactService = new ContactService(this.env);
     const customerService = new CustomerService(this.env);
 
+    // Create billing address and customer's addresses
     await addressService.processHaravanAddress(haravanOrderData.billing_address);
     const customerAddresses = await Promise.all(haravanOrderData.customer.addresses.map(address => addressService.processHaravanAddress(address)));
     const customerDefaultAdress = customerAddresses[0];
 
+    // Create contact and customer with default address
     const contact = await contactService.processHaravanContact(haravanOrderData.customer, undefined, customerDefaultAdress);
     const customer = await customerService.processHaravanCustomer(haravanOrderData.customer, contact, customerDefaultAdress);
 
+    // Update the customer back to his contact and address
+    await contactService.processHaravanContact(haravanOrderData.customer, customer, customerDefaultAdress);
     await addressService.processHaravanAddress(haravanOrderData.billing_address, customer);
     await Promise.all(haravanOrderData.customer.addresses.map(address => addressService.processHaravanAddress(address, customer)));
+
+    const paymentTransactions = haravanOrderData.transactions.filter(transaction => transaction.kind.toLowerCase() === "capture");
+    const paidAmount = paymentTransactions.reduce((total, transaction) => total + transaction.amount, 0);
+
+
 
     const mappedOrderData = {
       doctype: this.doctype,
@@ -72,7 +81,11 @@ export default class OrderService {
       total: haravanOrderData.total_line_items_price,
       payment_records: haravanOrderData.transactions.filter(transaction => transaction.kind.toLowerCase() === "capture").map(this.mapPaymentRecordFields),
       contact_person: contact.name,
-      customer_address: customerDefaultAdress.name
+      customer_address: customerDefaultAdress.name,
+      total_amount: haravanOrderData.total_price,
+      grand_total: haravanOrderData.total_price,
+      paid_amount: paidAmount,
+      balance: haravanOrderData.total_price - paidAmount
     };
     const order = await this.frappeClient.upsert(mappedOrderData, "haravan_order_id", ["items"]);
     return order;
