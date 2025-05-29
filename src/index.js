@@ -4,6 +4,8 @@ import { bearerAuth } from "hono/bearer-auth";
 import Routes from "./routes";
 import errorTracker from "./services/error-tracker";
 
+import scheduleHandler from "./schedules/schedule-handler";
+
 const app = new Hono();
 const api = app.basePath("/api");
 
@@ -20,4 +22,7 @@ api.use("*", bearerAuth({
 // Routes registration
 Routes.register(api);
 
-export default app;
+export default {
+  fetch: app.fetch,
+  scheduled: scheduleHandler.scheduled
+};
