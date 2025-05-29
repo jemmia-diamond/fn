@@ -7,7 +7,7 @@ export default class LeadWebhooksController {
     let body =  await ctx.req.json()
     let conversationId = body['conversationId']
     if(!conversationId){
-        throw new HTTPException('Conversation id is required')
+        throw new HTTPException(400, 'Conversation id is required')
     }
 
     let leadService = new LeadService(ctx.env)
