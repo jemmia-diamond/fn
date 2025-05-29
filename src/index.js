@@ -29,7 +29,7 @@ webhook.use("*", some(
     verifyAIHubWebhook
 ));
 
-webhook.post("erp/lead/info", LeadWebhooksController.updateLeadInfo);
+webhook.post("erp/lead/info", LeadWebhooksController.update);
 // Routes registration
 Routes.APIRoutes.register(api);
 Routes.WebhookRoutes.register(webhook);
