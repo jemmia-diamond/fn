@@ -35,7 +35,7 @@ export default class ContactService {
       mappedContactData.links = [{ "link_doctype": customer.doctype, "link_name": customer.name }];
     };
 
-    const contacts = await this.frappeClient.getList("Contact", { filters: [["Contact Phone", "phone", "=", customerData["phone"]]] });
+    const contacts = await this.frappeClient.getList(this.doctype, { filters: [["Contact Phone", "phone", "=", customerData["phone"]]] });
     if (contacts.length > 0) {
       mappedContactData.name = contacts[0].name;
       const contact = await this.frappeClient.update(mappedContactData);

@@ -94,7 +94,7 @@ export default class OrderService {
     return order;
   }
 
-  static async decodeOrderQueue(batch, env) {
+  static async dequeueOrderQueue(batch, env) {
     const orderService = new OrderService(env);
     const messages = batch.messages;
     for (const message of messages) {
