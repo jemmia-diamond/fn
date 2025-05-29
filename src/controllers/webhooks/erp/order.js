@@ -1,4 +1,4 @@
-export default class Order {
+export default class OrderController {
   static async create(ctx) {
     // Receives the order events from haravan and sends them to the order queue
     const data = await ctx.req.json();

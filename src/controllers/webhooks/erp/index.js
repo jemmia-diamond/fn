@@ -1,6 +1,6 @@
-import Order from "./order";
+import OrderController from "./order";
 
 
 export default {
-  Order
+  OrderController
 };
