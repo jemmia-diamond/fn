@@ -36,7 +36,7 @@ export default class ContactService {
     };
 
     const contacts = await this.frappeClient.getList(this.doctype, { filters: [["Contact Phone", "phone", "=", customerData["phone"]]] });
-    if (contacts.length > 0) {
+    if (contacts.length) {
       mappedContactData.name = contacts[0].name;
       const contact = await this.frappeClient.update(mappedContactData);
       return contact;
