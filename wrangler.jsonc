@@ -10,6 +10,11 @@
   "observability": {
     "enabled": true
   },
+  "tail_consumers": [
+    {
+      "service": "fn-tail"
+    }
+  ],
   "routes": [
     {
       "pattern": "fn.jemmia.vn",
