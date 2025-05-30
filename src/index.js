@@ -4,9 +4,8 @@ import verifyHaravanWebhook from "./auth/haravan-auth";
 import Routes from "./routes";
 import errorTracker from "./services/error-tracker";
 import queueHandler from "./queues/queue-handler";
-import verifyAIHubWebhook from "./auth/aihub-auth"
+import verifyAIHubWebhook from "./auth/aihub-auth";
 import { some } from "hono/combine";
-import LeadWebhooksController from "./controllers/webhooks/erp/lead";
 
 const app = new Hono();
 const api = app.basePath("/api");
@@ -25,11 +24,10 @@ api.use("*",
 );
 
 webhook.use("*", some(
-    verifyHaravanWebhook,
-    verifyAIHubWebhook
+  verifyHaravanWebhook,
+  verifyAIHubWebhook
 ));
 
-webhook.post("erp/lead/info", LeadWebhooksController.update);
 // Routes registration
 Routes.APIRoutes.register(api);
 Routes.WebhookRoutes.register(webhook);

@@ -1,7 +1,7 @@
 import { HTTPException } from "hono/http-exception";
 import LeadService from "../../../services/erp/lead";
 
-export default class LeadWebhooksController {
+export default class LeadController {
   static async update(ctx) {
     let body = await ctx.req.json();
     let conversationId = body["conversationId"];
