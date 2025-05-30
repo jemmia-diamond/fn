@@ -29,12 +29,12 @@ webhook.use("*", some(
     verifyAIHubWebhook
 ));
 
-webhook.post('erp/lead/info', LeadWebhooksController.updateLeadInfo)
+webhook.post("erp/lead/info", LeadWebhooksController.updateLeadInfo);
 // Routes registration
 Routes.APIRoutes.register(api);
 Routes.WebhookRoutes.register(webhook);
 Routes.register(api);
-Routes.register(webhook)
+Routes.register(webhook);
 
 // Cron trigger and Queue Integrations
 export default {
