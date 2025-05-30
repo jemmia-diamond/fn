@@ -139,4 +139,15 @@ export default class FrappeClient {
       throw e;
     }
   }
+
+  async updateLeadInfo(data) {
+    const url = `${this.url}/api/method/erpnext.crm.doctype.lead.lead_methods.update_lead_from_summary`;
+    let res = await fetch(url, {
+      method: "POST",
+      headers: { ...this.headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify({data})
+    });
+
+    return res;
+  }
 }
