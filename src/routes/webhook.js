@@ -8,6 +8,6 @@ export default class WebhookRoutes {
     */
     const jemmiaERPNamespaceApi = webhook.basePath("/erp");
     jemmiaERPNamespaceApi.post("/orders", Webhook.ERP.OrderController.create);
-    jemmiaERPNamespaceApi.post("/lead/info", Webhook.ERP.LeadController.update);
+    jemmiaERPNamespaceApi.post("/lead/info", Webhook.ERP.LeadController.create);
   };
 };

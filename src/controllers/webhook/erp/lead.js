@@ -2,7 +2,7 @@ import { HTTPException } from "hono/http-exception";
 import LeadService from "../../../services/erp/lead";
 
 export default class LeadController {
-  static async update(ctx) {
+  static async create(ctx) {
     let body = await ctx.req.json();
     let conversationId = body["conversationId"];
     if (!conversationId) {
