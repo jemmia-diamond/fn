@@ -6,14 +6,14 @@ export default class LeadService {
     this.frappeClient = new FrappeClient({
       url: env.JEMMIA_ERP_BASE_URL,
       apiKey: env.JEMMIA_ERP_API_KEY,
-      apiSecret: env.JEMMIA_ERP_API_SECRET,
+      apiSecret: env.JEMMIA_ERP_API_SECRET
     });
   }
 
   async updateLeadInfoFromSummary(data, conversationId) {
     let res = await this.frappeClient.updateLeadInfo({
       ...data,
-      conversation_id: conversationId,
+      conversation_id: conversationId
     });
 
     return res;
