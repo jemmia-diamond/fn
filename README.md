@@ -33,7 +33,13 @@ Start the development server with:
 pnpm run dev
 ```
 
-This will start a local development server using Wrangler.
+This will start a local development server using Wrangler. Or in the case you want to test Cron triggers using Wrangler.
+
+```bash
+pnpm run dev --test-scheduled
+
+curl "http://localhost:8787/__scheduled?cron=*+*+*+*+*"
+```
 
 ## Adding New Features
 
