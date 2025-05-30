@@ -31,16 +31,13 @@ export default class FrappeClient {
     await this.getRequest("", { cmd: "logout" });
   }
 
-  async getList(
-    doctype,
-    {
-      fields = ["*"],
-      filters = null,
-      limit_start = 0,
-      limit_page_length = 0,
-      order_by = null
-    } = {}
-  ) {
+  async getList(doctype, {
+    fields = ["*"],
+    filters = null,
+    limit_start = 0,
+    limit_page_length = 0,
+    order_by = null
+  } = {}) {
     const params = {
       fields: JSON.stringify(fields),
       ...(filters && { filters: JSON.stringify(filters) }),
@@ -57,14 +54,11 @@ export default class FrappeClient {
   }
 
   async insert(doc) {
-    const res = await fetch(
-      `${this.url}/api/resource/${encodeURIComponent(doc.doctype)}`,
-      {
-        method: "POST",
-        headers: { ...this.headers, "Content-Type": "application/json" },
-        body: JSON.stringify({ data: JSON.stringify(doc) })
-      }
-    );
+    const res = await fetch(`${this.url}/api/resource/${encodeURIComponent(doc.doctype)}`, {
+      method: "POST",
+      headers: { ...this.headers, "Content-Type": "application/json" },
+      body: JSON.stringify({ data: JSON.stringify(doc) })
+    });
     return this.postProcess(res);
   }
 
@@ -76,9 +70,7 @@ export default class FrappeClient {
   }
 
   async update(doc) {
-    const url = `${this.url}/api/resource/${encodeURIComponent(
-      doc.doctype
-    )}/${encodeURIComponent(doc.name)}`;
+    const url = `${this.url}/api/resource/${encodeURIComponent(doc.doctype)}/${encodeURIComponent(doc.name)}`;
     const res = await fetch(url, {
       method: "PUT",
       headers: { ...this.headers, "Content-Type": "application/json" },
@@ -88,9 +80,7 @@ export default class FrappeClient {
   }
 
   async upsert(doc, key, ignoredFields = []) {
-    const documents = await this.getList(doc.doctype, {
-      filters: [[key, "=", doc[key]]]
-    });
+    const documents = await this.getList(doc.doctype, {filters:[[key, "=", doc[key]]]});
     if (documents.length > 1) {
       throw new Error(`Multiple ${doc.doctype} found for ${key} ${doc[key]}`);
     } else if (documents.length === 1) {
@@ -119,10 +109,7 @@ export default class FrappeClient {
   async postRequest(path = "", data = {}) {
     const res = await fetch(`${this.url}${path}`, {
       method: "POST",
-      headers: {
-        ...this.headers,
-        "Content-Type": "application/x-www-form-urlencoded"
-      },
+      headers: { ...this.headers, "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams(data)
     });
     return this.postProcess(res);
@@ -152,7 +139,7 @@ export default class FrappeClient {
       throw e;
     }
   }
-
+  
   async updateLeadInfo(data) {
     const url = `${this.url}/api/method/erpnext.crm.doctype.lead.lead_methods.update_lead_from_summary`;
     let res = await fetch(url, {

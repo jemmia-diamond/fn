@@ -31,8 +31,6 @@ webhook.use("*", some(
 // Routes registration
 Routes.APIRoutes.register(api);
 Routes.WebhookRoutes.register(webhook);
-Routes.register(api);
-Routes.register(webhook);
 
 // Cron trigger and Queue Integrations
 export default {
