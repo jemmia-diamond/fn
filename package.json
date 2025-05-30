@@ -8,13 +8,15 @@
   },
   "dependencies": {
     "@hono/sentry": "^1.2.1",
+    "crypto-js": "^4.2.0",
+    "dayjs": "^1.11.13",
     "hono": "^4.7.10"
   },
   "devDependencies": {
     "eslint": "^9.27.0",
     "eslint-plugin-unused-imports": "^4.1.4",
     "globals": "^16.1.0",
-    "wrangler": "^4.16.1"
+    "wrangler": "^4.17.0"
   },
   "packageManager": "pnpm@10.11.0"
 }
