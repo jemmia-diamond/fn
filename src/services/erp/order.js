@@ -5,7 +5,6 @@ import AddressService from "./address";
 import ContactService from "./contact";
 import CustomerService from "./customer";
 
-
 export default class OrderService {
   constructor(env) {
     this.env = env;

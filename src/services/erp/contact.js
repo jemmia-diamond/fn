@@ -1,6 +1,5 @@
 import FrappeClient from "../../frappe/frappe-client";
 
-
 export default class ContactService {
   constructor(env) {
     this.env = env;
