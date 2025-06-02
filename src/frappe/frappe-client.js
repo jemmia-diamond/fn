@@ -144,6 +144,6 @@ export default class FrappeClient {
     return await this.postRequest("",{
       cmd: "erpnext.crm.doctype.lead.lead_methods.update_lead_from_summary",
       data : JSON.stringify(data)
-    })
+    });
   }
 }
