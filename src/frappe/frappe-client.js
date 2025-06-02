@@ -139,5 +139,4 @@ export default class FrappeClient {
       throw e;
     }
   }
-  
 }
