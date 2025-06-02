@@ -5,7 +5,6 @@ import queueHandler from "./queues/queue-handler";
 import Routes from "./routes";
 
 import scheduleHandler from "./schedules/schedule-handler";
-import verifyAIHubWebhook from "./auth/aihub-auth";
 import Routes from "./routes";
 
 const app = new Hono();
