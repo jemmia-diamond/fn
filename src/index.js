@@ -1,10 +1,7 @@
 import { Hono } from "hono";
 import { bearerAuth } from "hono/bearer-auth";
-import { some } from "hono/combine";
-import verifyHaravanWebhook from "./auth/haravan-auth";
 import errorTracker from "./services/error-tracker";
 import queueHandler from "./queues/queue-handler";
-import verifyAIHubWebhook from "./auth/aihub-auth";
 import Routes from "./routes";
 
 const app = new Hono();
@@ -23,10 +20,6 @@ api.use("*",
   })
 );
 
-webhook.use("*", some(
-  verifyHaravanWebhook,
-  verifyAIHubWebhook
-));
 
 // Routes registration
 Routes.APIRoutes.register(api);

@@ -140,10 +140,4 @@ export default class FrappeClient {
     }
   }
   
-  async updateLeadInfo(data) {
-    return await this.postRequest("",{
-      cmd: "erpnext.crm.doctype.lead.lead_methods.update_lead_from_summary",
-      data : JSON.stringify(data)
-    });
-  }
 }

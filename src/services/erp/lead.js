@@ -11,11 +11,14 @@ export default class LeadService {
   }
 
   async updateLeadInfoFromSummary(data, conversationId) {
-    let res = await this.frappeClient.updateLeadInfo({
-      ...data,
-      conversation_id: conversationId
+    let res = await this.frappeClient.postRequest("", {
+      cmd: "erpnext.crm.doctype.lead.lead_methods.update_lead_from_summary",
+      data: JSON.stringify({
+        ...data,
+        conversation_id: conversationId
+      })
     });
-
+    
     return res;
   }
 }
