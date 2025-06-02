@@ -1,11 +1,11 @@
 import { Hono } from "hono";
 import { bearerAuth } from "hono/bearer-auth";
+import { some } from "hono/combine";
 import verifyHaravanWebhook from "./auth/haravan-auth";
-import Routes from "./routes";
 import errorTracker from "./services/error-tracker";
 import queueHandler from "./queues/queue-handler";
 import verifyAIHubWebhook from "./auth/aihub-auth";
-import { some } from "hono/combine";
+import Routes from "./routes";
 
 const app = new Hono();
 const api = app.basePath("/api");
