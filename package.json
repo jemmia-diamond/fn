@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "@hono/sentry": "^1.2.1",
+    "@neondatabase/serverless": "^1.0.0",
     "crypto-js": "^4.2.0",
     "dayjs": "^1.11.13",
     "hono": "^4.7.10"

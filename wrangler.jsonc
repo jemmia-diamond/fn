@@ -35,5 +35,10 @@
         "binding": "ORDER_QUEUE"
       }
     ]
+  },
+  "triggers": {
+    "crons": [
+      "0 0 * * *",
+    ]
   }
 }
