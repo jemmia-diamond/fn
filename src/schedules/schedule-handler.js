@@ -1,7 +1,6 @@
 function scheduledJob(env, ctx) {
   // Do something 
-  // If return is needed, use an object to return multiple values
-  // return { env, ctx };
+  return { env, ctx };
 };
 
 export default {
