@@ -44,15 +44,12 @@ curl "http://localhost:8787/__scheduled?cron=*+*+*+*+*"
 ## Working With Larksuite SDK
 
 ```javascript
-import * as lark from '@larksuiteoapi/node-sdk';
-import fetchAdapter from "@vespaiach/axios-fetch-adapter";
+import LarksuiteService from "../../services/larksuite/lark";
 
-const client = new lark.Client({
-  appId: "App ID",
-  appSecret: "App Secret"
-});
-// Change the default adapter
-client.httpInstance.defaults.adapter = fetchAdapter;
+static async someFunction(ctx) {
+  const larkClient = LarksuiteService.createClient(ctx.env);
+  return ctx.text("lark client");
+}
 ```
 
 ## Adding New Features
