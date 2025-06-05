@@ -41,6 +41,20 @@ pnpm run dev --test-scheduled
 curl "http://localhost:8787/__scheduled?cron=*+*+*+*+*"
 ```
 
+## Working With Larksuite SDK
+
+```javascript
+import * as lark from '@larksuiteoapi/node-sdk';
+import fetchAdapter from "@vespaiach/axios-fetch-adapter";
+
+const client = new lark.Client({
+  appId: "App ID",
+  appSecret: "App Secret"
+});
+// Change the default adapter
+client.httpInstance.defaults.adapter = fetchAdapter;
+```
+
 ## Adding New Features
 
 ### Project Structure
