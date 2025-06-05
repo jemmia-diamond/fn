@@ -16,6 +16,7 @@ export default {
       break;
     case "30 8 * * *":
       await Larksuite.Attendance.ScheduleService.syncScheduleToDatabase(env);
+      break;
     default:
       break;
     };
