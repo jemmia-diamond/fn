@@ -35,5 +35,8 @@
         "binding": "ORDER_QUEUE"
       }
     ]
-  }
+  },
+  "compatibility_flags": [
+    "nodejs_compat"
+  ]
 }
