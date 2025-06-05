@@ -51,10 +51,9 @@ export default class BaseClient {
 
   async postProcess(res) {
     const json = await res.json();
-    if (json.msg != "success") {
+    if (json.code != 0) {
       throw new Error(json.msg);
     }
     return json.data;
   }
-
 }
