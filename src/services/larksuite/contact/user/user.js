@@ -1,29 +1,42 @@
-import UserClient from "../../../../larksuite/modules/contact/user";
+import LarksuiteService from "../../lark";
 import Database from "../../../database";
+import * as lark from "@larksuiteoapi/node-sdk";
 
 export default class UserService {
-  constructor(env) {
-    this.env = env;
-    this.userClient = new UserClient({ appId: env.LARKSUITE_APP_ID, appSecret: env.LARKSUITE_APP_SECRET });
+  static async syncUsersToDatabase(env) {
+    const db = Database.instance(env);
+    const larkClient = LarksuiteService.createClient(env);
+    const tenantAccessToken = await LarksuiteService.getTenantAccessToken(env);
+
+    const departementIds = await UserService.getDepartmentIds(env);
+    const usersArrays = await Promise.all(departementIds.map(departmentId => UserService.findUsersByDepartment(larkClient, tenantAccessToken, departmentId)));
+    const users = usersArrays.flat().filter(Boolean);
+
+    for (const user of users.slice(0, 9)) {
+      await db.$queryRaw`INSERT INTO larksuite.users (user_id, name, email) 
+      VALUES (${user.user_id}, ${user.name}, ${user.email})
+      ON CONFLICT (user_id) DO UPDATE SET name = ${user.name}, email = ${user.email}`;
+    }
   }
 
-  static async syncUsersToDatabase(env) {
-    const userService = new UserService(env);
+  static async getDepartmentIds(env) {
     const db = Database.instance(env);
-
     const departements = await db.$queryRaw`SELECT department_id FROM larksuite.departments`;
-    const departement_ids = departements.map(departement => departement.department_id);
+    return departements.map(departement => departement.department_id);
+  }
 
-    console.log(departement_ids);
-        
-    // const allUsers = [];
-    // for (const departement_id of departement_ids) {
-    //   const users = await userService.userClient.findAllByDepartment({
-    //     user_id_type: "user_id",
-    //     department_id_type: "department_id",
-    //     department_id: departement_id
-    //   });
-    //   allUsers.push(...users.items);
-    // } 
+  static async findUsersByDepartment(larkClient, tenantAccessToken, departmentId) {
+    const reponse = await larkClient.contact.user.findByDepartment({
+      params: {
+        user_id_type: 'user_id',
+        department_id_type: 'department_id',
+        department_id: departmentId,
+        page_size: 50,
+      },
+    },
+      lark.withTenantToken(tenantAccessToken)
+    );
+    const users = reponse.data.items;
+    return users;
   }
 }
