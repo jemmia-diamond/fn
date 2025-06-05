@@ -41,17 +41,6 @@ pnpm run dev --test-scheduled
 curl "http://localhost:8787/__scheduled?cron=*+*+*+*+*"
 ```
 
-## Working With Larksuite SDK
-
-```javascript
-import LarksuiteService from "../../services/larksuite/lark";
-
-static async someFunction(ctx) {
-  const larkClient = LarksuiteService.createClient(ctx.env);
-  return ctx.text("lark client");
-}
-```
-
 ## Adding New Features
 
 ### Project Structure
