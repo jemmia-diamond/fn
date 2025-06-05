@@ -10,7 +10,7 @@ const verifyHaravanWebhook = async (ctx, next) => {
   }
 
   const rawBody = await ctx.req.text();
-  const computedHmac = encodeBase64(HmacSHA256(rawBody, ctx.env.HARAVAN_CLIENT_SECRET).toString());
+  const computedHmac = encodeBase64(HmacSHA256(rawBody, ctx.env.HARAVAN_WEBHOOK_SECRET).toString());
 
   if (signature !== computedHmac) {
     throw new HTTPException(401, "Unauthorized");
