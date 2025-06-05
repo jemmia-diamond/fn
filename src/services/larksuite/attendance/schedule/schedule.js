@@ -1,26 +1,23 @@
 import ScheduleClient from "../../../../larksuite/modules/attendance/schedule";
-import { neon } from "@neondatabase/serverless";
+import Database from "../../../database";
 import dayjs from "dayjs";
 
 export default class ScheduleService {
   constructor(env) {
     this.env = env;
     this.scheduleClient = new ScheduleClient({ appId: env.LARKSUITE_APP_ID, appSecret: env.LARKSUITE_APP_SECRET });
-    this.dbConnector = neon(env.DATABASE_URL);
   }
 
   static async syncScheduleToDatabase(env) {
     const scheduleService = new ScheduleService(env);
+    const db = Database.instance(env);
 
     const currentDate = dayjs();
     const timeThresholdStart = Number(currentDate.format("YYYYMMDD"));
     const timeThresholdEnd = Number(currentDate.add(1, "day").format("YYYYMMDD"));
 
-    const users = await scheduleService.dbConnector.query(`
-            SELECT
-            user_id
-            FROM larksuite.users
-        `);
+    const users = await db.$queryRaw`SELECT user_id FROM larksuite.users`;
+
     const userIds = users.map(user => user.user_id);
 
     const allShifts = [];
