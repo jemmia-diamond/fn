@@ -14,14 +14,14 @@ export default class BaseClient {
       "app_id": this.appId,
       "app_secret": this.appSecret
     };
-    const reponse = await fetch(
+    const res = await fetch(
       url, {
         method: "POST",
         headers: headers,
         body: JSON.stringify(payload)
       }
     );
-    const json = await reponse.json();
+    const json = await res.json();
     this.tenantAccessToken = json.tenant_access_token;
     return json.tenant_access_token;
   }
