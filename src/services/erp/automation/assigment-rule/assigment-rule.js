@@ -85,19 +85,16 @@ export default class AssignmentRuleService {
   static async updateAssignmentRulesStartDay(env) {
     const shifts = [SHIFTS.FIRST_SHIFT];
     await AssignmentRuleService.updateAssignmentRules(env, shifts);
-    console.log("Update Assignment Rule First Shift");
   }
 
   static async updateAssignmentRulesMidDay(env) {
     const shifts = [SHIFTS.FIRST_SHIFT, SHIFTS.SECOND_SHIFT];
     await AssignmentRuleService.updateAssignmentRules(env, shifts);
-    console.log("Update Assignment Rule First Shift");
   }
 
   static async updateAssignmentRulesEndDay(env) {
     const shifts = [SHIFTS.SECOND_SHIFT];
     await AssignmentRuleService.updateAssignmentRules(env, shifts);
-    console.log("Update Assignment Rule Second Shift");
   }
 
 }
