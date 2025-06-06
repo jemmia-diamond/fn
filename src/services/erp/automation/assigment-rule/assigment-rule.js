@@ -7,7 +7,6 @@ import { SHIFTS, ASSIGNMENT_RULES } from "./enum";
 
 dayjs.extend(utc);
 
-
 export default class AssignmentRuleService {
   constructor(env) {
     this.env = env;
@@ -23,7 +22,7 @@ export default class AssignmentRuleService {
 
   async getAssignedUsers(region) {
     const salesPeople = await this.frappeClient.getList("Sales Person", {
-      filters: [["sales_region", "=", region]]
+      filters: [["sales_region", "=", region], ["assigned_lead", "=", "true"]]
     });
     const employeeNames = salesPeople.map((salesPerson) => salesPerson.employee);
     const employees = [];
@@ -72,11 +71,10 @@ export default class AssignmentRuleService {
   }
 
   static async updateAssignmentRules(env, shifts) {
-
     const timeThreshold = dayjs.utc();
     const dayNo = timeThreshold.date();
     const month = Number(timeThreshold.format("YYYYMM"));
-
+    // Update assignment rules for three region
     await AssignmentRuleService.updateAssignmentRule(env, ASSIGNMENT_RULES.HN, shifts, dayNo, month);
     await AssignmentRuleService.updateAssignmentRule(env, ASSIGNMENT_RULES.HCM, shifts, dayNo, month);
     await AssignmentRuleService.updateAssignmentRule(env, ASSIGNMENT_RULES.CT, shifts, dayNo, month);
