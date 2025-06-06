@@ -5,7 +5,6 @@ import queueHandler from "./queues/queue-handler";
 import Routes from "./routes";
 
 import scheduleHandler from "./schedules/schedule-handler";
-import Routes from "./routes";
 
 const app = new Hono();
 const api = app.basePath("/api");
@@ -27,8 +26,6 @@ api.use("*",
 // Routes registration
 Routes.APIRoutes.register(api);
 Routes.WebhookRoutes.register(webhook);
-Routes.register(api);
-Routes.register(webhook)
 
 export default {
   fetch: app.fetch,
