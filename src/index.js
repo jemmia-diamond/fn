@@ -7,7 +7,7 @@ import Routes from "./routes";
 import errorTracker from "./services/error-tracker";
 
 import queueHandler from "./queues/queue-handler";
-import scheduleHandler from "./schedules/schedule-handler";
+import scheduleHandler from "./services/schedule-handler";
 
 const app = new Hono();
 const api = app.basePath("/api");
