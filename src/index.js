@@ -24,10 +24,6 @@ api.use("*",
   })
 );
 
-webhook.use("*", some(
-  verifyHaravanWebhook,
-  verifyAIHubWebhook
-));
 
 // Routes registration
 Routes.APIRoutes.register(api);
