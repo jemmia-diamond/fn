@@ -10,4 +10,15 @@ export default class LarksuiteService {
     client.httpInstance.defaults.adapter = fetchAdapter;
     return client;
   }
+
+  static async getTenantAccessToken(env) {
+    const larkClient = LarksuiteService.createClient(env);
+    const res = await larkClient.auth.tenantAccessToken.internal({
+      data: {
+        app_id: env.LARKSUITE_APP_ID,
+        app_secret: env.LARKSUITE_APP_SECRET
+      }
+    });
+    return res.tenant_access_token;
+  }
 };

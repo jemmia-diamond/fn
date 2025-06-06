@@ -36,5 +36,11 @@
         "binding": "ORDER_QUEUE"
       }
     ]
+  },
+  "triggers": {
+    "crons": [
+      "0 17 * * *",
+      "30 1 * * *"
+    ]
   }
 }

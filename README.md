@@ -33,6 +33,11 @@ Start the development server with:
 pnpm run dev
 ```
 
+Build Prisma with:
+```bash
+pnpx prisma generate
+```
+
 This will start a local development server using Wrangler. Or in the case you want to test Cron triggers using Wrangler.
 
 ```bash
