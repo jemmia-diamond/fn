@@ -8,10 +8,12 @@ export default class UserService {
     const larkClient = LarksuiteService.createClient(env);
     const tenantAccessToken = await LarksuiteService.getTenantAccessToken(env);
 
+    // Get all departments ids from database
     const departementIds = await UserService.getDepartmentIds(env);
+    // Get all users from each department
     const usersArrays = await Promise.all(departementIds.map(departmentId => UserService.findUsersByDepartment(larkClient, tenantAccessToken, departmentId)));
     const users = usersArrays.flat().filter(Boolean);
-
+    // Insert users into database
     for (const user of users.slice(0, 9)) {
       await db.$queryRaw`INSERT INTO larksuite.users (user_id, name, email) 
       VALUES (${user.user_id}, ${user.name}, ${user.email})
