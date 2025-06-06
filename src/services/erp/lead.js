@@ -4,9 +4,9 @@ export default class LeadService {
   constructor(env) {
     this.env = env;
     this.frappeClient = new FrappeClient({
-      url: env.JEMMIA_ERP_BASE_URL,
-      apiKey: env.JEMMIA_ERP_API_KEY,
-      apiSecret: env.JEMMIA_ERP_API_SECRET
+      url: this.env.JEMMIA_ERP_BASE_URL,
+      apiKey: this.env.JEMMIA_ERP_API_KEY,
+      apiSecret: this.env.JEMMIA_ERP_API_SECRET
     });
   }
 
