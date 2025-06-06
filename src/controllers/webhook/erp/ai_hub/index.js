@@ -9,7 +9,7 @@ export default class AIHubWebhook {
     const  aiHubWebhookNamespace = webhook.basePath("/ai-hub");
 
     aiHubWebhookNamespace.use("*", verifyAIHubWebhook);
-    aiHubWebhookNamespace.post("/leads/", LeadController.update);
+    aiHubWebhookNamespace.post("/leads", LeadController.update);
 
   };
 };
