@@ -37,7 +37,7 @@ export default class AssignmentRuleService {
     return userIds;
   }
 
-  static async getattendingUsers(db, dayNo, month, shifts) {
+  static async getAttendingUsers(db, dayNo, month, shifts) {
     const emails = await db.$queryRaw`
       SELECT 
       u.enterprise_email AS email
