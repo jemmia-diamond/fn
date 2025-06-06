@@ -37,16 +37,16 @@ export default class ScheduleService {
   static async getUserSchedule(larkClient, tenantAccessToken, userId, from, to) {
     const reponse = await larkClient.attendance.userDailyShift.query({
       params: {
-        employee_type: 'employee_id',
+        employee_type: "employee_id"
       },
       data: {
         user_ids: [userId],
         check_date_from: from,
-        check_date_to: to,
-      },
+        check_date_to: to
+      }
     },
-      lark.withTenantToken(tenantAccessToken)
-    )
+    lark.withTenantToken(tenantAccessToken)
+    );
     return reponse.data.user_daily_shifts;
   }
 }

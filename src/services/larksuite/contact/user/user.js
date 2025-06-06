@@ -30,13 +30,13 @@ export default class UserService {
   static async findUsersByDepartment(larkClient, tenantAccessToken, departmentId) {
     const reponse = await larkClient.contact.user.findByDepartment({
       params: {
-        user_id_type: 'user_id',
-        department_id_type: 'department_id',
+        user_id_type: "user_id",
+        department_id_type: "department_id",
         department_id: departmentId,
-        page_size: 50,
-      },
+        page_size: 50
+      }
     },
-      lark.withTenantToken(tenantAccessToken)
+    lark.withTenantToken(tenantAccessToken)
     );
     const users = reponse.data.items;
     return users;
