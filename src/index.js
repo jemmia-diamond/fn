@@ -6,8 +6,8 @@ import Routes from "./routes";
 
 import scheduleHandler from "./schedules/schedule-handler";
 import verifyAIHubWebhook from "./auth/aihub-auth"
+import verifyAIHubWebhook from "./auth/aihub-auth";
 import { some } from "hono/combine";
-import LeadWebhooksController from "./controllers/webhooks/erp/lead";
 
 const app = new Hono();
 const api = app.basePath("/api");
@@ -26,11 +26,10 @@ api.use("*",
 );
 
 webhook.use("*", some(
-    verifyHaravanWebhook,
-    verifyAIHubWebhook
+  verifyHaravanWebhook,
+  verifyAIHubWebhook
 ));
 
-webhook.post('erp/lead/info', LeadWebhooksController.updateLeadInfo)
 // Routes registration
 Routes.APIRoutes.register(api);
 Routes.WebhookRoutes.register(webhook);
