@@ -9,6 +9,5 @@ export default class WebhookRoutes {
 
     AIHubWebhook.register(webhook);
     HaravanWebhook.register(webhook);
-    console.log(webhook)
   };
 };
