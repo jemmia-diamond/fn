@@ -1,5 +1,5 @@
 import verifyHaravanWebhook from "../../../auth/haravan-auth";
-import OrderController from "../erp/order"
+import OrderController from "../erp/order";
 
 export default class HaravanWebhook {
   static register(webhook) {

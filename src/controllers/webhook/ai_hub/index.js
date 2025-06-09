@@ -1,5 +1,5 @@
 import verifyAIHubWebhook from "../../../auth/aihub-auth";
-import LeadController from "../erp/lead"
+import LeadController from "../erp/lead";
 
 export default class AIHubWebhook {
   static register(webhook) {
