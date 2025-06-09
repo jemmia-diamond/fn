@@ -1,5 +1,5 @@
-import verifyHaravanWebhook from "../../../../auth/haravan-auth";
-import OrderController from "../order";
+import verifyHaravanWebhook from "../../../auth/haravan-auth";
+import OrderController from "../erp/order"
 
 export default class HaravanWebhook {
   static register(webhook) {
@@ -10,6 +10,6 @@ export default class HaravanWebhook {
     
     haravanWebhookNamespace.use("*", verifyHaravanWebhook);
     haravanWebhookNamespace.post("/orders", OrderController.create);
-
+    
   };
 };
