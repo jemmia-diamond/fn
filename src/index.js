@@ -1,7 +1,6 @@
 import { Hono } from "hono";
 import { bearerAuth } from "hono/bearer-auth";
 
-
 import Routes from "./routes";
 import errorTracker from "./services/error-tracker";
 
@@ -23,7 +22,6 @@ api.use("*",
     }
   })
 );
-
 
 // Routes registration
 Routes.APIRoutes.register(api);
