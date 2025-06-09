@@ -1,7 +1,7 @@
 import { HTTPException } from "hono/http-exception";
-import LeadService from "../../../services/erp/lead";
+import LeadService from "../../../../services/erp/lead";
 
-export default class LeadController {
+export default class AIHubERPLeadController {
   static async update(ctx) {
     let body = await ctx.req.json();
     let conversationId = body["conversationId"];
@@ -14,3 +14,5 @@ export default class LeadController {
     return ctx.json({ success: true });
   }
 }
+
+
