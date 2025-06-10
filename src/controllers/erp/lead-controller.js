@@ -7,11 +7,16 @@ export default class LeadController {
     const queryParams = await ctx.req.query();
     const conversationId = queryParams.conversation_id;
     if (conversationId) {
-      const lead = await leadService.findLeadByConversationId(conversationId);
-      if (lead) {
-        return ctx.json(lead);
+      try {
+        const lead = await leadService.findLeadByConversationId(conversationId);
+        if (lead) {
+          return ctx.json(lead);
+        }
+        throw new HTTPException(404, "Lead not found");
+      } catch (error) {
+        if (error instanceof HTTPException) throw error;
+        throw new HTTPException(500, "Failed to retrieve lead");
       }
-      throw new HTTPException(404, "Lead not found");
     }
     return ctx.json({ success: true });
   }
