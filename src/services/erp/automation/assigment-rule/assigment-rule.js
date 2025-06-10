@@ -18,6 +18,7 @@ export default class AssignmentRuleService {
         apiSecret: env.JEMMIA_ERP_API_SECRET
       }
     );
+    this.db = Database.instance(env);
   }
 
   async getAssignedUsers(region) {
@@ -36,8 +37,8 @@ export default class AssignmentRuleService {
     return userIds;
   }
 
-  static async getAttendingUsers(db, dayNo, month, shifts) {
-    const emails = await db.$queryRaw`
+  async getAttendingUsers(dayNo, month, shifts) {
+    const emails = await this.db.$queryRaw`
       SELECT 
       u.enterprise_email AS email
       FROM larksuite.users u 
@@ -52,17 +53,14 @@ export default class AssignmentRuleService {
     return emails;
   }
 
-  static async updateAssignmentRule(env, defaultAssignmentRule, shifts, dayNo, month) {
-    const db = Database.instance(env);
-    const assignmentRuleService = new AssignmentRuleService(env);
-
-    const users = await assignmentRuleService.getAssignedUsers(defaultAssignmentRule.region_name);
-    const attendingUsers = await AssignmentRuleService.getAttendingUsers(db, dayNo, month, shifts);
+  async updateAssignmentRule(defaultAssignmentRule, shifts, dayNo, month) {
+    const users = await this.getAssignedUsers(defaultAssignmentRule.region_name);
+    const attendingUsers = await this.getAttendingUsers(dayNo, month, shifts);
     const assignedUsers = users.filter((userId) => attendingUsers.some((attendedUser) => attendedUser.email === userId));
 
-    const updatedAssignmentRule = await assignmentRuleService.frappeClient.update(
+    const updatedAssignmentRule = await this.frappeClient.update(
       {
-        "doctype": assignmentRuleService.doctype,
+        "doctype": this.doctype,
         "name": defaultAssignmentRule.name,
         "users": assignedUsers.map((user) => ({ user }))
       }
@@ -70,29 +68,33 @@ export default class AssignmentRuleService {
     return updatedAssignmentRule;
   }
 
-  static async updateAssignmentRules(env, shifts) {
+  async updateAssignmentRules(shifts) {
     const timeThreshold = dayjs.utc();
     const dayNo = timeThreshold.date();
     const month = Number(timeThreshold.format("YYYYMM"));
     // Update assignment rules for three region
-    await AssignmentRuleService.updateAssignmentRule(env, ASSIGNMENT_RULES.HN, shifts, dayNo, month);
-    await AssignmentRuleService.updateAssignmentRule(env, ASSIGNMENT_RULES.HCM, shifts, dayNo, month);
-    await AssignmentRuleService.updateAssignmentRule(env, ASSIGNMENT_RULES.CT, shifts, dayNo, month);
+    await this.updateAssignmentRule(ASSIGNMENT_RULES.HN, shifts, dayNo, month);
+    await this.updateAssignmentRule(ASSIGNMENT_RULES.HCM, shifts, dayNo, month);
+    await this.updateAssignmentRule(ASSIGNMENT_RULES.CT, shifts, dayNo, month);
   }
 
+  // Static methods for external usage
   static async updateAssignmentRulesStartDay(env) {
+    const assignmentRuleService = new AssignmentRuleService(env);
     const shifts = [SHIFTS.FIRST_SHIFT];
-    await AssignmentRuleService.updateAssignmentRules(env, shifts);
+    await assignmentRuleService.updateAssignmentRules(shifts);
   }
 
   static async updateAssignmentRulesMidDay(env) {
+    const assignmentRuleService = new AssignmentRuleService(env);
     const shifts = [SHIFTS.FIRST_SHIFT, SHIFTS.SECOND_SHIFT];
-    await AssignmentRuleService.updateAssignmentRules(env, shifts);
+    await assignmentRuleService.updateAssignmentRules(shifts);
   }
 
   static async updateAssignmentRulesEndDay(env) {
+    const assignmentRuleService = new AssignmentRuleService(env);
     const shifts = [SHIFTS.SECOND_SHIFT];
-    await AssignmentRuleService.updateAssignmentRules(env, shifts);
+    await assignmentRuleService.updateAssignmentRules(shifts);
   }
 
 }
