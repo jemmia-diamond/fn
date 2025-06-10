@@ -4,7 +4,7 @@ import { bearerAuth } from "hono/bearer-auth";
 import Routes from "./routes";
 import errorTracker from "./services/error-tracker";
 
-import queueHandler from "./queues/queue-handler";
+import queueHandler from "./services/queue-handler";
 import scheduleHandler from "./services/schedule-handler";
 
 const app = new Hono();

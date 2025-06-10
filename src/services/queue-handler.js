@@ -1,10 +1,10 @@
-import OrderService from "../services/erp/order";
+import ERP from "../services/erp";
 
 export default {
   queue: async (batch, env) => {
     switch (batch.queue) {
     case "order":
-      await OrderService.dequeueOrderQueue(batch, env);
+      await ERP.Selling.OrderService.dequeueOrderQueue(batch, env);
       break;
     default:
       break;

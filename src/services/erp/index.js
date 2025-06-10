@@ -1,15 +1,11 @@
-import OrderService from "./order";
-import AddressService from "./address";
-import ContactService from "./contact";
-import CustomerService from "./customer";
 import Automation from "./automation";
-import LeadService from "./lead";
+import CRM from "./crm";
+import Selling from "./selling";
+import Contacts from "./contacts";
 
 export default {
-  OrderService: OrderService,
-  AddressService: AddressService,
-  ContactService: ContactService,
-  CustomerService: CustomerService,
   Automation: Automation,
-  LeadService: LeadService
+  CRM: CRM,
+  Selling: Selling,
+  Contacts: Contacts
 };

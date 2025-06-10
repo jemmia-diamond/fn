@@ -1,9 +1,9 @@
-import FrappeClient from "../../frappe/frappe-client";
-import { convertIsoToDatetime } from "../../frappe/utils/datetime";
+import FrappeClient from "../../../../frappe/frappe-client";
+import { convertIsoToDatetime } from "../../../../frappe/utils/datetime";
 
-import AddressService from "./address";
-import ContactService from "./contact";
-import CustomerService from "./customer";
+import AddressService from "../../contacts/address/address";
+import ContactService from "../../contacts/contact/contact";
+import CustomerService from "../customer/customer";
 
 export default class OrderService {
   constructor(env) {
