@@ -1,4 +1,4 @@
-import FrappeClient from "../../frappe/frappe-client";
+import FrappeClient from "../../../../frappe/frappe-client";
 
 export default class ContactService {
   constructor(env) {
