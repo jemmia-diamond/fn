@@ -58,14 +58,17 @@ export default class AssignmentRuleService {
     const attendingUsers = await this.getAttendingUsers(dayNo, month, shifts);
     const assignedUsers = users.filter((userId) => attendingUsers.some((attendedUser) => attendedUser.email === userId));
 
-    const updatedAssignmentRule = await this.frappeClient.update(
-      {
-        "doctype": this.doctype,
-        "name": defaultAssignmentRule.name,
-        "users": assignedUsers.map((user) => ({ user }))
-      }
-    );
-    return updatedAssignmentRule;
+    if (assignedUsers.length) {
+      const updatedAssignmentRule = await this.frappeClient.update(
+        {
+          "doctype": this.doctype,
+          "name": defaultAssignmentRule.name,
+          "users": assignedUsers.map((user) => ({ user }))
+        }
+      );
+      return updatedAssignmentRule;
+    }
+    return null;
   }
 
   async updateAssignmentRules(shifts) {
