@@ -13,6 +13,11 @@ export default class UserService {
         this.db = Database.instance(env);
     }
 
+    async getPancakeUsers() {
+        const users = this.db.$queryRaw`SELECT u.id,u.enterprise_email FROM pancake.users u `;
+        return users;
+    }
+
     static async syncLarkIds(env) {
         const userService = new UserService(env);
         const users = await userService.frappeClient.getList(userService.doctype, {
@@ -20,5 +25,17 @@ export default class UserService {
                 ["pancake_id", "=", null]
             ]
         });
+
+        const pancakeUsers = await userService.getPancakeUsers();
+        for (const user of users) {
+            const pancakeUser = pancakeUsers.find(pancakeUser => pancakeUser.enterprise_email === user.email);
+            if (pancakeUser) {
+                await userService.frappeClient.update({
+                    doctype: userService.doctype,
+                    name: user.name,
+                    pancake_id: pancakeUser.id,
+                })
+            }
+        }
     }
 }
