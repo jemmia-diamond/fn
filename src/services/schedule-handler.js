@@ -19,6 +19,9 @@ export default {
     case "20 10 * * *": // 17:20
       await ERP.Automation.AssignmentRuleService.updateAssignmentRulesEndDay(env);
       break;
+    case "* * * * *": // 00:00
+      await ERP.Core.UserService.syncLarkIds(env);
+      break;
     default:
       break;
     };
