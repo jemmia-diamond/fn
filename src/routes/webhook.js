@@ -1,12 +1,13 @@
 // TODO: Make this import dynamic, so that we can add new controllers without repeating ourselves.
-import Webhook from "../controllers/webhook";
-
+import AIHubWebhook from "../controllers/webhook/ai-hub";
+import HaravanWebhook from  "../controllers/webhook/haravan";
 export default class WebhookRoutes {
   static register(webhook) {
     /*
     /webhook/namespace/resources
     */
-    const jemmiaERPNamespaceApi = webhook.basePath("/erp");
-    jemmiaERPNamespaceApi.post("/orders", Webhook.ERP.OrderController.create);
+
+    AIHubWebhook.register(webhook);
+    HaravanWebhook.register(webhook);
   };
 };
