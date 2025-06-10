@@ -18,6 +18,7 @@ export default class APIRoutes {
     anotherNamespaceApi.get("/foo", anotherNamespace.fooController.index);
 
     const jemmiaERPNamespaceApi = api.basePath("/erp");
+    jemmiaERPNamespaceApi.get("/leads", ERP.LeadController.index);
     jemmiaERPNamespaceApi.post("/orders", ERP.OrderController.create);
   };
 };
