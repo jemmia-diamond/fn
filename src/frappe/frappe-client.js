@@ -53,6 +53,15 @@ export default class FrappeClient {
     return this.postProcess(res);
   }
 
+  async getDoc(doctype, name) {
+    const url = `${this.url}/api/resource/${encodeURIComponent(doctype)}/${encodeURIComponent(name)}`;
+    const res = await fetch(url, {
+      method: "GET",
+      headers: this.headers
+    });
+    return this.postProcess(res);
+  }
+
   async insert(doc) {
     const res = await fetch(`${this.url}/api/resource/${encodeURIComponent(doc.doctype)}`, {
       method: "POST",
