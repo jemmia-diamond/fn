@@ -1,5 +1,6 @@
 import Larksuite from "../services/larksuite";
 import ERP from "../services/erp";
+import Pancake from "./pancake";
 
 export default {
   scheduled: async (controller, env, _ctx) => {
@@ -18,6 +19,9 @@ export default {
       break;
     case "20 10 * * *": // 17:20
       await ERP.Automation.AssignmentRuleService.updateAssignmentRulesEndDay(env);
+      break;
+    case "* * * * *":
+      await Pancake.ConversationAssignmentService.test(env);
       break;
     default:
       break;
