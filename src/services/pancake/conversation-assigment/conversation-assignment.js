@@ -28,7 +28,7 @@ export default class ConversationAssignmentService {
     const conversationAssignmentService = new ConversationAssignmentService(env);
     const frappeClient = new FrappeClient({ url: env.JEMMIA_ERP_BASE_URL, apiKey: env.JEMMIA_ERP_API_KEY, apiSecret: env.JEMMIA_ERP_API_SECRET });
 
-    const timeThreshold = dayjs.utc().subtract(SYNC_LOOKBACK_MINUTES, "munute").format("YYYY-MM-DD HH:mm:ss");
+    const timeThreshold = dayjs.utc().subtract(SYNC_LOOKBACK_MINUTES, "minute").format("YYYY-MM-DD HH:mm:ss");
     const todoList = await frappeClient.getList("ToDo", {
       filters: [
         ["creation", ">=", timeThreshold],
