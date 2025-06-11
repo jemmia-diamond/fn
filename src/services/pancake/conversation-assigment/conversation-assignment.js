@@ -11,6 +11,7 @@ export default class ConversationAssignmentService {
     this.env = env;
     this.pancakeClient = new PancakeClient(env.PANCAKE_ACCESS_TOKEN);
     this.db = Database.instance(env);
+    this.frappeClient = new FrappeClient({ url: env.JEMMIA_ERP_BASE_URL, apiKey: env.JEMMIA_ERP_API_KEY, apiSecret: env.JEMMIA_ERP_API_SECRET });
   }
 
   async getLastConversationAssigneesHistory(conversationId) {
@@ -23,37 +24,22 @@ export default class ConversationAssignmentService {
     return userIds;
   }
 
-  static async syncERPAssignmentsToPancake(env) {
-    const SYNC_LOOKBACK_MINUTES = 10;
-    const conversationAssignmentService = new ConversationAssignmentService(env);
-    const frappeClient = new FrappeClient({ url: env.JEMMIA_ERP_BASE_URL, apiKey: env.JEMMIA_ERP_API_KEY, apiSecret: env.JEMMIA_ERP_API_SECRET });
-
-    const timeThreshold = dayjs.utc().subtract(SYNC_LOOKBACK_MINUTES, "minute").format("YYYY-MM-DD HH:mm:ss");
-    const todoList = await frappeClient.getList("ToDo", {
-      filters: [
-        ["creation", ">=", timeThreshold],
-        ["reference_type", "=", "Lead"],
-        ["status", "=", "Open"],
-        ["assignment_rule", "LIKE", "%Lead-Assignment-Sales%"]
-      ]
+  async syncConversationAssigneesWithERPToDo(todo) {
+    const leadName = todo.reference_name;
+    const allocatedUser = todo.allocated_to;
+    const allocatedUserPancakeId = (await this.frappeClient.getDoc("User", allocatedUser)).pancake_id;
+    const contacts = await this.frappeClient.getList("Contact", {
+      filters: [["Dynamic Link", "link_name", "=", leadName]]
     });
 
-    if (!todoList.length) { return; }
+    if (!contacts.length) { return null; }
 
-    for (const todo of todoList) {
-      const leadName = todo.reference_name;
-      const allocatedUser = todo.allocated_to;
-      const allocatedUserPancakeId = (await frappeClient.getDoc("User", allocatedUser)).pancake_id;
-      const contacts = await frappeClient.getList("Contact", {
-        filters: [["Dynamic Link", "link_name", "=", leadName]]
-      });
-      if (!contacts.length) { continue; }
-      const contact = contacts[0];
-      const pageId = contact.pancake_page_id;
-      const conversationId = contact.pancake_conversation_id;
-      const assigneesHistory = await conversationAssignmentService.getLastConversationAssigneesHistory(conversationId);
-      const assignedUserIds = [...new Set([...assigneesHistory, allocatedUserPancakeId])];
-      await conversationAssignmentService.pancakeClient.assignConversation(pageId, conversationId, assignedUserIds);
-    }
+    const contact = contacts[0];
+    const pageId = contact.pancake_page_id;
+    const conversationId = contact.pancake_conversation_id;
+    const assigneesHistory = await this.getLastConversationAssigneesHistory(conversationId);
+    const assignedUserIds = [...new Set([...assigneesHistory, allocatedUserPancakeId])];
+    const res = await this.pancakeClient.assignConversation(pageId, conversationId, assignedUserIds);
+    return res;
   }
 }
