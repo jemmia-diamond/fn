@@ -6,7 +6,6 @@ import Database from "../../../services/database";
 
 dayjs.extend(utc);
 
-
 export default class ConversationAssignmentService {
   constructor(env) {
     this.env = env;

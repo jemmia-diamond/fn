@@ -6,7 +6,7 @@ export default {
   scheduled: async (controller, env, _ctx) => {
     switch (controller.cron) {
     case "*/5 * * * *":
-      await Pancake.ConversationAssignmentService.test(env);
+      await Pancake.ConversationAssignmentService.syncERPAssignmentsToPancake(env);
       break;
     case "0 17 * * *": // 00:00
       await Larksuite.Contact.UserService.syncUsersToDatabase(env);
