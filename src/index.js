@@ -3,6 +3,7 @@ import { bearerAuth } from "hono/bearer-auth";
 
 import Routes from "./routes";
 import errorTracker from "./services/error-tracker";
+import loggrageLogger from "./services/custom-logger";
 
 import queueHandler from "./services/queue-handler";
 import scheduleHandler from "./services/schedule-handler";
@@ -13,6 +14,7 @@ const webhook = app.basePath("/webhook");
 
 // Error tracking
 app.use("*", errorTracker);
+app.use(loggrageLogger());
 
 // Authentication
 api.use("*",

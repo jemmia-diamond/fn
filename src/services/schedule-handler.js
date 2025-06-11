@@ -7,6 +7,7 @@ export default {
     switch (controller.cron) {
     case "0 17 * * *": // 00:00
       await Larksuite.Contact.UserService.syncUsersToDatabase(env);
+      await ERP.Core.UserService.syncLarkIds(env);
       break;
     case "30 1 * * *": // 08:30
       await Larksuite.Attendance.ScheduleService.syncScheduleToDatabase(env);
