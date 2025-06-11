@@ -1,6 +1,5 @@
 import Larksuite from "../services/larksuite";
 import ERP from "../services/erp";
-import Pancake from "./pancake";
 
 export default {
   scheduled: async (controller, env, _ctx) => {
