@@ -5,6 +5,9 @@ import Pancake from "./pancake";
 export default {
   scheduled: async (controller, env, _ctx) => {
     switch (controller.cron) {
+    case "*/5 * * * *":
+      await Pancake.ConversationAssignmentService.test(env);
+      break;
     case "0 17 * * *": // 00:00
       await Larksuite.Contact.UserService.syncUsersToDatabase(env);
       await ERP.Core.UserService.syncLarkIds(env);
@@ -20,9 +23,6 @@ export default {
       break;
     case "20 10 * * *": // 17:20
       await ERP.Automation.AssignmentRuleService.updateAssignmentRulesEndDay(env);
-      break;
-    case "* * * * *":
-      await Pancake.ConversationAssignmentService.test(env);
       break;
     default:
       break;

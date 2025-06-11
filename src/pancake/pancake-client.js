@@ -2,7 +2,7 @@ export default class PancakeClient {
   constructor(accessToken) {
     this.baseUrl = "https://pages.fm/api";
     this.accessToken = accessToken;
-    this.headers = { 'Content-Type': 'application/json' };
+    this.headers = { "Content-Type": "application/json" };
   }
 
   async getPageAccessToken(pageId) {
@@ -19,7 +19,6 @@ export default class PancakeClient {
 
   async postRequest(pageId, path, data) {
     const pageAccessToken = await this.getPageAccessToken(pageId);
-    console.log(pageAccessToken);
     const params = new URLSearchParams({
       page_access_token: pageAccessToken
     });
