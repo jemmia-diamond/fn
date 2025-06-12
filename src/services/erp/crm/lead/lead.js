@@ -50,7 +50,7 @@ export default class LeadService {
     let offset = 0;
     const batchSize = 200;
     let totalProcessed = 0;
-    console.log('sqdsa')
+    console.log("sqdsa");
     const updatedTime = dayjs()
       .utc()
       .subtract(1000, "minute")
@@ -107,7 +107,7 @@ export default class LeadService {
 
         let trackingConversations = insertLeads.map((lead, i) => ({
           conversationId: lead.pancake_data.conversation_id,
-          frappeNameId: insertResponse[i],
+          frappeNameId: insertResponse[i]
         }));
 
         trackingConversations = trackingConversations.filter(
@@ -128,14 +128,14 @@ export default class LeadService {
   async insertLeadByBatch(docs) {
     return await this.frappeClient.postRequest("", {
       cmd: "erpnext.crm.doctype.lead.lead_methods.insert_lead_by_batch",
-      docs: JSON.stringify(docs),
+      docs: JSON.stringify(docs)
     });
   }
 
   async syncLeadByBatchUpdate(docs) {
     return this.frappeClient.postRequest("", {
       cmd: "erpnext.crm.doctype.lead.lead_methods.update_lead_by_batch",
-      docs: JSON.stringify(docs),
+      docs: JSON.stringify(docs)
     });
   }
 }

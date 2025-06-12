@@ -127,7 +127,7 @@ export default class ConversationService {
 
     const flatValues = trackingConversations.flatMap((lead) => [
       lead.conversationId,
-      lead.frappeNameId,
+      lead.frappeNameId
     ]);
 
     const query = `
@@ -139,7 +139,7 @@ export default class ConversationService {
 
     try {
       const result = await this.db.$transaction([
-        this.db.$executeRawUnsafe(query, ...flatValues),
+        this.db.$executeRawUnsafe(query, ...flatValues)
       ]);
       return result;
     } catch (err) {

@@ -21,7 +21,7 @@ export default {
       await ERP.Automation.AssignmentRuleService.updateAssignmentRulesEndDay(env);
       break;
     case "*/5 * * * *":
-      await ERP.Automation.AutomationLeadService.handleSyncLeadFromPancake(env)
+      await ERP.Automation.AutomationLeadService.handleSyncLeadFromPancake(env);
     default:
       break;
     };

@@ -48,14 +48,14 @@ export function convertConversationPayload(conversation) {
       can_inbox: conversation.can_inbox === true ? 1 : 0,
       latest_message_at: conversation.latest_message_at
         ? convertIsoToDatetime(
-            new Date(conversation.latest_message_at).toISOString()
-          )
+          new Date(conversation.latest_message_at).toISOString()
+        )
         : null,
-      pancake_user_id: conversation.pancake_user_id || null,
+      pancake_user_id: conversation.pancake_user_id || null
     },
     pancake_tags: conversation.tags,
     address: conversation.customer_lives_in,
-    birth_date: birthDate,
+    birth_date: birthDate
   };
 
   if (conversation.frappe_name_id) {
