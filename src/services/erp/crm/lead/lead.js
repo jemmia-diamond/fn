@@ -50,7 +50,6 @@ export default class LeadService {
     let offset = 0;
     const batchSize = 200;
     let totalProcessed = 0;
-    console.log("sqdsa");
     const updatedTime = dayjs()
       .utc()
       .subtract(1000, "minute")
@@ -83,11 +82,11 @@ export default class LeadService {
       const insertCount = insertLeads.length;
       const updateCount = updateLeads.length;
 
-      console.info(
+      console.warn(
         `Total: ${batchCount}, Insert leads: ${insertCount}, Update leads: ${updateCount}`
       );
       totalProcessed += batchCount;
-      console.info(
+      console.warn(
         `Fetched offset: ${offset}, batchSize: ${batchSize}, batch count: ${batchCount}. Total processed: ${totalProcessed}`
       );
 
@@ -114,7 +113,6 @@ export default class LeadService {
           (e) => e.frappeNameId && e.conversationId
         );
         if (trackingConversations.length !== 0) {
-          console.log("check");
           await conversationService.saveSyncedLeadsBatch(trackingConversations);
         }
       }

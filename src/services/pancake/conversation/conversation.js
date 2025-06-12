@@ -12,7 +12,7 @@ export default class ConversationService {
                 SELECT c.id, c.page_id, c.customer_id, c.type, c.inserted_at, c.updated_at,
                     c.has_phone, c.database_updated_at, c.last_sent_at, c.added_user_id
                 FROM pancake.conversation c 
-                WHERE c.inserted_at >= '2025-05-01 00:00:00' AND c.updated_at >= '2025-06-011 00:00:00'
+                WHERE c.inserted_at >= '2025-05-01 00:00:00' AND c.updated_at >= ${updated_time}
                 ORDER BY c.database_updated_at DESC
                 LIMIT ${batch_size} OFFSET ${offset}
             ),
@@ -94,7 +94,7 @@ export default class ConversationService {
 
       return conversations;
     } catch (err) {
-      console.log(err);
+      console.error(err);
       return [];
     }
   }

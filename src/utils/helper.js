@@ -19,6 +19,7 @@ export function getBirthDate(birthday) {
       }
     } catch (e) {
       // Invalid date
+      console.error(e);
     }
   }
   return null;
