@@ -2,6 +2,7 @@
 import AIHubWebhook from "../controllers/webhook/ai-hub";
 import HaravanWebhook from  "../controllers/webhook/haravan";
 import FrappeWebhook from "../controllers/webhook/frappe";
+
 export default class WebhookRoutes {
   static register(webhook) {
     /*
