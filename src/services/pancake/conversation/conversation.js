@@ -12,7 +12,7 @@ export default class ConversationService {
                 SELECT c.id, c.page_id, c.customer_id, c.type, c.inserted_at, c.updated_at,
                     c.has_phone, c.database_updated_at, c.last_sent_at, c.added_user_id
                 FROM pancake.conversation c 
-                WHERE c.inserted_at >= '2025-05-01 00:00:00' AND c.updated_at >= ${updated_time}
+                WHERE c.inserted_at >= ${this.env.LEAD_CONVERSATION_SYNC_START_DATE} AND c.updated_at >= ${updated_time}
                 ORDER BY c.database_updated_at DESC
                 LIMIT ${batch_size} OFFSET ${offset}
             ),
@@ -104,7 +104,7 @@ export default class ConversationService {
       const [{ total_count }] = await this.db.$queryRaw`
             SELECT COUNT(*) AS total_count
             FROM pancake.conversation c
-            WHERE c.inserted_at >= '2025-05-01 00:00:00'
+            WHERE c.inserted_at >= ${this.env.LEAD_CONVERSATION_SYNC_START_DATE}
             AND c.updated_at >= ${updatedTime}
         `;
       return total_count;
