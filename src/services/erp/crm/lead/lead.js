@@ -136,4 +136,9 @@ export default class LeadService {
       docs: JSON.stringify(docs)
     });
   }
+
+  static async scheduleToSyncLeadFromPancake(env){
+    let leadService =new LeadService(env)
+    await leadService .handleSyncLead();
+  }
 }
