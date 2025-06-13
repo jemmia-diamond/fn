@@ -52,7 +52,7 @@ export default class LeadService {
     let totalProcessed = 0;
     const updatedTime = dayjs()
       .utc()
-      .subtract(1000, "minute")
+      .subtract(20, "minute")
       .format("YYYY-MM-DD HH:mm:ss");
 
     let baseCount = await conversationService.getBaseCount(updatedTime);
