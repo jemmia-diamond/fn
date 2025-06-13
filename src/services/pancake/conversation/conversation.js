@@ -136,7 +136,6 @@ export default class ConversationService {
       ON CONFLICT (conversation_id)
       DO UPDATE SET frappe_name_id = EXCLUDED.frappe_name_id
     `;
-    return;
     try {
       const result = await this.db.$transaction([
         this.db.$executeRawUnsafe(query, ...flatValues)
