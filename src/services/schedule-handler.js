@@ -20,6 +20,8 @@ export default {
     case "20 10 * * *": // 17:20
       await ERP.Automation.AssignmentRuleService.updateAssignmentRulesEndDay(env);
       break;
+    case "*/5 * * * *":
+      await ERP.Automation.AutomationLeadService.handleSyncLeadFromPancake(env)
     default:
       break;
     };
