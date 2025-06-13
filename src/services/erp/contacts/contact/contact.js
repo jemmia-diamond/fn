@@ -36,7 +36,7 @@ export default class ContactService {
       contact.links.push({ "link_doctype": customer.doctype, "link_name": customer.name });
     };
     return contact;
-  }
+  };
 
   async processHaravanContact(customerData, customer, address) {
     const customerPhone = customerData["phone"] || this.defaultContactPhone;
@@ -61,7 +61,6 @@ export default class ContactService {
     if (targetContact) {
       // Merge fields
       Object.assign(targetContact, mappedContactData);
-      console.log(targetContact);
       const referencedContact = this.reference(targetContact, customer);
       const contact = await this.frappeClient.update(referencedContact);
       return contact;
