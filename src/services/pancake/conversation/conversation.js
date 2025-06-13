@@ -10,9 +10,18 @@ export default class ConversationService {
     try {
       let conversations = await this.db.$queryRaw`WITH base_conversations AS (
                 SELECT c.id, c.page_id, c.customer_id, c.type, c.inserted_at, c.updated_at,
-                    c.has_phone, c.database_updated_at, c.last_sent_at, c.added_user_id
+                    c.has_phone, c.database_updated_at, c.last_sent_at, 
+                    pc.name as customer_name, 
+                    pc.phone as customer_phone, 
+                    pc.gender as customer_gender, 
+                    pc.birthday as customer_birthday, 
+                    pc.phone_numbers as customer_phone_numbers, 
+                    pc.lives_in as customer_lives_in, 
+                    pc.can_inbox as can_inbox,
+                    c.added_user_id
                 FROM pancake.conversation c 
-                WHERE c.inserted_at >= ${this.env.LEAD_CONVERSATION_SYNC_START_DATE} AND c.updated_at >= ${updated_time}
+                LEFT JOIN pancake.page_customer pc ON c.customer_id = pc.customer_id 
+                WHERE c.inserted_at >= '2025-05-01 00:00:00' AND (c.updated_at >= ${updated_time} OR pc.updated_at >= ${updated_time})
                 ORDER BY c.database_updated_at DESC
                 LIMIT ${batch_size} OFFSET ${offset}
             ),
@@ -38,24 +47,23 @@ export default class ConversationService {
                 c.has_phone,
                 p.name as page_name,
                 p.platform as platform,
-                pc.name as customer_name,
-                pc.phone as customer_phone,
-                pc.gender as customer_gender,
-                pc.birthday as customer_birthday,
-                pc.phone_numbers as customer_phone_numbers,
-                pc.lives_in as customer_lives_in,
-                pc.can_inbox as can_inbox,
+                customer_name,
+                customer_phone,
+                customer_gender,
+                customer_birthday,
+                customer_phone_numbers,
+                customer_lives_in,
+                can_inbox,
                 flc.frappe_name_id as frappe_name_id, 
                 array_remove(array_agg(vt.tag_label), NULL) as tags,
                 c.last_sent_at as latest_message_at, 
                 c.added_user_id as pancake_user_id
             FROM base_conversations c
             LEFT JOIN pancake.conversation_page_customer cpc ON c.id = cpc.conversation_id
-            LEFT JOIN pancake.page_customer pc ON c.customer_id = pc.customer_id 
             LEFT JOIN pancake.page p ON p.id = c.page_id 
             LEFT JOIN pancake.frappe_lead_conversation flc ON c.id = flc.conversation_id 
             LEFT JOIN valid_tags vt ON c.id = vt.conversation_id 
-            WHERE EXISTS (
+            WHERE (c.customer_phone IS NOT NULL AND c.customer_phone != '') OR EXISTS (
                 SELECT 1 
                 FROM valid_tags vt2
                 WHERE vt2.conversation_id = c.id 
@@ -88,9 +96,15 @@ export default class ConversationService {
             )
             GROUP BY 
                 c.id, c.page_id, c.customer_id, c.type, c.inserted_at, c.updated_at, c.has_phone, 
-                pc.name, pc.phone, pc.gender, pc.birthday, pc.phone_numbers, pc.lives_in, pc.can_inbox,
+                customer_name, 
+                customer_phone, 
+                customer_gender, 
+                customer_birthday, 
+                customer_phone_numbers, 
+                customer_lives_in, 
+                can_inbox,
                 flc.frappe_name_id, c.database_updated_at, p.platform, c.last_sent_at, p.name, c.added_user_id
-            ORDER BY c.database_updated_at DESC `;
+            ORDER BY c.database_updated_at DESC  `;
 
       return conversations;
     } catch (err) {
