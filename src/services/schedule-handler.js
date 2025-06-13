@@ -1,12 +1,11 @@
 import Larksuite from "../services/larksuite";
 import ERP from "../services/erp";
-import LeadService from "./erp/crm/lead/lead";
 
 export default {
   scheduled: async (controller, env, _ctx) => {
     switch (controller.cron) {
     case "0 * * * *":
-      await LeadService.scheduleToSyncLeadFromPancake(env);
+      await ERP.CRM.LeadService.scheduleToSyncLeadFromPancake(env);
       break;
     case "0 17 * * *": // 00:00
       await Larksuite.Contact.UserService.syncUsersToDatabase(env);
