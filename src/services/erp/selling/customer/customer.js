@@ -13,7 +13,7 @@ export default class CustomerService {
     );
   };
 
-  async processHaravanCustomer(customerData, contact = {}, address = {}) {
+  async processHaravanCustomer(customerData, contact, address) {
     const nameParts = [customerData.last_name, customerData.first_name].filter(Boolean);
     const mappedCustomerData = {
       doctype: this.doctype,
