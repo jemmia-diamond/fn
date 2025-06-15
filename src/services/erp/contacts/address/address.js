@@ -14,10 +14,16 @@ export default class AddressService {
   };
 
   async processHaravanAddress(addressData, customer) {
-    const nameParts = [addressData.last_name, addressData.first_name].filter(Boolean);
+    let addressName;
+    if (customer) {
+      addressName = customer.customer_name;
+    } else {
+      const nameParts = [addressData.last_name, addressData.first_name].filter(Boolean);
+      addressName = nameParts.join(' ') || addressData.address1 || "No Entry";
+    }
     const mappedAddressData = {
       doctype: this.doctype,
-      address_name: nameParts.join(" "),
+      address_name: addressName,
       haravan_id: String(addressData.id),
       province: addressData.province,
       district: addressData.district,
@@ -27,7 +33,7 @@ export default class AddressService {
     };
     if (customer) {
       mappedAddressData.links = [{ "link_doctype": customer.doctype, "link_name": customer.name }];
-    };
+    }
     const address = await this.frappeClient.upsert(mappedAddressData, "haravan_id");
     return address;
   };
