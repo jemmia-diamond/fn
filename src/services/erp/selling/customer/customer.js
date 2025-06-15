@@ -11,13 +11,15 @@ export default class CustomerService {
         apiSecret: env.JEMMIA_ERP_API_SECRET
       }
     );
+    this.defaultCustomerName = "Khách Vãng Lai";
   };
 
   async processHaravanCustomer(customerData, contact, address) {
     const nameParts = [customerData.last_name, customerData.first_name].filter(Boolean);
+    const customerName = nameParts.join(" ") || this.defaultCustomerName;
     const mappedCustomerData = {
       doctype: this.doctype,
-      customer_name: nameParts.join(" "),
+      customer_name: customerName,
       haravan_id: String(customerData.id),
       customer_type: "Individual",
       language: "vietnamese",
