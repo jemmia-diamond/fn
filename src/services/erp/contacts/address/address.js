@@ -19,7 +19,7 @@ export default class AddressService {
       addressName = customer.customer_name;
     } else {
       const nameParts = [addressData.last_name, addressData.first_name].filter(Boolean);
-      addressName = nameParts.join(' ') || addressData.address1 || "No Entry";
+      addressName = nameParts.join(" ") || addressData.address1 || "No Entry";
     }
     const mappedAddressData = {
       doctype: this.doctype,
