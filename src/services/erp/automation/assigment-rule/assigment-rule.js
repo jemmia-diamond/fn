@@ -57,32 +57,28 @@ export default class AssignmentRuleService {
     const users = await this.getAssignedUsers(defaultAssignmentRule.region_name);
     const attendingUsers = await this.getAttendingUsers(dayNo, month, shifts);
     const assignedUsers = users.filter((userId) => attendingUsers.some((attendedUser) => attendedUser.email === userId));
-
-    console.log(attendingUsers);
-    console.log(users);
     console.log(assignedUsers);
-    // if (assignedUsers.length) {
-    //   const updatedAssignmentRule = await this.frappeClient.update(
-    //     {
-    //       "doctype": this.doctype,
-    //       "name": defaultAssignmentRule.name,
-    //       "users": assignedUsers.map((user) => ({ user }))
-    //     }
-    //   );
-    //   return updatedAssignmentRule;
-    // }
-    // return null;
+    if (assignedUsers.length) {
+      const updatedAssignmentRule = await this.frappeClient.update(
+        {
+          "doctype": this.doctype,
+          "name": defaultAssignmentRule.name,
+          "users": assignedUsers.map((user) => ({ user }))
+        }
+      );
+      return updatedAssignmentRule;
+    }
+    return null;
   }
 
   async updateAssignmentRules(shifts) {
     const timeThreshold = dayjs.utc();
     const dayNo = timeThreshold.date();
     const month = Number(timeThreshold.format("YYYYMM"));
-    console.log(dayNo, month);
     // Update assignment rules for three region
-    // await this.updateAssignmentRule(ASSIGNMENT_RULES.HN, shifts, dayNo, month);
+    await this.updateAssignmentRule(ASSIGNMENT_RULES.HN, shifts, dayNo, month);
     await this.updateAssignmentRule(ASSIGNMENT_RULES.HCM, shifts, dayNo, month);
-    // await this.updateAssignmentRule(ASSIGNMENT_RULES.CT, shifts, dayNo, month);
+    await this.updateAssignmentRule(ASSIGNMENT_RULES.CT, shifts, dayNo, month);
   }
 
   // Static methods for external usage
