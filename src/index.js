@@ -17,6 +17,11 @@ const webhook = app.basePath("/webhook");
 app.use("*", errorTracker);
 app.use(loggrageLogger());
 
+// CORS
+api.use("*", cors({
+  origin: ["https://pancake.vn"]
+}));
+
 // Authentication
 api.use("*",
   bearerAuth({
@@ -25,10 +30,6 @@ api.use("*",
     }
   })
 );
-
-api.use("*", cors({
-  origin: ["https://pancake.vn"]
-}));
 
 // Routes registration
 Routes.APIRoutes.register(api);
