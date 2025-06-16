@@ -9,6 +9,8 @@ import loggrageLogger from "./services/custom-logger";
 import queueHandler from "./services/queue-handler";
 import scheduleHandler from "./services/schedule-handler";
 
+import { PANCAKE_ORIGIN } from "./config/origin";
+
 const app = new Hono();
 const api = app.basePath("/api");
 const webhook = app.basePath("/webhook");
@@ -19,7 +21,7 @@ app.use(loggrageLogger());
 
 // CORS
 api.use("*", cors({
-  origin: ["https://pancake.vn"]
+  origin: [PANCAKE_ORIGIN]
 }));
 
 // Authentication
