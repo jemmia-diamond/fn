@@ -57,7 +57,6 @@ export default class AssignmentRuleService {
     const users = await this.getAssignedUsers(defaultAssignmentRule.region_name);
     const attendingUsers = await this.getAttendingUsers(dayNo, month, shifts);
     const assignedUsers = users.filter((userId) => attendingUsers.some((attendedUser) => attendedUser.email === userId));
-    console.log(assignedUsers);
     if (assignedUsers.length) {
       const updatedAssignmentRule = await this.frappeClient.update(
         {
