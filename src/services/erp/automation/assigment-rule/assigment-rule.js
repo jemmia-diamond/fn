@@ -23,7 +23,7 @@ export default class AssignmentRuleService {
 
   async getAssignedUsers(region) {
     const salesPeople = await this.frappeClient.getList("Sales Person", {
-      filters: [["sales_region", "=", region], ["assigned_lead", "=", "true"]]
+      filters: [["sales_region", "=", region], ["assigned_lead", "=", true]]
     });
     const employeeNames = salesPeople.map((salesPerson) => salesPerson.employee);
     const employees = [];
@@ -58,27 +58,31 @@ export default class AssignmentRuleService {
     const attendingUsers = await this.getAttendingUsers(dayNo, month, shifts);
     const assignedUsers = users.filter((userId) => attendingUsers.some((attendedUser) => attendedUser.email === userId));
 
-    if (assignedUsers.length) {
-      const updatedAssignmentRule = await this.frappeClient.update(
-        {
-          "doctype": this.doctype,
-          "name": defaultAssignmentRule.name,
-          "users": assignedUsers.map((user) => ({ user }))
-        }
-      );
-      return updatedAssignmentRule;
-    }
-    return null;
+    console.log(attendingUsers);
+    console.log(users);
+    console.log(assignedUsers);
+    // if (assignedUsers.length) {
+    //   const updatedAssignmentRule = await this.frappeClient.update(
+    //     {
+    //       "doctype": this.doctype,
+    //       "name": defaultAssignmentRule.name,
+    //       "users": assignedUsers.map((user) => ({ user }))
+    //     }
+    //   );
+    //   return updatedAssignmentRule;
+    // }
+    // return null;
   }
 
   async updateAssignmentRules(shifts) {
     const timeThreshold = dayjs.utc();
     const dayNo = timeThreshold.date();
     const month = Number(timeThreshold.format("YYYYMM"));
+    console.log(dayNo, month);
     // Update assignment rules for three region
-    await this.updateAssignmentRule(ASSIGNMENT_RULES.HN, shifts, dayNo, month);
+    // await this.updateAssignmentRule(ASSIGNMENT_RULES.HN, shifts, dayNo, month);
     await this.updateAssignmentRule(ASSIGNMENT_RULES.HCM, shifts, dayNo, month);
-    await this.updateAssignmentRule(ASSIGNMENT_RULES.CT, shifts, dayNo, month);
+    // await this.updateAssignmentRule(ASSIGNMENT_RULES.CT, shifts, dayNo, month);
   }
 
   // Static methods for external usage
