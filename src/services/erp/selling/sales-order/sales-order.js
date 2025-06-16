@@ -97,7 +97,7 @@ export default class OrderService {
     const orderService = new OrderService(env);
     const messages = batch.messages;
     for (const message of messages) {
-      const orderData = JSON.parse(message.body.body);
+      const orderData = message.body;
       await orderService.processHaravanOrder(orderData);
     }
   }
