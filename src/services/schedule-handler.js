@@ -8,16 +8,14 @@ export default {
       await Larksuite.Contact.UserService.syncUsersToDatabase(env);
       await ERP.Core.UserService.syncLarkIds(env);
       break;
-    case "30 1 * * *": // 08:30
+    case "0 1 * * *": // 08:00
       await Larksuite.Attendance.ScheduleService.syncScheduleToDatabase(env);
-      break;
-    case "50 1 * * *": // 08:50
       await ERP.Automation.AssignmentRuleService.updateAssignmentRulesStartDay(env);
       break;
-    case "20 5 * * *": // 12:20
+    case "0 5 * * *": // 12:00
       await ERP.Automation.AssignmentRuleService.updateAssignmentRulesMidDay(env);
       break;
-    case "20 10 * * *": // 17:20
+    case "0 10 * * *": // 17:00
       await ERP.Automation.AssignmentRuleService.updateAssignmentRulesEndDay(env);
       break;
     default:
