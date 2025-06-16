@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { bearerAuth } from "hono/bearer-auth";
+import { cors } from "hono/cors";
 
 import Routes from "./routes";
 import errorTracker from "./services/error-tracker";
@@ -24,6 +25,10 @@ api.use("*",
     }
   })
 );
+
+api.use("*", cors({
+  origin: ["https://pancake.vn"]
+}));
 
 // Routes registration
 Routes.APIRoutes.register(api);
