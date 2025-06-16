@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { bearerAuth } from "hono/bearer-auth";
+import { cors } from "hono/cors";
 
 import Routes from "./routes";
 import errorTracker from "./services/error-tracker";
@@ -8,6 +9,8 @@ import loggrageLogger from "./services/custom-logger";
 import queueHandler from "./services/queue-handler";
 import scheduleHandler from "./services/schedule-handler";
 
+import { PANCAKE_ORIGIN } from "./config/origin";
+
 const app = new Hono();
 const api = app.basePath("/api");
 const webhook = app.basePath("/webhook");
@@ -15,6 +18,11 @@ const webhook = app.basePath("/webhook");
 // Error tracking
 app.use("*", errorTracker);
 app.use(loggrageLogger());
+
+// CORS
+api.use("*", cors({
+  origin: [PANCAKE_ORIGIN]
+}));
 
 // Authentication
 api.use("*",
