@@ -20,7 +20,6 @@ export default {
       await ERP.Automation.AssignmentRuleService.updateAssignmentRulesEndDay(env);
       break;
     case "0 14 * * *": // 21:00
-      await ERP.Automation.AssignmentRuleService.disableAssignmentRuleOffHour(env);
       await ERP.Automation.AssignmentRuleService.enableAssignmentRuleOffHour(env);
       break;
     default:
