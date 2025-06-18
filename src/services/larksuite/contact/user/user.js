@@ -14,10 +14,10 @@ export default class UserService {
     const usersArrays = await Promise.all(departementIds.map(departmentId => UserService.findUsersByDepartment(larkClient, tenantAccessToken, departmentId)));
     const users = usersArrays.flat().filter(Boolean);
     // Insert users into database
-    for (const user of users.slice(0, 9)) {
-      await db.$queryRaw`INSERT INTO larksuite.users (user_id, name, email) 
-      VALUES (${user.user_id}, ${user.name}, ${user.email})
-      ON CONFLICT (user_id) DO UPDATE SET name = ${user.name}, email = ${user.email}`;
+    for (const user of users) {
+      await db.$queryRaw`INSERT INTO larksuite.users (user_id, name, email, avatar) 
+      VALUES (${user.user_id}, ${user.name}, ${user.email}, ${user.avatar})
+      ON CONFLICT (user_id) DO UPDATE SET name = ${user.name}, email = ${user.email}, avatar = ${user.avatar}`;
     }
   }
 
