@@ -99,4 +99,23 @@ export default class AssignmentRuleService {
     await assignmentRuleService.updateAssignmentRules(shifts);
   }
 
+  static async disableAssignmentRuleOffHour(env) {
+    const assignmentRuleService = new AssignmentRuleService(env);
+    const assignmentRuleName = ASSIGNMENT_RULES.OFF_HOURS.name;
+    await assignmentRuleService.frappeClient.update({
+      "doctype": assignmentRuleService.doctype,
+      "name": assignmentRuleName,
+      "disabled": 1
+    });
+  }
+
+  static async enableAssignmentRuleOffHour(env) {
+    const assignmentRuleService = new AssignmentRuleService(env);
+    const assignmentRuleName = ASSIGNMENT_RULES.OFF_HOURS.name;
+    await assignmentRuleService.frappeClient.update({
+      "doctype": assignmentRuleService.doctype,
+      "name": assignmentRuleName,
+      "disabled": 0
+    });
+  }
 }

@@ -15,5 +15,8 @@ export const ASSIGNMENT_RULES = {
   CT: {
     "name": "Lead-Assignment-Sales-CT",
     "region_name": "CRM-REGION-SOURCE-0000003"
+  },
+  OFF_HOURS: {
+    "name": "Lead-Assignment-Sales-Off-Hours"
   }
 };
