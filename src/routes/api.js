@@ -2,6 +2,7 @@
 import Namespace from "../controllers/namespace";
 import anotherNamespace from "../controllers/another-namespace";
 import ERP from "../controllers/erp";
+import Pancake from "../controllers/pancake";
 
 export default class APIRoutes {
   static register(api) {
@@ -20,5 +21,8 @@ export default class APIRoutes {
     const jemmiaERPNamespaceApi = api.basePath("/erp");
     jemmiaERPNamespaceApi.get("/leads", ERP.LeadController.index);
     jemmiaERPNamespaceApi.post("/orders", ERP.OrderController.create);
+
+    const pancakeNamespaceApi = api.basePath("/pancake");
+    pancakeNamespaceApi.post("/conversation_assignments", Pancake.ConversationAssignmentController.create);
   };
 };

@@ -23,7 +23,7 @@ export default class AssignmentRuleService {
 
   async getAssignedUsers(region) {
     const salesPeople = await this.frappeClient.getList("Sales Person", {
-      filters: [["sales_region", "=", region], ["assigned_lead", "=", "true"]]
+      filters: [["sales_region", "=", region], ["assigned_lead", "=", true]]
     });
     const employeeNames = salesPeople.map((salesPerson) => salesPerson.employee);
     const employees = [];
@@ -57,7 +57,6 @@ export default class AssignmentRuleService {
     const users = await this.getAssignedUsers(defaultAssignmentRule.region_name);
     const attendingUsers = await this.getAttendingUsers(dayNo, month, shifts);
     const assignedUsers = users.filter((userId) => attendingUsers.some((attendedUser) => attendedUser.email === userId));
-
     if (assignedUsers.length) {
       const updatedAssignmentRule = await this.frappeClient.update(
         {
