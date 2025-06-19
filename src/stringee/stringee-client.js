@@ -36,7 +36,7 @@ export default class StringeeClient {
   async getCallLogs(params = {}) {
     const path = `/call/log`;
     const res = await this.getRequest(path, params);
-    return res
+    return res.calls;
   }
 
   async postProcess(res) {
