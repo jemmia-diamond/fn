@@ -10,10 +10,12 @@ export default {
       break;
     case "0 1 * * *": // 08:00
       await Larksuite.Attendance.ScheduleService.syncScheduleToDatabase(env);
+      break;
+    case "30 1 * * *": // 08:30
       await ERP.Automation.AssignmentRuleService.disableAssignmentRuleOffHour(env);
       await ERP.Automation.AssignmentRuleService.updateAssignmentRulesStartDay(env);
       break;
-    case "0 5 * * *": // 12:00
+    case "30 5 * * *": // 12:30
       await ERP.Automation.AssignmentRuleService.updateAssignmentRulesMidDay(env);
       break;
     case "0 10 * * *": // 17:00
