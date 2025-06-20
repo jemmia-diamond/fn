@@ -30,12 +30,21 @@
         "queue": "order",
         "max_concurrency": 1,
         "max_batch_size": 1
+      },
+      {
+        "queue": "message",
+        "max_concurrency": 1,
+        "max_batch_size": 1
       }
     ],
     "producers": [
       {
         "queue": "order",
         "binding": "ORDER_QUEUE"
+      },
+      {
+        "queue": "message",
+        "binding": "MESSAGE_QUEUE"
       }
     ]
   },
