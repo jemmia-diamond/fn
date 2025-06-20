@@ -39,4 +39,12 @@ export default class ConversationService {
     return result;
   }
 
+  static async dequeueMessageQueue(batch, env) {
+    const conversationService = new ConversationService(env);
+    const messages = batch.messages;
+    for (const message of messages) {
+      const data = message.body;
+      await conversationService.processLastCustomerMessage(data.data);
+    }
+  }
 }
