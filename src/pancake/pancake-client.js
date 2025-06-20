@@ -30,7 +30,7 @@ export default class PancakeClient {
     return res.json();
   }
 
-    async getRequest(pageId, path, params = {}) {
+  async getRequest(pageId, path, params = {}) {
     const pageAccessToken = await this.getPageAccessToken(pageId);
     const _params = new URLSearchParams({
       page_access_token: pageAccessToken,
