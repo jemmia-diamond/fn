@@ -28,12 +28,12 @@ export default class ContactService {
     return null;
   }
 
-  reference = (contact, customer) => {
-    if (customer) {
+  reference = (contact, doc) => {
+    if (doc) {
       if (!contact.links) {
         contact.links = [];
       }
-      contact.links.push({ "link_doctype": customer.doctype, "link_name": customer.name });
+      contact.links.push({ "link_doctype": doc.doctype, "link_name": doc.name });
     };
     return contact;
   };
