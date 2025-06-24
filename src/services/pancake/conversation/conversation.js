@@ -1,3 +1,4 @@
+import dayjs from "dayjs";
 import PancakeClient from "../../../pancake/pancake-client";
 import Database from "../../database";
 
@@ -12,8 +13,7 @@ export default class ConversationService {
     const result = await this.db.$queryRaw`
             UPDATE pancake.conversation c 
             SET last_sent_at = ${insertedAt}
-            WHERE c.id = ${conversationId} AND c.page_id = ${pageId};
-        `;
+            WHERE c.id = ${conversationId} AND c.page_id = ${pageId};`;
     return result;
   }
 
@@ -33,19 +33,9 @@ export default class ConversationService {
     }
     const conversationId = message.conversation_id;
     const pageId = message.page_id;
-    const insertedAt = message.inserted_at;
-    console.log("[DEBUG] processLastCustomerMessage:", {
-      conversationId,
-      pageId,
-      insertedAt,
-      message
-    });
-    if (!conversationId || !pageId || !insertedAt) {
-      throw new Error("Page ID: " + pageId + ", Conversation ID: " + conversationId + ", Inserted At: " + insertedAt);
-    }
+    const insertedAt = dayjs(message.inserted_at).format("YYYY-MM-DD HH:mm:ss");
     // Store the time of the last customer message
-    const result = await this.updateConversation(conversationId, pageId, insertedAt);
-    return result;
+    await this.updateConversation(conversationId, pageId, insertedAt);
   }
 
   static async dequeueMessageQueue(batch, env) {
