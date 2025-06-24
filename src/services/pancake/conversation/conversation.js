@@ -34,6 +34,12 @@ export default class ConversationService {
     const conversationId = message.conversation_id;
     const pageId = message.page_id;
     const insertedAt = message.inserted_at;
+    console.log("[DEBUG] processLastCustomerMessage:", {
+      conversationId,
+      pageId,
+      insertedAt,
+      message
+    });
     if (!conversationId || !pageId || !insertedAt) {
       throw new Error("Page ID: " + pageId + ", Conversation ID: " + conversationId + ", Inserted At: " + insertedAt);
     }
