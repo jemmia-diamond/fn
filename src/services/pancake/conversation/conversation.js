@@ -10,30 +10,27 @@ export default class ConversationService {
 
   async updateConversation(conversationId, pageId, insertedAt) {
     const result = await this.db.$queryRaw`
-            UPDATE pancake.conversation c 
+            UPDATE pancake.conversation c
             SET last_sent_at = ${insertedAt}
             WHERE c.id = ${conversationId} AND c.page_id = ${pageId};
         `;
     return result;
   }
 
-  isFromCustomer = (from) => {
-    if (from.admin_id) {
-      return false;
-    }
-    return true;
-  };
-
   async processLastCustomerMessage(data) {
     const message = data.message;
     const from = message.from;
-    if (!this.isFromCustomer(from)) {
+    if (!from?.admin_id) {
       // Not processing messages from admin
       return;
     }
     const conversationId = message.conversation_id;
     const pageId = message.page_id;
     const insertedAt = message.inserted_at;
+
+    if (!conversationId || !pageId || !insertedAt) {
+      throw new Error("Page ID: " + pageId + ", Conversation ID: " + conversationId + ", Inserted At: " + insertedAt);
+    }
     // Store the time of the last customer message
     const result = await this.updateConversation(conversationId, pageId, insertedAt);
     return result;
