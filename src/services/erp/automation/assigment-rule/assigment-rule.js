@@ -22,13 +22,13 @@ export default class AssignmentRuleService {
   }
 
   async getAssignedUsers(regions) {
-    const salesPeople = [];
-    for (const region of regions) {
-      const _salesPeople = await this.frappeClient.getList("Sales Person", {
+    const salesPeoplePromises = regions.map(region => 
+      this.frappeClient.getList("Sales Person", {
         filters: [["sales_region", "=", region], ["assigned_lead", "=", true]]
-      });
-      salesPeople.push(..._salesPeople);
-    }
+      })
+    );
+    const salesPeopleResults = await Promise.all(salesPeoplePromises);
+    const salesPeople = salesPeopleResults.flat();
 
     const employeeNames = salesPeople.map((salesPerson) => salesPerson.employee);
     const employees = [];
