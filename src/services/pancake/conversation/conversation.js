@@ -17,30 +17,17 @@ export default class ConversationService {
     return result;
   }
 
-  isFromCustomer = (from) => {
-    if (from.admin_id) {
-      return false;
-    }
-    return true;
-  };
-
   async processLastCustomerMessage(data) {
     const message = data.message;
     const from = message.from;
-    if (!this.isFromCustomer(from)) {
+    if (!from?.admin_id) {
       // Not processing messages from admin
       return;
     }
     const conversationId = message.conversation_id;
     const pageId = message.page_id;
     const insertedAt = message.inserted_at;
-    console.info("[INFO] processLastCustomerMessage:", {
-      conversationId,
-      pageId,
-      insertedAt,
-      insertedAtType: typeof insertedAt,
-      message
-    });
+
     if (!conversationId || !pageId || !insertedAt) {
       throw new Error("Page ID: " + pageId + ", Conversation ID: " + conversationId + ", Inserted At: " + insertedAt);
     }
