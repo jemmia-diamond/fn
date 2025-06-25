@@ -10,7 +10,7 @@ export default class ConversationService {
 
   async updateConversation(conversationId, pageId, insertedAt) {
     const result = await this.db.$queryRaw`
-            UPDATE pancake.conversation c 
+            UPDATE pancake.conversation c
             SET last_sent_at = ${insertedAt}
             WHERE c.id = ${conversationId} AND c.page_id = ${pageId};
         `;
@@ -34,10 +34,11 @@ export default class ConversationService {
     const conversationId = message.conversation_id;
     const pageId = message.page_id;
     const insertedAt = message.inserted_at;
-    console.log("[DEBUG] processLastCustomerMessage:", {
+    console.info("[INFO] processLastCustomerMessage:", {
       conversationId,
       pageId,
       insertedAt,
+      insertedAtType: typeof insertedAt,
       message
     });
     if (!conversationId || !pageId || !insertedAt) {
