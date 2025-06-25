@@ -21,10 +21,15 @@ export default class AssignmentRuleService {
     this.db = Database.instance(env);
   }
 
-  async getAssignedUsers(region) {
-    const salesPeople = await this.frappeClient.getList("Sales Person", {
-      filters: [["sales_region", "=", region], ["assigned_lead", "=", true]]
-    });
+  async getAssignedUsers(regions) {
+    const salesPeople = [];
+    for (const region of regions) {
+      const _salesPeople = await this.frappeClient.getList("Sales Person", {
+        filters: [["sales_region", "=", region], ["assigned_lead", "=", true]]
+      });
+      salesPeople.push(..._salesPeople);
+    }
+
     const employeeNames = salesPeople.map((salesPerson) => salesPerson.employee);
     const employees = [];
     for (const employeeName of employeeNames) {
@@ -54,7 +59,7 @@ export default class AssignmentRuleService {
   }
 
   async updateAssignmentRule(defaultAssignmentRule, shifts, dayNo, month) {
-    const users = await this.getAssignedUsers(defaultAssignmentRule.region_name);
+    const users = await this.getAssignedUsers(defaultAssignmentRule.region_names);
     const attendingUsers = await this.getAttendingUsers(dayNo, month, shifts);
     const assignedUsers = users.filter((userId) => attendingUsers.some((attendedUser) => attendedUser.email === userId));
     if (assignedUsers.length) {
@@ -78,6 +83,19 @@ export default class AssignmentRuleService {
     await this.updateAssignmentRule(ASSIGNMENT_RULES.HN, shifts, dayNo, month);
     await this.updateAssignmentRule(ASSIGNMENT_RULES.HCM, shifts, dayNo, month);
     await this.updateAssignmentRule(ASSIGNMENT_RULES.CT, shifts, dayNo, month);
+
+    await this.updateAssignmentRule(ASSIGNMENT_RULES.Lead_ZaloKOC_HN, shifts, dayNo, month);
+    await this.updateAssignmentRule(ASSIGNMENT_RULES.Lead_ZaloKOC_HCM_CT, shifts, dayNo, month);
+
+    await this.updateAssignmentRule(ASSIGNMENT_RULES.Lead_Website_ZaloOA_HN, shifts, dayNo, month);
+    await this.updateAssignmentRule(ASSIGNMENT_RULES.Lead_Website_ZaloOA_HCM_CT, shifts, dayNo, month);
+
+    await this.updateAssignmentRule(ASSIGNMENT_RULES.Lead_Tiktok_HN, shifts, dayNo, month);
+    await this.updateAssignmentRule(ASSIGNMENT_RULES.Lead_Tiktok_HCM_CT, shifts, dayNo, month);
+
+    await this.updateAssignmentRule(ASSIGNMENT_RULES.Lead_Facebook_HN, shifts, dayNo, month);
+    await this.updateAssignmentRule(ASSIGNMENT_RULES.Lead_Facebook_HCM, shifts, dayNo, month);
+    await this.updateAssignmentRule(ASSIGNMENT_RULES.Lead_Facebook_CT, shifts, dayNo, month);
   }
 
   // Static methods for external usage
