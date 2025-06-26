@@ -41,7 +41,7 @@ export default class LeadService {
     if(!currentLead) {
       return null;
     }
-    if (!currentLead.first_name || currentLead.toLowerCase() === "chưa rõ") {
+    if (!currentLead.first_name || currentLead.first_name.toLowerCase() === "chưa rõ") {
       currentLead.first_name = data.name;
     }
     if (!currentLead.phone) {
