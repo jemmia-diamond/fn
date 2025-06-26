@@ -20,4 +20,14 @@ export default class LeadController {
     }
     return ctx.json({ success: true });
   }
+
+  static async update(ctx) {
+    const leadService = new ERP.CRM.LeadService(ctx.env);
+    const data = await ctx.req.json();
+    const { id } = ctx.req.param();
+    if(!id) {
+      throw new HTTPException(400, "Lead id is required");
+    }
+    return await leadService.updateLeadFromSalesaya(id, data);
+  }
 }

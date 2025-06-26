@@ -35,4 +35,19 @@ export default class LeadService {
     }
     return null;
   }
+
+  async updateLeadFromSalesaya(name, data) {
+    const currentLead = await this.frappeClient.getDoc(this.doctype, name);
+    if(!currentLead) {
+      return null;
+    }
+    if (!currentLead.first_name || currentLead.toLowerCase() === "chưa rõ") {
+      currentLead.first_name = data.name;
+    }
+    if (!currentLead.phone) {
+      currentLead.phone = data.phone;
+    }
+    const lead = await this.frappeClient.update(currentLead);
+    return lead;
+  }
 }
