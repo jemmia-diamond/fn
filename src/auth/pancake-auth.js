@@ -1,3 +1,5 @@
+import { HTTPException } from "hono/http-exception";
+
 const IPs = ["203.171.22.6"];
 
 export const verifyPancakeWebhook = async (ctx, next) => {
