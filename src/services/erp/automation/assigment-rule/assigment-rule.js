@@ -59,7 +59,7 @@ export default class AssignmentRuleService {
   }
 
   async updateAssignmentRule(defaultAssignmentRule, shifts, dayNo, month) {
-    const users = await this.getAssignedUsers(defaultAssignmentRule.region_names);
+    const users = await this.getAssignedUsers(defaultAssignmentRule.regionNames);
     const attendingUsers = await this.getAttendingUsers(dayNo, month, shifts);
     const assignedUsers = users.filter((userId) => attendingUsers.some((attendedUser) => attendedUser.email === userId));
     if (assignedUsers.length) {
