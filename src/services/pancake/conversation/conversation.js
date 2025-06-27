@@ -19,6 +19,11 @@ export default class ConversationService {
 
   async processLastCustomerMessage(data) {
     const message = data.message;
+    if (!message) {
+      console.warn("No message found in data:", data);
+      return;
+    }
+
     const from = message.from;
     if (!from?.admin_id) {
       // Not processing messages from admin
