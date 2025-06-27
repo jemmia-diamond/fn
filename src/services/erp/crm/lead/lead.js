@@ -103,7 +103,7 @@ export default class LeadService {
 
   static async syncWebsiteLeads(env) {
     const leadService = new LeadService(env);
-    const timeThreshold = dayjs().utc().subtract(2, "hour").format("YYYY-MM-DD HH:mm:ss");
+    const timeThreshold = dayjs().utc().subtract(1, "hour").subtract(5, "minutes").format("YYYY-MM-DD HH:mm:ss");
     const leads = await leadService.getWebsiteLeads(timeThreshold);
     if (leads.length) {
       for (const lead of leads) {
