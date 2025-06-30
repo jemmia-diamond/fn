@@ -86,6 +86,7 @@ export default class AssignmentRuleService {
 
     await this.updateAssignmentRule(ASSIGNMENT_RULES.Lead_Facebook_Tiktok_ZaloKOC_Website_ZaloOA_HN, shifts, dayNo, month);
     await this.updateAssignmentRule(ASSIGNMENT_RULES.Lead_Tiktok_ZaloKOC_Website_ZaloOA_HCM_CT, shifts, dayNo, month);
+    // Facebook is handled separately for HCM and CT regions due to specific business requirements
     await this.updateAssignmentRule(ASSIGNMENT_RULES.Lead_Facebook_HCM, shifts, dayNo, month);
     await this.updateAssignmentRule(ASSIGNMENT_RULES.Lead_Facebook_CT, shifts, dayNo, month);
   }
