@@ -49,7 +49,6 @@ export default class SerialService {
         sku: serial.sku,
         design_code: serial.design_code
       }, "serial_number");
-      await new Promise(resolve => setTimeout(resolve, 150));
     }
   }
 }
