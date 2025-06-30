@@ -4,6 +4,9 @@ import ERP from "../services/erp";
 export default {
   scheduled: async (controller, env, _ctx) => {
     switch (controller.cron) {
+    case "0 * * * *": // At minute 0 every hour
+      await ERP.CRM.LeadService.syncWebsiteLeads(env);
+      break;
     case "0 17 * * *": // 00:00
       await Larksuite.Contact.UserService.syncUsersToDatabase(env);
       await ERP.Core.UserService.syncLarkIds(env);

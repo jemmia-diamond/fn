@@ -1,4 +1,9 @@
 import FrappeClient from "../../../../frappe/frappe-client";
+import Database from "../../../database";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc.js";
+
+dayjs.extend(utc);
 
 export default class LeadService {
   constructor(env) {
@@ -9,6 +14,9 @@ export default class LeadService {
       apiKey: this.env.JEMMIA_ERP_API_KEY,
       apiSecret: this.env.JEMMIA_ERP_API_SECRET
     });
+    this.db = Database.instance(env);
+    this.WebsiteFormLeadSource = "CRM-LEAD-SOURCE-0000023";
+    this.defaultLeadOwner = "tech@jemmia.vn";
   }
 
   async updateLeadInfoFromSummary(data, conversationId) {
@@ -24,7 +32,7 @@ export default class LeadService {
 
   async findLeadByConversationId(conversationId) {
     const contacts = await this.frappeClient.getList("Contact", {
-      filters:[["pancake_conversation_id", "=", conversationId]]
+      filters: [["pancake_conversation_id", "=", conversationId]]
     });
     if (contacts.length) {
       const contact = await this.frappeClient.getDoc("Contact", contacts[0].name);
@@ -49,5 +57,58 @@ export default class LeadService {
     }
     const lead = await this.frappeClient.update(currentLead);
     return lead;
+  }
+
+  async getWebsiteLeads(timeThreshold) {
+    const result = await this.db.$queryRaw`
+      SELECT * FROM ecom.leads l
+      WHERE l.database_created_at > ${timeThreshold};
+    `;
+    return result;
+  }
+
+  async processWebsiteLead(data) {
+    const custom_uuid = data.custom_uuid;
+    const location = data.raw_data.location;
+
+    const contacts = await this.frappeClient.getList("Contact", {
+      filters: [["custom_uuid", "=", custom_uuid]]
+    });
+
+    if (contacts.length) { return; }
+
+    const provinces = await this.frappeClient.getList("Province", {
+      filters: [["province_name", "LIKE", `%${location}%`]]
+    });
+
+    const leadData = {
+      doctype: this.doctype,
+      source: this.WebsiteFormLeadSource,
+      first_name: data.raw_data.name,
+      phone: data.raw_data.phone,
+      lead_owner: this.defaultLeadOwner,
+      province: provinces.length ? provinces[0].name : null,
+      first_reach_at: dayjs(data.database_created_at).format("YYYY-MM-DD HH:mm:ss")
+    };
+    const lead = await this.frappeClient.insert(leadData);
+    const contact = (await this.frappeClient.getList("Contact", {
+      filters: [["Dynamic Link", "link_name", "=", lead.name]]
+    }))[0];
+
+    contact.doctype = "Contact";
+    contact.custom_uuid = custom_uuid;
+    contact.owner = this.defaultLeadOwner;
+    await this.frappeClient.update(contact);
+  }
+
+  static async syncWebsiteLeads(env) {
+    const leadService = new LeadService(env);
+    const timeThreshold = dayjs().utc().subtract(1, "hour").subtract(5, "minutes").format("YYYY-MM-DD HH:mm:ss");
+    const leads = await leadService.getWebsiteLeads(timeThreshold);
+    if (leads.length) {
+      for (const lead of leads) {
+        await leadService.processWebsiteLead(lead);
+      }
+    }
   }
 }
