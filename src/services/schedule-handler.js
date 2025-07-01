@@ -15,8 +15,8 @@ export default {
       await Larksuite.Attendance.ScheduleService.syncScheduleToDatabase(env);
       break;
     case "30 1 * * *": // 08:30
-      // await ERP.Automation.AssignmentRuleService.disableAssignmentRuleOffHour(env);
-      // await ERP.Automation.AssignmentRuleService.updateAssignmentRulesStartDay(env);
+      await ERP.Automation.AssignmentRuleService.disableAssignmentRuleOffHour(env);
+      await ERP.Automation.AssignmentRuleService.updateAssignmentRulesStartDay(env);
       await ERP.Automation.AssignmentRuleService.reAssignOffHourLeads(env);
       break;
     case "30 5 * * *": // 12:30
