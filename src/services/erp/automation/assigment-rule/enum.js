@@ -23,12 +23,8 @@ export const ASSIGNMENT_RULES = {
     name: "Lead_Facebook-Tiktok-ZaloKOC-Website-ZaloOA_HN",
     regionNames: ["CRM-REGION-SOURCE-0000001"]
   },
-  Lead_Tiktok_ZaloKOC_Website_ZaloOA_HCM_CT: {
+  Lead_Facebook_Tiktok_ZaloKOC_Website_ZaloOA_HCM: {
     name: "Lead_Tiktok-ZaloKOC-Website-ZaloOA_HCM-CT",
-    regionNames: ["CRM-REGION-SOURCE-0000002", "CRM-REGION-SOURCE-0000003"]
-  },
-  Lead_Facebook_HCM: {
-    name: "Lead_Facebook_HCM",
     regionNames: ["CRM-REGION-SOURCE-0000002"]
   },
   Lead_Facebook_CT: {
