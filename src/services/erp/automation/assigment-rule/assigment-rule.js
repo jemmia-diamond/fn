@@ -23,7 +23,7 @@ export default class AssignmentRuleService {
   }
 
   async getAssignedUsers(regions) {
-    const salesPeoplePromises = regions.map(region => 
+    const salesPeoplePromises = regions.map(region =>
       this.frappeClient.getList("Sales Person", {
         filters: [["sales_region", "=", region], ["assigned_lead", "=", true]]
       })
@@ -149,7 +149,7 @@ export default class AssignmentRuleService {
         "doctype": "ToDo",
         "name": toDo.name,
         "status": "Cancelled"
-      }
+      };
     });
     await assignmentRuleService.frappeClient.bulkUpdate(toDoDucuments);
     // Apply assignment rule
@@ -158,6 +158,6 @@ export default class AssignmentRuleService {
       cmd: "frappe.automation.doctype.assignment_rule.assignment_rule.bulk_apply",
       doctype: "Lead",
       docnames: JSON.stringify(leadNames)
-    })
+    });
   }
 }
