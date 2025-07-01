@@ -143,6 +143,7 @@ export default class AssignmentRuleService {
       fields: ["name", "reference_name"],
       limit_page_length: 100
     });
+    if (!toDos.length) {return;}
     // Cancel all toDos
     const toDoDucuments = toDos.map((toDo) => {
       return {
