@@ -14,7 +14,11 @@ export default class ScheduleService {
     const timeThresholdEnd = Number(currentDate.add(1, "day").format("YYYYMMDD"));
 
     const userIds = await ScheduleService.getUsersIds(db);
-    const schedulesSets = await Promise.all(userIds.map(userId => ScheduleService.getUserSchedule(larkClient, tenantAccessToken, userId, timeThresholdStart, timeThresholdEnd)));
+    const schedulesSets = [];
+    for (const userId of userIds) {
+      const userSchedule = await ScheduleService.getUserSchedule(larkClient, tenantAccessToken, userId, timeThresholdStart, timeThresholdEnd);
+      schedulesSets.push(userSchedule);
+    }
     const schedules = schedulesSets.flat().filter(Boolean);
 
     for (const schedule of schedules) {
@@ -23,8 +27,8 @@ export default class ScheduleService {
       ) VALUES (
           ${schedule.day_no}, ${schedule.group_id}, ${schedule.month}, ${schedule.shift_id}, ${schedule.user_id}
       )
-      ON CONFLICT (day_no, group_id, month, shift_id, user_id) 
-      DO NOTHING;
+      ON CONFLICT (day_no, group_id, month, user_id) 
+      DO UPDATE SET shift_id = ${schedule.shift_id}
       `;
     }
   }
