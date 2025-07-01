@@ -73,4 +73,25 @@ export default class ContactService {
     const contact = await this.frappeClient.insert(mappedContactData);
     return contact;
   }
+
+  async processWebsiteContact(data) {
+    const custom_uuid = data.custom_uuid;
+    const contacts = await this.frappeClient.getList(this.doctype, {
+      filters: [["custom_uuid", "=", custom_uuid]]
+    });
+    if (contacts.length) { return; }
+
+    const contactData = {
+      doctype: this.doctype,
+      first_name: data.raw_data.name,
+      phone_nos: [
+        {
+          "phone": data.raw_data.phone,
+          "is_primary_phone": 1
+        }
+      ]
+    };
+    const contact = await this.frappeClient.insert(contactData);
+    return contact;
+  }
 }

@@ -68,6 +68,16 @@ export default class LeadService {
   }
 
   async processWebsiteLead(data) {
+    const phone = data.raw_data.phone;
+    
+    const leads = await this.frappeClient.getList(this.doctype, {
+      filters: [["phone", "=", phone]]
+    });
+
+    if (leads.length) {
+      return await this.frappeClient.getDoc(this.doctype, leads[0].name);
+    }
+
     const custom_uuid = data.custom_uuid;
     const location = data.raw_data.location;
 
