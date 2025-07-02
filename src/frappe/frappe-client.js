@@ -114,20 +114,6 @@ export default class FrappeClient {
     });
   }
 
-  async syncLeadByBatchInsertion(docs) {
-    return this.postRequest("", {
-      cmd: "erpnext.crm.doctype.lead.lead_methods.insert_lead_by_batch",
-      docs: JSON.stringify(docs)
-    });
-  }
-
-  async syncLeadByBatchUpdate(docs) {
-    return this.postRequest("", {
-      cmd: "erpnext.crm.doctype.lead.lead_methods.update_lead_by_batch",
-      docs: JSON.stringify(docs)
-    });
-  }
-
   // --- Utility methods ---
 
   async postRequest(path = "", data = {}) {

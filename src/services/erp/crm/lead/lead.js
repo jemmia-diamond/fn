@@ -64,7 +64,7 @@ export default class LeadService {
     phone,
     firstName
   }) {
-    const lead = await this.frappeClient.syncLeadByBatchUpdate([
+    const lead = await this.syncLeadByBatchUpdate([
       {
         "doctype": "Lead",
         "docname": leadName,
@@ -90,7 +90,7 @@ export default class LeadService {
     pancakeUserId,
     pancakeAvatarUrl
   }) {
-    const lead = await this.frappeClient.syncLeadByBatchInsertion([
+    const lead = await this.syncLeadByBatchInsertion([
       {
         "doctype": "Lead",
         "status": "Lead",
@@ -114,6 +114,21 @@ export default class LeadService {
     ]);
     return lead;
   }
+
+  async syncLeadByBatchInsertion(docs) {
+    return await this.frappeClient.postRequest("", {
+      cmd: "erpnext.crm.doctype.lead.lead_methods.insert_lead_by_batch",
+      docs: JSON.stringify(docs)
+    });
+  }
+
+  async syncLeadByBatchUpdate(docs) {
+    return await this.frappeClient.postRequest("", {
+      cmd: "erpnext.crm.doctype.lead.lead_methods.update_lead_by_batch",
+      docs: JSON.stringify(docs)
+    });
+  }
+
 
   async getWebsiteLeads(timeThreshold) {
     const result = await this.db.$queryRaw`
