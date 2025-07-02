@@ -15,8 +15,7 @@
     "@vespaiach/axios-fetch-adapter": "^0.3.1",
     "crypto-js": "^4.2.0",
     "dayjs": "^1.11.13",
-    "hono": "^4.7.10",
-    "uuid": "^11.1.0"
+    "hono": "^4.7.10"
   },
   "devDependencies": {
     "eslint": "^9.27.0",

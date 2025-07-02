@@ -1,6 +1,5 @@
 import PancakeClient from "../../../pancake/pancake-client";
 import Database from "../../database";
-import { v4 as uuidv4 } from "uuid";
 import LeadService from "../../erp/crm/lead/lead";
 
 export default class ConversationService {
@@ -17,28 +16,6 @@ export default class ConversationService {
             SET last_sent_at = ${insertedAt}
             WHERE c.id = ${conversationId} AND c.page_id = ${pageId};
         `;
-    return result;
-  }
-
-  async upsertConversation(
-    conversationId, 
-    type, 
-    insertedAt, 
-    pageId, 
-    hasPhone, 
-    updatedAt
-  ) {
-    const uuid = uuidv4();
-    const result = await this.db.$queryRaw`
-      INSERT INTO pancake.conversation (uuid, id, type, inserted_at, page_id, has_phone, updated_at)
-      VALUES (${uuid}, ${conversationId}, ${type}, ${insertedAt}, ${pageId}, ${hasPhone}, ${updatedAt})
-      ON CONFLICT (id) DO UPDATE SET 
-        type = EXCLUDED.type,
-        inserted_at = EXCLUDED.inserted_at,
-        page_id = EXCLUDED.page_id,
-        has_phone = EXCLUDED.has_phone,
-        updated_at = EXCLUDED.updated_at;
-    `
     return result;
   }
 
