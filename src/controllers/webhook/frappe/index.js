@@ -4,7 +4,7 @@ import FrappePancakeConversationAssignmentController from "./pancake/conversatio
 export default class FrappeWebhook {
   static register(webhook) {
     const frappeWebhookNamespace = webhook.basePath("/frappe");
-    // frappeWebhookNamespace.use("*", verifyHmacBase64Auth("X-Frappe-Webhook-Signature", "FRAPPE_WEBHOOK_SECRET"));
+    frappeWebhookNamespace.use("*", verifyHmacBase64Auth("X-Frappe-Webhook-Signature", "FRAPPE_WEBHOOK_SECRET"));
     frappeWebhookNamespace.post("/pancake/conversation_assignments", FrappePancakeConversationAssignmentController.create);
   }
 }
