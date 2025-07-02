@@ -20,7 +20,7 @@ export default class ConversationService {
   }
 
   async upsertFrappeLeadConversation(
-    conversationId, 
+    conversationId,
     frappeNameId
   ) {
     const result = await this.db.$queryRaw`
@@ -37,18 +37,18 @@ export default class ConversationService {
     conversationId
   }) {
     try {
-        const result = await this.db.$queryRaw`
+      const result = await this.db.$queryRaw`
         SELECT * FROM pancake.frappe_lead_conversation AS flc
         WHERE flc.conversation_id = ${conversationId}
         LIMIT 1;
       `;
       if (result && result.length > 0) {
-        return result[0]
+        return result[0];
       }
-      return null
+      return null;
     } catch (error) {
-      console.error(error)
-      return undefined
+      console.error(error);
+      return undefined;
     }
   }
 
@@ -56,18 +56,18 @@ export default class ConversationService {
     pageId
   }) {
     try {
-        const result = await this.db.$queryRaw`
+      const result = await this.db.$queryRaw`
         SELECT * FROM pancake.page AS p
         WHERE p.id = ${pageId}
         LIMIT 1;
       `;
       if (result && result.length > 0) {
-        return result[0]
+        return result[0];
       }
-      return null
+      return null;
     } catch (error) {
-      console.error(error)
-      return undefined
+      console.error(error);
+      return undefined;
     }
   }
 
@@ -102,33 +102,33 @@ export default class ConversationService {
         return;
       }
 
-      const pageId = body.page_id
+      const pageId = body.page_id;
       if (!pageId || pageId.trim() === "") {
-        return
+        return;
       }
 
       if (body.data.message.has_phone === undefined || body.data.message.has_phone === false) {
-        return
+        return;
       }
 
       const existingDocName = await this.findExistingLead({
         conversationId: conversationId
-      })
-      if (existingDocName === undefined) return
+      });
+      if (existingDocName === undefined) return;
 
-      let frappeNameId
+      let frappeNameId;
       if (existingDocName !== null) {
-        frappeNameId = existingDocName.frappe_name_id
+        frappeNameId = existingDocName.frappe_name_id;
         await this.leadService.updateLead({
           leadName: existingDocName.frappe_name_id,
           phone: body.data.message.phone_info?.[0].phone_number ?? "",
-          firstName: body.data.conversation.from.name ?? "",
-        })
+          firstName: body.data.conversation.from.name ?? ""
+        });
       } else {
         const pancakePage = await this.findPageInfo({
           pageId: pageId
-        })
-        if (pancakePage === undefined || pancakePage === null) return
+        });
+        if (pancakePage === undefined || pancakePage === null) return;
 
         const newLead = await this.leadService.insertLead({
           firstName: body.data.conversation.from.name ?? "",
@@ -143,11 +143,11 @@ export default class ConversationService {
           type: body.data.conversation.type ?? "",
           lastestMessageAt: "",
           pancakeUserId: body.data.conversation.assignee_ids?.[0] ?? "",
-          pancakeAvatarUrl: "",
-        })
+          pancakeAvatarUrl: ""
+        });
 
         if (newLead !== undefined && newLead !== null && newLead.length > 0) {
-          frappeNameId = newLead[0]
+          frappeNameId = newLead[0];
         }
       }
 
@@ -155,8 +155,8 @@ export default class ConversationService {
         await this.upsertFrappeLeadConversation(conversationId, frappeNameId);
       }
     } catch (error) {
-      console.error(error)
-      return
+      console.error(error);
+      return;
     }
   }
 

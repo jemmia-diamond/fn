@@ -62,7 +62,7 @@ export default class LeadService {
   async updateLead({
     leadName,
     phone,
-    firstName,
+    firstName
   }) {
     const lead = await this.frappeClient.syncLeadByBatchUpdate([
       {
@@ -71,8 +71,8 @@ export default class LeadService {
         "phone": phone,
         "first_name": firstName
       }
-    ])
-    return lead
+    ]);
+    return lead;
   }
 
   async insertLead({
@@ -88,8 +88,8 @@ export default class LeadService {
     type,
     lastestMessageAt,
     pancakeUserId,
-    pancakeAvatarUrl,
-    }) {
+    pancakeAvatarUrl
+  }) {
     const lead = await this.frappeClient.syncLeadByBatchInsertion([
       {
         "doctype": "Lead",
@@ -108,11 +108,11 @@ export default class LeadService {
           "can_inbox": type === "INBOX" ? 1 : 0,
           "latest_message_at": lastestMessageAt,
           "pancake_user_id": pancakeUserId, // sale
-          "pancake_avatar_url": pancakeAvatarUrl,
+          "pancake_avatar_url": pancakeAvatarUrl
         }
       }
-    ])
-    return lead;   
+    ]);
+    return lead;
   }
 
   async getWebsiteLeads(timeThreshold) {
