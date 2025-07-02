@@ -1,6 +1,7 @@
 import PancakeClient from "../../../pancake/pancake-client";
 import Database from "../../database";
 import LeadService from "../../erp/crm/lead/lead";
+import AIHUBClient from "../../clients/aihub";
 
 export default class ConversationService {
   constructor(env) {
@@ -26,7 +27,7 @@ export default class ConversationService {
     const result = await this.db.$queryRaw`
       INSERT INTO pancake.frappe_lead_conversation (conversation_id, frappe_name_id, updated_at, created_at)
       VALUES (${conversationId}, ${frappeNameId}, NOW(), NOW())
-      ON CONFLICT (conversation_id) DO UPDATE SET 
+      ON CONFLICT (conversation_id) DO UPDATE SET
         frappe_name_id = EXCLUDED.frappe_name_id,
         updated_at = NOW();
     `;
@@ -160,13 +161,30 @@ export default class ConversationService {
     }
   }
 
+  async summarizeLead(env, body) {
+    const { data } = body;
+    const { message } = data;
+
+    // Skip if the message is from admin
+    if (!message?.from?.admin_id) { return; }
+
+    const aihub = new AIHUBClient(env);
+    return await aihub.makeRequest("/lead-info", {
+      "pageId": body.page_id,
+      "conversationId": message.conversation_id,
+      "webhookUrl": `${env.HOST}/webhook/ai-hub/erp/leads`
+    });
+  }
+
   static async dequeueMessageQueue(batch, env) {
     const conversationService = new ConversationService(env);
     const messages = batch.messages;
     for (const message of messages) {
-      const data = message.body;
-      await conversationService.processLastCustomerMessage(data.data);
-      await conversationService.syncCustomerToLeadCrm(data);
+      const body = message.body;
+
+      await conversationService.processLastCustomerMessage(body.data);
+      await conversationService.syncCustomerToLeadCrm(body);
+      await conversationService.summarizeLead(env, body);
     }
   }
 }
