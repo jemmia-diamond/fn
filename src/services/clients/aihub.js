@@ -10,7 +10,7 @@ export default class AIHUBClient {
 
   async #getHeaders() {
     if (!this.#bearerToken) {
-      this.#bearerToken = await this.#env.AIHUB_BEARER_TOKEN.get();
+      this.#bearerToken = await this.#env.BEARER_TOKEN_SECRET.get();
     }
 
     return {
