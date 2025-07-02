@@ -46,7 +46,6 @@ export default class ConversationService {
     conversationId, 
     frappeNameId
   ) {
-    console.log("kokoaaa", conversationId, frappeNameId)
     const result = await this.db.$queryRaw`
       INSERT INTO pancake.frappe_lead_conversation (conversation_id, frappe_name_id, updated_at, created_at)
       VALUES (${conversationId}, ${frappeNameId}, NOW(), NOW())
@@ -71,6 +70,7 @@ export default class ConversationService {
       }
       return null
     } catch (error) {
+      console.error(error)
       return undefined
     }
   }
@@ -89,6 +89,7 @@ export default class ConversationService {
       }
       return null
     } catch (error) {
+      console.error(error)
       return undefined
     }
   }
@@ -177,6 +178,7 @@ export default class ConversationService {
         await this.upsertFrappeLeadConversation(conversationId, frappeNameId);
       }
     } catch (error) {
+      console.error(error)
       return
     }
   }
