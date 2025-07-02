@@ -80,21 +80,8 @@ export default class AssignmentRuleService {
     const dayNo = timeThreshold.date();
     const month = Number(timeThreshold.format("YYYYMM"));
     // Update assignment rules for three region
-    await this.updateAssignmentRule(ASSIGNMENT_RULES.HN, shifts, dayNo, month);
-    await this.updateAssignmentRule(ASSIGNMENT_RULES.HCM, shifts, dayNo, month);
-    await this.updateAssignmentRule(ASSIGNMENT_RULES.CT, shifts, dayNo, month);
-
-    await this.updateAssignmentRule(ASSIGNMENT_RULES.Lead_ZaloKOC_HN, shifts, dayNo, month);
-    await this.updateAssignmentRule(ASSIGNMENT_RULES.Lead_ZaloKOC_HCM_CT, shifts, dayNo, month);
-
-    await this.updateAssignmentRule(ASSIGNMENT_RULES.Lead_Website_ZaloOA_HN, shifts, dayNo, month);
-    await this.updateAssignmentRule(ASSIGNMENT_RULES.Lead_Website_ZaloOA_HCM_CT, shifts, dayNo, month);
-
-    await this.updateAssignmentRule(ASSIGNMENT_RULES.Lead_Tiktok_HN, shifts, dayNo, month);
-    await this.updateAssignmentRule(ASSIGNMENT_RULES.Lead_Tiktok_HCM_CT, shifts, dayNo, month);
-
-    await this.updateAssignmentRule(ASSIGNMENT_RULES.Lead_Facebook_HN, shifts, dayNo, month);
-    await this.updateAssignmentRule(ASSIGNMENT_RULES.Lead_Facebook_HCM, shifts, dayNo, month);
+    await this.updateAssignmentRule(ASSIGNMENT_RULES.Lead_Facebook_Tiktok_ZaloKOC_Website_ZaloOA_HN, shifts, dayNo, month);
+    await this.updateAssignmentRule(ASSIGNMENT_RULES.Lead_Facebook_Tiktok_ZaloKOC_Website_ZaloOA_HCM, shifts, dayNo, month);
     await this.updateAssignmentRule(ASSIGNMENT_RULES.Lead_Facebook_CT, shifts, dayNo, month);
   }
 
