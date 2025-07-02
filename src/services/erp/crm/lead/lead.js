@@ -50,4 +50,60 @@ export default class LeadService {
     const lead = await this.frappeClient.update(currentLead);
     return lead;
   }
+
+  async updateLead({
+    leadName,
+    phone,
+    firstName,
+  }) {
+    const lead = await this.frappeClient.syncLeadByBatchUpdate([
+      {
+        "doctype": "Lead",
+        "docname": leadName,
+        "phone": phone,
+        "first_name": firstName
+      }
+    ])
+    return lead
+  }
+
+  async insertLead({
+    firstName,
+    phone,
+    platform,
+    conversationId,
+    customerId,
+    pageId,
+    pageName,
+    insertedAt,
+    updatedAt,
+    type,
+    lastestMessageAt,
+    pancakeUserId,
+    pancakeAvatarUrl,
+    }) {
+    const lead = await this.frappeClient.syncLeadByBatchInsertion([
+      {
+        "doctype": "Lead",
+        "status": "Lead",
+        "naming_series": "CRM-LEAD-.YYYY.-",
+        "first_name": firstName,
+        "phone": phone,
+        "pancake_data": {
+          "platform": platform,
+          "conversation_id": conversationId,
+          "customer_id": customerId,
+          "page_id": pageId,
+          "page_name": pageName,
+          "inserted_at": insertedAt,
+          "updated_at": updatedAt,
+          "can_inbox": type === "INBOX" ? 1 : 0,
+          "latest_message_at": lastestMessageAt,
+          "pancake_user_id": pancakeUserId, // sale
+          "pancake_avatar_url": pancakeAvatarUrl,
+        }
+      }
+    ])
+    return lead;   
+  }
 }

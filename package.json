@@ -10,12 +10,13 @@
   "dependencies": {
     "@hono/sentry": "^1.2.1",
     "@larksuiteoapi/node-sdk": "1.47.1",
-    "@vespaiach/axios-fetch-adapter": "^0.3.1",
     "@prisma/adapter-neon": "^6.9.0",
     "@prisma/client": "6.9.0",
+    "@vespaiach/axios-fetch-adapter": "^0.3.1",
     "crypto-js": "^4.2.0",
     "dayjs": "^1.11.13",
-    "hono": "^4.7.10"
+    "hono": "^4.7.10",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "eslint": "^9.27.0",
