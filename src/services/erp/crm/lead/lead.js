@@ -129,7 +129,6 @@ export default class LeadService {
     });
   }
 
-
   async getWebsiteLeads(timeThreshold) {
     const result = await this.db.$queryRaw`
       SELECT * FROM ecom.leads l
