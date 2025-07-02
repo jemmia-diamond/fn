@@ -113,6 +113,7 @@ export default class FrappeClient {
       docs: JSON.stringify(docs)
     });
   }
+
   // --- Utility methods ---
 
   async postRequest(path = "", data = {}) {
