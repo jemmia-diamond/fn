@@ -24,7 +24,7 @@ export const ASSIGNMENT_RULES = {
     regionNames: ["CRM-REGION-SOURCE-0000001"]
   },
   Lead_Facebook_Tiktok_ZaloKOC_Website_ZaloOA_HCM: {
-    name: "Lead_Tiktok-ZaloKOC-Website-ZaloOA_HCM-CT",
+    name: "Lead_Facebook-Tiktok-ZaloKOC-Website-ZaloOA_HCM",
     regionNames: ["CRM-REGION-SOURCE-0000002"]
   },
   Lead_Facebook_CT: {
