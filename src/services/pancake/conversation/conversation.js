@@ -97,6 +97,17 @@ export default class ConversationService {
 
   async syncCustomerToLeadCrm(body) {
     try {
+      const adminId = body?.data?.message?.from?.admin_id;
+      // Ignore message from admin
+      if (adminId) {
+        return;
+      }
+
+      // Ignore if it is not messaging
+      if (body?.event_type !== "messaging") {
+        return;
+      }
+
       const conversationId = body?.data?.conversation?.id;
       if (!conversationId || conversationId.trim() === "") {
         return;
