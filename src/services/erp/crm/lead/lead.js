@@ -30,7 +30,7 @@ export default class LeadService {
       });
       return { success: true, data: res };
     } catch (error) {
-      console.error("Failed to update lead info from summary:", {
+      console.warn("Failed to update lead info from summary:", {
         error: error.message,
         conversationId,
         data
