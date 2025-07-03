@@ -118,7 +118,7 @@ export default class ConversationService {
         return;
       }
 
-      const hasPhone = body?.data?.message?.has_phone
+      const hasPhone = body?.data?.message?.has_phone;
       if (hasPhone === undefined || hasPhone === false) {
         return;
       }
