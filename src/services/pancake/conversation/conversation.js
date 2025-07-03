@@ -97,17 +97,18 @@ export default class ConversationService {
 
   async syncCustomerToLeadCrm(body) {
     try {
-      const conversationId = body.data.conversation.id;
+      const conversationId = body?.data?.conversation?.id;
       if (!conversationId || conversationId.trim() === "") {
         return;
       }
 
-      const pageId = body.page_id;
+      const pageId = body?.page_id;
       if (!pageId || pageId.trim() === "") {
         return;
       }
 
-      if (body.data.message.has_phone === undefined || body.data.message.has_phone === false) {
+      const hasPhone = body?.data?.message?.has_phone
+      if (hasPhone === undefined || hasPhone === false) {
         return;
       }
 
@@ -121,8 +122,8 @@ export default class ConversationService {
         frappeNameId = existingDocName.frappe_name_id;
         await this.leadService.updateLead({
           leadName: existingDocName.frappe_name_id,
-          phone: body.data.message.phone_info?.[0].phone_number ?? "",
-          firstName: body.data.conversation.from.name ?? ""
+          phone: body?.data?.message?.phone_info?.[0].phone_number ?? "",
+          firstName: body?.data?.conversation?.from?.name ?? ""
         });
       } else {
         const pancakePage = await this.findPageInfo({
@@ -131,8 +132,8 @@ export default class ConversationService {
         if (pancakePage === undefined || pancakePage === null) return;
 
         const newLead = await this.leadService.insertLead({
-          firstName: body.data.conversation.from.name ?? "",
-          phone: body.data.message.phone_info?.[0].phone_number ?? "",
+          firstName: body?.data?.conversation?.from?.name ?? "",
+          phone: body?.data?.message?.phone_info?.[0].phone_number ?? "",
           platform: pancakePage.platform ?? "",
           conversationId: conversationId ?? "",
           customerId: "",
@@ -140,9 +141,9 @@ export default class ConversationService {
           pageName: pancakePage.name ?? "",
           insertedAt: "",
           updatedAt: "",
-          type: body.data.conversation.type ?? "",
+          type: body?.data?.conversation?.type ?? "",
           lastestMessageAt: "",
-          pancakeUserId: body.data.conversation.assignee_ids?.[0] ?? "",
+          pancakeUserId: body?.data?.conversation?.assignee_ids?.[0] ?? "",
           pancakeAvatarUrl: ""
         });
 
