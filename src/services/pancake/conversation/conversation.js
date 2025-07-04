@@ -194,11 +194,8 @@ export default class ConversationService {
     for (const message of messages) {
       const body = message.body;
 
-      console.warn("conversationService#summarizeLead");
       await conversationService.summarizeLead(env, body);
-      console.warn("conversationService#processLastCustomerMessage");
       await conversationService.processLastCustomerMessage(body.data);
-      console.warn("conversationService#syncCustomerToLeadCrm");
       await conversationService.syncCustomerToLeadCrm(body);
     }
   }
