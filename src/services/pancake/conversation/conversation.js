@@ -75,7 +75,7 @@ export default class ConversationService {
   async processLastCustomerMessage(data) {
     const message = data.message;
     if (!message) {
-      console.warn("No message found in data:", data);
+      console.warn(`No message found in data: ${JSON.stringify(data)}`);
       return;
     }
 
@@ -196,13 +196,13 @@ export default class ConversationService {
 
       await Promise.all([
         conversationService.summarizeLead(env, body).catch(err =>
-          console.error("summarizeLead failed:", err)
+          console.error(`summarizeLead failed: ${err}`)
         ),
         conversationService.processLastCustomerMessage(body.data).catch(err =>
-          console.error("processLastCustomerMessage failed:", err)
+          console.error(`processLastCustomerMessage failed: ${err}`)
         ),
         conversationService.syncCustomerToLeadCrm(body).catch(err =>
-          console.error("syncCustomerToLeadCrm failed:", err)
+          console.error(`syncCustomerToLeadCrm failed: ${err}`)
         )
       ]);
     }
