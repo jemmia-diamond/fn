@@ -194,9 +194,17 @@ export default class ConversationService {
     for (const message of messages) {
       const body = message.body;
 
-      await conversationService.summarizeLead(env, body);
-      await conversationService.processLastCustomerMessage(body.data);
-      await conversationService.syncCustomerToLeadCrm(body);
+      await Promise.all([
+        conversationService.summarizeLead(env, body).catch(err =>
+          console.error("summarizeLead failed:", err)
+        ),
+        conversationService.processLastCustomerMessage(body.data).catch(err =>
+          console.error("processLastCustomerMessage failed:", err)
+        ),
+        conversationService.syncCustomerToLeadCrm(body).catch(err =>
+          console.error("syncCustomerToLeadCrm failed:", err)
+        )
+      ]);
     }
   }
 }
