@@ -177,7 +177,7 @@ export default class ConversationService {
     const { message } = data;
 
     // Skip if the message is from admin
-    if (!message?.from?.admin_id) { return; }
+    if (message?.from?.admin_id) { return; }
 
     const aihub = new AIHUBClient(env);
     return await aihub.makeRequest("/lead-info", {
