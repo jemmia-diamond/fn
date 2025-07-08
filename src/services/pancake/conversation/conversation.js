@@ -80,8 +80,7 @@ export default class ConversationService {
     }
 
     const from = message.from;
-    if (!from?.admin_id) {
-      // Not processing messages from admin
+    if (from?.admin_id) {
       return;
     }
     const conversationId = message.conversation_id;
