@@ -34,7 +34,9 @@ api.use("*", cors({
 api.use("*",
   bearerAuth({
     verifyToken: async (token, c) => {
-      return token === c.env.BEARER_TOKEN;
+      const bearerToken = await c.env.BEARER_TOKEN_SECRET.get();
+
+      return token === (bearerToken || c.env.BEARER_TOKEN);
     }
   })
 );
