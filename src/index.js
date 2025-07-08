@@ -9,7 +9,10 @@ import loggrageLogger from "./services/custom-logger";
 import queueHandler from "./services/queue-handler";
 import scheduleHandler from "./services/schedule-handler";
 
-import { PANCAKE_ORIGIN } from "./config/origin";
+import {
+  JEMMIA_ORIGIN,
+  PANCAKE_ORIGIN
+} from "./config/origin";
 
 const app = new Hono();
 const api = app.basePath("/api");
@@ -21,7 +24,10 @@ app.use(loggrageLogger());
 
 // CORS
 api.use("*", cors({
-  origin: [PANCAKE_ORIGIN]
+  origin: [
+    JEMMIA_ORIGIN,
+    PANCAKE_ORIGIN
+  ]
 }));
 
 // Authentication
