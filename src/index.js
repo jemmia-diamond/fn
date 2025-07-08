@@ -27,7 +27,9 @@ api.use("*", cors({
   origin: [
     JEMMIA_ORIGIN,
     PANCAKE_ORIGIN
-  ]
+  ],
+  allowHeaders: ['Content-Type', 'Authorization'],
+  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
 }));
 
 // Authentication
