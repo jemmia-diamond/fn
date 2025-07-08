@@ -108,9 +108,10 @@ export default class FrappeClient {
   }
 
   async bulkUpdate(docs) {
+    const docsWithDocNames = docs.map(doc => ({ ...doc, docname: doc.name }));
     return this.postRequest("", {
       cmd: "frappe.client.bulk_update",
-      docs: JSON.stringify(docs)
+      docs: JSON.stringify(docsWithDocNames)
     });
   }
 
