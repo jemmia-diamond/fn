@@ -2,20 +2,10 @@ import { PrismaClient } from "@prisma-cli";
 import { PrismaNeon } from "@prisma/adapter-neon";
 
 // Example usage:
-// const db = Database.instance(c.env);
+// const db = Database.createClient(c.env);
 // const users = await db.$queryRaw`SELECT * FROM larksuite.users`;
 class Database {
-  static #instance = null;
-
-  static instance(env) {
-    if (!Database.#instance && env) {
-      Database.#instance = Database.#createClient(env);
-    }
-
-    return Database.#instance;
-  }
-
-  static #createClient(env) {
+  static createClient(env) {
     try {
       const adapter = new PrismaNeon({
         connectionString: env.DATABASE_URL
@@ -26,6 +16,11 @@ class Database {
       console.error("Failed to initialize database client:", error);
       throw error;
     }
+  }
+
+  // Keep this for backward compatibility, but it creates a new instance each time
+  static instance(env) {
+    return Database.createClient(env);
   }
 }
 
