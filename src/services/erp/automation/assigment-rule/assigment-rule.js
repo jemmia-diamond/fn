@@ -19,12 +19,18 @@ export default class AssignmentRuleService {
       }
     );
     this.db = Database.instance(env);
+    this.defaultUser = "tech@jemmia.vn";
   }
 
-  async getAssignedUsers(region) {
-    const salesPeople = await this.frappeClient.getList("Sales Person", {
-      filters: [["sales_region", "=", region], ["assigned_lead", "=", true]]
-    });
+  async getAssignedUsers(regions) {
+    const salesPeoplePromises = regions.map(region =>
+      this.frappeClient.getList("Sales Person", {
+        filters: [["sales_region", "=", region], ["assigned_lead", "=", true]]
+      })
+    );
+    const salesPeopleResults = await Promise.all(salesPeoplePromises);
+    const salesPeople = salesPeopleResults.flat();
+
     const employeeNames = salesPeople.map((salesPerson) => salesPerson.employee);
     const employees = [];
     for (const employeeName of employeeNames) {
@@ -54,7 +60,7 @@ export default class AssignmentRuleService {
   }
 
   async updateAssignmentRule(defaultAssignmentRule, shifts, dayNo, month) {
-    const users = await this.getAssignedUsers(defaultAssignmentRule.region_name);
+    const users = await this.getAssignedUsers(defaultAssignmentRule.regionNames);
     const attendingUsers = await this.getAttendingUsers(dayNo, month, shifts);
     const assignedUsers = users.filter((userId) => attendingUsers.some((attendedUser) => attendedUser.email === userId));
     if (assignedUsers.length) {
@@ -75,9 +81,9 @@ export default class AssignmentRuleService {
     const dayNo = timeThreshold.date();
     const month = Number(timeThreshold.format("YYYYMM"));
     // Update assignment rules for three region
-    await this.updateAssignmentRule(ASSIGNMENT_RULES.HN, shifts, dayNo, month);
-    await this.updateAssignmentRule(ASSIGNMENT_RULES.HCM, shifts, dayNo, month);
-    await this.updateAssignmentRule(ASSIGNMENT_RULES.CT, shifts, dayNo, month);
+    await this.updateAssignmentRule(ASSIGNMENT_RULES.Lead_Facebook_Tiktok_ZaloKOC_Website_ZaloOA_HN, shifts, dayNo, month);
+    await this.updateAssignmentRule(ASSIGNMENT_RULES.Lead_Facebook_Tiktok_ZaloKOC_Website_ZaloOA_HCM, shifts, dayNo, month);
+    await this.updateAssignmentRule(ASSIGNMENT_RULES.Lead_Facebook_CT, shifts, dayNo, month);
   }
 
   // Static methods for external usage
@@ -116,6 +122,37 @@ export default class AssignmentRuleService {
       "doctype": assignmentRuleService.doctype,
       "name": assignmentRuleName,
       "disabled": 0
+    });
+  }
+
+  static async reAssignOffHourLeads(env) {
+    const assignmentRuleService = new AssignmentRuleService(env);
+    // Get all leads assigned to the default user
+    const toDos = await assignmentRuleService.frappeClient.getList("ToDo", {
+      filters: [
+        ["allocated_to", "like", `%${assignmentRuleService.defaultUser}%`],
+        ["status", "=", "Open"],
+        ["reference_type", "=", "Lead"]
+      ],
+      fields: ["name", "reference_name"],
+      limit_page_length: 100
+    });
+    if (!toDos.length) {return;}
+    // Cancel all toDos
+    const toDoDucuments = toDos.map((toDo) => {
+      return {
+        "doctype": "ToDo",
+        "name": toDo.name,
+        "status": "Cancelled"
+      };
+    });
+    await assignmentRuleService.frappeClient.bulkUpdate(toDoDucuments);
+    // Apply assignment rule
+    const leadNames = toDos.map((toDo) => toDo.reference_name);
+    await assignmentRuleService.frappeClient.postRequest("", {
+      cmd: "frappe.automation.doctype.assignment_rule.assignment_rule.bulk_apply",
+      doctype: "Lead",
+      docnames: JSON.stringify(leadNames)
     });
   }
 }

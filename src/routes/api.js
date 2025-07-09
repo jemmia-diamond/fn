@@ -3,10 +3,11 @@ import Namespace from "../controllers/namespace";
 import anotherNamespace from "../controllers/another-namespace";
 import ERP from "../controllers/erp";
 import Pancake from "../controllers/pancake";
+import Dashboard from "../controllers/dashboard";
 
 export default class APIRoutes {
   static register(api) {
-    /* 
+    /*
     /api/namespace/resources
     */
     const namespaceApi = api.basePath("/namespace");
@@ -25,5 +26,8 @@ export default class APIRoutes {
 
     const pancakeNamespaceApi = api.basePath("/pancake");
     pancakeNamespaceApi.post("/conversation_assignments", Pancake.ConversationAssignmentController.create);
+
+    const dashboardNamespaceApi = api.basePath("/dashboard");
+    dashboardNamespaceApi.get("/tv", Dashboard.TVController.show);
   };
 };
