@@ -176,6 +176,8 @@ export default class ConversationService {
     const { data } = body;
     const { message } = data;
 
+    if (body?.event_type !== "messaging") { return; }
+
     // Skip if the message is from admin
     if (message?.from?.admin_id) { return; }
 
