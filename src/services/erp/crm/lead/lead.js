@@ -2,6 +2,7 @@ import FrappeClient from "../../../../frappe/frappe-client";
 import Database from "../../../database";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
+import ContactService from "services/erp/contacts/contact/contact";
 
 dayjs.extend(utc);
 
@@ -148,15 +149,8 @@ export default class LeadService {
   }
 
   async processWebsiteLead(data) {
-    const custom_uuid = data.custom_uuid;
+    const contactService = new ContactService(this.env);
     const location = data.raw_data.location;
-
-    const contacts = await this.frappeClient.getList("Contact", {
-      filters: [["custom_uuid", "=", custom_uuid]]
-    });
-
-    if (contacts.length) { return; }
-
     const provinces = await this.frappeClient.getList("Province", {
       filters: [["province_name", "LIKE", `%${location}%`]]
     });
@@ -167,18 +161,10 @@ export default class LeadService {
       first_name: data.raw_data.name,
       phone: data.raw_data.phone,
       lead_owner: this.defaultLeadOwner,
-      province: provinces.length ? provinces[0].name : null,
-      first_reach_at: dayjs(data.database_created_at).format("YYYY-MM-DD HH:mm:ss")
+      province: provinces.length ? provinces[0].name : null
     };
-    const lead = await this.frappeClient.insert(leadData);
-    const contact = (await this.frappeClient.getList("Contact", {
-      filters: [["Dynamic Link", "link_name", "=", lead.name]]
-    }))[0];
-
-    contact.doctype = "Contact";
-    contact.custom_uuid = custom_uuid;
-    contact.owner = this.defaultLeadOwner;
-    await this.frappeClient.update(contact);
+    const lead = await this.frappeClient.upsert(leadData, "phone");
+    await contactService.processWebsiteContact(data, lead);
   }
 
   static async syncWebsiteLeads(env) {
