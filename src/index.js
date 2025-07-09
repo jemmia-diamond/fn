@@ -27,13 +27,13 @@ api.use("*", cors({
     }
 
     // Handle wildcard, eg: *.jemmia.vn
-    corsOrigin.filter((o) => o.startsWith("*.")).forEach((o) => {
-      if (origin.endsWith(o.slice(1))) {
+    corsOrigin.filter((o) => o.startsWith("https://*.")).forEach((o) => {
+      if (origin.endsWith(o.replace("https://*", ""))) {
         return origin;
       }
     });
 
-    return "*";
+    return null;
   },
   allowHeaders: ["Content-Type", "Authorization"],
   allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
