@@ -36,7 +36,7 @@ api.use("*", cors({
     return "*";
   },
   allowHeaders: ["Content-Type", "Authorization"],
-  allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"]
+  allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
 }));
 
 // Authentication
