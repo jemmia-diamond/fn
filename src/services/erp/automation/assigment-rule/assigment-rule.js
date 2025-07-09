@@ -19,10 +19,11 @@ export default class AssignmentRuleService {
       }
     );
     this.db = Database.instance(env);
+    this.defaultUser = "tech@jemmia.vn";
   }
 
   async getAssignedUsers(regions) {
-    const salesPeoplePromises = regions.map(region => 
+    const salesPeoplePromises = regions.map(region =>
       this.frappeClient.getList("Sales Person", {
         filters: [["sales_region", "=", region], ["assigned_lead", "=", true]]
       })
@@ -121,6 +122,37 @@ export default class AssignmentRuleService {
       "doctype": assignmentRuleService.doctype,
       "name": assignmentRuleName,
       "disabled": 0
+    });
+  }
+
+  static async reAssignOffHourLeads(env) {
+    const assignmentRuleService = new AssignmentRuleService(env);
+    // Get all leads assigned to the default user
+    const toDos = await assignmentRuleService.frappeClient.getList("ToDo", {
+      filters: [
+        ["allocated_to", "like", `%${assignmentRuleService.defaultUser}%`],
+        ["status", "=", "Open"],
+        ["reference_type", "=", "Lead"]
+      ],
+      fields: ["name", "reference_name"],
+      limit_page_length: 100
+    });
+    if (!toDos.length) {return;}
+    // Cancel all toDos
+    const toDoDucuments = toDos.map((toDo) => {
+      return {
+        "doctype": "ToDo",
+        "name": toDo.name,
+        "status": "Cancelled"
+      };
+    });
+    await assignmentRuleService.frappeClient.bulkUpdate(toDoDucuments);
+    // Apply assignment rule
+    const leadNames = toDos.map((toDo) => toDo.reference_name);
+    await assignmentRuleService.frappeClient.postRequest("", {
+      cmd: "frappe.automation.doctype.assignment_rule.assignment_rule.bulk_apply",
+      doctype: "Lead",
+      docnames: JSON.stringify(leadNames)
     });
   }
 }

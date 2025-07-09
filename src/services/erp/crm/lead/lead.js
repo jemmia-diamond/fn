@@ -20,14 +20,24 @@ export default class LeadService {
   }
 
   async updateLeadInfoFromSummary(data, conversationId) {
-    let res = await this.frappeClient.postRequest("", {
-      cmd: "erpnext.crm.doctype.lead.lead_methods.update_lead_from_summary",
-      data: JSON.stringify({
-        ...data,
-        conversation_id: conversationId
-      })
-    });
-    return res;
+    try {
+      let res = await this.frappeClient.postRequest("", {
+        cmd: "erpnext.crm.doctype.lead.lead_methods.update_lead_from_summary",
+        data: JSON.stringify({
+          ...data,
+          conversation_id: conversationId
+        })
+      });
+      return { success: true, data: res };
+    } catch (error) {
+      console.warn("Failed to update lead info from summary:", {
+        error: error.message,
+        conversationId,
+        data
+      });
+
+      return { success: false, error: error.message };
+    }
   }
 
   async findLeadByConversationId(conversationId) {
@@ -57,6 +67,76 @@ export default class LeadService {
     }
     const lead = await this.frappeClient.update(currentLead);
     return lead;
+  }
+
+  async updateLead({
+    leadName,
+    phone,
+    firstName
+  }) {
+    const lead = await this.syncLeadByBatchUpdate([
+      {
+        "doctype": "Lead",
+        "docname": leadName,
+        "phone": phone,
+        "first_name": firstName
+      }
+    ]);
+    return lead;
+  }
+
+  async insertLead({
+    firstName,
+    phone,
+    platform,
+    conversationId,
+    customerId,
+    pageId,
+    pageName,
+    insertedAt,
+    updatedAt,
+    type,
+    lastestMessageAt,
+    pancakeUserId,
+    pancakeAvatarUrl
+  }) {
+    const lead = await this.syncLeadByBatchInsertion([
+      {
+        "doctype": "Lead",
+        "status": "Lead",
+        "naming_series": "CRM-LEAD-.YYYY.-",
+        "first_name": firstName,
+        "phone": phone,
+        "pancake_data": {
+          "platform": platform,
+          "conversation_id": conversationId,
+          "customer_id": customerId,
+          "page_id": pageId,
+          "page_name": pageName,
+          "inserted_at": insertedAt,
+          "updated_at": updatedAt,
+          "can_inbox": type === "INBOX" ? 1 : 0,
+          "latest_message_at": lastestMessageAt,
+          "pancake_user_id": pancakeUserId, // sale
+          "pancake_avatar_url": pancakeAvatarUrl
+        }
+      }
+    ]);
+    return lead;
+  }
+
+  async syncLeadByBatchInsertion(docs) {
+    return await this.frappeClient.postRequest("", {
+      cmd: "erpnext.crm.doctype.lead.lead_methods.insert_lead_by_batch",
+      docs: JSON.stringify(docs)
+    });
+  }
+
+  async syncLeadByBatchUpdate(docs) {
+    return await this.frappeClient.postRequest("", {
+      cmd: "erpnext.crm.doctype.lead.lead_methods.update_lead_by_batch",
+      docs: JSON.stringify(docs)
+    });
   }
 
   async getWebsiteLeads(timeThreshold) {
