@@ -57,8 +57,8 @@ export default class LeadService {
 
   async updateLeadFromSalesaya(name, data) {
     const currentLead = await this.frappeClient.getDoc(this.doctype, name);
-    if(!currentLead) {
-      return null;
+    if (!currentLead) {
+      return { success: false, message: "Lead does not exists" };
     }
     if (!currentLead.first_name || currentLead.first_name.toLowerCase() === "chưa rõ") {
       currentLead.first_name = data.name;
@@ -66,8 +66,16 @@ export default class LeadService {
     if (!currentLead.phone) {
       currentLead.phone = data.phone;
     }
-    const lead = await this.frappeClient.update(currentLead);
-    return lead;
+    try {
+      const lead = await this.frappeClient.update(currentLead);
+      return { success: true, data: lead};
+    } catch (error) {
+      console.log("Failed to update lead from salesaya:", error);
+      return {
+        success: false,
+        message: error
+      };
+    }
   }
 
   async updateLead({
@@ -178,3 +186,40 @@ export default class LeadService {
     }
   }
 }
+
+// // Utility function to parse error messages
+// export function parseErrorMessage(errorStr) {
+//   if (typeof errorStr !== 'string') {
+//     // Try to extract message from Error object or fallback to string conversion
+//     if (errorStr && typeof errorStr.message === 'string') {
+//       errorStr = errorStr.message;
+//     } else {
+//       errorStr = String(errorStr);
+//     }
+//   }
+//   // Remove the prefix
+//   const jsonPart = errorStr.replace(/^Error:\s*/, '').trim();
+//   // Parse the ["..."] JSON
+//   let arr;
+//   try {
+//     arr = JSON.parse(jsonPart);
+//   } catch (e) {
+//     console.error('Invalid JSON:', e);
+//     return null;
+//   }
+//   const traceback = arr[0];
+//   // Split by newlines
+//   const lines = traceback.split('\n');
+
+//   // Reverse and find last line with Error or Exception
+//   for (let i = lines.length - 1; i >= 0; i--) {
+//     const line = lines[i].trim();
+//     if (line.includes(':')) {
+//       const parts = line.split(':');
+//       if (parts[0].toLowerCase().includes('error') || parts[0].toLowerCase().includes('exception')) {
+//         return parts.slice(1).join(':').trim();
+//       }
+//     }
+//   }
+//   return null;
+// }
