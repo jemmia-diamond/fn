@@ -24,11 +24,26 @@
       "custom_domain": true
     }
   ],
+  "vars": {
+    "HOST": "https://fn.jemmia.vn",
+  },
+  "secrets_store_secrets": [
+    {
+      "binding": "BEARER_TOKEN_SECRET",
+      "store_id": "dff6fef7003446178302a7874af64fde",
+      "secret_name": "BEARER_TOKEN"
+    }
+  ],
   "queues": {
     "consumers": [
       {
         "queue": "order",
         "max_concurrency": 1,
+        "max_batch_size": 1
+      },
+      {
+        "queue": "message",
+        "max_concurrency": 5,
         "max_batch_size": 1
       }
     ],
@@ -36,11 +51,16 @@
       {
         "queue": "order",
         "binding": "ORDER_QUEUE"
+      },
+      {
+        "queue": "message",
+        "binding": "MESSAGE_QUEUE"
       }
     ]
   },
   "triggers": {
     "crons": [
+      "0 * * * *",
       "0 17 * * *",
       "0 1 * * *",
       "30 1 * * *",

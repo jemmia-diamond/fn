@@ -1,4 +1,8 @@
 import FrappeClient from "../../../../frappe/frappe-client";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc.js";
+
+dayjs.extend(utc);
 
 export default class ContactService {
   constructor(env) {
@@ -28,12 +32,12 @@ export default class ContactService {
     return null;
   }
 
-  reference = (contact, customer) => {
-    if (customer) {
+  reference = (contact, doc) => {
+    if (doc) {
       if (!contact.links) {
         contact.links = [];
       }
-      contact.links.push({ "link_doctype": customer.doctype, "link_name": customer.name });
+      contact.links.push({ "link_doctype": doc.doctype, "link_name": doc.name });
     };
     return contact;
   };
@@ -72,5 +76,25 @@ export default class ContactService {
     };
     const contact = await this.frappeClient.insert(mappedContactData);
     return contact;
+  }
+
+  async processWebsiteContact(data, lead) {
+    const contactData = {
+      doctype: this.doctype,
+      custom_uuid: data.custom_uuid,
+      first_name: data.raw_data.name,
+      inserted_at: dayjs(data.database_created_at).utc().format("YYYY-MM-DD HH:mm:ss"),
+      phone_nos: [
+        {
+          "phone": data.raw_data.phone,
+          "is_primary_phone": 1
+        }
+      ],
+      source: lead.source
+    };
+    const contact = await this.frappeClient.upsert(contactData, "custom_uuid");
+    // reference contact with lead
+    const contactWithLinks = await this.frappeClient.getDoc(this.doctype, contact.name);
+    await this.frappeClient.update(this.reference(contactWithLinks, lead));
   }
 }
