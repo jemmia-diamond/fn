@@ -161,7 +161,8 @@ export default class LeadService {
       first_name: data.raw_data.name,
       phone: data.raw_data.phone,
       lead_owner: this.defaultLeadOwner,
-      province: provinces.length ? provinces[0].name : null
+      province: provinces.length ? provinces[0].name : null,
+      first_reach_at: dayjs(data.database_created_at).utc().format("YYYY-MM-DD HH:mm:ss")
     };
     const lead = await this.frappeClient.upsert(leadData, "phone");
     await contactService.processWebsiteContact(data, lead);
