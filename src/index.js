@@ -9,11 +9,6 @@ import loggrageLogger from "./services/custom-logger";
 import queueHandler from "./services/queue-handler";
 import scheduleHandler from "./services/schedule-handler";
 
-import {
-  JEMMIA_ORIGIN,
-  PANCAKE_ORIGIN
-} from "./config/origin";
-
 const app = new Hono();
 const api = app.basePath("/api");
 const webhook = app.basePath("/webhook");
@@ -24,12 +19,24 @@ app.use(loggrageLogger());
 
 // CORS
 api.use("*", cors({
-  origin: [
-    JEMMIA_ORIGIN,
-    PANCAKE_ORIGIN
-  ],
+  origin: (origin, c) => {
+    const corsOrigin = c.env.CORS_ORIGINS.split(",");
+
+    if (corsOrigin.includes(origin)) {
+      return origin;
+    }
+
+    // Handle wildcard, eg: *.jemmia.vn
+    for (const o of corsOrigin.filter((o) => o.startsWith("https://*.") )) {
+      if (origin.endsWith(o.replace("https://*", ""))) {
+        return origin;
+      }
+    }
+
+    return null;
+  },
   allowHeaders: ["Content-Type", "Authorization"],
-  allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"]
+  allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
 }));
 
 // Authentication
