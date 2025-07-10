@@ -70,7 +70,6 @@ export default class LeadService {
       const lead = await this.frappeClient.update(currentLead);
       return { success: true, data: lead};
     } catch (error) {
-      console.log("Failed to update lead from salesaya:", error);
       return {
         success: false,
         message: error
