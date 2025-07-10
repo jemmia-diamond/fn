@@ -28,10 +28,10 @@ export default class LeadController {
     if(!id) {
       throw new HTTPException(400, "Lead id is required");
     }
-    const lead = await leadService.updateLeadFromSalesaya(id, data);
-    if (!lead) {
-      throw new HTTPException(404, "Lead not found");
+    const response = await leadService.updateLeadFromSalesaya(id, data);
+    if (!response.success) {
+      throw new HTTPException(400, response.message);
     }
-    return ctx.json({ success: true, lead });
+    return ctx.json({ success: true, data: response.data });
   }
 }

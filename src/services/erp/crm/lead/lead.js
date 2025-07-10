@@ -57,8 +57,8 @@ export default class LeadService {
 
   async updateLeadFromSalesaya(name, data) {
     const currentLead = await this.frappeClient.getDoc(this.doctype, name);
-    if(!currentLead) {
-      return null;
+    if (!currentLead) {
+      return { success: false, message: "Lead does not exists" };
     }
     if (!currentLead.first_name || currentLead.first_name.toLowerCase() === "chưa rõ") {
       currentLead.first_name = data.name;
@@ -66,8 +66,15 @@ export default class LeadService {
     if (!currentLead.phone) {
       currentLead.phone = data.phone;
     }
-    const lead = await this.frappeClient.update(currentLead);
-    return lead;
+    try {
+      const lead = await this.frappeClient.update(currentLead);
+      return { success: true, data: lead};
+    } catch (error) {
+      return {
+        success: false,
+        message: error
+      };
+    }
   }
 
   async updateLead({
