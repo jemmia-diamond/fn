@@ -26,6 +26,7 @@ export default class CallLogService {
     for (const callLog of callLogs) {
       const mappedCallLog = callLogService.mapStringeeCallLogFields(callLog);
       await callLogService.frappeClient.upsert(mappedCallLog, "id");
+      console.log(callLog);
     }
   }
 

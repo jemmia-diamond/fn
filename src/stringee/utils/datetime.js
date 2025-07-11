@@ -1,3 +1,6 @@
 import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc.js";
 
-export const timestampToDatetime = (timestamp) => dayjs(timestamp).subtract(7, "hour").format("YYYY-MM-DD HH:mm:ss");
+dayjs.extend(utc);
+
+export const timestampToDatetime = (timestamp) => dayjs(timestamp).utc().format("YYYY-MM-DD HH:mm:ss");
