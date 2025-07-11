@@ -13,6 +13,7 @@ export default class CallLogService {
     this.env = env;
     this.frappeClient = new FrappeClient({ url: env.JEMMIA_ERP_BASE_URL, apiKey: env.JEMMIA_ERP_API_KEY, apiSecret: env.JEMMIA_ERP_API_SECRET });
     this.stringeeClient = new StringeeClient(env.STRINGEE_API_KEY_SID, env.STRINGEE_API_KEY_SECRET);
+    this.stringeeRecordingPrefix = `${this.stringeeClient.baseUrl}/call/recording`;
   }
 
   static async syncStringeeCallLogs(env) {
@@ -31,7 +32,7 @@ export default class CallLogService {
 
   mapStringeeCallLogFields = (callLog) => {
     const type = callLog.from_internal === 1 ? "Outgoing" : "Incoming";
-    const recording_url = callLog.recorded === 1 ? `https://api.stringee.com/v1/call/recording/${callLog.id}` : null;
+    const recording_url = callLog.recorded === 1 ? `${this.stringeeRecordingPrefix}/${callLog.id}` : null;
 
     return {
       doctype: this.doctype,
