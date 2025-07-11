@@ -4,6 +4,7 @@ import { timestampToDatetime } from "src/stringee/utils/datetime";
 import { normalizePhoneNumber } from "src/stringee/utils/phone-number";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
+import { customizeEnv } from "services/env-handler";
 
 dayjs.extend(utc);
 
@@ -12,11 +13,14 @@ export default class CallLogService {
     this.doctype = "Call Log";
     this.env = env;
     this.frappeClient = new FrappeClient({ url: env.JEMMIA_ERP_BASE_URL, apiKey: env.JEMMIA_ERP_API_KEY, apiSecret: env.JEMMIA_ERP_API_SECRET });
-    this.stringeeClient = new StringeeClient(env.STRINGEE_API_KEY_SID, env.STRINGEE_API_KEY_SECRET);
+    this.stringeeClient = new StringeeClient(
+      env.STRINGEE_SID_SECRET || env.STRINGEE_API_KEY_SID, 
+      env.STRINGEE_KEY_SECRET || env.STRINGEE_API_KEY_SECRET);
     this.stringeeRecordingPrefix = `${this.stringeeClient.baseUrl}/call/recording`;
   }
 
   static async syncStringeeCallLogs(env) {
+    env = await customizeEnv(env);
     const currentTimestamp = dayjs.utc().subtract(1, "hour").subtract(5, "minutes").unix();
     const callLogService = new CallLogService(env);
     const callLogs = await callLogService.stringeeClient.getCallLogs({
