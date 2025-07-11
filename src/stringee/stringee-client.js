@@ -18,13 +18,13 @@ export default class StringeeClient {
       rest_api: true
     };
     const accessToken = await Jwt.sign(payload, this.apiKeySecret, "HS256");
-    return accessToken
+    return accessToken;
   }
 
   async generateHeaders() {
     return {
       "X-STRINGEE-AUTH": await this.getAccessToken()
-    }
+    };
   }
 
   async getRequest(path, params = {}) {
@@ -34,7 +34,7 @@ export default class StringeeClient {
   }
 
   async getCallLogs(params = {}) {
-    const path = `/call/log`;
+    const path = "/call/log";
     const res = await this.getRequest(path, params);
     return res.calls;
   }

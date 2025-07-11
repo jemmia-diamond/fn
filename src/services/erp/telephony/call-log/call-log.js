@@ -43,6 +43,6 @@ export default class CallLogService {
       duration: callLog.answer_duration,
       type: type,
       recording_url: recording_url
-    }
-  }
+    };
+  };
 }

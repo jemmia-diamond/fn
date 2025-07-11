@@ -8,7 +8,7 @@ export default {
       await Promise.all([
         ERP.CRM.LeadService.syncWebsiteLeads(env),
         ERP.Telephony.CallLogService.syncStringeeCallLogs(env)
-      ])
+      ]);
       break;
     case "0 17 * * *": // 00:00
       await Larksuite.Contact.UserService.syncUsersToDatabase(env);

@@ -3,4 +3,4 @@ export const normalizePhoneNumber = (phone) => {
     return "0" + phone.slice(2);
   }
   return phone;
-}
+};
