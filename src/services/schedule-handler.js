@@ -6,7 +6,7 @@ export default {
     switch (controller.cron) {
     case "0 * * * *": // At minute 0 every hour
       await Promise.all([
-        // ERP.CRM.LeadService.syncWebsiteLeads(env),
+        ERP.CRM.LeadService.syncWebsiteLeads(env),
         ERP.Telephony.CallLogService.syncStringeeCallLogs(env)
       ]);
       break;
