@@ -15,7 +15,6 @@ export default class ContactService {
         apiSecret: env.JEMMIA_ERP_API_SECRET
       }
     );
-    this.defaultContactPhone = "0000000000";
     this.defaultContactName = "DEFAULT CONTACT";
   };
 
