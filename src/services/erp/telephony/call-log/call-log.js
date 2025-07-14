@@ -24,20 +24,20 @@ export default class CallLogService {
   }
 
   static async syncStringeeCallLogs(env) {
-    const JEMMIA_ERP_BASE_URL = env.JEMMIA_ERP_BASE_URL;
-    const JEMMIA_ERP_API_KEY = env.JEMMIA_ERP_API_KEY;
-    const JEMMIA_ERP_API_SECRET = env.JEMMIA_ERP_API_SECRET;
-    const STRINGEE_API_KEY_SID = await env.STRINGEE_SID_SECRET.get();
-    const STRINGEE_API_KEY_SECRET = await env.STRINGEE_KEY_SECRET.get();
+    const jemmia_erp_base_url = env.JEMMIA_ERP_BASE_URL;
+    const jemmia_erp_api_key = env.JEMMIA_ERP_API_KEY;
+    const jemmia_erp_api_secret = env.JEMMIA_ERP_API_SECRET;
+    const stringee_api_key_sid = await env.STRINGEE_SID_SECRET.get();
+    const stringee_api_key_secret = await env.STRINGEE_KEY_SECRET.get();
 
     const currentTimestamp = dayjs.utc().subtract(1, "hour").subtract(5, "minutes").unix();
     const callLogService = new CallLogService(
       {
-        jemmiaErpBaseUrl: JEMMIA_ERP_BASE_URL,
-        jemmiaErpApiKey: JEMMIA_ERP_API_KEY,
-        jemmiaErpApiSecret: JEMMIA_ERP_API_SECRET,
-        stringeeApiKeySid: STRINGEE_API_KEY_SID,
-        stringeeApiKeySecret: STRINGEE_API_KEY_SECRET
+        jemmiaErpBaseUrl: jemmia_erp_base_url,
+        jemmiaErpApiKey: jemmia_erp_api_key,
+        jemmiaErpApiSecret: jemmia_erp_api_secret,
+        stringeeApiKeySid: stringee_api_key_sid,
+        stringeeApiKeySecret: stringee_api_key_secret
       }
     );
     const callLogs = await callLogService.stringeeClient.getCallLogs({
