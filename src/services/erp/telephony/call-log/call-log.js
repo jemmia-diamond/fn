@@ -27,8 +27,8 @@ export default class CallLogService {
     const JEMMIA_ERP_BASE_URL = env.JEMMIA_ERP_BASE_URL;
     const JEMMIA_ERP_API_KEY = env.JEMMIA_ERP_API_KEY;
     const JEMMIA_ERP_API_SECRET = env.JEMMIA_ERP_API_SECRET;
-    const STRINGEE_API_KEY_SID = env.STRINGEE_SID_SECRET.get();
-    const STRINGEE_API_KEY_SECRET = env.STRINGEE_KEY_SECRET.get();
+    const STRINGEE_API_KEY_SID = await env.STRINGEE_SID_SECRET.get();
+    const STRINGEE_API_KEY_SECRET = await env.STRINGEE_KEY_SECRET.get();
 
     const currentTimestamp = dayjs.utc().subtract(1, "hour").subtract(5, "minutes").unix();
     const callLogService = new CallLogService(
