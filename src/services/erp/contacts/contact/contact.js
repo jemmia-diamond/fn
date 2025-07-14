@@ -47,7 +47,7 @@ export default class ContactService {
     const mappedContactData = {
       doctype: this.doctype,
       first_name: nameParts.join(" "),
-      haravan_customer_id: String(customerData.id),
+      haravan_customer_id: String(customerData.id)
     };
 
     if (customerData["phone"]) {
@@ -60,10 +60,8 @@ export default class ContactService {
     }
     const contact = await this.frappeClient.upsert(mappedContactData, "haravan_customer_id");
     if (customer) {
-      const c = await this.frappeClient.reference(contact, "Contact", customer, "Customer");
-      console.log(c);
-      return c
-    }
+      return await this.frappeClient.reference(contact, "Contact", customer, "Customer");
+    };
     return contact;
   }
 
