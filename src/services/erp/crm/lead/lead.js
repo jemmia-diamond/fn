@@ -210,7 +210,7 @@ export default class LeadService {
         ["creation", ">=", timeThreshold], 
         ["type", "=", "Incoming"]]
     });
-    for (const callLog of callLogs) {
+    for (const callLog of callLogs.slice(0,1)) {
       await leadService.processCallLogLead(callLog);
     }
   }

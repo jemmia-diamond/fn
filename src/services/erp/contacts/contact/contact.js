@@ -114,7 +114,6 @@ export default class ContactService {
     };
     const contact = await this.frappeClient.upsert(contactData, "stringee_id");
     // reference contact with lead
-    const contactWithLinks = await this.frappeClient.getDoc(this.doctype, contact.name);
-    await this.frappeClient.update(this.reference(contactWithLinks, lead));
+    await this.frappeClient.reference(contact, this.doctype, lead, "Lead");
   }
 }

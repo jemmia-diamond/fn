@@ -115,6 +115,16 @@ export default class FrappeClient {
     });
   }
 
+  async reference(doc, doctype, referencedDoc, referencedDoctype) {
+    const docWithLinks = this.getDoc(doctype, doc.name);
+    if (!docWithLinks.links) {
+      docWithLinks.links = [];
+    }
+    docWithLinks.links.push({ "link_doctype": referencedDoctype, "link_name": referencedDoc.name });
+    docWithLinks.doctype = doctype;
+    return this.update(docWithLinks);
+  }
+
   // --- Utility methods ---
 
   async postRequest(path = "", data = {}) {
