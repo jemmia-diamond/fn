@@ -111,7 +111,7 @@ export default class ContactService {
           "is_primary_phone": 1
         }
       ]
-    }
+    };
     const contact = await this.frappeClient.upsert(contactData, "stringee_id");
     // reference contact with lead
     const contactWithLinks = await this.frappeClient.getDoc(this.doctype, contact.name);

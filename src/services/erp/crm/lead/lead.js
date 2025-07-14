@@ -197,7 +197,7 @@ export default class LeadService {
       phone: phone,
       lead_owner: this.defaultLeadOwner,
       first_reach_at: dayjs(data.creation).utc().format("YYYY-MM-DD HH:mm:ss")
-    }
+    };
     const lead = await this.frappeClient.upsert(leadData, "phone", ["first_name"]);
     await contactService.processCallLogContact(data, lead);
   }
@@ -209,9 +209,8 @@ export default class LeadService {
       filters: [
         ["creation", ">=", timeThreshold], 
         ["type", "=", "Incoming"]]
-    })
+    });
     for (const callLog of callLogs) {
-      console.log(callLog);
       await leadService.processCallLogLead(callLog);
     }
   }
