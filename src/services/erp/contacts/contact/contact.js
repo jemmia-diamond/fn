@@ -15,7 +15,6 @@ export default class ContactService {
         apiSecret: env.JEMMIA_ERP_API_SECRET
       }
     );
-    this.defaultContactPhone = "0000000000";
     this.defaultContactName = "DEFAULT CONTACT";
   };
 
@@ -42,39 +41,26 @@ export default class ContactService {
     return contact;
   };
 
-  async processHaravanContact(customerData, customer, address) {
-    const customerPhone = customerData["phone"] || this.defaultContactPhone;
+  async processHaravanContact(customerData, customer) {
     const nameParts = customerData["phone"] ? [customerData.last_name, customerData.first_name].filter(Boolean) : [this.defaultContactName];
     const mappedContactData = {
       doctype: this.doctype,
       first_name: nameParts.join(" "),
-      phone_nos: [
+      haravan_customer_id: String(customerData.id)
+    };
+
+    if (customerData["phone"]) {
+      mappedContactData.phone_nos = [
         {
-          "phone": customerPhone,
+          "phone": customerData["phone"],
           "is_primary_phone": 1
         }
-      ]
-    };
-
-    if (address) {
-      mappedContactData.address = address.name;
-    };
-
-    const targetContact = await this.findContactByPrimaryPhone(customerPhone);
-    // Check if contact with phone already exists
-    if (targetContact) {
-      // Merge fields
-      Object.assign(targetContact, mappedContactData);
-      const referencedContact = this.reference(targetContact, customer);
-      const contact = await this.frappeClient.update(referencedContact);
-      return contact;
+      ];
     }
-
-    // Create new contact with referenced customer
+    const contact = await this.frappeClient.upsert(mappedContactData, "haravan_customer_id");
     if (customer) {
-      mappedContactData.links = [{ "link_doctype": customer.doctype, "link_name": customer.name }];
+      return await this.frappeClient.reference(contact, "Contact", customer, "Customer");
     };
-    const contact = await this.frappeClient.insert(mappedContactData);
     return contact;
   }
 

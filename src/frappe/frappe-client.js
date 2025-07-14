@@ -116,7 +116,7 @@ export default class FrappeClient {
   }
 
   async reference(doc, doctype, referencedDoc, referencedDoctype) {
-    const docWithLinks = this.getDoc(doctype, doc.name);
+    const docWithLinks = await this.getDoc(doctype, doc.name);
     if (!docWithLinks.links) {
       docWithLinks.links = [];
     }
