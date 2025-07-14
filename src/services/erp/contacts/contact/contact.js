@@ -97,4 +97,24 @@ export default class ContactService {
     const contactWithLinks = await this.frappeClient.getDoc(this.doctype, contact.name);
     await this.frappeClient.update(this.reference(contactWithLinks, lead));
   }
+
+  async processCallLogContact(data, lead) {
+    const phone = data.type === "Incoming" ? data.from : data.to;
+    const contactData = {
+      doctype: this.doctype,
+      stringee_id: data.id,
+      first_name: phone,
+      inserted_at: data.start_time,
+      phone_nos: [
+        {
+          "phone": phone,
+          "is_primary_phone": 1
+        }
+      ]
+    }
+    const contact = await this.frappeClient.upsert(contactData, "stringee_id");
+    // reference contact with lead
+    const contactWithLinks = await this.frappeClient.getDoc(this.doctype, contact.name);
+    await this.frappeClient.update(this.reference(contactWithLinks, lead));
+  }
 }

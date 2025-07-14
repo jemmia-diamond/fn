@@ -7,6 +7,7 @@ export default {
     case "0 * * * *": // At minute 0 every hour
       await ERP.CRM.LeadService.syncWebsiteLeads(env);
       await ERP.Telephony.CallLogService.syncStringeeCallLogs(env);
+      await ERP.CRM.LeadService.syncCallLogLead(env);
       break;
     case "0 17 * * *": // 00:00
       await Larksuite.Contact.UserService.syncUsersToDatabase(env);
