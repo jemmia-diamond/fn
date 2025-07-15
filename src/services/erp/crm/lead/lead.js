@@ -164,6 +164,24 @@ export default class LeadService {
       province: provinces.length ? provinces[0].name : null,
       first_reach_at: dayjs(data.database_created_at).utc().format("YYYY-MM-DD HH:mm:ss")
     };
+
+    const notes = []
+    if (data.raw_data.join_date) {
+      notes.push({
+        note: "Join Date: " + data.raw_data.join_date
+      })
+    }
+
+    if (data.raw_data.demand) {
+      notes.push({
+        note: "Demand: " + data.raw_data.demand
+      })
+    }
+
+    if (notes.length) {
+      leadData.notes = notes;
+    }
+
     const lead = await this.frappeClient.upsert(leadData, "phone");
     await contactService.processWebsiteContact(data, lead);
   }
