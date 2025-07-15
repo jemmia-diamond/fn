@@ -165,17 +165,17 @@ export default class LeadService {
       first_reach_at: dayjs(data.database_created_at).utc().format("YYYY-MM-DD HH:mm:ss")
     };
 
-    const notes = []
+    const notes = [];
     if (data.raw_data.join_date) {
       notes.push({
         note: "Join Date: " + data.raw_data.join_date
-      })
+      });
     }
 
     if (data.raw_data.demand) {
       notes.push({
         note: "Demand: " + data.raw_data.demand
-      })
+      });
     }
 
     if (notes.length) {
