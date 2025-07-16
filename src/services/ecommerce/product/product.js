@@ -1,5 +1,5 @@
 import Database from "services/database";
-import { buildQuery, aggregateQuery } from "./utils/jewelry";
+import { buildQuery } from "./utils/jewelry";
 
 export default class ProductService {
   constructor(env) {
@@ -17,7 +17,7 @@ export default class ProductService {
     return {
       data,
       count: Number(count[0].total)
-    }
+    };
   }
 
   async getJewelry(jsonParams) {
@@ -28,6 +28,6 @@ export default class ProductService {
         total: count,
         pagination: jsonParams.pagination
       }
-    }
+    };
   }
 }

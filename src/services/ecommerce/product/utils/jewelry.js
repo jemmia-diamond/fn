@@ -1,7 +1,7 @@
 export function buildQuery(jsonParams) {
   const { filterString, sortString, paginationString, handleFinenessPriority } = aggregateQuery(jsonParams);
 
-  const finenessOrder = handleFinenessPriority === '14K' ? 'ASC' : 'DESC';
+  const finenessOrder = handleFinenessPriority === "14K" ? "ASC" : "DESC";
 
   const dataSql = `
     SELECT  
