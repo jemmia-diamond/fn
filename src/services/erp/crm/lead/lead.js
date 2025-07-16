@@ -18,6 +18,7 @@ export default class LeadService {
     this.db = Database.instance(env);
     this.WebsiteFormLeadSource = "CRM-LEAD-SOURCE-0000023";
     this.defaultLeadOwner = "tech@jemmia.vn";
+    this.CallLogLeadSource = "CRM-LEAD-SOURCE-0000022";
   }
 
   async updateLeadInfoFromSummary(data, conversationId) {
@@ -201,6 +202,34 @@ export default class LeadService {
       for (const lead of leads) {
         await leadService.processWebsiteLead(lead);
       }
+    }
+  }
+
+  async processCallLogLead(data) {
+    const contactService = new ContactService(this.env);
+    const phone = data.type === "Incoming" ? data.from : data.to;
+    const leadData = {
+      doctype: this.doctype,
+      source: this.CallLogLeadSource,
+      first_name: phone,
+      phone: phone,
+      lead_owner: this.defaultLeadOwner,
+      first_reach_at: dayjs(data.creation).utc().format("YYYY-MM-DD HH:mm:ss")
+    };
+    const lead = await this.frappeClient.upsert(leadData, "phone", ["first_name"]);
+    await contactService.processCallLogContact(data, lead);
+  }
+
+  static async syncCallLogLead(env) {
+    const leadService = new LeadService(env);
+    const timeThreshold = dayjs().utc().subtract(3, "hours").subtract(5, "minutes").format("YYYY-MM-DD HH:mm:ss");
+    const callLogs = await leadService.frappeClient.getList("Call Log", {
+      filters: [
+        ["creation", ">=", timeThreshold], 
+        ["type", "=", "Incoming"]]
+    });
+    for (const callLog of callLogs.slice(0,1)) {
+      await leadService.processCallLogLead(callLog);
     }
   }
 }
