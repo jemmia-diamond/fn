@@ -103,8 +103,8 @@ export function aggregateQuery(jsonParams) {
     filterString += `AND p.min_price >= ${jsonParams.price.min} AND p.max_price <= ${jsonParams.price.max}\n`;
   }
 
-  if (jsonParams.gender && jsonParams.gender.length > 0) {
-    filterString += `AND d.gender IN ('${jsonParams.gender.join("','")}')\n`;
+  if (jsonParams.genders && jsonParams.genders.length > 0) {
+    filterString += `AND d.gender IN ('${jsonParams.genders.join("','")}')\n`;
   }
 
   if (jsonParams.sort) {
