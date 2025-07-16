@@ -89,7 +89,7 @@ export default class FrappeClient {
   }
 
   async upsert(doc, key, ignoredFields = []) {
-    const documents = await this.getList(doc.doctype, {filters:[[key, "=", doc[key]]]});
+    const documents = await this.getList(doc.doctype, { filters: [[key, "=", doc[key]]] });
     if (documents.length > 1) {
       throw new Error(`Multiple ${doc.doctype} found for ${key} ${doc[key]}`);
     } else if (documents.length === 1) {
@@ -108,11 +108,23 @@ export default class FrappeClient {
   }
 
   async bulkUpdate(docs) {
+    const docsWithDocNames = docs.map(doc => ({ ...doc, docname: doc.name }));
     return this.postRequest("", {
       cmd: "frappe.client.bulk_update",
-      docs: JSON.stringify(docs)
+      docs: JSON.stringify(docsWithDocNames)
     });
   }
+
+  async reference(doc, doctype, referencedDoc, referencedDoctype) {
+    const docWithLinks = await this.getDoc(doctype, doc.name);
+    if (!docWithLinks.links) {
+      docWithLinks.links = [];
+    }
+    docWithLinks.links.push({ "link_doctype": referencedDoctype, "link_name": referencedDoc.name });
+    docWithLinks.doctype = doctype;
+    return this.update(docWithLinks);
+  }
+
   // --- Utility methods ---
 
   async postRequest(path = "", data = {}) {
@@ -138,6 +150,41 @@ export default class FrappeClient {
     return chunks;
   }
 
+  parseErrorMessage(errorStr) {
+    if (typeof errorStr !== "string") {
+      // Try to extract message from Error object or fallback to string conversion
+      if (errorStr && typeof errorStr.message === "string") {
+        errorStr = errorStr.message;
+      } else {
+        errorStr = String(errorStr);
+      }
+    }
+    // Remove the prefix
+    const jsonPart = errorStr.replace(/^Error:\s*/, "").trim();
+    // Parse the ["..."] JSON
+    let arr;
+    try {
+      arr = JSON.parse(jsonPart);
+    } catch (e) {
+      console.error("Invalid JSON:", e);
+      return null;
+    }
+    const traceback = arr[0];
+    // Split by newlines
+    const lines = traceback.split("\n");
+    // Reverse and find last line with Error or Exception
+    for (let i = lines.length - 1; i >= 0; i--) {
+      const line = lines[i].trim();
+      if (line.includes(":")) {
+        const parts = line.split(":");
+        if (parts[0].toLowerCase().includes("error") || parts[0].toLowerCase().includes("exception")) {
+          return parts.slice(1).join(":").trim();
+        }
+      }
+    }
+    return null;
+  }
+
   async postProcess(res) {
     const text = await res.text();
     try {
@@ -145,7 +192,7 @@ export default class FrappeClient {
       if (data.exc) throw new Error(data.exc);
       return data.message || data.data || null;
     } catch (e) {
-      throw e;
+      throw this.parseErrorMessage(e);
     }
   }
 }

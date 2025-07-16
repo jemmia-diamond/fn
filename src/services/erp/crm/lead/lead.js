@@ -2,6 +2,7 @@ import FrappeClient from "../../../../frappe/frappe-client";
 import Database from "../../../database";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
+import ContactService from "services/erp/contacts/contact/contact";
 
 dayjs.extend(utc);
 
@@ -17,17 +18,28 @@ export default class LeadService {
     this.db = Database.instance(env);
     this.WebsiteFormLeadSource = "CRM-LEAD-SOURCE-0000023";
     this.defaultLeadOwner = "tech@jemmia.vn";
+    this.CallLogLeadSource = "CRM-LEAD-SOURCE-0000022";
   }
 
   async updateLeadInfoFromSummary(data, conversationId) {
-    let res = await this.frappeClient.postRequest("", {
-      cmd: "erpnext.crm.doctype.lead.lead_methods.update_lead_from_summary",
-      data: JSON.stringify({
-        ...data,
-        conversation_id: conversationId
-      })
-    });
-    return res;
+    try {
+      let res = await this.frappeClient.postRequest("", {
+        cmd: "erpnext.crm.doctype.lead.lead_methods.update_lead_from_summary",
+        data: JSON.stringify({
+          ...data,
+          conversation_id: conversationId
+        })
+      });
+      return { success: true, data: res };
+    } catch (error) {
+      console.warn("Failed to update lead info from summary:", {
+        error: error.message,
+        conversationId,
+        data
+      });
+
+      return { success: false, error: error.message };
+    }
   }
 
   async findLeadByConversationId(conversationId) {
@@ -46,8 +58,8 @@ export default class LeadService {
 
   async updateLeadFromSalesaya(name, data) {
     const currentLead = await this.frappeClient.getDoc(this.doctype, name);
-    if(!currentLead) {
-      return null;
+    if (!currentLead) {
+      return { success: false, message: "Lead does not exists" };
     }
     if (!currentLead.first_name || currentLead.first_name.toLowerCase() === "chưa rõ") {
       currentLead.first_name = data.name;
@@ -55,8 +67,85 @@ export default class LeadService {
     if (!currentLead.phone) {
       currentLead.phone = data.phone;
     }
-    const lead = await this.frappeClient.update(currentLead);
+    try {
+      const lead = await this.frappeClient.update(currentLead);
+      return { success: true, data: lead};
+    } catch (error) {
+      return {
+        success: false,
+        message: error
+      };
+    }
+  }
+
+  async updateLead({
+    leadName,
+    phone,
+    firstName
+  }) {
+    const lead = await this.syncLeadByBatchUpdate([
+      {
+        "doctype": "Lead",
+        "docname": leadName,
+        "phone": phone,
+        "first_name": firstName
+      }
+    ]);
     return lead;
+  }
+
+  async insertLead({
+    firstName,
+    phone,
+    platform,
+    conversationId,
+    customerId,
+    pageId,
+    pageName,
+    insertedAt,
+    updatedAt,
+    type,
+    lastestMessageAt,
+    pancakeUserId,
+    pancakeAvatarUrl
+  }) {
+    const lead = await this.syncLeadByBatchInsertion([
+      {
+        "doctype": "Lead",
+        "status": "Lead",
+        "naming_series": "CRM-LEAD-.YYYY.-",
+        "first_name": firstName,
+        "phone": phone,
+        "pancake_data": {
+          "platform": platform,
+          "conversation_id": conversationId,
+          "customer_id": customerId,
+          "page_id": pageId,
+          "page_name": pageName,
+          "inserted_at": insertedAt,
+          "updated_at": updatedAt,
+          "can_inbox": type === "INBOX" ? 1 : 0,
+          "latest_message_at": lastestMessageAt,
+          "pancake_user_id": pancakeUserId, // sale
+          "pancake_avatar_url": pancakeAvatarUrl
+        }
+      }
+    ]);
+    return lead;
+  }
+
+  async syncLeadByBatchInsertion(docs) {
+    return await this.frappeClient.postRequest("", {
+      cmd: "erpnext.crm.doctype.lead.lead_methods.insert_lead_by_batch",
+      docs: JSON.stringify(docs)
+    });
+  }
+
+  async syncLeadByBatchUpdate(docs) {
+    return await this.frappeClient.postRequest("", {
+      cmd: "erpnext.crm.doctype.lead.lead_methods.update_lead_by_batch",
+      docs: JSON.stringify(docs)
+    });
   }
 
   async getWebsiteLeads(timeThreshold) {
@@ -68,15 +157,8 @@ export default class LeadService {
   }
 
   async processWebsiteLead(data) {
-    const custom_uuid = data.custom_uuid;
+    const contactService = new ContactService(this.env);
     const location = data.raw_data.location;
-
-    const contacts = await this.frappeClient.getList("Contact", {
-      filters: [["custom_uuid", "=", custom_uuid]]
-    });
-
-    if (contacts.length) { return; }
-
     const provinces = await this.frappeClient.getList("Province", {
       filters: [["province_name", "LIKE", `%${location}%`]]
     });
@@ -88,17 +170,28 @@ export default class LeadService {
       phone: data.raw_data.phone,
       lead_owner: this.defaultLeadOwner,
       province: provinces.length ? provinces[0].name : null,
-      first_reach_at: dayjs(data.database_created_at).format("YYYY-MM-DD HH:mm:ss")
+      first_reach_at: dayjs(data.database_created_at).utc().format("YYYY-MM-DD HH:mm:ss")
     };
-    const lead = await this.frappeClient.insert(leadData);
-    const contact = (await this.frappeClient.getList("Contact", {
-      filters: [["Dynamic Link", "link_name", "=", lead.name]]
-    }))[0];
 
-    contact.doctype = "Contact";
-    contact.custom_uuid = custom_uuid;
-    contact.owner = this.defaultLeadOwner;
-    await this.frappeClient.update(contact);
+    const notes = [];
+    if (data.raw_data.join_date) {
+      notes.push({
+        note: "Join Date: " + data.raw_data.join_date
+      });
+    }
+
+    if (data.raw_data.demand) {
+      notes.push({
+        note: "Demand: " + data.raw_data.demand
+      });
+    }
+
+    if (notes.length) {
+      leadData.notes = notes;
+    }
+
+    const lead = await this.frappeClient.upsert(leadData, "phone");
+    await contactService.processWebsiteContact(data, lead);
   }
 
   static async syncWebsiteLeads(env) {
@@ -109,6 +202,34 @@ export default class LeadService {
       for (const lead of leads) {
         await leadService.processWebsiteLead(lead);
       }
+    }
+  }
+
+  async processCallLogLead(data) {
+    const contactService = new ContactService(this.env);
+    const phone = data.type === "Incoming" ? data.from : data.to;
+    const leadData = {
+      doctype: this.doctype,
+      source: this.CallLogLeadSource,
+      first_name: phone,
+      phone: phone,
+      lead_owner: this.defaultLeadOwner,
+      first_reach_at: dayjs(data.creation).utc().format("YYYY-MM-DD HH:mm:ss")
+    };
+    const lead = await this.frappeClient.upsert(leadData, "phone", ["first_name"]);
+    await contactService.processCallLogContact(data, lead);
+  }
+
+  static async syncCallLogLead(env) {
+    const leadService = new LeadService(env);
+    const timeThreshold = dayjs().utc().subtract(3, "hours").subtract(5, "minutes").format("YYYY-MM-DD HH:mm:ss");
+    const callLogs = await leadService.frappeClient.getList("Call Log", {
+      filters: [
+        ["creation", ">=", timeThreshold], 
+        ["type", "=", "Incoming"]]
+    });
+    for (const callLog of callLogs.slice(0,1)) {
+      await leadService.processCallLogLead(callLog);
     }
   }
 }

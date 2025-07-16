@@ -2,6 +2,9 @@ import LarksuiteService from "../../lark";
 import * as lark from "@larksuiteoapi/node-sdk";
 import Database from "../../../database";
 import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc.js";
+
+dayjs.extend(utc);
 
 export default class ScheduleService {
   static async syncScheduleToDatabase(env) {
@@ -9,24 +12,25 @@ export default class ScheduleService {
     const larkClient = LarksuiteService.createClient(env);
     const tenantAccessToken = await LarksuiteService.getTenantAccessToken(env);
 
-    const currentDate = dayjs();
-    const timeThresholdStart = Number(currentDate.format("YYYYMMDD"));
+    const currentDate = dayjs().utc();
+    const timeThresholdStart = Number(currentDate.subtract(1, "day").format("YYYYMMDD"));
     const timeThresholdEnd = Number(currentDate.add(1, "day").format("YYYYMMDD"));
 
     const userIds = await ScheduleService.getUsersIds(db);
-    const schedulesSets = await Promise.all(userIds.map(userId => ScheduleService.getUserSchedule(larkClient, tenantAccessToken, userId, timeThresholdStart, timeThresholdEnd)));
+    const schedulesSets = [];
+    for (const userId of userIds) {
+      const userSchedule = await ScheduleService.getUserSchedule(larkClient, tenantAccessToken, userId, timeThresholdStart, timeThresholdEnd);
+      schedulesSets.push(userSchedule);
+    }
     const schedules = schedulesSets.flat().filter(Boolean);
 
-    for (const schedule of schedules) {
-      await db.$queryRaw`INSERT INTO larksuite.user_daily_shifts (
-          day_no, group_id, month, shift_id, user_id
-      ) VALUES (
-          ${schedule.day_no}, ${schedule.group_id}, ${schedule.month}, ${schedule.shift_id}, ${schedule.user_id}
-      )
-      ON CONFLICT (day_no, group_id, month, shift_id, user_id) 
-      DO NOTHING;
-      `;
-    }
+    if (schedules.length === 0) return;
+
+    // Batch insert for optimization
+    const values = schedules.map((_schedule, idx) => `($${idx * 5 + 1}, $${idx * 5 + 2}, $${idx * 5 + 3}, $${idx * 5 + 4}, $${idx * 5 + 5})`).join(",\n");
+    const params = schedules.flatMap(s => [s.day_no, s.group_id, s.month, s.shift_id, s.user_id]);
+    const query = `INSERT INTO larksuite.user_daily_shifts (day_no, group_id, month, shift_id, user_id)\nVALUES\n${values}\nON CONFLICT (day_no, group_id, month, user_id) DO UPDATE SET shift_id = EXCLUDED.shift_id`;
+    await db.$executeRawUnsafe(query, ...params);
   }
 
   static async getUsersIds(db) {

@@ -1,4 +1,8 @@
 import FrappeClient from "../../../../frappe/frappe-client";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc.js";
+
+dayjs.extend(utc);
 
 export default class ContactService {
   constructor(env) {
@@ -11,7 +15,6 @@ export default class ContactService {
         apiSecret: env.JEMMIA_ERP_API_SECRET
       }
     );
-    this.defaultContactPhone = "0000000000";
     this.defaultContactName = "DEFAULT CONTACT";
   };
 
@@ -38,39 +41,65 @@ export default class ContactService {
     return contact;
   };
 
-  async processHaravanContact(customerData, customer, address) {
-    const customerPhone = customerData["phone"] || this.defaultContactPhone;
+  async processHaravanContact(customerData, customer) {
     const nameParts = customerData["phone"] ? [customerData.last_name, customerData.first_name].filter(Boolean) : [this.defaultContactName];
     const mappedContactData = {
       doctype: this.doctype,
       first_name: nameParts.join(" "),
+      haravan_customer_id: String(customerData.id)
+    };
+
+    if (customerData["phone"]) {
+      mappedContactData.phone_nos = [
+        {
+          "phone": customerData["phone"],
+          "is_primary_phone": 1
+        }
+      ];
+    }
+    const contact = await this.frappeClient.upsert(mappedContactData, "haravan_customer_id");
+    if (customer) {
+      return await this.frappeClient.reference(contact, "Contact", customer, "Customer");
+    };
+    return contact;
+  }
+
+  async processWebsiteContact(data, lead) {
+    const contactData = {
+      doctype: this.doctype,
+      custom_uuid: data.custom_uuid,
+      first_name: data.raw_data.name,
+      inserted_at: dayjs(data.database_created_at).utc().format("YYYY-MM-DD HH:mm:ss"),
       phone_nos: [
         {
-          "phone": customerPhone,
+          "phone": data.raw_data.phone,
+          "is_primary_phone": 1
+        }
+      ],
+      source: lead.source
+    };
+    const contact = await this.frappeClient.upsert(contactData, "custom_uuid");
+    // reference contact with lead
+    const contactWithLinks = await this.frappeClient.getDoc(this.doctype, contact.name);
+    await this.frappeClient.update(this.reference(contactWithLinks, lead));
+  }
+
+  async processCallLogContact(data, lead) {
+    const phone = data.type === "Incoming" ? data.from : data.to;
+    const contactData = {
+      doctype: this.doctype,
+      stringee_id: data.id,
+      first_name: phone,
+      inserted_at: data.start_time,
+      phone_nos: [
+        {
+          "phone": phone,
           "is_primary_phone": 1
         }
       ]
     };
-
-    if (address) {
-      mappedContactData.address = address.name;
-    };
-
-    const targetContact = await this.findContactByPrimaryPhone(customerPhone);
-    // Check if contact with phone already exists
-    if (targetContact) {
-      // Merge fields
-      Object.assign(targetContact, mappedContactData);
-      const referencedContact = this.reference(targetContact, customer);
-      const contact = await this.frappeClient.update(referencedContact);
-      return contact;
-    }
-
-    // Create new contact with referenced customer
-    if (customer) {
-      mappedContactData.links = [{ "link_doctype": customer.doctype, "link_name": customer.name }];
-    };
-    const contact = await this.frappeClient.insert(mappedContactData);
-    return contact;
+    const contact = await this.frappeClient.upsert(contactData, "stringee_id");
+    // reference contact with lead
+    await this.frappeClient.reference(contact, this.doctype, lead, "Lead");
   }
 }

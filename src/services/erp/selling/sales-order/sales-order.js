@@ -52,11 +52,11 @@ export default class OrderService {
     const customerDefaultAdress = customerAddresses[0];
 
     // Create contact and customer with default address
-    const contact = await contactService.processHaravanContact(haravanOrderData.customer, undefined, customerDefaultAdress);
+    const contact = await contactService.processHaravanContact(haravanOrderData.customer);
     const customer = await customerService.processHaravanCustomer(haravanOrderData.customer, contact, customerDefaultAdress);
 
     // Update the customer back to his contact and address
-    await contactService.processHaravanContact(haravanOrderData.customer, customer, customerDefaultAdress);
+    await contactService.processHaravanContact(haravanOrderData.customer, customer);
     await addressService.processHaravanAddress(haravanOrderData.billing_address, customer);
     for (const address of haravanOrderData.customer.addresses) {
       await addressService.processHaravanAddress(address, customer);
