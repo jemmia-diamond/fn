@@ -9,6 +9,9 @@ export default class SearchController {
     const limit = Number(params.limit) <= MAX_SEARCH_RESULT ? Number(params.limit) : MAX_SEARCH_RESULT;
     const productService = new Ecommerce.ProductService(ctx.env);
     const result = await productService.searchJewelry(searchKey, limit);
-    return ctx.json(result);
+    const responseBody = {
+      data: result
+    }
+    return ctx.json(responseBody);
   }
 }
