@@ -1,7 +1,9 @@
-import OrderService from "./sales-order/sales-order";
-import CustomerService from "./customer/customer";
+import OrderService from "./sales-order/sales-order.js";
+import CustomerService from "./customer/customer.js";
+import SalesOrderSyncService from "./sales-order/sales-order-sync.js";
 
 export default {
   OrderService: OrderService,
-  CustomerService: CustomerService
+  CustomerService: CustomerService,
+  SalesOrderSyncService: SalesOrderSyncService
 };
