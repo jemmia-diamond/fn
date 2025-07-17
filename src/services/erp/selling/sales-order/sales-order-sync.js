@@ -510,38 +510,62 @@ export default class SalesOrderSyncService {
   }
 
   // 4. Main functions
+  /**
+   * Sync Sales Orders using KV to store last sync time for optimal incremental sync.
+   * Requires env.FN_KV to be available (Cloudflare KV binding).
+   */
   async syncSalesOrders(options = {}) {
     try {
       // Default options
       const {
-        minutesBack = 1440, // Default: 24 hours = 1440 minutes
-        syncType = 'auto' // 'auto', 'manual', 'frequent'
+        minutesBack = 1440, // fallback: 24 hours
+        syncType = 'auto', // 'auto', 'manual', 'frequent'
+        kv = this.env.FN_KV // pass in KV namespace from env
       } = options;
 
-      // Calculate time range
-      const fromDate = dayjs().utc().subtract(minutesBack, 'minutes').format('YYYY-MM-DD HH:mm:ss');
-      const toDate = dayjs().utc().format('YYYY-MM-DD HH:mm:ss');
+
+      const KV_KEY = "sales_order_sync:last_date";
+      const lastDate = await kv.get(KV_KEY) || null;
       
-      // Human readable time range
-      let timeRange;
-      if (minutesBack < 60) {
-        timeRange = `${minutesBack} minutes`;
-      } else if (minutesBack < 1440) {
-        const hours = Math.round(minutesBack / 60 * 10) / 10; // 1 decimal
-        timeRange = `${hours} hours`;
+      if (lastDate) {
+        console.log(`⏱️  Last sync date found: ${lastDate}`);
       } else {
-        const days = Math.round(minutesBack / 1440 * 10) / 10; // 1 decimal  
-        timeRange = `${days} days`;
+        console.log("⏱️  No previous sync date found. Performing initial sync.");
       }
       
+      let fromDate;
+      const toDate = dayjs().utc().format('YYYY-MM-DD HH:mm:ss');
+
+      if (lastDate) {
+        fromDate = dayjs.utc(lastDate).subtract(1, 'minute').format('YYYY-MM-DD HH:mm:ss');
+      } else {
+        fromDate = dayjs().utc().subtract(minutesBack, 'minutes').format('YYYY-MM-DD HH:mm:ss');
+      }
+
+      // Human readable time range
+      let timeRange;
+      if (lastDate) {
+        timeRange = `from last sync at ${lastDate}`;
+      } else if (minutesBack < 60) {
+        timeRange = `${minutesBack} minutes`;
+      } else if (minutesBack < 1440) {
+        const hours = Math.round(minutesBack / 60 * 10) / 10;
+        timeRange = `${hours} hours`;
+      } else {
+        const days = Math.round(minutesBack / 1440 * 10) / 10;
+        timeRange = `${days} days`;
+      }
+
       console.log(`🔄 Starting ${syncType} Sales Order sync for ${timeRange}...`);
       console.log(`📅 Syncing Sales Orders from ${fromDate} to ${toDate}`);
 
       // Get Sales Orders Records 
       const salesOrders = await this.fetchSalesOrdersFromERP(fromDate, toDate);
-      
+
       if (salesOrders.length === 0) {
         console.log("📦 No Sales Orders to sync");
+        // Still update last_date to toDate, so next run is incremental
+        await kv.put(KV_KEY, toDate);
         return { 
           success: true, 
           synced: 0, 
@@ -559,21 +583,23 @@ export default class SalesOrderSyncService {
         try {
           // Save Sales Order
           await this.saveSalesOrderToDatabase(salesOrder);
-          
+
           // Get Sales Order Details and save items
           const salesOrderDetails = await this.fetchSalesOrderDetails(salesOrder.name);
           if (salesOrderDetails && salesOrderDetails.items) {
             await this.saveSalesOrderItemsToDatabase(salesOrder.name, salesOrderDetails.items);
           }
-          
+
           syncedCount++;
           console.log(`✅ Synced Sales Order: ${salesOrder.name}`);
-          
+
         } catch (error) {
           errorCount++;
           console.error(`❌ Failed to sync Sales Order ${salesOrder.name}:`, error);
         }
       }
+
+      await kv.put(KV_KEY, toDate);
 
       const result = {
         success: true,
@@ -599,12 +625,13 @@ export default class SalesOrderSyncService {
     }
   }
 
-  // Static methods with minutes parameter
+  // Static methods with minutes parameter, pass env.FN_KV to instance
   static async syncDailySalesOrders(env) {
     const syncService = new SalesOrderSyncService(env);
     return await syncService.syncSalesOrders({ 
-      minutesBack: 10, // default 10 mitues ago
-      syncType: 'auto' 
+      minutesBack: 10, // fallback if no last_date
+      syncType: 'auto',
+      kv: env.FN_KV
     });
   }
 } 
