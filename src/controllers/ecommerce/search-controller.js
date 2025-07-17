@@ -11,7 +11,7 @@ export default class SearchController {
     const result = await productService.searchJewelry(searchKey, limit);
     const responseBody = {
       data: result
-    }
+    };
     return ctx.json(responseBody);
   }
 }
