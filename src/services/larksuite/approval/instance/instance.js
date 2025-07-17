@@ -9,6 +9,7 @@ dayjs.extend(utc);
 export default class InstanceService {
   static async syncInstancesToDatabase(env) {
     const instanceService = new InstanceService(env);
+    const db = Database.instance(env);
     const larkClient = LarksuiteService.createClient(env);
     const timeThreshold = dayjs().utc();
     const startTime = timeThreshold.subtract(1, "day").subtract(1, "hour").unix() * 1000;
@@ -44,7 +45,24 @@ export default class InstanceService {
     }
 
     const transformedIntances = instances.map(instance => instanceService.transformInstance(instance));
-    console.log(transformedIntances[0]);
+    
+    const values = transformedIntances.map((_instance, idx) => `($${idx * 11 + 1}, $${idx * 11 + 2}, $${idx * 11 + 3}, $${idx * 11 + 4}, $${idx * 11 + 5}, $${idx * 11 + 6}, $${idx * 11 + 7}, $${idx * 11 + 8}, $${idx * 11 + 9}, $${idx * 11 + 10}, $${idx * 11 + 11})`).join(",\n");
+    const params = transformedIntances.flatMap(instance => [
+      instance.instance_code,
+      instance.approval_code,
+      instance.approval_name,
+      instance.status,
+      instance.form,
+      instance.start_time,
+      instance.end_time,
+      instance.serial_number,
+      instance.user_id,
+      instance.uuid,
+      instance.department_id
+    ]);
+    const query = `INSERT INTO larksuite.instances (instance_code, approval_code, approval_name, status, form, start_time, end_time, serial_number, user_id, uuid, department_id)\nVALUES\n${values}\nON CONFLICT (instance_code) \nDO UPDATE SET \
+  approval_code = EXCLUDED.approval_code,\n  approval_name = EXCLUDED.approval_name,\n  status = EXCLUDED.status,\n  form = EXCLUDED.form,\n  start_time = EXCLUDED.start_time,\n  end_time = EXCLUDED.end_time,\n  serial_number = EXCLUDED.serial_number,\n  user_id = EXCLUDED.user_id,\n  uuid = EXCLUDED.uuid,\n  department_id = EXCLUDED.department_id`;
+    await db.$executeRawUnsafe(query, ...params);
     
   }
 
@@ -59,7 +77,8 @@ export default class InstanceService {
       end_time: dayjs(Number(instance.end_time)).utc().format("YYYY-MM-DD HH:mm:ss"),
       serial_number: instance.serial_number,
       user_id: instance.user_id,
-      uuid: instance.uuid
+      uuid: instance.uuid,
+      department_id: instance.department_id
     }
   }
 }
