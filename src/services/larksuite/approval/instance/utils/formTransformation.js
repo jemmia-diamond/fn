@@ -12,5 +12,5 @@ export const transformLeaveFormData = (form) => {
     reason: widgetsObj.widgetLeaveGroupV2.reason,
     interval: Number(widgetsObj.widgetLeaveGroupV2.interval),
     name: widgetsObj.widgetLeaveGroupV2.name
-  }
-}
+  };
+};

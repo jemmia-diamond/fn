@@ -17,7 +17,7 @@ export default class InstanceService {
 
     const approvalCodes = [
       APPROVALS.LEAVE_APPROVAL
-    ]
+    ];
 
     const transformedInstances = [];
 
@@ -36,7 +36,7 @@ export default class InstanceService {
           path: {
             instance_id: code
           }
-        })
+        });
         const instance = response.data;
         const transformedInstance = instanceService.transformInstance(instance);
         const formData = approval.formtransformFunction(instance.form);
@@ -81,6 +81,6 @@ export default class InstanceService {
       user_id: instance.user_id,
       uuid: instance.uuid,
       department_id: instance.department_id
-    }
-  }
+    };
+  };
 }
