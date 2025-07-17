@@ -22,7 +22,7 @@ export default class InstanceService {
     const transformedInstances = [];
 
     for (const approval of approvalCodes) {
-      const response = await larkClient.approval.v4.instance.list({
+      const listResponse = await larkClient.approval.v4.instance.list({
         params: {
           start_time: startTime,
           end_time: endTime,
@@ -30,14 +30,14 @@ export default class InstanceService {
           page_size: 100
         }
       });
-      const codes = response.data.instance_code_list;
+      const codes = listResponse.data.instance_code_list;
       for (const code of codes) {
-        const response = await larkClient.approval.v4.instance.get({
+        const instanceResponse = await larkClient.approval.v4.instance.get({
           path: {
             instance_id: code
           }
         });
-        const instance = response.data;
+        const instance = instanceResponse.data;
         const transformedInstance = instanceService.transformInstance(instance);
         const formData = approval.formtransformFunction(instance.form);
         transformedInstance.form_data = JSON.stringify(formData);
