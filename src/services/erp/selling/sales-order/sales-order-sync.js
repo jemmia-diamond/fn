@@ -603,22 +603,8 @@ export default class SalesOrderSyncService {
   static async syncDailySalesOrders(env) {
     const syncService = new SalesOrderSyncService(env);
     return await syncService.syncSalesOrders({ 
-      minutesBack: 1000, // default 10 mitues ago
+      minutesBack: 10, // default 10 mitues ago
       syncType: 'auto' 
-    });
-  }
-
-  // Static method to sync Sales Orders with custom range
-  static async syncSalesOrdersCustomRange(env, options = {}) {
-    const syncService = new SalesOrderSyncService(env);
-    const {
-      minutesBack = 1440, // Default: 1 day = 1440 minutes
-      syncType = 'manual'
-    } = options;
-    
-    return await syncService.syncSalesOrders({ 
-      minutesBack,
-      syncType 
     });
   }
 } 
