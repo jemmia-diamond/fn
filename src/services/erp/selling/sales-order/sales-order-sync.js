@@ -518,7 +518,7 @@ export default class SalesOrderSyncService {
     try {
       // Default options
       const {
-        minutesBack = 1440, // fallback: 24 hours
+        minutesBack = 10, // fallback: 10 minutes
         syncType = 'auto', // 'auto', 'manual', 'frequent'
         kv = this.env.FN_KV // pass in KV namespace from env
       } = options;
