@@ -12,6 +12,7 @@ import scheduleHandler from "./services/schedule-handler";
 const app = new Hono();
 const api = app.basePath("/api");
 const webhook = app.basePath("/webhook");
+const ecommerce = app.basePath("/ecommerce_api");
 
 // Error tracking
 app.use("*", errorTracker);
@@ -53,6 +54,7 @@ api.use("*",
 // Routes registration
 Routes.APIRoutes.register(api);
 Routes.WebhookRoutes.register(webhook);
+Routes.EcommerceRoutes.register(ecommerce);
 
 // Cron trigger and Queue Integrations
 export default {
