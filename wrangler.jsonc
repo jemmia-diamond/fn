@@ -25,7 +25,7 @@
     }
   ],
   "vars": {
-    "HOST": "https://fn.jemmia.vn",
+    "HOST": "https://fn.jemmia.vn"
   },
   "secrets_store_secrets": [
     {
@@ -70,6 +70,7 @@
   },
   "triggers": {
     "crons": [
+      "*/5 * * * *",
       "0 * * * *",
       "0 17 * * *",
       "0 1 * * *",
