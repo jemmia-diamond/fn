@@ -186,6 +186,12 @@ export default class LeadService {
       });
     }
 
+    if (data.raw_data.diamond_note) {
+      notes.push({
+        note: "Diamond: " + data.raw_data.diamond_note
+      });
+    }
+
     if (notes.length) {
       leadData.notes = notes;
     }
