@@ -1,0 +1,304 @@
+import { convertIsoToDatetime } from "src/frappe/utils/datetime";
+
+/**
+ * Maps Haravan payment transaction to Sales Order Payment Record
+ * @param {Object} hrvTransactionData - Haravan transaction data
+ * @returns {Object} Mapped payment record data
+ */
+export const mapPaymentRecordFields = (hrvTransactionData) => {
+  return {
+    doctype: "Sales Order Payment Record",
+    date: convertIsoToDatetime(hrvTransactionData["created_at"]),
+    amount: hrvTransactionData["amount"],
+    gateway: hrvTransactionData["gateway"],
+    kind: hrvTransactionData["kind"],
+    transaction_id: hrvTransactionData["id"]
+  };
+};
+
+/**
+ * Maps Haravan line item to Sales Order Item
+ * @param {Object} lineItemData - Haravan line item data
+ * @returns {Object} Mapped line item data
+ */
+export const mapLineItemsFields = (lineItemData) => {
+  return {
+    doctype: "Sales Order Item",
+    haravan_variant_id: lineItemData.variant_id,
+    item_name: lineItemData.title,
+    variant_title: lineItemData.variant_title,
+    sku: lineItemData.sku,
+    barcode: lineItemData.barcode,
+    qty: lineItemData.quantity,
+    price_list_rate: parseInt(lineItemData.price_original),
+    discount_amount: parseInt(lineItemData.price_original - lineItemData.price),
+    rate: parseInt(lineItemData.price)
+  };
+};
+
+/**
+ * Maps Haravan order data to Sales Order format
+ * @param {Object} haravanOrderData - Haravan order data
+ * @param {Object} customer - Customer object
+ * @param {Object} contact - Contact object
+ * @param {Object} customerDefaultAddress - Default address object
+ * @returns {Object} Mapped sales order data
+ */
+export const mapHaravanOrderToSalesOrder = (haravanOrderData, customer, contact, customerDefaultAddress) => {
+  const paymentTransactions = haravanOrderData.transactions.filter(transaction => transaction.kind.toLowerCase() === "capture");
+  const paidAmount = paymentTransactions.reduce((total, transaction) => total + transaction.amount, 0);
+
+  const financialStatusMapper = {
+    paid: "Paid",
+    partially_paid: "Partially Paid",
+    partially_refunded: "Partially Refunded",
+    refunded: "Refunded",
+    pending: "Pending"
+  };
+
+  const fulfillmentStatusMapper = {
+    fulfilled: "Fulfilled",
+    notfulfilled: "Not Fulfilled"
+  };
+
+  const cancelledStatusMapper = {
+    uncancelled: "Uncancelled",
+    cancelled: "Cancelled"
+  };
+
+  return {
+    doctype: "Sales Order",
+    customer: customer.name,
+    order_number: haravanOrderData.order_number,
+    haravan_order_id: String(haravanOrderData.id),
+    haravan_ref_order_id: String(haravanOrderData.ref_order_id),
+    source_name: haravanOrderData.source_name,
+    discount_amount: haravanOrderData.total_discounts,
+    items: haravanOrderData.line_items.map(mapLineItemsFields),
+    skip_delivery_note: 1,
+    financial_status: financialStatusMapper[haravanOrderData.financial_status],
+    fulfillment_status: fulfillmentStatusMapper[haravanOrderData.fulfillment_status],
+    cancelled_status: cancelledStatusMapper[haravanOrderData.cancelled_status],
+    transaction_date: convertIsoToDatetime(haravanOrderData.created_at, "date"),
+    haravan_created_at: convertIsoToDatetime(haravanOrderData.created_at, "datetime"),
+    total: haravanOrderData.total_line_items_price,
+    payment_records: paymentTransactions.map(mapPaymentRecordFields),
+    contact_person: contact.name,
+    customer_address: customerDefaultAddress.name,
+    total_amount: haravanOrderData.total_price,
+    grand_total: haravanOrderData.total_price,
+    paid_amount: paidAmount,
+    balance: haravanOrderData.total_price - paidAmount
+  };
+};
+
+/**
+ * Maps ERPNext Sales Order to database format
+ * @param {Object} salesOrder - ERPNext sales order data
+ * @returns {Object} Mapped database sales order data
+ */
+export const mapSalesOrderToDatabase = (salesOrder) => {
+  return {
+    name: salesOrder.name || null,
+    owner: salesOrder.owner || null,
+    creation: salesOrder.creation ? new Date(salesOrder.creation) : null,
+    modified: salesOrder.modified ? new Date(salesOrder.modified) : null,
+    modified_by: salesOrder.modified_by || null,
+    docstatus: salesOrder.docstatus || 0,
+    idx: salesOrder.idx || null,
+    title: salesOrder.title || null,
+    naming_series: salesOrder.naming_series || null,
+    tax_id: salesOrder.tax_id || null,
+    order_type: salesOrder.order_type || null,
+    skip_delivery_note: salesOrder.skip_delivery_note || 0,
+    delivery_date: salesOrder.delivery_date ? new Date(salesOrder.delivery_date) : null,
+    po_no: salesOrder.po_no || null,
+    po_date: salesOrder.po_date ? new Date(salesOrder.po_date) : null,
+    company: salesOrder.company || null,
+    amended_from: salesOrder.amended_from || null,
+    customer_name: salesOrder.customer_name || null,
+    order_number: salesOrder.order_number || null,
+    transaction_date: salesOrder.transaction_date ? new Date(salesOrder.transaction_date) : null,
+    real_order_date: salesOrder.real_order_date ? new Date(salesOrder.real_order_date) : null,
+    cancelled_status: salesOrder.cancelled_status || null,
+    financial_status: salesOrder.financial_status || null,
+    fulfillment_status: salesOrder.fulfillment_status || null,
+    cost_center: salesOrder.cost_center || null,
+    project: salesOrder.project || null,
+    currency: salesOrder.currency || "VND",
+    conversion_rate: salesOrder.conversion_rate ? parseFloat(salesOrder.conversion_rate) : null,
+    selling_price_list: salesOrder.selling_price_list || null,
+    price_list_currency: salesOrder.price_list_currency || null,
+    plc_conversion_rate: salesOrder.plc_conversion_rate ? parseFloat(salesOrder.plc_conversion_rate) : null,
+    ignore_pricing_rule: salesOrder.ignore_pricing_rule || 0,
+    scan_barcode: salesOrder.scan_barcode || null,
+    set_warehouse: salesOrder.set_warehouse || null,
+    reserve_stock: salesOrder.reserve_stock || 0,
+    apply_discount_on: salesOrder.apply_discount_on || null,
+    base_discount_amount: salesOrder.base_discount_amount ? parseFloat(salesOrder.base_discount_amount) : null,
+    coupon_code: salesOrder.coupon_code || null,
+    additional_discount_percentage: salesOrder.additional_discount_percentage ? parseFloat(salesOrder.additional_discount_percentage) : null,
+    total_qty: salesOrder.total_qty ? parseFloat(salesOrder.total_qty) : null,
+    total: salesOrder.total ? parseFloat(salesOrder.total) : null,
+    discount_amount: salesOrder.discount_amount ? parseFloat(salesOrder.discount_amount) : null,
+    grand_total: salesOrder.grand_total ? parseFloat(salesOrder.grand_total) : null,
+    base_total: salesOrder.base_total ? parseFloat(salesOrder.base_total) : null,
+    base_net_total: salesOrder.base_net_total ? parseFloat(salesOrder.base_net_total) : null,
+    total_net_weight: salesOrder.total_net_weight ? parseFloat(salesOrder.total_net_weight) : null,
+    net_total: salesOrder.net_total ? parseFloat(salesOrder.net_total) : null,
+    tax_category: salesOrder.tax_category || null,
+    taxes_and_charges: salesOrder.taxes_and_charges || null,
+    shipping_rule: salesOrder.shipping_rule || null,
+    incoterm: salesOrder.incoterm || null,
+    named_place: salesOrder.named_place || null,
+    base_total_taxes_and_charges: salesOrder.base_total_taxes_and_charges ? parseFloat(salesOrder.base_total_taxes_and_charges) : null,
+    total_taxes_and_charges: salesOrder.total_taxes_and_charges ? parseFloat(salesOrder.total_taxes_and_charges) : null,
+    base_grand_total: salesOrder.base_grand_total ? parseFloat(salesOrder.base_grand_total) : null,
+    base_rounding_adjustment: salesOrder.base_rounding_adjustment ? parseFloat(salesOrder.base_rounding_adjustment) : null,
+    base_rounded_total: salesOrder.base_rounded_total ? parseFloat(salesOrder.base_rounded_total) : null,
+    base_in_words: salesOrder.base_in_words || null,
+    rounding_adjustment: salesOrder.rounding_adjustment ? parseFloat(salesOrder.rounding_adjustment) : null,
+    rounded_total: salesOrder.rounded_total ? parseFloat(salesOrder.rounded_total) : null,
+    in_words: salesOrder.in_words,
+    advance_paid: salesOrder.advance_paid ? parseFloat(salesOrder.advance_paid) : null,
+    disable_rounded_total: salesOrder.disable_rounded_total || 0,
+    other_charges_calculation: salesOrder.other_charges_calculation || null,
+    contact_person: salesOrder.contact_person || null,
+    contact_display: salesOrder.contact_display || null,
+    contact_phone: salesOrder.contact_phone || null,
+    contact_mobile: salesOrder.contact_mobile || null,
+    contact_email: salesOrder.contact_email || null,
+    customer_address: salesOrder.customer_address || null,
+    address_display: salesOrder.address_display || null,
+    customer_group: salesOrder.customer_group || null,
+    territory: salesOrder.territory || null,
+    shipping_address_name: salesOrder.shipping_address_name || null,
+    shipping_address: salesOrder.shipping_address || null,
+    customer: salesOrder.customer || null,
+    gender: salesOrder.gender || null,
+    customer_personal_id: salesOrder.customer_personal_id || null,
+    birth_date: salesOrder.birth_date ? new Date(salesOrder.birth_date) : null,
+    date_of_issuance: salesOrder.date_of_issuance ? new Date(salesOrder.date_of_issuance) : null,
+    dispatch_address: salesOrder.dispatch_address || null,
+    place_of_issuance: salesOrder.place_of_issuance || null,
+    dispatch_address_name: salesOrder.dispatch_address_name || null,
+    company_address: salesOrder.company_address || null,
+    company_address_display: salesOrder.company_address_display || null,
+    company_contact_person: salesOrder.company_contact_person || null,
+    status: salesOrder.status || null,
+    delivery_status: salesOrder.delivery_status || null,
+    per_delivered: salesOrder.per_delivered ? parseFloat(salesOrder.per_delivered) : null,
+    per_billed: salesOrder.per_billed ? parseFloat(salesOrder.per_billed) : null,
+    per_picked: salesOrder.per_picked ? parseFloat(salesOrder.per_picked) : null,
+    billing_status: salesOrder.billing_status || null,
+    sales_partner: salesOrder.sales_partner || null,
+    amount_eligible_for_commission: salesOrder.amount_eligible_for_commission ? parseFloat(salesOrder.amount_eligible_for_commission) : null,
+    commission_rate: salesOrder.commission_rate ? parseFloat(salesOrder.commission_rate) : null,
+    total_commission: salesOrder.total_commission ? parseFloat(salesOrder.total_commission) : null,
+    loyalty_points: salesOrder.loyalty_points ? parseFloat(salesOrder.loyalty_points) : null,
+    loyalty_amount: salesOrder.loyalty_amount ? parseFloat(salesOrder.loyalty_amount) : null,
+    from_date: salesOrder.from_date ? new Date(salesOrder.from_date) : null,
+    to_date: salesOrder.to_date ? new Date(salesOrder.to_date) : null,
+    auto_repeat: salesOrder.auto_repeat || null,
+    letter_head: salesOrder.letter_head || null,
+    group_same_items: salesOrder.group_same_items || 0,
+    select_print_heading: salesOrder.select_print_heading || null,
+    language: salesOrder.language || null,
+    is_internal_customer: salesOrder.is_internal_customer || 0,
+    represents_company: salesOrder.represents_company || null,
+    source: salesOrder.source || null,
+    inter_company_order_reference: salesOrder.inter_company_order_reference || null,
+    campaign: salesOrder.campaign || null,
+    party_account_currency: salesOrder.party_account_currency || null,
+    total_amount: salesOrder.total_amount ? parseFloat(salesOrder.total_amount) : null,
+    expected_payment_date: salesOrder.expected_payment_date ? new Date(salesOrder.expected_payment_date) : null,
+    paid_amount: salesOrder.paid_amount ? parseFloat(salesOrder.paid_amount) : null,
+    balance: salesOrder.balance ? parseFloat(salesOrder.balance) : null,
+    payment_terms_template: salesOrder.payment_terms_template || null,
+    tc_name: salesOrder.tc_name || null,
+    terms: salesOrder.terms || null,
+    haravan_order_id: salesOrder.haravan_order_id || null,
+    haravan_ref_order_id: salesOrder.haravan_ref_order_id || null,
+    haravan_created_at: salesOrder.haravan_created_at ? new Date(salesOrder.haravan_created_at) : null,
+    source_name: salesOrder.source_name || null
+  };
+};
+
+/**
+ * Maps ERPNext Sales Order Item to database format
+ * @param {Object} item - ERPNext sales order item data
+ * @param {string} salesOrderName - Parent sales order name
+ * @returns {Object} Mapped database sales order item data
+ */
+export const mapSalesOrderItemToDatabase = (item, salesOrderName) => {
+  return {
+    name: item.name,
+    owner: item.owner,
+    creation: item.creation ? new Date(item.creation) : null,
+    modified: item.modified ? new Date(item.modified) : null,
+    modified_by: item.modified_by,
+    docstatus: item.docstatus || 0,
+    idx: item.idx,
+    item_name: item.item_name,
+    variant_title: item.variant_title,
+    sku: item.item_code, // Map item_code to sku field
+    barcode: item.barcode,
+    haravan_variant_id: item.haravan_variant_id ? BigInt(item.haravan_variant_id) : null,
+    ensure_delivery_based_on_produced_serial_no: item.ensure_delivery_based_on_produced_serial_no || 0,
+    is_stock_item: item.is_stock_item || 0,
+    reserve_stock: item.reserve_stock || 0,
+    qty: item.qty ? parseFloat(item.qty) : null,
+    stock_uom: item.stock_uom,
+    uom: item.uom,
+    conversion_factor: item.conversion_factor ? parseFloat(item.conversion_factor) : null,
+    stock_qty: item.stock_qty ? parseFloat(item.stock_qty) : null,
+    stock_reserved_qty: item.stock_reserved_qty ? parseFloat(item.stock_reserved_qty) : null,
+    price_list_rate: item.price_list_rate ? parseFloat(item.price_list_rate) : null,
+    base_price_list_rate: item.base_price_list_rate ? parseFloat(item.base_price_list_rate) : null,
+    discount_percentage: item.discount_percentage ? parseFloat(item.discount_percentage) : null,
+    discount_amount: item.discount_amount ? parseFloat(item.discount_amount) : null,
+    distributed_discount_amount: item.distributed_discount_amount ? parseFloat(item.distributed_discount_amount) : null,
+    base_rate_with_margin: item.base_rate_with_margin ? parseFloat(item.base_rate_with_margin) : null,
+    margin_type: item.margin_type,
+    margin_rate_or_amount: item.margin_rate_or_amount ? parseFloat(item.margin_rate_or_amount) : null,
+    rate_with_margin: item.rate_with_margin ? parseFloat(item.rate_with_margin) : null,
+    rate: item.rate ? parseFloat(item.rate) : null,
+    amount: item.amount ? parseFloat(item.amount) : null,
+    base_rate: item.base_rate ? parseFloat(item.base_rate) : null,
+    base_amount: item.base_amount ? parseFloat(item.base_amount) : null,
+    stock_uom_rate: item.stock_uom_rate ? parseFloat(item.stock_uom_rate) : null,
+    is_free_item: item.is_free_item || 0,
+    grant_commission: item.grant_commission || 0,
+    net_rate: item.net_rate ? parseFloat(item.net_rate) : null,
+    net_amount: item.net_amount ? parseFloat(item.net_amount) : null,
+    base_net_rate: item.base_net_rate ? parseFloat(item.base_net_rate) : null,
+    base_net_amount: item.base_net_amount ? parseFloat(item.base_net_amount) : null,
+    billed_amt: item.billed_amt ? parseFloat(item.billed_amt) : null,
+    valuation_rate: item.valuation_rate ? parseFloat(item.valuation_rate) : null,
+    gross_profit: item.gross_profit ? parseFloat(item.gross_profit) : null,
+    delivered_by_supplier: item.delivered_by_supplier || 0,
+    weight_per_unit: item.weight_per_unit ? parseFloat(item.weight_per_unit) : null,
+    total_weight: item.total_weight ? parseFloat(item.total_weight) : null,
+    against_blanket_order: item.against_blanket_order || 0,
+    blanket_order_rate: item.blanket_order_rate ? parseFloat(item.blanket_order_rate) : null,
+    actual_qty: item.actual_qty ? parseFloat(item.actual_qty) : null,
+    company_total_stock: item.company_total_stock ? parseFloat(item.company_total_stock) : null,
+    projected_qty: item.projected_qty ? parseFloat(item.projected_qty) : null,
+    ordered_qty: item.ordered_qty ? parseFloat(item.ordered_qty) : null,
+    planned_qty: item.planned_qty ? parseFloat(item.planned_qty) : null,
+    production_plan_qty: item.production_plan_qty ? parseFloat(item.production_plan_qty) : null,
+    work_order_qty: item.work_order_qty ? parseFloat(item.work_order_qty) : null,
+    delivered_qty: item.delivered_qty ? parseFloat(item.delivered_qty) : null,
+    produced_qty: item.produced_qty ? parseFloat(item.produced_qty) : null,
+    returned_qty: item.returned_qty ? parseFloat(item.returned_qty) : null,
+    picked_qty: item.picked_qty ? parseFloat(item.picked_qty) : null,
+    page_break: item.page_break || 0,
+    item_tax_rate: item.item_tax_rate,
+    transaction_date: item.transaction_date ? new Date(item.transaction_date) : null,
+    cost_center: item.cost_center,
+    parent: salesOrderName,
+    parentfield: item.parentfield || "items",
+    parenttype: item.parenttype || "Sales Order",
+    doctype: item.doctype || "Sales Order Item"
+  };
+}; 

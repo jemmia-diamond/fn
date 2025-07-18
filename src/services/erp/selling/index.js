@@ -1,5 +1,5 @@
-import OrderService from "./sales-order/sales-order";
-import CustomerService from "./customer/customer";
+import OrderService from "./sales-order/sales-order.js";
+import CustomerService from "./customer/customer.js";
 
 export default {
   OrderService: OrderService,

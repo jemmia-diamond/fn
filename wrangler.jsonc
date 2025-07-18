@@ -25,7 +25,7 @@
     }
   ],
   "vars": {
-    "HOST": "https://fn.jemmia.vn",
+    "HOST": "https://fn.jemmia.vn"
   },
   "secrets_store_secrets": [
     {
@@ -42,6 +42,12 @@
       "binding": "STRINGEE_SID_SECRET",
       "store_id": "dff6fef7003446178302a7874af64fde",
       "secret_name": "STRINGEE_SID"
+    }
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "FN_KV",
+      "id": "929367ba02c94a6997a40942aef533a7"
     }
   ],
   "queues": {
@@ -70,6 +76,7 @@
   },
   "triggers": {
     "crons": [
+      "*/5 * * * *",
       "0 * * * *",
       "0 17 * * *",
       "0 1 * * *",
