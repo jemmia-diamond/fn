@@ -4,7 +4,7 @@ import ERP from "../services/erp/index.js";
 export default {
   scheduled: async (controller, env, _ctx) => {
     switch (controller.cron) {
-    case "*/5 * * * *": // Every 5 minutes - Sales Order sync (10 minutes back)
+    case "*/5 * * * *": // Every 5 minutes
       await ERP.Selling.OrderService.syncDailySalesOrders(env); 
       break;
     case "0 * * * *": // At minute 0 every hour
