@@ -38,7 +38,7 @@ export function buildQuery(jsonParams) {
         ORDER BY v.fineness ${finenessOrder}, v.price DESC
       ) v ON TRUE
     WHERE 1 = 1
-      AND p.haravan_product_type != 'Nhẫn Cưới'
+      AND (p.haravan_product_type != 'Nhẫn Cưới' OR (p.haravan_product_type = 'Nhẫn Cưới' AND d.gender = 'Nam'))
       ${filterString}
     GROUP BY 
       p.haravan_product_id, p.title, d.design_code, p.handle, 
