@@ -12,25 +12,25 @@ export default {
       await ERP.Telephony.CallLogService.syncStringeeCallLogs(env);
       await ERP.CRM.LeadService.syncCallLogLead(env);
       break;
-    case "0 17 * * *": // 17:00 (5 PM)
+    case "0 17 * * *": // 00:00 (12 AM) UTC +7
       await Larksuite.Contact.UserService.syncUsersToDatabase(env);
       await ERP.Core.UserService.syncLarkIds(env);
       break;
-    case "0 1 * * *": // 01:00 (1 AM)  
+    case "0 1 * * *": // 08:00 (8 AM) UTC +7
       await Larksuite.Attendance.ScheduleService.syncScheduleToDatabase(env);
       break;
-    case "30 1 * * *": // 01:30 (1:30 AM)
+    case "30 1 * * *": // 08:30 (8:30 AM) UTC +7
       await ERP.Automation.AssignmentRuleService.disableAssignmentRuleOffHour(env);
       await ERP.Automation.AssignmentRuleService.updateAssignmentRulesStartDay(env);
       await ERP.Automation.AssignmentRuleService.reAssignOffHourLeads(env);
       break;
-    case "30 5 * * *": // 05:30 (5:30 AM)
+    case "30 5 * * *": // 08:30 (8:30 AM) UTC +7
       await ERP.Automation.AssignmentRuleService.updateAssignmentRulesMidDay(env);
       break;
-    case "0 10 * * *": // 10:00 (10 AM)
+    case "0 10 * * *": // 17:00 (5 PM) UTC +7
       await ERP.Automation.AssignmentRuleService.updateAssignmentRulesEndDay(env);
       break;
-    case "0 14 * * *": // 14:00 (2 PM)
+    case "0 14 * * *": // 00:00 (12 AM) UTC +7
       await ERP.Automation.AssignmentRuleService.enableAssignmentRuleOffHour(env);
       break;
     default:
