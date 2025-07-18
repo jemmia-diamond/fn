@@ -2,10 +2,13 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "services/*": ["src/services/*"],
-      "controllers/*": ["src/controllers/*"],
       "auth/*": ["src/auth/*"],
-      "config/*": ["src/config/*"]
+      "controllers/*": ["src/controllers/*"],
+      "frappe/*": ["src/frappe/*"],
+      "pancake/*": ["src/pancake/*"],
+      "routes/*": ["src/routes/*"],
+      "services/*": ["src/services/*"],
+      "stringee/*": ["src/stringee/*"]
     }
   },
   "include": ["src/**/*"]
