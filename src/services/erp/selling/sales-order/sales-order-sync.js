@@ -21,10 +21,10 @@ export default class SalesOrderSyncService {
   async fetchSalesOrdersFromERP(fromDate, toDate = null) {
     try {
       const filters = {};
-      filters['modified'] = ['>=', fromDate];
+      filters["modified"] = [">=", fromDate];
       
       if (toDate) {
-        filters['modified'] = ['between', [fromDate, toDate]];
+        filters["modified"] = ["between", [fromDate, toDate]];
       }
 
       let allSalesOrders = [];
@@ -33,6 +33,7 @@ export default class SalesOrderSyncService {
       let hasMoreData = true;
 
       while (hasMoreData) {
+        // eslint-disable-next-line no-console
         console.log(`🔄 Fetching Sales Orders batch ${Math.floor(start/pageSize) + 1} (from ${start})`);
         
         const salesOrdersBatch = await this.frappeClient.getList(this.doctype, {
@@ -55,6 +56,7 @@ export default class SalesOrderSyncService {
         }
       }
 
+      // eslint-disable-next-line no-console
       console.log(`✅ Total fetched ${allSalesOrders.length} Sales Orders`);
       return allSalesOrders;
       
@@ -106,7 +108,7 @@ export default class SalesOrderSyncService {
         fulfillment_status: salesOrder.fulfillment_status || null,
         cost_center: salesOrder.cost_center || null,
         project: salesOrder.project || null,
-        currency: salesOrder.currency || 'VND',
+        currency: salesOrder.currency || "VND",
         conversion_rate: salesOrder.conversion_rate ? parseFloat(salesOrder.conversion_rate) : null,
         selling_price_list: salesOrder.selling_price_list || null,
         price_list_currency: salesOrder.price_list_currency || null,
@@ -201,7 +203,7 @@ export default class SalesOrderSyncService {
         haravan_order_id: salesOrder.haravan_order_id || null,
         haravan_ref_order_id: salesOrder.haravan_ref_order_id || null,
         haravan_created_at: salesOrder.haravan_created_at ? new Date(salesOrder.haravan_created_at) : null,
-        source_name: salesOrder.source_name || null,
+        source_name: salesOrder.source_name || null
       };
 
       // Use Prisma ORM to upsert sales order
@@ -235,7 +237,7 @@ export default class SalesOrderSyncService {
           fulfillment_status: salesOrderData.fulfillment_status || null,
           cost_center: salesOrderData.cost_center || null,
           project: salesOrderData.project || null,
-          currency: salesOrderData.currency || 'VND',
+          currency: salesOrderData.currency || "VND",
           conversion_rate: salesOrderData.conversion_rate ? parseFloat(salesOrderData.conversion_rate) : null,
           selling_price_list: salesOrderData.selling_price_list || null,
           price_list_currency: salesOrderData.price_list_currency || null,
@@ -330,12 +332,13 @@ export default class SalesOrderSyncService {
           haravan_order_id: salesOrderData.haravan_order_id || null,
           haravan_ref_order_id: salesOrderData.haravan_ref_order_id || null,
           haravan_created_at: salesOrderData.haravan_created_at ? new Date(salesOrderData.haravan_created_at) : null,
-          source_name: salesOrderData.source_name || null,
+          source_name: salesOrderData.source_name || null
         },
         create: salesOrderData
       });
 
-      console.log(` ✅ Successfully`);
+      // eslint-disable-next-line no-console
+      console.log(" ✅ Successfully");
       return result;
       
     } catch (error) {
@@ -416,9 +419,9 @@ export default class SalesOrderSyncService {
           transaction_date: item.transaction_date ? new Date(item.transaction_date) : null,
           cost_center: item.cost_center,
           parent: salesOrderName,
-          parentfield: item.parentfield || 'items',
-          parenttype: item.parenttype || 'Sales Order',
-          doctype: item.doctype || 'Sales Order Item',
+          parentfield: item.parentfield || "items",
+          parenttype: item.parenttype || "Sales Order",
+          doctype: item.doctype || "Sales Order Item"
         };
 
         return this.db.sales_order_items.upsert({
@@ -492,7 +495,7 @@ export default class SalesOrderSyncService {
             parent: itemData.parent,
             parentfield: itemData.parentfield,
             parenttype: itemData.parenttype,
-            doctype: itemData.doctype,
+            doctype: itemData.doctype
           },
           create: itemData
         });
@@ -501,6 +504,7 @@ export default class SalesOrderSyncService {
       // Execute all upserts in parallel
       await Promise.all(upsertPromises);
 
+      // eslint-disable-next-line no-console
       console.log(`  ${items.length} Sales Order Items for ${salesOrderName} upserted successfully`);
       
     } catch (error) {
@@ -519,27 +523,28 @@ export default class SalesOrderSyncService {
       // Default options
       const {
         minutesBack = 10, // fallback: 10 minutes
-        syncType = 'auto', // 'auto', 'manual', 'frequent'
+        syncType = "auto", // 'auto', 'manual', 'frequent'
         kv = this.env.FN_KV // pass in KV namespace from env
       } = options;
 
-
       const KV_KEY = "sales_order_sync:last_date";
       const lastDate = await kv.get(KV_KEY) || null;
-      
-      if (lastDate) {
-        console.log(`⏱️  Last sync date found: ${lastDate}`);
-      } else {
-        console.log("⏱️  No previous sync date found. Performing initial sync.");
-      }
-      
-      let fromDate;
-      const toDate = dayjs().utc().format('YYYY-MM-DD HH:mm:ss');
 
       if (lastDate) {
-        fromDate = dayjs.utc(lastDate).subtract(1, 'minute').format('YYYY-MM-DD HH:mm:ss');
+        // eslint-disable-next-line no-console
+        console.log(`⏱️  Last sync date found: ${lastDate}`);
       } else {
-        fromDate = dayjs().utc().subtract(minutesBack, 'minutes').format('YYYY-MM-DD HH:mm:ss');
+        // eslint-disable-next-line no-console
+        console.log("⏱️  No previous sync date found. Performing initial sync.");
+      }
+
+      let fromDate;
+      const toDate = dayjs().utc().format("YYYY-MM-DD HH:mm:ss");
+
+      if (lastDate) {
+        fromDate = dayjs.utc(lastDate).subtract(1, "minute").format("YYYY-MM-DD HH:mm:ss");
+      } else {
+        fromDate = dayjs().utc().subtract(minutesBack, "minutes").format("YYYY-MM-DD HH:mm:ss");
       }
 
       // Human readable time range
@@ -556,13 +561,16 @@ export default class SalesOrderSyncService {
         timeRange = `${days} days`;
       }
 
+      // eslint-disable-next-line no-console
       console.log(`🔄 Starting ${syncType} Sales Order sync for ${timeRange}...`);
+      // eslint-disable-next-line no-console
       console.log(`📅 Syncing Sales Orders from ${fromDate} to ${toDate}`);
 
       // Get Sales Orders Records 
       const salesOrders = await this.fetchSalesOrdersFromERP(fromDate, toDate);
 
       if (salesOrders.length === 0) {
+        // eslint-disable-next-line no-console
         console.log("📦 No Sales Orders to sync");
         // Still update last_date to toDate, so next run is incremental
         await kv.put(KV_KEY, toDate);
@@ -591,6 +599,7 @@ export default class SalesOrderSyncService {
           }
 
           syncedCount++;
+          // eslint-disable-next-line no-console
           console.log(`✅ Synced Sales Order: ${salesOrder.name}`);
 
         } catch (error) {
@@ -612,6 +621,7 @@ export default class SalesOrderSyncService {
         message: `${syncType}: ${syncedCount}/${salesOrders.length} Sales Orders (${timeRange})`
       };
 
+      // eslint-disable-next-line no-console
       console.log("🎉 Sales Order sync completed:", result);
       return result;
 
@@ -630,8 +640,9 @@ export default class SalesOrderSyncService {
     const syncService = new SalesOrderSyncService(env);
     return await syncService.syncSalesOrders({ 
       minutesBack: 10, // fallback if no last_date
-      syncType: 'auto',
+      syncType: "auto",
       kv: env.FN_KV
     });
   }
-} 
+}
+
