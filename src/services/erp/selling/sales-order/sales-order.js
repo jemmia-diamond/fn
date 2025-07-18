@@ -4,6 +4,21 @@ import { convertIsoToDatetime } from "../../../../frappe/utils/datetime";
 import AddressService from "../../contacts/address/address";
 import ContactService from "../../contacts/contact/contact";
 import CustomerService from "../customer/customer";
+import Database from "../../../database";
+
+import {
+  mapSalesOrderToDatabase,
+  mapSalesOrderItemToDatabase
+} from "./utils/sales-order-mappers";
+
+import {
+  formatTimeRange,
+  calculateDateRange,
+  createSyncResponse,
+  logSyncProgress,
+  batchItems,
+  retryWithBackoff
+} from "./utils/sales-order-helpers";
 
 export default class OrderService {
   constructor(env) {
@@ -35,6 +50,7 @@ export default class OrderService {
         apiSecret: env.JEMMIA_ERP_API_SECRET
       }
     );
+    this.db = Database.instance(env);
   };
 
   async processHaravanOrder(haravanOrderData) {
@@ -94,11 +110,11 @@ export default class OrderService {
   }
 
   static async dequeueOrderQueue(batch, env) {
-    const orderService = new OrderService(env);
+    const OrderService = new OrderService(env);
     const messages = batch.messages;
     for (const message of messages) {
       const orderData = message.body;
-      await orderService.processHaravanOrder(orderData);
+      await OrderService.processHaravanOrder(orderData);
     }
   }
 
@@ -127,4 +143,303 @@ export default class OrderService {
       rate: parseInt(lineItemData.price)
     };
   };
+
+  async fetchSalesOrdersFromERP(fromDate, toDate = null) {
+    try {
+      const filters = {};
+      filters["modified"] = [">=", fromDate];
+      
+      if (toDate) {
+        filters["modified"] = ["between", [fromDate, toDate]];
+      }
+
+      let allSalesOrders = [];
+      let start = 0;
+      const pageSize = 1000; // Fetch 1000 records per batch
+      let hasMoreData = true;
+
+      while (hasMoreData) {
+        logSyncProgress("info", `Fetching Sales Orders batch ${Math.floor(start/pageSize) + 1} (from ${start})`);
+        
+        const salesOrdersBatch = await retryWithBackoff(async () => {
+          return await this.frappeClient.getList(this.doctype, {
+            filters: filters,
+            limit_start: start,
+            limit_page_length: pageSize,
+            order_by: "creation desc"
+          });
+        });
+
+        if (salesOrdersBatch && salesOrdersBatch.length > 0) {
+          allSalesOrders.push(...salesOrdersBatch);
+          start += pageSize;
+          
+          // If we got less than pageSize, we've reached the end
+          if (salesOrdersBatch.length < pageSize) {
+            hasMoreData = false;
+          }
+        } else {
+          hasMoreData = false;
+        }
+      }
+
+      logSyncProgress("success", `Total fetched ${allSalesOrders.length} Sales Orders`);
+      return allSalesOrders;
+      
+    } catch (error) {
+      logSyncProgress("error", "Error fetching Sales Orders from ERPNext", { error: error.message });
+      throw error;
+    }
+  }
+
+  /**
+   * Fetches Sales Order details from ERPNext
+   * @param {string} salesOrderName - Sales order name
+   * @returns {Object|null} Sales order details
+   */
+  async fetchSalesOrderDetails(salesOrderName) {
+    try {
+      const salesOrder = await retryWithBackoff(async () => {
+        return await this.frappeClient.getDoc(this.doctype, salesOrderName);
+      });
+      return salesOrder;
+    } catch (error) {
+      logSyncProgress("error", `Error fetching Sales Order details for ${salesOrderName}`, { error: error.message });
+      return null;
+    }
+  }
+
+  /**
+   * Saves sales order to database
+   * @param {Object} salesOrder - Sales order data
+   * @returns {Object} Upsert result
+   */
+  async saveSalesOrderToDatabase(salesOrder) {
+    try {
+      const salesOrderData = mapSalesOrderToDatabase(salesOrder);
+
+      const result = await this.db.sales_orders.upsert({
+        where: {
+          name: salesOrderData.name
+        },
+        update: salesOrderData,
+        create: salesOrderData
+      });
+
+      logSyncProgress("success", `Successfully saved Sales Order: ${salesOrder.name}`);
+      return result;
+      
+    } catch (error) {
+      logSyncProgress("error", `Error saving Sales Order ${salesOrder.name} to database`, { error: error.message });
+      throw error;
+    }
+  }
+
+  /**
+   * Saves sales order items to database
+   * @param {string} salesOrderName - Parent sales order name
+   * @param {Array} items - Array of sales order items
+   */
+  async saveSalesOrderItemsToDatabase(salesOrderName, items) {
+    try {
+      if (!items || items.length === 0) return;
+
+      // Process items in batches to avoid overwhelming the database
+      const itemBatches = batchItems(items, 50);
+      
+      for (const batch of itemBatches) {
+        const upsertPromises = batch.map(item => {
+          const itemData = mapSalesOrderItemToDatabase(item, salesOrderName);
+
+          return this.db.sales_order_items.upsert({
+            where: {
+              name: item.name
+            },
+            update: itemData,
+            create: itemData
+          });
+        });
+
+        // Execute batch upserts in parallel
+        await Promise.all(upsertPromises);
+      }
+
+      logSyncProgress("success", `Successfully saved ${items.length} Sales Order Items for ${salesOrderName}`);
+      
+    } catch (error) {
+      logSyncProgress("error", `Error saving Sales Order Items for ${salesOrderName}`, { error: error.message });
+      throw error;
+    }
+  }
+
+  /**
+   * Main sync method using KV to store last sync time for optimal incremental sync
+   * @param {Object} options - Sync options
+   * @returns {Object} Sync result
+   */
+  async syncSalesOrders(options = {}) {
+    try {
+      // Default options
+      const {
+        minutesBack = 10, // fallback: 10 minutes
+        syncType = "auto", // 'auto', 'manual', 'frequent'
+        kv = this.env.FN_KV // pass in KV namespace from env
+      } = options;
+
+      const KV_KEY = "sales_order_sync:last_date";
+      const lastDate = await kv.get(KV_KEY) || null;
+
+      if (lastDate) {
+        logSyncProgress("info", `Last sync date found: ${lastDate}`);
+      } else {
+        logSyncProgress("info", "No previous sync date found. Performing initial sync.");
+      }
+
+      const { fromDate, toDate } = calculateDateRange(minutesBack, lastDate);
+      const timeRange = formatTimeRange(minutesBack, lastDate);
+
+      logSyncProgress("info", `Starting ${syncType} Sales Order sync for ${timeRange}...`);
+      logSyncProgress("info", `Syncing Sales Orders from ${fromDate} to ${toDate}`);
+
+      // Get Sales Orders Records 
+      const salesOrders = await this.fetchSalesOrdersFromERP(fromDate, toDate);
+
+      if (salesOrders.length === 0) {
+        logSyncProgress("info", "No Sales Orders to sync");
+        // Still update last_date to toDate, so next run is incremental
+        await kv.put(KV_KEY, toDate);
+        return createSyncResponse({ 
+          synced: 0, 
+          message: `No Sales Orders to sync (${timeRange})`,
+          timeRange,
+          minutesBack,
+          syncType
+        });
+      }
+
+      let syncedCount = 0;
+      let errorCount = 0;
+
+      // Process sales orders in batches
+      const salesOrderBatches = batchItems(salesOrders, 10);
+      
+      for (const batch of salesOrderBatches) {
+        const batchPromises = batch.map(async (salesOrder) => {
+          try {
+            // Save Sales Order
+            await this.saveSalesOrderToDatabase(salesOrder);
+
+            // Get Sales Order Details and save items
+            const salesOrderDetails = await this.fetchSalesOrderDetails(salesOrder.name);
+            if (salesOrderDetails && salesOrderDetails.items) {
+              await this.saveSalesOrderItemsToDatabase(salesOrder.name, salesOrderDetails.items);
+            }
+
+            syncedCount++;
+            logSyncProgress("success", `Synced Sales Order: ${salesOrder.name}`);
+
+          } catch (error) {
+            errorCount++;
+            logSyncProgress("error", `Failed to sync Sales Order ${salesOrder.name}`, { error: error.message });
+          }
+        });
+
+        // Process batch in parallel
+        await Promise.all(batchPromises);
+      }
+
+      await kv.put(KV_KEY, toDate);
+
+      const result = createSyncResponse({
+        total: salesOrders.length,
+        synced: syncedCount,
+        errors: errorCount,
+        timeRange,
+        minutesBack,
+        syncType,
+        message: `${syncType}: ${syncedCount}/${salesOrders.length} Sales Orders (${timeRange})`
+      });
+
+      logSyncProgress("success", "Sales Order sync completed", result);
+      return result;
+
+    } catch (error) {
+      logSyncProgress("error", "Sales Order sync failed", { error: error.message });
+      return createSyncResponse({
+        success: false,
+        error: error.message,
+        message: "Sales Order sync failed"
+      });
+    }
+  }
+
+  // ===== STATIC CONVENIENCE METHODS =====
+
+  /**
+   * Static method for daily sync with default parameters
+   * @param {Object} env - Environment variables
+   * @returns {Object} Sync result
+   */
+  static async syncDailySalesOrders(env) {
+    const syncService = new OrderService(env);
+    return await syncService.syncSalesOrders({ 
+      minutesBack: 10, // fallback if no last_date
+      syncType: "auto",
+      kv: env.FN_KV
+    });
+  }
+
+  /**
+   * Static method for manual sync with custom parameters
+   * @param {Object} env - Environment variables
+   * @param {Object} options - Sync options
+   * @returns {Object} Sync result
+   */
+  static async syncManualSalesOrders(env, options = {}) {
+    const syncService = new OrderService(env);
+    return await syncService.syncSalesOrders({ 
+      syncType: "manual",
+      kv: env.FN_KV,
+      ...options
+    });
+  }
+
+  // ===== UTILITY METHODS =====
+
+  /**
+   * Gets sync status from KV store
+   * @returns {Object} Sync status information
+   */
+  async getSyncStatus() {
+    try {
+      const KV_KEY = "sales_order_sync:last_date";
+      const lastDate = await this.env.FN_KV.get(KV_KEY);
+      
+      return {
+        lastSyncDate: lastDate,
+        nextSyncDue: lastDate ? new Date(Date.parse(lastDate) + 10 * 60 * 1000) : null, // 10 minutes from last sync
+        isOverdue: lastDate ? Date.now() > (Date.parse(lastDate) + 10 * 60 * 1000) : true
+      };
+    } catch (error) {
+      logSyncProgress("error", "Error getting sync status", { error: error.message });
+      return null;
+    }
+  }
+
+  /**
+   * Resets sync status (useful for testing or manual resets)
+   * @returns {boolean} Success status
+   */
+  async resetSyncStatus() {
+    try {
+      const KV_KEY = "sales_order_sync:last_date";
+      await this.env.FN_KV.delete(KV_KEY);
+      logSyncProgress("success", "Sync status reset successfully");
+      return true;
+    } catch (error) {
+      logSyncProgress("error", "Error resetting sync status", { error: error.message });
+      return false;
+    }
+  }
+  
 }
