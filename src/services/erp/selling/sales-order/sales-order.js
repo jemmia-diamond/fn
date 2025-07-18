@@ -20,7 +20,7 @@ import {
   retryWithBackoff
 } from "./utils/sales-order-helpers";
 
-export default class OrderService {
+export default class SalesOrderService {
   constructor(env) {
     this.env = env;
     this.doctype = "Sales Order";
@@ -110,11 +110,11 @@ export default class OrderService {
   }
 
   static async dequeueOrderQueue(batch, env) {
-    const OrderService = new OrderService(env);
+    const salesOrderService = new SalesOrderService(env);
     const messages = batch.messages;
     for (const message of messages) {
-      const orderData = message.body;
-      await OrderService.processHaravanOrder(orderData);
+      const salesOrderData = message.body;
+      await salesOrderService.processHaravanOrder(salesOrderData);
     }
   }
 
@@ -218,7 +218,7 @@ export default class OrderService {
     try {
       const salesOrderData = mapSalesOrderToDatabase(salesOrder);
 
-      const result = await this.db.sales_orders.upsert({
+      const result = await this.db.ErpnextSalesOrder.upsert({
         where: {
           name: salesOrderData.name
         },
@@ -251,7 +251,7 @@ export default class OrderService {
         const upsertPromises = batch.map(item => {
           const itemData = mapSalesOrderItemToDatabase(item, salesOrderName);
 
-          return this.db.sales_order_items.upsert({
+          return this.db.ErpnextSalesOrderItem.upsert({
             where: {
               name: item.name
             },
@@ -381,11 +381,11 @@ export default class OrderService {
    * @returns {Object} Sync result
    */
   static async syncDailySalesOrders(env) {
-    const syncService = new OrderService(env);
+    const syncService = new SalesOrderService(env);
     return await syncService.syncSalesOrders({ 
-      minutesBack: 10, // fallback if no last_date
+      minutesBack: 1000, // fallback if no last_date
       syncType: "auto",
-      kv: env.FN_KV
+      // kv: env.FN_KV
     });
   }
 
@@ -396,7 +396,7 @@ export default class OrderService {
    * @returns {Object} Sync result
    */
   static async syncManualSalesOrders(env, options = {}) {
-    const syncService = new OrderService(env);
+    const syncService = new SalesOrderService(env);
     return await syncService.syncSalesOrders({ 
       syncType: "manual",
       kv: env.FN_KV,

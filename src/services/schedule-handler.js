@@ -1,11 +1,11 @@
-import Larksuite from "../services/larksuite/index.js";
-import ERP from "../services/erp/index.js";
+import Larksuite from "../services/larksuite";
+import ERP from "../services/erp";
 
 export default {
   scheduled: async (controller, env, _ctx) => {
     switch (controller.cron) {
     case "*/5 * * * *": // Every 5 minutes
-      await ERP.Selling.OrderService.syncDailySalesOrders(env); 
+      await ERP.Selling.SalesOrderService.syncDailySalesOrders(env); 
       break;
     case "0 * * * *": // At minute 0 every hour
       await ERP.CRM.LeadService.syncWebsiteLeads(env);
@@ -30,7 +30,7 @@ export default {
     case "0 10 * * *": // 17:00 UTC +7
       await ERP.Automation.AssignmentRuleService.updateAssignmentRulesEndDay(env);
       break;
-    case "0 14 * * *": // 21:00 UTC +7
+    case "0 14 * * *": // 00:00 UTC +7
       await ERP.Automation.AssignmentRuleService.enableAssignmentRuleOffHour(env);
       break;
     default:

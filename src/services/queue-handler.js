@@ -8,7 +8,7 @@ export default {
     console.log(JSON.stringify(batch.messages));
     switch (batch.queue) {
     case "order":
-      await ERP.Selling.OrderService.dequeueOrderQueue(batch, env);
+      await ERP.Selling.SalesOrderService.dequeueOrderQueue(batch, env);
       break;
     case "message":
       await Pancake.ConversationService.dequeueMessageQueue(batch, env);

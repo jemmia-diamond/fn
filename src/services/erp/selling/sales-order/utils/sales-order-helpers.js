@@ -4,47 +4,6 @@ import utc from "dayjs/plugin/utc.js";
 dayjs.extend(utc);
 
 /**
- * Status mappers for different status fields
- */
-export const STATUS_MAPPERS = {
-  financial: {
-    paid: "Paid",
-    partially_paid: "Partially Paid",
-    partially_refunded: "Partially Refunded",
-    refunded: "Refunded",
-    pending: "Pending"
-  },
-  fulfillment: {
-    fulfilled: "Fulfilled",
-    notfulfilled: "Not Fulfilled"
-  },
-  cancelled: {
-    uncancelled: "Uncancelled",
-    cancelled: "Cancelled"
-  }
-};
-
-/**
- * Linked table doctypes configuration
- */
-export const LINKED_TABLE_DOCTYPES = {
-  lineItems: "Sales Order Item",
-  paymentRecords: "Sales Order Payment Record"
-};
-
-/**
- * Calculates paid amount from payment transactions
- * @param {Array} transactions - Array of payment transactions
- * @returns {number} Total paid amount
- */
-export const calculatePaidAmount = (transactions) => {
-  const paymentTransactions = transactions.filter(transaction => 
-    transaction.kind.toLowerCase() === "capture"
-  );
-  return paymentTransactions.reduce((total, transaction) => total + transaction.amount, 0);
-};
-
-/**
  * Formats time range for display
  * @param {number} minutesBack - Minutes back from current time
  * @param {string} lastDate - Last sync date
@@ -81,28 +40,6 @@ export const calculateDateRange = (minutesBack, lastDate = null) => {
   }
   
   return { fromDate, toDate };
-};
-
-/**
- * Validates environment variables required for the service
- * @param {Object} env - Environment object
- * @returns {boolean} True if all required variables are present
- */
-export const validateEnvironment = (env) => {
-  const required = [
-    "JEMMIA_ERP_BASE_URL",
-    "JEMMIA_ERP_API_KEY",
-    "JEMMIA_ERP_API_SECRET"
-  ];
-  
-  for (const variable of required) {
-    if (!env[variable]) {
-      console.error(`❌ Missing required environment variable: ${variable}`);
-      return false;
-    }
-  }
-  
-  return true;
 };
 
 /**

@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma-cli";
-import { PrismaNeon } from "@prisma/adapter-neon";
+import { withAccelerate } from "@prisma/extension-accelerate";
 
 // Example usage:
 // const db = Database.createClient(c.env);
@@ -7,11 +7,12 @@ import { PrismaNeon } from "@prisma/adapter-neon";
 class Database {
   static createClient(env) {
     try {
-      const adapter = new PrismaNeon({
-        connectionString: env.DATABASE_URL
-      });
+      // Use Prisma Accelerate for Cloudflare Workers
+      const prisma = new PrismaClient({
+        datasourceUrl: env.DATABASE_URL
+      }).$extends(withAccelerate());
 
-      return new PrismaClient({ adapter });
+      return prisma;
     } catch (error) {
       console.error("Failed to initialize database client:", error);
       throw error;
