@@ -24,7 +24,7 @@ export default {
       await ERP.Automation.AssignmentRuleService.updateAssignmentRulesStartDay(env);
       await ERP.Automation.AssignmentRuleService.reAssignOffHourLeads(env);
       break;
-    case "30 5 * * *": // 08:30 UTC +7
+    case "30 5 * * *": // 12:30 UTC +7
       await ERP.Automation.AssignmentRuleService.updateAssignmentRulesMidDay(env);
       break;
     case "0 10 * * *": // 17:00 UTC +7
