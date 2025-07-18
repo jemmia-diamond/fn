@@ -383,9 +383,9 @@ export default class SalesOrderService {
   static async syncDailySalesOrders(env) {
     const syncService = new SalesOrderService(env);
     return await syncService.syncSalesOrders({ 
-      minutesBack: 1000, // fallback if no last_date
+      minutesBack: 10, // fallback if no last_date
       syncType: "auto",
-      // kv: env.FN_KV
+      kv: env.FN_KV
     });
   }
 
