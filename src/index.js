@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { bearerAuth } from "hono/bearer-auth";
 import { cors } from "hono/cors";
 
-import Routes from "routes";
+import Routes from "src/routes";
 import errorTracker from "services/error-tracker";
 import loggrageLogger from "services/custom-logger";
 
