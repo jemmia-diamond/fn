@@ -441,5 +441,4 @@ export default class OrderService {
       return false;
     }
   }
-  
 }

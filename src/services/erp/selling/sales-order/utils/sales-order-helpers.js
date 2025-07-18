@@ -161,10 +161,20 @@ export const logSyncProgress = (level, message, data = null) => {
     logMessage += ` ${JSON.stringify(data, null, 2)}`;
   }
   
-  if (level === "error") {
+  // Use appropriate console method for each level
+  switch (level) {
+  case "error":
     console.error(logMessage);
-  } else {
+    break;
+  case "warning":
     console.warn(logMessage);
+    break;
+  case "success":
+  case "info":
+  default:
+    // eslint-disable-next-line no-console
+    console.log(logMessage);
+    break;
   }
 };
 
