@@ -1,7 +1,7 @@
-import Contact from "./contact";
-import Attendance from "./attendance";
-import LarksuiteService from "./lark";
-import Approval from "./approval";
+import Contact from "services/larksuite/contact";
+import Attendance from "services/larksuite/attendance";
+import LarksuiteService from "services/larksuite/lark";
+import Approval from "services/larksuite/approval";
 
 export default {
   Contact: Contact,

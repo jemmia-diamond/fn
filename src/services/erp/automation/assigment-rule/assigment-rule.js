@@ -1,9 +1,9 @@
-import Database from "../../../database";
-import FrappeClient from "../../../../frappe/frappe-client";
+import Database from "services/database";
+import FrappeClient from "frappe/frappe-client";
 import { Prisma } from "@prisma-cli";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
-import { SHIFTS, ASSIGNMENT_RULES } from "./enum";
+import { SHIFTS, ASSIGNMENT_RULES } from "services/erp/automation/assigment-rule/enum";
 
 dayjs.extend(utc);
 

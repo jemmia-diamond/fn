@@ -1,5 +1,5 @@
-import LarksuiteService from "../../lark";
-import Database from "../../../database";
+import LarksuiteService from "services/larksuite/lark";
+import Database from "services/database";
 import * as lark from "@larksuiteoapi/node-sdk";
 
 export default class UserService {

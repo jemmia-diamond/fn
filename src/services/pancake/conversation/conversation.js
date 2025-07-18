@@ -1,7 +1,7 @@
-import PancakeClient from "../../../pancake/pancake-client";
-import Database from "../../database";
-import LeadService from "../../erp/crm/lead/lead";
-import AIHUBClient from "../../clients/aihub";
+import PancakeClient from "pancake/pancake-client";
+import Database from "services/database";
+import LeadService from "services/erp/crm/lead/lead";
+import AIHUBClient from "services/clients/aihub";
 
 export default class ConversationService {
   constructor(env) {

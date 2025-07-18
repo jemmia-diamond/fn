@@ -1,5 +1,5 @@
 import { HTTPException } from "hono/http-exception";
-import LeadService from "../../../../services/erp/crm/lead/lead";
+import LeadService from "services/erp/crm/lead/lead";
 
 export default class AIHubERPUpdateLeadController {
   static async create(ctx) {

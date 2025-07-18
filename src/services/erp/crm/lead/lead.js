@@ -1,5 +1,5 @@
-import FrappeClient from "../../../../frappe/frappe-client";
-import Database from "../../../database";
+import FrappeClient from "frappe/frappe-client";
+import Database from "services/database";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import ContactService from "services/erp/contacts/contact/contact";

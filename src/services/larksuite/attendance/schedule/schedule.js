@@ -1,6 +1,6 @@
-import LarksuiteService from "../../lark";
+import LarksuiteService from "services/larksuite/lark";
 import * as lark from "@larksuiteoapi/node-sdk";
-import Database from "../../../database";
+import Database from "services/database";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 

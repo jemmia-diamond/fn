@@ -1,4 +1,4 @@
-import { transformLeaveFormData } from "./instance/utils/formTransformation";
+import { transformLeaveFormData } from "services/larksuite/approval/instance/utils/formTransformation";
 
 export const APPROVALS = {
   LEAVE_APPROVAL: {

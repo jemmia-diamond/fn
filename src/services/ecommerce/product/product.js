@@ -1,5 +1,5 @@
 import Database from "services/database";
-import { buildQuery } from "./utils/jewelry";
+import { buildQuery } from "services/ecommerce/product/utils/jewelry";
 
 export default class ProductService {
   constructor(env) {

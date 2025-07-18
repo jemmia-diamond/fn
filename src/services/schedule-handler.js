@@ -1,5 +1,5 @@
-import Larksuite from "../services/larksuite";
-import ERP from "../services/erp";
+import Larksuite from "services/larksuite";
+import ERP from "services/erp";
 
 export default {
   scheduled: async (controller, env, _ctx) => {
