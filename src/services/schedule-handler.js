@@ -30,7 +30,7 @@ export default {
     case "0 10 * * *": // 17:00 UTC +7
       await ERP.Automation.AssignmentRuleService.updateAssignmentRulesEndDay(env);
       break;
-    case "0 14 * * *": // 00:00 UTC +7
+    case "0 14 * * *": // 21:00 UTC +7
       await ERP.Automation.AssignmentRuleService.enableAssignmentRuleOffHour(env);
       break;
     default:
