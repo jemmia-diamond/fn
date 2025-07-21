@@ -1,8 +1,8 @@
 // FrappeClient.js
 import axios from "axios";
 import axiosRetry from "axios-retry";
-// import { createFetchAdapter } from "@haverstack/axios-fetch-adapter";
-// const fetchAdapter = createFetchAdapter(); 
+import { createFetchAdapter } from "@haverstack/axios-fetch-adapter";
+const fetchAdapter = createFetchAdapter(); 
 
 const DEFAULT_HEADERS = { Accept: "application/json" };
 
@@ -21,8 +21,8 @@ export default class FrappeClient {
     this.axios = axios.create({
       baseURL: url,
       timeout: 30_000,
-      headers: { ...this.headers }
-      // adapter: fetchAdapter
+      headers: { ...this.headers },
+      adapter: fetchAdapter
     });
 
     // Retry 3 times
