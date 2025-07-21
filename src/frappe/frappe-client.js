@@ -112,42 +112,43 @@ export default class FrappeClient {
   }
 
   async upsert(doc, key, ignoredFields = []) {
-    const records = await this.getList(doc.doctype, {
-      filters: [[key, "=", doc[key]]]
-    });
-
-    if (records.length > 1) {
+    const documents = await this.getList(doc.doctype, { filters: [[key, "=", doc[key]]] });
+    if (documents.length > 1) {
       throw new Error(`Multiple ${doc.doctype} found for ${key} ${doc[key]}`);
-    } else if (records.length === 1) {
-      if (records[0].docstatus === 2) return records[0];
-
-      doc.name = records[0].name;
-      ignoredFields.forEach((f) => delete doc[f]);
+    } else if (documents.length === 1) {
+      if (documents[0].docstatus === 2) {
+        return documents[0];
+      };
+      doc.name = documents[0].name;
+      // Remove ignored fields before update
+      for (const field of ignoredFields) {
+        delete doc[field];
+      }
       return this.update(doc);
+    } else {
+      return this.insert(doc);
     }
-    return this.insert(doc);
   }
 
   async bulkUpdate(docs) {
-    const docsWithNames = docs.map((d) => ({ ...d, docname: d.name }));
+    const docsWithDocNames = docs.map(doc => ({ ...doc, docname: doc.name }));
     return this.postRequest("", {
       cmd: "frappe.client.bulk_update",
-      docs: JSON.stringify(docsWithNames)
+      docs: JSON.stringify(docsWithDocNames)
     });
   }
 
   async reference(doc, doctype, referencedDoc, referencedDoctype) {
-    const fullDoc = await this.getDoc(doctype, doc.name);
-    fullDoc.links = fullDoc.links || [];
-    fullDoc.links.push({
-      link_doctype: referencedDoctype,
-      link_name: referencedDoc.name
-    });
-    fullDoc.doctype = doctype;
-    return this.update(fullDoc);
+    const docWithLinks = await this.getDoc(doctype, doc.name);
+    if (!docWithLinks.links) {
+      docWithLinks.links = [];
+    }
+    docWithLinks.links.push({ "link_doctype": referencedDoctype, "link_name": referencedDoc.name });
+    docWithLinks.doctype = doctype;
+    return this.update(docWithLinks);
   }
 
-  // Helper wrappers
+  // --- Utility methods ---
 
   async postRequest(path = "", data = {}) {
     const res = await this.axios.post(
