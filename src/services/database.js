@@ -1,5 +1,5 @@
-import { PrismaClient } from "@prisma-cli"; 
-import { PrismaNeon } from "@prisma/adapter-neon"; 
+import { PrismaClient } from "@prisma-cli";
+import { PrismaNeon } from "@prisma/adapter-neon";
 
 // Example usage:
 // const db = Database.createClient(c.env);
