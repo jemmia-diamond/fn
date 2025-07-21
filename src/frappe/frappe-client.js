@@ -21,7 +21,7 @@ export default class FrappeClient {
     this.axios = axios.create({
       baseURL: url,
       timeout: 30_000,
-      headers: { ...this.headers },
+      headers: { ...this.headers }
       // adapter: fetchAdapter
     });
 
