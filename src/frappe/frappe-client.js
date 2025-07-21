@@ -14,7 +14,7 @@ export default class FrappeClient {
     this.canDownload = [];
 
     if (apiKey && apiSecret) {
-      const token = Buffer.from(`${apiKey}:${apiSecret}`).toString("base64");
+      const token = btoa(`${apiKey}:${apiSecret}`);
       this.headers.Authorization = `Basic ${token}`;
     }
 
@@ -62,7 +62,7 @@ export default class FrappeClient {
       fields = ["*"],
       filters = null,
       limit_start = 0,
-      limit_page_length = 0,
+      limit_page_length = 0, 
       order_by = null
     } = {}
   ) {
