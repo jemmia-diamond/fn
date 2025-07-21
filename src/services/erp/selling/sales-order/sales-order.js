@@ -5,6 +5,7 @@ import AddressService from "../../contacts/address/address";
 import ContactService from "../../contacts/contact/contact";
 import CustomerService from "../customer/customer";
 import Database from "../../../database";
+import { retryWithBackoff } from "src/utils/retry";
 
 import {
   mapSalesOrderToDatabase,
@@ -16,8 +17,7 @@ import {
   calculateDateRange,
   createSyncResponse,
   logSyncProgress,
-  batchItems,
-  retryWithBackoff
+  batchItems
 } from "./utils/sales-order-helpers";
 
 export default class SalesOrderService {
@@ -183,7 +183,7 @@ export default class SalesOrderService {
         }
       }
 
-      logSyncProgress("success", `Total fetched ${allSalesOrders.length} Sales Orders`);
+      logSyncProgress("success",`Total fetched ${allSalesOrders.length} Sales Orders`);
       return allSalesOrders;
       
     } catch (error) {
@@ -287,8 +287,7 @@ export default class SalesOrderService {
       } = options;
 
       const KV_KEY = "sales_order_sync:last_date";
-      // const lastDate = await kv.get(KV_KEY) || null;
-      const lastDate = null;
+      const lastDate = await kv.get(KV_KEY) || null;
 
       if (lastDate) {
         logSyncProgress("info", `Last sync date found: ${lastDate}`);
@@ -299,8 +298,7 @@ export default class SalesOrderService {
       const { fromDate, toDate } = calculateDateRange(minutesBack, lastDate);
       const timeRange = formatTimeRange(minutesBack, lastDate);
 
-      logSyncProgress("info", `Starting ${syncType} Sales Order sync for ${timeRange}...`);
-      logSyncProgress("info", `Syncing Sales Orders from ${fromDate} to ${toDate}`);
+      logSyncProgress("info", `Syncing Sales Orders from ${fromDate} to ${toDate}`); 
 
       // Get Sales Orders Records 
       const salesOrders = await this.fetchSalesOrdersFromERP(fromDate, toDate);
@@ -384,7 +382,7 @@ export default class SalesOrderService {
   static async syncDailySalesOrders(env) {
     const syncService = new SalesOrderService(env);
     return await syncService.syncSalesOrders({ 
-      minutesBack: 1000000, // fallback if no last_date
+      minutesBack: 10, // fallback if no last_date
       syncType: "auto",
       kv: env.FN_KV
     });

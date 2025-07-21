@@ -129,27 +129,3 @@ export const batchItems = (items, batchSize = 100) => {
   return batches;
 };
 
-/**
- * Retries an async operation with exponential backoff
- * @param {Function} operation - Async operation to retry
- * @param {number} maxRetries - Maximum number of retries
- * @param {number} baseDelay - Base delay in ms
- * @returns {Promise} Result of the operation
- */
-export const retryWithBackoff = async (operation, maxRetries = 3, baseDelay = 1000) => {
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      return await operation();
-    } catch (error) {
-      if (attempt === maxRetries) {
-        throw error;
-      }
-      
-      const delay = baseDelay * Math.pow(2, attempt - 1);
-      logSyncProgress("warning", `Attempt ${attempt} failed, retrying in ${delay}ms`, { error: error.message });
-      
-      await new Promise(resolve => setTimeout(resolve, delay));
-    }
-  }
-}; 
-
