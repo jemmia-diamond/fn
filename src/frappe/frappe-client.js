@@ -1,4 +1,9 @@
 // FrappeClient.js
+import axios from "axios";
+import axiosRetry from "axios-retry";
+// import { createFetchAdapter } from "@haverstack/axios-fetch-adapter";
+// const fetchAdapter = createFetchAdapter(); 
+
 const DEFAULT_HEADERS = { Accept: "application/json" };
 
 export default class FrappeClient {
@@ -9,14 +14,32 @@ export default class FrappeClient {
     this.canDownload = [];
 
     if (apiKey && apiSecret) {
-      const token = btoa(`${apiKey}:${apiSecret}`);
-      this.headers["Authorization"] = `Basic ${token}`;
+      const token = Buffer.from(`${apiKey}:${apiSecret}`).toString("base64");
+      this.headers.Authorization = `Basic ${token}`;
     }
+
+    this.axios = axios.create({
+      baseURL: url,
+      timeout: 30_000,
+      headers: { ...this.headers },
+      // adapter: fetchAdapter
+    });
+
+    // Retry 3 times
+    axiosRetry(this.axios, {
+      retries: 3,
+      retryDelay: axiosRetry.exponentialDelay,
+      retryCondition: (err) =>
+        axiosRetry.isNetworkOrIdempotentRequestError(err) ||
+        err.response?.status >= 500
+    });
 
     if (username && password) {
       this.login(username, password);
     }
   }
+
+  // Auth
 
   async login(username, password) {
     const res = await this.postRequest("", {
@@ -31,13 +54,18 @@ export default class FrappeClient {
     await this.getRequest("", { cmd: "logout" });
   }
 
-  async getList(doctype, {
-    fields = ["*"],
-    filters = null,
-    limit_start = 0,
-    limit_page_length = 0,
-    order_by = null
-  } = {}) {
+  //CRUD
+
+  async getList(
+    doctype,
+    {
+      fields = ["*"],
+      filters = null,
+      limit_start = 0,
+      limit_page_length = 0,
+      order_by = null
+    } = {}
+  ) {
     const params = {
       fields: JSON.stringify(fields),
       ...(filters && { filters: JSON.stringify(filters) }),
@@ -45,29 +73,24 @@ export default class FrappeClient {
       ...(order_by && { order_by })
     };
 
-    const url = `${this.url}/api/resource/${encodeURIComponent(doctype)}`;
-    const res = await fetch(`${url}?${new URLSearchParams(params)}`, {
-      method: "GET",
-      headers: this.headers
-    });
+    const url = `/api/resource/${encodeURIComponent(doctype)}`;
+    const res = await this.axios.get(url, { params });
     return this.postProcess(res);
   }
 
   async getDoc(doctype, name) {
-    const url = `${this.url}/api/resource/${encodeURIComponent(doctype)}/${encodeURIComponent(name)}`;
-    const res = await fetch(url, {
-      method: "GET",
-      headers: this.headers
-    });
+    const url = `/api/resource/${encodeURIComponent(doctype)}/${encodeURIComponent(name)}`;
+    const res = await this.axios.get(url);
     return this.postProcess(res);
   }
 
   async insert(doc) {
-    const res = await fetch(`${this.url}/api/resource/${encodeURIComponent(doc.doctype)}`, {
-      method: "POST",
-      headers: { ...this.headers, "Content-Type": "application/json" },
-      body: JSON.stringify({ data: JSON.stringify(doc) })
-    });
+    const url = `/api/resource/${encodeURIComponent(doc.doctype)}`;
+    const res = await this.axios.post(
+      url,
+      { data: JSON.stringify(doc) },
+      { headers: { "Content-Type": "application/json" } }
+    );
     return this.postProcess(res);
   }
 
@@ -79,68 +102,68 @@ export default class FrappeClient {
   }
 
   async update(doc) {
-    const url = `${this.url}/api/resource/${encodeURIComponent(doc.doctype)}/${encodeURIComponent(doc.name)}`;
-    const res = await fetch(url, {
-      method: "PUT",
-      headers: { ...this.headers, "Content-Type": "application/json" },
-      body: JSON.stringify({ data: JSON.stringify(doc) })
-    });
+    const url = `/api/resource/${encodeURIComponent(doc.doctype)}/${encodeURIComponent(doc.name)}`;
+    const res = await this.axios.put(
+      url,
+      { data: JSON.stringify(doc) },
+      { headers: { "Content-Type": "application/json" } }
+    );
     return this.postProcess(res);
   }
 
   async upsert(doc, key, ignoredFields = []) {
-    const documents = await this.getList(doc.doctype, { filters: [[key, "=", doc[key]]] });
-    if (documents.length > 1) {
+    const records = await this.getList(doc.doctype, {
+      filters: [[key, "=", doc[key]]]
+    });
+
+    if (records.length > 1) {
       throw new Error(`Multiple ${doc.doctype} found for ${key} ${doc[key]}`);
-    } else if (documents.length === 1) {
-      if (documents[0].docstatus === 2) {
-        return documents[0];
-      };
-      doc.name = documents[0].name;
-      // Remove ignored fields before update
-      for (const field of ignoredFields) {
-        delete doc[field];
-      }
+    } else if (records.length === 1) {
+      if (records[0].docstatus === 2) return records[0];
+
+      doc.name = records[0].name;
+      ignoredFields.forEach((f) => delete doc[f]);
       return this.update(doc);
-    } else {
-      return this.insert(doc);
     }
+    return this.insert(doc);
   }
 
   async bulkUpdate(docs) {
-    const docsWithDocNames = docs.map(doc => ({ ...doc, docname: doc.name }));
+    const docsWithNames = docs.map((d) => ({ ...d, docname: d.name }));
     return this.postRequest("", {
       cmd: "frappe.client.bulk_update",
-      docs: JSON.stringify(docsWithDocNames)
+      docs: JSON.stringify(docsWithNames)
     });
   }
 
   async reference(doc, doctype, referencedDoc, referencedDoctype) {
-    const docWithLinks = await this.getDoc(doctype, doc.name);
-    if (!docWithLinks.links) {
-      docWithLinks.links = [];
-    }
-    docWithLinks.links.push({ "link_doctype": referencedDoctype, "link_name": referencedDoc.name });
-    docWithLinks.doctype = doctype;
-    return this.update(docWithLinks);
+    const fullDoc = await this.getDoc(doctype, doc.name);
+    fullDoc.links = fullDoc.links || [];
+    fullDoc.links.push({
+      link_doctype: referencedDoctype,
+      link_name: referencedDoc.name
+    });
+    fullDoc.doctype = doctype;
+    return this.update(fullDoc);
   }
 
-  // --- Utility methods ---
+  // Helper wrappers
 
   async postRequest(path = "", data = {}) {
-    const res = await fetch(`${this.url}${path}`, {
-      method: "POST",
-      headers: { ...this.headers, "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams(data)
-    });
+    const res = await this.axios.post(
+      path,
+      new URLSearchParams(data),
+      { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
+    );
     return this.postProcess(res);
   }
 
   async getRequest(path = "", params = {}) {
-    const url = `${this.url}${path}?${new URLSearchParams(params)}`;
-    const res = await fetch(url, { headers: this.headers });
+    const res = await this.axios.get(path, { params });
     return this.postProcess(res);
   }
+
+  // Utils
 
   chunk(arr, size) {
     const chunks = [];
@@ -152,33 +175,23 @@ export default class FrappeClient {
 
   parseErrorMessage(errorStr) {
     if (typeof errorStr !== "string") {
-      // Try to extract message from Error object or fallback to string conversion
-      if (errorStr && typeof errorStr.message === "string") {
-        errorStr = errorStr.message;
-      } else {
-        errorStr = String(errorStr);
-      }
+      errorStr = errorStr?.message ?? String(errorStr);
     }
-    // Remove the prefix
     const jsonPart = errorStr.replace(/^Error:\s*/, "").trim();
-    // Parse the ["..."] JSON
     let arr;
     try {
       arr = JSON.parse(jsonPart);
-    } catch (e) {
-      console.error("Invalid JSON:", e);
+    } catch {
       return null;
     }
-    const traceback = arr[0];
-    // Split by newlines
+    const traceback = arr[0] ?? "";
     const lines = traceback.split("\n");
-    // Reverse and find last line with Error or Exception
     for (let i = lines.length - 1; i >= 0; i--) {
       const line = lines[i].trim();
       if (line.includes(":")) {
-        const parts = line.split(":");
-        if (parts[0].toLowerCase().includes("error") || parts[0].toLowerCase().includes("exception")) {
-          return parts.slice(1).join(":").trim();
+        const [kind, ...rest] = line.split(":");
+        if (kind.toLowerCase().includes("error") || kind.toLowerCase().includes("exception")) {
+          return rest.join(":").trim();
         }
       }
     }
@@ -186,11 +199,12 @@ export default class FrappeClient {
   }
 
   async postProcess(res) {
-    const text = await res.text();
+    const raw = typeof res.data === "string" ? res.data : JSON.stringify(res.data);
+    let data;
     try {
-      const data = JSON.parse(text);
+      data = typeof res.data === "string" ? JSON.parse(raw) : res.data;
       if (data.exc) throw new Error(data.exc);
-      return data.message || data.data || null;
+      return data.message ?? data.data ?? null;
     } catch (e) {
       throw this.parseErrorMessage(e);
     }

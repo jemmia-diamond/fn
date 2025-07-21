@@ -1,5 +1,6 @@
 import * as lark from "@larksuiteoapi/node-sdk";
-import fetchAdapter from "@vespaiach/axios-fetch-adapter";
+import { createFetchAdapter } from "@haverstack/axios-fetch-adapter";
+const fetchAdapter = createFetchAdapter();
 
 export default class LarksuiteService {
   static createClient(env) {

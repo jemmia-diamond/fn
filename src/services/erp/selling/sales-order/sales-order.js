@@ -5,7 +5,6 @@ import AddressService from "../../contacts/address/address";
 import ContactService from "../../contacts/contact/contact";
 import CustomerService from "../customer/customer";
 import Database from "../../../database";
-import { retryWithBackoff } from "src/utils/retry";
 
 import {
   mapSalesOrderToDatabase,
@@ -161,13 +160,11 @@ export default class SalesOrderService {
       while (hasMoreData) {
         logSyncProgress("info", `Fetching Sales Orders batch ${Math.floor(start/pageSize) + 1} (from ${start})`);
         
-        const salesOrdersBatch = await retryWithBackoff(async () => {
-          return await this.frappeClient.getList(this.doctype, {
-            filters: filters,
-            limit_start: start,
-            limit_page_length: pageSize,
-            order_by: "creation desc"
-          });
+        const salesOrdersBatch = await this.frappeClient.getList(this.doctype, {
+          filters: filters,
+          limit_start: start,
+          limit_page_length: pageSize,
+          order_by: "creation desc"
         });
 
         if (salesOrdersBatch && salesOrdersBatch.length > 0) {
@@ -199,9 +196,7 @@ export default class SalesOrderService {
    */
   async fetchSalesOrderDetails(salesOrderName) {
     try {
-      const salesOrder = await retryWithBackoff(async () => {
-        return await this.frappeClient.getDoc(this.doctype, salesOrderName);
-      });
+      const salesOrder = await this.frappeClient.getDoc(this.doctype, salesOrderName);
       return salesOrder;
     } catch (error) {
       logSyncProgress("error", `Error fetching Sales Order details for ${salesOrderName}`, { error: error.message });
