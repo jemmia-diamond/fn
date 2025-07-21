@@ -12,7 +12,7 @@ export default {
       await ERP.Telephony.CallLogService.syncStringeeCallLogs(env);
       await ERP.CRM.LeadService.syncCallLogLead(env);
       break;
-    case "0 17 * * *": // 21:00 UTC +7
+    case "0 17 * * *": // 00:00 UTC +7
       await Larksuite.Contact.UserService.syncUsersToDatabase(env);
       await ERP.Core.UserService.syncLarkIds(env);
       break;
