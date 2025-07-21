@@ -287,7 +287,8 @@ export default class SalesOrderService {
       } = options;
 
       const KV_KEY = "sales_order_sync:last_date";
-      const lastDate = await kv.get(KV_KEY) || null;
+      // const lastDate = await kv.get(KV_KEY) || null;
+      const lastDate = null;
 
       if (lastDate) {
         logSyncProgress("info", `Last sync date found: ${lastDate}`);
@@ -383,7 +384,7 @@ export default class SalesOrderService {
   static async syncDailySalesOrders(env) {
     const syncService = new SalesOrderService(env);
     return await syncService.syncSalesOrders({ 
-      minutesBack: 10, // fallback if no last_date
+      minutesBack: 1000000, // fallback if no last_date
       syncType: "auto",
       kv: env.FN_KV
     });

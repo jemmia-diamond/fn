@@ -1,5 +1,5 @@
 model ErpnextSalesOrderItem {
-  uuid                                        String    @id @db.Uuid
+  uuid                                        String    @id @default(uuid()) @db.Uuid
   name                                        String?   @unique @db.VarChar(140)
   owner                                       String?   @db.VarChar(140)
   creation                                    DateTime? @db.Timestamp(6)
@@ -81,7 +81,7 @@ model ErpnextSalesOrderItem {
 }
 
 model ErpnextSalesOrder {
-  uuid                           String    @id @db.Uuid
+  uuid                           String    @id @default(uuid()) @db.Uuid
   name                           String    @unique @db.VarChar(140)
   owner                          String?   @db.VarChar(140)
   creation                       DateTime? @db.Timestamp(6)
