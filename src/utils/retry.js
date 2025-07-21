@@ -12,6 +12,7 @@ const logRetryProgress = (level, message, data = {}) => {
   const timestamp = new Date().toISOString();
   const logData = data.error ? { ...data, error: data.error.message || data.error } : data;
   
+  // eslint-disable-next-line no-console
   console.log(`[${timestamp}] ${level.toUpperCase()}: ${message}`, logData);
 };
 
