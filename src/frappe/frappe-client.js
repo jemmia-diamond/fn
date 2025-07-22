@@ -199,13 +199,18 @@ export default class FrappeClient {
   }
 
   async postProcess(res) {
-    const text = await res.text();
+    // If response is object, use it directly
+    if (typeof res.data === "object" && res.data !== null) {
+      if (res.data.exc) throw new Error(res.data.exc);
+      return res.data.message ?? res.data.data ?? null;
+    }
+    // If response is string, try parse
     try {
-      const data = JSON.parse(text);
+      const data = JSON.parse(res.data);
       if (data.exc) throw new Error(data.exc);
-      return data.message || data.data || null;
+      return data.message ?? data.data ?? null;
     } catch (e) {
       throw this.parseErrorMessage(e);
-    }
+    }  
   }
 }
