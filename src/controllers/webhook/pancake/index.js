@@ -1,5 +1,5 @@
-import PancakeERPMessageController from "./erp/message";
-import { verifyPancakeWebhook } from "../../../auth/pancake-auth";
+import PancakeERPMessageController from "controllers/webhook/pancake/erp/message";
+import { verifyPancakeWebhook } from "auth/pancake-auth";
 
 export default class PancakeWebhook {
   static async register(webhook) {

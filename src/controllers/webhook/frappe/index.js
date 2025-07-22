@@ -1,5 +1,5 @@
-import { verifyHmacBase64Auth } from "../../../auth/hmac-base64-auth";
-import FrappePancakeConversationAssignmentController from "./pancake/conversation-assignment";
+import { verifyHmacBase64Auth } from "auth/hmac-base64-auth";
+import FrappePancakeConversationAssignmentController from "controllers/webhook/frappe/pancake/conversation-assignment";
 
 export default class FrappeWebhook {
   static register(webhook) {

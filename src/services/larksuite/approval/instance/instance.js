@@ -2,7 +2,7 @@ import LarksuiteService from "services/larksuite/lark";
 import Database from "services/database";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
-import { APPROVALS } from "../constant";
+import { APPROVALS } from "services/larksuite/approval/constant";
 
 dayjs.extend(utc);
 

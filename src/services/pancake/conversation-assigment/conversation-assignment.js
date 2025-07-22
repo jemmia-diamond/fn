@@ -1,8 +1,8 @@
-import PancakeClient from "../../../pancake/pancake-client";
-import FrappeClient from "../../../frappe/frappe-client";
+import PancakeClient from "pancake/pancake-client";
+import FrappeClient from "frappe/frappe-client";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
-import Database from "../../../services/database";
+import Database from "services/database";
 
 dayjs.extend(utc);
 

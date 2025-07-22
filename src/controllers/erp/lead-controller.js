@@ -1,4 +1,4 @@
-import ERP from "../../services/erp";
+import ERP from "services/erp";
 import { HTTPException } from "hono/http-exception";
 
 export default class LeadController {

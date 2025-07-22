@@ -1,9 +1,9 @@
 // TODO: Make this import dynamic, so that we can add new controllers without repeating ourselves.
-import Namespace from "../controllers/namespace";
-import anotherNamespace from "../controllers/another-namespace";
-import ERP from "../controllers/erp";
-import Pancake from "../controllers/pancake";
-import Dashboard from "../controllers/dashboard";
+import Namespace from "controllers/namespace";
+import anotherNamespace from "controllers/another-namespace";
+import ERP from "controllers/erp";
+import Pancake from "controllers/pancake";
+import Dashboard from "controllers/dashboard";
 
 export default class APIRoutes {
   static register(api) {

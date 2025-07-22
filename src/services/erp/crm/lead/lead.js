@@ -1,5 +1,5 @@
-import FrappeClient from "../../../../frappe/frappe-client";
-import Database from "../../../database";
+import FrappeClient from "frappe/frappe-client";
+import Database from "services/database";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import ContactService from "services/erp/contacts/contact/contact";
@@ -183,6 +183,12 @@ export default class LeadService {
     if (data.raw_data.demand) {
       notes.push({
         note: "Demand: " + data.raw_data.demand
+      });
+    }
+
+    if (data.raw_data.diamond_note) {
+      notes.push({
+        note: "Diamond: " + data.raw_data.diamond_note
       });
     }
 

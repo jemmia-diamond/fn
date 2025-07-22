@@ -1,4 +1,4 @@
-import AssignmentRuleService from "./assigment-rule/assigment-rule";
+import AssignmentRuleService from "services/erp/automation/assigment-rule/assigment-rule";
 
 export default {
   AssignmentRuleService: AssignmentRuleService

@@ -1,4 +1,4 @@
-import ScheduleService from "./schedule/schedule";
+import ScheduleService from "services/larksuite/attendance/schedule/schedule";
 
 export default {
   ScheduleService: ScheduleService

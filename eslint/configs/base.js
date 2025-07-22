@@ -1,12 +1,18 @@
 import globals from "globals";
 import unusedImports from "eslint-plugin-unused-imports";
+import noRelativeImports from "../rules/no-relative-imports.js";
 
 export default function getBaseConfig() {
   return {
     files: ["**/*.{js,mjs,cjs}"],
     languageOptions: { globals: globals.browser },
     plugins: {
-      "unused-imports": unusedImports
+      "unused-imports": unusedImports,
+      "custom": {
+        rules: {
+          "no-relative-imports": noRelativeImports
+        }
+      }
     },
     rules: {
       quotes: ["error", "double"],
@@ -27,7 +33,8 @@ export default function getBaseConfig() {
       "no-multiple-empty-lines": ["error", { max: 1 }],
       "eol-last": ["error", "always"],
       "no-console": ["error", { "allow": ["warn", "error"] }],
-      "indent": ["error", 2]
+      "indent": ["error", 2],
+      "custom/no-relative-imports": "error"
     }
   };
 }
