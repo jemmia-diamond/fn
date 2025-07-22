@@ -1,5 +1,7 @@
-import ProductController from "./product-controller";
+import ProductController from "controllers/ecommerce/product-controller";
+import SearchController from "controllers/ecommerce/search-controller";
 
 export default {
-  ProductController: ProductController
+  ProductController: ProductController,
+  SearchController: SearchController
 };

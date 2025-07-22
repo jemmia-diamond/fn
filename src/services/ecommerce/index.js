@@ -1,4 +1,4 @@
-import ProductService from "./product/product";
+import ProductService from "services/ecommerce/product/product";
 
 export default {
   ProductService: ProductService

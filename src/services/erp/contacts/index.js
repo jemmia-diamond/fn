@@ -1,5 +1,5 @@
-import AddressService from "./address/address";
-import ContactService from "./contact/contact";
+import AddressService from "services/erp/contacts/address/address";
+import ContactService from "services/erp/contacts/contact/contact";
 
 export default {
   AddressService: AddressService,

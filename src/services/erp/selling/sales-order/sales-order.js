@@ -1,5 +1,5 @@
-import FrappeClient from "../../../../frappe/frappe-client";
-import { convertIsoToDatetime } from "../../../../frappe/utils/datetime";
+import FrappeClient from "frappe/frappe-client";
+import { convertIsoToDatetime } from "frappe/utils/datetime";
 
 import AddressService from "../../contacts/address/address";
 import ContactService from "../../contacts/contact/contact";

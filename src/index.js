@@ -2,12 +2,12 @@ import { Hono } from "hono";
 import { bearerAuth } from "hono/bearer-auth";
 import { cors } from "hono/cors";
 
-import Routes from "./routes";
-import errorTracker from "./services/error-tracker";
-import loggrageLogger from "./services/custom-logger";
+import Routes from "src/routes";
+import errorTracker from "services/error-tracker";
+import loggrageLogger from "services/custom-logger";
 
-import queueHandler from "./services/queue-handler";
-import scheduleHandler from "./services/schedule-handler";
+import queueHandler from "services/queue-handler";
+import scheduleHandler from "services/schedule-handler";
 
 const app = new Hono();
 const api = app.basePath("/api");

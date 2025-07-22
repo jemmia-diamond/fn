@@ -1,4 +1,4 @@
-import Pancake from "../../../../services/pancake";
+import Pancake from "services/pancake";
 
 export default class FrappePancakeConversationAssignmentController {
   static async create(ctx) {

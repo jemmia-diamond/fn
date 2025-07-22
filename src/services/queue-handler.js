@@ -1,7 +1,7 @@
 /* eslint no-console: "off" */
 
-import ERP from "../services/erp";
-import Pancake from "../services/pancake";
+import ERP from "services/erp";
+import Pancake from "services/pancake";
 
 export default {
   queue: async (batch, env) => {
