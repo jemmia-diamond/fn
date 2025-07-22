@@ -1,4 +1,4 @@
-import SalesOrderService from "../../services/erp/selling/sales-order/sales-order";
+import SalesOrderService from "src/services/erp/selling/sales-order/sales-order";
 
 export default class SalesOrderController {
   static async create(ctx) {

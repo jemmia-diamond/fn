@@ -1,15 +1,15 @@
 import FrappeClient from "frappe/frappe-client";
 import { convertIsoToDatetime } from "frappe/utils/datetime";
 
-import AddressService from "services/erp/contacts/address/address";
-import ContactService from "services/erp/contacts/contact/contact";
-import CustomerService from "services/erp/selling/customer/customer";
-import Database from "../../../database";
+import AddressService from "src/services/erp/contacts/address/address";
+import ContactService from "src/services/erp/contacts/contact/contact";
+import CustomerService from "src/services/erp/selling/customer/customer";
+import Database from "src/database";
 
 import {
   mapSalesOrderToDatabase,
   mapSalesOrderItemToDatabase
-} from "./utils/sales-order-mappers";
+} from "src/services/erp/selling/sales-order/utils/sales-order-mappers";
 
 import {
   formatTimeRange,
@@ -17,7 +17,7 @@ import {
   createSyncResponse,
   logSyncProgress,
   batchItems
-} from "./utils/sales-order-helpers";
+} from "src/services/erp/selling/sales-order/utils/sales-order-helpers";
 
 export default class SalesOrderService {
   constructor(env) {
