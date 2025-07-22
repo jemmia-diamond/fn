@@ -43,10 +43,10 @@ This project uses multiple Prisma schema files for better organization:
 - Models can reference each other across files without imports
 - Run pull/push to migrate schema database.
 ```bash
-# Pull the current database schema into your Prisma schema files
+# Pull the state from the database to the Prisma schema using introspection (Do not need with an empty schema)
 pnpx prisma db pull 
 
-# Push your Prisma schema changes to the database (apply schema changes)
+# Push the state from Prisma schema to the database during prototyping (apply schema changes to database)
 pnpx prisma db push
 ```
 - Build Prisma with:
