@@ -4,7 +4,7 @@ import { convertIsoToDatetime } from "frappe/utils/datetime";
 import AddressService from "src/services/erp/contacts/address/address";
 import ContactService from "src/services/erp/contacts/contact/contact";
 import CustomerService from "src/services/erp/selling/customer/customer";
-import Database from "src/database";
+import Database from "src/services/database";
 
 import {
   mapSalesOrderToDatabase,
@@ -20,6 +20,9 @@ import {
 } from "src/services/erp/selling/sales-order/utils/sales-order-helpers";
 
 export default class SalesOrderService {
+
+  // ===== ERPNEXT CONSTANTS =====
+  static ERPNEXT_PAGE_SIZE = 50;
   constructor(env) {
     this.env = env;
     this.doctype = "Sales Order";
@@ -50,6 +53,7 @@ export default class SalesOrderService {
       }
     );
     this.db = Database.instance(env);
+    
   };
 
   async processHaravanOrder(haravanOrderData) {
@@ -154,7 +158,7 @@ export default class SalesOrderService {
 
       let allSalesOrders = [];
       let start = 0;
-      const pageSize = 1000; // Fetch 1000 records per batch
+      const pageSize = SalesOrderService.ERPNEXT_PAGE_SIZE;
       let hasMoreData = true;
 
       while (hasMoreData) {
