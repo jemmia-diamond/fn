@@ -44,6 +44,12 @@
       "secret_name": "STRINGEE_SID"
     }
   ],
+  "kv_namespaces": [
+    {
+      "binding": "FN_KV",
+      "id": "929367ba02c94a6997a40942aef533a7"
+    }
+  ],
   "queues": {
     "consumers": [
       {

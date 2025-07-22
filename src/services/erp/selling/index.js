@@ -1,7 +1,7 @@
-import OrderService from "services/erp/selling/sales-order/sales-order";
-import CustomerService from "services/erp/selling/customer/customer";
+import SalesOrderService from "src/services/erp/selling/sales-order/sales-order";
+import CustomerService from "src/services/erp/selling/customer/customer";
 
 export default {
-  OrderService: OrderService,
+  SalesOrderService: SalesOrderService,
   CustomerService: CustomerService
 };
