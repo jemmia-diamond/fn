@@ -54,7 +54,7 @@ export default class FrappeClient {
     await this.getRequest("", { cmd: "logout" });
   }
 
-  //CRUD
+  // CRUD
 
   async getList(
     doctype,
@@ -164,8 +164,6 @@ export default class FrappeClient {
     return this.postProcess(res);
   }
 
-  // Utils
-
   chunk(arr, size) {
     const chunks = [];
     for (let i = 0; i < arr.length; i += size) {
@@ -182,7 +180,8 @@ export default class FrappeClient {
     let arr;
     try {
       arr = JSON.parse(jsonPart);
-    } catch {
+    } catch (e) {
+      console.error("Invalid JSON:", e);
       return null;
     }
     const traceback = arr[0] ?? "";
@@ -190,9 +189,9 @@ export default class FrappeClient {
     for (let i = lines.length - 1; i >= 0; i--) {
       const line = lines[i].trim();
       if (line.includes(":")) {
-        const [kind, ...rest] = line.split(":");
-        if (kind.toLowerCase().includes("error") || kind.toLowerCase().includes("exception")) {
-          return rest.join(":").trim();
+        const parts = line.split(":");
+        if (parts[0].toLowerCase().includes("error") || parts[0].toLowerCase().includes("exception")) {
+          return parts.slice(1).join(":").trim();
         }
       }
     }
@@ -200,12 +199,11 @@ export default class FrappeClient {
   }
 
   async postProcess(res) {
-    const raw = typeof res.data === "string" ? res.data : JSON.stringify(res.data);
-    let data;
+    const text = await res.text();
     try {
-      data = typeof res.data === "string" ? JSON.parse(raw) : res.data;
+      const data = JSON.parse(text);
       if (data.exc) throw new Error(data.exc);
-      return data.message ?? data.data ?? null;
+      return data.message || data.data || null;
     } catch (e) {
       throw this.parseErrorMessage(e);
     }
