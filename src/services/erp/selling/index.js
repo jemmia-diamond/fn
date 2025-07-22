@@ -3,5 +3,6 @@ import CustomerService from "services/erp/selling/customer/customer";
 
 export default {
   OrderService: OrderService,
-  CustomerService: CustomerService
+  CustomerService: CustomerService,
+  SerialService: SerialService
 };
