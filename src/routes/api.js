@@ -22,7 +22,7 @@ export default class APIRoutes {
     const jemmiaERPNamespaceApi = api.basePath("/erp");
     jemmiaERPNamespaceApi.get("/leads", ERP.LeadController.index);
     jemmiaERPNamespaceApi.patch("/leads/:id", ERP.LeadController.update);
-    jemmiaERPNamespaceApi.post("/orders", ERP.OrderController.create);
+    jemmiaERPNamespaceApi.post("/sales_orders", ERP.SalesOrderController.create);
 
     const pancakeNamespaceApi = api.basePath("/pancake");
     pancakeNamespaceApi.post("/conversation_assignments", Pancake.ConversationAssignmentController.create);
