@@ -1,10 +1,10 @@
-import OrderService from "services/erp/selling/sales-order/sales-order";
+import SalesOrderService from "src/services/erp/selling/sales-order/sales-order";
 
 export default class OrderController {
   static async create(ctx) {
-    const orderData = await ctx.req.json();
-    const orderSer = new OrderService(ctx.env);
-    const order = await orderSer.processHaravanOrder(orderData);
-    return ctx.json(order, 200);
+    const salesOrderData = await ctx.req.json();
+    const salesOrderService = new SalesOrderService(ctx.env);
+    const salesOrder = await salesOrderService.processHaravanOrder(salesOrderData);
+    return ctx.json(salesOrder, 200);
   };
 };
