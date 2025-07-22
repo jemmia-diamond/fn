@@ -22,7 +22,13 @@ importers:
         version: 6.9.0(prisma@6.9.0)
       '@vespaiach/axios-fetch-adapter':
         specifier: ^0.3.1
-        version: 0.3.1(axios@0.27.2)
+        version: 0.3.1(axios@1.10.0)
+      axios:
+        specifier: ^1.10.0
+        version: 1.10.0
+      axios-retry:
+        specifier: ^4.5.0
+        version: 4.5.0(axios@1.10.0)
       crypto-js:
         specifier: ^4.2.0
         version: 4.2.0
@@ -567,8 +573,16 @@ packages:
   asynckit@0.4.0:
     resolution: {integrity: sha512-Oei9OH4tRh0YqU3GxhX79dM/mwVgvbZJaSNaRk+bshkj0S5cfHcgYakreBjrHwatXKbz+IoIdYLxrKim2MjW0Q==}
 
+  axios-retry@4.5.0:
+    resolution: {integrity: sha512-aR99oXhpEDGo0UuAlYcn2iGRds30k366Zfa05XWScR9QaQD4JYiP3/1Qt1u7YlefUOK+cn0CcwoL1oefavQUlQ==}
+    peerDependencies:
+      axios: 0.x || 1.x
+
   axios@0.27.2:
     resolution: {integrity: sha512-t+yRIyySRTp/wua5xEr+z1q60QmLq8ABsS5O9Me1AsE5dfKqgnCFzwiCZZ/cGNd1lq4/7akDWMxdhVlucjmnOQ==}
+
+  axios@1.10.0:
+    resolution: {integrity: sha512-/1xYAC4MP/HEG+3duIhFr4ZQXR4sQXOIe+o6sdqzeykGLx6Upp/1p8MHqhINOvGeP7xyNHe7tsiJByc4SSVUxw==}
 
   balanced-match@1.0.2:
     resolution: {integrity: sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw==}
@@ -861,6 +875,10 @@ packages:
     resolution: {integrity: sha512-xelSayHH36ZgE7ZWhli7pW34hNbNl8Ojv5KVmkJD4hBdD3th8Tfk9vYasLM+mXWOZhFkgZfxhLSnrwRr4elSSg==}
     engines: {node: '>=0.10.0'}
 
+  is-retry-allowed@2.2.0:
+    resolution: {integrity: sha512-XVm7LOeLpTW4jV19QSH38vkswxoLud8sQ57YwJVTPWdiaI9I8keEhGFpBlslyVsgdQy4Opg8QOLb8YRgsyZiQg==}
+    engines: {node: '>=10'}
+
   isexe@2.0.0:
     resolution: {integrity: sha512-RHxMLp9lnKHGHRng9QFhRCMbYAcVpn69smSGcq3f36xjgVVWThj4qqLbTLlq7Ssj8B+fIQ1EuCEGI2lKsyQeIw==}
 
@@ -1027,6 +1045,9 @@ packages:
   protobufjs@7.5.3:
     resolution: {integrity: sha512-sildjKwVqOI2kmFDiXQ6aEB0fjYTafpEvIBs8tOR8qI4spuL9OPROLVu2qZqi/xgCfsHIwVqlaF8JBjWFHnKbw==}
     engines: {node: '>=12.0.0'}
+
+  proxy-from-env@1.1.0:
+    resolution: {integrity: sha512-D+zkORCbA9f1tdWRK0RaCR3GPv50cMxcrz4X8k5LTSUD1Dkw47mKJEZQNunItRTkWwgtaUSo1RVFRIG9ZXiFYg==}
 
   punycode@2.3.1:
     resolution: {integrity: sha512-vYt7UD1U9Wg6138shLtLOvdAu+8DsC/ilFtEVHcH+wydcSpNE20AfSOduf6MkRFahL5FY7X1oU7nKVZFtfq8Fg==}
@@ -1536,9 +1557,9 @@ snapshots:
       pg-protocol: 1.10.0
       pg-types: 2.2.0
 
-  '@vespaiach/axios-fetch-adapter@0.3.1(axios@0.27.2)':
+  '@vespaiach/axios-fetch-adapter@0.3.1(axios@1.10.0)':
     dependencies:
-      axios: 0.27.2
+      axios: 1.10.0
 
   acorn-jsx@5.3.2(acorn@8.14.0):
     dependencies:
@@ -1567,10 +1588,23 @@ snapshots:
 
   asynckit@0.4.0: {}
 
+  axios-retry@4.5.0(axios@1.10.0):
+    dependencies:
+      axios: 1.10.0
+      is-retry-allowed: 2.2.0
+
   axios@0.27.2:
     dependencies:
       follow-redirects: 1.15.9
       form-data: 4.0.2
+    transitivePeerDependencies:
+      - debug
+
+  axios@1.10.0:
+    dependencies:
+      follow-redirects: 1.15.9
+      form-data: 4.0.2
+      proxy-from-env: 1.1.0
     transitivePeerDependencies:
       - debug
 
@@ -1878,6 +1912,8 @@ snapshots:
     dependencies:
       is-extglob: 2.1.1
 
+  is-retry-allowed@2.2.0: {}
+
   isexe@2.0.0: {}
 
   jiti@2.4.2: {}
@@ -2031,6 +2067,8 @@ snapshots:
       '@protobufjs/utf8': 1.1.0
       '@types/node': 22.15.29
       long: 5.3.2
+
+  proxy-from-env@1.1.0: {}
 
   punycode@2.3.1: {}
 
