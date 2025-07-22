@@ -43,13 +43,23 @@ This project uses multiple Prisma schema files for better organization:
 - Models can reference each other across files without imports
 - Run pull/push to migrate schema database.
 ```bash
-pnpx prisma db pull
+# Pull the current database schema into your Prisma schema files
+pnpx prisma db pull 
+
+# Push your Prisma schema changes to the database (apply schema changes)
 pnpx prisma db push
 ```
 - Build Prisma with:
 ```bash
 pnpx prisma generate
 ```
+
+### Important Notes
+
+- **Model names must be unique** across all schema files
+- Use `@@map()` to map Prisma models to actual database table names when needed
+- For detailed examples of model mapping, see `erpnext.prisma`
+
 
 This will start a local development server using Wrangler. Or in the case you want to test Cron triggers using Wrangler.
 
