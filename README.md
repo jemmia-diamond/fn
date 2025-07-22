@@ -37,16 +37,23 @@ pnpm run dev
 
 This project uses multiple Prisma schema files for better organization:
 
-- Place your `.prisma` files in `prisma/schema/` directory
 - The main `schema.prisma` contains generator and datasource configuration
+- Place your `.prisma` files in `prisma/schema/` directory
 - Create separate files for different model groups (e.g., `haravan.prisma`, `pancake.prisma`)
 - Models can reference each other across files without imports
-- Run pull/push to migrate schema database.
-```bash
-# Pull the state from the database to the Prisma schema using introspection (Do not need with an empty schema)
-pnpx prisma db pull 
+- Don't forget to place a .env file containing DATABASE_URL or use the above command before pull/push operation
 
-# Push the state from Prisma schema to the database during prototyping (apply schema changes to database)
+```bash
+export DATABASE_URL=<connection_string>
+```
+
+- Pull the state from the database to the Prisma schema using introspection (Do not need with an empty schema)
+```bash
+pnpx prisma db pull 
+```
+
+- Push the state from Prisma schema to the database during prototyping (apply schema changes to database)
+```bash
 pnpx prisma db push
 ```
 - Build Prisma with:
