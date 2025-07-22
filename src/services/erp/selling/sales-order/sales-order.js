@@ -1,9 +1,9 @@
 import FrappeClient from "frappe/frappe-client";
 import { convertIsoToDatetime } from "frappe/utils/datetime";
 
-import AddressService from "../../contacts/address/address";
-import ContactService from "../../contacts/contact/contact";
-import CustomerService from "../customer/customer";
+import AddressService from "services/erp/contacts/address/address";
+import ContactService from "services/erp/contacts/contact/contact";
+import CustomerService from "services/erp/selling/customer/customer";
 import Database from "../../../database";
 
 import {
