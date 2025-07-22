@@ -8,11 +8,11 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@haverstack/axios-fetch-adapter": "^0.12.0",
     "@hono/sentry": "^1.2.1",
     "@larksuiteoapi/node-sdk": "1.47.1",
     "@prisma/adapter-neon": "^6.9.0",
     "@prisma/client": "6.9.0",
-    "@vespaiach/axios-fetch-adapter": "^0.3.1",
     "axios": "^1.10.0",
     "axios-retry": "^4.5.0",
     "crypto-js": "^4.2.0",
