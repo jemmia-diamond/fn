@@ -33,7 +33,20 @@ Start the development server with:
 pnpm run dev
 ```
 
-Build Prisma with:
+## Prisma Multiple Schema Files
+
+This project uses multiple Prisma schema files for better organization:
+
+- Place your `.prisma` files in `prisma/schema/` directory
+- The main `schema.prisma` contains generator and datasource configuration
+- Create separate files for different model groups (e.g., `haravan.prisma`, `pancake.prisma`)
+- Models can reference each other across files without imports
+- Run pull/push to migrate schema database.
+```bash
+pnpx prisma db pull
+pnpx prisma db push
+```
+- Build Prisma with:
 ```bash
 pnpx prisma generate
 ```
