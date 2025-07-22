@@ -1,6 +1,6 @@
-import SalesOrderController from "./sales-order-controller";
-import LeadController from "./lead-controller";
-import SalesOrderNotificationController from "./sales-order-notification-controller";
+import SalesOrderController from "controllers/erp/sales-order-controller";
+import LeadController from "controllers/erp/lead-controller";
+import SalesOrderNotificationController from "controllers/erp/sales-order-notification-controller";
 
 export default {
   SalesOrderController,
