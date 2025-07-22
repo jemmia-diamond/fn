@@ -1,7 +1,9 @@
-import APIRoutes from "./api";
-import WebhookRoutes from "./webhook";
+import APIRoutes from "routes/api";
+import WebhookRoutes from "routes/webhook";
+import EcommerceRoutes from "routes/ecommerce";
 
 export default {
   APIRoutes,
-  WebhookRoutes
+  WebhookRoutes,
+  EcommerceRoutes
 };

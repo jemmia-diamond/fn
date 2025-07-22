@@ -1,9 +1,9 @@
-import Automation from "./automation";
-import CRM from "./crm";
-import Selling from "./selling";
-import Contacts from "./contacts";
-import Core from "./core";
-import Telephony from "./telephony";
+import Automation from "services/erp/automation";
+import CRM from "services/erp/crm";
+import Selling from "services/erp/selling";
+import Contacts from "services/erp/contacts";
+import Core from "services/erp/core";
+import Telephony from "services/erp/telephony";
 
 export default {
   Automation: Automation,

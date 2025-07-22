@@ -2,16 +2,17 @@ import { Hono } from "hono";
 import { bearerAuth } from "hono/bearer-auth";
 import { cors } from "hono/cors";
 
-import Routes from "./routes";
-import errorTracker from "./services/error-tracker";
-import loggrageLogger from "./services/custom-logger";
+import Routes from "src/routes";
+import errorTracker from "services/error-tracker";
+import loggrageLogger from "services/custom-logger";
 
-import queueHandler from "./services/queue-handler";
-import scheduleHandler from "./services/schedule-handler";
+import queueHandler from "services/queue-handler";
+import scheduleHandler from "services/schedule-handler";
 
 const app = new Hono();
 const api = app.basePath("/api");
 const webhook = app.basePath("/webhook");
+const ecommerce = app.basePath("/ecommerce_api");
 
 // Error tracking
 app.use("*", errorTracker);
@@ -53,6 +54,7 @@ api.use("*",
 // Routes registration
 Routes.APIRoutes.register(api);
 Routes.WebhookRoutes.register(webhook);
+Routes.EcommerceRoutes.register(ecommerce);
 
 // Cron trigger and Queue Integrations
 export default {

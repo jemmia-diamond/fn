@@ -5,7 +5,8 @@ export default class LarksuiteService {
   static createClient(env) {
     const client = new lark.Client({
       appId: env.LARKSUITE_APP_ID,
-      appSecret: env.LARKSUITE_APP_SECRET
+      appSecret: env.LARKSUITE_APP_SECRET,
+      domain: "https://open.larksuite.com"
     });
     client.httpInstance.defaults.adapter = fetchAdapter;
     return client;

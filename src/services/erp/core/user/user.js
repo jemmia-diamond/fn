@@ -1,5 +1,5 @@
-import FrappeClient from "../../../../frappe/frappe-client";
-import Database from "../../../database";
+import FrappeClient from "frappe/frappe-client";
+import Database from "services/database";
 
 export default class UserService {
   constructor(env) {
