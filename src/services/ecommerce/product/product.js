@@ -16,7 +16,7 @@ export default class ProductService {
 
     return {
       data,
-      count: Number(count[0].total)
+      count: count.length ? Number(count[0].total) : 0
     };
   }
 
