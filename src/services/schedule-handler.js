@@ -32,6 +32,9 @@ export default {
       await ERP.Automation.AssignmentRuleService.enableAssignmentRuleOffHour(env);
       break;
     default:
+      // await ERP.Core.UserService.syncUsersToDatabase(env);
+      // await ERP.Setup.EmployeeService.syncEmployeesToDatabase(env);
+      await ERP.Selling.SalesPersonService.syncSalesPersonToDatabase(env);
       break;
     };
   }

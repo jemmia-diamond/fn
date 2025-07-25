@@ -1,4 +1,4 @@
-model ERPNextUser {
+model erpnextUser {
   uuid                String @id @default(uuid()) @db.Uuid
   name                String? @unique
   email               String?
@@ -7,7 +7,7 @@ model ERPNextUser {
   @@schema("erpnext2")
 }
 
-model ERPNextEmployee {
+model erpnextEmployee {
   uuid                String @id @default(uuid()) @db.Uuid
   name                String? @unique
   user_id             String?
@@ -17,7 +17,7 @@ model ERPNextEmployee {
 }
 
 
-model ERPNextSalesPerson {
+model erpnextSalesPerson {
   uuid                String @id @default(uuid()) @db.Uuid
   name                String? @unique
   employee            String?
