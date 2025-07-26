@@ -1,9 +1,14 @@
 import FrappeClient from "src/frappe/frappe-client";
 import { convertIsoToDatetime } from "src/frappe/utils/datetime";
-
+import LarksuiteService from "services/larksuite/lark";
 import AddressService from "src/services/erp/contacts/address/address";
 import ContactService from "src/services/erp/contacts/contact/contact";
 import CustomerService from "src/services/erp/selling/customer/customer";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc.js";
+import { composeSalesOrderNotification, extractPromotions } from "services/erp/selling/sales-order/utils/sales-order-notification";
+
+dayjs.extend(utc);
 
 export default class SalesOrderService {
   constructor(env) {
@@ -127,4 +132,27 @@ export default class SalesOrderService {
       rate: parseInt(lineItemData.price)
     };
   };
+
+  async sendNotificationToLark(salesOrderData) {
+    const larkClient = LarksuiteService.createClient(this.env);
+
+    const promotionNames = extractPromotions(salesOrderData);
+    const promotionData = await this.frappeClient.getList("Promotion", {
+      filters: [["name", "in", promotionNames]]
+    });
+    const content = composeSalesOrderNotification(salesOrderData, promotionData);
+
+    const response = await larkClient.im.message.create({
+      params: {
+        receive_id_type: "chat_id"
+      },
+      data: {
+        receive_id: "oc_7f6dd355251aa766220a84dcae2403e1",
+        msg_type: "text",
+        content: JSON.stringify({
+          text: content
+        })
+      }
+    });
+  }
 }
