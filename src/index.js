@@ -51,27 +51,6 @@ api.use("*",
   })
 );
 
-ecommerce.use("*", cors({
-  origin: (origin, c) => {
-    const corsOrigin = c.env.CORS_ORIGINS.split(",");
-
-    if (corsOrigin.includes(origin)) {
-      return origin;
-    }
-
-    // Handle wildcard, eg: *.jemmia.vn
-    for (const o of corsOrigin.filter((o) => o.startsWith("https://*.") )) {
-      if (origin.endsWith(o.replace("https://*", ""))) {
-        return origin;
-      }
-    }
-
-    return null;
-  },
-  allowHeaders: ["Content-Type", "Authorization"],
-  allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
-}));
-
 // Routes registration
 Routes.APIRoutes.register(api);
 Routes.WebhookRoutes.register(webhook);
