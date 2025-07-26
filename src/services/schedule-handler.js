@@ -34,7 +34,8 @@ export default {
     default:
       // await ERP.Core.UserService.syncUsersToDatabase(env);
       // await ERP.Setup.EmployeeService.syncEmployeesToDatabase(env);
-      await ERP.Selling.SalesPersonService.syncSalesPersonToDatabase(env);
+      // await ERP.Selling.SalesPersonService.syncSalesPersonToDatabase(env);
+      await ERP.Selling.SalesOrderService.backfillAllocations(env);
       break;
     };
   }

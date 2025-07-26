@@ -5,6 +5,8 @@ import AddressService from "src/services/erp/contacts/address/address";
 import ContactService from "src/services/erp/contacts/contact/contact";
 import CustomerService from "src/services/erp/selling/customer/customer";
 
+import Database from "services/database";
+
 export default class SalesOrderService {
   constructor(env) {
     this.env = env;
@@ -35,6 +37,7 @@ export default class SalesOrderService {
         apiSecret: env.JEMMIA_ERP_API_SECRET
       }
     );
+    this.db = Database.instance(env);
   };
 
   async processHaravanOrder(haravanOrderData) {
@@ -127,4 +130,45 @@ export default class SalesOrderService {
       rate: parseInt(lineItemData.price)
     };
   };
+
+  static async backfillAllocations(env) {
+    const salesOrderService = new SalesOrderService(env);
+    const allocationData = await salesOrderService.db.$queryRaw`
+SELECT
+  so."name" AS sales_order_name,
+  JSON_AGG(
+    JSON_BUILD_OBJECT(
+      'sales_person', sp."name",
+      'allocated_percentage', round(a.allocation_amount_percent, 2)
+    )
+  ) AS sales_team
+FROM haravan.orders o 
+  INNER JOIN bizflycrm.orders o2 ON o.id::text = o2.haravan_id 
+  INNER JOIN erpnext_local_env.sales_orders so ON so.haravan_order_id = o.id::text
+  INNER JOIN bizflycrm.allocations a ON o2.id = a.order_id
+  INNER JOIN bizflycrm.users u ON a.sale_id = u.id 
+  INNER JOIN erpnext2.users u2 ON u.email = u2.email 
+  INNER JOIN erpnext2.employee e ON u2."name" = e.user_id
+  INNER JOIN erpnext2.sales_persons sp ON e."name" = sp.employee 
+WHERE o.cancelled_status = 'uncancelled' AND so."name" >= 'SAL-ORD-2025-00412'
+GROUP BY so."name"
+ORDER BY so."name"
+      `
+    console.log(allocationData.length);
+    for (const order of allocationData) {
+      try {
+      const res = await salesOrderService.frappeClient.update(
+        {
+          doctype: "Sales Order",
+          name: order.sales_order_name,
+          sales_team: order.sales_team
+        }
+      )
+      }
+      catch (e) {
+        console.log(order.sales_order_name);
+        console.error(e);
+      }
+    }
+  }
 }
