@@ -4,6 +4,7 @@ import anotherNamespace from "controllers/another-namespace";
 import ERP from "controllers/erp";
 import Pancake from "controllers/pancake";
 import Dashboard from "controllers/dashboard";
+import Ecommerce from "controllers/ecommerce";
 
 export default class APIRoutes {
   static register(api) {
@@ -29,5 +30,9 @@ export default class APIRoutes {
 
     const dashboardNamespaceApi = api.basePath("/dashboard");
     dashboardNamespaceApi.get("/tv", Dashboard.TVController.show);
+
+    const ecommerceNamespaceApi = api.basePath("/ecommerce");
+    ecommerceNamespaceApi.get("/search", Ecommerce.SearchController.index);
+    ecommerceNamespaceApi.get("/product/jewelries", Ecommerce.ProductController.index); // TODO: It should be JewelryController
   };
 };
