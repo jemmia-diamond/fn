@@ -18,40 +18,40 @@ app.use("*", errorTracker);
 app.use(loggrageLogger());
 
 // CORS
-api.use("*", cors({
-  origin: (origin, c) => {
-    const corsOrigin = c.env.CORS_ORIGINS.split(",");
+// api.use("*", cors({
+//   origin: (origin, c) => {
+//     const corsOrigin = c.env.CORS_ORIGINS.split(",");
 
-    if (corsOrigin.includes(origin)) {
-      return origin;
-    }
+//     if (corsOrigin.includes(origin)) {
+//       return origin;
+//     }
 
-    // Handle wildcard, eg: *.jemmia.vn
-    for (const o of corsOrigin.filter((o) => o.startsWith("https://*.") )) {
-      const baseDomain = o.replace("https://*.", "");
+//     // Handle wildcard, eg: *.jemmia.vn
+//     for (const o of corsOrigin.filter((o) => o.startsWith("https://*.") )) {
+//       const baseDomain = o.replace("https://*.", "");
 
-      // Allow both wildcard subdomains and the base domain itself
-      if (origin.endsWith(`.${baseDomain}`) || origin === `https://${baseDomain}`) {
-        return origin;
-      }
-    }
+//       // Allow both wildcard subdomains and the base domain itself
+//       if (origin.endsWith(`.${baseDomain}`) || origin === `https://${baseDomain}`) {
+//         return origin;
+//       }
+//     }
 
-    return null;
-  },
-  allowHeaders: ["Content-Type", "Authorization"],
-  allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
-}));
+//     return null;
+//   },
+//   allowHeaders: ["Content-Type", "Authorization"],
+//   allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+// }));
 
 // Authentication
-api.use("*",
-  bearerAuth({
-    verifyToken: async (token, c) => {
-      const bearerToken = await c.env.BEARER_TOKEN_SECRET.get();
+// api.use("*",
+//   bearerAuth({
+//     verifyToken: async (token, c) => {
+//       const bearerToken = await c.env.BEARER_TOKEN_SECRET.get();
 
-      return (token === bearerToken) || (token === c.env.BEARER_TOKEN);
-    }
-  })
-);
+//       return (token === bearerToken) || (token === c.env.BEARER_TOKEN);
+//     }
+//   })
+// );
 
 // Routes registration
 Routes.APIRoutes.register(api);

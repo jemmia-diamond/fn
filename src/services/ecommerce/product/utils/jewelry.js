@@ -108,8 +108,12 @@ export function aggregateQuery(jsonParams) {
     }
   }
 
-  if (jsonParams.price) {
-    filterString += `AND p.min_price >= ${jsonParams.price.min} AND p.max_price <= ${jsonParams.price.max}\n`;
+  if (jsonParams.price?.min) {
+    filterString += `AND p.min_price >= ${jsonParams.price.min}\n`;
+  }
+
+  if (jsonParams.price?.max) {
+    filterString += `AND p.max_price <= ${jsonParams.price.max}\n`;
   }
 
   if (jsonParams.genders && jsonParams.genders.length > 0) {
