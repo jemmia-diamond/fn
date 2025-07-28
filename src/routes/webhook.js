@@ -3,6 +3,7 @@ import AIHubWebhook from "controllers/webhook/ai-hub";
 import HaravanWebhook from  "controllers/webhook/haravan";
 import FrappeWebhook from "controllers/webhook/frappe";
 import PancakeWebhook from "controllers/webhook/pancake";
+import InventoryCmsWebhook from "controllers/webhook/inventory-cms";
 
 export default class WebhookRoutes {
   static register(webhook) {
@@ -14,5 +15,6 @@ export default class WebhookRoutes {
     HaravanWebhook.register(webhook);
     FrappeWebhook.register(webhook);
     PancakeWebhook.register(webhook);
+    InventoryCmsWebhook.register(webhook);
   };
 };
