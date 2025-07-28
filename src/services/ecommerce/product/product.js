@@ -35,7 +35,7 @@ export default class ProductService {
     const lowerSearchKey = searchKey.toLowerCase();
     const likePattern = `%${lowerSearchKey}%`;
     const result = await this.db.$queryRaw`
-    SELECT  
+SELECT  
   CAST(p.haravan_product_id AS INT) AS id,
   p.title,
   d.design_code,
