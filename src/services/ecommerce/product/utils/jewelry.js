@@ -16,7 +16,7 @@ export function buildQuery(jsonParams) {
         WHEN e.product_id IS NULL THEN FALSE 
         ELSE TRUE 
       END AS has_360,
-      array_agg(i.src ORDER BY i.src) AS images,
+      img.images,
       JSON_AGG(
         JSON_BUILD_OBJECT(
           'id', CAST(v.haravan_variant_id AS INT),
@@ -30,7 +30,16 @@ export function buildQuery(jsonParams) {
     FROM ecom.products p
       INNER JOIN workplace.designs d ON d.id = p.design_id
       LEFT JOIN workplace.ecom_360 e ON p.workplace_id = e.product_id
-      INNER JOIN haravan.images i ON i.product_id = p.haravan_product_id
+
+      -- Subquery for pre-aggregated images
+      INNER JOIN (
+        SELECT 
+          i.product_id,
+          array_agg(i.src ORDER BY i.src) AS images
+        FROM haravan.images i
+        GROUP BY i.product_id
+      ) img ON img.product_id = p.haravan_product_id
+
       INNER JOIN LATERAL (
         SELECT *
         FROM ecom.variants v
@@ -45,7 +54,7 @@ export function buildQuery(jsonParams) {
       d.diamond_holder, d.ring_band_type, p.haravan_product_type,
       CASE WHEN e.product_id IS NULL THEN FALSE ELSE TRUE END,
       p.max_price, p.min_price, p.max_price_18, p.max_price_14, 
-      p.qty_onhand, p.image_updated_at
+      p.qty_onhand, p.image_updated_at, img.images
     ${sortString}
     ${paginationString}
   `;
