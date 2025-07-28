@@ -17,7 +17,7 @@ export default class ProductController {
       },
       price: {
         min: params.min_price ? parseInt(params.min_price) : null,
-        max: params.max_price ? parseInt(params.max_price) : 0
+        max: params.max_price ? parseInt(params.max_price) : null
       },
       sort: {
         by: params.sort_by || "price",
