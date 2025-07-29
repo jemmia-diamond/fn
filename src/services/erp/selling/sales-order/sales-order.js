@@ -1,11 +1,11 @@
-import FrappeClient from "frappe/frappe-client";
-import { convertIsoToDatetime } from "frappe/utils/datetime";
+import FrappeClient from "src/frappe/frappe-client";
+import { convertIsoToDatetime } from "src/frappe/utils/datetime";
 
-import AddressService from "services/erp/contacts/address/address";
-import ContactService from "services/erp/contacts/contact/contact";
-import CustomerService from "services/erp/selling/customer/customer";
+import AddressService from "src/services/erp/contacts/address/address";
+import ContactService from "src/services/erp/contacts/contact/contact";
+import CustomerService from "src/services/erp/selling/customer/customer";
 
-export default class OrderService {
+export default class SalesOrderService {
   constructor(env) {
     this.env = env;
     this.doctype = "Sales Order";
@@ -94,11 +94,11 @@ export default class OrderService {
   }
 
   static async dequeueOrderQueue(batch, env) {
-    const orderService = new OrderService(env);
+    const salesOrderService = new SalesOrderService(env);
     const messages = batch.messages;
     for (const message of messages) {
-      const orderData = message.body;
-      await orderService.processHaravanOrder(orderData);
+      const salesOrderData = message.body;
+      await salesOrderService.processHaravanOrder(salesOrderData);
     }
   }
 

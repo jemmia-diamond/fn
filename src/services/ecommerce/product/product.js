@@ -16,7 +16,7 @@ export default class ProductService {
 
     return {
       data,
-      count: Number(count[0].total)
+      count: count.length ? Number(count[0].total) : 0
     };
   }
 
@@ -35,7 +35,7 @@ export default class ProductService {
     const lowerSearchKey = searchKey.toLowerCase();
     const likePattern = `%${lowerSearchKey}%`;
     const result = await this.db.$queryRaw`
-    SELECT  
+SELECT  
   CAST(p.haravan_product_id AS INT) AS id,
   p.title,
   d.design_code,

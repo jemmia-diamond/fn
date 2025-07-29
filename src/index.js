@@ -12,7 +12,6 @@ import scheduleHandler from "services/schedule-handler";
 const app = new Hono();
 const api = app.basePath("/api");
 const webhook = app.basePath("/webhook");
-const ecommerce = app.basePath("/ecommerce_api");
 
 // Error tracking
 app.use("*", errorTracker);
@@ -29,7 +28,10 @@ api.use("*", cors({
 
     // Handle wildcard, eg: *.jemmia.vn
     for (const o of corsOrigin.filter((o) => o.startsWith("https://*.") )) {
-      if (origin.endsWith(o.replace("https://*", ""))) {
+      const baseDomain = o.replace("https://*.", "");
+
+      // Allow both wildcard subdomains and the base domain itself
+      if (origin.endsWith(`.${baseDomain}`) || origin === `https://${baseDomain}`) {
         return origin;
       }
     }
@@ -54,7 +56,6 @@ api.use("*",
 // Routes registration
 Routes.APIRoutes.register(api);
 Routes.WebhookRoutes.register(webhook);
-Routes.EcommerceRoutes.register(ecommerce);
 
 // Cron trigger and Queue Integrations
 export default {
