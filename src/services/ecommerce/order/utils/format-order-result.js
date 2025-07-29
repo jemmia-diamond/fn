@@ -1,4 +1,4 @@
-export function formatOrderResult(orderId, row, lastOrderId) {
+export function formatOrderResult(orderId, row) {
   return {
     order_id: orderId,
     total_price: Number(row.total_price),
