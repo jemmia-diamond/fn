@@ -1,7 +1,7 @@
 import Database from "services/database";
-import { orderStatusQuery } from "./queries/order-status";
-import { getLastOrderIdQuery } from "./queries/get-last_order";
-import { formatOrderResult } from "./utils/format-order-result";
+import { orderStatusQuery } from "src/services/ecommerce/order/queries/order-status";
+import { getLastOrderIdQuery } from "src/services/ecommerce/order/queries/get-last_order";
+import { formatOrderResult } from "src/services/ecommerce/order/utils/format-order-result";
 
 export default class OrderService {
   constructor(env) {
