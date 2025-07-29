@@ -6,7 +6,7 @@ export function formatOrderResult(orderId, row) {
     shipping_fee: Number(row.shipping_fee),
     discount: Number(row.discount),
     order_details: {
-      items: row.items || [],
+      items: row.items || []
     },
     status: "",
     order_statuses: [],
