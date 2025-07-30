@@ -1,5 +1,6 @@
+export function buildWeddingRingsQuery(jsonParams) {
+  const {paginationString} = aggregateQuery(jsonParams);
 
-export function buildWeddingRingsQuery() {
   const dataSql = `
     SELECT 
         wr.id,
@@ -48,6 +49,7 @@ export function buildWeddingRingsQuery() {
         INNER JOIN ecom.wedding_rings wr ON d.wedding_ring_id = wr.id 
     GROUP BY wr.id, wr.title, wr.image_updated_at
     ORDER BY wr.image_updated_at DESC 
+    ${paginationString}
   `;
 
   const countSql = `
@@ -62,5 +64,20 @@ export function buildWeddingRingsQuery() {
   return {
     dataSql,
     countSql
+  };
+}
+
+export function aggregateQuery(jsonParams) {
+  let paginationString = "";
+
+  if (jsonParams.pagination) {
+    paginationString += `LIMIT ${jsonParams.pagination.limit} `;
+    if (jsonParams.pagination.from !== 1) {
+      paginationString += `OFFSET ${jsonParams.pagination.from - 1}\n`;
+    }
+  }
+
+  return {
+    paginationString
   };
 }

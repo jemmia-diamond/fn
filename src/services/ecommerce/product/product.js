@@ -87,8 +87,8 @@ LIMIT ${limit};
     return result;  
   }
 
-  async getWeddingRingsData() {
-    const {dataSql, countSql} = buildWeddingRingsQuery();
+  async getWeddingRingsData(jsonParams) {
+    const {dataSql, countSql} = buildWeddingRingsQuery(jsonParams);
 
     const [data, count] = await Promise.all([
       this.db.$queryRawUnsafe(dataSql),
@@ -102,7 +102,7 @@ LIMIT ${limit};
   }
 
   async getWeddingRings(jsonParams) {
-    const {data, count} = await this.getWeddingRingsData();
+    const {data, count} = await this.getWeddingRingsData(jsonParams);
     return {
       data,
       metadata: {
