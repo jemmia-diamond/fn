@@ -87,7 +87,6 @@ LIMIT ${limit};
   }
 
   async getDiamondProfileImage(gia_no) {
-    console.log(gia_no);
     const result = await this.db.$queryRaw`
       SELECT propimg 
       FROM gia.report_no_data 
