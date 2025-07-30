@@ -1,7 +1,9 @@
 import JewelryController from "controllers/ecommerce/jewelry-controller";
 import SearchController from "controllers/ecommerce/search-controller";
+import WeddingRingController from "controllers/ecommerce/wedding-rings-controller";
 
 export default {
   JewelryController: JewelryController,
-  SearchController: SearchController
+  SearchController: SearchController,
+  WeddingRingController: WeddingRingController
 };
