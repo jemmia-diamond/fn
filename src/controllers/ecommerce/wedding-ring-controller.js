@@ -1,4 +1,6 @@
 import Ecommerce from "services/ecommerce";
+const DEFAULT_LIMIT = 24;
+const DEFAULT_FROM = 1;
 
 export default class WeddingRingController {
   static async index(ctx) {
@@ -6,8 +8,8 @@ export default class WeddingRingController {
 
     const jsonParams = {
       pagination: {
-        from: params.from ? parseInt(params.from, 10) : 1,
-        limit: params.limit ? parseInt(params.limit, 10) : 24
+        from: params.from ? Number(params.from) : DEFAULT_FROM,
+        limit: params.limit ? Number(params.limit) : DEFAULT_LIMIT
       }    
     };
 
