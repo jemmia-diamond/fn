@@ -1,5 +1,6 @@
 import Database from "services/database";
 import { buildQuery } from "services/ecommerce/product/utils/jewelry";
+import { buildWeddingRingsQuery } from "services/ecommerce/product/utils/wedding-ring";
 
 export default class ProductService {
   constructor(env) {
@@ -94,4 +95,30 @@ LIMIT ${limit};
     `;
     return result?.[0] || null;
   }
+  
+  async getWeddingRingsData(jsonParams) {
+    const {dataSql, countSql} = buildWeddingRingsQuery(jsonParams);
+
+    const [data, count] = await Promise.all([
+      this.db.$queryRawUnsafe(dataSql),
+      this.db.$queryRawUnsafe(countSql)
+    ]);
+
+    return {
+      data,
+      count: count.length ? Number(count[0].total) : 0
+    };
+  }
+
+  async getWeddingRings(jsonParams) {
+    const {data, count} = await this.getWeddingRingsData(jsonParams);
+    return {
+      data,
+      metadata: {
+        total: count,
+        pagination: jsonParams.pagination
+      }
+    };
+  }
+  
 }
