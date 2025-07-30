@@ -1,6 +1,6 @@
 import Database from "services/database";
 import { buildQuery } from "services/ecommerce/product/utils/jewelry";
-import { buildWeddingRingsQuery } from "services/ecommerce/product/utils/wedding-rings";
+import { buildWeddingRingsQuery } from "services/ecommerce/product/utils/wedding-ring";
 
 export default class ProductService {
   constructor(env) {
