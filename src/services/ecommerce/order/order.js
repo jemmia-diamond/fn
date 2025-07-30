@@ -10,7 +10,6 @@ export default class OrderService {
 
   async trackOrder(orderId) {
     try {
-      // ✅ Validate orderId strictly
       const parsedOrderId = parseInt(orderId, 10);
 
       if (
@@ -21,7 +20,6 @@ export default class OrderService {
         throw new Error("Invalid order ID");
       }
 
-      // 🧠 Use parsedOrderId instead of raw input
       const lastOrderIdQuery = getLastOrderIdQuery(parsedOrderId);
       const lastOrderIds = await this.db.$queryRawUnsafe(lastOrderIdQuery);
 
