@@ -85,4 +85,14 @@ LIMIT ${limit};
     `;
     return result;  
   }
+
+  async getDiamondProfileImage(gia_no) {
+    console.log(gia_no);
+    const result = await this.db.$queryRaw`
+      SELECT propimg 
+      FROM gia.report_no_data 
+      WHERE report_no = ${gia_no};
+    `;
+    return result?.[0] || null;
+  }
 }
