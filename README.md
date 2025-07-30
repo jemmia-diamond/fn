@@ -33,10 +33,40 @@ Start the development server with:
 pnpm run dev
 ```
 
-Build Prisma with:
+## Prisma Multiple Schema Files
+
+This project uses multiple Prisma schema files for better organization:
+
+- The main `schema.prisma` contains generator and datasource configuration
+- Place your `.prisma` files in `prisma/schema/` directory
+- Create separate files for different model groups (e.g., `haravan.prisma`, `pancake.prisma`)
+- Models can reference each other across files without imports
+- Don't forget to place a .env file containing DATABASE_URL or use the above command before pull/push operation
+
+```bash
+export DATABASE_URL=<connection_string>
+```
+
+- Pull the state from the database to the Prisma schema using introspection (Do not need with an empty schema)
+```bash
+pnpx prisma db pull 
+```
+
+- Push the state from Prisma schema to the database during prototyping (apply schema changes to database)
+```bash
+pnpx prisma db push
+```
+- Build Prisma with:
 ```bash
 pnpx prisma generate
 ```
+
+### Important Notes
+
+- **Model names must be unique** across all schema files
+- Use `@@map()` to map Prisma models to actual database table names when needed
+- For detailed examples of model mapping, see `erpnext.prisma`
+
 
 This will start a local development server using Wrangler. Or in the case you want to test Cron triggers using Wrangler.
 
