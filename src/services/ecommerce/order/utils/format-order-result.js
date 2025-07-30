@@ -6,7 +6,7 @@ export function formatOrderResult(orderId, row) {
     shipping_fee: Number(row.shipping_fee),
     discount: Number(row.discount),
     order_details: {
-      items: row.items || [],
+      items: row.items || []
     },
     status: "",
     order_statuses: [],
@@ -15,13 +15,13 @@ export function formatOrderResult(orderId, row) {
     receiver: {
       name: row.receiver_name,
       phone: row.receiver_phone,
-      address: row.receiver_address,
+      address: row.receiver_address
     },
     payment_method: row.payment_method,
     order_date: row.order_date,
     payment_date: "",
     completed_date: "",
     note: row.note,
-    cancel_reason: row.cancel_reason || "",
+    cancel_reason: row.cancel_reason || ""
   };
 }
