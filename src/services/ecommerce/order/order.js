@@ -1,5 +1,5 @@
 import Database from "services/database";
-import { orderStatusQuery } from "src/services/ecommerce/order/queries/order-status";
+import { orderStatusQuery } from "services/ecommerce/order/queries/order-info";
 import { getLastOrderIdQuery } from "src/services/ecommerce/order/queries/get-last_order";
 import { formatOrderResult } from "src/services/ecommerce/order/utils/format-order-result";
 
