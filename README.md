@@ -154,7 +154,7 @@ app.delete("/resources/:id", YourController.destroy) // Delete
 2. Make your changes following the project structure
 3. Run ESLint locally before submitting your PR:
 ```bash
-pnpm run lint
+pnpm run lint src/
 ```
 4. Push your changes and open a Pull Request
 
