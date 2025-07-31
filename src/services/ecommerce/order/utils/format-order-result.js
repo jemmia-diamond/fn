@@ -10,28 +10,27 @@ class OrderFormatter {
     const isFulfilled = this.row.fulfillment_status;
     const isCanceled = this.row.cancel_status;
 
-    // Giao hàng
     status.push({
       title: "Chưa giao hàng",
       time: "",
       status: isFulfilled ? "done" : "current",
-      link: "",
+      link: ""
     });
 
     status.push({
       title: "Đã giao hàng",
       time: "",
       status: isFulfilled ? "current" : "upcoming",
-      link: "",
+      link: ""
     });
 
-    // Đã hủy (nếu có)
+    // Adding cancel status
     if (isCanceled) {
       status.push({
         title: "Đã hủy",
         time: this.row.cancel_at || "",
         status: "current",
-        link: "",
+        link: ""
       });
     }
 
@@ -50,7 +49,7 @@ class OrderFormatter {
       shipping_fee: Number(this.row.shipping_fee || 0),
       discount: Number(this.row.discount || 0),
       order_details: {
-        items: this.row.items || [],
+        items: this.row.items || []
       },
       order_statuses: this.getFulfillmentStatuses(),
       expected_date: "",
@@ -58,14 +57,14 @@ class OrderFormatter {
       receiver: {
         name: this.row.receiver_name || "",
         phone: this.row.receiver_phone || "",
-        address: this.row.receiver_address || "",
+        address: this.row.receiver_address || ""
       },
       payment_method: this.row.payment_method || "",
       order_date: this.row.order_date || "",
       payment_date: "",
       completed_date: "",
       note: this.row.note || "",
-      cancel_reason: this.row.cancel_reason || "",
+      cancel_reason: this.row.cancel_reason || ""
     };
   }
 }

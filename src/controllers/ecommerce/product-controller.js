@@ -1,6 +1,6 @@
 import Ecommerce from "services/ecommerce";
 
-export default class JewelryController {
+export default class ProductController {
   static async index(ctx) {
     const params = await ctx.req.query();
 
