@@ -3,11 +3,11 @@ import { HTTPException } from "hono/http-exception";
 
 export default class OrderController {
   static async show(ctx) {
-    const { order_id } = ctx.req.param();
+    const { id } = ctx.req.param();
 
     const orderService = new Ecommerce.OrderService(ctx.env);
     try {
-      const orderDetails = await orderService.trackOrder(order_id);
+      const orderDetails = await orderService.trackOrder(id);
       if (!orderDetails || orderDetails.length === 0) {
         throw new HTTPException(404, { message: "Order not found" });
       }
