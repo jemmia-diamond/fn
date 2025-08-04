@@ -4,6 +4,9 @@ import { HTTPException } from "hono/http-exception";
 export default class OrderController {
   static async show(ctx) {
     const { id } = ctx.req.param();
+    if (!id) {
+      throw new HTTPException(400, { message: "Order ID is required" });
+    }
 
     const orderService = new Ecommerce.OrderService(ctx.env);
     try {
