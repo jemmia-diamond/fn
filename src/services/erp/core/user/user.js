@@ -2,7 +2,6 @@ import FrappeClient from "frappe/frappe-client";
 import Database from "services/database";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
-import erp from "services/erp";
 
 dayjs.extend(utc);
 
@@ -60,7 +59,7 @@ export default class UserService {
           name: user.name,
           email: user.email
         }
-      })
+      });
     }
   }
 }

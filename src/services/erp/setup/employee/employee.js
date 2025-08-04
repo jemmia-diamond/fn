@@ -23,14 +23,14 @@ export default class EmployeeService {
     for (const employee of employees) {
       await emmployeeService.db.erpnextEmployee.upsert({
         where: {
-          name: employee.name,
+          name: employee.name
         },
         update: {},
         create: {
           name: employee.name,
           user_id: employee.user_id
         }
-      })
+      });
     }
   }
 }

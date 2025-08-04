@@ -23,14 +23,14 @@ export default class SalesPersonService {
     for (const salesPerson of salesPersons) {
       await salesPersonService.db.erpnextSalesPerson.upsert({
         where: {
-          name: salesPerson.name,
+          name: salesPerson.name
         },
         update: {},
         create: {
           name: salesPerson.name,
           employee: salesPerson.employee
         }
-      })
+      });
     }
   }
 }
