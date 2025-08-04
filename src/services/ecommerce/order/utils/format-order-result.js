@@ -33,7 +33,7 @@ class OrderFormatter {
     if (cancelStatus === CancelStatus.CANCELLED) {
       order_statuses.push({
         title: OrderOverallStatus.CANCELLED,
-        time: this.row.cancel_at,
+        time: this.row.cancelled_at,
         status: OrderTimelineStatus.CANCELLED,
         link: null
       });

@@ -20,7 +20,7 @@ export default class OrderService {
         throw new Error("Invalid order ID");
       }
 
-      const lastOrderIds = await getLastOrderIdQuery(this.db , parsedOrderId);
+      const lastOrderIds = await getLastOrderIdQuery(this.db, parsedOrderId);
 
       const lastOrderId = lastOrderIds.length
         ? lastOrderIds[0].id
