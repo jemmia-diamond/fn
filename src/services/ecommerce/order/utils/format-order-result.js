@@ -1,3 +1,6 @@
+const FulfillmentStatus  = require("../enums/fulfillment-status.enums");
+const CancelStatus  = require("../enums/cancel-status.enums");
+
 class OrderFormatter {
   constructor(orderId, row) {
     this.orderId = orderId;
@@ -7,25 +10,25 @@ class OrderFormatter {
   getFulfillmentStatuses() {
     const status = [];
 
-    const isFulfilled = this.row.fulfillment_status;
-    const isCanceled = this.row.cancel_status;
+    const fulfillmentStatus = this.row.fulfillment_status;
+    const cancelStatus = this.row.cancelled_status;  
 
     status.push({
       title: "Chưa giao hàng",
       time: "",
-      status: isFulfilled ? "done" : "current",
+      status: fulfillmentStatus === FulfillmentStatus.FULFILLED ? "done" : "current",
       link: ""
     });
 
     status.push({
       title: "Đã giao hàng",
       time: "",
-      status: isFulfilled ? "current" : "upcoming",
+      status: fulfillmentStatus === FulfillmentStatus.FULFILLED ? "current" : "upcoming",
       link: ""
     });
 
     // Adding cancel status
-    if (isCanceled) {
+    if (cancelStatus === CancelStatus.CANCELED) {
       status.push({
         title: "Đã hủy",
         time: this.row.cancel_at || "",

@@ -17,6 +17,7 @@ export function orderStatusQuery(orderId) {
       o.confirmed_at AS order_date,
       o.confirmed_at AS payment_date,
       o.closed_at AS completed_date,
+      o.cancelled_status,
       o.fulfillment_status,
       json_agg(json_build_object(
         'product_id', ln.product_id::text,
@@ -46,6 +47,7 @@ export function orderStatusQuery(orderId) {
       o.confirmed_at,
       o.closed_at,
       o.cancelled_at,
-      o.fulfillment_status
+      o.fulfillment_status,
+      o.cancelled_status
   `;
 }
