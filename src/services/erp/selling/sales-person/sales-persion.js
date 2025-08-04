@@ -16,9 +16,13 @@ export default class SalesPersonService {
   }
 
   static async syncSalesPersonToDatabase(env) {
+    const timeThreshold = dayjs().subtract(1, "day").utc().format("YYYY-MM-DD HH:mm:ss");
     const salesPersonService = new SalesPersonService(env);
     const salesPersons = await salesPersonService.frappeClient.getList("Sales Person", {
-      limit_page_length: 100
+      limit_page_length: 100,
+      filters: [
+        ["modified", ">=", timeThreshold]
+      ]
     });
     for (const salesPerson of salesPersons) {
       await salesPersonService.db.erpnextSalesPerson.upsert({

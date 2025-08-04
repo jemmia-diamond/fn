@@ -16,9 +16,13 @@ export default class EmployeeService {
   }
 
   static async syncEmployeesToDatabase(env) {
+    const timeThreshold = dayjs().subtract(1, "day").utc().format("YYYY-MM-DD HH:mm:ss");
     const emmployeeService = new EmployeeService(env);
     const employees = await emmployeeService.frappeClient.getList("Employee", {
-      limit_page_length: 100
+      limit_page_length: 100,
+      filters: [
+        ["modified", ">=", timeThreshold]
+      ]
     });
     for (const employee of employees) {
       await emmployeeService.db.erpnextEmployee.upsert({

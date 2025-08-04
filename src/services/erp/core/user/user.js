@@ -44,9 +44,13 @@ export default class UserService {
   }
 
   static async syncUsersToDatabase(env) {
+    const timeThreshold = dayjs().subtract(1, "day").utc().format("YYYY-MM-DD HH:mm:ss");
     const userService = new UserService(env);
     const users = await userService.frappeClient.getList(userService.doctype, {
-      limit_page_length: 100
+      limit_page_length: 100,
+      filters: [
+        ["modified", ">=", timeThreshold]
+      ]
     });
 
     for (const user of users) {
