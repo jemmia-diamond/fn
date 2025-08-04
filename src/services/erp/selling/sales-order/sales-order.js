@@ -37,7 +37,6 @@ export default class SalesOrderService {
         apiSecret: env.JEMMIA_ERP_API_SECRET
       }
     );
-    this.db = Database.instance(env);
   };
 
   async processHaravanOrder(haravanOrderData) {
