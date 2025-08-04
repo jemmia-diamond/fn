@@ -5,8 +5,6 @@ import AddressService from "src/services/erp/contacts/address/address";
 import ContactService from "src/services/erp/contacts/contact/contact";
 import CustomerService from "src/services/erp/selling/customer/customer";
 
-import Database from "services/database";
-
 export default class SalesOrderService {
   constructor(env) {
     this.env = env;
