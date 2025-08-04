@@ -1,5 +1,6 @@
-const FulfillmentStatus  = require("../enums/fulfillment-status.enums");
-const CancelStatus  = require("../enums/cancel-status.enums");
+const FulfillmentStatus  = require("../enums/fulfillment-status.enum");
+const CancelStatus  = require("../enums/cancel-status.enum");
+const OrderStepStatus = require("../enums/order-step-status.enum");
 
 class OrderFormatter {
   constructor(orderId, row) {
@@ -8,43 +9,43 @@ class OrderFormatter {
   }
 
   getFulfillmentStatuses() {
-    const status = [];
+    const order_statuses = [];
 
     const fulfillmentStatus = this.row.fulfillment_status;
     const cancelStatus = this.row.cancelled_status;  
 
-    status.push({
+    order_statuses.push({
       title: "Chưa giao hàng",
       time: "",
-      status: fulfillmentStatus === FulfillmentStatus.FULFILLED ? "done" : "current",
+      status: fulfillmentStatus === FulfillmentStatus.FULFILLED ? OrderStepStatus.PAST : OrderStepStatus.ONGOING,
       link: ""
     });
 
-    status.push({
+    order_statuses.push({
       title: "Đã giao hàng",
       time: "",
-      status: fulfillmentStatus === FulfillmentStatus.FULFILLED ? "current" : "upcoming",
+      status: fulfillmentStatus === FulfillmentStatus.FULFILLED ? OrderStepStatus.ONGOING : OrderStepStatus.UPCOMING,
       link: ""
     });
 
     // Adding cancel status
     if (cancelStatus === CancelStatus.CANCELED) {
-      status.push({
+      order_statuses.push({
         title: "Đã hủy",
         time: this.row.cancel_at || "",
-        status: "current",
+        status: OrderStepStatus.CANCELLED,
         link: ""
       });
     }
 
-    return status;
+    return order_statuses;
   }
 
   format() {
     return {
       order_id: this.orderId.toString(),
-      status:
-        this.row.fulfillment_status === "fulfilled"
+      overall_status:
+        this.row.fulfillment_status === FulfillmentStatus.FULFILLED
           ? "Đã giao hàng"
           : "Chưa giao hàng",
       total_price: Number(this.row.total_price || 0),

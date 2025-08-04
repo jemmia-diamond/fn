@@ -1,5 +1,5 @@
-export function orderStatusQuery(orderId) {
-  return `
+export function orderStatusQuery(db, orderId) {
+  return db.$queryRaw`
     SELECT 
       o.id AS order_id,
       o.cancel_reason,
@@ -30,7 +30,7 @@ export function orderStatusQuery(orderId) {
       )) AS items
     FROM haravan.orders o
     LEFT JOIN haravan.line_items ln ON o.id = ln.order_id
-    WHERE o.id = '${orderId}'
+    WHERE o.id = ${orderId}
     GROUP BY 
       o.id,
       o.cancel_reason,

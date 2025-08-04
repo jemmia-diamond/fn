@@ -20,15 +20,13 @@ export default class OrderService {
         throw new Error("Invalid order ID");
       }
 
-      const lastOrderIdQuery = getLastOrderIdQuery(parsedOrderId);
-      const lastOrderIds = await this.db.$queryRawUnsafe(lastOrderIdQuery);
+      const lastOrderIds = await getLastOrderIdQuery(this.db , parsedOrderId);
 
       const lastOrderId = lastOrderIds.length
         ? lastOrderIds[0].id
         : parsedOrderId;
 
-      const query = orderStatusQuery(lastOrderId);
-      const result = await this.db.$queryRawUnsafe(query);
+      const result = await orderStatusQuery(this.db,lastOrderId);
 
       const row = result[0];
       if (!row) return null;
