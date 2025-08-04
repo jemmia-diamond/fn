@@ -1,5 +1,9 @@
 import Database from "services/database";
 import FrappeClient from "frappe/frappe-client";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc.js";
+
+dayjs.extend(utc);
 
 export default class EmployeeService {
   constructor(env) {

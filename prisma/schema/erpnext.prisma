@@ -12,10 +12,9 @@ model erpnextEmployee {
   name    String? @unique
   user_id String?
 
-  @@map("employee")
+  @@map("employees")
   @@schema("erpnext")
 }
-
 
 model erpnextSalesPerson {
   uuid     String  @id @default(uuid()) @db.Uuid

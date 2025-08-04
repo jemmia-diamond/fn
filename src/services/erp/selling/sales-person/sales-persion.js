@@ -1,5 +1,9 @@
 import FrappeClient from "frappe/frappe-client";
 import Database from "services/database";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc.js";
+
+dayjs.extend(utc);
 
 export default class SalesPersonService {
   constructor(env) {
@@ -19,7 +23,7 @@ export default class SalesPersonService {
     const timeThreshold = dayjs().subtract(1, "day").utc().format("YYYY-MM-DD HH:mm:ss");
     const salesPersonService = new SalesPersonService(env);
     const salesPersons = await salesPersonService.frappeClient.getList("Sales Person", {
-      limit_page_length: 100,
+      limit_page_length: 10,
       filters: [
         ["modified", ">=", timeThreshold]
       ]
