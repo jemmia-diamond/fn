@@ -1,6 +1,6 @@
-export const OrderStepStatus = Object.freeze({
-  PAST : "past",
-  ONGOING : "ongoing",
-  UPCOMING : "upcoming",
+export const OrderTimelineStatus = Object.freeze({
+  PAST: "past",
+  CURRENT: "ongoing",
+  FUTURE: "upcoming",
   CANCELLED: "cancelled"
 });

@@ -1,6 +1,7 @@
-const FulfillmentStatus  = require("../enums/fulfillment-status.enum");
-const CancelStatus  = require("../enums/cancel-status.enum");
-const OrderStepStatus = require("../enums/order-step-status.enum");
+import { FulfillmentStatus } from "src/services/ecommerce/order/enums/fulfillment-status.enum.js";
+import { CancelStatus } from "src/services/ecommerce/order/enums/cancel-status.enum.js";
+import { OrderTimelineStatus } from "src/services/ecommerce/order/enums/order-step-status.enum.js";
+import { OrderOverallStatus } from "src/services/ecommerce/order/enums/order-overall-status.enum.js";
 
 class OrderFormatter {
   constructor(orderId, row) {
@@ -15,26 +16,26 @@ class OrderFormatter {
     const cancelStatus = this.row.cancelled_status;  
 
     order_statuses.push({
-      title: "Chưa giao hàng",
-      time: "",
-      status: fulfillmentStatus === FulfillmentStatus.FULFILLED ? OrderStepStatus.PAST : OrderStepStatus.ONGOING,
-      link: ""
+      title: OrderOverallStatus.UNFULFILLED,
+      time: null,
+      status: fulfillmentStatus === FulfillmentStatus.FULFILLED ? OrderTimelineStatus.PAST : OrderTimelineStatus.ONGOING,
+      link: null
     });
 
     order_statuses.push({
-      title: "Đã giao hàng",
-      time: "",
-      status: fulfillmentStatus === FulfillmentStatus.FULFILLED ? OrderStepStatus.ONGOING : OrderStepStatus.UPCOMING,
-      link: ""
+      title: OrderOverallStatus.FULFILLED,
+      time: null,
+      status: fulfillmentStatus === FulfillmentStatus.FULFILLED ? OrderTimelineStatus.ONGOING : OrderTimelineStatus.UPCOMING,
+      link: null
     });
 
     // Adding cancel status
-    if (cancelStatus === CancelStatus.CANCELED) {
+    if (cancelStatus === CancelStatus.CANCELLED) {
       order_statuses.push({
-        title: "Đã hủy",
-        time: this.row.cancel_at || "",
-        status: OrderStepStatus.CANCELLED,
-        link: ""
+        title: OrderOverallStatus.CANCELLED,
+        time: this.row.cancel_at,
+        status: OrderTimelineStatus.CANCELLED,
+        link: null
       });
     }
 
@@ -42,12 +43,10 @@ class OrderFormatter {
   }
 
   format() {
+    const order_statuses = this.getFulfillmentStatuses();
+    
     return {
       order_id: this.orderId.toString(),
-      overall_status:
-        this.row.fulfillment_status === FulfillmentStatus.FULFILLED
-          ? "Đã giao hàng"
-          : "Chưa giao hàng",
       total_price: Number(this.row.total_price || 0),
       subtotal_price: Number(this.row.subtotal_price || 0),
       shipping_fee: Number(this.row.shipping_fee || 0),
@@ -55,20 +54,21 @@ class OrderFormatter {
       order_details: {
         items: this.row.items || []
       },
-      order_statuses: this.getFulfillmentStatuses(),
-      expected_date: "",
-      shipping_type: "",
+      order_statuses: order_statuses,
+      expected_date: null,
+      shipping_type: null,
       receiver: {
-        name: this.row.receiver_name || "",
-        phone: this.row.receiver_phone || "",
-        address: this.row.receiver_address || ""
+        name: this.row.receiver_name || null,
+        phone: this.row.receiver_phone || null,
+        address: this.row.receiver_address || null
       },
-      payment_method: this.row.payment_method || "",
-      order_date: this.row.order_date || "",
-      payment_date: "",
-      completed_date: "",
-      note: this.row.note || "",
-      cancel_reason: this.row.cancel_reason || ""
+      payment_method: this.row.payment_method,
+      order_date: this.row.order_date || null,
+      payment_date: null,
+      completed_date: null,
+      note: this.row.note || null,
+      cancel_reason: this.row.cancel_reason || null,
+      overall_status: order_statuses.find(status => status.status === OrderTimelineStatus.ONGOING).title
     };
   }
 }

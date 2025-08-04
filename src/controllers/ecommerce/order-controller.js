@@ -8,7 +8,7 @@ export default class OrderController {
     const orderService = new Ecommerce.OrderService(ctx.env);
     try {
       const orderDetails = await orderService.trackOrder(id);
-      if (!orderDetails || orderDetails.length === 0) {
+      if (!orderDetails) {
         throw new HTTPException(404, { message: "Order not found" });
       }
       return ctx.json(orderDetails);
