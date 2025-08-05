@@ -1,0 +1,26 @@
+model erpnextUser {
+  uuid  String  @id @default(uuid()) @db.Uuid
+  name  String? @unique
+  email String?
+
+  @@map("users")
+  @@schema("erpnext")
+}
+
+model erpnextEmployee {
+  uuid    String  @id @default(uuid()) @db.Uuid
+  name    String? @unique
+  user_id String?
+
+  @@map("employees")
+  @@schema("erpnext")
+}
+
+model erpnextSalesPerson {
+  uuid     String  @id @default(uuid()) @db.Uuid
+  name     String? @unique
+  employee String?
+
+  @@map("sales_persons")
+  @@schema("erpnext")
+}
