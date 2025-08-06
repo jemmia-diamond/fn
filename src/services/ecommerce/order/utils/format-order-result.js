@@ -48,7 +48,7 @@ class OrderFormatter {
       completed_date: null,
       note: this.row.note || null,
       cancel_reason: this.row.cancel_reason || null,
-      overall_status:""
+      overall_status: order_statuses.find(status => status.status === "ongoing")?.title || null
     };
   }
 }

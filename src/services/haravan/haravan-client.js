@@ -18,9 +18,9 @@ export default class HaravanClient {
     };
 
     const requestOptions = {
+      ...options,
       method: options.method,
-      headers,
-      ...options
+      headers
     };
 
     if (options.body && typeof options.body === "object") {
