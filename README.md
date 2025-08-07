@@ -58,6 +58,7 @@ pnpx prisma migrate deploy
 ```bash
 pnpx prisma migrate dev --name <MIGRATION_NAME>
 # pnpx prisma migrate dev --name init
+# pnpx prisma migrate dev --name 00001
 ```
 
 Build Prisma with:
