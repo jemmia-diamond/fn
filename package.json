@@ -3,7 +3,7 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
-    "build": "prisma db pull && prisma db push && prisma generate",
+    "build": "prisma migrate deploy && prisma generate",
     "deploy": "wrangler deploy --minify",
     "lint": "eslint"
   },
