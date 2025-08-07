@@ -36,7 +36,7 @@ pnpm run dev
 ORM with Prisma:
 
 - Sync your local database with
-```
+```bash
 pnpx prisma migrate deploy
 ```
 ```bash
