@@ -15,7 +15,6 @@ export const transformLeaveFormData = (form) => {
   };
 };
 
-
 export const transformPaymentFormData = (form) => {
   const widgets = JSON.parse(form);
   const widgetsObj = widgets.reduce((acc, item) => {
@@ -32,9 +31,8 @@ export const transformPaymentFormData = (form) => {
     total_amount: widgetsObj.widget17006372249800001,
     payment_info: widgetsObj.widget17006373118010001,
     expected_payment_date: widgetsObj.widget17006373325040001
-  }
+  };
 };
-
 
 export const transformPurchaseFormData = (form) => {
   const widgets = JSON.parse(form);
@@ -48,6 +46,6 @@ export const transformPurchaseFormData = (form) => {
     description: widgetsObj.widget17464364605980001,
     estimated_amount: widgetsObj.widget17394169374020001,
     expected_receive_date: widgetsObj.widget17394170111200001
-  }
+  };
 };
 
