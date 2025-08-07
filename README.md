@@ -61,6 +61,10 @@ pnpx prisma migrate dev --name <MIGRATION_NAME>
 # pnpx prisma migrate dev --name 00001
 ```
 
+> [!IMPORTANT]
+>
+> Prisma manage migration via a table named public._prisma_migrations
+
 Build Prisma with:
 ```bash
 pnpx prisma generate
