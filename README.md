@@ -59,7 +59,7 @@ pnpx prisma migrate deploy
 pnpx prisma migrate dev --name <MIGRATION_NAME>
 # pnpx prisma migrate dev --name init
 # pnpx prisma migrate dev --name 00001
-# Prisma will generate DDL script for futher migration on different environment
+# Prisma will generate DDL script for futher migration on different environments
 ```
 
 > [!IMPORTANT]
