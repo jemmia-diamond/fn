@@ -53,12 +53,13 @@ pnpx prisma migrate deploy
 # All migrations have been successfully applied.
 ```
 
-- After modifying existing or add new model - Prisma with generate DDL script for futher migration on different environment
+- After modifying existing or add new model
 
 ```bash
 pnpx prisma migrate dev --name <MIGRATION_NAME>
 # pnpx prisma migrate dev --name init
 # pnpx prisma migrate dev --name 00001
+# Prisma will generate DDL script for futher migration on different environment
 ```
 
 > [!IMPORTANT]
