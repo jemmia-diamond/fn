@@ -1,12 +1,13 @@
 export default class HaravanClient {
   constructor(env) {
     this.baseUrl = env.HARAVAN_API_BASE_URL;
+    this.env = env;
   }
 
   //Method to call Haravan API endpoints
   async makeRequest(endpoint, options = {}) {
     const url = `${this.baseUrl}${endpoint}`;
-    const accessToken = await env.HARAVAN_TOKEN_SECRET.get();
+    const accessToken = await this.env.HARAVAN_TOKEN_SECRET.get();
     const headers = {
       "Content-Type": "application/json",
       "Authorization": `Bearer ${accessToken}`,
