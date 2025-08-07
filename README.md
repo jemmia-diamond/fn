@@ -33,6 +33,39 @@ Start the development server with:
 pnpm run dev
 ```
 
+ORM and migration with Prisma:
+
+- Sync your local/dev database with
+```bash
+pnpx prisma migrate deploy
+```
+```bash
+# 1 migration found in prisma/migrations
+
+# Applying migration `20250807023446_00001`
+
+# The following migration(s) have been applied:
+
+# migrations/
+#   └─ 20250807023446_00001/
+#     └─ migration.sql
+      
+# All migrations have been successfully applied.
+```
+
+- After modifying existing or add new model
+
+```bash
+pnpx prisma migrate dev --name <MIGRATION_NAME>
+# pnpx prisma migrate dev --name init
+# pnpx prisma migrate dev --name 00001
+# Prisma will generate DDL script for futher migration on different environments
+```
+
+> [!IMPORTANT]
+>
+> Prisma manage migration via a table named public._prisma_migrations, so please don't touch it in the production environment database.
+
 Build Prisma with:
 ```bash
 pnpx prisma generate

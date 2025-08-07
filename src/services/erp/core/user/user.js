@@ -1,5 +1,9 @@
 import FrappeClient from "frappe/frappe-client";
 import Database from "services/database";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc.js";
+
+dayjs.extend(utc);
 
 export default class UserService {
   constructor(env) {
@@ -36,6 +40,30 @@ export default class UserService {
           pancake_id: pancakeUser.id
         });
       }
+    }
+  }
+
+  static async syncUsersToDatabase(env) {
+    const timeThreshold = dayjs().subtract(1, "day").utc().format("YYYY-MM-DD HH:mm:ss");
+    const userService = new UserService(env);
+    const users = await userService.frappeClient.getList(userService.doctype, {
+      limit_page_length: 100,
+      filters: [
+        ["modified", ">=", timeThreshold]
+      ]
+    });
+
+    for (const user of users) {
+      await userService.db.erpnextUser.upsert({
+        where: {
+          name: user.name
+        },
+        update: {},
+        create: {
+          name: user.name,
+          email: user.email
+        }
+      });
     }
   }
 }
