@@ -1,3 +1,5 @@
+import { APPROVALS } from "services/larksuite/approval/constant";
+
 const widgetsArrayToObject = (form) => {
   const widgets = JSON.parse(form);
   return widgets.reduce((acc, item) => {
@@ -6,40 +8,46 @@ const widgetsArrayToObject = (form) => {
   }, {});
 };
 
+const accessNestedKey = (data, keys) => {
+  return keys.reduce((a, key) => a[key], data);
+};
+
 export const transformLeaveFormData = (form) => {
   const widgetsObj = widgetsArrayToObject(form);
-
+  const widgetFieldMapper = APPROVALS.LEAVE_APPROVAL.widgetFieldMapper;
   return {
-    start: widgetsObj.widgetLeaveGroupV2.start,
-    end: widgetsObj.widgetLeaveGroupV2.end,
-    unit: widgetsObj.widgetLeaveGroupV2.unit,
-    reason: widgetsObj.widgetLeaveGroupV2.reason,
-    interval: Number(widgetsObj.widgetLeaveGroupV2.interval),
-    name: widgetsObj.widgetLeaveGroupV2.name
+    start: accessNestedKey(widgetsObj, widgetFieldMapper.start),
+    end: accessNestedKey(widgetsObj, widgetFieldMapper.end),
+    unit: accessNestedKey(widgetsObj, widgetFieldMapper.unit),
+    reason: accessNestedKey(widgetsObj, widgetFieldMapper.reason),
+    interval: Number(accessNestedKey(widgetsObj, widgetFieldMapper.interval)),
+    name: accessNestedKey(widgetsObj, widgetFieldMapper.name)
   };
 };
 
 export const transformPaymentFormData = (form) => {
   const widgetsObj = widgetsArrayToObject(form);
+  const widgetFieldMapper = APPROVALS.PAYMENT_APPROVAL.widgetFieldMapper;
   return {
-    type: widgetsObj.widget17006371313490001,
-    purchase_occurrence: widgetsObj.widget17211214457820001,
-    reason: widgetsObj.widget17096981353550001,
-    description: widgetsObj.widget17006369838020001,
-    qualified_document: widgetsObj.widget17230221450530001,
-    total_amount: widgetsObj.widget17006372249800001,
-    payment_info: widgetsObj.widget17006373118010001,
-    expected_payment_date: widgetsObj.widget17006373325040001
+    type: widgetsObj[widgetFieldMapper.type],
+    purchase_occurrence: widgetsObj[widgetFieldMapper.purchase_occurrence],
+    reason: widgetsObj[widgetFieldMapper.reason],
+    description: widgetsObj[widgetFieldMapper.description],
+    qualified_document: widgetsObj[widgetFieldMapper.qualified_document],
+    total_amount: widgetsObj[widgetFieldMapper.total_amount],
+    payment_info: widgetsObj[widgetFieldMapper.payment_info],
+    expected_payment_date: widgetsObj[widgetFieldMapper.expected_payment_date]
   };
 };
 
 export const transformPurchaseFormData = (form) => {
   const widgetsObj = widgetsArrayToObject(form);
+  const widgetFieldMapper = APPROVALS.PURCHASE_APPROVAL.widgetFieldMapper;
   return {
-    reason: widgetsObj.widget17519456028420001,
-    description: widgetsObj.widget17464364605980001,
-    estimated_amount: widgetsObj.widget17394169374020001,
-    expected_receive_date: widgetsObj.widget17394170111200001
+    reason: widgetsObj[widgetFieldMapper.reason],
+    description: widgetsObj[widgetFieldMapper.description],
+    estimated_amount: widgetsObj[widgetFieldMapper.estimated_amount],
+    expected_receive_date: widgetsObj[widgetFieldMapper.expected_receive_date]
   };
 };
 
