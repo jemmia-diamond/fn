@@ -63,7 +63,7 @@ pnpx prisma migrate dev --name <MIGRATION_NAME>
 
 > [!IMPORTANT]
 >
-> Prisma manage migration via a table named public._prisma_migrations
+> Prisma manage migration via a table named public._prisma_migrations, so please don't touch it in the production environment
 
 Build Prisma with:
 ```bash
