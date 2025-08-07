@@ -1,5 +1,5 @@
 export default class HaravanClient {
-  constructor({accessToken, baseUrl}) {
+  constructor(accessToken, baseUrl) {
     this.baseUrl = baseUrl;
     this.accessToken = accessToken;
   }
