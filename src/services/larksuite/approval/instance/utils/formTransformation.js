@@ -24,7 +24,7 @@ export const transformPaymentFormData = (form) => {
   
   return {
     type: widgetsObj.widget17006371313490001,
-    purchase_occurence: widgetsObj.widget17211214457820001,
+    purchase_occurrence: widgetsObj.widget17211214457820001,
     reason: widgetsObj.widget17096981353550001,
     description: widgetsObj.widget17006369838020001,
     qualified_document: widgetsObj.widget17230221450530001,
