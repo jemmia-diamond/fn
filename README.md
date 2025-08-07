@@ -53,8 +53,6 @@ pnpx prisma migrate deploy
 # All migrations have been successfully applied.
 ```
 
-
-
 - After modify existing or add new model - Prisma with generate DDL script for futher migration on different environment
 
 ```bash
