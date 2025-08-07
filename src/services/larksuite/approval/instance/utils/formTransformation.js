@@ -1,9 +1,13 @@
-export const transformLeaveFormData = (form) => {
+const widgetsArrayToObject = (form) => {
   const widgets = JSON.parse(form);
-  const widgetsObj = widgets.reduce((acc, item) => {
+  return widgets.reduce((acc, item) => {
     acc[item.id] = item.value;
     return acc;
   }, {});
+};
+
+export const transformLeaveFormData = (form) => {
+  const widgetsObj = widgetsArrayToObject(form);
 
   return {
     start: widgetsObj.widgetLeaveGroupV2.start,
@@ -16,12 +20,7 @@ export const transformLeaveFormData = (form) => {
 };
 
 export const transformPaymentFormData = (form) => {
-  const widgets = JSON.parse(form);
-  const widgetsObj = widgets.reduce((acc, item) => {
-    acc[item.id] = item.value;
-    return acc;
-  }, {});
-  
+  const widgetsObj = widgetsArrayToObject(form);
   return {
     type: widgetsObj.widget17006371313490001,
     purchase_occurrence: widgetsObj.widget17211214457820001,
@@ -35,12 +34,7 @@ export const transformPaymentFormData = (form) => {
 };
 
 export const transformPurchaseFormData = (form) => {
-  const widgets = JSON.parse(form);
-  const widgetsObj = widgets.reduce((acc, item) => {
-    acc[item.id] = item.value;
-    return acc;
-  }, {});
-
+  const widgetsObj = widgetsArrayToObject(form);
   return {
     reason: widgetsObj.widget17519456028420001,
     description: widgetsObj.widget17464364605980001,
