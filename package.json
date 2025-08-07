@@ -3,7 +3,7 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
-    "build": "prisma generate",
+    "build": "prisma migrate deploy && prisma generate",
     "deploy": "wrangler deploy --minify",
     "lint": "eslint"
   },
@@ -27,5 +27,8 @@
     "prisma": "^6.9.0",
     "wrangler": "^4.17.0"
   },
-  "packageManager": "pnpm@10.11.0"
+  "packageManager": "pnpm@10.11.0",
+  "prisma": {
+    "schema": "./prisma/schema/"
+  }
 }

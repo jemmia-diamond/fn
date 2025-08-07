@@ -1,103 +1,166 @@
 import HaravanClient from "services/haravan/haravan-client.js";
-import { OrderOverallStatus } from "src/services/ecommerce/order/enums/order-status.enum.js";
+import { OrderOverallStatus } from "services/ecommerce/order/enums/order-delivery-status.enum.js";
 
 export default class GetOrderStatusesList {
   constructor(env) {
     this.haravanClient = new HaravanClient(env);
   }
-
   async getStatuses(orderId) {
     const endpoint = `/com/orders/${orderId}.json`;
     return this.haravanClient.makeRequest(endpoint);
   }
 
-  async getOrderTimeline(orderId) {
+  async getOrderDeliveryStatus(orderId) {
     try {
       const data = await this.getStatuses(orderId);
       const order = data.order;
 
-      if (!order) throw new Error("Order not found");
-
-      const fulfillment = order.fulfillments?.[order.fulfillments.length - 1] || {};
-
-      const timeline = {
-        ready_to_confirm: order.created_at,
-        confirmed: order.confirmed_at,
-        ready_to_pick: fulfillment.ready_to_pick_date || null,
-        picking: fulfillment.picking_date || null,
-        delivering: fulfillment.delivering_date || null,
-        delivered: fulfillment.delivered_date || null,
-        cancel: fulfillment.cancel_date || null,
-        not_meet_customer: fulfillment.not_meet_customer_date || null,
-        waiting_for_return: fulfillment.waiting_for_return_date || null,
-        return: fulfillment.return_date || null
-      };
-
-      const orderedSteps = Object.entries(OrderOverallStatus).map(([key, title]) => ({
-        key,
-        title,
-        time: timeline[key] || null
-      }));
-
-      // If the order is cancelled, we store all the steps up to the cancellation time
-      if (order.cancelled_at) {
-        const cancelledTime = new Date(order.cancelled_at);
-
-        const validSteps = orderedSteps
-          .filter(step => step.time !== null && new Date(step.time) <= cancelledTime)
-          .map(step => ({
-            title: step.title,
-            time: step.time,
-            status: "past"
-          }));
-
-        validSteps.push({
-          title: OrderOverallStatus.cancelled_at,
-          time: order.cancelled_at,
-          status: "ongoing"
-        });
-
-        return validSteps;
+      if (!order) {
+        throw new Error(`Order ${orderId} not found`);
       }
 
-      // If the order is not cancelled, we determine the last filled step
-      const lastFilledIndex = [...orderedSteps].reverse().findIndex(step => step.time !== null);
-      const lastIndex = lastFilledIndex >= 0 ? orderedSteps.length - 1 - lastFilledIndex : -1;
+      const fulfillment = this._getLatestFulfillment(order);
+      
+      const timeline = this._buildTimeline(order, fulfillment);
+      
+      const orderedSteps = this._createOrderedSteps(timeline);
 
-      const filteredSteps = orderedSteps.map((step, index) => {
-        if (step.time !== null) {
-          let status = "upcoming";
+      // Handle cancelled orders
+      if (order.cancelled_at) {
+        return this._handleCancelledOrder(order, orderedSteps);
+      }
 
-          if (index < lastIndex) status = "past";
-          else if (index === lastIndex) status = "ongoing";
-
-          return {
-            title: step.title,
-            time: step.time,
-            status
-          };
-        } else {
-        // chỉ giữ lại các bước null nếu nó nằm **sau ongoing và trước delivered**
-          const isAfterOngoing = index > lastIndex;
-          const isBeforeDelivered = orderedSteps.findIndex(s => s.key === "delivered") >= index;
-
-          if (isAfterOngoing && isBeforeDelivered) {
-            return {
-              title: step.title,
-              time: null,
-              status: "upcoming"
-            };
-          }
-
-          // loại bỏ hoàn toàn nếu không thỏa 2 điều kiện trên
-          return null;
-        }
-      });
-
-      return filteredSteps.filter(Boolean);
+      // Handle active orders
+      return this._handleActiveOrder(orderedSteps);
     } catch (err) {
-      console.error(`Error fetching order timeline ${orderId}:`, err.message);
-      throw err;
+      console.error(`Error fetching order timeline for order ${orderId}:`, err.message);
+      throw new Error(`Failed to fetch order timeline: ${err.message}`);
     }
+  }
+
+  /**
+   * Get the latest fulfillment information from order
+   * @private
+   */
+  _getLatestFulfillment(order) {
+    return order.fulfillments?.[order.fulfillments.length - 1] || {};
+  }
+
+  /**
+   * Build timeline object mapping status keys to timestamps
+   * @private
+   */
+  _buildTimeline(order, fulfillment) {
+    return {
+      ready_to_confirm: order.created_at,
+      confirmed: order.confirmed_at,
+      ready_to_pick: fulfillment.ready_to_pick_date || null,
+      picking: fulfillment.picking_date || null,
+      delivering: fulfillment.delivering_date || null,
+      delivered: fulfillment.delivered_date || null,
+      cancel: fulfillment.cancel_date || null,
+      not_meet_customer: fulfillment.not_meet_customer_date || null,
+      waiting_for_return: fulfillment.waiting_for_return_date || null,
+      return: fulfillment.return_date || null
+    };
+  }
+
+  /**
+   * Create ordered steps array based on OrderOverallStatus enum
+   * @private
+   */
+  _createOrderedSteps(timeline) {
+    return Object.entries(OrderOverallStatus).map(([key, title]) => ({
+      key,
+      title,
+      time: timeline[key] || null
+    }));
+  }
+
+  /**
+   * Handle timeline for cancelled orders
+   * @private
+   */
+  _handleCancelledOrder(order, orderedSteps) {
+    const cancelledTime = new Date(order.cancelled_at);
+
+    // Get all valid steps up to cancellation time
+    const validSteps = orderedSteps
+      .filter(step => step.time !== null && new Date(step.time) <= cancelledTime)
+      .map(step => ({
+        title: step.title,
+        time: step.time,
+        status: "past"
+      }));
+
+    // Add cancellation step
+    validSteps.push({
+      title: OrderOverallStatus.cancelled_at,
+      time: order.cancelled_at,
+      status: "ongoing"
+    });
+
+    return validSteps;
+  }
+
+  /**
+   * Handle timeline for active (non-cancelled) orders
+   * @private
+   */
+  _handleActiveOrder(orderedSteps) {
+    // Find the last step with a timestamp
+    const lastFilledIndex = this._findLastFilledStepIndex(orderedSteps);
+
+    // Filter and map steps based on their position relative to the last filled step
+    const filteredSteps = orderedSteps.map((step, index) => {
+      if (step.time !== null) {
+        return this._createFilledStep(step, index, lastFilledIndex);
+      } else {
+        return this._createUnfilledStep(step, index, lastFilledIndex, orderedSteps);
+      }
+    });
+
+    return filteredSteps.filter(Boolean);
+  }
+
+  /**
+   * Find the index of the last step that has a timestamp
+   * @private
+   */
+  _findLastFilledStepIndex(orderedSteps) {
+    const lastFilledIndex = [...orderedSteps].reverse().findIndex(step => step.time !== null);
+    return lastFilledIndex >= 0 ? orderedSteps.length - 1 - lastFilledIndex : -1;
+  }
+
+  _createFilledStep(step, index, lastFilledIndex) {
+    let status = "upcoming";
+    
+    if (index < lastFilledIndex) {
+      status = "past";
+    } else if (index === lastFilledIndex) {
+      status = "ongoing";
+    }
+
+    return {
+      title: step.title,
+      time: step.time,
+      status
+    };
+  }
+
+  _createUnfilledStep(step, index, lastFilledIndex, orderedSteps) {
+    const isAfterOngoing = index > lastFilledIndex;
+    const deliveredIndex = orderedSteps.findIndex(s => s.key === "delivered");
+    const isBeforeDelivered = deliveredIndex >= 0 ? index <= deliveredIndex : true;
+
+    if (isAfterOngoing && isBeforeDelivered) {
+      return {
+        title: step.title,
+        time: null,
+        status: "upcoming"
+      };
+    }
+
+    return null;
   }
 } 
