@@ -16,7 +16,9 @@ export default class InstanceService {
     const endTime = timeThreshold.add(12, "hour").unix() * 1000;
 
     const approvalCodes = [
-      APPROVALS.LEAVE_APPROVAL
+      APPROVALS.LEAVE_APPROVAL,
+      APPROVALS.PAYMENT_APPROVAL,
+      APPROVALS.PURCHASE_APPROVAL
     ];
 
     const transformedInstances = [];
