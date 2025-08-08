@@ -1,0 +1,39 @@
+import Database from "services/database";
+import { getOrderOverallInfo} from "services/ecommerce/order-tracking/queries/get-order-overall-info";
+import { getLastOrderIdQuery } from "services/ecommerce/order-tracking/queries/get-last-orderid";
+import { formatOrderResult } from "services/ecommerce/order-tracking/utils/format-order-result";
+
+export default class OrderService {
+  constructor(env) {
+    this.db = Database.instance(env);
+  }
+
+  async trackOrder(orderId) {
+    try {
+      const parsedOrderId = parseInt(orderId, 10);
+
+      if (isNaN(parsedOrderId) || parsedOrderId <= 0) {
+        throw new Error("Invalid order ID");
+      }
+
+      const lastOrderIds = await getLastOrderIdQuery(this.db, parsedOrderId);
+
+      const lastOrderId = lastOrderIds.length
+        ? lastOrderIds[0].id
+        : parsedOrderId;
+      
+      if (!lastOrderId || !Number.isInteger(lastOrderId)) {
+        throw new Error("Invalid order ID");
+      }
+      const result = await getOrderOverallInfo(this.db, lastOrderId);
+
+      if (!result || result.length === 0) return null;
+      const row = result[0];
+
+      return await formatOrderResult(parsedOrderId, row);
+    } catch (error) {
+      console.error("Error tracking order:", error);
+      throw new Error("Failed to track order");
+    }
+  }
+}
