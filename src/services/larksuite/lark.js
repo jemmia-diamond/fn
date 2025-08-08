@@ -26,15 +26,20 @@ export default class LarksuiteService {
 
   static async requestWithAllPage(fn, payload, pageSize) {
     let pageToken = null;
-    let responses = [];
+    const responses = [];
+    payload.params = payload.params || {};
     payload.params.page_size = pageSize;
     payload.params.page_token = pageToken;
-    do {
-      const res = await fn(payload);
-      responses.push(res);
-      pageToken = res.data.page_token;
-      payload.params.page_token = pageToken;
-    } while (pageToken);
+    try {
+      do {
+        const res = await fn(payload);
+        responses.push(res);
+        pageToken = res?.data?.page_token || null;
+        payload.params.page_token = pageToken;
+      } while (pageToken);
+    } catch (err) {
+      throw new Error(`Lark pagination request failed: ${err?.message || String(err)}`);
+    }
     return responses;
   }
 };
