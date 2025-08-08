@@ -1,8 +1,7 @@
 class OrderFormatter {
-  constructor(orderId, row, env = null) {
+  constructor(orderId, row) {
     this.orderId = orderId;
     this.row = row;
-    this.env = env;
   }
 
   async format() {
@@ -21,22 +20,22 @@ class OrderFormatter {
       expected_date: null,
       shipping_type: null,
       receiver: {
-        name: this.row.receiver_name || null,
-        phone: this.row.receiver_phone || null,
-        address: this.row.receiver_address || null
+        name: this.row.receiver_name ?? null,
+        phone: this.row.receiver_phone ?? null,
+        address: this.row.receiver_address ?? null
       },
       payment_method: this.row.payment_method,
-      order_date: this.row.order_date || null,
+      order_date: this.row.order_date ?? null,
       payment_date: null,
       completed_date: null,
-      note: this.row.note || null,
-      cancel_reason: this.row.cancel_reason || null,
+      note: this.row.note ?? null,
+      cancel_reason: this.row.cancel_reason ?? null,
       overall_status: null
     };
   }
 }
 
-export async function formatOrderResult(orderId, row, env = null) {
-  const formatter = new OrderFormatter(orderId, row, env);
+export async function formatOrderResult(orderId, row) {
+  const formatter = new OrderFormatter(orderId, row);
   return await formatter.format();
 }

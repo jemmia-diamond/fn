@@ -5,7 +5,6 @@ import { formatOrderResult } from "services/ecommerce/order-tracking/utils/forma
 
 export default class OrderService {
   constructor(env) {
-    this.env = env;
     this.db = Database.instance(env);
   }
 
@@ -31,7 +30,7 @@ export default class OrderService {
       if (!result || result.length === 0) return null;
       const row = result[0];
 
-      return await formatOrderResult(parsedOrderId, row, this.env);
+      return await formatOrderResult(parsedOrderId, row);
     } catch (error) {
       console.error("Error tracking order:", error);
       throw new Error("Failed to track order");
