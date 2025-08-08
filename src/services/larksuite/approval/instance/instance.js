@@ -16,7 +16,9 @@ export default class InstanceService {
     const endTime = timeThreshold.add(12, "hour").unix() * 1000;
 
     const approvalCodes = [
-      APPROVALS.LEAVE_APPROVAL
+      APPROVALS.LEAVE_APPROVAL,
+      APPROVALS.PAYMENT_APPROVAL,
+      APPROVALS.PURCHASE_APPROVAL
     ];
 
     const transformedInstances = [];
@@ -39,7 +41,7 @@ export default class InstanceService {
         });
         const instance = instanceResponse.data;
         const transformedInstance = instanceService.transformInstance(instance);
-        const formData = approval.formtransformFunction(instance.form);
+        const formData = approval.formTransformFunction(instance.form);
         transformedInstance.form_data = JSON.stringify(formData);
         transformedInstances.push(transformedInstance);
       }
