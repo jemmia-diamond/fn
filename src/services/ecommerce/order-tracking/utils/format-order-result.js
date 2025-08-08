@@ -20,16 +20,16 @@ class OrderFormatter {
       expected_date: null,
       shipping_type: null,
       receiver: {
-        name: this.row.receiver_name ?? null,
-        phone: this.row.receiver_phone ?? null,
-        address: this.row.receiver_address ?? null
+        name: this.row.receiver_name,
+        phone: this.row.receiver_phone,
+        address: this.row.receiver_address
       },
       payment_method: this.row.payment_method,
-      order_date: this.row.order_date ?? null,
+      order_date: this.row.order_date,
       payment_date: null,
       completed_date: null,
-      note: this.row.note ?? null,
-      cancel_reason: this.row.cancel_reason ?? null,
+      note: this.row.note,
+      cancel_reason: this.row.cancel_reason,
       overall_status: null
     };
   }
