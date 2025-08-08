@@ -6,6 +6,7 @@ export default {
     switch (controller.cron) {
     case "0 * * * *": // At minute 0 every hour
       await ERP.CRM.LeadService.syncWebsiteLeads(env);
+      await ERP.Selling.SerialService.syncSerialsToERP(env);
       await ERP.Telephony.CallLogService.syncStringeeCallLogs(env);
       await ERP.CRM.LeadService.syncCallLogLead(env);
       break;
