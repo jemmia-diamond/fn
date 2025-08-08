@@ -21,24 +21,24 @@ export const APPROVALS = {
     code: "1B72AFFE-46D8-44E2-B0C1-0B07E800E24F",
     formTransformFunction: transformPaymentFormData,
     widgetFieldMapper: {
-      type: "widget17006371313490001",
-      purchase_occurrence: "widget17211214457820001",
-      reason: "widget17096981353550001",
-      description: "widget17006369838020001",
-      qualified_document: "widget17230221450530001",
-      total_amount: "widget17006372249800001",
-      payment_info: "widget17006373118010001",
-      expected_payment_date: "widget17006373325040001"
+      type: ["widget17006371313490001"],
+      purchase_occurrence: ["widget17211214457820001"],
+      reason: ["widget17096981353550001"],
+      description: ["widget17006369838020001"],
+      qualified_document: ["widget17230221450530001"],
+      total_amount: ["widget17006372249800001"],
+      payment_info: ["widget17006373118010001"],
+      expected_payment_date: ["widget17006373325040001"]
     }
   },
   PURCHASE_APPROVAL: {
     code: "5B91FC83-0365-435F-8A2D-F4A500CF1BE3",
     formTransformFunction: transformPurchaseFormData,
     widgetFieldMapper: {
-      reason: "widget17519456028420001",
-      description: "widget17464364605980001",
-      estimated_amount: "widget17394169374020001",
-      expected_receive_date: "widget17394170111200001"
+      reason: ["widget17519456028420001"],
+      description: ["widget17464364605980001"],
+      estimated_amount: ["widget17394169374020001"],
+      expected_receive_date: ["widget17394170111200001"]
     }
   }
 };
