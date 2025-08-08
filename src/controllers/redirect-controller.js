@@ -1,10 +1,11 @@
 export default class RedirectController {
   static MAPPINGS = {
-    "warranty-policy": "https://jemmia.vn/pages/chinh-sach-bao-hanh-va-thu-mua-thu-doi-san-pham",
-    "return-and-exchange-policy": "https://jemmia.vn/pages/chinh-sach-bao-hanh-va-thu-mua-thu-doi-san-pham"
+    "warranty-policy": "https://jemmia.vn/pages/chinh-sach-bao-hanh-va-thu-mua-thu-doi-san-pham#:~:text=III.%20CH%C3%8DNH%20S%C3%81CH%20B%E1%BA%A2O%20H%C3%80NH",
+    "return-and-exchange-policy": "https://jemmia.vn/pages/chinh-sach-bao-hanh-va-thu-mua-thu-doi-san-pham#:~:text=IV.%20CH%C3%8DNH%20S%C3%81CH%20THU%20MUA%20%E2%80%93%20THU%20%C4%90%E1%BB%94I",
+    "order-tracking": "https://jemmia.vn/pages/chinh-sach-bao-mat"
   };
 
-  static async show(ctx) {
+  static async show(ctx) {    
     const name = ctx.req.param("name");
 
     const url = RedirectController.MAPPINGS[name];
