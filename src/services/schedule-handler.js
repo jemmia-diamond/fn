@@ -16,6 +16,7 @@ export default {
       await ERP.Core.UserService.syncUsersToDatabase(env);
       await ERP.Setup.EmployeeService.syncEmployeesToDatabase(env);
       await ERP.Selling.SalesPersonService.syncSalesPersonToDatabase(env);
+      await Larksuite.Docs.Base.RecordService.syncRecordsToDatabase(env);
       break;
     case "0 1 * * *": // 08:00
       await Larksuite.Attendance.ScheduleService.syncScheduleToDatabase(env);
