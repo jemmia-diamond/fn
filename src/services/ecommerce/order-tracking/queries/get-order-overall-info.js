@@ -1,7 +1,4 @@
 export function getOrderOverallInfo(db, orderId) {
-  if (!orderId || !Number.isInteger(orderId)) {
-    throw new Error("Invalid order ID");
-  }
   return db.$queryRaw`
     SELECT 
       o.id AS order_id,

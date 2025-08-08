@@ -23,6 +23,9 @@ export default class OrderService {
         ? lastOrderIds[0].id
         : parsedOrderId;
       
+      if (!lastOrderId || !Number.isInteger(lastOrderId)) {
+        throw new Error("Invalid order ID");
+      }
       const result = await getOrderOverallInfo(this.db, lastOrderId);
 
       if (!result || result.length === 0) return null;
