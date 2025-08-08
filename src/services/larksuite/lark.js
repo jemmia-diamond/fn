@@ -25,17 +25,18 @@ export default class LarksuiteService {
   }
 
   static async requestWithPagination(fn, payload, pageSize) {
+    const _payload = payload;
     let pageToken = null;
     const responses = [];
-    payload.params = payload.params || {};
-    payload.params.page_size = pageSize;
-    payload.params.page_token = pageToken;
+    _payload.params = payload.params || {};
+    _payload.params.page_size = pageSize;
+    _payload.params.page_token = pageToken;
     try {
       do {
-        const res = await fn(payload);
+        const res = await fn(_payload);
         responses.push(res);
         pageToken = res?.data?.page_token || null;
-        payload.params.page_token = pageToken;
+        _payload.params.page_token = pageToken;
       } while (pageToken);
     } catch (err) {
       throw new Error(`Lark pagination request failed: ${err?.message || String(err)}`);
