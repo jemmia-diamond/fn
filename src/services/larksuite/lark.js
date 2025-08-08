@@ -23,4 +23,18 @@ export default class LarksuiteService {
     });
     return res.tenant_access_token;
   }
+
+  static async requestWithAllPage(fn, payload, pageSize) {
+    let pageToken = null;
+    let responses = [];
+    payload.params.page_size = pageSize;
+    payload.params.page_token = pageToken;
+    do {
+      const res = await fn(payload);
+      responses.push(res);
+      pageToken = res.data.page_token;
+      payload.params.page_token = pageToken;
+    } while (pageToken);
+    return responses;
+  }
 };
