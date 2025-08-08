@@ -13,11 +13,7 @@ export default class OrderService {
     try {
       const parsedOrderId = parseInt(orderId, 10);
 
-      if (
-        !parsedOrderId ||
-        isNaN(parsedOrderId) ||
-        typeof parsedOrderId !== "number"
-      ) {
+      if (isNaN(parsedOrderId) || parsedOrderId <= 0) {
         throw new Error("Invalid order ID");
       }
 
@@ -27,10 +23,10 @@ export default class OrderService {
         ? lastOrderIds[0].id
         : parsedOrderId;
       
-      const result = await getOrderOverallInfo(this.db,lastOrderId);
+      const result = await getOrderOverallInfo(this.db, lastOrderId);
 
+      if (!result || result.length === 0) return null;
       const row = result[0];
-      if (!row) return null;
 
       return await formatOrderResult(parsedOrderId, row, this.env);
     } catch (error) {
