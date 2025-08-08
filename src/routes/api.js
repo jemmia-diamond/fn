@@ -5,6 +5,7 @@ import ERP from "controllers/erp";
 import Pancake from "controllers/pancake";
 import Dashboard from "controllers/dashboard";
 import Ecommerce from "controllers/ecommerce";
+import ReDirect from "controllers/redirect/redirect-controller";
 
 export default class APIRoutes {
   static register(api) {
@@ -37,5 +38,8 @@ export default class APIRoutes {
     ecommerceNamespaceApi.get("/product/diamonds", Ecommerce.DiamondController.index);
     ecommerceNamespaceApi.get("/product/wedding_rings", Ecommerce.WeddingRingController.index);
     ecommerceNamespaceApi.get("/order-trackings/:id", Ecommerce.OrderTrackingController.show);
+
+    const redirectNamespaceApi = api.basePath("/redirect");
+    redirectNamespaceApi.get("/:name", ReDirect.show);
   };
 };
