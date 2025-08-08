@@ -26,7 +26,7 @@ export default class OrderService {
       const lastOrderId = lastOrderIds.length
         ? lastOrderIds[0].id
         : parsedOrderId;
-
+      
       const result = await getOrderOverallInfo(this.db,lastOrderId);
 
       const row = result[0];
