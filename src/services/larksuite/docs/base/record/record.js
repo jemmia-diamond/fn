@@ -39,7 +39,7 @@ export default class RecordService {
           }
         }
       };
-      const responses = await LarksuiteService.requestWithAllPage(larkClient.bitable.appTableRecord.search, payload, pageSize);
+      const responses = await LarksuiteService.requestWithPagination(larkClient.bitable.appTableRecord.search, payload, pageSize);
       const records = responses.flatMap(res => (res?.data?.items ?? []));
       const recordsWithTableMetaData = records.map(record => {
         return {

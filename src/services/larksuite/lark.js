@@ -24,7 +24,7 @@ export default class LarksuiteService {
     return res.tenant_access_token;
   }
 
-  static async requestWithAllPage(fn, payload, pageSize) {
+  static async requestWithPagination(fn, payload, pageSize) {
     let pageToken = null;
     const responses = [];
     payload.params = payload.params || {};
