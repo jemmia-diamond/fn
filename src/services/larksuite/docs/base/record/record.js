@@ -26,19 +26,19 @@ export default class RecordService {
           table_id: table.table_id
         },
         params: {
-          user_id_type: "user_id",
+          user_id_type: "user_id"
         },
         data: {
           filter: {
             conjunction: "and",
             conditions: [{
-              field_name: 'Last Modified Date',
-              operator: 'isGreater',
-              value: ['ExactDate', timeThreshold],
+              field_name: "Last Modified Date",
+              operator: "isGreater",
+              value: ["ExactDate", timeThreshold]
             }]
           }
         }
-      }
+      };
       const responses = await LarksuiteService.requestWithAllPage(larkClient.bitable.appTableRecord.search, payload, pageSize);
       const records = responses.flatMap(res => res.data.items);
       const recordsWithTableMetaData = records.map(record => {
@@ -46,8 +46,8 @@ export default class RecordService {
           ...record,
           table_id: table.table_id,
           app_token: table.app_token
-        }
-      })
+        };
+      });
       allRecords.push(...recordsWithTableMetaData);
     }
     
@@ -65,7 +65,7 @@ export default class RecordService {
           app_token: record.app_token,
           fields: record.fields
         }
-      })
+      });
     }
   }
 }
