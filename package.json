@@ -6,7 +6,7 @@
     "build": "prisma migrate deploy && prisma generate",
     "deploy": "wrangler deploy --minify",
     "lint": "eslint",
-    "prepare": "husky",
+    "prepare": "is-ci || husky install",
     "format": "eslint --fix"
   },
   "dependencies": {
