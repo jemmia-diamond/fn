@@ -155,11 +155,14 @@ app.delete("/resources/:id", YourController.destroy) // Delete
 
 1. Create a new branch for your feature
 2. Make your changes following the project structure
-3. Run ESLint locally before submitting your PR:
-```bash
-pnpm run lint src/
-```
+3. Code quality check
+- Before each commit, ESLint will run automatically
+- If linting fails, please run this command or manually fix the lint errors:  
+  ```bash
+  pnpm run format
+  ```
 4. Push your changes and open a Pull Request
+
 
 ## Deployment
 
