@@ -51,6 +51,9 @@ importers:
       globals:
         specifier: ^16.1.0
         version: 16.1.0
+      husky:
+        specifier: ^9.1.7
+        version: 9.1.7
       prisma:
         specifier: ^6.9.0
         version: 6.9.0
@@ -854,6 +857,11 @@ packages:
   hono@4.7.10:
     resolution: {integrity: sha512-QkACju9MiN59CKSY5JsGZCYmPZkA6sIW6OFCUp7qDjZu6S6KHtJHhAc9Uy9mV9F8PJ1/HQ3ybZF2yjCa/73fvQ==}
     engines: {node: '>=16.9.0'}
+
+  husky@9.1.7:
+    resolution: {integrity: sha512-5gs5ytaNjBrh5Ow3zrvdUUY+0VxIuWVL4i9irt6friV+BqdCfmV11CQTWMiBYWHbXhco+J1kHfTOUkePhCDvMA==}
+    engines: {node: '>=18'}
+    hasBin: true
 
   ignore@5.3.2:
     resolution: {integrity: sha512-hsBTNUqQTDwkWtcdYI2i06Y/nUBEsNEDJKjWdigLvegy8kDuJAS8uRlpkkcQpyEXL0Z/pjDy5HBmMjRCJ2gq+g==}
@@ -1901,6 +1909,8 @@ snapshots:
       function-bind: 1.1.2
 
   hono@4.7.10: {}
+
+  husky@9.1.7: {}
 
   ignore@5.3.2: {}
 
