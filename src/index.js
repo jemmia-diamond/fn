@@ -11,7 +11,7 @@ import scheduleHandler from "services/schedule-handler";
 
 const app = new Hono();
 const api = app.basePath("/api");
-const publicApi = app.basePath("/api/public");
+const publicApi = app.basePath("/public-api");
 const webhook = app.basePath("/webhook");
 
 // Error tracking
@@ -44,11 +44,6 @@ api.use("*", cors({
 }));
 
 // Authentication
-api.use("/api/public/*", async (c, next) => {
-  // Skip auth for public routes
-  await next();
-});
-
 api.use("*",
   bearerAuth({
     verifyToken: async (token, c) => {
