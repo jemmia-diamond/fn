@@ -43,6 +43,11 @@ api.use("*", cors({
 }));
 
 // Authentication
+api.use("/api/public/*", async (c, next) => {
+  // Skip auth for public routes
+  await next();
+});
+
 api.use("*",
   bearerAuth({
     verifyToken: async (token, c) => {
