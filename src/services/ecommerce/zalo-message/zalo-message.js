@@ -10,6 +10,9 @@ export default class ZNSMessageService {
     this.clientSecret = await this.env.ZALO_CLIENT_SECRET.get();
     this.zaloOAId = await this.env.ZALO_OA_ID.get();
     this.baseURL = env.ZALOPAY_API_BASE_URL;
+    if (!this.clientId || !this.clientSecret || !this.zaloOAId || !this.baseURL) {
+      throw new Error("ZNSMessageService: Missing required environment variables");
+    }
     return this;
   }
 
@@ -26,10 +29,6 @@ export default class ZNSMessageService {
 
   async sendMessage(phone, templateId, templateData) {
     try {
-      if (!this.clientId || !this.clientSecret || !this.zaloOAId) {
-        throw new BadRequest("ZNS service not initialized. Call init() first.");
-      }
-
       const requestId = this._generateRequestId();
       
       const payloadObject = {
@@ -51,11 +50,17 @@ export default class ZNSMessageService {
         "x-request-id": requestId,
         "Content-Type": "application/json"
       };
-      await fetch(this.baseURL, {
+      const response = await fetch(this.baseURL, {
         method: "POST",
         headers,
-        body: payloadObject
+        body: JSON.stringify(payloadObject)
       });
+
+      if (response.status!== 200) {
+        const errorData = await response.json();
+        throw new Error(`Zalo API error: ${errorData.message}`);
+      }
+      return response.json();
     } catch (error) {
       console.error("Error sending Zalo message:", error);
       throw error;
