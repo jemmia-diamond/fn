@@ -1,4 +1,4 @@
-export function getOrderOverallInfo(db, orderId) {
+export async function getOrderOverallInfo(db, orderId) {
   return db.$queryRaw`
     SELECT 
       o.id AS order_id,

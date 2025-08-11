@@ -5,7 +5,6 @@ class OrderFormatter {
   }
 
   async format() {
-    const order_statuses = [];
 
     return {
       order_id: this.orderId.toString(),
@@ -16,7 +15,6 @@ class OrderFormatter {
       order_details: {
         items: this.row.items || []
       },
-      order_statuses: order_statuses,
       expected_date: null,
       shipping_type: null,
       receiver: {

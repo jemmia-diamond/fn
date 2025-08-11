@@ -1,9 +1,9 @@
 import Database from "services/database";
 import { getOrderOverallInfo} from "services/ecommerce/order-tracking/queries/get-order-overall-info";
-import { getLastOrderIdQuery } from "services/ecommerce/order-tracking/queries/get-last-orderid";
+import { getLatestOrderId} from "services/ecommerce/order-tracking/queries/get-latest-orderid";
 import { formatOrderResult } from "services/ecommerce/order-tracking/utils/format-order-result";
 
-export default class OrderService {
+export default class OrderTrackingService {
   constructor(env) {
     this.db = Database.instance(env);
   }
@@ -16,7 +16,7 @@ export default class OrderService {
         throw new Error("Invalid order ID");
       }
 
-      const lastOrderIds = await getLastOrderIdQuery(this.db, parsedOrderId);
+      const lastOrderIds = await getLatestOrderId(this.db, parsedOrderId);
 
       const lastOrderId = lastOrderIds.length
         ? lastOrderIds[0].id
