@@ -1,7 +1,7 @@
 import Database from "services/database";
 import { getOrderOverallInfo} from "services/ecommerce/order-tracking/queries/get-order-overall-info";
 import { getLatestOrderId} from "services/ecommerce/order-tracking/queries/get-latest-orderid";
-import { formatOrderResult } from "services/ecommerce/order-tracking/utils/format-order-result";
+import { formatOrderResult } from "services/ecommerce/order-tracking/utils/format-order-tracking";
 
 export default class OrderTrackingService {
   constructor(env) {
