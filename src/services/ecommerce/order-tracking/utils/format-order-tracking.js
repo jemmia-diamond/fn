@@ -1,4 +1,4 @@
-export async function formatOrderTrackingResult(orderId, row) {
+export function formatOrderTrackingResult(orderId, row) {
   return {
     order_id: orderId.toString(),
     total_price: Number(row.total_price || 0),

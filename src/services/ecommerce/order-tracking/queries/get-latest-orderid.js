@@ -1,5 +1,5 @@
 export async function getLatestOrderId(db, orderId) {
-  return db.$queryRaw`
+  return await db.$queryRaw`
     WITH RECURSIVE order_chain AS (
       SELECT id, ref_order_id, 1 AS depth
       FROM haravan.orders

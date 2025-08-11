@@ -30,7 +30,7 @@ export default class OrderTrackingService {
       if (!result || result.length === 0) return null;
       const row = result[0];
 
-      return await formatOrderTrackingResult(parsedOrderId, row);
+      return formatOrderTrackingResult(parsedOrderId, row);
     } catch (error) {
       console.error("Error tracking order:", error);
       throw new Error("Failed to track order");

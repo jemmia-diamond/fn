@@ -1,5 +1,5 @@
 export async function getOrderOverallInfo(db, orderId) {
-  return db.$queryRaw`
+  return await db.$queryRaw`
     SELECT 
       o.id AS order_id,
       o.cancel_reason,
