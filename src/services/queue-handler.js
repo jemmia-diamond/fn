@@ -10,7 +10,7 @@ export default {
     switch (batch.queue) {
     case "order":
       await ERP.Selling.SalesOrderService.dequeueOrderQueue(batch, env);
-      await Ecommerce.IndDayService.trackBudget(batch, env);
+      await Ecommerce.IndDayStatService.trackBudget(batch, env);
       break;
     case "message":
       await Pancake.ConversationService.dequeueMessageQueue(batch, env);

@@ -1,7 +1,7 @@
 import ProductService from "services/ecommerce/product/product";
-import IndDayService from "services/ecommerce/order/ind-day";
+import IndDayStatService from "services/ecommerce/order/ind-day-stat";
 
 export default {
   ProductService: ProductService,
-  IndDayService: IndDayService
+  IndDayStatService: IndDayStatService
 };
