@@ -1,16 +1,53 @@
-export const transformLeaveFormData = (form) => {
+import { APPROVALS } from "services/larksuite/approval/constant";
+
+const widgetsArrayToObject = (form) => {
   const widgets = JSON.parse(form);
-  const widgetsObj = widgets.reduce((acc, item) => {
+  return widgets.reduce((acc, item) => {
     acc[item.id] = item.value;
     return acc;
   }, {});
+};
 
+const accessNestedKey = (data, keys) => {
+  return keys.reduce((a, key) => a[key], data);
+};
+
+export const transformLeaveFormData = (form) => {
+  const widgetsObj = widgetsArrayToObject(form);
+  const widgetFieldMapper = APPROVALS.LEAVE_APPROVAL.widgetFieldMapper;
   return {
-    start: widgetsObj.widgetLeaveGroupV2.start,
-    end: widgetsObj.widgetLeaveGroupV2.end,
-    unit: widgetsObj.widgetLeaveGroupV2.unit,
-    reason: widgetsObj.widgetLeaveGroupV2.reason,
-    interval: Number(widgetsObj.widgetLeaveGroupV2.interval),
-    name: widgetsObj.widgetLeaveGroupV2.name
+    start: accessNestedKey(widgetsObj, widgetFieldMapper.start),
+    end: accessNestedKey(widgetsObj, widgetFieldMapper.end),
+    unit: accessNestedKey(widgetsObj, widgetFieldMapper.unit),
+    reason: accessNestedKey(widgetsObj, widgetFieldMapper.reason),
+    interval: Number(accessNestedKey(widgetsObj, widgetFieldMapper.interval)),
+    name: accessNestedKey(widgetsObj, widgetFieldMapper.name)
   };
 };
+
+export const transformPaymentFormData = (form) => {
+  const widgetsObj = widgetsArrayToObject(form);
+  const widgetFieldMapper = APPROVALS.PAYMENT_APPROVAL.widgetFieldMapper;
+  return {
+    type: accessNestedKey(widgetsObj, widgetFieldMapper.type),
+    purchase_occurrence: accessNestedKey(widgetsObj, widgetFieldMapper.purchase_occurrence),
+    reason: accessNestedKey(widgetsObj, widgetFieldMapper.reason),
+    description: accessNestedKey(widgetsObj, widgetFieldMapper.description),
+    qualified_document: accessNestedKey(widgetsObj, widgetFieldMapper.qualified_document),
+    total_amount: accessNestedKey(widgetsObj, widgetFieldMapper.total_amount),
+    payment_info: accessNestedKey(widgetsObj, widgetFieldMapper.payment_info),
+    expected_payment_date: accessNestedKey(widgetsObj, widgetFieldMapper.expected_payment_date)
+  };
+};
+
+export const transformPurchaseFormData = (form) => {
+  const widgetsObj = widgetsArrayToObject(form);
+  const widgetFieldMapper = APPROVALS.PURCHASE_APPROVAL.widgetFieldMapper;
+  return {
+    reason: accessNestedKey(widgetsObj, widgetFieldMapper.reason),
+    description: accessNestedKey(widgetsObj, widgetFieldMapper.description),
+    estimated_amount: accessNestedKey(widgetsObj, widgetFieldMapper.estimated_amount),
+    expected_receive_date: accessNestedKey(widgetsObj, widgetFieldMapper.expected_receive_date)
+  };
+};
+

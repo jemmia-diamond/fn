@@ -2,6 +2,7 @@ import JewelryController from "controllers/ecommerce/jewelry-controller";
 import SearchController from "controllers/ecommerce/search-controller";
 import DiamondController from "controllers/ecommerce/diamond-controller";
 import WeddingRingController from "controllers/ecommerce/wedding-ring-controller";
+import ProductController from "controllers/ecommerce/product-controller";
 import OrderTrackingController from "controllers/ecommerce/order-tracking-controller";
 
 export default {
@@ -9,5 +10,6 @@ export default {
   SearchController: SearchController,
   DiamondController: DiamondController,
   WeddingRingController: WeddingRingController,
+  ProductController: ProductController,
   OrderTrackingController: OrderTrackingController
 };
