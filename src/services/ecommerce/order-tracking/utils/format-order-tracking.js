@@ -1,7 +1,5 @@
-class OrderTrackingFormatter {
-
-  async format(orderId, row) {
-    return {
+export async function formatOrderResult(orderId, row) {
+  return {
       order_id: orderId.toString(),
       total_price: Number(row.total_price || 0),
       subtotal_price: Number(row.subtotal_price || 0),
@@ -24,11 +22,6 @@ class OrderTrackingFormatter {
       note: row.note,
       cancel_reason: row.cancel_reason,
       overall_status: null
-    };
-  }
+ };
 }
 
-export async function formatOrderResult(orderId, row) {
-  const formatter = new OrderTrackingFormatter();
-  return await formatter.format(orderId, row);
-}
