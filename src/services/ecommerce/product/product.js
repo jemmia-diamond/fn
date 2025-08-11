@@ -5,6 +5,8 @@ import { buildWeddingRingsQuery } from "services/ecommerce/product/utils/wedding
 export default class ProductService {
   constructor(env) {
     this.db = Database.instance(env);
+    this.baseUrl = env.HARAVAN_API_BASE_URL;
+    this.haravanTokenSecret =  env.HARAVAN_TOKEN_SECRET;
   }
 
   async getJewelryData(jsonParams) {
@@ -121,4 +123,25 @@ LIMIT ${limit};
     };
   }
   
+  async getProductById(id) {
+    const haravanToken = await this.haravanTokenSecret.get();
+    const url = `${this.baseUrl}/com/products/${id}.json`;
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${haravanToken}`
+      }
+    });
+
+    if (!response.ok) {
+      const error = new Error(
+        `Haravan API error: ${response.statusText}`
+      );
+      error.status = response.status;
+      throw error;
+    }    
+    
+    return await response.json();
+  }
 }
