@@ -1,7 +1,7 @@
 import Database from "services/database";
 import { getOrderOverallInfo} from "services/ecommerce/order-tracking/queries/get-order-overall-info";
 import { getLatestOrderId} from "services/ecommerce/order-tracking/queries/get-latest-orderid";
-import { formatOrderResult } from "services/ecommerce/order-tracking/utils/format-order-tracking";
+import { formatOrderTrackingResult } from "services/ecommerce/order-tracking/utils/format-order-tracking";
 
 export default class OrderTrackingService {
   constructor(env) {
@@ -30,7 +30,7 @@ export default class OrderTrackingService {
       if (!result || result.length === 0) return null;
       const row = result[0];
 
-      return await formatOrderResult(parsedOrderId, row);
+      return await formatOrderTrackingResult(parsedOrderId, row);
     } catch (error) {
       console.error("Error tracking order:", error);
       throw new Error("Failed to track order");
