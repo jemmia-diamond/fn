@@ -26,7 +26,8 @@
   ],
   "vars": {
     "HOST": "https://fn.jemmia.vn",
-    "HARAVAN_API_BASE_URL": "https://apis.haravan.com"
+    "HARAVAN_API_BASE_URL": "https://apis.haravan.com",
+    "ZALOPAY_API_BASE_URL": "https://api-partner.zalopay.vn/zns-partner/v1/messages"
   },
   "secrets_store_secrets": [
     {
