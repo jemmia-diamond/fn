@@ -25,11 +25,11 @@ export default class IndDayStatService {
         0
       );
 
-      const kvValues = await env.FN_KV.get([
+      const values = await env.FN_KV.get([
         indDayStatService.countOrderKey,
         indDayStatService.countProductQuantityKey
       ]);
-      const { count_order, count_product_quantity} = Object.fromEntries(kvValues);
+      const { count_order, count_product_quantity} = Object.fromEntries(values);
 
       let newOrderCount = parseInt(count_order) || 0;
       let newQuantityCount = parseInt(count_product_quantity) || 0;
@@ -56,14 +56,18 @@ export default class IndDayStatService {
 
   async getStats() {
     try {
-      const countOrder = await this.env.FN_KV.get(this.countOrderKey);
-      const countProductQuantity = await this.env.FN_KV.get(this.countProductQuantityKey);
-      if (countOrder === null || countProductQuantity === null) {
+      const values = await this.env.FN_KV.get([
+        this.countOrderKey,
+        this.countProductQuantityKey
+      ]);
+      const { count_order, count_product_quantity} = Object.fromEntries(values);
+
+      if (count_order === null || count_order === null) {
         throw new Error("Data is missing keys");
       }
       return {
-        count_order: countOrder,
-        count_product_quantity: countProductQuantity
+        count_order,
+        count_product_quantity
       };
     } catch (error) {
       console.error("Error checking budget:", error);
