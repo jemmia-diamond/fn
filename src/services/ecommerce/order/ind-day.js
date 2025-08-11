@@ -22,10 +22,10 @@ export default class IndDayService {
       const newQuantityCount = parseInt(countProductQuantity) + totalQuantity;
 
       await env.FN_KV.put(indDayService.countOrderKey, newOrderCount);
-      if (newQuantityCount < this.productQuantityBudget) {
+      if (newQuantityCount < indDayService.productQuantityBudget) {
         await env.FN_KV.put(indDayService.countProductQuantityKey, newQuantityCount);
       } else {
-        console.warn(`Product quantity budget exceeded, limit is ${this.productQuantityBudget}`);
+        console.warn(`Product quantity budget exceeded, limit is ${indDayService.productQuantityBudget}`);
       }
     } catch (error) {
       console.error("Error tracking budget:", error);
