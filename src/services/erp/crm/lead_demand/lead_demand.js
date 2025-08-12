@@ -21,7 +21,6 @@ export default class LeadDemandService {
   }
 
   static async syncLeadDemandToDatabase(env) {
-    console.log("*** Starting sync lead demand to database");
     const timeThreshold = dayjs().subtract(1, "day").utc().format("YYYY-MM-DD HH:mm:ss");
     const leadDemandService = new LeadDemandService(env);
     const leadDemands = await leadDemandService.frappeClient.getList("Lead Demand", {
@@ -31,7 +30,6 @@ export default class LeadDemandService {
       ]
     });
     if (leadDemands.length > 0) {
-      console.log(`*** Found ${leadDemands.length} lead demands to sync`);
       for (const leadDemand of leadDemands) {
         await leadDemandService.db.erpnextLeadDemand.upsert({
           where: {

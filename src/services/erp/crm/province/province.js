@@ -19,10 +19,8 @@ export default class ProvinceService {
     );
     this.db = Database.instance(env);
   }
-
   static async syncProvincesToDatabase(env) {
-    console.log("*** Starting sync provinces to database");
-    const timeThreshold = dayjs().subtract(1000, "day").utc().format("YYYY-MM-DD HH:mm:ss");
+    const timeThreshold = dayjs().subtract(1, "day").utc().format("YYYY-MM-DD HH:mm:ss");
     const provinceService = new ProvinceService(env); 
     const provinces = await provinceService.frappeClient.getList("Province", {
       limit_page_length: ProvinceService.ERPNEXT_PAGE_SIZE,

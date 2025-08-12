@@ -21,8 +21,7 @@ export default class LeadBudgetService {
   }
 
   static async syncLeadBudgetsToDatabase(env) {
-    console.log("*** Starting sync lead budgets to database");
-    const timeThreshold = dayjs().subtract(1, "day").utc().format("YYYY-MM-DD HH:mm:ss");
+    const timeThreshold = dayjs().subtract(100, "day").utc().format("YYYY-MM-DD HH:mm:ss");
     const leadBudgetService = new LeadBudgetService(env);
     const leadBudgets = await leadBudgetService.frappeClient.getList("Lead Budget", {
       limit_page_length: LeadBudgetService.ERPNEXT_PAGE_SIZE,
@@ -31,7 +30,6 @@ export default class LeadBudgetService {
       ]
     });
     if (leadBudgets.length > 0) {
-      console.log(`*** Found ${leadBudgets.length} lead budgets to sync`);
       for (const leadBudget of leadBudgets) {
         await leadBudgetService.db.erpnextLeadBudget.upsert({
           where: {
