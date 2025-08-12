@@ -1,7 +1,5 @@
-import ProductService from "services/ecommerce/product/product";
-import ZNSMessageService from "services/ecommerce/zalo-message/zalo-message";
+import ProductService from "src/services/ecommerce/product/product";
 
 export default {
-  ProductService: ProductService,
-  ZNSMessageService: ZNSMessageService
+  ProductService
 };
