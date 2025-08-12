@@ -3,12 +3,12 @@ import { HARAVAN_TOPIC } from "services/ecommerce/enum";
 export default class IndDayStatService {
   constructor(env) {
     this.env = env;
-    this.indDayProductId = 1062559389; // Product ID for Independent Day
+    this.indDayProductIds = [1062559389]; // Mock Product IDs for Independent Day
     this.countOrderKey = "count_order"; // Key for counting orders
     this.countProductQuantityKey = "count_product_quantity"; // Key for counting product quantity
     this.productQuantityBudget = 250; // Budget for product quantity
   }
-
+  
   static async trackBudget(batch, env) {
     try {
       if (!batch?.messages?.length) {
@@ -19,7 +19,7 @@ export default class IndDayStatService {
 
       const totalQuantity = lineItems.reduce(
         (sum, item) =>
-          item.product_id === indDayStatService.indDayProductId
+          indDayStatService.indDayProductIds.includes(item.product_id)
             ? sum + item.quantity
             : sum,
         0
