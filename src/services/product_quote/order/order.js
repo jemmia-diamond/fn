@@ -35,9 +35,13 @@ export default class ProductQuoteOrderService {
         return;
       }
 
-      const orderId = createdOrder.id;
-      const orderNumber = createdOrder.order_number;
-      const refOrderNumber = createdOrder.ref_order_number;
+      const orderId = createdOrder?.id;
+      const orderNumber = createdOrder?.order_number;
+      const refOrderNumber = createdOrder?.ref_order_number;
+
+      if (!orderId || !orderNumber) {
+        throw new Error("orderId and orderNumber cannot be null or undefined");
+      }
 
       const productQuoteOrderService = new ProductQuoteOrderService(env);
       const db = productQuoteOrderService.db;
@@ -94,7 +98,7 @@ export default class ProductQuoteOrderService {
    * Finds a temporary product by its Haravan variant ID from the database.
    * Note: This is a private helper method.
    * @param {object} db - The database client instance.
-   * @param {number|string} haravanVariantId - The variant ID from Haravan.
+   * @param {number} haravanVariantId - The variant ID from Haravan.
    * @returns {Promise<object|null>} - The temporary product record or null if not found.
    */
   static async _findTemporaryProductByVariantId(db, haravanVariantId) {
