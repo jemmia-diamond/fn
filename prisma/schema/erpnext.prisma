@@ -12,7 +12,7 @@ model erpnextEmployee {
   name    String? @unique
   user_id String?
 
-  @@map("employees") 
+  @@map("employees")
   @@schema("erpnext")
 }
 
