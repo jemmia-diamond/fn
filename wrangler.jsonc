@@ -27,7 +27,7 @@
   "vars": {
     "HOST": "https://fn.jemmia.vn",
     "HARAVAN_API_BASE_URL": "https://apis.haravan.com",
-    "ZNS_API_BASE_URL": "https://api-partner.zalopay.vn/zns-partner/v1/messages",
+    "ZNS_API_BASE_URL": "https://api-partner.zalopay.vn",
     "ZNS_CLIENT_ID": "zpmc_jemmia",
     "ZNS_OA_ID": "2838947343790196672"
   },
