@@ -48,11 +48,14 @@ export default class ZNSMessageService {
         body: JSON.stringify(payloadObject)
       });
 
-      if (response.status!== 200) {
-        const errorData = await response.json();
-        throw new Error(`Zalo API error: ${errorData.message}`);
+      const text = await response.text();
+      const data = text ? JSON.parse(text) : null;
+
+      if (!response.ok) {
+        throw new Error(`Zalo API error: ${data?.message || "Unknown error"}`);
       }
-      return response.json();
+
+      return data;
     } catch (error) {
       console.error("Error sending Zalo message:", error);
       throw error;
