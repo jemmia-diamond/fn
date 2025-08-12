@@ -43,14 +43,13 @@ export default class IndDayStatService {
       }
 
       if (newQuantityCount > indDayStatService.productQuantityBudget) {
-        throw new Error("Product quantity budget exceeded");
+        console.warn("Product quantity budget exceeded");
       }
       await env.FN_KV.put(indDayStatService.countOrderKey, newOrderCount);
       await env.FN_KV.put(indDayStatService.countProductQuantityKey, newQuantityCount);
 
     } catch (error) {
       console.error("Error tracking budget:", error);
-      throw error;
     }
   }
 
