@@ -9,15 +9,16 @@ export default class ProductQuoteOrderService {
   }
 
   static async dequeueOrderQueue(batch, _env) {
-    try {
-      const messages = batch.messages;
-      for (const message of messages) {
+    const messages = batch.messages || [];
+    for (const message of messages) {
+      try {
         const orderData = message.body;
         await ProductQuoteOrderService.syncOrderToLark(_env, orderData);
+      } catch (error) {
+        console.error(error);
       }
-    } catch (error) {
-      console.error(error);
     }
+    
   }
 
   /**
@@ -72,7 +73,7 @@ export default class ProductQuoteOrderService {
             if (!multiOrders.includes(String(orderNumber))) {
               multiOrders.unshift(String(orderNumber));
             }
-            
+
             const fieldsToUpdate = {
               [LARK_LINK_ORDER_KEY]: { link: `https://jemmiavn.myharavan.com/admin/orders/${orderId}`, text: String(orderNumber) },
               [LARK_ORDER_KEY]: multiOrders
