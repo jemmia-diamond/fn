@@ -149,5 +149,6 @@ LIMIT ${limit};
     const db = Database.instance(env);
     await db.$queryRaw`REFRESH MATERIALIZED VIEW ecom.materialized_products;`;
     await db.$queryRaw`REFRESH MATERIALIZED VIEW ecom.materialized_variants;`;
+    await db.$queryRaw`REFRESH MATERIALIZED VIEW ecom.materialized_wedding_rings;`;
   }
 }
