@@ -1,6 +1,6 @@
 import Database from "services/database";
-import { getOrderOverallInfo} from "services/ecommerce/order-tracking/queries/get-order-overall-info";
-import { getLatestOrderId} from "services/ecommerce/order-tracking/queries/get-latest-orderid";
+import { getOrderOverallInfo } from "services/ecommerce/order-tracking/queries/get-order-overall-info";
+import { getLatestOrderId } from "services/ecommerce/order-tracking/queries/get-latest-orderid";
 import { formatOrderTrackingResult } from "services/ecommerce/order-tracking/utils/format-order-tracking";
 
 export default class OrderTrackingService {
@@ -10,27 +10,19 @@ export default class OrderTrackingService {
 
   async trackOrder(orderId) {
     try {
-      const parsedOrderId = parseInt(orderId, 10);
+      const latestOrderRows = await getLatestOrderId(this.db, orderId);
 
-      if (isNaN(parsedOrderId) || parsedOrderId <= 0) {
-        throw new Error("Invalid order ID");
-      }
+      const latestOrderId = latestOrderRows.length
+        ? latestOrderRows[0].id
+        : orderId;
 
-      const lastOrderIds = await getLatestOrderId(this.db, parsedOrderId);
+      const orderInfoRows = await getOrderOverallInfo(this.db, latestOrderId);
 
-      const lastOrderId = lastOrderIds.length
-        ? lastOrderIds[0].id
-        : parsedOrderId;
-      
-      if (!lastOrderId || !Number.isInteger(lastOrderId)) {
-        throw new Error("Invalid order ID");
-      }
-      const result = await getOrderOverallInfo(this.db, lastOrderId);
+      if (!orderInfoRows || !orderInfoRows.length) return null;
 
-      if (!result || result.length === 0) return null;
-      const row = result[0];
+      const orderInfo = orderInfoRows[0];
 
-      return formatOrderTrackingResult(parsedOrderId, row);
+      return formatOrderTrackingResult(orderId, orderInfo);
     } catch (error) {
       console.error("Error tracking order:", error);
       throw new Error("Failed to track order");
