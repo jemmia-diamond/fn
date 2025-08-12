@@ -39,6 +39,7 @@ export default class ProductQuoteOrderService {
       const refOrderNumber = createdOrder.ref_order_number;
 
       const productQuoteOrderService = new ProductQuoteOrderService(env);
+      const db = productQuoteOrderService.db;
       const LARK_ORDER_KEY = "Đơn hàng";
       const LARK_LINK_ORDER_KEY = "Link Đơn hàng";
       const APP_TOKEN = TABLES.TEMP_PRODUCT_QUOTE.app_token;
@@ -49,7 +50,7 @@ export default class ProductQuoteOrderService {
           const variantId = lineItem.variant_id;
           if (!variantId) continue;
 
-          const dbTempVariant = await this._findTemporaryProductByVariantId(productQuoteOrderService.db, variantId);
+          const dbTempVariant = await this._findTemporaryProductByVariantId(db, variantId);
 
           if (dbTempVariant?.lark_base_record_id) {
             const recordId = dbTempVariant.lark_base_record_id;
@@ -57,7 +58,7 @@ export default class ProductQuoteOrderService {
 
             if (refOrderNumber) {
               const oldRecord = await RecordService.getLarksuiteRecord(
-                productQuoteOrderService.env,
+                env,
                 APP_TOKEN,
                 TABLE_ID,
                 recordId
@@ -68,7 +69,10 @@ export default class ProductQuoteOrderService {
               }
             }
 
-            multiOrders.unshift(String(orderNumber));
+            if (!multiOrders.includes(String(orderNumber))) {
+              multiOrders.unshift(String(orderNumber));
+            }
+            
             const fieldsToUpdate = {
               [LARK_LINK_ORDER_KEY]: { link: `https://jemmiavn.myharavan.com/admin/orders/${orderId}`, text: String(orderNumber) },
               [LARK_ORDER_KEY]: multiOrders
