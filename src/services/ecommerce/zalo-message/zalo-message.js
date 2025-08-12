@@ -2,18 +2,10 @@ import crypto from "crypto";
 
 export default class ZNSMessageService {
   constructor(env) {
-    this.env = env;
-  }
-
-  async init() {
-    this.clientId = await this.env.ZALO_CLIENT_ID.get();
-    this.clientSecret = await this.env.ZALO_CLIENT_SECRET.get();
-    this.zaloOAId = await this.env.ZALO_OA_ID.get();
-    this.baseURL = env.ZALOPAY_API_BASE_URL;
-    if (!this.clientId || !this.clientSecret || !this.zaloOAId || !this.baseURL) {
-      throw new Error("ZNSMessageService: Missing required environment variables");
-    }
-    return this;
+    this.clientId = env.ZNS_CLIENT_ID;
+    this.clientSecret = env.ZNS_SECRET_KEY_SECRET;
+    this.zaloOAId = env.ZNS_OA_ID;
+    this.baseURL = env.ZNS_API_BASE_URL;
   }
 
   _generateHash(data, secret) {
@@ -24,7 +16,7 @@ export default class ZNSMessageService {
   }
 
   _generateRequestId() {
-    return `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `req_${Date.now()}`;
   }
 
   async sendMessage(phone, templateId, templateData) {
