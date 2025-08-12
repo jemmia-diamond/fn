@@ -1,5 +1,6 @@
 import Larksuite from "services/larksuite";
 import ERP from "services/erp";
+import Ecommerce from "services/ecommerce";
 
 export default {
   scheduled: async (controller, env, _ctx) => {
@@ -9,6 +10,9 @@ export default {
       await ERP.Selling.SerialService.syncSerialsToERP(env);
       await ERP.Telephony.CallLogService.syncStringeeCallLogs(env);
       await ERP.CRM.LeadService.syncCallLogLead(env);
+      break;
+    case "*/30 * * * *": // At every 30th minute
+      await Ecommerce.ProductService.refreshMaterializedViews(env);
       break;
     case "0 17 * * *": // 00:00
       await Larksuite.Contact.UserService.syncUsersToDatabase(env);
