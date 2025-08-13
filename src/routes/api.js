@@ -33,8 +33,12 @@ export default class APIRoutes {
 
     const ecommerceNamespaceApi = api.basePath("/ecommerce");
     ecommerceNamespaceApi.get("/search", Ecommerce.SearchController.index);
-    ecommerceNamespaceApi.get("/product/jewelries", Ecommerce.JewelryController.index);
+    ecommerceNamespaceApi.get("/product/jewelries", Ecommerce.JewelryController.index); // TODO: Remove these endpoints
     ecommerceNamespaceApi.get("/product/diamonds", Ecommerce.DiamondController.index);
     ecommerceNamespaceApi.get("/product/wedding_rings", Ecommerce.WeddingRingController.index);
+
+    ecommerceNamespaceApi.get("/products/diamonds", Ecommerce.DiamondController.index);
+    ecommerceNamespaceApi.get("/products/jewelries", Ecommerce.JewelryController.index);
+    ecommerceNamespaceApi.get("/products/wedding_rings", Ecommerce.WeddingRingController.index);
   };
 };
