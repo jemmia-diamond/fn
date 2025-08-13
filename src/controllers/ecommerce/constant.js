@@ -3,4 +3,4 @@ export const API_CONFIG = {
   DEFAULT_FROM: 1,
   MIN_FROM: 1,
   MAX_LIMIT: 100
-}
+};
