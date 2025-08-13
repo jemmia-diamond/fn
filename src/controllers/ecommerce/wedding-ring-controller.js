@@ -1,5 +1,6 @@
 import Ecommerce from "services/ecommerce";
 import { API_CONFIG } from "src/controllers/ecommerce/constant";
+import { isValidated } from "services/ecommerce/product/utils/validation";
 
 export default class WeddingRingController {
   static async index(ctx) {
@@ -17,11 +18,14 @@ export default class WeddingRingController {
         order: params.sort_order || "asc"
       },
       price: {
-        min: params.min_price ? parseInt(params.min_price) : null,
-        max: params.max_price ? parseInt(params.max_price) : null
+        min: params.min_price ? Number(params.min_price) : null,
+        max: params.max_price ? Number(params.max_price) : null
       }
     };
 
+    if (!isValidated(jsonParams)) {
+      return ctx.json({ message: "Invalid query parameters" }, 400);
+    }
     const productService = new Ecommerce.ProductService(ctx.env);
     const result = await productService.getWeddingRings(jsonParams);
     return ctx.json(result);
