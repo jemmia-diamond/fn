@@ -1,6 +1,6 @@
 import Ecommerce from "services/ecommerce";
 import { API_CONFIG } from "src/controllers/ecommerce/constant";
-import { isValidated } from "services/ecommerce/product/utils/validation";
+import { validateParams } from "services/ecommerce/product/utils/validation";
 
 export default class WeddingRingController {
   static async index(ctx) {
@@ -23,8 +23,9 @@ export default class WeddingRingController {
       }
     };
 
-    if (!isValidated(jsonParams)) {
-      return ctx.json({ message: "Invalid query parameters" }, 400);
+    const {isValidated, message} = validateParams(jsonParams);
+    if (!isValidated) {
+      return ctx.json({ message: message }, 400);
     }
     const productService = new Ecommerce.ProductService(ctx.env);
     const result = await productService.getWeddingRings(jsonParams);

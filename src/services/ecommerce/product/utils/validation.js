@@ -12,11 +12,19 @@ export const validationData = {
   sort_order: ["asc", "desc"]
 };
 
-export const isValidated = (jsonParams) => {
-  for (const key in jsonParams) {
-    if (!validationData[key].includes(jsonParams[key])) {
-      return false;
+export const validateParams = (jsonParams) => {
+  let isValidated = true;
+  let message = "";
+  for (const key in validationData) {
+    if (jsonParams[key]) {
+      for (const value of jsonParams[key]) {
+        if (!validationData[key].includes(value)) {
+          isValidated = false;
+          message = `Invalid ${key}: ${value}`;
+          break;
+        }
+      }
     }
   }
-  return true;
+  return { isValidated, message };
 };
