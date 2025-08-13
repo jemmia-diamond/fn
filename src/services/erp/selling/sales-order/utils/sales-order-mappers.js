@@ -148,17 +148,17 @@ export const mapSalesOrderToDatabase = (salesOrder) => {
     source_name: salesOrder?.source_name || null,
     
     // JSONB fields
-    sales_team: salesOrder?.sales_team || null,
-    ref_sales_orders: salesOrder?.ref_sales_orders || null,
-    promotions: salesOrder?.promotions || null,
-    product_categories: salesOrder?.product_categories || null,
-    packed_items: salesOrder?.packed_items || null,
-    taxes: salesOrder?.taxes || null,
-    pricing_rules: salesOrder?.pricing_rules || null,
-    payment_records: salesOrder?.payment_records || null,
-    payment_schedule: salesOrder?.payment_schedule || null,
-    policies: salesOrder?.policies || null,
-    items: salesOrder?.items || null
+    sales_team: salesOrder?.sales_team ? JSON.stringify(salesOrder.sales_team) : null,
+    ref_sales_orders: salesOrder?.ref_sales_orders ? JSON.stringify(salesOrder.ref_sales_orders) : null,
+    promotions: salesOrder?.promotions ? JSON.stringify(salesOrder.promotions) : null,
+    product_categories: salesOrder?.product_categories ? JSON.stringify(salesOrder.product_categories) : null,
+    packed_items: salesOrder?.packed_items ? JSON.stringify(salesOrder.packed_items) : null,
+    taxes: salesOrder?.taxes ? JSON.stringify(salesOrder.taxes) : null,
+    pricing_rules: salesOrder?.pricing_rules ? JSON.stringify(salesOrder.pricing_rules) : null,
+    payment_records: salesOrder?.payment_records ? JSON.stringify(salesOrder.payment_records) : null,
+    payment_schedule: salesOrder?.payment_schedule ? JSON.stringify(salesOrder.payment_schedule) : null,
+    policies: salesOrder?.policies ? JSON.stringify(salesOrder.policies) : null,
+    items: salesOrder?.items ? JSON.stringify(salesOrder.items) : null
   };
 };
 
