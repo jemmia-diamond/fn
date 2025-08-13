@@ -11,6 +11,7 @@ export async function fetchSalesOrdersFromERP(frappeClient, doctype, fromDate, t
 
     const allSalesOrders = [];
     let start = 0;
+    // get list of sales orders
     while (true) {
       const batch = await frappeClient.getList(doctype, {
         filters,
@@ -18,38 +19,26 @@ export async function fetchSalesOrdersFromERP(frappeClient, doctype, fromDate, t
         limit_page_length: pageSize,
         order_by: "creation desc"
       });
-      if (!Array.isArray(batch) || batch.length === 0) break;
+      if (!Array.isArray(batch) || batch.length === 0) break; 
+
       allSalesOrders.push(...batch);
       start += pageSize;
       if (batch.length < pageSize) break;
     }
     return allSalesOrders;
   } catch (error) {
-    console.error("Error fetching sales orders from ERPNext", { error: error.message });
     throw error;
   }
 }
   
-export async function fetchSalesOrdersDetails(frappeClient, doctype, salesOrderNames) {
-  const salesOrders = await frappeClient.getDoc(doctype, salesOrderNames);
-  
-  if (salesOrders && typeof salesOrders === "object") {
-    return {
-      sales_team: salesOrders.sales_team,
-      ref_sales_orders: salesOrders.ref_sales_orders,
-      promotions: salesOrders.promotions,
-      product_categories: salesOrders.product_categories,
-      packed_items: salesOrders.packed_items,
-      taxes: salesOrders.taxes,
-      pricing_rules: salesOrders.pricing_rules,
-      payment_records: salesOrders.payment_records,
-      payment_schedule: salesOrders.payment_schedule,
-      policies: salesOrders.policies,
-      items: salesOrders.items
-    };
+export async function fetchSalesOrderItemsFromERP(frappeClient, salesOrderNames) {
+  if (!Array.isArray(salesOrderNames) || salesOrderNames.length === 0) {
+    return [];
   }
-  
-  return null;
+  const quotedNames = salesOrderNames.map(name => `"${name}"`).join(", ");
+  const sql = `SELECT * FROM \`tabSales Order Item\` WHERE parent IN (${quotedNames})`;
+  const salesOrderItems = await frappeClient.executeSQL(sql);
+  return salesOrderItems || [];
 }
 
 export async function saveSalesOrdersToDatabase(db, salesOrders) {

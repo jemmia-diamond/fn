@@ -74,17 +74,17 @@ model erpnextSalesOrders {
   
   // Discount and totals
   apply_discount_on               String?
-  base_discount_amount            Float?
+  base_discount_amount            Decimal? @db.Decimal(18, 6)
   coupon_code                     String?
-  additional_discount_percentage  Float?
-  total_qty                       Float?
-  total                          Float?
-  discount_amount                Float?
-  grand_total                    Float?
-  base_total                     Float?
-  base_net_total                 Float?
-  total_net_weight               Float?
-  net_total                      Float?
+  additional_discount_percentage  Decimal? @db.Decimal(18, 6)
+  total_qty                       Int?
+  total                          Decimal? @db.Decimal(18, 6)
+  discount_amount                Decimal? @db.Decimal(18, 6)
+  grand_total                    Decimal? @db.Decimal(18, 6)
+  base_total                     Decimal? @db.Decimal(18, 6)
+  base_net_total                 Decimal? @db.Decimal(18, 6)
+  total_net_weight               Decimal? @db.Decimal(18, 6)
+  net_total                      Decimal? @db.Decimal(18, 6)
   
   // Tax information
   tax_category                String?
@@ -92,16 +92,16 @@ model erpnextSalesOrders {
   shipping_rule               String?
   incoterm                    String?
   named_place                 String?
-  base_total_taxes_and_charges Float?
-  total_taxes_and_charges     Float?
-  base_grand_total            Float?
-  base_rounding_adjustment    Float?
-  base_rounded_total          Float?
+  base_total_taxes_and_charges Decimal? @db.Decimal(18, 6)
+  total_taxes_and_charges     Decimal? @db.Decimal(18, 6)
+  base_grand_total            Decimal? @db.Decimal(18, 6)
+  base_rounding_adjustment    Decimal? @db.Decimal(18, 6)
+  base_rounded_total          Decimal? @db.Decimal(18, 6)
   base_in_words               String?
-  rounding_adjustment         Float?
-  rounded_total               Float?
+  rounding_adjustment         Decimal? @db.Decimal(18, 6)
+  rounded_total               Decimal? @db.Decimal(18, 6)
   in_words                    String?
-  advance_paid                Float?
+  advance_paid                Decimal? @db.Decimal(18, 6)
   disable_rounded_total       Int?
   other_charges_calculation   String?
   
@@ -133,18 +133,18 @@ model erpnextSalesOrders {
   // Status information
   status          String?
   delivery_status String?
-  per_delivered   Float?
-  per_billed      Float?
-  per_picked      Float?
+  per_delivered   Decimal? @db.Decimal(18, 6)
+  per_billed      Decimal? @db.Decimal(18, 6)
+  per_picked      Decimal? @db.Decimal(18, 6)
   billing_status  String?
   
   // Sales and commission
   sales_partner                   String?
-  amount_eligible_for_commission  Float?
-  commission_rate                 Float?
-  total_commission                Float?
+  amount_eligible_for_commission  Decimal? @db.Decimal(18, 6)
+  commission_rate                 Decimal? @db.Decimal(18, 6)
+  total_commission                Decimal? @db.Decimal(18, 6)
   loyalty_points                  Int?
-  loyalty_amount                  Float?
+  loyalty_amount                  Decimal? @db.Decimal(18, 6)
   from_date                       DateTime?
   to_date                         DateTime?
   auto_repeat                     String?
@@ -162,10 +162,10 @@ model erpnextSalesOrders {
   party_account_currency String?
   
   // Payment information
-  total_amount            Float?
+  total_amount            Decimal? @db.Decimal(18, 6)
   expected_payment_date   DateTime?
-  paid_amount             Float?
-  balance                 Float?
+  paid_amount             Decimal? @db.Decimal(18, 6)
+  balance                 Decimal? @db.Decimal(18, 6)
   payment_terms_template  String?
   tc_name                 String?
   terms                   String? @db.Text
@@ -190,7 +190,7 @@ model erpnextSalesOrders {
   items               Json? @db.JsonB
 
   database_created_at     DateTime? @default(now()) @db.Timestamp(6)
-  database_updated_at     DateTime? @db.Timestamp(6)
+  database_updated_at     DateTime? @updatedAt @db.Timestamp(6)
 
   @@map("sales_orders")
   @@schema("erpnext")
@@ -213,12 +213,12 @@ model erpnextSalesOrderItem {
   ensure_delivery_based_on_produced_serial_no Int?      @db.SmallInt
   is_stock_item                               Int?      @db.SmallInt
   reserve_stock                               Int?      @db.SmallInt
-  qty                                         Decimal?  @db.Decimal(18, 6)
+  qty                                         Int?
   stock_uom                                   String?   @db.VarChar(50)
   uom                                         String?   @db.VarChar(50)
   conversion_factor                           Decimal?  @db.Decimal(18, 6)
-  stock_qty                                   Decimal?  @db.Decimal(18, 6)
-  stock_reserved_qty                          Decimal?  @db.Decimal(18, 6)
+  stock_qty                                   Int?
+  stock_reserved_qty                          Int?
   price_list_rate                             Decimal?  @db.Decimal(18, 6)
   base_price_list_rate                        Decimal?  @db.Decimal(18, 6)
   discount_percentage                         Decimal?  @db.Decimal(18, 6)
@@ -247,17 +247,17 @@ model erpnextSalesOrderItem {
   total_weight                                Decimal?  @db.Decimal(18, 6)
   against_blanket_order                       Int?      @db.SmallInt
   blanket_order_rate                          Decimal?  @db.Decimal(18, 6)
-  actual_qty                                  Decimal?  @db.Decimal(18, 6)
-  company_total_stock                         Decimal?  @db.Decimal(18, 6)
-  projected_qty                               Decimal?  @db.Decimal(18, 6)
-  ordered_qty                                 Decimal?  @db.Decimal(18, 6)
-  planned_qty                                 Decimal?  @db.Decimal(18, 6)
-  production_plan_qty                         Decimal?  @db.Decimal(18, 6)
-  work_order_qty                              Decimal?  @db.Decimal(18, 6)
-  delivered_qty                               Decimal?  @db.Decimal(18, 6)
-  produced_qty                                Decimal?  @db.Decimal(18, 6)
-  returned_qty                                Decimal?  @db.Decimal(18, 6)
-  picked_qty                                  Decimal?  @db.Decimal(18, 6)
+  actual_qty                                  Int?
+  company_total_stock                         Int?
+  projected_qty                               Int?
+  ordered_qty                                 Int?
+  planned_qty                                 Int?
+  production_plan_qty                         Int?
+  work_order_qty                              Int?
+  delivered_qty                               Int?
+  produced_qty                                Int?
+  returned_qty                                Int?
+  picked_qty                                  Int?
   page_break                                  Int?      @db.SmallInt
   item_tax_rate                               String?
   transaction_date                            DateTime? @db.Date
@@ -267,7 +267,7 @@ model erpnextSalesOrderItem {
   parenttype                                  String?   @db.VarChar(140)
   doctype                                     String?   @db.VarChar(140)
   database_created_at                         DateTime? @default(now()) @db.Timestamp(6)
-  database_updated_at                         DateTime? @db.Timestamp(6)
+  database_updated_at                         DateTime? @updatedAt @db.Timestamp(6)
 
   @@index([barcode])
   @@index([haravan_variant_id])
