@@ -6,6 +6,8 @@ import ContactService from "src/services/erp/contacts/contact/contact";
 import CustomerService from "src/services/erp/selling/customer/customer";
 
 export default class SalesOrderService {
+  static ERPNEXT_PAGE_SIZE = 100;
+  
   constructor(env) {
     this.env = env;
     this.doctype = "Sales Order";
@@ -35,6 +37,7 @@ export default class SalesOrderService {
         apiSecret: env.JEMMIA_ERP_API_SECRET
       }
     );
+    this.db = Database.instance(env);
   };
 
   async processHaravanOrder(haravanOrderData) {
