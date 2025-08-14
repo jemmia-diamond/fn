@@ -146,7 +146,7 @@ export default class SalesOrderService {
     });
     const content = composeSalesOrderNotification(salesOrderData, promotionData);
 
-    const response = await larkClient.im.message.create({
+    const _response = await larkClient.im.message.create({
       params: {
         receive_id_type: "chat_id"
       },
