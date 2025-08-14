@@ -188,8 +188,8 @@ export default class SalesOrderService {
   static async cronSyncSalesOrdersToDatabase(env) {
     const syncService = new SalesOrderService(env);
     return await syncService.syncSalesOrdersToDatabase({ 
-      minutesBack: 1440, 
-      syncType: "autos"
+      minutesBack: 10, 
+      syncType: "auto"
     });
   }
 }
