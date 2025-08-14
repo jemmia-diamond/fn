@@ -8,7 +8,7 @@ import OrderTrackingController from "controllers/ecommerce/order-tracking-contro
 export default {
   JewelryController: JewelryController,
   SearchController: SearchController,
-  DiamondController: DiamondController, 
+  DiamondController: DiamondController,
   WeddingRingController: WeddingRingController,
   IndDayStatController: IndDayStatController,
   OrderTrackingController: OrderTrackingController
