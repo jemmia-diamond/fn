@@ -277,3 +277,66 @@ model erpnextSalesOrderItem {
   @@map("sales_order_items")
   @@schema("erpnext")
 }
+
+model erpnextLeadDemand {
+  uuid                String    @id @default(uuid()) @db.Uuid
+  name                String    @unique @db.VarChar(255)
+  owner               String?   @db.VarChar(255)
+  creation            DateTime? @db.Timestamp(6)
+  modified            DateTime? @db.Timestamp(6)
+  demand_label        String?   @db.VarChar(255)
+  database_created_at DateTime  @default(now()) @db.Timestamp(6)
+  database_updated_at DateTime? @updatedAt @db.Timestamp(6)
+
+  @@index([name])
+  @@map("lead_demands")
+  @@schema("erpnext")
+}
+
+model erpnextLeadBudget {
+  uuid                String    @id @default(uuid()) @db.Uuid
+  name                String    @unique @db.VarChar(255)
+  owner               String?   @db.VarChar(255)
+  creation            DateTime? @db.Timestamp(6)
+  modified            DateTime? @db.Timestamp(6)
+  budget_label        String?   @db.VarChar(255)
+  budget_from         Decimal?  @db.Decimal(18, 6)
+  budget_to           Decimal?  @db.Decimal(18, 6)
+  database_created_at DateTime  @default(now()) @db.Timestamp(6)
+  database_updated_at DateTime? @updatedAt @db.Timestamp(6)
+
+  @@index([name])
+  @@map("lead_budgets")
+  @@schema("erpnext")
+}
+
+model erpnextProvince {
+  uuid                String    @id @default(uuid()) @db.Uuid
+  name                String    @unique @db.VarChar(255)
+  owner               String?   @db.VarChar(255)
+  creation            DateTime? @db.Timestamp(6)
+  modified            DateTime? @db.Timestamp(6)
+  province_name       String?   @db.VarChar(255)
+  region              String    @db.VarChar(255)
+  database_created_at DateTime  @default(now()) @db.Timestamp(6)
+  database_updated_at DateTime? @updatedAt @db.Timestamp(6)
+
+  @@index([name])
+  @@map("provinces")
+  @@schema("erpnext")
+}
+
+model erpnextRegion {
+  uuid                String    @id @default(uuid()) @db.Uuid
+  name                String    @unique @db.VarChar(255)
+  owner               String?   @db.VarChar(255)
+  creation            DateTime? @db.Timestamp(6)
+  modified            DateTime? @db.Timestamp(6)
+  region_name         String    @db.VarChar(255)
+  database_created_at DateTime  @default(now()) @db.Timestamp(6)
+  database_updated_at DateTime? @updatedAt @db.Timestamp(6)
+
+  @@index([name])
+  @@map("regions")
+  @@schema("erpnext")
+}

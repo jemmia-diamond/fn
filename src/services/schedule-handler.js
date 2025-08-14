@@ -25,6 +25,12 @@ export default {
       await ERP.Selling.SalesPersonService.syncSalesPersonToDatabase(env);
       await Larksuite.Docs.Base.RecordService.syncRecordsToDatabase(env);
       break;
+    case "30 0 * * *": // 07:30
+      await ERP.CRM.LeadDemandService.syncLeadDemandToDatabase(env);
+      await ERP.CRM.LeadBudgetService.syncLeadBudgetsToDatabase(env);
+      await ERP.CRM.RegionService.syncRegionsToDatabase(env);
+      await ERP.CRM.ProvinceService.syncProvincesToDatabase(env);
+      break;
     case "0 1 * * *": // 08:00
       await Larksuite.Attendance.ScheduleService.syncScheduleToDatabase(env);
       await Larksuite.Approval.InstanceService.syncInstancesToDatabase(env);
