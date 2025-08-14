@@ -41,13 +41,13 @@ function escapeSqlValue(value) {
   if (value === null || value === undefined) {
     return "NULL";
   } else if (typeof value === "string") {
-    return `"${value.replace(/"/g, "\"\"")}"`;
+    return `'${value.replace(/'/g, "''")}'`;
   } else if (value instanceof Date) {
-    return `"${value.toISOString()}"`;
+    return `'${value.toISOString()}'`;
   } else if (typeof value === "boolean") {
     return value ? "1" : "0";
   } else if (Array.isArray(value) || typeof value === "object") {
-    return `"${JSON.stringify(value).replace(/"/g, "\"\"")}"`;
+    return `'${JSON.stringify(value).replace(/'/g, "''")}'`;
   }
   return value;
 }
@@ -60,7 +60,7 @@ export async function saveLeadsToDatabase(db, leads) {
     }
     
     // Process in chunks to avoid SQL statement size limits
-    const chunkSize = 500;
+    const chunkSize = 5;
     for (let i = 0; i < leadsData.length; i += chunkSize) {
       const chunk = leadsData.slice(i, i + chunkSize);
       
@@ -81,7 +81,7 @@ export async function saveLeadsToDatabase(db, leads) {
         };
         const fieldValues = fields.map(field => escapeSqlValue(leadWithTimestamps[field]));
         return `(${fieldValues.join(", ")})`;
-      }).join(", ");
+      }).join(",\n  ");
       
       // Create UPDATE SET clause for ON CONFLICT (exclude "name", "uuid", and "database_created_at")
       const updateSetSql = fields
@@ -100,12 +100,10 @@ export async function saveLeadsToDatabase(db, leads) {
         ON CONFLICT (name) DO UPDATE SET
         ${updateSetSql};
       `;
-      await db.$executeRawUnsafe(query);
+      await db.$queryRawUnsafe(query);
     }
-    
-    console.error(`Successfully upserted ${leadsData.length} leads to database`);
+ 
   } catch (error) {
     console.error("Error saving leads to database:", error.message);
-    throw error;
   }
 } 

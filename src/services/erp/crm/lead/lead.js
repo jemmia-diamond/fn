@@ -282,7 +282,7 @@ export default class LeadService {
   static async cronSyncLeadsToDatabase(env) {
     const syncService = new LeadService(env);
     return await syncService.syncLeadsToDatabase({ 
-      minutesBack: 90,  
+      minutesBack: 1,  
       syncType: "auto"
     });
   }
