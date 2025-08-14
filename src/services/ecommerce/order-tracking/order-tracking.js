@@ -10,11 +10,7 @@ export default class OrderTrackingService {
 
   async trackOrder(orderId) {
     try {
-      const latestOrderRows = await getLatestOrderId(this.db, orderId);
-
-      const latestOrderId = latestOrderRows.length
-        ? latestOrderRows[0].id
-        : orderId;
+      const latestOrderId = await getLatestOrderId(this.db, orderId);
 
       const orderInfoRows = await getOrderOverallInfo(this.db, latestOrderId);
 
