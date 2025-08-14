@@ -61,12 +61,13 @@ export default class IndDayStatService {
       ]);
       const { count_order, count_product_quantity} = Object.fromEntries(values);
 
-      if (count_order === null || count_order === null) {
+      if (count_order === null || count_product_quantity === null) {
         throw new Error("Data is missing keys");
       }
+
       return {
-        count_order,
-        count_product_quantity
+        count_order: Number(count_order),
+        count_product_quantity: Number(count_product_quantity) + Number(this.env.STATS_NUMBER_BUFFER)
       };
     } catch (error) {
       console.error("Error checking budget:", error);
