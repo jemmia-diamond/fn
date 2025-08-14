@@ -444,8 +444,8 @@ model erpnextLead {
   notes                  Json?     @db.JsonB
   user_tags              Json?     @db.JsonB
   preferred_product_type Json?     @db.JsonB
-  database_created_at    DateTime  @default(now()) @db.Timestamp(6)
-  database_updated_at    DateTime? @updatedAt @db.Timestamp(6)
+  database_created_at    DateTime?  @default(now()) @db.Timestamp(6)
+  database_updated_at    DateTime?  @updatedAt @db.Timestamp(6)
 
   @@index([name])
   @@map("leads")

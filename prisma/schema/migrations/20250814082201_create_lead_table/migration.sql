@@ -78,7 +78,7 @@ CREATE TABLE "erpnext"."leads" (
     "notes" JSONB,
     "user_tags" JSONB,
     "preferred_product_type" JSONB,
-    "database_created_at" TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "database_created_at" TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP,
     "database_updated_at" TIMESTAMP(6),
 
     CONSTRAINT "leads_pkey" PRIMARY KEY ("uuid")

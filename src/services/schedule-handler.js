@@ -46,6 +46,9 @@ export default {
     case "0 14 * * *": // 21:00
       await ERP.Automation.AssignmentRuleService.enableAssignmentRuleOffHour(env);
       break;
+    case "6 * * * *": // At minute 1 of every hour
+      await ERP.CRM.LeadService.cronSyncLeadsToDatabase(env);
+      break;
     default:
       break;
     };
