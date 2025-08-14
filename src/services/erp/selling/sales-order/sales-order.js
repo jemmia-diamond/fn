@@ -148,23 +148,22 @@ export default class SalesOrderService {
   };
 
   async syncSalesOrdersToDatabase(options = {}) {
-    try {
-      // minutesBack = 10 is default value for first sync when no create kv
-      const { syncType = "auto", minutesBack = 10 } = options;
-      const kv = this.env.FN_KV;
-      const KV_KEY = "sales_order_sync:last_date";
-      const toDate = dayjs().utc().format("YYYY-MM-DD HH:mm:ss");
-      let fromDate;
+    // minutesBack = 10 is default value for first sync when no create kv
+    const { syncType = "auto", minutesBack = 10 } = options;
+    const kv = this.env.FN_KV;
+    const KV_KEY = "sales_order_sync:last_date";
+    const toDate = dayjs().utc().format("YYYY-MM-DD HH:mm:ss");
+    let fromDate;
 
-      if (syncType === "auto") {
-        const lastDate = await kv.get(KV_KEY);
-        fromDate = lastDate || dayjs().utc().subtract(minutesBack, "minutes").format("YYYY-MM-DD HH:mm:ss"); // first time when deploy app, we need define fromDate, if not, we will get all data from ERP
-      } else {
-        fromDate = dayjs().utc().subtract(minutesBack, "minutes").format("YYYY-MM-DD HH:mm:ss");
-      }
-    
+    if (syncType === "auto") {
+      const lastDate = await kv.get(KV_KEY);
+      fromDate = lastDate || dayjs().utc().subtract(minutesBack, "minutes").format("YYYY-MM-DD HH:mm:ss"); // first time when deploy app, we need define fromDate, if not, we will get all data from ERP
+    } else {
+      fromDate = dayjs().utc().subtract(minutesBack, "minutes").format("YYYY-MM-DD HH:mm:ss");
+    }
+
+    try {   
       const salesOrders = await fetchSalesOrdersFromERP(this.frappeClient, this.doctype, fromDate, toDate, SalesOrderService.ERPNEXT_PAGE_SIZE);
-
       const salesOrdersNames = salesOrders.map(salesOrder => salesOrder.name).flat();
 
       const salesOrdersItems = await fetchSalesOrderItemsFromERP(this.frappeClient, salesOrdersNames);
@@ -187,8 +186,13 @@ export default class SalesOrderService {
       }
     } catch (error) {
       console.error("Error syncing sales orders to database:", error.message);
+      // Handle when cronjon failed in 1 hour => we need to update the last date to the current date
+      if (syncType === "auto" && dayjs(toDate).diff(dayjs(await kv.get(KV_KEY)), "hour") >= 1) {
+        await kv.put(KV_KEY, toDate);
+      }
     }
-  }
+  };
+  
   static async cronSyncSalesOrdersToDatabase(env) {
     const syncService = new SalesOrderService(env);
     return await syncService.syncSalesOrdersToDatabase({ 
@@ -197,3 +201,4 @@ export default class SalesOrderService {
     });
   }
 }
+
