@@ -1,6 +1,6 @@
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
-import { mapSalesOrderToDatabase, mapSalesOrderItemsToDatabase } from "src/services/erp/selling/sales-order/utils/sales-order-mappers";
+import { mapSalesOrderToDatabase, mapSalesOrderItemToDatabase, mapSalesTeamToDatabase } from "src/services/erp/selling/sales-order/utils/sales-order-mappers";
 
 dayjs.extend(utc);
 
@@ -41,6 +41,16 @@ export async function fetchSalesOrderItemsFromERP(frappeClient, salesOrderNames)
   return salesOrderItems || [];
 }
 
+export async function fetchSalesTeamFromERP(frappeClient, salesOrderNames) {
+  if (!Array.isArray(salesOrderNames) || salesOrderNames.length === 0) {
+    return [];
+  }
+  const quotedNames = salesOrderNames.map(name => `"${name}"`).join(", ");
+  const sql = `SELECT * FROM \`tabSales Team\` WHERE parent IN (${quotedNames})`;
+  const salesTeams = await frappeClient.executeSQL(sql);
+  return salesTeams || [];
+}  
+
 export async function saveSalesOrdersToDatabase(db, salesOrders) {
   const mappedSalesOrders = salesOrders.map(mapSalesOrderToDatabase);
   for (const salesOrder of mappedSalesOrders) {
@@ -53,7 +63,7 @@ export async function saveSalesOrdersToDatabase(db, salesOrders) {
 }
 
 export async function saveSalesOrderItemsToDatabase(db, salesOrderItems) {
-  const mappedSalesOrderItems = salesOrderItems.map(mapSalesOrderItemsToDatabase);
+  const mappedSalesOrderItems = salesOrderItems.map(mapSalesOrderItemToDatabase);
   for (const salesOrderItem of mappedSalesOrderItems) {
     await db.erpnextSalesOrderItem.upsert({
       where: { name: salesOrderItem.name },
@@ -62,3 +72,15 @@ export async function saveSalesOrderItemsToDatabase(db, salesOrderItems) {
     });
   }
 }
+
+export async function saveSalesTeamToDatabase(db, salesTeam) {
+  const mappedSalesTeam = salesTeam.map(mapSalesTeamToDatabase);
+  for (const salesTeam of mappedSalesTeam) {
+    await db.erpnextSalesTeam.upsert({
+      where: { name: salesTeam.name },
+      update: salesTeam,
+      create: salesTeam
+    });
+  }
+}
+

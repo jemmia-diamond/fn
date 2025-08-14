@@ -173,7 +173,7 @@ export const mapSalesOrderToDatabase = (salesOrder) => {
   };
 };
 
-export const mapSalesOrderItemsToDatabase = (salesOrderItem) => {
+export const mapSalesOrderItemToDatabase = (salesOrderItem) => {
   return ({
     name: salesOrderItem?.name || null,
     owner: salesOrderItem?.owner || null,
@@ -242,6 +242,26 @@ export const mapSalesOrderItemsToDatabase = (salesOrderItem) => {
     parent: safeValue(salesOrderItem?.parent),
     parentfield: safeValue(salesOrderItem?.parentfield),
     parenttype: safeValue(salesOrderItem?.parenttype),
-    doctype: salesOrderItem?.doctype || null
+    doctype: safeValue(salesOrderItem?.doctype)
+  });
+};
+
+export const mapSalesTeamToDatabase = (salesTeam) => {
+  return ({
+    name: safeValue(salesTeam?.name),
+    owner: safeValue(salesTeam?.owner),
+    creation: salesTeam?.creation ? new Date(salesTeam.creation) : null,
+    modified: salesTeam?.modified ? new Date(salesTeam.modified) : null,
+    modified_by: safeValue(salesTeam?.modified_by),
+    docstatus: safeNumericValue(salesTeam?.docstatus),
+    idx: safeNumericValue(salesTeam?.idx),
+    allocated_amount: safeNumericValue(salesTeam?.allocated_amount),
+    allocated_percentage: safeNumericValue(salesTeam?.allocated_percentage),
+    commission_rate: safeValue(salesTeam?.commission_rate),
+    incentive: safeNumericValue(salesTeam?.incentive),
+    parentfield: safeValue(salesTeam?.parentfield),
+    parent: safeValue(salesTeam?.parent),
+    parenttype: safeValue(salesTeam?.parenttype),
+    sales_person: safeValue(salesTeam?.sales_person)
   });
 };

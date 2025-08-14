@@ -219,6 +219,30 @@ CREATE TABLE "erpnext"."sales_order_items" (
     CONSTRAINT "sales_order_items_pkey" PRIMARY KEY ("uuid")
 );
 
+-- CreateTable
+CREATE TABLE "erpnext"."sales_teams" (
+    "uuid" UUID NOT NULL,
+    "name" VARCHAR(140),
+    "owner" VARCHAR(140),
+    "creation" TIMESTAMP(6),
+    "modified" TIMESTAMP(6),
+    "modified_by" VARCHAR(140),
+    "docstatus" SMALLINT,
+    "idx" SMALLINT,
+    "allocated_amount" DECIMAL(18,6),
+    "allocated_percentage" DECIMAL(5,2),
+    "commission_rate" VARCHAR(140),
+    "incentive" DECIMAL(18,6),
+    "parentfield" VARCHAR(140),
+    "parent" VARCHAR(140),
+    "parenttype" VARCHAR(140),
+    "sales_person" VARCHAR(140),
+    "database_created_at" TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP,
+    "database_updated_at" TIMESTAMP(6),
+
+    CONSTRAINT "sales_teams_pkey" PRIMARY KEY ("uuid")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "sales_orders_name_key" ON "erpnext"."sales_orders"("name");
 
@@ -239,3 +263,6 @@ CREATE INDEX "sales_order_items_parent_idx" ON "erpnext"."sales_order_items"("pa
 
 -- CreateIndex
 CREATE INDEX "sales_order_items_sku_idx" ON "erpnext"."sales_order_items"("sku");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "sales_teams_name_key" ON "erpnext"."sales_teams"("name");
