@@ -25,6 +25,283 @@ model erpnextSalesPerson {
   @@schema("erpnext")
 }
 
+model erpnextSalesOrders {
+  uuid String @id @default(uuid()) @db.Uuid
+  name String? @unique
+  
+  // Basic metadata
+  owner            String?
+  creation         DateTime?
+  modified         DateTime?
+  modified_by      String?
+  docstatus        Int?
+  idx              Int?
+  
+  // Order information
+  title                    String?
+  naming_series           String?
+  tax_id                  String?
+  order_type              String?
+  skip_delivery_note      Int?
+  delivery_date           DateTime?
+  po_no                   String?
+  po_date                 DateTime?
+  company                 String?
+  amended_from            String?
+  
+  // Customer information
+  customer_name           String?
+  order_number            String?
+  transaction_date        DateTime?
+  real_order_date         DateTime?
+  cancelled_status        String?
+  financial_status        String?
+  fulfillment_status      String?
+  expected_delivery_date  DateTime?
+  cost_center             String?
+  project                 String?
+  
+  // Currency and pricing
+  currency                String?
+  conversion_rate         Float?
+  selling_price_list      String?
+  price_list_currency     String?
+  plc_conversion_rate     Float?
+  ignore_pricing_rule     Int?
+  scan_barcode            String?
+  set_warehouse           String?
+  reserve_stock           Int?
+  
+  // Discount and totals
+  apply_discount_on               String?
+  base_discount_amount            Decimal? @db.Decimal(18, 6)
+  coupon_code                     String?
+  additional_discount_percentage  Decimal? @db.Decimal(18, 6)
+  total_qty                       Int?
+  total                          Decimal? @db.Decimal(18, 6)
+  discount_amount                Decimal? @db.Decimal(18, 6)
+  grand_total                    Decimal? @db.Decimal(18, 6)
+  base_total                     Decimal? @db.Decimal(18, 6)
+  base_net_total                 Decimal? @db.Decimal(18, 6)
+  total_net_weight               Decimal? @db.Decimal(18, 6)
+  net_total                      Decimal? @db.Decimal(18, 6)
+  
+  // Tax information
+  tax_category                String?
+  taxes_and_charges           String?
+  shipping_rule               String?
+  incoterm                    String?
+  named_place                 String?
+  base_total_taxes_and_charges Decimal? @db.Decimal(18, 6)
+  total_taxes_and_charges     Decimal? @db.Decimal(18, 6)
+  base_grand_total            Decimal? @db.Decimal(18, 6)
+  base_rounding_adjustment    Decimal? @db.Decimal(18, 6)
+  base_rounded_total          Decimal? @db.Decimal(18, 6)
+  base_in_words               String?
+  rounding_adjustment         Decimal? @db.Decimal(18, 6)
+  rounded_total               Decimal? @db.Decimal(18, 6)
+  in_words                    String?
+  advance_paid                Decimal? @db.Decimal(18, 6)
+  disable_rounded_total       Int?
+  other_charges_calculation   String?
+  
+  // Contact and address information
+  contact_person          String?
+  contact_display         String?
+  contact_phone           String?
+  contact_mobile          String?
+  contact_email           String?
+  customer_address        String?
+  address_display         String? @db.Text
+  customer_group          String?
+  territory               String?
+  shipping_address_name   String?
+  shipping_address        String?
+  customer                String?
+  gender                  String?
+  customer_type           String?
+  customer_personal_id    String?
+  birth_date              DateTime?
+  date_of_issuance        DateTime?
+  dispatch_address        String?
+  place_of_issuance       String?
+  dispatch_address_name   String?
+  company_address         String?
+  company_address_display String?
+  company_contact_person  String?
+  
+  // Status information
+  status          String?
+  delivery_status String?
+  per_delivered   Decimal? @db.Decimal(18, 6)
+  per_billed      Decimal? @db.Decimal(18, 6)
+  per_picked      Decimal? @db.Decimal(18, 6)
+  billing_status  String?
+  
+  // Sales and commission
+  sales_partner                   String?
+  amount_eligible_for_commission  Decimal? @db.Decimal(18, 6)
+  commission_rate                 Decimal? @db.Decimal(18, 6)
+  total_commission                Decimal? @db.Decimal(18, 6)
+  loyalty_points                  Int?
+  loyalty_amount                  Decimal? @db.Decimal(18, 6)
+  from_date                       DateTime?
+  to_date                         DateTime?
+  auto_repeat                     String?
+  
+  // Print and display
+  letter_head           String?
+  group_same_items      Int?
+  select_print_heading  String?
+  language              String?
+  is_internal_customer  Int?
+  represents_company    String?
+  source                String?
+  inter_company_order_reference String?
+  campaign              String?
+  party_account_currency String?
+  
+  // Payment information
+  total_amount            Decimal? @db.Decimal(18, 6)
+  expected_payment_date   DateTime?
+  paid_amount             Decimal? @db.Decimal(18, 6)
+  balance                 Decimal? @db.Decimal(18, 6)
+  payment_terms_template  String?
+  tc_name                 String?
+  terms                   String? @db.Text
+  
+  // Haravan integration
+  haravan_order_id        String?
+  haravan_ref_order_id    String?
+  haravan_created_at      DateTime?
+  source_name             String?
+
+  // JSONB fields
+  sales_team          Json? @db.JsonB
+  ref_sales_orders    Json? @db.JsonB
+  promotions          Json? @db.JsonB
+  product_categories  Json? @db.JsonB
+  packed_items        Json? @db.JsonB
+  taxes               Json? @db.JsonB
+  pricing_rules       Json? @db.JsonB
+  payment_records     Json? @db.JsonB
+  payment_schedule    Json? @db.JsonB
+  policies            Json? @db.JsonB
+  items               Json? @db.JsonB
+
+  database_created_at     DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at     DateTime? @updatedAt @db.Timestamp(6)
+
+  @@map("sales_orders")
+  @@schema("erpnext")
+}
+
+model erpnextSalesOrderItem {
+  uuid                                        String    @id @default(uuid()) @db.Uuid
+  name                                        String?   @unique @db.VarChar(140)
+  owner                                       String?   @db.VarChar(140)
+  creation                                    DateTime? @db.Timestamp(6)
+  modified                                    DateTime? @db.Timestamp(6)
+  modified_by                                 String?   @db.VarChar(140)
+  docstatus                                   Int?      @db.SmallInt
+  idx                                         Int?      @db.SmallInt
+  item_name                                   String?   @db.VarChar(200)
+  variant_title                               String?   @db.VarChar(200)
+  sku                                         String?   @db.VarChar(140)
+  barcode                                     String?   @db.VarChar(140)
+  haravan_variant_id                          BigInt?
+  ensure_delivery_based_on_produced_serial_no Int?      @db.SmallInt
+  is_stock_item                               Int?      @db.SmallInt
+  reserve_stock                               Int?      @db.SmallInt
+  qty                                         Int?
+  stock_uom                                   String?   @db.VarChar(50)
+  uom                                         String?   @db.VarChar(50)
+  conversion_factor                           Decimal?  @db.Decimal(18, 6)
+  stock_qty                                   Int?
+  stock_reserved_qty                          Int?
+  price_list_rate                             Decimal?  @db.Decimal(18, 6)
+  base_price_list_rate                        Decimal?  @db.Decimal(18, 6)
+  discount_percentage                         Decimal?  @db.Decimal(18, 6)
+  discount_amount                             Decimal?  @db.Decimal(18, 6)
+  distributed_discount_amount                 Decimal?  @db.Decimal(18, 6)
+  base_rate_with_margin                       Decimal?  @db.Decimal(18, 6)
+  margin_type                                 String?   @db.VarChar(50)
+  margin_rate_or_amount                       Decimal?  @db.Decimal(18, 6)
+  rate_with_margin                            Decimal?  @db.Decimal(18, 6)
+  rate                                        Decimal?  @db.Decimal(18, 6)
+  amount                                      Decimal?  @db.Decimal(18, 6)
+  base_rate                                   Decimal?  @db.Decimal(18, 6)
+  base_amount                                 Decimal?  @db.Decimal(18, 6)
+  stock_uom_rate                              Decimal?  @db.Decimal(18, 6)
+  is_free_item                                Int?      @db.SmallInt
+  grant_commission                            Int?      @db.SmallInt
+  net_rate                                    Decimal?  @db.Decimal(18, 6)
+  net_amount                                  Decimal?  @db.Decimal(18, 6)
+  base_net_rate                               Decimal?  @db.Decimal(18, 6)
+  base_net_amount                             Decimal?  @db.Decimal(18, 6)
+  billed_amt                                  Decimal?  @db.Decimal(18, 6)
+  valuation_rate                              Decimal?  @db.Decimal(18, 6)
+  gross_profit                                Decimal?  @db.Decimal(18, 6)
+  delivered_by_supplier                       Int?      @db.SmallInt
+  weight_per_unit                             Decimal?  @db.Decimal(18, 6)
+  total_weight                                Decimal?  @db.Decimal(18, 6)
+  against_blanket_order                       Int?      @db.SmallInt
+  blanket_order_rate                          Decimal?  @db.Decimal(18, 6)
+  actual_qty                                  Int?
+  company_total_stock                         Int?
+  projected_qty                               Int?
+  ordered_qty                                 Int?
+  planned_qty                                 Int?
+  production_plan_qty                         Int?
+  work_order_qty                              Int?
+  delivered_qty                               Int?
+  produced_qty                                Int?
+  returned_qty                                Int?
+  picked_qty                                  Int?
+  page_break                                  Int?      @db.SmallInt
+  item_tax_rate                               String?
+  transaction_date                            DateTime? @db.Date
+  cost_center                                 String?   @db.VarChar(140)
+  parent                                      String?   @db.VarChar(140)
+  parentfield                                 String?   @db.VarChar(140)
+  parenttype                                  String?   @db.VarChar(140)
+  doctype                                     String?   @db.VarChar(140)
+  database_created_at                         DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at                         DateTime? @updatedAt @db.Timestamp(6)
+
+  @@index([barcode])
+  @@index([haravan_variant_id])
+  @@index([item_name])
+  @@index([parent])
+  @@index([sku])
+  @@map("sales_order_items")
+  @@schema("erpnext")
+}
+
+model erpnextSalesTeam {
+  uuid                                        String    @id @default(uuid()) @db.Uuid
+  name                                        String?   @unique @db.VarChar(140)
+  owner                                       String?   @db.VarChar(140)
+  creation                                    DateTime? @db.Timestamp(6)
+  modified                                    DateTime? @db.Timestamp(6)
+  modified_by                                 String?   @db.VarChar(140)
+  docstatus                                   Int?      @db.SmallInt
+  idx                                         Int?      @db.SmallInt
+  allocated_amount                            Decimal?  @db.Decimal(18, 6)
+  allocated_percentage                        Decimal?  @db.Decimal(5, 2)
+  commission_rate                             String?   @db.VarChar(140)
+  incentive                                   Decimal?  @db.Decimal(18, 6)
+  parentfield                                 String?   @db.VarChar(140)
+  parent                                      String?   @db.VarChar(140)
+  parenttype                                  String?   @db.VarChar(140)
+  sales_person                                String?   @db.VarChar(140)
+  database_created_at                         DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at                         DateTime? @updatedAt @db.Timestamp(6)
+
+  @@map("sales_teams")
+  @@schema("erpnext")
+}
+
 model erpnextLeadDemand {
   uuid                String    @id @default(uuid()) @db.Uuid
   name                String    @unique @db.VarChar(255)
@@ -85,5 +362,92 @@ model erpnextRegion {
 
   @@index([name])
   @@map("regions")
+  @@schema("erpnext")
+}
+
+model erpnextLead {
+  uuid                   String    @id @default(uuid()) @db.Uuid
+  name                   String    @unique @db.VarChar(255)
+  owner                  String?   @db.VarChar(255)
+  creation               DateTime? @db.Timestamp(6)
+  modified               DateTime? @db.Timestamp(6)
+  modified_by            String?   @db.VarChar(255)
+  docstatus              Int?
+  idx                    Int?
+  naming_series          String?   @db.VarChar(255)
+  type                   String?   @db.VarChar(255)
+  salutation             String?   @db.VarChar(255)
+  first_name             String?   @db.VarChar(255)
+  middle_name            String?   @db.VarChar(255)
+  territory              String?   @db.VarChar(255)
+  lead_stage             String?   @db.VarChar(100)
+  phone                  String?   @db.VarChar(20)
+  email_id               String?   @db.VarChar(255)
+  job_title              String?   @db.VarChar(255)
+  last_name              String?   @db.VarChar(255)
+  gender                 String?   @db.VarChar(10)
+  qualified_lead_date    DateTime? @db.Timestamp(6)
+  first_reach_at         DateTime? @db.Timestamp(6)
+  lead_owner             String?   @db.VarChar(255)
+  source                 String?   @db.VarChar(255)
+  status                 String?   @db.VarChar(50)
+  customer               String?   @db.VarChar(255)
+  request_type           String?   @db.VarChar(100)
+  lead_name              String?   @db.VarChar(255)
+  lead_received_date     DateTime? @db.Timestamp(6)
+  lead_source_name       String?   @db.VarChar(255)
+  lead_source_platform   String?   @db.VarChar(255)
+  qualification_status   String?   @db.VarChar(255)
+  qualified_by           String?   @db.VarChar(255)
+  qualified_on           DateTime? @db.Timestamp(6)
+  purpose_lead           String?   @db.VarChar(255)
+  expected_delivery_date DateTime? @db.Date
+  budget_lead            String?   @db.VarChar(255)
+  province               String?   @db.VarChar(255)
+  region                 String?   @db.VarChar(255)
+  company_name           String?   @db.VarChar(255)
+  no_of_employees        String?   @db.VarChar(20)
+  annual_revenue         Decimal?  @db.Decimal
+  industry               String?   @db.VarChar(255)
+  market_segment         String?   @db.VarChar(255)
+  fax                    String?   @db.VarChar(255)
+  tax_number             String?   @db.VarChar(255)
+  ceo_name               String?   @db.VarChar(255)
+  birth_date             DateTime? @db.Date
+  address                String?
+  personal_tax_id        String?   @db.VarChar(255)
+  first_channel          String?   @db.VarChar(255)
+  personal_id            String?   @db.VarChar(255)
+  place_of_issuance      String?   @db.VarChar(255)
+  date_of_issuance       DateTime? @db.Date
+  website                String?   @db.VarChar(255)
+  bank_name              String?   @db.VarChar(255)
+  bank_branch            String?   @db.VarChar(255)
+  account_number         String?   @db.VarChar(255)
+  bank_province          String?   @db.VarChar(255)
+  bank_district          String?   @db.VarChar(255)
+  bank_ward              String?   @db.VarChar(255)
+  campaign_name          String?   @db.VarChar(255)
+  company                String?   @db.VarChar(255)
+  website_from_data      String?   @db.VarChar(255)
+  language               String?   @db.VarChar(10)
+  image                  String?
+  title                  String?   @db.VarChar(255)
+  disabled               Int?
+  unsubscribed           Int?
+  blog_subscriber        Int?
+  mobile_no              String?   @db.VarChar(20)
+  whatsapp_no            String?   @db.VarChar(20)
+  phone_ext              String?   @db.VarChar(20)
+  check_duplicate        String?   @db.VarChar(255)
+  doctype                String?   @db.VarChar(50)
+  notes                  Json?     @db.JsonB
+  user_tags              String?   @db.VarChar(255)
+  database_updated_at    DateTime? @updatedAt @db.Timestamp(6)
+  preferred_product_type Json?
+  database_created_at    DateTime  @default(now()) @db.Timestamp(6)
+
+  @@index([name])
+  @@map("leads")
   @@schema("erpnext")
 }
