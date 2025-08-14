@@ -23,4 +23,24 @@ export default class LarksuiteService {
     });
     return res.tenant_access_token;
   }
+
+  static async requestWithPagination(fn, payload, pageSize) {
+    const _payload = payload;
+    let pageToken = null;
+    const responses = [];
+    _payload.params = payload.params || {};
+    _payload.params.page_size = pageSize;
+    _payload.params.page_token = pageToken;
+    try {
+      do {
+        const res = await fn(_payload);
+        responses.push(res);
+        pageToken = res?.data?.page_token || null;
+        _payload.params.page_token = pageToken;
+      } while (pageToken);
+    } catch (err) {
+      throw new Error(`Lark pagination request failed: ${err?.message || String(err)}`);
+    }
+    return responses;
+  }
 };

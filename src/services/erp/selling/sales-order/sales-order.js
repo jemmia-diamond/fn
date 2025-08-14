@@ -103,7 +103,11 @@ export default class SalesOrderService {
     const messages = batch.messages;
     for (const message of messages) {
       const salesOrderData = message.body;
-      await salesOrderService.processHaravanOrder(salesOrderData);
+      try {
+        await salesOrderService.processHaravanOrder(salesOrderData);
+      } catch (error) {
+        console.error(error);
+      }
     }
   }
 
