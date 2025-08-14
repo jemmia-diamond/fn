@@ -4,20 +4,10 @@ import NhattinClient from "services/nhattin/nhattin-client";
 
 export default class GetOrderStatusesListService {
   constructor(env) {
+    this.env = env;
     this.haravanClient = new HaravanClient(
       env.HARAVAN_API_KEY,
       "https://apis.haravan.com"
-    );
-    const nhattinEmail = env.NHAT_TIN_LOGISTIC_EMAIL;
-    const nhattinPassword = env.NHAT_TIN_LOGISTIC_PASSWORD;
-    const nhattinPartnerId = env.NHAT_TIN_PARTNER_ID;
-    const nhattinBaseUrl = env.NHAT_TIN_API_URL;
-
-    this.nhattinClient = new NhattinClient(
-      nhattinEmail,
-      nhattinPassword,
-      nhattinPartnerId,
-      nhattinBaseUrl
     );
   }
   async getOrder(orderId) {
@@ -29,7 +19,19 @@ export default class GetOrderStatusesListService {
     try {
       if (!trackingNumber) return;
 
-      const bill = await this.nhattinClient.trackBill(trackingNumber);
+      const nhattinEmail = this.env.NHAT_TIN_LOGISTIC_EMAIL;
+      const nhattinPartnerId = this.env.NHAT_TIN_PARTNER_ID;
+      const nhattinBaseUrl = this.env.NHAT_TIN_API_URL;
+      const nhattinPassword = await this.env.NHAT_TIN_LOGISTIC_PASSWORD_SECRET.get();
+  
+      const nhattinClient = new NhattinClient(
+        nhattinEmail,
+        nhattinPassword,
+        nhattinPartnerId,
+        nhattinBaseUrl
+      );
+
+      const bill = await nhattinClient.trackBill(trackingNumber);
 
       return bill;
     } catch (error) {
