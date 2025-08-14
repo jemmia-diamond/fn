@@ -5,6 +5,5 @@ export default class PublicAPIRoutes {
     const ecommerceNamespaceApi = publicApi.basePath("/ecommerce");
     ecommerceNamespaceApi.get("/products/jewelries/:id", Ecommerce.JewelryController.show);
     ecommerceNamespaceApi.get("/ind-day-stats", Ecommerce.IndDayStatController.show);
-    ecommerceNamespaceApi.delete("/ind-day-stats", Ecommerce.IndDayStatController.destroy);
   };
 };
