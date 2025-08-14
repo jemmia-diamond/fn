@@ -4,7 +4,6 @@ import { convertIsoToDatetime } from "src/frappe/utils/datetime";
 import AddressService from "src/services/erp/contacts/address/address";
 import ContactService from "src/services/erp/contacts/contact/contact";
 import CustomerService from "src/services/erp/selling/customer/customer";
-import ZNSMessageService from "src/services/zalo-message/zalo-message";
 
 export default class SalesOrderService {
   constructor(env) {
@@ -128,15 +127,4 @@ export default class SalesOrderService {
       rate: parseInt(lineItemData.price)
     };
   };
-
-  async sendConfirmedMessage(haravanOrderData){
-    const phone = haravanOrderData.customer.phone;
-    const templateId = 476840;
-    const templateData = {
-      order_number: haravanOrderData.order_number,
-      price: haravanOrderData.total_price
-    };
-    const messageService = new ZNSMessageService(this.env);
-    return await messageService.sendMessage(phone, templateId, templateData);
-  }
 }
