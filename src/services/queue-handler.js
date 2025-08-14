@@ -3,6 +3,7 @@
 import ERP from "src/services/erp";
 import Pancake from "src/services/pancake";
 import ProductQuote from "src/services/product_quote";
+import Ecommerce from "src/services/ecommerce";
 
 export default {
   queue: async (batch, env) => {
@@ -10,6 +11,7 @@ export default {
     switch (batch.queue) {
     case "order":
       await ProductQuote.ProductQuoteOrderService.dequeueOrderQueue(batch, env);
+      await Ecommerce.IndDayStatService.trackBudget(batch, env);
       await ERP.Selling.SalesOrderService.dequeueOrderQueue(batch, env);
       break;
     case "message":
