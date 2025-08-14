@@ -2,10 +2,7 @@ import crypto from "crypto";
 
 export default class ZNSMessageService {
   constructor(env) {
-    this.clientId = env.ZNS_CLIENT_ID;
-    this.clientSecret = env.ZNS_SECRET_KEY_SECRET;
-    this.zaloOAId = env.ZNS_OA_ID;
-    this.baseURL = env.ZNS_API_BASE_URL;
+    this.env = env;
   }
 
   _generateHash(data, secret) {
@@ -22,7 +19,11 @@ export default class ZNSMessageService {
   async sendMessage(phone, templateId, templateData) {
     try {
       const requestId = this._generateRequestId();
-      
+      this.clientId = this.env.ZNS_CLIENT_ID;
+      this.zaloOAId = this.env.ZNS_OA_ID;
+      this.baseURL = this.env.ZNS_API_BASE_URL;
+      this.clientSecret = await this.env.ZNS_SECRET_KEY_SECRET.get();
+
       const payloadObject = {
         phone: phone,
         zalo_oa_id: this.zaloOAId,
