@@ -1,5 +1,5 @@
 export function buildWeddingRingsQuery(jsonParams) {
-  const {paginationString} = aggregateQuery(jsonParams);
+  const {filterString, sortString, paginationString} = aggregateQuery(jsonParams);
 
   const dataSql = `
     SELECT 
@@ -46,18 +46,23 @@ export function buildWeddingRingsQuery(jsonParams) {
         ) AS products
     FROM workplace.products p 
         INNER JOIN workplace.designs d ON p.design_id = d.id 
-        INNER JOIN ecom.wedding_rings wr ON d.wedding_ring_id = wr.id 
-    GROUP BY wr.id, wr.title, wr.image_updated_at
-    ORDER BY wr.image_updated_at DESC 
+        INNER JOIN ecom.materialized_wedding_rings wr ON d.wedding_ring_id = wr.id 
+    WHERE 1 = 1
+    ${filterString}
+    GROUP BY wr.id, wr.title, wr.max_price, wr.min_price, wr.qty_onhand
+    ${sortString}
     ${paginationString}
+    
   `;
 
   const countSql = `
       SELECT CAST(COUNT(*) OVER() AS INT) AS total
       FROM workplace.products p 
         INNER JOIN workplace.designs d ON p.design_id = d.id 
-        INNER JOIN ecom.wedding_rings wr ON d.wedding_ring_id = wr.id 
-      GROUP BY wr.id, wr.title, wr.image_updated_at
+        INNER JOIN ecom.materialized_wedding_rings wr ON d.wedding_ring_id = wr.id 
+      WHERE 1 = 1
+      ${filterString}
+      GROUP BY wr.id, wr.title
       LIMIT 1
     `;
 
@@ -69,6 +74,8 @@ export function buildWeddingRingsQuery(jsonParams) {
 
 export function aggregateQuery(jsonParams) {
   let paginationString = "";
+  let sortString = "";
+  let filterString = "";
 
   if (jsonParams.pagination) {
     paginationString += `LIMIT ${jsonParams.pagination.limit} `;
@@ -77,7 +84,33 @@ export function aggregateQuery(jsonParams) {
     }
   }
 
+  if (jsonParams.fineness && jsonParams.fineness.length > 0) {
+    filterString += `AND wr.fineness LIKE '%${jsonParams.fineness.join(", ")}%'\n`;
+  }
+
+  if (jsonParams.material_colors && jsonParams.material_colors.length > 0) {
+    filterString += `AND wr.material_colors LIKE '%${jsonParams.material_colors.join(", ")}%'\n`;
+  }
+
+  if (jsonParams.price?.min) {
+    filterString += `AND wr.min_price >= ${jsonParams.price.min}\n`;
+  }
+
+  if (jsonParams.price?.max) {
+    filterString += `AND wr.max_price <= ${jsonParams.price.max}\n`;
+  }
+
+  if (jsonParams.sort) {
+    if (jsonParams.sort.by === "price") {
+      sortString += `ORDER BY ${jsonParams.sort.order === "asc" ? "wr.min_price" : "wr.max_price"} ${jsonParams.sort.order === "asc" ? "ASC" : "DESC"}\n`;
+    } else if (jsonParams.sort.by === "stock") {
+      sortString += `ORDER BY wr.qty_onhand ${jsonParams.sort.order === "asc" ? "ASC" : "DESC"}\n`;
+    }
+  }
+
   return {
+    filterString,
+    sortString,
     paginationString
   };
 }
