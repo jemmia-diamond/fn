@@ -39,6 +39,7 @@ export default class APIRoutes {
 
     ecommerceNamespaceApi.get("/products/diamonds", Ecommerce.DiamondController.index);
     ecommerceNamespaceApi.get("/products/jewelries", Ecommerce.JewelryController.index);
+    ecommerceNamespaceApi.get("/products/jewelries/:id", Ecommerce.JewelryController.show);
     ecommerceNamespaceApi.get("/products/wedding_rings", Ecommerce.WeddingRingController.index);
     
     ecommerceNamespaceApi.get("/ind-day-stats", Ecommerce.IndDayStatController.show);
