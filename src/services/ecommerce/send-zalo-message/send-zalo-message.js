@@ -1,4 +1,3 @@
-import Database from "services/database";
 import ZNSMessageService from "services/zalo-message/zalo-message";
 
 export default class SendZaloMessage {
@@ -16,7 +15,7 @@ export default class SendZaloMessage {
     }
   }
 
-  async dequeueOrderQueue(batch, env) {
+  async dequeueOrderQueue(batch) {
     const messages = batch.messages;
     for (const message of messages) {
       const { phone, templateId, templateData } = message.body;
