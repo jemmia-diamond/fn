@@ -76,10 +76,10 @@ CREATE TABLE "erpnext"."leads" (
     "check_duplicate" VARCHAR(255),
     "doctype" VARCHAR(50),
     "notes" JSONB,
-    "user_tags" VARCHAR(255),
-    "database_updated_at" TIMESTAMP(6),
+    "user_tags" JSONB,
     "preferred_product_type" JSONB,
     "database_created_at" TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "database_updated_at" TIMESTAMP(6),
 
     CONSTRAINT "leads_pkey" PRIMARY KEY ("uuid")
 );
