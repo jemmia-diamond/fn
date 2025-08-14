@@ -169,7 +169,8 @@ LIMIT ${limit};
 	          'material_color', v.material_color,
 	          'ring_size', v.ring_size,
 	          'price', CAST(v.price AS INT),
-	          'price_compare_at', CAST(v.price_compare_at AS INT)
+	          'price_compare_at', CAST(v.price_compare_at AS INT),
+            'applique_material', v.applique_material
 	        )
 	      ) AS variants,
 	      JSON_BUILD_OBJECT(
