@@ -67,7 +67,7 @@ export default class IndDayStatService {
 
       return {
         count_order: Number(count_order),
-        count_product_quantity: Number(count_product_quantity) + Number(this.env.STATS_NUMBER_BUFFER)
+        count_product_quantity: Number(count_product_quantity) + (Number(this.env.STATS_NUMBER_BUFFER ) || 0)
       };
     } catch (error) {
       console.error("Error checking budget:", error);
