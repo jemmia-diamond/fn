@@ -5,8 +5,6 @@ import { buildWeddingRingsQuery } from "services/ecommerce/product/utils/wedding
 export default class ProductService {
   constructor(env) {
     this.db = Database.instance(env);
-    this.baseUrl = env.HARAVAN_API_BASE_URL;
-    this.haravanTokenSecret =  env.HARAVAN_TOKEN_SECRET;
   }
 
   async getJewelryData(jsonParams) {
