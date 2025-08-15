@@ -183,7 +183,7 @@ export default class SalesOrderService {
       if (Array.isArray(salesTeams) && salesTeams.length > 0) {
         await saveSalesTeamToDatabase(this.db, salesTeams);
       }
-      if (syncType === "auto") {
+      if (isSyncType === SalesOrderService.SYNC_TYPE_AUTO) {
         await kv.put(KV_KEY, toDate);
       }
     } catch (error) {
