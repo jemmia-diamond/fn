@@ -41,6 +41,7 @@ export default class APIRoutes {
     ecommerceNamespaceApi.get("/products/jewelries", Ecommerce.JewelryController.index);
     ecommerceNamespaceApi.get("/products/wedding_rings", Ecommerce.WeddingRingController.index);
     ecommerceNamespaceApi.delete("/ind-day-stats", Ecommerce.IndDayStatController.destroy);
+    ecommerceNamespaceApi.get("/order-trackings/nhattin/:id", Ecommerce.NhattinTrackingController.show);
     ecommerceNamespaceApi.get("/order-trackings/:id", Ecommerce.OrderTrackingController.show);
   };
 };
