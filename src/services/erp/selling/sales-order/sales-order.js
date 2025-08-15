@@ -151,13 +151,13 @@ export default class SalesOrderService {
 
   async syncSalesOrdersToDatabase(options = {}) {
     // minutesBack = 10 is default value for first sync when no create kv
-    const { isSyncType = SalesOrderService.SYNC_TYPE_AUTO, minutesBack = 10 } = options;
+    const { isSyncType = SalesOrderService.SYNC_TYPE_MANUAL, minutesBack = 10 } = options;
     const kv = this.env.FN_KV;
     const KV_KEY = "sales_order_sync:last_date";
     const toDate = dayjs().utc().format("YYYY-MM-DD HH:mm:ss");
     let fromDate;
 
-    if (isSyncType === 1) {
+    if (isSyncType === SalesOrderService.SYNC_TYPE_AUTO) {
       const lastDate = await kv.get(KV_KEY);
       fromDate = lastDate || dayjs().utc().subtract(minutesBack, "minutes").format("YYYY-MM-DD HH:mm:ss"); // first time when deploy app, we need define fromDate, if not, we will get all data from ERP
     } else {
@@ -189,7 +189,7 @@ export default class SalesOrderService {
     } catch (error) {
       console.error("Error syncing sales orders to database:", error.message);
       // Handle when cronjon failed in 1 hour => we need to update the last date to the current date
-      if (syncType === "auto" && dayjs(toDate).diff(dayjs(await kv.get(KV_KEY)), "hour") >= 1) {
+      if (isSyncType === SalesOrderService.SYNC_TYPE_AUTO && dayjs(toDate).diff(dayjs(await kv.get(KV_KEY)), "hour") >= 1) {
         await kv.put(KV_KEY, toDate);
       }
     }
