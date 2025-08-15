@@ -9,7 +9,7 @@ export class GetTemplateZalo {
         phone: this.convertPhoneNumber(data.billing_address?.phone),
         templateData: {
           order_number: data.name,
-          address: data.billing_address?.address_1,
+          address: data.billing_address?.address1,
           product: data.line_items?.[0]?.title,
           price: data.total_price,
           status: ORDER_STATUS.PAID,
