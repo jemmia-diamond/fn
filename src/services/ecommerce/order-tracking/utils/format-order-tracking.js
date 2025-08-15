@@ -1,4 +1,4 @@
-export function formatOrderTrackingResult(orderId, row) {
+export function formatOrderTrackingResult(orderId, row, orderStatuses) {
   return {
     order_id: orderId.toString(),
     total_price: Number(row.total_price || 0),
@@ -8,6 +8,7 @@ export function formatOrderTrackingResult(orderId, row) {
     order_details: {
       items: row.items || []
     },
+    order_statuses: orderStatuses,
     expected_date: null,
     shipping_type: null,
     receiver: {
