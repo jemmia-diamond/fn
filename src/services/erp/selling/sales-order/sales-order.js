@@ -19,6 +19,8 @@ dayjs.extend(utc);
 
 export default class SalesOrderService {
   static ERPNEXT_PAGE_SIZE = 100;
+  static SYNC_TYPE_AUTO = 1; // auto sync when deploy app
+  static SYNC_TYPE_MANUAL = 0; // manual sync when call function
   
   constructor(env) {
     this.env = env;
@@ -149,13 +151,13 @@ export default class SalesOrderService {
 
   async syncSalesOrdersToDatabase(options = {}) {
     // minutesBack = 10 is default value for first sync when no create kv
-    const { syncType = "auto", minutesBack = 10 } = options;
+    const { isSyncType = SalesOrderService.SYNC_TYPE_AUTO, minutesBack = 10 } = options;
     const kv = this.env.FN_KV;
     const KV_KEY = "sales_order_sync:last_date";
     const toDate = dayjs().utc().format("YYYY-MM-DD HH:mm:ss");
     let fromDate;
 
-    if (syncType === "auto") {
+    if (isSyncType === 1) {
       const lastDate = await kv.get(KV_KEY);
       fromDate = lastDate || dayjs().utc().subtract(minutesBack, "minutes").format("YYYY-MM-DD HH:mm:ss"); // first time when deploy app, we need define fromDate, if not, we will get all data from ERP
     } else {
@@ -197,7 +199,7 @@ export default class SalesOrderService {
     const syncService = new SalesOrderService(env);
     return await syncService.syncSalesOrdersToDatabase({ 
       minutesBack: 10, 
-      syncType: "auto"
+      isSyncType: SalesOrderService.SYNC_TYPE_AUTO
     });
   }
 }
