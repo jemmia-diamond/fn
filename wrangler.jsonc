@@ -59,11 +59,6 @@
       "secret_name": "HARAVAN_TOKEN"
     },
     {
-      "binding": "NHAT_TIN_LOGISTIC_PASSWORD_SECRET",
-      "store_id": "dff6fef7003446178302a7874af64fde",
-      "secret_name": "NHAT_TIN_LOGISTIC_PASSWORD"
-    },
-    {
       "binding": "ZNS_SECRET_KEY_SECRET",
       "store_id": "dff6fef7003446178302a7874af64fde",
       "secret_name": "ZNS_SECRET_KEY"
