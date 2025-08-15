@@ -21,7 +21,9 @@ export default class SendZaloMessage {
     for (const message of messages) {
       const templateId = message.body.template_id;
       const result = GetTemplateZalo.getTemplateZalo(templateId, message.body);
-      await this.sendZaloMessage(result.phone, templateId, result.templateData, env);
+      if (result) {
+        await this.sendZaloMessage(result.phone, templateId, result.templateData, env);
+      }
     }
   }
 }
