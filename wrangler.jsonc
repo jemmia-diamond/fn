@@ -77,7 +77,7 @@
         "max_batch_size": 1
       },
       {
-        "queue": "zalo-message",
+        "queue": "zalo-message"
       }
     ],
     "producers": [
