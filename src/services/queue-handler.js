@@ -10,11 +10,12 @@ export default {
     switch (batch.queue) {
     case "order":
       await ERP.Selling.SalesOrderService.dequeueOrderQueue(batch, env);
-      await Ecommerce.ZNSMessageService.dequeueOrderQueue(batch, env);
       break;
     case "message":
       await Pancake.ConversationService.dequeueMessageQueue(batch, env);
       break;
+    case "send_zalo":
+      await Ecommerce.SendZaloMessage.dequeueOrderQueue(batch);
     default:
       break;
     }

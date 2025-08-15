@@ -85,6 +85,10 @@
       {
         "queue": "message",
         "binding": "MESSAGE_QUEUE"
+      },
+      {
+        "queue": "zalo-message",
+        "binding": "ZALO_MESSAGE_QUEUE"
       }
     ]
   },

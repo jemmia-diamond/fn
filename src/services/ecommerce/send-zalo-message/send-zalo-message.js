@@ -5,7 +5,7 @@ export default class SendZaloMessage {
     this.env = env;
   }
   
-  async sendMessage(phone, templateId, templateData) {
+  static async sendConfirmedMessage(phone, templateId, templateData) {
     try {
       const messageService = new ZNSMessageService(this.env);
       return await messageService.sendMessage(phone, templateId, templateData);
@@ -15,11 +15,11 @@ export default class SendZaloMessage {
     }
   }
 
-  async dequeueOrderQueue(batch) {
+  static async dequeueOrderQueue(batch) {
     const messages = batch.messages;
     for (const message of messages) {
       const { phone, templateId, templateData } = message.body;
-      await this.sendMessage(phone, templateId, templateData);
+      await this.sendConfirmedMessage(phone, templateId, templateData);
     }
   }
 }
