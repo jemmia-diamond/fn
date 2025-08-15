@@ -3,11 +3,13 @@ import SearchController from "controllers/ecommerce/search-controller";
 import DiamondController from "controllers/ecommerce/diamond-controller";
 import WeddingRingController from "controllers/ecommerce/wedding-ring-controller";
 import IndDayStatController from "controllers/ecommerce/ind-day-stat-controller";
+import OrderTrackingController from "controllers/ecommerce/order-tracking-controller";
 
 export default {
   JewelryController: JewelryController,
   SearchController: SearchController,
   DiamondController: DiamondController,
   WeddingRingController: WeddingRingController,
-  IndDayStatController: IndDayStatController
+  IndDayStatController: IndDayStatController,
+  OrderTrackingController: OrderTrackingController
 };
