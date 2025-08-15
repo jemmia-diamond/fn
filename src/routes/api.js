@@ -5,7 +5,7 @@ import ERP from "controllers/erp";
 import Pancake from "controllers/pancake";
 import Dashboard from "controllers/dashboard";
 import Ecommerce from "controllers/ecommerce";
-import Nhattin from "controllers/nhattin";
+import Delivery from "controllers/delivery";
 
 export default class APIRoutes {
   static register(api) {
@@ -43,7 +43,7 @@ export default class APIRoutes {
     ecommerceNamespaceApi.get("/products/wedding_rings", Ecommerce.WeddingRingController.index);
     ecommerceNamespaceApi.delete("/ind-day-stats", Ecommerce.IndDayStatController.destroy);
 
-    const nhattinNamespaceApi = api.basePath("/nhattin");
-    nhattinNamespaceApi.get("/bill_code/:id", Nhattin.NhattinTrackingController.show);
+    const nhattinNamespaceApi = api.basePath("/delivery");
+    nhattinNamespaceApi.get("/nhattin", Delivery.DeliveryTrackingController.show);
   };
 };

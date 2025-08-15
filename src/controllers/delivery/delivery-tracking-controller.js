@@ -1,9 +1,9 @@
 import Ecommerce from "services/ecommerce";
 import { HTTPException } from "hono/http-exception";
 
-export default class NhattinTrackingController {
+export default class DeliveryTrackingController {
   static async show(ctx) {
-    const { id } = ctx.req.param();
+    const id = ctx.req.query("bill_code");
     if (!id) {
       throw new HTTPException(400, { message: "Bill Code is required" });
     }
