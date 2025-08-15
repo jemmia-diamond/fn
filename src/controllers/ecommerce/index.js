@@ -4,7 +4,6 @@ import DiamondController from "controllers/ecommerce/diamond-controller";
 import WeddingRingController from "controllers/ecommerce/wedding-ring-controller";
 import IndDayStatController from "controllers/ecommerce/ind-day-stat-controller";
 import OrderTrackingController from "controllers/ecommerce/order-tracking-controller";
-import NhattinTrackingController from "controllers/ecommerce/nhattin-tracking-controller";
 
 export default {
   JewelryController: JewelryController,
@@ -12,6 +11,5 @@ export default {
   DiamondController: DiamondController,
   WeddingRingController: WeddingRingController,
   IndDayStatController: IndDayStatController,
-  OrderTrackingController: OrderTrackingController,
-  NhattinTrackingController: NhattinTrackingController
+  OrderTrackingController: OrderTrackingController
 };
