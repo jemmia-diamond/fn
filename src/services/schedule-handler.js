@@ -11,6 +11,9 @@ export default {
       await ERP.Telephony.CallLogService.syncStringeeCallLogs(env);
       await ERP.CRM.LeadService.syncCallLogLead(env);
       break;
+    case "*/10 * * * *": // At every 10th minute
+      await ERP.CRM.LeadService.cronSyncLeadsToDatabase(env);
+      break;
     case "*/30 * * * *": // At every 30th minute
       await Ecommerce.ProductService.refreshMaterializedViews(env);
       break;
@@ -45,9 +48,6 @@ export default {
       break;
     case "0 14 * * *": // 21:00
       await ERP.Automation.AssignmentRuleService.enableAssignmentRuleOffHour(env);
-      break;
-    case "6 * * * *": // At minute 1 of every hour
-      await ERP.CRM.LeadService.cronSyncLeadsToDatabase(env);
       break;
     default:
       break;

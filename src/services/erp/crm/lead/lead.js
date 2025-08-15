@@ -8,7 +8,7 @@ import { fetchLeadsFromERP, saveLeadsToDatabase } from "services/erp/crm/lead/ut
 dayjs.extend(utc);
 
 export default class LeadService {
-  static ERPNEXT_PAGE_SIZE = 1000;
+  static ERPNEXT_PAGE_SIZE = 100;
   constructor(env) {
     this.env = env;
     this.doctype = "Lead";
@@ -257,11 +257,10 @@ export default class LeadService {
 
     try {    
       const leads = await fetchLeadsFromERP(this.frappeClient, this.doctype, fromDate, toDate, LeadService.ERPNEXT_PAGE_SIZE);
-
       if (Array.isArray(leads) && leads.length > 0) {
         await saveLeadsToDatabase(this.db, leads);
       }
-
+      
       if (syncType === "auto") {
         await kv.put(KV_KEY, toDate);
       }
@@ -282,7 +281,7 @@ export default class LeadService {
   static async cronSyncLeadsToDatabase(env) {
     const syncService = new LeadService(env);
     return await syncService.syncLeadsToDatabase({ 
-      minutesBack: 1,  
+      minutesBack: 10,  
       syncType: "auto"
     });
   }

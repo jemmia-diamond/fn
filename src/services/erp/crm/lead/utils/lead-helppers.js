@@ -1,8 +1,12 @@
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
+import { Prisma } from "@prisma-cli";
 import { randomUUID } from "crypto";
-import { mapLeadsToDatabase } from "services/erp/crm/lead/utils/lead-mappers";
+import { mapLeadsToDatabase } from "src/services/erp/crm/lead/utils/lead-mappers";
+import { escapeSqlValue } from "src/services/utils/sql-helpers";
 dayjs.extend(utc);
+
+const CHUNK_SIZE = 500;
 
 export async function fetchLeadsFromERP(frappeClient, doctype, fromDate, toDate, pageSize) {
   try {
@@ -36,22 +40,6 @@ export async function fetchLeadsFromERP(frappeClient, doctype, fromDate, toDate,
   }
 }
 
-// Helper function to escape SQL values
-function escapeSqlValue(value) {
-  if (value === null || value === undefined) {
-    return "NULL";
-  } else if (typeof value === "string") {
-    return `'${value.replace(/'/g, "''")}'`;
-  } else if (value instanceof Date) {
-    return `'${value.toISOString()}'`;
-  } else if (typeof value === "boolean") {
-    return value ? "1" : "0";
-  } else if (Array.isArray(value) || typeof value === "object") {
-    return `'${JSON.stringify(value).replace(/'/g, "''")}'`;
-  }
-  return value;
-}
-
 export async function saveLeadsToDatabase(db, leads) {
   try {
     const leadsData = mapLeadsToDatabase(leads);
@@ -60,9 +48,8 @@ export async function saveLeadsToDatabase(db, leads) {
     }
     
     // Process in chunks to avoid SQL statement size limits
-    const chunkSize = 5;
-    for (let i = 0; i < leadsData.length; i += chunkSize) {
-      const chunk = leadsData.slice(i, i + chunkSize);
+    for (let i = 0; i < leadsData.length; i += CHUNK_SIZE) {
+      const chunk = leadsData.slice(i, i + CHUNK_SIZE);
       
       // Get fields including both database timestamp columns for INSERT
       const fields = ["uuid", ...Object.keys(chunk[0]).filter(field => 
@@ -100,7 +87,7 @@ export async function saveLeadsToDatabase(db, leads) {
         ON CONFLICT (name) DO UPDATE SET
         ${updateSetSql};
       `;
-      await db.$queryRawUnsafe(query);
+      await db.$queryRaw(Prisma.raw(query));
     }
  
   } catch (error) {
