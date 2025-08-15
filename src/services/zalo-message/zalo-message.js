@@ -30,7 +30,8 @@ export default class ZNSMessageService {
         content : {
           template_id: templateId,
           template_data: templateData
-        }
+        },
+        callback_url: ""
       };
 
       const payload = JSON.stringify(payloadObject);
