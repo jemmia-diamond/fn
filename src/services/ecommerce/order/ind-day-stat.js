@@ -3,10 +3,10 @@ import { HARAVAN_TOPIC } from "services/ecommerce/enum";
 export default class IndDayStatService {
   constructor(env) {
     this.env = env;
-    this.indDayProductIds = [1062559389]; // Mock Product IDs for Independent Day
+    this.indDayProductIds = [1069557862]; // Mock Product IDs for Independent Day
     this.countOrderKey = "count_order"; // Key for counting orders
     this.countProductQuantityKey = "count_product_quantity"; // Key for counting product quantity
-    this.productQuantityBudget = 250; // Budget for product quantity
+    this.productQuantityBudget = 290; // Budget for product quantity
   }
   
   static async trackBudget(batch, env) {
@@ -14,10 +14,9 @@ export default class IndDayStatService {
       if (!batch?.messages?.length) {
         return;
       }
-      const { line_items: lineItems = [], haravan_topic, cancelled_at } = batch.messages[0].body;
+      const { line_items, haravan_topic, cancelled_status } = batch.messages[0].body;
       const indDayStatService = new IndDayStatService();
-
-      const totalQuantity = lineItems.reduce(
+      const totalQuantity = Object.values(line_items).reduce(
         (sum, item) =>
           indDayStatService.indDayProductIds.includes(item.product_id)
             ? sum + item.quantity
@@ -37,7 +36,7 @@ export default class IndDayStatService {
       if (haravan_topic === HARAVAN_TOPIC.CREATED) {
         newOrderCount ++;
         newQuantityCount += totalQuantity;
-      } else if (haravan_topic === HARAVAN_TOPIC.UPDATED && cancelled_at) {
+      } else if (haravan_topic === HARAVAN_TOPIC.UPDATED && cancelled_status !== "uncancelled") {
         newOrderCount --;
         newQuantityCount -= totalQuantity;
       }
