@@ -4,17 +4,16 @@ export default class IndDayStatService {
   constructor(env) {
     this.env = env;
     this.indDayProductIds = [1069557862]; // Mock Product IDs for Independent Day
-    this.countOrderKey = "count_order"; // Key for counting orders
     this.countProductQuantityKey = "count_product_quantity"; // Key for counting product quantity
     this.productQuantityBudget = 290; // Budget for product quantity
   }
   
   static async trackBudget(batch, env) {
     try {
-      if (!batch?.messages?.length) {
-        return;
-      }
-      const { line_items, haravan_topic, cancelled_status } = batch.messages[0].body;
+      const { line_items, haravan_topic, cancelled_status, cancelled_at, updated_at, partially_paid } = batch.messages[0].body;
+      
+      if ( partially_paid !== "partially_paid" ) return;
+      
       const indDayStatService = new IndDayStatService();
       const totalQuantity = Object.values(line_items).reduce(
         (sum, item) =>
@@ -24,27 +23,23 @@ export default class IndDayStatService {
         0
       );
 
-      const values = await env.FN_KV.get([
-        indDayStatService.countOrderKey,
-        indDayStatService.countProductQuantityKey
-      ]);
-      const { count_order, count_product_quantity} = Object.fromEntries(values);
+      const productQuantity = await env.FN_KV.get(indDayStatService.countProductQuantityKey);
 
-      let newOrderCount = parseInt(count_order) || 0;
-      let newQuantityCount = parseInt(count_product_quantity) || 0;
+      let newQuantityCount = parseInt(productQuantity) || 0;
 
       if (haravan_topic === HARAVAN_TOPIC.CREATED) {
-        newOrderCount ++;
         newQuantityCount += totalQuantity;
-      } else if (haravan_topic === HARAVAN_TOPIC.UPDATED && cancelled_status !== "uncancelled") {
-        newOrderCount --;
-        newQuantityCount -= totalQuantity;
+      } else if (haravan_topic === HARAVAN_TOPIC.UPDATED && cancelled_status === "cancelled" ) {
+        const cancelledAt = new Date(cancelled_at);
+        const updatedAt = new Date(updated_at);
+        if (updatedAt.getTime() - cancelledAt.getTime() < 2000) {
+          newQuantityCount -= totalQuantity;
+        }
       }
 
       if (newQuantityCount > indDayStatService.productQuantityBudget) {
         console.warn("Product quantity budget exceeded");
       }
-      await env.FN_KV.put(indDayStatService.countOrderKey, newOrderCount);
       await env.FN_KV.put(indDayStatService.countProductQuantityKey, newQuantityCount);
 
     } catch (error) {
@@ -54,19 +49,13 @@ export default class IndDayStatService {
 
   async getStats() {
     try {
-      const values = await this.env.FN_KV.get([
-        this.countOrderKey,
-        this.countProductQuantityKey
-      ]);
-      const { count_order, count_product_quantity} = Object.fromEntries(values);
-
-      if (count_order === null || count_product_quantity === null) {
+      const productQuantity = await this.env.FN_KV.get(this.countProductQuantityKey);
+      if (productQuantity === null) {
         throw new Error("Data is missing keys");
       }
 
       return {
-        count_order: Number(count_order),
-        count_product_quantity: Number(count_product_quantity) + (Number(this.env.STATS_NUMBER_BUFFER) || 0)
+        count_product_quantity: Number(productQuantity) + (Number(this.env.STATS_NUMBER_BUFFER) || 0)
       };
     } catch (error) {
       console.error("Error checking budget:", error);
@@ -76,7 +65,6 @@ export default class IndDayStatService {
 
   async reset() {
     try {
-      await this.env.FN_KV.delete(this.countOrderKey);
       await this.env.FN_KV.delete(this.countProductQuantityKey);
     } catch (error) {
       console.error("Error resetting budget:", error);
