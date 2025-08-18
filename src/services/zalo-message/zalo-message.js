@@ -22,7 +22,7 @@ export default class ZNSMessageService {
       this.clientId = this.env.ZNS_CLIENT_ID;
       this.zaloOAId = this.env.ZNS_OA_ID;
       this.baseURL = this.env.ZNS_API_BASE_URL;
-      this.clientSecret = await this.env.ZNS_SECRET_KEY_SECRET.get();
+      this.clientSecret = this.env.ZNS_SECRET_KEY || await this.env.ZNS_SECRET_KEY_SECRET.get();
 
       const payloadObject = {
         zalo_oa_id: this.zaloOAId,
