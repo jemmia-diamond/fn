@@ -68,5 +68,71 @@ export default class RecordService {
       });
     }
   }
+
+  /**
+   * Retrieves a single record from a Larksuite table.
+   *
+   * @param {string} env - The environment configuration.
+   * @param {string} app_token - The app token of the Larksuite application.
+   * @param {string} table_id - The table ID of the table containing the record.
+   * @param {string} record_id - The ID of the record to retrieve.
+   * @returns {Promise<object|null>} - The record object if found, otherwise null.
+   */
+  static async getLarksuiteRecord(env, app_token, table_id, record_id) {
+    const larkClient = LarksuiteService.createClient(env);
+
+    try {
+      const response = await larkClient.bitable.appTableRecord.get({
+        path: {
+          app_token: app_token,
+          table_id: table_id,
+          record_id: record_id
+        },
+        params: {
+          user_id_type: "user_id"
+        }
+      });
+
+      return response.data.record;
+    } catch (error) {
+      console.error("Error retrieving Larksuite record:", error);
+      return null;
+    }
+  }
+
+  /**
+   * Updates a single record in a Larksuite table.
+   *
+   * @param {string} env - The environment configuration.
+   * @param {string} app_token - The app token of the Larksuite application.
+   * @param {string} table_id - The table ID of the table containing the record.
+   * @param {string} record_id - The ID of the record to update.
+   * @param {object} fields - An object containing the fields to update and their new values.
+   * @returns {Promise<object|null>} - The updated record object if successful, otherwise null.
+   */
+  static async updateLarksuiteRecord(env, app_token, table_id, record_id, fields) {
+    const larkClient = LarksuiteService.createClient(env);
+
+    try {
+      const response = await larkClient.bitable.appTableRecord.update({
+        path: {
+          app_token: app_token,
+          table_id: table_id,
+          record_id: record_id
+        },
+        params: {
+          user_id_type: "user_id"
+        },
+        data: {
+          fields: fields
+        }
+      });
+
+      return response.data.record;
+    } catch (error) {
+      console.error("Error updating Larksuite record:", error);
+      return null;
+    }
+  }
 }
 
