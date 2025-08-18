@@ -6,8 +6,8 @@ export const OrderOverallStatus = Object.freeze({
   delivered: "Đã giao hàng",
   not_meet_customer: "Không gặp được khách",
   waiting_for_return: "Chờ hoàn hàng",
-  return: "Đã hoàn hàng",
-  cancelled_at: "Đã hủy đơn"
+  returned: "Đã hoàn hàng",
+  cancelled: "Đã hủy đơn"
 });
 
 export const NhattinDeliveryStatus = Object.freeze({

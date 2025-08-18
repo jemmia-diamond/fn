@@ -1,14 +1,16 @@
 import HaravanClient from "services/haravan/haravan-client.js";
 import { NhattinDeliveryStatus, OrderOverallStatus } from "services/ecommerce/order-tracking/enums/order-delivery-status.enum";
 import { TrackingLog } from "services/ecommerce/order-tracking/dtos/tracking-log";
+import { OrderTimelineStatus } from "services/ecommerce/order-tracking/enums/order-step-status.enum";
 
 export default class GetOrderStatusesListService {
   constructor(env) {
     this.env = env;
     this.haravanClient = new HaravanClient(
       env.HARAVAN_API_KEY,
-      "https://apis.haravan.com"
+      env.HARAVAN_API_BASE_URL
     );
+    this.fnNhattinDeliveryTrackingUrl = "http://fn.jemmia.vn/api/delivery/nhattin";
   }
   async getOrder(orderId) {
     const endpoint = `/com/orders/${orderId}.json`;
@@ -16,14 +18,16 @@ export default class GetOrderStatusesListService {
   }
 
   async getBillInfo(billCode) {
-    const url = new URL("http://fn.jemmia.vn/api/delivery/nhattin");
+    const url = new URL(this.fnNhattinDeliveryTrackingUrl);
     
     url.searchParams.append("bill_code", billCode);
+
+    const bearerToken = await this.env.BEARER_TOKEN_SECRET.get();
   
     const options = {
       method: "GET",
       headers: {
-        "Authorization": `Bearer ${this.env.BEARER_TOKEN}`,
+        "Authorization": `Bearer ${bearerToken}`,
         "Accept": "application/json"
       }
     };
@@ -109,7 +113,7 @@ export default class GetOrderStatusesListService {
   combinedSteps(haravanSteps, takeFromVendorLogs, transitLogs) {
 
     // ready_to_confirm | confirmed | ready_to_pick
-    const beforePickIndex = haravanSteps.findIndex(step => ["ready_to_confirm", "confirmed", "ready_to_pick"].includes(step.key) && step.status === "ongoing");
+    const beforePickIndex = haravanSteps.findIndex(step => ["ready_to_confirm", "confirmed", "ready_to_pick"].includes(step.key) && step.status === OrderTimelineStatus.ONGOING);
     if (beforePickIndex > -1) {
       return haravanSteps;
     }
@@ -128,7 +132,7 @@ export default class GetOrderStatusesListService {
         title: takeFromVendorLogs[0].operation,
         time: takeFromVendorLogs[0].getDateTimeObject().toISOString(),
         key: "delivering",
-        status: "past"
+        status: OrderTimelineStatus.PAST
       };
 
       // ready pick -> (picked) -> delivering
@@ -149,20 +153,20 @@ export default class GetOrderStatusesListService {
           title: log.operation,
           time: log.getDateTimeObject().toISOString(),
           key: "delivering",
-          status: "past"
+          status: OrderTimelineStatus.PAST
         };
         beforeDeliveringSteps.push(newStep);
       });
     }
 
     // If ongoing step exists in the first half, change their status to past and change last step to ongoing
-    const ongoingStepIndex = beforeDeliveringSteps.findIndex(step => step.status === "ongoing");
+    const ongoingStepIndex = beforeDeliveringSteps.findIndex(step => step.status === OrderTimelineStatus.ONGOING);
     if (ongoingStepIndex > -1) {
       beforeDeliveringSteps = beforeDeliveringSteps.map((step, index) => {
         if (index === beforeDeliveringSteps.length - 1) {
-          return { ...step, status: "ongoing" };
+          return { ...step, status: OrderTimelineStatus.ONGOING };
         } else {
-          return { ...step, status: "past" };
+          return { ...step, status: OrderTimelineStatus.PAST };
         }
       });
     }
@@ -226,14 +230,14 @@ export default class GetOrderStatusesListService {
         title: step.title,
         time: step.time,
         key: step.key,
-        status: "past"
+        status: OrderTimelineStatus.PAST
       }));
 
     // Add cancellation step
     validSteps.push({
-      title: OrderOverallStatus.cancelled_at,
+      title: OrderOverallStatus.cancelled,
       time: order.cancelled_at,
-      status: "ongoing"
+      status: OrderTimelineStatus.ONGOING
     });
 
     return validSteps;
@@ -269,12 +273,12 @@ export default class GetOrderStatusesListService {
   }
 
   _createFilledStep(step, index, lastFilledIndex) {
-    let status = "upcoming";
+    let status = OrderTimelineStatus.UPCOMING;
 
     if (index < lastFilledIndex) {
-      status = "past";
+      status = OrderTimelineStatus.PAST;
     } else if (index === lastFilledIndex) {
-      status = "ongoing";
+      status = OrderTimelineStatus.ONGOING;
     }
 
     return {
@@ -295,7 +299,7 @@ export default class GetOrderStatusesListService {
         title: step.title,
         time: null,
         key: step.key,
-        status: "upcoming"
+        status: OrderTimelineStatus.UPCOMING
       };
     }
 
