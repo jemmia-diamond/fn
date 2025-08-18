@@ -26,7 +26,13 @@
   ],
   "vars": {
     "HOST": "https://fn.jemmia.vn",
-    "HARAVAN_API_BASE_URL": "https://apis.haravan.com"
+    "HARAVAN_API_BASE_URL": "https://apis.haravan.com",
+    "ZNS_API_BASE_URL": "https://api-partner.zalopay.vn",
+    "ZNS_CLIENT_ID": "zpmc_jemmia",
+    "ZNS_OA_ID": "2838947343790196672",
+    "NHAT_TIN_LOGISTIC_EMAIL": "jemmia",
+    "NHAT_TIN_PARTNER_ID": "305081",
+    "NHAT_TIN_API_URL": "https://apiws.ntlogistics.vn/v1",
   },
   "secrets_store_secrets": [
     {
@@ -48,7 +54,17 @@
       "binding": "HARAVAN_TOKEN_SECRET",
       "store_id": "dff6fef7003446178302a7874af64fde",
       "secret_name": "HARAVAN_TOKEN"
-    }
+    },
+    {
+      "binding": "ZNS_SECRET_KEY_SECRET",
+      "store_id": "dff6fef7003446178302a7874af64fde",
+      "secret_name": "ZNS_SECRET_KEY"
+    },
+    {
+      "binding": "NHAT_TIN_LOGISTIC_PASSWORD_SECRET",
+      "store_id": "dff6fef7003446178302a7874af64fde",
+      "secret_name": "NHAT_TIN_LOGISTIC_PASSWORD"
+    },
   ],
   "kv_namespaces": [
     {
@@ -67,6 +83,9 @@
         "queue": "message",
         "max_concurrency": 5,
         "max_batch_size": 1
+      },
+      {
+        "queue": "zalo-message"
       }
     ],
     "producers": [
@@ -77,6 +96,10 @@
       {
         "queue": "message",
         "binding": "MESSAGE_QUEUE"
+      },
+      {
+        "queue": "zalo-message",
+        "binding": "ZALO_MESSAGE_QUEUE"
       }
     ]
   },
@@ -84,6 +107,7 @@
     "crons": [
       "0 * * * *",
       "*/10 * * * *",
+      "*/20 * * * *",
       "*/30 * * * *",
       "0 17 * * *",
       "30 0 * * *",

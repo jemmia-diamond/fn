@@ -1,10 +1,10 @@
 import { Hono } from "hono";
 import { bearerAuth } from "hono/bearer-auth";
-import { cors } from "hono/cors";
 
 import Routes from "src/routes";
 import errorTracker from "services/error-tracker";
 import loggrageLogger from "services/custom-logger";
+import CorsService from "services/cors-service";
 
 import queueHandler from "services/queue-handler";
 import scheduleHandler from "services/schedule-handler";
@@ -18,30 +18,9 @@ const webhook = app.basePath("/webhook");
 app.use("*", errorTracker);
 app.use(loggrageLogger());
 
-// CORS
-api.use("*", cors({
-  origin: (origin, c) => {
-    const corsOrigin = c.env.CORS_ORIGINS.split(",");
-
-    if (corsOrigin.includes(origin)) {
-      return origin;
-    }
-
-    // Handle wildcard, eg: *.jemmia.vn
-    for (const o of corsOrigin.filter((o) => o.startsWith("https://*.") )) {
-      const baseDomain = o.replace("https://*.", "");
-
-      // Allow both wildcard subdomains and the base domain itself
-      if (origin.endsWith(`.${baseDomain}`) || origin === `https://${baseDomain}`) {
-        return origin;
-      }
-    }
-
-    return null;
-  },
-  allowHeaders: ["Content-Type", "Authorization"],
-  allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
-}));
+// Apply CORS to routes using the service
+api.use("*", CorsService.createCorsConfig());
+publicApi.use("*", CorsService.createCorsConfig());
 
 // Authentication
 api.use("*",

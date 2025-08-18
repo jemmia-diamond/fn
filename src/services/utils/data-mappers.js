@@ -11,4 +11,3 @@ export const safeValue = (value, type = "string") => {
     return value;
   }
 };
-
