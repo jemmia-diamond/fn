@@ -83,6 +83,9 @@
         "queue": "message",
         "max_concurrency": 5,
         "max_batch_size": 1
+      },
+      {
+        "queue": "zalo-message"
       }
     ],
     "producers": [
@@ -93,12 +96,17 @@
       {
         "queue": "message",
         "binding": "MESSAGE_QUEUE"
+      },
+      {
+        "queue": "zalo-message",
+        "binding": "ZALO_MESSAGE_QUEUE"
       }
     ]
   },
   "triggers": {
     "crons": [
       "0 * * * *",
+      "*/20 * * * *",
       "*/30 * * * *",
       "0 17 * * *",
       "30 0 * * *",

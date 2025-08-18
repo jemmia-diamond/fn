@@ -30,7 +30,8 @@ export default class ZNSMessageService {
         content : {
           template_id: templateId,
           template_data: templateData
-        }
+        },
+        callback_url: ""
       };
 
       const payload = JSON.stringify(payloadObject);
@@ -54,7 +55,7 @@ export default class ZNSMessageService {
       const data = text ? JSON.parse(text) : null;
 
       if (!response.ok) {
-        throw new Error(`Zalo API error: ${data?.message || "Unknown error"}`);
+        throw new Error(`Zalo API error: ${response}`);
       }
 
       return data;
