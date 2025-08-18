@@ -25,8 +25,8 @@ export default class ZNSMessageService {
       this.clientSecret = await this.env.ZNS_SECRET_KEY_SECRET.get();
 
       const payloadObject = {
-        phone: phone,
         zalo_oa_id: this.zaloOAId,
+        phone: phone,
         content : {
           template_id: templateId,
           template_data: templateData
@@ -48,7 +48,7 @@ export default class ZNSMessageService {
       const response = await fetch(endpoint, {
         method: "POST",
         headers,
-        body: JSON.stringify(payloadObject)
+        body: payloadObject
       });
 
       const text = await response.text();
