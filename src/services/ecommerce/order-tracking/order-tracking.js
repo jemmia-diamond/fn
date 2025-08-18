@@ -111,8 +111,8 @@ export default class OrderTrackingService {
       // Handle active orders
       let finalHaravanSteps = this._handleActiveOrder(orderedSteps);
 
-      const takeFromVendorLogs = nhattinTrackingLog.filter(log => log.billStatusId === NhattinDeliveryStatus.take_order_from_vendor);
-      const transitLogs = nhattinTrackingLog.filter(log => log.billStatusId === NhattinDeliveryStatus.transiting);
+      const takeFromVendorLogs = nhattinTrackingLog.filter(log => log.billStatusId === NhattinDeliveryStatus.TAKE_ORDER_FROM_VENDOR);
+      const transitLogs = nhattinTrackingLog.filter(log => log.billStatusId === NhattinDeliveryStatus.TRANSITING);
 
       return this.combinedSteps(finalHaravanSteps, takeFromVendorLogs, transitLogs);
     } catch (err) {
@@ -132,12 +132,17 @@ export default class OrderTrackingService {
   combinedSteps(haravanSteps, takeFromVendorLogs, transitLogs) {
 
     // ready_to_confirm | confirmed | ready_to_pick
-    const beforePickIndex = haravanSteps.findIndex(step => ["ready_to_confirm", "confirmed", "ready_to_pick"].includes(step.key) && step.status === OrderTimelineStatus.ONGOING);
+    const beforePickIndex = haravanSteps.findIndex(step => 
+      [ 
+        OrderOverallStatus.READY_TO_CONFIRM.key, 
+        OrderOverallStatus.CONFIRMED.key,
+        OrderOverallStatus.READY_TO_PICK.key
+      ].includes(step.key) && step.status === OrderTimelineStatus.ONGOING);
     if (beforePickIndex > -1) {
       return haravanSteps;
     }
  
-    const deliveringIndex = haravanSteps.findIndex(step => step.key === "delivering");
+    const deliveringIndex = haravanSteps.findIndex(step => step.key === OrderOverallStatus.DELIVERING.key);
     if (deliveringIndex <= -1) {
       return haravanSteps;
     }
@@ -150,12 +155,12 @@ export default class OrderTrackingService {
       const newStep = {
         title: takeFromVendorLogs[0].operation,
         time: takeFromVendorLogs[0].getDateTimeObject().toISOString(),
-        key: "delivering",
+        key: OrderOverallStatus.DELIVERING.key,
         status: OrderTimelineStatus.PAST
       };
 
       // ready pick -> (picked) -> delivering
-      const readyToPickIndex = beforeDeliveringSteps.findIndex(step => step.key === "ready_to_pick");
+      const readyToPickIndex = beforeDeliveringSteps.findIndex(step => step.key === OrderOverallStatus.READY_TO_PICK.key);
       if (readyToPickIndex > -1) {
         beforeDeliveringSteps = [
           ...beforeDeliveringSteps.slice(0, readyToPickIndex + 1),
@@ -171,7 +176,7 @@ export default class OrderTrackingService {
         const newStep = {
           title: log.operation,
           time: log.getDateTimeObject().toISOString(),
-          key: "delivering",
+          key: OrderOverallStatus.DELIVERING.key,
           status: OrderTimelineStatus.PAST
         };
         beforeDeliveringSteps.push(newStep);
@@ -228,10 +233,10 @@ export default class OrderTrackingService {
    * @private
    */
   _createOrderedSteps(timeline) {
-    return Object.entries(OrderOverallStatus).map(([key, title]) => ({
-      key,
-      title,
-      time: timeline[key] || null
+    return Object.entries(OrderOverallStatus).map(([_, statusObject]) => ({
+      key: statusObject.key,
+      title: statusObject.label,
+      time: timeline[statusObject.key] || null
     }));
   }
 
@@ -254,7 +259,7 @@ export default class OrderTrackingService {
 
     // Add cancellation step
     validSteps.push({
-      title: OrderOverallStatus.cancelled,
+      title: OrderOverallStatus.CANCELLED.label,
       time: order.cancelled_at,
       status: OrderTimelineStatus.ONGOING
     });
@@ -310,7 +315,7 @@ export default class OrderTrackingService {
 
   _createUnfilledStep(step, index, lastFilledIndex, orderedSteps) {
     const isAfterOngoing = index > lastFilledIndex;
-    const deliveredIndex = orderedSteps.findIndex(s => s.key === "delivered");
+    const deliveredIndex = orderedSteps.findIndex(s => s.key === OrderOverallStatus.DELIVERED.key);
     const isBeforeDelivered = deliveredIndex >= 0 ? index <= deliveredIndex : true;
 
     if (isAfterOngoing && isBeforeDelivered) {
