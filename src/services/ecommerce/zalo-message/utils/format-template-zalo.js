@@ -19,9 +19,10 @@ export class GetTemplateZalo {
   static convertPhoneNumber(phone) {
     if (!phone) return null;
 
-    if (phone.startsWith("0")) return `+84${phone.slice(1)}`;
-    else if (phone.startsWith("84")) return `+${phone}`;
-    else if (phone.startsWith("+84")) return phone;
+    if (phone.startsWith("0")) return `84${phone.slice(1)}`;
+    if (phone.startsWith("84")) return phone;
+    if (phone.startsWith("+84")) return phone.slice(1);
+
     return null;
   }
 }
