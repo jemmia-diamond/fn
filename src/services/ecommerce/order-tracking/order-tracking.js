@@ -16,7 +16,6 @@ export default class OrderTrackingService {
       env.HARAVAN_API_KEY,
       env.HARAVAN_API_BASE_URL
     );
-    this.fnNhattinDeliveryTrackingUrl = "http://fn.jemmia.vn/api/delivery/nhattin";
   }
 
   async trackOrder(orderId) {
@@ -78,39 +77,6 @@ export default class OrderTrackingService {
     return this.haravanClient.makeRequest(endpoint);
   }
 
-  async getBillInfo(billCode) {
-    const url = new URL(this.fnNhattinDeliveryTrackingUrl);
-    
-    url.searchParams.append("bill_code", billCode);
-
-    const bearerToken = await this.env.BEARER_TOKEN_SECRET.get();
-  
-    const options = {
-      method: "GET",
-      headers: {
-        "Authorization": `Bearer ${bearerToken}`,
-        "Accept": "application/json"
-      }
-    };
-  
-    try {
-      const response = await fetch(url, options);
-  
-      if (!response.ok) {
-  
-        const errorBody = await response.text();
-        throw new Error(`API Error: ${response.status} ${response.statusText} - ${errorBody}`);
-      }
-  
-      const data = await response.json();
-      return data;
-  
-    } catch (error) {
-      console.error("Failed to fetch tracking data:", error);
-      throw error;
-    }
-  }
-
   async getOrderDeliveryStatus(orderId) {
     try {
       const { order } = await this.getOrder(orderId);
@@ -123,7 +89,7 @@ export default class OrderTrackingService {
 
       const trackingNumber = haravanFulfillment.tracking_number;
 
-      const nhattinBillTrack = trackingNumber && await this.getBillInfo(trackingNumber);
+      const nhattinBillTrack = trackingNumber && await this.getNhatTinDeliveryStatus(trackingNumber);
 
       let nhattinTrackingLog = [];
       const histories = nhattinBillTrack?.data?.at(-1)?.histories;
