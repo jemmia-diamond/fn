@@ -9,3 +9,8 @@ export const OrderOverallStatus = Object.freeze({
   return: "Đã hoàn hàng",
   cancelled_at: "Đã hủy đơn"
 });
+
+export const NhattinDeliveryStatus = Object.freeze({
+  take_order_from_vendor: 3,
+  transiting: 15
+});
