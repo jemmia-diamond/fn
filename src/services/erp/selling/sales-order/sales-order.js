@@ -1,11 +1,27 @@
 import FrappeClient from "src/frappe/frappe-client";
 import { convertIsoToDatetime } from "src/frappe/utils/datetime";
+import Database from "src/services/database";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc.js";
 
 import AddressService from "src/services/erp/contacts/address/address";
 import ContactService from "src/services/erp/contacts/contact/contact";
 import CustomerService from "src/services/erp/selling/customer/customer";
 
+import { fetchSalesOrdersFromERP, 
+  fetchSalesOrderItemsFromERP, 
+  fetchSalesTeamFromERP, 
+  saveSalesOrdersToDatabase, 
+  saveSalesOrderItemsToDatabase, 
+  saveSalesTeamToDatabase } from "src/services/erp/selling/sales-order/utils/sales-order-helpers";
+
+dayjs.extend(utc);
+
 export default class SalesOrderService {
+  static ERPNEXT_PAGE_SIZE = 100;
+  static SYNC_TYPE_AUTO = 1; // auto sync when deploy app
+  static SYNC_TYPE_MANUAL = 0; // manual sync when call function
+  
   constructor(env) {
     this.env = env;
     this.doctype = "Sales Order";
@@ -35,6 +51,7 @@ export default class SalesOrderService {
         apiSecret: env.JEMMIA_ERP_API_SECRET
       }
     );
+    this.db = Database.instance(env);
   };
 
   async processHaravanOrder(haravanOrderData) {
@@ -131,4 +148,59 @@ export default class SalesOrderService {
       rate: parseInt(lineItemData.price)
     };
   };
+
+  async syncSalesOrdersToDatabase(options = {}) {
+    // minutesBack = 10 is default value for first sync when no create kv
+    const { isSyncType = SalesOrderService.SYNC_TYPE_MANUAL, minutesBack = 10 } = options;
+    const kv = this.env.FN_KV;
+    const KV_KEY = "sales_order_sync:last_date";
+    const toDate = dayjs().utc().format("YYYY-MM-DD HH:mm:ss");
+    let fromDate;
+
+    if (isSyncType === SalesOrderService.SYNC_TYPE_AUTO) {
+      const lastDate = await kv.get(KV_KEY);
+      fromDate = lastDate || dayjs().utc().subtract(minutesBack, "minutes").format("YYYY-MM-DD HH:mm:ss"); // first time when deploy app, we need define fromDate, if not, we will get all data from ERP
+    } else {
+      fromDate = dayjs().utc().subtract(minutesBack, "minutes").format("YYYY-MM-DD HH:mm:ss");
+    }
+
+    try {   
+      const salesOrders = await fetchSalesOrdersFromERP(this.frappeClient, this.doctype, fromDate, toDate, SalesOrderService.ERPNEXT_PAGE_SIZE);
+      const salesOrdersNames = salesOrders.map(salesOrder => salesOrder.name).flat();
+
+      const salesOrdersItems = await fetchSalesOrderItemsFromERP(this.frappeClient, salesOrdersNames);
+      const salesTeams = await fetchSalesTeamFromERP(this.frappeClient, salesOrdersNames);
+
+      // Save Sales Orders
+      if (Array.isArray(salesOrders) && salesOrders.length > 0) {
+        await saveSalesOrdersToDatabase(this.db, salesOrders);
+      }
+      // Save Sales Order Items
+      if (Array.isArray(salesOrdersItems) && salesOrdersItems.length > 0) {
+        await saveSalesOrderItemsToDatabase(this.db, salesOrdersItems);
+      }
+      // Save Sales Team
+      if (Array.isArray(salesTeams) && salesTeams.length > 0) {
+        await saveSalesTeamToDatabase(this.db, salesTeams);
+      }
+      if (isSyncType === SalesOrderService.SYNC_TYPE_AUTO) {
+        await kv.put(KV_KEY, toDate);
+      }
+    } catch (error) {
+      console.error("Error syncing sales orders to database:", error.message);
+      // Handle when cronjon failed in 1 hour => we need to update the last date to the current date
+      if (isSyncType === SalesOrderService.SYNC_TYPE_AUTO && dayjs(toDate).diff(dayjs(await kv.get(KV_KEY)), "hour") >= 1) {
+        await kv.put(KV_KEY, toDate);
+      }
+    }
+  };
+  
+  static async cronSyncSalesOrdersToDatabase(env) {
+    const syncService = new SalesOrderService(env);
+    return await syncService.syncSalesOrdersToDatabase({ 
+      minutesBack: 10, 
+      isSyncType: SalesOrderService.SYNC_TYPE_AUTO
+    });
+  }
 }
+
