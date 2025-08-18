@@ -9,6 +9,8 @@ dayjs.extend(utc);
 
 export default class LeadService {
   static ERPNEXT_PAGE_SIZE = 100;
+  static SYNC_TYPE_AUTO = 1; // auto sync when deploy app
+  static SYNC_TYPE_MANUAL = 0; // manual sync when call function
   constructor(env) {
     this.env = env;
     this.doctype = "Lead";
@@ -242,13 +244,13 @@ export default class LeadService {
   }
   async syncLeadsToDatabase(options = {}) {
     
-    const { syncType = "auto", minutesBack = 10 } = options;
+    const { isSyncType = LeadService.SYNC_TYPE_AUTO, minutesBack = 10 } = options;
     const kv = this.env.FN_KV;
     const KV_KEY = "lead_sync:last_date";
     const toDate = dayjs().utc().format("YYYY-MM-DD HH:mm:ss");
     let fromDate;
     
-    if (syncType === "auto") {
+    if (isSyncType === LeadService.SYNC_TYPE_AUTO) {
       const lastDate = await kv.get(KV_KEY);
       fromDate = lastDate || dayjs().utc().subtract(minutesBack, "minutes").format("YYYY-MM-DD HH:mm:ss");
     } else {
@@ -261,20 +263,14 @@ export default class LeadService {
         await saveLeadsToDatabase(this.db, leads);
       }
       
-      if (syncType === "auto") {
+      if (isSyncType === LeadService.SYNC_TYPE_AUTO) {
         await kv.put(KV_KEY, toDate);
       }
     } catch (error) {
       console.error("Error syncing leads to database:", error.message);
-      // Handle error KV is not updated when the error continuously 3 times (1 hour)
-      if (syncType === "auto") {
-        const lastDate = await kv.get(KV_KEY);
-        if (lastDate) {
-          const timeDiffHours = dayjs(toDate).diff(dayjs(lastDate), "hour");
-          if (timeDiffHours > 1) {
-            await kv.put(KV_KEY, toDate);
-          }
-        }
+      // Handle when cronjon failed in 1 hour => we need to update the last date to the current date
+      if (isSyncType === LeadService.SYNC_TYPE_AUTO && dayjs(toDate).diff(dayjs(await kv.get(KV_KEY)), "hour") >= 1) {
+        await kv.put(KV_KEY, toDate);
       }
     }
   }
@@ -282,7 +278,7 @@ export default class LeadService {
     const syncService = new LeadService(env);
     return await syncService.syncLeadsToDatabase({ 
       minutesBack: 10,  
-      syncType: "auto"
+      isSyncType: LeadService.SYNC_TYPE_AUTO
     });
   }
 }

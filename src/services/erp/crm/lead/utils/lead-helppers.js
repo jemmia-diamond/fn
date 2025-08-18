@@ -18,14 +18,33 @@ export async function fetchLeadsFromERP(frappeClient, doctype, fromDate, toDate,
     let allLeads = [];
     let start = 0;
     let hasMoreData = true;
+    
     while (hasMoreData) {     
       const leadsBatch = await frappeClient.getList(doctype, {
         filters: filters,
         limit_start: start,
         limit_page_length: pageSize,
         order_by: "creation desc"
-      });
+      });  
+     
       if (leadsBatch?.length) {
+        const leadNames = leadsBatch.map(lead => lead.name);
+        const leadProductItems = await fetchLeadProductItemsFromERP(frappeClient, leadNames);
+        
+        // group leadProductItems by lead name
+        const leadProductItemsMap = {};
+        leadProductItems.forEach(item => {
+          if (!leadProductItemsMap[item.parent]) {
+            leadProductItemsMap[item.parent] = [];
+          }
+          leadProductItemsMap[item.parent].push(item);
+        });
+        
+        // add leadProductItems to each lead in leadsBatch
+        leadsBatch.forEach(lead => {
+          lead.preferred_product_type = leadProductItemsMap[lead.name] || [];
+        });
+        
         allLeads.push(...leadsBatch);
         hasMoreData = leadsBatch.length === pageSize;
         start += pageSize;
@@ -38,6 +57,15 @@ export async function fetchLeadsFromERP(frappeClient, doctype, fromDate, toDate,
     console.error("Error fetching leads from ERPNext", { error: error.message });
     throw error;
   }
+}
+export async function fetchLeadProductItemsFromERP(frappeClient, leadNames) {
+  if (!Array.isArray(leadNames) || leadNames.length === 0) {
+    return [];
+  }
+  const quotedNames = leadNames.map(name => `"${name}"`).join(", ");
+  const sql = `SELECT * FROM \`tabLead Product Item\` WHERE parent IN (${quotedNames})`;
+  const leadProductItems = await frappeClient.executeSQL(sql);
+  return leadProductItems || [];
 }
 
 export async function saveLeadsToDatabase(db, leads) {
