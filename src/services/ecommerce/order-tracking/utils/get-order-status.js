@@ -52,8 +52,7 @@ export default class GetOrderStatusesListService {
 
   async getOrderDeliveryStatus(orderId) {
     try {
-      const data = await this.getOrder(orderId);
-      const order = data.order;
+      const { order } = await this.getOrder(orderId);
 
       if (!order) {
         throw new Error(`Order ${orderId} not found`);
@@ -63,21 +62,14 @@ export default class GetOrderStatusesListService {
 
       const trackingNumber = haravanFulfillment.tracking_number;
 
-      let nhattinBillTrack;
-      if (trackingNumber) {
-        nhattinBillTrack = await this.getBillInfo(trackingNumber);
-      }
+      const nhattinBillTrack = trackingNumber && await this.getBillInfo(trackingNumber);
 
       let nhattinTrackingLog = [];
-      if (nhattinBillTrack && nhattinBillTrack.data && nhattinBillTrack.data.length > 0) {
-        const histories = nhattinBillTrack.data[nhattinBillTrack.data.length - 1].histories;
- 
-        if (histories && Array.isArray(histories)) {
-    
-          histories.forEach(historyLog => {
-            nhattinTrackingLog.push(new TrackingLog(historyLog));
-          });
-        }
+      const histories = nhattinBillTrack?.data?.at(-1)?.histories;
+      if (histories && Array.isArray(histories)) {
+        histories.forEach(historyLog => {
+          nhattinTrackingLog.push(new TrackingLog(historyLog));
+        });
       }
 
       const haravanTimeline = this._buildTimeline(order, haravanFulfillment);
