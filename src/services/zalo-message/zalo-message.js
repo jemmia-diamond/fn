@@ -55,7 +55,11 @@ export default class ZNSMessageService {
       const data = text ? JSON.parse(text) : null;
 
       if (!response.ok) {
-        throw new Error(`Zalo API error: ${response}`);
+        console.error("Zalo API request failed:", {
+          status: response.status,
+          body: data
+        });
+        throw new Error(`Zalo API error: ${text}`);
       }
 
       return data;
