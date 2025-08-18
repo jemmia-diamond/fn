@@ -47,6 +47,10 @@ export default class OrderTrackingService {
       const nhattinBaseUrl = this.env.NHAT_TIN_API_URL;
       const nhattinPassword = await this.env.NHAT_TIN_LOGISTIC_PASSWORD_SECRET.get();
 
+      if (!nhattinEmail || !nhattinPartnerId || !nhattinBaseUrl || !nhattinPassword) {
+        throw new Error("Missing Nhattin API credentials");
+      }
+
       const nhattinClient = new NhattinClient(
         nhattinEmail,
         nhattinPassword,
