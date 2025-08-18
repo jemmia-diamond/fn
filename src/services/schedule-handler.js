@@ -11,6 +11,9 @@ export default {
       await ERP.Telephony.CallLogService.syncStringeeCallLogs(env);
       await ERP.CRM.LeadService.syncCallLogLead(env);
       break;
+    case "*/10 * * * *": // At every 10th minute
+      await ERP.CRM.LeadService.cronSyncLeadsToDatabase(env);
+      break;
     case "*/20 * * * *": // At every 20th minute
       await ERP.Selling.SalesOrderService.cronSyncSalesOrdersToDatabase(env);
       break;

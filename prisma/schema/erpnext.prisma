@@ -364,3 +364,90 @@ model erpnextRegion {
   @@map("regions")
   @@schema("erpnext")
 }
+
+model erpnextLead {
+  uuid                   String    @id @default(uuid()) @db.Uuid
+  name                   String    @unique @db.VarChar(255)
+  owner                  String?   @db.VarChar(255)
+  creation               DateTime? @db.Timestamp(6)
+  modified               DateTime? @db.Timestamp(6)
+  modified_by            String?   @db.VarChar(255)
+  docstatus              Int?
+  idx                    Int?
+  naming_series          String?   @db.VarChar(255)
+  type                   String?   @db.VarChar(255)
+  salutation             String?   @db.VarChar(255)
+  first_name             String?   @db.VarChar(255)
+  middle_name            String?   @db.VarChar(255)
+  territory              String?   @db.VarChar(255)
+  lead_stage             String?   @db.VarChar(100)
+  phone                  String?   @db.VarChar(20)
+  email_id               String?   @db.VarChar(255)
+  job_title              String?   @db.VarChar(255)
+  last_name              String?   @db.VarChar(255)
+  gender                 String?   @db.VarChar(10)
+  qualified_lead_date    DateTime? @db.Timestamp(6)
+  first_reach_at         DateTime? @db.Timestamp(6)
+  lead_owner             String?   @db.VarChar(255)
+  source                 String?   @db.VarChar(255)
+  status                 String?   @db.VarChar(50)
+  customer               String?   @db.VarChar(255)
+  request_type           String?   @db.VarChar(100)
+  lead_name              String?   @db.VarChar(255)
+  lead_received_date     DateTime? @db.Timestamp(6)
+  lead_source_name       String?   @db.VarChar(255)
+  lead_source_platform   String?   @db.VarChar(255)
+  qualification_status   String?   @db.VarChar(255)
+  qualified_by           String?   @db.VarChar(255)
+  qualified_on           DateTime? @db.Timestamp(6)
+  purpose_lead           String?   @db.VarChar(255)
+  expected_delivery_date DateTime? @db.Date
+  budget_lead            String?   @db.VarChar(255)
+  province               String?   @db.VarChar(255)
+  region                 String?   @db.VarChar(255)
+  company_name           String?   @db.VarChar(255)
+  no_of_employees        String?   @db.VarChar(20)
+  annual_revenue         Decimal?  @db.Decimal
+  industry               String?   @db.VarChar(255)
+  market_segment         String?   @db.VarChar(255)
+  fax                    String?   @db.VarChar(255)
+  tax_number             String?   @db.VarChar(255)
+  ceo_name               String?   @db.VarChar(255)
+  birth_date             DateTime? @db.Date
+  address                String?
+  personal_tax_id        String?   @db.VarChar(255)
+  first_channel          String?   @db.VarChar(255)
+  personal_id            String?   @db.VarChar(255)
+  place_of_issuance      String?   @db.VarChar(255)
+  date_of_issuance       DateTime? @db.Date
+  website                String?   @db.VarChar(255)
+  bank_name              String?   @db.VarChar(255)
+  bank_branch            String?   @db.VarChar(255)
+  account_number         String?   @db.VarChar(255)
+  bank_province          String?   @db.VarChar(255)
+  bank_district          String?   @db.VarChar(255)
+  bank_ward              String?   @db.VarChar(255)
+  campaign_name          String?   @db.VarChar(255)
+  company                String?   @db.VarChar(255)
+  website_from_data      String?   @db.VarChar(255)
+  language               String?   @db.VarChar(10)
+  image                  String?
+  title                  String?   @db.VarChar(255)
+  disabled               Int?
+  unsubscribed           Int?
+  blog_subscriber        Int?
+  mobile_no              String?   @db.VarChar(20)
+  whatsapp_no            String?   @db.VarChar(20)
+  phone_ext              String?   @db.VarChar(20)
+  check_duplicate        String?   @db.VarChar(255)
+  doctype                String?   @db.VarChar(50)
+  notes                  Json?     @db.JsonB
+  user_tags              Json?     @db.JsonB
+  preferred_product_type Json?     @db.JsonB
+  database_created_at    DateTime?  @default(now()) @db.Timestamp(6)
+  database_updated_at    DateTime?  @updatedAt @db.Timestamp(6)
+
+  @@index([name])
+  @@map("leads")
+  @@schema("erpnext")
+}
