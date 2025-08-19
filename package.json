@@ -38,6 +38,6 @@
     "schema": "./prisma/schema/"
   },
   "lint-staged": {
-  "*.{js,ts,jsx,tsx}": "eslint"
+  "*.{js,ts,jsx,tsx}": "eslint --fix"
   }
 }
