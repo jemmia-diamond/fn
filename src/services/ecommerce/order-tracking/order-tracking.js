@@ -3,19 +3,15 @@ import { getOrderOverallInfo } from "services/ecommerce/order-tracking/queries/g
 import { getLatestOrderId } from "services/ecommerce/order-tracking/queries/get-latest-orderid";
 import { formatOrderTrackingResult } from "services/ecommerce/order-tracking/utils/format-order-tracking";
 import NhattinClient from "services/nhattin/nhattin-client";
-import HaravanClient from "services/haravan/haravan-client.js";
 import { NhattinDeliveryStatus, OrderOverallStatus } from "services/ecommerce/order-tracking/enums/order-delivery-status.enum";
 import { TrackingLog } from "services/ecommerce/order-tracking/dtos/tracking-log";
 import { OrderTimelineStatus } from "services/ecommerce/order-tracking/enums/order-step-status.enum";
+import HaravanClient from "services/haravan/haravan-client";
 
 export default class OrderTrackingService {
   constructor(env) {
     this.env = env;
     this.db = Database.instance(env);
-    this.haravanClient = new HaravanClient(
-      env.HARAVAN_API_KEY,
-      env.HARAVAN_API_BASE_URL
-    );
   }
 
   async trackOrder(orderId) {
@@ -74,7 +70,12 @@ export default class OrderTrackingService {
 
   async getOrder(orderId) {
     const endpoint = `/com/orders/${orderId}.json`;
-    return this.haravanClient.makeRequest(endpoint);
+    const haravanApiKey = await this.env.HARAVAN_TOKEN_SECRET.get();
+    const haravanClient = new HaravanClient(
+      haravanApiKey,
+      env.HARAVAN_API_BASE_URL
+    );
+    return haravanClient.makeRequest(endpoint);
   }
 
   async getOrderDeliveryStatus(orderId) {
