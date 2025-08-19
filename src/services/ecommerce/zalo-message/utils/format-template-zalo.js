@@ -1,4 +1,5 @@
 import {ZALO_TEMPLATE} from "services/ecommerce/zalo-message/enums/zalo-template.enum";
+import { ORDER_STATUS } from "src/services/ecommerce/zalo-message/enums/order-status.enum";
 
 export class GetTemplateZalo {
   static getTemplateZalo(templateId, data) {
@@ -8,7 +9,13 @@ export class GetTemplateZalo {
         phone: this.convertPhoneNumber(data.billing_address?.phone),
         templateData: {
           order_number: data.name,
-          name: data.billing_address?.name
+          address : data.billing_address?.address1,
+          product: data.line_items[0].title,
+          price: data.total_price.toLocaleString("vi-VN"),
+          status: ORDER_STATUS.PAID,
+          date: new Date(data.created_at).toLocaleDateString("vi-VN", {
+            timeZone: "Asia/Ho_Chi_Minh"
+          })
         }
       };
 
