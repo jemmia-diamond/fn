@@ -209,8 +209,7 @@ export default class SalesOrderService {
       filters: [
         ["real_order_date", "is", "not set"],
         ["cancelled_status", "=", "uncancelled"]
-      ],
-      limit_page_length: 1000
+      ]
     });
     
     for (const salesOrder of salesOrders) {
