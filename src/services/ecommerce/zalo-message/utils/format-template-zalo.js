@@ -7,7 +7,8 @@ export class GetTemplateZalo {
       return {
         phone: this.convertPhoneNumber(data.billing_address?.phone),
         templateData: {
-          order_number: data.name
+          order_number: data.name,
+          name: data.billing_address?.name
         }
       };
 
