@@ -33,7 +33,8 @@
     "NHAT_TIN_LOGISTIC_EMAIL": "jemmia",
     "NHAT_TIN_PARTNER_ID": "305081",
     "NHAT_TIN_API_URL": "https://apiws.ntlogistics.vn/v1",
-    "LARK_APP_ID": "cli_a7f8a8df1979902f"
+    "LARK_APP_ID": "cli_a7f8a8df1979902f",
+    "LARK_API_ENDPOINT": "https://open.larksuite.com" 
   },
   "secrets_store_secrets": [
     {
