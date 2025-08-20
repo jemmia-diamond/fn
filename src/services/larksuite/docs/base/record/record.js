@@ -73,9 +73,9 @@ export default class RecordService {
    * Retrieves a single record from a Larksuite table.
    *
    * @param {string} env - The environment configuration.
-   * @param {string} app_token - The app token of the Larksuite application.
-   * @param {string} table_id - The table ID of the table containing the record.
-   * @param {string} record_id - The ID of the record to retrieve.
+   * @param {string} appToken - The app token of the Larksuite application.
+   * @param {string} tableId - The table ID of the table containing the record.
+   * @param {string} recordId - The ID of the record to retrieve.
    * @param {string} userIdType - The type of user ID to use (default is "user_id").
    * @returns {Promise<object|null>} - The record object if found, otherwise null.
    */
@@ -108,7 +108,7 @@ export default class RecordService {
    *
    * @param {string} env - The environment configuration.
    * @param {string} appToken - The app token of the Larksuite application.
-   * @param {string} table_id - The table ID of the table containing the record.
+   * @param {string} tableId - The table ID of the table containing the record.
    * @param {string} recordId - The ID of the record to update.
    * @param {object} fields - An object containing the fields to update and their new values.
    * @param {string} userIdType - The type of user ID to use (default is "user_id").
