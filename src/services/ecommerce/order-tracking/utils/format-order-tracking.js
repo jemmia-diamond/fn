@@ -5,7 +5,7 @@ export function formatOrderTrackingResult(order, nhattinTrackInfo) {
     original_total_price: Number(order.original_total_price || 0),
     shipping_fee: Number(order.shipping_fee || 0),
     items: order.items || [],
-    tracking_logs: nhattinTrackInfo.status,
+    tracking_logs: nhattinTrackInfo?.status || [],
     expected_receive_date: convertToUTC(nhattinTrackInfo.date_expected),
     shipping_address_name: order.shipping_address_name,
     shipping_address_phone: order.shipping_address_phone,
