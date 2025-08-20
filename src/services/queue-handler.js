@@ -18,7 +18,7 @@ export default {
       await Pancake.ConversationService.dequeueMessageQueue(batch, env);
       break;
     case "zalo-message":
-      await Ecommerce.SendZaloMessage.dequeueOrderQueue(batch, env);
+      await Ecommerce.SendZaloMessage.dequeueSendZaloMessageQueue(batch, env);
       break;
     default:
       break;
