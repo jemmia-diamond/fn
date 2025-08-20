@@ -3,7 +3,7 @@ import { getOrderOverallInfo } from "services/ecommerce/order-tracking/queries/g
 import { getLatestOrderId } from "services/ecommerce/order-tracking/queries/get-latest-orderid";
 import { formatOrderTrackingResult } from "services/ecommerce/order-tracking/utils/format-order-tracking";
 import NhattinClient from "services/nhattin/nhattin-client";
-import { NhattinDeliveryStatus, OrderOverallStatus } from "services/ecommerce/order-tracking/enums/order-delivery-status.enum";
+import { NhattinDeliveryStatus, NhattinPaymentMethod, OrderOverallStatus } from "services/ecommerce/order-tracking/enums/order-delivery-status.enum";
 import { TrackingLog } from "services/ecommerce/order-tracking/dtos/tracking-log";
 import { OrderTimelineStatus } from "services/ecommerce/order-tracking/enums/order-step-status.enum";
 import HaravanClient from "services/haravan/haravan-client";
@@ -22,21 +22,30 @@ export default class OrderTrackingService {
 
       if (!orderInfoRows || !orderInfoRows.length) return null;
 
-      const orderInfo = orderInfoRows[0];
+      let orderInfo = orderInfoRows[0];
 
-      let orderStatuses;
+      orderInfo.original_total_price = this.getOriginalTotalPrice(orderInfo);
 
+      let nhattinTrackInfo = {};
       try {
-        orderStatuses = await this.getOrderDeliveryStatus(latestOrderId);
+        nhattinTrackInfo = await this.getOrderDeliveryStatus(latestOrderId);
       } catch (e) {
         console.error(e);
       }
 
-      return formatOrderTrackingResult(orderId, orderInfo, orderStatuses);
+      return formatOrderTrackingResult(orderInfo, nhattinTrackInfo);
     } catch (error) {
       console.error("Error tracking order:", error);
       throw new Error("Failed to track order");
     }
+  }
+
+  getOriginalTotalPrice(order) {
+    let totalOriginalPrice = 0;
+    order.items.forEach(item => {
+      totalOriginalPrice += Number(item.original_price || 0) * Number(item.quantity || 0);
+    });
+    return totalOriginalPrice;
   }
 
   async getNhatTinDeliveryStatus(trackingNumber) {
@@ -93,7 +102,8 @@ export default class OrderTrackingService {
       const nhattinBillTrack = trackingNumber && await this.getNhatTinDeliveryStatus(trackingNumber);
 
       let nhattinTrackingLog = [];
-      const histories = nhattinBillTrack?.data?.at(-1)?.histories;
+      const nhattinTrackingData = nhattinBillTrack?.data?.at(-1);
+      const histories = nhattinTrackingData?.histories;
       if (histories && Array.isArray(histories)) {
         histories.forEach(historyLog => {
           nhattinTrackingLog.push(new TrackingLog(historyLog));
@@ -104,18 +114,54 @@ export default class OrderTrackingService {
 
       const orderedSteps = this._createOrderedSteps(haravanTimeline);
 
+      const trackInfo = {
+        bill_code: nhattinTrackingData?.bill_code,
+        ref_code: nhattinTrackingData?.ref_code,
+        p_link_image: nhattinTrackingData?.p_link_image,
+        bill_image_link: nhattinTrackingData?.bill_image_link,
+        document_image_link: nhattinTrackingData?.document_image_link,
+        date_delivery: nhattinTrackingData?.date_delivery,
+        date_pickup: nhattinTrackingData?.date_pickup,
+        date_expected: nhattinTrackingData?.date_expected,
+        payment_method: NhattinPaymentMethod[nhattinTrackingData?.pay_method],
+        total_fee: nhattinTrackingData?.total_fee,
+        main_fee: nhattinTrackingData?.main_fee,
+        insurance_fee: nhattinTrackingData?.insurance_fee,
+        cod_amt: nhattinTrackingData?.cod_amt,
+        cod_fee: nhattinTrackingData?.cod_fee,
+        service: nhattinTrackingData?.service
+      };
+
       // Handle cancelled orders
       if (order.cancelled_at) {
-        return this._handleCancelledOrder(order, orderedSteps);
+        const status = this._handleCancelledOrder(order, orderedSteps);
+        return {
+          ...trackInfo,
+          status: status,
+          overall_status: status.find(step => step.status === OrderTimelineStatus.ONGOING).key
+        };
       }
 
       // Handle active orders
       let finalHaravanSteps = this._handleActiveOrder(orderedSteps);
 
       const takeFromVendorLogs = nhattinTrackingLog.filter(log => log.billStatusId === NhattinDeliveryStatus.TAKE_ORDER_FROM_VENDOR);
+
       const transitLogs = nhattinTrackingLog.filter(log => log.billStatusId === NhattinDeliveryStatus.TRANSITING);
 
-      return this.combinedSteps(finalHaravanSteps, takeFromVendorLogs, transitLogs);
+      const combinedSteps = this.combinedSteps(
+        {
+          haravanSteps : finalHaravanSteps, 
+          takeFromVendorLogs : takeFromVendorLogs,
+          transitLogs : transitLogs
+        }
+      );
+
+      return {
+        ...trackInfo,
+        status: combinedSteps,
+        overall_status: combinedSteps.find(step => step.status === OrderTimelineStatus.ONGOING).key
+      };
     } catch (err) {
       console.error(`Error fetching order timeline for order ${orderId}:`, err.message);
       throw new Error(`Failed to fetch order timeline: ${err.message}`);
@@ -130,22 +176,32 @@ export default class OrderTrackingService {
    * @returns 
    */
 
-  combinedSteps(haravanSteps, takeFromVendorLogs, transitLogs) {
+  combinedSteps({
+    haravanSteps, takeFromVendorLogs, transitLogs
+  }) {
 
     // ready_to_confirm | confirmed | ready_to_pick
-    const beforePickIndex = haravanSteps.findIndex(step => 
-      [ 
-        OrderOverallStatus.READY_TO_CONFIRM.key, 
-        OrderOverallStatus.CONFIRMED.key,
-        OrderOverallStatus.READY_TO_PICK.key
-      ].includes(step.key) && step.status === OrderTimelineStatus.ONGOING);
-    if (beforePickIndex > -1) {
+    const ongoingStep = haravanSteps.find(step => step.status === OrderTimelineStatus.ONGOING);
+
+    if ([ 
+      OrderOverallStatus.READY_TO_CONFIRM.key, 
+      OrderOverallStatus.CONFIRMED.key,
+      OrderOverallStatus.READY_TO_PICK.key
+    ].includes(ongoingStep.key)) {
       return haravanSteps;
     }
- 
+
     const deliveringIndex = haravanSteps.findIndex(step => step.key === OrderOverallStatus.DELIVERING.key);
     if (deliveringIndex <= -1) {
       return haravanSteps;
+    }
+
+    const vendorTime = takeFromVendorLogs?.[0]?.getDateTimeObject().toISOString();
+    if (vendorTime) {
+      const currentStep = haravanSteps[deliveringIndex];
+      if (!currentStep.time || currentStep.time > vendorTime) {
+        currentStep.time = vendorTime;
+      }
     }
 
     let beforeDeliveringSteps = haravanSteps.slice(0, deliveringIndex + 1);
@@ -328,6 +384,15 @@ export default class OrderTrackingService {
       };
     }
 
-    return null;
+    if (isAfterOngoing && !isBeforeDelivered) {
+      return null;
+    }
+
+    return {
+      title: step.title,
+      time: step.time,
+      key: step.key,
+      status: isAfterOngoing ? OrderTimelineStatus.UPCOMING : OrderTimelineStatus.PAST
+    };
   }
 }

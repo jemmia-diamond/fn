@@ -39,5 +39,12 @@ export const OrderOverallStatus = Object.freeze({
 
 export const NhattinDeliveryStatus = Object.freeze({
   TAKE_ORDER_FROM_VENDOR: 3,
-  TRANSITING: 15
+  TRANSITING: 15,
+  DELIVERED: 4
+});
+
+export const NhattinPaymentMethod = Object.freeze({
+  NGTTN: { id: 10, name: "Người Gửi Thanh Toán Ngay"},
+  NGTTS: { id: 11, name: "Người Gửi Thanh Toán Sau" },
+  NNTTN: { id: 20, name: "Người Nhận Thanh Toán Ngay" }
 });
