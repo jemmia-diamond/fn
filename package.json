@@ -6,6 +6,7 @@
     "build": "prisma migrate deploy && prisma generate",
     "deploy": "wrangler deploy --minify",
     "lint": "eslint",
+    "lint:staged": "lint-staged",
     "prepare": "husky install",
     "format": "eslint --fix"
   },
@@ -28,11 +29,15 @@
     "eslint-plugin-unused-imports": "^4.1.4",
     "globals": "^16.1.0",
     "husky": "^9.1.7",
+    "lint-staged": "^16.1.5",
     "prisma": "^6.9.0",
     "wrangler": "^4.17.0"
   },
   "packageManager": "pnpm@10.11.0",
   "prisma": {
     "schema": "./prisma/schema/"
+  },
+  "lint-staged": {
+  "*.{js,ts,jsx,tsx}": "eslint --fix"
   }
 }

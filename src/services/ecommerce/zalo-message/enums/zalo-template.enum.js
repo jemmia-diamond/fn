@@ -1,3 +1,3 @@
 export const ZALO_TEMPLATE = {
-  orderConfirmed : 476961
+  orderConfirmed : 476840
 };

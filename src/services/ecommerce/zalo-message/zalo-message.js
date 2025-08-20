@@ -1,5 +1,6 @@
 import ZNSMessageService from "services/zalo-message/zalo-message";
 import { GetTemplateZalo } from "services/ecommerce/zalo-message/utils/format-template-zalo";
+import { ZALO_TEMPLATE } from "services/ecommerce/zalo-message/enums/zalo-template.enum";
 
 export default class SendZaloMessage {
   constructor(env) {
@@ -16,10 +17,10 @@ export default class SendZaloMessage {
     }
   }
 
-  static async dequeueOrderQueue(batch, env) {
+  static async dequeueSendZaloMessageQueue(batch, env) {
     const messages = batch.messages;
     for (const message of messages) {
-      const templateId = message.body.template_id;
+      const templateId = ZALO_TEMPLATE.orderConfirmed;
       const result = GetTemplateZalo.getTemplateZalo(templateId, message.body);
       if (result) {
         await this.sendZaloMessage(result.phone, templateId, result.templateData, env);
