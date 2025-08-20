@@ -13,6 +13,18 @@ export default class LarksuiteService {
     return client;
   }
 
+  static async createClientV2(env) {
+    const larkAppId = env.LARK_APP_ID;
+    const larkAppSecretSecret = await env.LARK_APP_SECRET_SECRET.get();
+    const client = new lark.Client({
+      appId: larkAppId,
+      appSecret: larkAppSecretSecret,
+      domain: "https://open.larksuite.com"
+    });
+    client.httpInstance.defaults.adapter = fetchAdapter;
+    return client;
+  }
+
   static async getTenantAccessToken(env) {
     const larkClient = LarksuiteService.createClient(env);
     const res = await larkClient.auth.tenantAccessToken.internal({
