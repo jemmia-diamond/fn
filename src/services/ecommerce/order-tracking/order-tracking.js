@@ -26,7 +26,7 @@ export default class OrderTrackingService {
 
       orderInfo.original_total_price = this.getOriginalTotalPrice(orderInfo);
 
-      let nhattinTrackInfo;
+      let nhattinTrackInfo = {};
       try {
         nhattinTrackInfo = await this.getOrderDeliveryStatus(latestOrderId);
       } catch (e) {
