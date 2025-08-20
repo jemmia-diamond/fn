@@ -82,7 +82,7 @@ export default class RecordService {
   static async getLarksuiteRecord({
     env, appToken, tableId, recordId, userIdType = "open_id"
   }) {
-    const larkClient = LarksuiteService.createClient(env);
+    const larkClient = await LarksuiteService.createClientV2(env);
 
     try {
       const response = await larkClient.bitable.appTableRecord.get({
@@ -117,7 +117,7 @@ export default class RecordService {
   static async updateLarksuiteRecord({
     env, appToken, tableId, recordId, fields, userIdType = "open_id"
   }) {
-    const larkClient = LarksuiteService.createClient(env);
+    const larkClient = await LarksuiteService.createClientV2(env);
 
     try {
       const response = await larkClient.bitable.appTableRecord.update({
