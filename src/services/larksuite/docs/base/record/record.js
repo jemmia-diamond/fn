@@ -76,20 +76,23 @@ export default class RecordService {
    * @param {string} app_token - The app token of the Larksuite application.
    * @param {string} table_id - The table ID of the table containing the record.
    * @param {string} record_id - The ID of the record to retrieve.
+   * @param {string} userIdType - The type of user ID to use (default is "user_id").
    * @returns {Promise<object|null>} - The record object if found, otherwise null.
    */
-  static async getLarksuiteRecord(env, app_token, table_id, record_id) {
+  static async getLarksuiteRecord({
+    env, appToken, tableId, recordId, userIdType = "open_id"
+  }) {
     const larkClient = LarksuiteService.createClient(env);
 
     try {
       const response = await larkClient.bitable.appTableRecord.get({
         path: {
-          app_token: app_token,
-          table_id: table_id,
-          record_id: record_id
+          app_token: appToken,
+          table_id: tableId,
+          record_id: recordId
         },
         params: {
-          user_id_type: "user_id"
+          user_id_type: userIdType
         }
       });
 
@@ -104,24 +107,27 @@ export default class RecordService {
    * Updates a single record in a Larksuite table.
    *
    * @param {string} env - The environment configuration.
-   * @param {string} app_token - The app token of the Larksuite application.
+   * @param {string} appToken - The app token of the Larksuite application.
    * @param {string} table_id - The table ID of the table containing the record.
-   * @param {string} record_id - The ID of the record to update.
+   * @param {string} recordId - The ID of the record to update.
    * @param {object} fields - An object containing the fields to update and their new values.
+   * @param {string} userIdType - The type of user ID to use (default is "user_id").
    * @returns {Promise<object|null>} - The updated record object if successful, otherwise null.
    */
-  static async updateLarksuiteRecord(env, app_token, table_id, record_id, fields) {
+  static async updateLarksuiteRecord({
+    env, appToken, tableId, recordId, fields, userIdType = "open_id"
+  }) {
     const larkClient = LarksuiteService.createClient(env);
 
     try {
       const response = await larkClient.bitable.appTableRecord.update({
         path: {
-          app_token: app_token,
-          table_id: table_id,
-          record_id: record_id
+          app_token: appToken,
+          table_id: tableId,
+          record_id: recordId
         },
         params: {
-          user_id_type: "user_id"
+          user_id_type: userIdType
         },
         data: {
           fields: fields
