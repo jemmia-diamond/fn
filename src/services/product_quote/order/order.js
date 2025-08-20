@@ -62,12 +62,13 @@ export default class ProductQuoteOrderService {
             let multiOrders = [];
 
             if (refOrderNumber) {
-              const oldRecord = await RecordService.getLarksuiteRecord(
-                env,
-                APP_TOKEN,
-                TABLE_ID,
-                recordId
-              );
+              const oldRecord = await RecordService.getLarksuiteRecord({ 
+                env: env,
+                appToken: APP_TOKEN,
+                tableId: TABLE_ID,
+                recordId: recordId,
+                userIdType: "open_id"
+              });
               if (oldRecord?.fields) {
                 const existingOrders = oldRecord.fields[LARK_ORDER_KEY];
                 multiOrders = Array.isArray(existingOrders) ? existingOrders : [];
@@ -83,7 +84,14 @@ export default class ProductQuoteOrderService {
               [LARK_ORDER_KEY]: multiOrders
             };
 
-            await RecordService.updateLarksuiteRecord(env, APP_TOKEN, TABLE_ID, recordId, fieldsToUpdate);
+            await RecordService.updateLarksuiteRecord({
+              env: env,
+              appToken: APP_TOKEN,
+              tableId: TABLE_ID,
+              recordId: recordId,
+              fields: fieldsToUpdate,
+              userIdType: "open_id"
+            });
           }
         } catch (error) {
           console.error(`syncOrderToLark: Error processing line item ${lineItem.variant_id}:`, error);
