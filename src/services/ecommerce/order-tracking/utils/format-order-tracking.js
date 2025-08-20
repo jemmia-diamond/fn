@@ -39,7 +39,7 @@ export function formatOrderTrackingResult(order, nhattinTrackInfo) {
 
 function mapShippingType(shippingType) {
   if (shippingType === "CPN (Mes)" || shippingType === "CPN") {
-    return "Chuyển phát nhánh";
+    return "Chuyển phát nhanh";
   }
   return shippingType;
 }

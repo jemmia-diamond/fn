@@ -24,9 +24,7 @@ export default class OrderTrackingService {
 
       let orderInfo = orderInfoRows[0];
 
-      const originalTotalPrice = this.getOriginalTotalPrice(orderInfo);
-
-      orderInfo.original_total_price = originalTotalPrice;
+      orderInfo.original_total_price = this.getOriginalTotalPrice(orderInfo);
 
       let nhattinTrackInfo;
       try {
@@ -45,7 +43,7 @@ export default class OrderTrackingService {
   getOriginalTotalPrice(order) {
     let totalOriginalPrice = 0;
     order.items.forEach(item => {
-      totalOriginalPrice += Number(item.original_price || 0);
+      totalOriginalPrice += Number(item.original_price || 0) * Number(item.quantity || 0);
     });
     return totalOriginalPrice;
   }
@@ -136,7 +134,7 @@ export default class OrderTrackingService {
 
       // Handle cancelled orders
       if (order.cancelled_at) {
-        const status = his._handleCancelledOrder(order, orderedSteps);
+        const status = this._handleCancelledOrder(order, orderedSteps);
         return {
           ...trackInfo,
           status: status,
