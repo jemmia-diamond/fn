@@ -8,11 +8,12 @@ export function formatOrderTrackingResult(order, nhattinTrackInfo) {
     items: order.items || [],
     tracking_logs: nhattinTrackInfo?.status || [],
     expected_receive_date: convertToUTC(nhattinTrackInfo.date_expected),
-    shipping_address_name: order.shipping_address_name,
-    shipping_address_phone: order.shipping_address_phone,
+    shipping_address_name: maskExceptFirstAndLast(order.shipping_address_name),
+    shipping_address_phone: maskPhoneNumber(order.shipping_address_phone),
     shipping_address_city: order.shipping_address_city,
-    shipping_address_district: order.shipping_address_district,
-    shipping_address_ward: order.shipping_address_ward,
+    shipping_address_district: maskFull(order.shipping_address_district),
+    shipping_address_ward: maskFull(order.shipping_address_ward),
+    shipping_address_address1: maskFull(order.shipping_address_address1),
     shipping_address_province: order.shipping_address_province,
     payment_method: order.payment_method,
     confirmed_date: order.order_date,
@@ -49,4 +50,33 @@ function convertToUTC(dateString) {
   if (!dateString) return null;
   const date = new Date(dateString);
   return date.toISOString();
+}
+
+function maskPhoneNumber(phone) {
+  if (!phone || phone.length <= 3) {
+    return "***";
+  }
+  const lastThreeDigits = phone.slice(-3);
+  const maskedPart = "*".repeat(phone.length - 3);
+  return maskedPart + lastThreeDigits;
+}
+
+function maskExceptFirstAndLast(str) {
+  if (!str || str.length <= 2) {
+    return str || "";
+  }
+
+  const firstChar = str[0];
+  const lastChar = str.slice(-1);
+
+  const middlePart = "*".repeat(str.length - 2);
+  return `${firstChar}${middlePart}${lastChar}`;
+}
+
+function maskFull(value) {
+  if (!value) {
+    return "";
+  }
+
+  return "*".repeat(value.length);
 }

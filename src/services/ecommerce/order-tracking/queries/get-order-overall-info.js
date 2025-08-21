@@ -10,6 +10,7 @@ export async function getOrderOverallInfo(db, orderId) {
       o.shipping_address_district,
       o.shipping_address_ward,
       o.shipping_address_province,
+      o.shipping_address_address1,
       o.gateway AS payment_method,
       o.confirmed_status,
       o.cancelled_at,
