@@ -2,6 +2,7 @@ export async function getOrderOverallInfo(db, orderId) {
   return await db.$queryRaw`
     SELECT 
       o.id AS order_id,
+      o.order_number AS order_number,
       o.cancel_reason,
       o.shipping_address_name,
       o.shipping_address_phone,

@@ -1,6 +1,7 @@
 export function formatOrderTrackingResult(order, nhattinTrackInfo) {
   return {
-    order_id: order.id,
+    order_id: order.order_id.toString(),
+    order_number: order.order_number,
     total_price: Number(order.total_price || 0),
     original_total_price: Number(order.original_total_price || 0),
     shipping_fee: Number(order.shipping_fee || 0),
