@@ -53,7 +53,6 @@ export default {
       await ERP.Automation.AssignmentRuleService.enableAssignmentRuleOffHour(env);
       break;
     default:
-      await Larksuite.Approval.InstanceService.syncInstancesToDatabase(env);
       break;
     };
   }
