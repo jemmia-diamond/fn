@@ -32,9 +32,9 @@ export default class UserService {
 
     // Insert users into database
     for (const user of usersArrays) {
-      await db.$queryRaw`INSERT INTO larksuite.users (user_id, name, email, avatar) 
-      VALUES (${user.user_id}, ${user.name}, ${user.email}, ${user.avatar})
-      ON CONFLICT (user_id) DO UPDATE SET name = ${user.name}, email = ${user.email}, avatar = ${user.avatar}`;
+      await db.$queryRaw`INSERT INTO larksuite.users (user_id, name, email, avatar, enterprise_email) 
+      VALUES (${user.user_id}, ${user.name}, ${user.email}, ${user.avatar}, ${user.enterprise_email})
+      ON CONFLICT (user_id) DO UPDATE SET name = ${user.name}, email = ${user.email}, avatar = ${user.avatar}, enterprise_email = ${user.enterprise_email}`;
     }
   }
 
