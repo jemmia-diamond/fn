@@ -14,6 +14,7 @@ export default class InstanceService {
     const timeThreshold = dayjs().utc();
     const startTime = timeThreshold.subtract(1, "day").subtract(1, "hour").unix() * 1000;
     const endTime = timeThreshold.add(12, "hour").unix() * 1000;
+    const pageSize = 100;
 
     const approvalCodes = [
       APPROVALS.LEAVE_APPROVAL,
@@ -24,15 +25,22 @@ export default class InstanceService {
     const transformedInstances = [];
 
     for (const approval of approvalCodes) {
-      const listResponse = await larkClient.approval.v4.instance.list({
+      const payload = {
         params: {
           start_time: startTime,
           end_time: endTime,
           approval_code: approval.code,
-          page_size: 100
+          page_size: pageSize
         }
-      });
-      const codes = listResponse.data.instance_code_list;
+      };
+
+      const responses = await LarksuiteService.requestWithPagination(
+        larkClient.approval.v4.instance.list,
+        payload,
+        pageSize
+      );
+      const codes = responses.flatMap(res => (res?.data?.instance_code_list ??[]));
+
       for (const code of codes) {
         const instanceResponse = await larkClient.approval.v4.instance.get({
           path: {
@@ -46,7 +54,7 @@ export default class InstanceService {
         transformedInstances.push(transformedInstance);
       }
     }
-    
+
     const values = transformedInstances.map((_instance, idx) => `($${idx * 12 + 1}, $${idx * 12 + 2}, $${idx * 12 + 3}, $${idx * 12 + 4}, $${idx * 12 + 5}, $${idx * 12 + 6}, $${idx * 12 + 7}, $${idx * 12 + 8}, $${idx * 12 + 9}, $${idx * 12 + 10}, $${idx * 12 + 11}, $${idx * 12 + 12})`).join(",\n");
     const params = transformedInstances.flatMap(instance => [
       instance.instance_code,
@@ -67,7 +75,7 @@ export default class InstanceService {
     DO UPDATE SET \
     approval_code = EXCLUDED.approval_code,\n  approval_name = EXCLUDED.approval_name,\n  status = EXCLUDED.status,\n  form = EXCLUDED.form,\n  start_time = EXCLUDED.start_time,\n  end_time = EXCLUDED.end_time,\n  serial_number = EXCLUDED.serial_number,\n  user_id = EXCLUDED.user_id,\n  uuid = EXCLUDED.uuid,\n  department_id = EXCLUDED.department_id,\n  form_data = EXCLUDED.form_data`;
     await db.$executeRawUnsafe(query, ...params);
-    
+
   }
 
   transformInstance = (instance) => {
