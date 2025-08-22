@@ -13,7 +13,7 @@ export function formatOrderTrackingResult(order, nhattinTrackInfo) {
     shipping_address_city: order.shipping_address_city,
     shipping_address_district: maskFull(order.shipping_address_district),
     shipping_address_ward: maskFull(order.shipping_address_ward),
-    shipping_address_address1: maskFull(order.shipping_address_address1),
+    shipping_address_address: maskFull(order.shipping_address_address1),
     shipping_address_province: order.shipping_address_province,
     payment_method: order.payment_method,
     confirmed_date: order.order_date,
