@@ -6,9 +6,13 @@ export default class SendZaloMessage {
   constructor(env) {
     this.env = env;
   }
+  static whiteListPhone = ["0862098011"];
 
   static async sendZaloMessage(phone, templateId, templateData, env) {
     try {
+      if (!this.whiteListPhone.includes(phone)) {
+        return;
+      }
       const messageService = new ZNSMessageService(env);
       return await messageService.sendMessage(phone, templateId, templateData);
     } catch (error) {
