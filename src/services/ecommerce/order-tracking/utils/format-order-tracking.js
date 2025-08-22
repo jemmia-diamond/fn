@@ -5,7 +5,7 @@ export function formatOrderTrackingResult(order, nhattinTrackInfo) {
     total_price: Number(order.total_price || 0),
     original_total_price: Number(order.original_total_price || 0),
     shipping_fee: Number(order.shipping_fee || 0),
-    items: order.items || [],
+    items: (order.items || []).map(normalizeDiamondItem),
     tracking_logs: nhattinTrackInfo?.status || [],
     expected_receive_date: convertToUTC(nhattinTrackInfo.date_expected),
     shipping_address_name: maskExceptFirstAndLast(order.shipping_address_name),
@@ -79,4 +79,18 @@ function maskFull(value) {
   }
 
   return "*".repeat(value.length);
+}
+
+function normalizeDiamondItem(item) {
+  const NATURAL_DIAMOND_TITLE = "Kim Cương Tự Nhiên";
+  const isNaturalDiamond = item.title.startsWith(NATURAL_DIAMOND_TITLE);
+
+  if (!isNaturalDiamond) {
+    return item;
+  }
+  return {
+    ...item,
+    title: NATURAL_DIAMOND_TITLE,
+    variant_title: item.name.replace(new RegExp(`^${NATURAL_DIAMOND_TITLE}\\s*`), "")
+  };
 }
