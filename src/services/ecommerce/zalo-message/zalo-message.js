@@ -10,9 +10,6 @@ export default class SendZaloMessage {
 
   static async sendZaloMessage(phone, templateId, templateData, env) {
     try {
-      if (!this.whitelistPhones.includes(phone)) {
-        return;
-      }
       const messageService = new ZNSMessageService(env);
       return await messageService.sendMessage(phone, templateId, templateData);
     } catch (error) {
@@ -24,6 +21,10 @@ export default class SendZaloMessage {
   static async dequeueSendZaloMessageQueue(batch, env) {
     const messages = batch.messages;
     for (const message of messages) {
+      if (!this.whitelistPhones.includes(message.body.billing_address?.phone)) {
+        return;
+      }
+
       const templateId = ZALO_TEMPLATE.orderConfirmed;
       const result = GetTemplateZalo.getTemplateZalo(templateId, message.body);
       if (result) {
