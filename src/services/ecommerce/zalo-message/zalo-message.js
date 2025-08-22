@@ -10,7 +10,7 @@ export default class SendZaloMessage {
 
   static async sendZaloMessage(phone, templateId, templateData, env) {
     try {
-      if (!this.whiteListPhone.includes(phone)) {
+      if (!this.whitelistPhones.includes(phone)) {
         return;
       }
       const messageService = new ZNSMessageService(env);
