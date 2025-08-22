@@ -53,6 +53,8 @@ export async function getOrderOverallInfo(db, orderId) {
       o.closed_at,
       o.cancelled_at,
       o.fulfillment_status,
-      o.cancelled_status
+      o.cancelled_status,
+      o.order_number,
+      o.shipping_address_address1
   `;
 }
