@@ -15,6 +15,7 @@ export default {
       await ERP.Selling.SalesOrderService.dequeueOrderQueue(batch, env);
       break;
     case "message":
+      await Pancake.ConversationService.dequeueMessageSummaryQueue(batch, env);
       await Pancake.ConversationService.dequeueMessageQueue(batch, env);
       break;
     case "zalo-message":
