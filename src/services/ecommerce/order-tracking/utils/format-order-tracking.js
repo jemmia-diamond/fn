@@ -1,17 +1,19 @@
 export function formatOrderTrackingResult(order, nhattinTrackInfo) {
   return {
-    order_id: order.id,
+    order_id: order.order_id.toString(),
+    order_number: order.order_number,
     total_price: Number(order.total_price || 0),
     original_total_price: Number(order.original_total_price || 0),
     shipping_fee: Number(order.shipping_fee || 0),
-    items: order.items || [],
+    items: (order.items || []).map(normalizeDiamondItem),
     tracking_logs: nhattinTrackInfo?.status || [],
     expected_receive_date: convertToUTC(nhattinTrackInfo.date_expected),
-    shipping_address_name: order.shipping_address_name,
-    shipping_address_phone: order.shipping_address_phone,
+    shipping_address_name: maskExceptFirstAndLast(order.shipping_address_name),
+    shipping_address_phone: maskPhoneNumber(order.shipping_address_phone),
     shipping_address_city: order.shipping_address_city,
-    shipping_address_district: order.shipping_address_district,
-    shipping_address_ward: order.shipping_address_ward,
+    shipping_address_district: maskFull(order.shipping_address_district),
+    shipping_address_ward: maskFull(order.shipping_address_ward),
+    shipping_address_address: maskFull(order.shipping_address_address1),
     shipping_address_province: order.shipping_address_province,
     payment_method: order.payment_method,
     confirmed_date: order.order_date,
@@ -48,4 +50,47 @@ function convertToUTC(dateString) {
   if (!dateString) return null;
   const date = new Date(dateString);
   return date.toISOString();
+}
+
+function maskPhoneNumber(phone) {
+  if (!phone || phone.length <= 3) {
+    return "***";
+  }
+  const lastThreeDigits = phone.slice(-3);
+  const maskedPart = "*".repeat(phone.length - 3);
+  return maskedPart + lastThreeDigits;
+}
+
+function maskExceptFirstAndLast(str) {
+  if (!str || str.length <= 2) {
+    return str || "";
+  }
+
+  const firstChar = str[0];
+  const lastChar = str.slice(-1);
+
+  const middlePart = "*".repeat(str.length - 2);
+  return `${firstChar}${middlePart}${lastChar}`;
+}
+
+function maskFull(value) {
+  if (!value) {
+    return "";
+  }
+
+  return "*".repeat(value.length);
+}
+
+function normalizeDiamondItem(item) {
+  const NATURAL_DIAMOND_TITLE = "Kim Cương Tự Nhiên";
+  const isNaturalDiamond = item.title.startsWith(NATURAL_DIAMOND_TITLE);
+
+  if (!isNaturalDiamond) {
+    return item;
+  }
+  return {
+    ...item,
+    title: NATURAL_DIAMOND_TITLE,
+    variant_title: item.name.replace(new RegExp(`^${NATURAL_DIAMOND_TITLE}\\s*`), "")
+  };
 }
