@@ -37,7 +37,18 @@ export default function getBaseConfig() {
       "no-console": ["error", { "allow": ["warn", "error"] }],
       "indent": ["error", 2],
       "custom/no-relative-imports": "error",
-      "custom/no-vietnamese-text": "error"
+      "custom/no-vietnamese-text": "error",
+      "no-restricted-syntax": [
+        "error",
+        {
+          "selector": "MemberExpression[property.name='$queryRawUnsafe']",
+          "message": "Use of $queryRawUnsafe is not allowed. Use $queryRaw with proper parameterization instead."
+        },
+        {
+          "selector": "MemberExpression[property.name='$executeRawUnsafe']",
+          "message": "Use of $executeRawUnsafe is not allowed. Use $executeRaw with proper parameterization instead."
+        }
+      ]
     }
   };
 }
