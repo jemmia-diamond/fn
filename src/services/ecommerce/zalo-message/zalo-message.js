@@ -32,7 +32,7 @@ export default class SendZaloMessage {
   static async dequeueSendZaloMessageQueue(batch, env) {
     const messages = batch.messages;
     for (const message of messages) {
-      if (!eligibleForSendingZaloMessage(message.body)) {
+      if (!this.eligibleForSendingZaloMessage(message.body)) {
         return;
       }
 
