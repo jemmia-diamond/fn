@@ -30,7 +30,7 @@ export default class ScheduleService {
     const values = schedules.map((_schedule, idx) => `($${idx * 5 + 1}, $${idx * 5 + 2}, $${idx * 5 + 3}, $${idx * 5 + 4}, $${idx * 5 + 5})`).join(",\n");
     const params = schedules.flatMap(s => [s.day_no, s.group_id, s.month, s.shift_id, s.user_id]);
     const query = `INSERT INTO larksuite.user_daily_shifts (day_no, group_id, month, shift_id, user_id)\nVALUES\n${values}\nON CONFLICT (day_no, group_id, month, user_id) DO UPDATE SET shift_id = EXCLUDED.shift_id`;
-    await db.$executeRawUnsafe(query, ...params);
+    await db.$executeRaw(query, ...params);
   }
 
   static async getUsersIds(db) {
