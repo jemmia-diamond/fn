@@ -1,4 +1,5 @@
 import Database from "services/database";
+import { Prisma } from "@prisma/client";
 import { buildQuery } from "services/ecommerce/product/utils/jewelry";
 import { buildWeddingRingsQuery } from "services/ecommerce/product/utils/wedding-ring";
 
@@ -100,8 +101,8 @@ export default class ProductService {
     const {dataSql, countSql} = buildWeddingRingsQuery(jsonParams);
 
     const [data, count] = await Promise.all([
-      this.db.$queryRaw(dataSql),
-      this.db.$queryRaw(countSql)
+      this.db.$queryRaw`${Prisma.raw(dataSql)}`,
+      this.db.$queryRaw`${Prisma.raw(countSql)}`
     ]);
 
     return {
