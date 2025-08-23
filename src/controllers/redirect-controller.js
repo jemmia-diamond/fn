@@ -5,7 +5,7 @@ export default class RedirectController {
     "order-tracking": "https://jemmia.vn/pages/tra-cuu-don-hang?order_id=1714590904"
   };
 
-  static async show(ctx) {    
+  static async show(ctx) {
     const name = ctx.req.param("name");
 
     const url = RedirectController.MAPPINGS[name];

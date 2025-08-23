@@ -9,7 +9,7 @@ export const mapSalesOrderToDatabase = (salesOrder) => {
     modified_by: safeValue(salesOrder?.modified_by,"string"),
     docstatus: safeValue(salesOrder?.docstatus,"number"),
     idx: safeValue(salesOrder?.idx,"number"),
-    
+
     // Order information
     title: safeValue(salesOrder?.title,"string"),
     naming_series: safeValue(salesOrder?.naming_series,"string"),
@@ -21,7 +21,7 @@ export const mapSalesOrderToDatabase = (salesOrder) => {
     po_date: safeValue(salesOrder?.po_date,"date"),
     company: safeValue(salesOrder?.company,"string"),
     amended_from: safeValue(salesOrder?.amended_from,"string"),
-    
+
     // Customer information
     customer_name: safeValue(salesOrder?.customer_name,"string"),
     order_number: safeValue(salesOrder?.order_number,"string"),
@@ -33,7 +33,7 @@ export const mapSalesOrderToDatabase = (salesOrder) => {
     expected_delivery_date: safeValue(salesOrder?.expected_delivery_date,"date"),
     cost_center: safeValue(salesOrder?.cost_center,"string"),
     project: safeValue(salesOrder?.project,"string"),
-    
+
     // Currency and pricing
     currency: safeValue(salesOrder?.currency,"string"),
     conversion_rate: safeValue(salesOrder?.conversion_rate,"number"),
@@ -44,7 +44,7 @@ export const mapSalesOrderToDatabase = (salesOrder) => {
     scan_barcode: safeValue(salesOrder?.scan_barcode,"string"),
     set_warehouse: safeValue(salesOrder?.set_warehouse,"string"),
     reserve_stock: safeValue(salesOrder?.reserve_stock,"string"),
-    
+
     // Discount and totals
     apply_discount_on: safeValue(salesOrder?.apply_discount_on,"string"),
     base_discount_amount: safeValue(salesOrder?.base_discount_amount,"number"),
@@ -58,7 +58,7 @@ export const mapSalesOrderToDatabase = (salesOrder) => {
     base_net_total: safeValue(salesOrder?.base_net_total,"number"),
     total_net_weight: safeValue(salesOrder?.total_net_weight,"number"),
     net_total: safeValue(salesOrder?.net_total,"number"),
-    
+
     // Tax information
     tax_category: safeValue(salesOrder?.tax_category,"string"),
     taxes_and_charges: safeValue(salesOrder?.taxes_and_charges,"string"),
@@ -102,7 +102,7 @@ export const mapSalesOrderToDatabase = (salesOrder) => {
     company_address: safeValue(salesOrder?.company_address,"string"),
     company_address_display: safeValue(salesOrder?.company_address_display,"string"),
     company_contact_person: safeValue(salesOrder?.company_contact_person,"string"),
-    
+
     // Status information
     status: safeValue(salesOrder?.status,"string"),
     delivery_status: safeValue(salesOrder?.delivery_status,"string"),
@@ -110,7 +110,7 @@ export const mapSalesOrderToDatabase = (salesOrder) => {
     per_billed: safeValue(salesOrder?.per_billed,"number"),
     per_picked: safeValue(salesOrder?.per_picked,"number"),
     billing_status: safeValue(salesOrder?.billing_status,"string"),
-    
+
     // Sales and commission
     sales_partner: safeValue(salesOrder?.sales_partner,"string"),
     amount_eligible_for_commission: safeValue(salesOrder?.amount_eligible_for_commission,"number"),
@@ -121,7 +121,7 @@ export const mapSalesOrderToDatabase = (salesOrder) => {
     from_date: safeValue(salesOrder?.from_date,"date"),
     to_date: safeValue(salesOrder?.to_date,"date"),
     auto_repeat: safeValue(salesOrder?.auto_repeat,"string"),
-    
+
     // Print and display
     letter_head: safeValue(salesOrder?.letter_head,"string"),
     group_same_items: safeValue(salesOrder?.group_same_items,"string"),
@@ -133,7 +133,7 @@ export const mapSalesOrderToDatabase = (salesOrder) => {
     inter_company_order_reference: safeValue(salesOrder?.inter_company_order_reference,"string"),
     campaign: safeValue(salesOrder?.campaign,"string"),
     party_account_currency: safeValue(salesOrder?.party_account_currency,"string"),
-    
+
     // Payment information
     total_amount: safeValue(salesOrder?.total_amount,"number"),
     expected_payment_date: safeValue(salesOrder?.expected_payment_date,"date"),
@@ -142,13 +142,13 @@ export const mapSalesOrderToDatabase = (salesOrder) => {
     payment_terms_template: safeValue(salesOrder?.payment_terms_template,"string"),
     tc_name: safeValue(salesOrder?.tc_name,"string"),
     terms: safeValue(salesOrder?.terms,"string"),
-    
+
     // Haravan integration
     haravan_order_id: safeValue(salesOrder?.haravan_order_id,"string"),
     haravan_ref_order_id: safeValue(salesOrder?.haravan_ref_order_id,"string"),
     haravan_created_at: safeValue(salesOrder?.haravan_created_at,"date"),
     source_name: safeValue(salesOrder?.source_name,"string"),
-    
+
     // JSONB fields - Prisma will handle JSON conversion automatically
     sales_team: safeValue(salesOrder?.sales_team,"string"),
     ref_sales_orders: safeValue(salesOrder?.ref_sales_orders,"string"),

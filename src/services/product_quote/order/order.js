@@ -18,13 +18,13 @@ export default class ProductQuoteOrderService {
         console.error(error);
       }
     }
-    
+
   }
 
   /**
-   * Processes a new order from a webhook, finds its temporary products, 
+   * Processes a new order from a webhook, finds its temporary products,
    * and updates their records in Larksuite to link the new order.
-   * @param {object} env - env 
+   * @param {object} env - env
    * @param {object} createdOrder - order from haravan webhook.
    */
   static async syncOrderToLark(env, createdOrder) {
@@ -62,7 +62,7 @@ export default class ProductQuoteOrderService {
             let multiOrders = [];
 
             if (refOrderNumber) {
-              const oldRecord = await RecordService.getLarksuiteRecord({ 
+              const oldRecord = await RecordService.getLarksuiteRecord({
                 env: env,
                 appToken: APP_TOKEN,
                 tableId: TABLE_ID,

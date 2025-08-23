@@ -25,7 +25,7 @@ export default class UserService {
         payload,
         pageSize
       );
-      
+
       const users = responses.flatMap(res => (res?.data?.items || []));
       usersArrays.push(...users);
     }
