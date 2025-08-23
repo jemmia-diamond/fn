@@ -1,5 +1,5 @@
 import Database from "services/database";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma-cli";
 import { buildQuery } from "services/ecommerce/product/utils/jewelry";
 import { buildWeddingRingsQuery } from "services/ecommerce/product/utils/wedding-ring";
 
