@@ -151,9 +151,9 @@ export default class OrderTrackingService {
 
       const combinedSteps = this.combinedSteps(
         {
-          haravanSteps : finalHaravanSteps,
-          takeFromVendorLogs : takeFromVendorLogs,
-          transitLogs : transitLogs
+          haravanSteps: finalHaravanSteps,
+          takeFromVendorLogs: takeFromVendorLogs,
+          transitLogs: transitLogs
         }
       );
 

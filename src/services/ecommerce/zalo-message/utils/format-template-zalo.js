@@ -10,7 +10,7 @@ export class GetTemplateZalo {
         templateData: {
           name: data.billing_address?.name,
           order_number: data.id,
-          address : data.billing_address?.address1,
+          address: data.billing_address?.address1,
           product: data.line_items[0].title,
           price: data.total_price.toLocaleString("vi-VN"),
           status: ORDER_STATUS.PAID,

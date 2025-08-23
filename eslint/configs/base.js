@@ -39,6 +39,7 @@ export default function getBaseConfig() {
       "no-console": ["error", { "allow": ["warn", "error"] }],
       "indent": ["error", 2],
       "no-trailing-spaces": "error",
+      "key-spacing": "error",
       "custom/no-relative-imports": "error",
       "custom/no-vietnamese-text": "error",
       "no-restricted-syntax": [
