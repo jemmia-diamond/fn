@@ -228,4 +228,59 @@ export default class SalesOrderService {
       isSyncType: SalesOrderService.SYNC_TYPE_AUTO
     });
   }
+
+  static async fillSalesOrderRealDate(env) {
+    const salesOrderService = new SalesOrderService(env);
+    const salesOrders = [];
+    try {
+      const orders = await salesOrderService.frappeClient.getList("Sales Order", {
+        filters: [
+          ["real_order_date", "is", "not set"],
+          ["cancelled_status", "=", "uncancelled"]
+        ]
+      });
+      salesOrders.push(...orders);
+    } catch (error) {
+      console.error(error);
+      return;
+    }
+
+    for (const salesOrder of salesOrders) {
+      const haravanId = Number(salesOrder.haravan_order_id);
+
+      const orderChain = await salesOrderService.db.$queryRaw`
+        WITH RECURSIVE order_chain AS (
+	        SELECT id, ref_order_id 
+	        FROM haravan.orders 
+	        WHERE id = ${haravanId}
+	        UNION ALL 
+	        SELECT o.id, o.ref_order_id
+	        FROM haravan.orders o
+	        	INNER JOIN order_chain oc ON o.id = oc.ref_order_id
+        )
+        SELECT 
+        o.id ,
+        o.order_number ,
+        o.created_at 
+        FROM haravan.orders o 
+        WHERE o.id IN (
+        	SELECT id FROM order_chain
+        )
+        ORDER BY o.created_at ASC
+      `;
+      const firstOfChain = orderChain[0];
+      const realOrderDate = dayjs(firstOfChain.created_at).utc().format("YYYY-MM-DD");
+      try {
+        await salesOrderService.frappeClient.update(
+          {
+            doctype: "Sales Order",
+            name: salesOrder.name,
+            real_order_date: realOrderDate
+          }
+        );
+      } catch (error) {
+        console.error(error);
+      }
+    }
+  }
 }

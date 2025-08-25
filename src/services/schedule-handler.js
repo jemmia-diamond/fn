@@ -9,6 +9,7 @@ export default {
       await ERP.CRM.LeadService.syncWebsiteLeads(env);
       await ERP.Telephony.CallLogService.syncStringeeCallLogs(env);
       await ERP.CRM.LeadService.syncCallLogLead(env);
+      await ERP.Selling.SalesOrderService.fillSalesOrderRealDate(env);
       break;
     case "*/10 * * * *": // At every 10th minute
       await ERP.Selling.SerialService.syncSerialsToERP(env);
