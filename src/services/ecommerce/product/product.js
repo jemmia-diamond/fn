@@ -12,8 +12,8 @@ export default class ProductService {
     const {dataSql, countSql} = buildQuery(jsonParams);
 
     const [data, count] = await Promise.all([
-      this.db.$queryRaw(dataSql),
-      this.db.$queryRaw(countSql)
+      this.db.$queryRaw`${Prisma.raw(dataSql)}`,
+      this.db.$queryRaw`${Prisma.raw(countSql)}`
     ]);
 
     return {
