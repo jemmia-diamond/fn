@@ -8,12 +8,14 @@ import AddressService from "src/services/erp/contacts/address/address";
 import ContactService from "src/services/erp/contacts/contact/contact";
 import CustomerService from "src/services/erp/selling/customer/customer";
 
-import { fetchSalesOrdersFromERP,
+import {
+  fetchSalesOrdersFromERP,
   fetchSalesOrderItemsFromERP,
   fetchSalesTeamFromERP,
   saveSalesOrdersToDatabase,
   saveSalesOrderItemsToDatabase,
-  saveSalesTeamToDatabase } from "src/services/erp/selling/sales-order/utils/sales-order-helpers";
+  saveSalesTeamToDatabase
+} from "src/services/erp/selling/sales-order/utils/sales-order-helpers";
 
 dayjs.extend(utc);
 
@@ -205,13 +207,20 @@ export default class SalesOrderService {
 
   static async fillSalesOrderRealDate(env) {
     const salesOrderService = new SalesOrderService(env);
-    const salesOrders = await salesOrderService.frappeClient.getList("Sales Order", {
-      filters: [
-        ["real_order_date", "is", "not set"],
-        ["cancelled_status", "=", "uncancelled"]
-      ]
-    });
-    
+    const salesOrders = [];
+    try {
+      const orders = await salesOrderService.frappeClient.getList("Sales Order", {
+        filters: [
+          ["real_order_date", "is", "not set"],
+          ["cancelled_status", "=", "uncancelled"]
+        ]
+      });
+      salesOrders.push(...orders);
+    } catch (error) {
+      console.error(error);
+      return;
+    }
+
     for (const salesOrder of salesOrders) {
       const haravanId = Number(salesOrder.haravan_order_id);
 
