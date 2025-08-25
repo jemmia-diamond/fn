@@ -7,7 +7,7 @@ export default class HaravanWebhook {
     */
     const  haravanWebhookNamespace = webhook.basePath("/haravan");
     
-    // haravanWebhookNamespace.use("*", verifyHmacBase64Auth("X-Haravan-Hmacsha256", "HARAVAN_WEBHOOK_SECRET"));
+    haravanWebhookNamespace.use("*", verifyHmacBase64Auth("X-Haravan-Hmacsha256", "HARAVAN_WEBHOOK_SECRET"));
     haravanWebhookNamespace.post("erp/orders", HaravanERPOrderController.create);
     
   };
