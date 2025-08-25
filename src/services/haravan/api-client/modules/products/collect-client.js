@@ -1,6 +1,6 @@
-import { BaseClient } from "services/haravan/base-client";
+import BaseClient from "services/haravan/api-client/base-client";
 
-export class CollectClient extends BaseClient {
+export default class CollectClient extends BaseClient {
   constructor(env) {
     super(env);
   }

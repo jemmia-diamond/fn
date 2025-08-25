@@ -4,12 +4,14 @@ import ERP from "src/services/erp";
 import Pancake from "src/services/pancake";
 import ProductQuote from "src/services/product_quote";
 import Ecommerce from "src/services/ecommerce";
+import Haravan from "src/services/haravan";
 
 export default {
   queue: async (batch, env) => {
     console.log(JSON.stringify(batch.messages));
     switch (batch.queue) {
     case "order":
+      await Haravan.OrderModule.OrderService.dequeueOrderQueue(batch, env);
       await ProductQuote.ProductQuoteOrderService.dequeueOrderQueue(batch, env);
       await Ecommerce.IndDayStatService.trackBudget(batch, env);
       await ERP.Selling.SalesOrderService.dequeueOrderQueue(batch, env);
