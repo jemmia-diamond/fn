@@ -7,13 +7,13 @@ export default class IndDayStatService {
     this.countProductQuantityKey = "count_product_quantity"; // Key for counting product quantity
     this.productQuantityBudget = 290; // Budget for product quantity
   }
-  
+
   static async trackBudget(batch, env) {
     try {
       const { line_items, haravan_topic, cancelled_status, cancelled_at, updated_at, partially_paid } = batch.messages[0].body;
-      
+
       if ( partially_paid !== "partially_paid" ) return;
-      
+
       const indDayStatService = new IndDayStatService();
       const totalQuantity = Object.values(line_items).reduce(
         (sum, item) =>

@@ -2,16 +2,19 @@ export async function getOrderOverallInfo(db, orderId) {
   return await db.$queryRaw`
     SELECT 
       o.id AS order_id,
+      o.order_number AS order_number,
       o.cancel_reason,
-      o.shipping_address_name AS receiver_name,
-      o.shipping_address_phone AS receiver_phone,
-      o.customer_default_address_address1 AS receiver_address,
+      o.shipping_address_name,
+      o.shipping_address_phone,
+      o.shipping_address_city,
+      o.shipping_address_district,
+      o.shipping_address_ward,
+      o.shipping_address_province,
+      o.shipping_address_address1,
       o.gateway AS payment_method,
       o.confirmed_status,
       o.cancelled_at,
-      o.subtotal_price::numeric,
       o.total_price::numeric,
-      o.total_discounts::numeric AS discount,
       o.note,
       (o.shipping_lines->0->>'price')::numeric AS shipping_fee,
       o.confirmed_at AS order_date,
@@ -21,11 +24,12 @@ export async function getOrderOverallInfo(db, orderId) {
       o.fulfillment_status,
       json_agg(json_build_object(
         'product_id', ln.product_id::text,
+        'title', ln.title,
         'name', ln.name,
-        'variant', ln.variant_title,
+        'variant_title', ln.variant_title,
         'quantity', ln.quantity,
         'original_price', ln.price_original,
-        'discount_price', ln.price_promotion,
+        'price', ln.price,
         'image_url', ln.image->>'src'
       )) AS items
     FROM haravan.orders o
@@ -36,18 +40,21 @@ export async function getOrderOverallInfo(db, orderId) {
       o.cancel_reason,
       o.shipping_address_name,
       o.shipping_address_phone,
-      o.customer_default_address_address1,
+      o.shipping_address_city,
+      o.shipping_address_district,
+      o.shipping_address_ward,
+      o.shipping_address_province,
       o.gateway,
       o.confirmed_status,
-      o.subtotal_price,
       o.total_price,
-      o.total_discounts,
       o.note,
       o.shipping_lines,
       o.confirmed_at,
       o.closed_at,
       o.cancelled_at,
       o.fulfillment_status,
-      o.cancelled_status
+      o.cancelled_status,
+      o.order_number,
+      o.shipping_address_address1
   `;
 }

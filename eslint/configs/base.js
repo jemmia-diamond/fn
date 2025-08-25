@@ -2,6 +2,7 @@ import globals from "globals";
 import unusedImports from "eslint-plugin-unused-imports";
 import noRelativeImports from "../rules/no-relative-imports.js";
 import noVietnameseText from "../rules/no-vietnamese-text.js";
+import stylistic from "@stylistic/eslint-plugin";
 
 export default function getBaseConfig() {
   return {
@@ -9,6 +10,7 @@ export default function getBaseConfig() {
     languageOptions: { globals: globals.browser },
     plugins: {
       "unused-imports": unusedImports,
+      "@stylistic": stylistic,
       "custom": {
         rules: {
           "no-relative-imports": noRelativeImports,
@@ -36,8 +38,21 @@ export default function getBaseConfig() {
       "eol-last": ["error", "always"],
       "no-console": ["error", { "allow": ["warn", "error"] }],
       "indent": ["error", 2],
+      "no-trailing-spaces": "error",
+      "key-spacing": "error",
       "custom/no-relative-imports": "error",
-      "custom/no-vietnamese-text": "error"
+      "custom/no-vietnamese-text": "error",
+      "no-restricted-syntax": [
+        "error",
+        {
+          "selector": "MemberExpression[property.name='$queryRawUnsafe']",
+          "message": "Use of $queryRawUnsafe is not allowed. Use $queryRaw with proper parameterization instead."
+        },
+        {
+          "selector": "MemberExpression[property.name='$executeRawUnsafe']",
+          "message": "Use of $executeRawUnsafe is not allowed. Use $executeRaw with proper parameterization instead."
+        }
+      ]
     }
   };
 }

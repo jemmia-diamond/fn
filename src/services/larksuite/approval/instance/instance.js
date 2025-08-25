@@ -46,7 +46,7 @@ export default class InstanceService {
         transformedInstances.push(transformedInstance);
       }
     }
-    
+
     const values = transformedInstances.map((_instance, idx) => `($${idx * 12 + 1}, $${idx * 12 + 2}, $${idx * 12 + 3}, $${idx * 12 + 4}, $${idx * 12 + 5}, $${idx * 12 + 6}, $${idx * 12 + 7}, $${idx * 12 + 8}, $${idx * 12 + 9}, $${idx * 12 + 10}, $${idx * 12 + 11}, $${idx * 12 + 12})`).join(",\n");
     const params = transformedInstances.flatMap(instance => [
       instance.instance_code,
@@ -66,8 +66,7 @@ export default class InstanceService {
     ON CONFLICT (instance_code) \n
     DO UPDATE SET \
     approval_code = EXCLUDED.approval_code,\n  approval_name = EXCLUDED.approval_name,\n  status = EXCLUDED.status,\n  form = EXCLUDED.form,\n  start_time = EXCLUDED.start_time,\n  end_time = EXCLUDED.end_time,\n  serial_number = EXCLUDED.serial_number,\n  user_id = EXCLUDED.user_id,\n  uuid = EXCLUDED.uuid,\n  department_id = EXCLUDED.department_id,\n  form_data = EXCLUDED.form_data`;
-    await db.$executeRawUnsafe(query, ...params);
-    
+    await db.$executeRaw(query, ...params);
   }
 
   transformInstance = (instance) => {

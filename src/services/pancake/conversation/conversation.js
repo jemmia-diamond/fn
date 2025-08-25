@@ -187,6 +187,19 @@ export default class ConversationService {
     });
   }
 
+  static async dequeueMessageSummaryQueue(batch, env) {
+    const conversationService = new ConversationService(env);
+    const messages = batch.messages;
+
+    for (const message of messages) {
+      const body = message.body;
+
+      await conversationService.summarizeLead(env, body).catch(err =>
+        console.error(`summarizeLead failed: ${err}`)
+      );
+    }
+  }
+
   static async dequeueMessageQueue(batch, env) {
     const conversationService = new ConversationService(env);
     const messages = batch.messages;

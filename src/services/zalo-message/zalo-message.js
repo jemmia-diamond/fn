@@ -22,12 +22,12 @@ export default class ZNSMessageService {
       this.clientId = this.env.ZNS_CLIENT_ID;
       this.zaloOAId = this.env.ZNS_OA_ID;
       this.baseURL = this.env.ZNS_API_BASE_URL;
-      this.clientSecret = await this.env.ZNS_SECRET_KEY_SECRET.get();
+      this.clientSecret = this.env.ZNS_SECRET_KEY || await this.env.ZNS_SECRET_KEY_SECRET.get();
 
       const payloadObject = {
         phone: phone,
         zalo_oa_id: this.zaloOAId,
-        content : {
+        content: {
           template_id: templateId,
           template_data: templateData
         },
@@ -55,7 +55,11 @@ export default class ZNSMessageService {
       const data = text ? JSON.parse(text) : null;
 
       if (!response.ok) {
-        throw new Error(`Zalo API error: ${response}`);
+        console.error("Zalo API request failed:", {
+          status: response.status,
+          body: data
+        });
+        throw new Error(`Zalo API error: ${text}`);
       }
 
       return data;
