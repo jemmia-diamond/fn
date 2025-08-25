@@ -1,6 +1,8 @@
 /* eslint no-console: "off" */
 
+import ERP from "src/services/erp";
 import Pancake from "src/services/pancake";
+import ProductQuote from "src/services/product_quote";
 import Ecommerce from "src/services/ecommerce";
 import Haravan from "src/services/haravan";
 
