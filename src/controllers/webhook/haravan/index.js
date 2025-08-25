@@ -1,3 +1,4 @@
+import { verifyHmacBase64Auth } from "auth/hmac-base64-auth";
 import HaravanERPOrderController from "controllers/webhook/haravan/erp/order";
 
 export default class HaravanWebhook {
