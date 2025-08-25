@@ -5,11 +5,9 @@ import Database from "src/services/database";
 import AddressService from "src/services/erp/contacts/address/address";
 import ContactService from "src/services/erp/contacts/contact/contact";
 import CustomerService from "src/services/erp/selling/customer/customer";
+import { composeSalesOrderNotification, extractPromotions } from "services/erp/selling/sales-order/utils/sales-order-notification";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
-import { composeSalesOrderNotification, extractPromotions } from "services/erp/selling/sales-order/utils/sales-order-notification";
-
-dayjs.extend(utc);
 
 import {
   fetchSalesOrdersFromERP,
@@ -231,4 +229,3 @@ export default class SalesOrderService {
     });
   }
 }
-
