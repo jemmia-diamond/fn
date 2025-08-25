@@ -39,7 +39,7 @@ export default class InstanceService {
         payload,
         pageSize
       );
-      const codes = responses.flatMap(res => (res?.data?.instance_code_list ??[]));
+      const codes = responses.flatMap(res => (res?.data?.instance_code_list ?? []));
 
       for (const code of codes) {
         const instanceResponse = await larkClient.approval.v4.instance.get({
