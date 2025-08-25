@@ -26,7 +26,7 @@ export default class HaravanClient {
 
     try {
       const response = await fetch(url, requestOptions);
-      
+
       if (!response.ok) {
         throw new Error(`Haravan API error: ${response.status} ${response.statusText}`);
       }

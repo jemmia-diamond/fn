@@ -34,7 +34,7 @@
     "NHAT_TIN_PARTNER_ID": "305081",
     "NHAT_TIN_API_URL": "https://apiws.ntlogistics.vn/v1",
     "LARK_APP_ID": "cli_a7f8a8df1979902f",
-    "LARK_API_ENDPOINT": "https://open.larksuite.com" 
+    "LARK_API_ENDPOINT": "https://open.larksuite.com"
   },
   "secrets_store_secrets": [
     {
@@ -80,21 +80,6 @@
     }
   ],
   "queues": {
-    "consumers": [
-      {
-        "queue": "order",
-        "max_concurrency": 1,
-        "max_batch_size": 1
-      },
-      {
-        "queue": "message",
-        "max_concurrency": 5,
-        "max_batch_size": 1
-      },
-      {
-        "queue": "zalo-message"
-      }
-    ],
     "producers": [
       {
         "queue": "order",
@@ -107,7 +92,29 @@
       {
         "queue": "zalo-message",
         "binding": "ZALO_MESSAGE_QUEUE"
-      }
+      },
+      {
+        "queue": "message-summary",
+        "binding": "MESSAGE_SUMMARY_QUEUE"
+      },
+    ],
+    "consumers": [
+      {
+        "queue": "order",
+        "max_concurrency": 1,
+        "max_batch_size": 1
+      },
+      {
+        "queue": "message",
+        "max_concurrency": 5,
+        "max_batch_size": 1
+      },
+      {
+        "queue": "zalo-message",
+      },
+      {
+        "queue": "message-summary"
+      },
     ]
   },
   "triggers": {

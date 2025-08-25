@@ -50,7 +50,7 @@ export default class RecordService {
       });
       allRecords.push(...recordsWithTableMetaData);
     }
-    
+
     for (const record of allRecords) {
       await db.larksuiteRecord.upsert({
         where: {

@@ -8,11 +8,11 @@ import AddressService from "src/services/erp/contacts/address/address";
 import ContactService from "src/services/erp/contacts/contact/contact";
 import CustomerService from "src/services/erp/selling/customer/customer";
 
-import { fetchSalesOrdersFromERP, 
-  fetchSalesOrderItemsFromERP, 
-  fetchSalesTeamFromERP, 
-  saveSalesOrdersToDatabase, 
-  saveSalesOrderItemsToDatabase, 
+import { fetchSalesOrdersFromERP,
+  fetchSalesOrderItemsFromERP,
+  fetchSalesTeamFromERP,
+  saveSalesOrdersToDatabase,
+  saveSalesOrderItemsToDatabase,
   saveSalesTeamToDatabase } from "src/services/erp/selling/sales-order/utils/sales-order-helpers";
 
 dayjs.extend(utc);
@@ -21,7 +21,7 @@ export default class SalesOrderService {
   static ERPNEXT_PAGE_SIZE = 100;
   static SYNC_TYPE_AUTO = 1; // auto sync when deploy app
   static SYNC_TYPE_MANUAL = 0; // manual sync when call function
-  
+
   constructor(env) {
     this.env = env;
     this.doctype = "Sales Order";
@@ -164,7 +164,7 @@ export default class SalesOrderService {
       fromDate = dayjs().utc().subtract(minutesBack, "minutes").format("YYYY-MM-DD HH:mm:ss");
     }
 
-    try {   
+    try {
       const salesOrders = await fetchSalesOrdersFromERP(this.frappeClient, this.doctype, fromDate, toDate, SalesOrderService.ERPNEXT_PAGE_SIZE);
       const salesOrdersNames = salesOrders.map(salesOrder => salesOrder.name).flat();
 
@@ -194,11 +194,11 @@ export default class SalesOrderService {
       }
     }
   };
-  
+
   static async cronSyncSalesOrdersToDatabase(env) {
     const syncService = new SalesOrderService(env);
-    return await syncService.syncSalesOrdersToDatabase({ 
-      minutesBack: 10, 
+    return await syncService.syncSalesOrdersToDatabase({
+      minutesBack: 10,
       isSyncType: SalesOrderService.SYNC_TYPE_AUTO
     });
   }
