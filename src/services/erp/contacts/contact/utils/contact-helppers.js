@@ -2,7 +2,7 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import { Prisma } from "@prisma-cli";
 import { randomUUID } from "crypto";
-import { mapContactsToDatabase } from "src/services/erp/crm/contact/utils/contact-mappers";
+import { mapContactsToDatabase } from "src/services/erp/contacts/contact/utils/contact-mappers";
 import { escapeSqlValue } from "src/services/utils/sql-helpers";
 dayjs.extend(utc);
 
