@@ -6,7 +6,7 @@ import Haravan from "src/services/haravan";
 
 export default {
   queue: async (batch, env) => {
-    // console.log(JSON.stringify(batch.messages));
+    console.log(JSON.stringify(batch.messages));
     switch (batch.queue) {
     case "order":
       await Haravan.OrderModule.OrderService.dequeueOrderQueue(batch, env);
