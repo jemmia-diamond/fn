@@ -195,4 +195,27 @@ export default class FrappeClient {
       throw this.parseErrorMessage(e);
     }
   }
+  async executeSQL(sql) {
+    try {
+      const res = await this.postRequest("", {
+        cmd: "frappe.desk.doctype.system_console.system_console.execute_code",
+        doc: JSON.stringify({
+          "name": "System Console",
+          "docstatus": 0,
+          "type": "SQL",
+          "doctype": "System Console",
+          "console": sql
+        })
+      });
+
+      if (res && res.output) {
+        return typeof res.output == "string" ? JSON.parse(res.output) : res.output;
+      }
+
+      return [];
+    } catch (error) {
+      console.error("SQL execution error:", error);
+      return [];
+    }
+  }
 }

@@ -29,7 +29,12 @@
     "HARAVAN_API_BASE_URL": "https://apis.haravan.com",
     "ZNS_API_BASE_URL": "https://api-partner.zalopay.vn",
     "ZNS_CLIENT_ID": "zpmc_jemmia",
-    "ZNS_OA_ID": "2838947343790196672"
+    "ZNS_OA_ID": "2838947343790196672",
+    "NHAT_TIN_LOGISTIC_EMAIL": "jemmia",
+    "NHAT_TIN_PARTNER_ID": "305081",
+    "NHAT_TIN_API_URL": "https://apiws.ntlogistics.vn/v1",
+    "LARK_APP_ID": "cli_a7f8a8df1979902f",
+    "LARK_API_ENDPOINT": "https://open.larksuite.com"
   },
   "secrets_store_secrets": [
     {
@@ -56,7 +61,17 @@
       "binding": "ZNS_SECRET_KEY_SECRET",
       "store_id": "dff6fef7003446178302a7874af64fde",
       "secret_name": "ZNS_SECRET_KEY"
-    }
+    },
+    {
+      "binding": "NHAT_TIN_LOGISTIC_PASSWORD_SECRET",
+      "store_id": "dff6fef7003446178302a7874af64fde",
+      "secret_name": "NHAT_TIN_LOGISTIC_PASSWORD"
+    },
+    {
+      "binding": "LARK_APP_SECRET_SECRET",
+      "store_id": "dff6fef7003446178302a7874af64fde",
+      "secret_name": "LARK_APP_SECRET"
+    },
   ],
   "kv_namespaces": [
     {
@@ -65,6 +80,24 @@
     }
   ],
   "queues": {
+    "producers": [
+      {
+        "queue": "order",
+        "binding": "ORDER_QUEUE"
+      },
+      {
+        "queue": "message",
+        "binding": "MESSAGE_QUEUE"
+      },
+      {
+        "queue": "zalo-message",
+        "binding": "ZALO_MESSAGE_QUEUE"
+      },
+      {
+        "queue": "message-summary",
+        "binding": "MESSAGE_SUMMARY_QUEUE"
+      },
+    ],
     "consumers": [
       {
         "queue": "order",
@@ -75,22 +108,20 @@
         "queue": "message",
         "max_concurrency": 5,
         "max_batch_size": 1
-      }
-    ],
-    "producers": [
-      {
-        "queue": "order",
-        "binding": "ORDER_QUEUE"
       },
       {
-        "queue": "message",
-        "binding": "MESSAGE_QUEUE"
-      }
+        "queue": "zalo-message",
+      },
+      {
+        "queue": "message-summary"
+      },
     ]
   },
   "triggers": {
     "crons": [
       "0 * * * *",
+      "*/10 * * * *",
+      "*/20 * * * *",
       "*/30 * * * *",
       "0 17 * * *",
       "30 0 * * *",

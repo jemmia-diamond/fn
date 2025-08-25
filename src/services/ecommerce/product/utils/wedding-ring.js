@@ -85,11 +85,13 @@ export function aggregateQuery(jsonParams) {
   }
 
   if (jsonParams.fineness && jsonParams.fineness.length > 0) {
-    filterString += `AND wr.fineness LIKE '%${jsonParams.fineness.join(", ")}%'\n`;
+    const expression = jsonParams.fineness.map((f) => `wr.fineness LIKE '%${f}%'`).join(" OR ");
+    filterString += `AND (${expression})\n`;
   }
 
   if (jsonParams.material_colors && jsonParams.material_colors.length > 0) {
-    filterString += `AND wr.material_colors LIKE '%${jsonParams.material_colors.join(", ")}%'\n`;
+    const expression = jsonParams.material_colors.map((color) => `wr.material_colors LIKE '%${color}%'`).join(" OR ");
+    filterString += `AND (${expression})\n`;
   }
 
   if (jsonParams.price?.min) {

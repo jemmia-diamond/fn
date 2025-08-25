@@ -50,7 +50,7 @@ export default class RecordService {
       });
       allRecords.push(...recordsWithTableMetaData);
     }
-    
+
     for (const record of allRecords) {
       await db.larksuiteRecord.upsert({
         where: {
@@ -66,6 +66,78 @@ export default class RecordService {
           fields: record.fields
         }
       });
+    }
+  }
+
+  /**
+   * Retrieves a single record from a Larksuite table.
+   *
+   * @param {string} env - The environment configuration.
+   * @param {string} appToken - The app token of the Larksuite application.
+   * @param {string} tableId - The table ID of the table containing the record.
+   * @param {string} recordId - The ID of the record to retrieve.
+   * @param {string} userIdType - The type of user ID to use (default is "user_id").
+   * @returns {Promise<object|null>} - The record object if found, otherwise null.
+   */
+  static async getLarksuiteRecord({
+    env, appToken, tableId, recordId, userIdType = "open_id"
+  }) {
+    const larkClient = await LarksuiteService.createClientV2(env);
+
+    try {
+      const response = await larkClient.bitable.appTableRecord.get({
+        path: {
+          app_token: appToken,
+          table_id: tableId,
+          record_id: recordId
+        },
+        params: {
+          user_id_type: userIdType
+        }
+      });
+
+      return response.data.record;
+    } catch (error) {
+      console.error("Error retrieving Larksuite record:", error);
+      return null;
+    }
+  }
+
+  /**
+   * Updates a single record in a Larksuite table.
+   *
+   * @param {string} env - The environment configuration.
+   * @param {string} appToken - The app token of the Larksuite application.
+   * @param {string} tableId - The table ID of the table containing the record.
+   * @param {string} recordId - The ID of the record to update.
+   * @param {object} fields - An object containing the fields to update and their new values.
+   * @param {string} userIdType - The type of user ID to use (default is "user_id").
+   * @returns {Promise<object|null>} - The updated record object if successful, otherwise null.
+   */
+  static async updateLarksuiteRecord({
+    env, appToken, tableId, recordId, fields, userIdType = "open_id"
+  }) {
+    const larkClient = await LarksuiteService.createClientV2(env);
+
+    try {
+      const response = await larkClient.bitable.appTableRecord.update({
+        path: {
+          app_token: appToken,
+          table_id: tableId,
+          record_id: recordId
+        },
+        params: {
+          user_id_type: userIdType
+        },
+        data: {
+          fields: fields
+        }
+      });
+
+      return response.data.record;
+    } catch (error) {
+      console.error("Error updating Larksuite record:", error);
+      return null;
     }
   }
 }
