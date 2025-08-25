@@ -161,7 +161,13 @@ app.delete("/resources/:id", YourController.destroy) // Delete
   ```bash
   pnpm run format
   ```
-4. Push your changes and open a Pull Request
+4. Commit your changes:
+- Instead of writing commit messages manually, run:
+  ```bash
+  git commit
+  ```
+- This will open an interactive prompt where you select the commit type (feat, fix, docs, …), scope, and description.
+5. Push your changes and open a Pull Request
 
 ## Deployment
 
