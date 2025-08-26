@@ -19,7 +19,7 @@ export async function fetchSalesOrdersFromERP(frappeClient, doctype, fromDate, t
         limit_page_length: pageSize,
         order_by: "creation desc"
       });
-      if (!Array.isArray(batch) || batch.length === 0) break; 
+      if (!Array.isArray(batch) || batch.length === 0) break;
 
       allSalesOrders.push(...batch);
       start += pageSize;
@@ -30,7 +30,7 @@ export async function fetchSalesOrdersFromERP(frappeClient, doctype, fromDate, t
     throw error;
   }
 }
-  
+
 export async function fetchSalesOrderItemsFromERP(frappeClient, salesOrderNames) {
   if (!Array.isArray(salesOrderNames) || salesOrderNames.length === 0) {
     return [];
@@ -49,7 +49,7 @@ export async function fetchSalesTeamFromERP(frappeClient, salesOrderNames) {
   const sql = `SELECT * FROM \`tabSales Team\` WHERE parent IN (${quotedNames})`;
   const salesTeams = await frappeClient.executeSQL(sql);
   return salesTeams || [];
-}  
+}
 
 export async function saveSalesOrdersToDatabase(db, salesOrders) {
   const mappedSalesOrders = salesOrders.map(mapSalesOrderToDatabase);

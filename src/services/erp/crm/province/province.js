@@ -21,7 +21,7 @@ export default class ProvinceService {
   }
   static async syncProvincesToDatabase(env) {
     const timeThreshold = dayjs().subtract(1, "day").utc().format("YYYY-MM-DD HH:mm:ss");
-    const provinceService = new ProvinceService(env); 
+    const provinceService = new ProvinceService(env);
     const provinces = await provinceService.frappeClient.getList("Province", {
       limit_page_length: ProvinceService.ERPNEXT_PAGE_SIZE,
       filters: [

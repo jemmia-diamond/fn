@@ -27,7 +27,7 @@ export default class ZNSMessageService {
       const payloadObject = {
         phone: phone,
         zalo_oa_id: this.zaloOAId,
-        content : {
+        content: {
           template_id: templateId,
           template_data: templateData
         },

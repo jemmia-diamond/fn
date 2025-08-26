@@ -67,7 +67,7 @@ export default class AssignmentRuleService {
     if (!assignedUsers.length) {
       assignedUsers.push(this.defaultUser);
     }
-    
+
     const updatedAssignmentRule = await this.frappeClient.update(
       {
         "doctype": this.doctype,

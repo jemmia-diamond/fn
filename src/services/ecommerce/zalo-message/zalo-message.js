@@ -6,6 +6,8 @@ export default class SendZaloMessage {
   constructor(env) {
     this.env = env;
   }
+  static whitelistPhones = ["0862098011", "0829976232"];
+  static whitelistSource = "web";
 
   static async sendZaloMessage(phone, templateId, templateData, env) {
     try {
@@ -17,9 +19,23 @@ export default class SendZaloMessage {
     }
   }
 
+  static eligibleForSendingZaloMessage(message) {
+    if (this.whitelistSource.includes(message?.source)
+        && this.whitelistPhones.includes(message?.billing_address?.phone)
+        && message.ref_order_id === 0) {
+      return true;
+    }
+
+    return false;
+  }
+
   static async dequeueSendZaloMessageQueue(batch, env) {
     const messages = batch.messages;
     for (const message of messages) {
+      if (!this.eligibleForSendingZaloMessage(message.body)) {
+        return;
+      }
+
       const templateId = ZALO_TEMPLATE.orderConfirmed;
       const result = GetTemplateZalo.getTemplateZalo(templateId, message.body);
       if (result) {

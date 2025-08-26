@@ -151,9 +151,9 @@ export default class OrderTrackingService {
 
       const combinedSteps = this.combinedSteps(
         {
-          haravanSteps : finalHaravanSteps, 
-          takeFromVendorLogs : takeFromVendorLogs,
-          transitLogs : transitLogs
+          haravanSteps: finalHaravanSteps,
+          takeFromVendorLogs: takeFromVendorLogs,
+          transitLogs: transitLogs
         }
       );
 
@@ -169,11 +169,11 @@ export default class OrderTrackingService {
   }
 
   /**
-   * 
+   *
    * @param {*} haravanSteps - Array logs of haravan steps
    * @param {*} takeFromVendorLogs - Array logs of taking from vendor
    * @param {*} transitLogs - Array logs of transiting
-   * @returns 
+   * @returns
    */
 
   combinedSteps({
@@ -183,8 +183,8 @@ export default class OrderTrackingService {
     // ready_to_confirm | confirmed | ready_to_pick
     const ongoingStep = haravanSteps.find(step => step.status === OrderTimelineStatus.ONGOING);
 
-    if ([ 
-      OrderOverallStatus.READY_TO_CONFIRM.key, 
+    if ([
+      OrderOverallStatus.READY_TO_CONFIRM.key,
       OrderOverallStatus.CONFIRMED.key,
       OrderOverallStatus.READY_TO_PICK.key
     ].includes(ongoingStep.key)) {
@@ -206,7 +206,7 @@ export default class OrderTrackingService {
 
     let beforeDeliveringSteps = haravanSteps.slice(0, deliveringIndex + 1);
     let afterDeliveringSteps = haravanSteps.slice(deliveringIndex + 1);
-  
+
     // Step to receive order from vendor Jemmia
     if (takeFromVendorLogs && takeFromVendorLogs.length > 0) {
       const newStep = {

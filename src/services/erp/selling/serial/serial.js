@@ -42,7 +42,7 @@ export default class SerialService {
     const timeThreshold = dayjs().utc().subtract(10, "minutes").subtract(1, "minute").format("YYYY-MM-DD HH:mm:ss");
     const serialService = new SerialService(env);
     const serials = await serialService.getSerialsToUpdate(timeThreshold);
-    await Promise.all(serials.map(serial => 
+    await Promise.all(serials.map(serial =>
       serialService.frappeClient.upsert({
         doctype: serialService.doctype,
         serial_number: serial.serial_number,

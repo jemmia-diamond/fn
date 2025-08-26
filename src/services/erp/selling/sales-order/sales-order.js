@@ -8,12 +8,14 @@ import AddressService from "src/services/erp/contacts/address/address";
 import ContactService from "src/services/erp/contacts/contact/contact";
 import CustomerService from "src/services/erp/selling/customer/customer";
 
-import { fetchSalesOrdersFromERP, 
-  fetchSalesOrderItemsFromERP, 
-  fetchSalesTeamFromERP, 
-  saveSalesOrdersToDatabase, 
-  saveSalesOrderItemsToDatabase, 
-  saveSalesTeamToDatabase } from "src/services/erp/selling/sales-order/utils/sales-order-helpers";
+import {
+  fetchSalesOrdersFromERP,
+  fetchSalesOrderItemsFromERP,
+  fetchSalesTeamFromERP,
+  saveSalesOrdersToDatabase,
+  saveSalesOrderItemsToDatabase,
+  saveSalesTeamToDatabase
+} from "src/services/erp/selling/sales-order/utils/sales-order-helpers";
 
 dayjs.extend(utc);
 
@@ -21,7 +23,7 @@ export default class SalesOrderService {
   static ERPNEXT_PAGE_SIZE = 100;
   static SYNC_TYPE_AUTO = 1; // auto sync when deploy app
   static SYNC_TYPE_MANUAL = 0; // manual sync when call function
-  
+
   constructor(env) {
     this.env = env;
     this.doctype = "Sales Order";
@@ -164,7 +166,7 @@ export default class SalesOrderService {
       fromDate = dayjs().utc().subtract(minutesBack, "minutes").format("YYYY-MM-DD HH:mm:ss");
     }
 
-    try {   
+    try {
       const salesOrders = await fetchSalesOrdersFromERP(this.frappeClient, this.doctype, fromDate, toDate, SalesOrderService.ERPNEXT_PAGE_SIZE);
       const salesOrdersNames = salesOrders.map(salesOrder => salesOrder.name).flat();
 
@@ -194,13 +196,67 @@ export default class SalesOrderService {
       }
     }
   };
-  
+
   static async cronSyncSalesOrdersToDatabase(env) {
     const syncService = new SalesOrderService(env);
-    return await syncService.syncSalesOrdersToDatabase({ 
-      minutesBack: 10, 
+    return await syncService.syncSalesOrdersToDatabase({
+      minutesBack: 10,
       isSyncType: SalesOrderService.SYNC_TYPE_AUTO
     });
   }
-}
 
+  static async fillSalesOrderRealDate(env) {
+    const salesOrderService = new SalesOrderService(env);
+    const salesOrders = [];
+    try {
+      const orders = await salesOrderService.frappeClient.getList("Sales Order", {
+        filters: [
+          ["real_order_date", "is", "not set"],
+          ["cancelled_status", "=", "uncancelled"]
+        ]
+      });
+      salesOrders.push(...orders);
+    } catch (error) {
+      console.error(error);
+      return;
+    }
+
+    for (const salesOrder of salesOrders) {
+      const haravanId = Number(salesOrder.haravan_order_id);
+
+      const orderChain = await salesOrderService.db.$queryRaw`
+        WITH RECURSIVE order_chain AS (
+	        SELECT id, ref_order_id 
+	        FROM haravan.orders 
+	        WHERE id = ${haravanId}
+	        UNION ALL 
+	        SELECT o.id, o.ref_order_id
+	        FROM haravan.orders o
+	        	INNER JOIN order_chain oc ON o.id = oc.ref_order_id
+        )
+        SELECT 
+        o.id ,
+        o.order_number ,
+        o.created_at 
+        FROM haravan.orders o 
+        WHERE o.id IN (
+        	SELECT id FROM order_chain
+        )
+        ORDER BY o.created_at ASC
+      `;
+      const firstOfChain = orderChain[0];
+      const realOrderDate = dayjs(firstOfChain.created_at).utc().format("YYYY-MM-DD");
+      try {
+        await salesOrderService.frappeClient.update(
+          {
+            doctype: "Sales Order",
+            name: salesOrder.name,
+            real_order_date: realOrderDate
+          }
+        );
+      } catch (error) {
+        console.error(error);
+      }
+    }
+  }
+}

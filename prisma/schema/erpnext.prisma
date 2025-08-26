@@ -451,3 +451,87 @@ model erpnextLead {
   @@map("leads")
   @@schema("erpnext")
 }
+
+model erpnextContact {
+  uuid                String    @id @default(uuid()) @db.Uuid
+  name                        String    @unique @db.VarChar(255)
+  owner                       String?   @db.VarChar(255)
+  creation                    DateTime? @db.Timestamp(6)
+  modified                    DateTime? @db.Timestamp(6)
+  modified_by                 String?   @db.VarChar(255)
+  docstatus                   Int?
+  idx                         Int?
+  salutation                  String?   @db.VarChar(50)
+  first_name                  String?   @db.VarChar(255)
+  address                     String?   @db.VarChar(255)
+  gender                      String?   @db.VarChar(20)
+  sync_with_google_contacts   Int?
+  middle_name                 String?   @db.VarChar(255)
+  full_name                   String?   @db.VarChar(255)
+  last_name                   String?   @db.VarChar(255)
+  user                        String?   @db.VarChar(255)
+  inserted_at                 DateTime? @db.Timestamp(6)
+  updated_at                  DateTime? @db.Timestamp(6)
+  haravan_customer_id         String?   @db.VarChar(255)
+  lead_owner                  String?   @db.VarChar(255)
+  source_group                String?   @db.VarChar(255)
+  source                      String?   @db.VarChar(255)
+  status                      String?   @db.VarChar(50)
+  designation                 String?   @db.VarChar(255)
+  phone                       String?   @db.VarChar(20)
+  email_id                    String?   @db.VarChar(255)
+  mobile_no                   String?   @db.VarChar(20)
+  company_name                String?   @db.VarChar(255)
+  image                       String?   @db.VarChar(255)
+  source_name                 String?   @db.VarChar(255)
+  type                        String?   @db.VarChar(50)
+  first_message_time          DateTime? @db.Timestamp(6)
+  last_message_time           DateTime? @db.Timestamp(6)
+  phone_number_provided_time  DateTime? @db.Timestamp(6)
+  department                  String?   @db.VarChar(255)
+  unsubscribed                Int?
+  last_outgoing_call_time     DateTime? @db.Timestamp(6)
+  last_incoming_call_time     DateTime? @db.Timestamp(6)
+  last_summarize_time         DateTime? @db.Timestamp(6)
+  is_replied                  Int?
+  pancake_conversation_id     String?   @db.VarChar(255)
+  pancake_inserted_at         DateTime? @db.Timestamp(6)
+  pancake_updated_at          DateTime? @db.Timestamp(6)
+  pancake_customer_id         String?   @db.VarChar(255)
+  thread_id                   String?   @db.VarChar(255)
+  psid                        String?   @db.VarChar(255)
+  can_inbox                   Int?
+  pancake_page_id             String?   @db.VarChar(255)
+  custom_uuid                 String?   @db.VarChar(255)
+  page_url                    String?   @db.VarChar(255)
+  user_agent                  String?   @db.VarChar(255)
+  remote_ip                   String?   @db.VarChar(255)
+  form_id                     String?   @db.VarChar(255)
+  form_name                   String?   @db.VarChar(255)
+  form_inserted_at            DateTime? @db.Timestamp(6)
+  form_updated_at             DateTime? @db.Timestamp(6)
+  stringee_id                 String?   @db.VarChar(255)
+  stringee_to_number          String?   @db.VarChar(50)
+  stringee_from_number        String?   @db.VarChar(50)
+  stringee_start_time         DateTime? @db.Timestamp(6)
+  stringee_end_time           DateTime? @db.Timestamp(6)
+  stringee_from_internal      Int?
+  stringee_to_internal        Int?
+  stringee_recorded           Int?
+  video_call                  Int?
+  google_contacts             String?   @db.VarChar(255)
+  google_contacts_id          String?   @db.VarChar(255)
+  pulled_from_google_contacts Int?
+  is_primary_contact          Int?
+  is_billing_contact          Int?
+  links                       Json?     @db.JsonB
+  phone_numbers               Json?     @db.JsonB 
+  phone_nos                   Json?     @db.JsonB
+  emails                      Json?     @db.JsonB
+  database_created_at         DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at         DateTime? @updatedAt @db.Timestamp(6)
+
+  @@index([name])
+  @@map("contacts")
+  @@schema("erpnext")
+}

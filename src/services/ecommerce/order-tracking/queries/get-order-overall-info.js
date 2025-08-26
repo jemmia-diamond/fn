@@ -2,6 +2,7 @@ export async function getOrderOverallInfo(db, orderId) {
   return await db.$queryRaw`
     SELECT 
       o.id AS order_id,
+      o.order_number AS order_number,
       o.cancel_reason,
       o.shipping_address_name,
       o.shipping_address_phone,
@@ -9,6 +10,7 @@ export async function getOrderOverallInfo(db, orderId) {
       o.shipping_address_district,
       o.shipping_address_ward,
       o.shipping_address_province,
+      o.shipping_address_address1,
       o.gateway AS payment_method,
       o.confirmed_status,
       o.cancelled_at,
@@ -51,6 +53,8 @@ export async function getOrderOverallInfo(db, orderId) {
       o.closed_at,
       o.cancelled_at,
       o.fulfillment_status,
-      o.cancelled_status
+      o.cancelled_status,
+      o.order_number,
+      o.shipping_address_address1
   `;
 }
