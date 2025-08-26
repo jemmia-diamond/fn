@@ -15,6 +15,9 @@ export default {
       await ERP.Selling.SerialService.syncSerialsToERP(env);
       await ERP.CRM.LeadService.cronSyncLeadsToDatabase(env);
       break;
+    case "*/15 * * * *": // At every 15th minute
+      await ERP.Contacts.ContactService.cronSyncContactsToDatabase(env);
+      break;
     case "*/20 * * * *": // At every 20th minute
       await ERP.Selling.SalesOrderService.cronSyncSalesOrdersToDatabase(env);
       break;
