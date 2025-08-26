@@ -2,6 +2,7 @@ import HaravanAPIClient from "services/haravan/api-client/api-client";
 import LarksuiteService from "services/larksuite/lark";
 import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/constant";
 import { negativeStockOrderMessage } from "services/haravan/orders/order-service/helpers/messages-compose";
+import { HARAVAN_TOPIC } from "services/ecommerce/enum";
 
 export default class OrderService {
   constructor(env) {
@@ -44,8 +45,11 @@ export default class OrderService {
     const orderService = new OrderService(env);
     for (const message of batch.messages) {
       try {
-        const data = message.body.order;
-        await orderService.invalidOrderNotification(data, env);
+        const data = message.body;
+        const haravan_topic = data.haravan_topic;
+        if (haravan_topic === HARAVAN_TOPIC.CREATED) {
+          await orderService.invalidOrderNotification(data, env);
+        }
       }
       catch (error) {
         console.error(error);
