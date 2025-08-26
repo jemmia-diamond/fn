@@ -1,4 +1,4 @@
 export const ZALO_TEMPLATE = {
   orderConfirmed: 481021,
-  delivering: 476961
+  delivering: 481927
 };

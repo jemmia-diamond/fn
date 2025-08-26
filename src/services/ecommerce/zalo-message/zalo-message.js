@@ -69,12 +69,12 @@ export default class SendZaloMessage {
 
         const db = Database.instance(env);
 
-        const isOrderInDelivery = await this.checkOrderInDelivery(order.id, db);
+        const isOrderInDelivery = await this.checkOrderInDelivery(String(order.id), db);
         if (isOrderInDelivery) {
           continue;
         }
 
-        const madeOrderInDelivery = await this.makeOrderInDelivery(order.id, db);
+        const madeOrderInDelivery = await this.makeOrderInDelivery(String(order.id), db);
         if (!madeOrderInDelivery) {
           continue;
         }
