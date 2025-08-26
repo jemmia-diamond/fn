@@ -10,8 +10,7 @@ export default class RedirectController {
 
     const url = RedirectController.MAPPINGS[name];
     if (!url) {
-      ctx.status(404);
-      return;
+      return ctx.text("Not Found", 404);
     }
 
     return ctx.redirect(url);
