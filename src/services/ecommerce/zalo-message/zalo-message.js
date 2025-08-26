@@ -58,25 +58,25 @@ export default class SendZaloMessage {
         const order = message.body;
 
         if (!this.eligibleForSendingZaloMessage(order)) {
-          return;
+          continue;
         }
 
         const haravanFulfillment = this.getLatestFulfillment(order);
 
         if (!haravanFulfillment || !haravanFulfillment.delivering_date) {
-          return;
+          continue;
         }
 
         const db = Database.instance(env);
 
         const isOrderInDelivery = await this.checkOrderInDelivery(order.id, db);
         if (isOrderInDelivery) {
-          return;
+          continue;
         }
 
         const madeOrderInDelivery = await this.makeOrderInDelivery(order.id, db);
         if (!madeOrderInDelivery) {
-          return;
+          continue;
         }
 
         const templateId = ZALO_TEMPLATE.delivering;
@@ -86,7 +86,6 @@ export default class SendZaloMessage {
         }
       } catch (error) {
         console.error("Failed to process order for Zalo delivery message:", error);
-        return;
       }
     }
   }
