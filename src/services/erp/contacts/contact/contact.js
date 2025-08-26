@@ -159,7 +159,7 @@ export default class ContactService {
       const contactName = body.name;
       const doctype = body.doctype;
       try {
-        if (docEvent && contactName && doctype === "Contact") {
+        if (docEvent && contactName && doctype === contactService.doctype) {
           await contactService.processContactFromWebhook(body, docEvent);
         }
       } catch (error) {
