@@ -21,6 +21,7 @@ export default {
       break;
     case "zalo-message":
       await Ecommerce.SendZaloMessage.dequeueSendZaloMessageQueue(batch, env);
+      await Ecommerce.SendZaloMessage.dequeueSendZaloRemindPayMessageQueue(batch, env);
       break;
     default:
       break;

@@ -45,6 +45,34 @@ export default class SendZaloMessage {
     }
   }
 
+  static async dequeueSendZaloRemindPayMessageQueue(batch, env) {
+    const messages = batch.messages;
+    for (const message of messages) {
+
+      try {
+        const payload = message.body;
+        const orderData = payload.data;
+        const dispatchType = payload.dispatchType; // 'DELAYED'
+
+        if (dispatchType !== "DELAYED") {
+          continue;
+        }
+
+        if (!this.eligibleForSendingZaloMessage(orderData)) {
+          continue;
+        }
+
+        const templateId = ZALO_TEMPLATE.remindPay;
+        const result = GetTemplateZalo.getTemplateZalo(templateId, orderData);
+        if (result) {
+          await this.sendZaloMessage(result.phone, templateId, result.templateData, env);
+        }
+      } catch (error) {
+        console.error("Failed to process order for Zalo remind pay message:", error);
+      }
+    }
+  }
+
   /**
    * This function processes an order and sends a Zalo message when the order starts delivery.
    * @param {*} batch
