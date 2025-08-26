@@ -1,4 +1,4 @@
-export class BaseClient {
+export default class BaseClient {
   constructor(env) {
     this.env = env;
     this.baseUrl = env.HARAVAN_API_BASE_URL;
@@ -8,7 +8,7 @@ export class BaseClient {
   async composeHeaders() {
     return {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${await this.accessToken.get()}   hh`
+      "Authorization": `Bearer ${await this.accessToken.get()}`
     };
   }
 
