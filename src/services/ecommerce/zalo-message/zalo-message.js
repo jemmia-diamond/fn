@@ -100,7 +100,7 @@ export default class SendZaloMessage {
         SELECT 1 FROM ecommerce.order_tracking
         WHERE haravan_order_id = ${orderId} AND haravan_order_status = 'delivering'
       `;
-      return orderInDelivery.count > 0;
+      return orderInDelivery.length > 0;
     } catch (error) {
       console.error(error);
       return false;
