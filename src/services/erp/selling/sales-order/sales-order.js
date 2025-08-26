@@ -5,9 +5,10 @@ import Database from "src/services/database";
 import AddressService from "src/services/erp/contacts/address/address";
 import ContactService from "src/services/erp/contacts/contact/contact";
 import CustomerService from "src/services/erp/selling/customer/customer";
-import { composeSalesOrderNotification, extractPromotions } from "services/erp/selling/sales-order/utils/sales-order-notification";
+import { composeSalesOrderNotification, extractPromotions, validateOrderInfo } from "services/erp/selling/sales-order/utils/sales-order-notification";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
+import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/constant";
 
 import {
   fetchSalesOrdersFromERP,
@@ -155,6 +156,11 @@ export default class SalesOrderService {
   async sendNotificationToLark(salesOrderData) {
     const larkClient = LarksuiteService.createClient(this.env);
 
+    const {isValid, message} = validateOrderInfo(salesOrderData);
+    if (!isValid) {
+      return {success: false, message: message};
+    }
+
     const promotionNames = extractPromotions(salesOrderData);
     const promotionData = await this.frappeClient.getList("Promotion", {
       filters: [["name", "in", promotionNames]]
@@ -166,13 +172,15 @@ export default class SalesOrderService {
         receive_id_type: "chat_id"
       },
       data: {
-        receive_id: "oc_7f6dd355251aa766220a84dcae2403e1",
+        receive_id: CHAT_GROUPS.TESTING_GROUP.chat_id,
         msg_type: "text",
         content: JSON.stringify({
           text: content
         })
       }
     });
+
+    return {success: true, message: "Send notification successfully"};
   }
 
   async syncSalesOrdersToDatabase(options = {}) {

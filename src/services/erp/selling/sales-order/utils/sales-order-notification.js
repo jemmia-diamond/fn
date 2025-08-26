@@ -1,5 +1,6 @@
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
+import { SKU_LENGTH } from "services/haravan/products/product-variant/constant";
 
 dayjs.extend(utc);
 
@@ -57,14 +58,10 @@ export const extractPromotions = (salesOrder) => {
   const promotionNames = [];
   const items = salesOrder.items;
   for (const item of items) {
-    if (item.g0) { promotionNames.push(item.g0); };
-    if (item.g1) { promotionNames.push(item.g1); };
-    if (item.g2) { promotionNames.push(item.g2); };
-    if (item.g3) { promotionNames.push(item.g3); };
-    if (item.g4) { promotionNames.push(item.g4); };
-    if (item.g5) { promotionNames.push(item.g5); };
-    if (item.g6) { promotionNames.push(item.g6); };
-    if (item.g7) { promotionNames.push(item.g7); };
+    if (item.promotion_1) { promotionNames.push(item.promotion_1); };
+    if (item.promotion_2) { promotionNames.push(item.promotion_2); };
+    if (item.promotion_3) { promotionNames.push(item.promotion_3); };
+    if (item.promotion_4) { promotionNames.push(item.promotion_4); };
   }
 
   const promotions = salesOrder.promotions;
@@ -73,3 +70,36 @@ export const extractPromotions = (salesOrder) => {
   }
   return promotionNames;
 };
+
+export function validateOrderInfo(salesOrderData) {
+  let message = null;
+  let isValid = false;
+
+  if (!salesOrderData.product_categories.length) {
+    message = "Chưa nhập đặc điểm sản phẩm đơn hàng";
+    return {isValid, message};
+  }
+
+  if (!salesOrderData.expected_delivery_date) {
+    message = "Chưa nhập ngày giao hàng";
+    return {isValid, message};
+  }
+
+  if (!salesOrderData.expected_payment_date) {
+    message = "Chưa nhập ngày thanh toán";
+    return {isValid, message};
+  }
+
+  const lineItems = salesOrderData.items;
+
+  const jewelryItems = lineItems.filter((item) => item.sku.length === SKU_LENGTH.JEWELRY);
+  for (const jewelryItem of jewelryItems) {
+    if (!jewelryItem.serial_numbers) {
+      message = "Chưa nhập serial number";
+      return {isValid, message};
+    }
+  }
+
+  isValid = true;
+  return {isValid, message};
+}
