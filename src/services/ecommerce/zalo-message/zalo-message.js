@@ -53,35 +53,40 @@ export default class SendZaloMessage {
   static async dequeueSendZaloDeliveryMessageQueue(batch, env) {
     const messages = batch.messages;
     for (const message of messages) {
+      try {
 
-      const order = message.body;
+        const order = message.body;
 
-      if (!this.eligibleForSendingZaloMessage(order)) {
+        if (!this.eligibleForSendingZaloMessage(order)) {
+          return;
+        }
+
+        const haravanFulfillment = this.getLatestFulfillment(order);
+
+        if (!haravanFulfillment || !haravanFulfillment.delivering_date) {
+          return;
+        }
+
+        const db = Database.instance(env);
+
+        const isOrderInDelivery = await this.checkOrderInDelivery(order.id, db);
+        if (isOrderInDelivery) {
+          return;
+        }
+
+        const madeOrderInDelivery = await this.makeOrderInDelivery(order.id, db);
+        if (!madeOrderInDelivery) {
+          return;
+        }
+
+        const templateId = ZALO_TEMPLATE.delivering;
+        const result = GetTemplateZalo.getTemplateZalo(templateId, order);
+        if (result) {
+          await this.sendZaloMessage(result.phone, templateId, result.templateData, env);
+        }
+      } catch (error) {
+        console.error("Failed to process order for Zalo delivery message:", error);
         return;
-      }
-
-      const haravanFulfillment = this.getLatestFulfillment(order);
-
-      if (!haravanFulfillment || !haravanFulfillment.delivering_date) {
-        return;
-      }
-
-      const db = Database.instance(env);
-
-      const isOrderInDelivery = await this.checkOrderInDelivery(order.id, db);
-      if (isOrderInDelivery) {
-        return;
-      }
-
-      const madeOrderInDelivery = await this.makeOrderInDelivery(order.id, db);
-      if (!madeOrderInDelivery) {
-        return;
-      }
-
-      const templateId = ZALO_TEMPLATE.delivering;
-      const result = GetTemplateZalo.getTemplateZalo(templateId, order);
-      if (result) {
-        await this.sendZaloMessage(result.phone, templateId, result.templateData, env);
       }
     }
   }
