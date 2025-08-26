@@ -2,7 +2,7 @@ import ZNSMessageService from "services/zalo-message/zalo-message";
 import { GetTemplateZalo } from "services/ecommerce/zalo-message/utils/format-template-zalo";
 import { ZALO_TEMPLATE } from "services/ecommerce/zalo-message/enums/zalo-template.enum";
 import Database from "services/database";
-import { HaravanAPIClient } from "services/haravan/api-client";
+import HaravanAPIClient from "services/haravan/api-client/api-client";
 
 export default class SendZaloMessage {
   constructor(env) {
@@ -66,9 +66,8 @@ export default class SendZaloMessage {
 
         // Get latest order data from Haravan API
         const haravanApiClient = new HaravanAPIClient(env);
-        const order = await haravanApiClient.orders.order.getOrder(orderData.id);
-
-        if (!order) {
+        const getOrderResponse = await haravanApiClient.orders.order.getOrder(orderData.id);
+        if (!getOrderResponse || !getOrderResponse.data) {
           continue;
         }
 
