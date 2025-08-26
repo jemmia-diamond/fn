@@ -97,6 +97,14 @@
         "queue": "message-summary",
         "binding": "MESSAGE_SUMMARY_QUEUE"
       },
+      {
+        "queue": "erp-contacts",
+        "binding": "ERP_CONTACTS_QUEUE"
+      },
+      {
+        "queue": "erp-crm",
+        "binding": "ERP_CRM_QUEUE"
+      },
     ],
     "consumers": [
       {
@@ -115,6 +123,12 @@
       {
         "queue": "message-summary"
       },
+      {
+        "queue": "erp-contacts"
+      },
+      {
+        "queue": "erp-crm"
+      }
     ]
   },
   "triggers": {

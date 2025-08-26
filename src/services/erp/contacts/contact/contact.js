@@ -2,7 +2,7 @@ import FrappeClient from "frappe/frappe-client";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import Database from "services/database";
-import { fetchContactsFromERP, saveContactsToDatabase } from "services/erp/contacts/contact/utils/contact-helppers";
+import { fetchContactsFromERP, saveContactsToDatabase, deleteContactFromDatabase } from "services/erp/contacts/contact/utils/contact-helppers";
 
 dayjs.extend(utc);
 
@@ -148,5 +148,29 @@ export default class ContactService {
       minutesBack: 10,
       isSyncType: ContactService.SYNC_TYPE_AUTO
     });
+  }
+
+  static async dequeueContactQueue(batch, env) {
+    const contactService = new ContactService(env);
+    const messages = batch.messages;
+    for (const message of messages) {
+      const body = message.body;
+      const docEvent = body.doc_event;
+      const contactName = body.name;
+      const doctype = body.doctype;
+      try {
+        if (docEvent && contactName && doctype === "Contact") {
+          await contactService.processContactFromWebhook(body, docEvent);
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    }
+  }
+  async processContactFromWebhook(data, docEvent) {
+    const contactName = data.name;
+    if (docEvent === "on_trash") {
+      return await deleteContactFromDatabase(this.db, contactName);
+    }
   }
 }
