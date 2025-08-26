@@ -21,7 +21,7 @@ export default {
     case "zalo-message":
       await Ecommerce.SendZaloMessage.dequeueSendZaloMessageQueue(batch, env);
       break;
-    case "erp-contacts":
+    case "erpnext-contacts":
       await ERP.Contacts.ContactService.dequeueContactQueue(batch, env);
       break;
     default:

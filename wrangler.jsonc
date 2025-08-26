@@ -98,12 +98,12 @@
         "binding": "MESSAGE_SUMMARY_QUEUE"
       },
       {
-        "queue": "erp-contacts",
-        "binding": "ERP_CONTACTS_QUEUE"
+        "queue": "erpnext-contacts",
+        "binding": "ERPNEXT_CONTACTS_QUEUE"
       },
       {
-        "queue": "erp-crm",
-        "binding": "ERP_CRM_QUEUE"
+        "queue": "erpnext-crm",
+        "binding": "ERPNEXT_CRM_QUEUE"
       },
     ],
     "consumers": [
@@ -124,10 +124,10 @@
         "queue": "message-summary"
       },
       {
-        "queue": "erp-contacts"
+        "queue": "erpnext-contacts"
       },
       {
-        "queue": "erp-crm"
+        "queue": "erpnext-crm"
       }
     ]
   },
