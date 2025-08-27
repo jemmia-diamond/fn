@@ -82,11 +82,17 @@ export default class SendZaloMessage {
           continue;
         }
 
+        // Ignore if order is cancelled
         if (order.cancelled_status === "cancelled") {
           continue;
         }
 
-        // If the order is already paid, skip sending the reminder
+        // Ignore if order is re-ordered to another order
+        if (order.ref_order_number) {
+          continue;
+        }
+
+        // Ignore if order is already paid or partially paid
         if (order.financial_status === "paid" || order.financial_status === "partially_paid") {
           continue;
         }
