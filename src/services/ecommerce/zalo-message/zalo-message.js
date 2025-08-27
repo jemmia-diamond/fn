@@ -2,6 +2,7 @@ import ZNSMessageService from "services/zalo-message/zalo-message";
 import { GetTemplateZalo } from "services/ecommerce/zalo-message/utils/format-template-zalo";
 import { ZALO_TEMPLATE } from "services/ecommerce/zalo-message/enums/zalo-template.enum";
 import HaravanAPIClient from "services/haravan/api-client/api-client";
+import { getLatestOrderId } from "services/ecommerce/order-tracking/queries/get-latest-orderid";
 
 export default class SendZaloMessage {
   constructor(env) {
@@ -63,10 +64,20 @@ export default class SendZaloMessage {
           continue;
         }
 
+        const db = Database.instance(env);
+
+        const latestOrderId = await getLatestOrderId(db, orderData.id);
+
         // Get latest order data from Haravan API
         const haravanApiClient = new HaravanAPIClient(env);
-        const getOrderResponse = await haravanApiClient.orders.order.getOrder(orderData.id);
+        const getOrderResponse = await haravanApiClient.orders.order.getOrder(latestOrderId);
         if (!getOrderResponse || !getOrderResponse.data) {
+          continue;
+        }
+
+        const order = getOrderResponse.data;
+
+        if (order.cancelled_status === "cancelled") {
           continue;
         }
 
