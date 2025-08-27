@@ -3,6 +3,7 @@ import { GetTemplateZalo } from "services/ecommerce/zalo-message/utils/format-te
 import { ZALO_TEMPLATE } from "services/ecommerce/zalo-message/enums/zalo-template.enum";
 import HaravanAPIClient from "services/haravan/api-client/api-client";
 import { getLatestOrderId } from "services/ecommerce/order-tracking/queries/get-latest-orderid";
+import Database from "services/database";
 
 export default class SendZaloMessage {
   constructor(env) {
@@ -77,16 +78,16 @@ export default class SendZaloMessage {
 
         const order = getOrderResponse.data;
 
+        if (!this.eligibleForSendingZaloMessage(order)) {
+          continue;
+        }
+
         if (order.cancelled_status === "cancelled") {
           continue;
         }
 
         // If the order is already paid, skip sending the reminder
         if (order.financial_status === "paid" || order.financial_status === "partially_paid") {
-          continue;
-        }
-
-        if (!this.eligibleForSendingZaloMessage(order)) {
           continue;
         }
 
