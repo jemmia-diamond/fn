@@ -97,6 +97,14 @@
         "queue": "message-summary",
         "binding": "MESSAGE_SUMMARY_QUEUE"
       },
+      {
+        "queue": "erpnext-contacts",
+        "binding": "ERPNEXT_CONTACTS_QUEUE"
+      },
+      {
+        "queue": "erpnext-crm",
+        "binding": "ERPNEXT_CRM_QUEUE"
+      },
     ],
     "consumers": [
       {
@@ -115,6 +123,12 @@
       {
         "queue": "message-summary"
       },
+      {
+        "queue": "erpnext-contacts"
+      },
+      {
+        "queue": "erpnext-crm"
+      }
     ]
   },
   "triggers": {
