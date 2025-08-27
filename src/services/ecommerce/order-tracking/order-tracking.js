@@ -145,6 +145,23 @@ export default class OrderTrackingService {
       // Handle active orders
       let finalHaravanSteps = this._handleActiveOrder(orderedSteps);
 
+      // Filter steps which are not READY_TO_PICK
+      const lineItemIds = order.line_items.map(item => item.variant_id);
+      const isTemporaryOrder = await this.isTemporaryOrder(this.db, lineItemIds);
+      if (!isTemporaryOrder) {
+        finalHaravanSteps = finalHaravanSteps.filter(step =>
+          step.key !== OrderOverallStatus.READY_TO_PICK.key
+        );
+      }
+
+      // Filter steps which are not DELIVERING and DELIVERED if shipping address is null
+      if (!order.shipping_address.address1) {
+        finalHaravanSteps = finalHaravanSteps.filter(step =>
+          step.key !== OrderOverallStatus.DELIVERING.key
+          && step.key !== OrderOverallStatus.DELIVERED.key
+        );
+      }
+
       const takeFromVendorLogs = nhattinTrackingLog.filter(log => log.billStatusId === NhattinDeliveryStatus.TAKE_ORDER_FROM_VENDOR);
 
       const transitLogs = nhattinTrackingLog.filter(log => log.billStatusId === NhattinDeliveryStatus.TRANSITING);
@@ -165,6 +182,23 @@ export default class OrderTrackingService {
     } catch (err) {
       console.error(`Error fetching order timeline for order ${orderId}:`, err.message);
       throw new Error(`Failed to fetch order timeline: ${err.message}`);
+    }
+  }
+
+  async isTemporaryOrder(db, lineItemIds) {
+    if (!lineItemIds || lineItemIds.length === 0) {
+      return false;
+    }
+    try {
+      const results = await db.$queryRaw`
+        SELECT id
+        FROM "workplace"."temporary_products"
+        WHERE haravan_variant_id = ANY(${lineItemIds});
+      `;
+      return results.length > 0;
+    } catch (error) {
+      console.error("Error checking for temporary order:", error);
+      return false;
     }
   }
 
