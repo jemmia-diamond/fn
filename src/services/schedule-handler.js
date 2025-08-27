@@ -22,6 +22,7 @@ export default {
       await ERP.Selling.SalesOrderService.cronSyncSalesOrdersToDatabase(env);
       break;
     case "*/30 * * * *": // At every 30th minute
+      await ERP.Contacts.AddressService.cronSyncAddressesToDatabase(env);
       await Ecommerce.ProductService.refreshMaterializedViews(env);
       break;
     case "0 17 * * *": // 00:00
