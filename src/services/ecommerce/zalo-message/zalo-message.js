@@ -48,6 +48,83 @@ export default class SendZaloMessage {
   }
 
   /**
+   * This function processes an order and sends a Zalo message when the order starts delivery.
+   * @param {*} batch
+   * @param {*} env
+   */
+  static async dequeueSendZaloDeliveryMessageQueue(batch, env) {
+    const messages = batch.messages;
+    for (const message of messages) {
+      try {
+
+        const order = message.body;
+
+        if (!this.eligibleForSendingZaloMessage(order)) {
+          continue;
+        }
+
+        const haravanFulfillment = this.getLatestFulfillment(order);
+
+        if (!haravanFulfillment || !haravanFulfillment.delivering_date) {
+          continue;
+        }
+
+        const db = Database.instance(env);
+
+        const isOrderInDelivery = await this.checkOrderInDelivery(String(order.id), db);
+        if (isOrderInDelivery) {
+          continue;
+        }
+
+        const madeOrderInDelivery = await this.makeOrderInDelivery(String(order.id), db);
+        if (!madeOrderInDelivery) {
+          continue;
+        }
+
+        const templateId = ZALO_TEMPLATE.delivering;
+        const result = GetTemplateZalo.getTemplateZalo(templateId, order);
+        if (result) {
+          await this.sendZaloMessage(result.phone, templateId, result.templateData, env);
+        }
+      } catch (error) {
+        console.error("Failed to process order for Zalo delivery message:", error);
+      }
+    }
+  }
+
+  static getLatestFulfillment(order) {
+    return order.fulfillments?.[order.fulfillments.length - 1] || {};
+  }
+
+  static async checkOrderInDelivery(orderId, db) {
+    try {
+      const orderInDelivery = await db.$queryRaw`
+        SELECT 1 FROM ecommerce.order_tracking
+        WHERE haravan_order_id = ${orderId} AND haravan_order_status = 'delivering'
+      `;
+      return orderInDelivery.length > 0;
+    } catch (error) {
+      console.error(error);
+      return false;
+    }
+  }
+
+  static async makeOrderInDelivery(orderId, db) {
+    const uuid = crypto.randomUUID();
+    try {
+      await db.$queryRaw`
+        INSERT INTO ecommerce.order_tracking (uuid, haravan_order_id, haravan_order_status)
+        VALUES (${uuid}, ${orderId}, 'delivering')
+        ON CONFLICT (haravan_order_id, haravan_order_status) DO NOTHING;
+      `;
+      return true;
+    } catch (error) {
+      console.error(error);
+      return false;
+    }
+  }
+
+  /**
    * This function processes a batch of messages from the queue and sends Zalo reminders for payment.
    * @param {*} batch
    * @param {*} env

@@ -19,6 +19,15 @@ export class GetTemplateZalo {
           })
         }
       };
+    case ZALO_TEMPLATE.delivering:
+      return {
+        phone: this.convertPhoneNumber(data.billing_address?.phone),
+        templateData: {
+          customer_name: data.billing_address?.name,
+          order_number: data.id,
+          name: data.id
+        }
+      };
     case ZALO_TEMPLATE.remindPay:
       // For ViettinBank, Transfer Note must have prefix "SEVQR "
       const bankTransferNote = `SEVQR ${data.order_number}`;
