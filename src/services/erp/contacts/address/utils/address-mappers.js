@@ -1,0 +1,38 @@
+import { safeValue } from "src/services/utils/data-mappers";
+
+export const mapAddressesToDatabase = (addresses) => {
+  return addresses.map((address) => ({
+    name: safeValue(address.name, "string"),
+    owner: safeValue(address.owner, "string"),
+    creation: safeValue(address.creation, "date"),
+    modified: safeValue(address.modified, "date"),
+    modified_by: safeValue(address.modified_by, "string"),
+    docstatus: safeValue(address.docstatus, "number"),
+    idx: safeValue(address.idx, "number"),
+    address_type: safeValue(address.address_type, "string"),
+    address_name: safeValue(address.address_name, "string"),
+    phone: safeValue(address.phone, "string"),
+    email_id: safeValue(address.email_id, "string"),
+    address_line2: safeValue(address.address_line2, "string"),
+    address_title: safeValue(address.address_title, "string"),
+    city: safeValue(address.city, "string"),
+    county: safeValue(address.county, "string"),
+    state: safeValue(address.state, "string"),
+    pincode: safeValue(address.pincode, "string"),
+    country: safeValue(address.country, "string"),
+    province: safeValue(address.province, "string"),
+    district: safeValue(address.district, "string"),
+    ward: safeValue(address.ward, "string"),
+    address_line1: safeValue(address.address_line1, "string"),
+    fax: safeValue(address.fax, "string"),
+    tax_category: safeValue(address.tax_category, "string"),
+    is_primary_address: safeValue(address.is_primary_address, "number"),
+    is_shipping_address: safeValue(address.is_shipping_address, "number"),
+    disabled: safeValue(address.disabled, "number"),
+    haravan_id: safeValue(address.haravan_id, "string"),
+    is_your_company_address: safeValue(address.is_your_company_address, "number"),
+    links: address.links || null,
+    database_created_at: safeValue(address.database_created_at, "date"),
+    database_updated_at: safeValue(address.database_updated_at, "date")
+  }));
+};
