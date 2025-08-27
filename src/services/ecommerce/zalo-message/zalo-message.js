@@ -36,7 +36,7 @@ export default class SendZaloMessage {
     const messages = batch.messages;
     for (const message of messages) {
       if (!this.eligibleForSendingZaloMessage(message.body)) {
-        return;
+        continue;
       }
 
       const templateId = ZALO_TEMPLATE.orderConfirmed;
