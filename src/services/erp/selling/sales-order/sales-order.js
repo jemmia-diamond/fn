@@ -8,7 +8,7 @@ import CustomerService from "src/services/erp/selling/customer/customer";
 import { composeSalesOrderNotification, extractPromotions, validateOrderInfo } from "services/erp/selling/sales-order/utils/sales-order-notification";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
-import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/constant";
+import { CHAT_GROUPS} from "services/larksuite/group-chat/group-management/constant";
 
 import {
   fetchSalesOrdersFromERP,
@@ -156,9 +156,19 @@ export default class SalesOrderService {
   async sendNotificationToLark(salesOrderData) {
     const larkClient = LarksuiteService.createClient(this.env);
 
-    const {isValid, message} = validateOrderInfo(salesOrderData);
+    const notificationTracking = await this.db.erpnextSalesOrderNotificationTracking.findFirst({
+      where: {
+        order_name: salesOrderData.name
+      }
+    });
+
+    if (notificationTracking) {
+      return { success: false, message: "Đơn hàng này đã được gửi thông báo từ trước đó!" };
+    }
+
+    const { isValid, message } = validateOrderInfo(salesOrderData);
     if (!isValid) {
-      return {success: false, message: message};
+      return { success: false, message: message };
     }
 
     const promotionNames = extractPromotions(salesOrderData);
@@ -172,7 +182,7 @@ export default class SalesOrderService {
         receive_id_type: "chat_id"
       },
       data: {
-        receive_id: CHAT_GROUPS.TESTING_GROUP.chat_id,
+        receive_id: CHAT_GROUPS.CUSTOMER_INFO.chat_id,
         msg_type: "text",
         content: JSON.stringify({
           text: content
@@ -180,7 +190,17 @@ export default class SalesOrderService {
       }
     });
 
-    return {success: true, message: "Send notification successfully"};
+    const messageId = _response.data.message_id;
+
+    await this.db.erpnextSalesOrderNotificationTracking.create({
+      data: {
+        lark_message_id: messageId,
+        order_name: salesOrderData.name,
+        haravan_order_id: salesOrderData.haravan_order_id
+      }
+    });
+
+    return { success: true, message: "Đã gửi thông báo thành công!" };
   }
 
   async syncSalesOrdersToDatabase(options = {}) {

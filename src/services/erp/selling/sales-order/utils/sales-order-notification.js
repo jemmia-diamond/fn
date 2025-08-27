@@ -1,6 +1,6 @@
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
-import { SKU_LENGTH } from "services/haravan/products/product-variant/constant";
+import { SKU_LENGTH, SKU_PREFIX } from "services/haravan/products/product-variant/constant";
 
 dayjs.extend(utc);
 
@@ -92,7 +92,7 @@ export function validateOrderInfo(salesOrderData) {
 
   const lineItems = salesOrderData.items;
 
-  const jewelryItems = lineItems.filter((item) => item.sku.length === SKU_LENGTH.JEWELRY);
+  const jewelryItems = lineItems.filter((item) => (item.sku.length === SKU_LENGTH.JEWELRY || item.sku.startsWith(SKU_PREFIX.TEMPORARY_JEWELRY)));
   for (const jewelryItem of jewelryItems) {
     if (!jewelryItem.serial_numbers) {
       message = "Chưa nhập serial number";
