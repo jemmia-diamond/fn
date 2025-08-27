@@ -12,3 +12,13 @@ export const escapeSqlValue = (value) => {
   }
   return value;
 };
+
+export async function fetchChildRecordsFromERP(frappeClient, parentNames, tableName) {
+  if (!Array.isArray(parentNames) || parentNames.length === 0) {
+    return [];
+  }
+  const quotedNames = parentNames.map(name => `"${name}"`).join(", ");
+  const sql = `SELECT * FROM \`${tableName}\` WHERE parent IN (${quotedNames})`;
+  const childRecords = await frappeClient.executeSQL(sql);
+  return childRecords || [];
+}
