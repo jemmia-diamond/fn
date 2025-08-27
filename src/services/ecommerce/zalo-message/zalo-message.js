@@ -76,7 +76,11 @@ export default class SendZaloMessage {
           continue;
         }
 
-        const order = getOrderResponse.data;
+        const order = getOrderResponse.data.order;
+
+        if (!order) {
+          continue;
+        }
 
         if (!this.eligibleForSendingZaloMessage(order)) {
           continue;
