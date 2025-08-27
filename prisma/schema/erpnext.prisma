@@ -606,3 +606,106 @@ model erpnextAddress {
   @@map("addresses")
   @@schema("erpnext")
 }
+
+model erpnextCustomer {
+  uuid                String    @id @default(uuid()) @db.Uuid
+  name                        String    @unique @db.VarChar(255)
+  owner                       String?   @db.VarChar(255)
+  creation                    DateTime? @db.Timestamp(6)
+  modified                    DateTime? @db.Timestamp(6)
+  modified_by                 String?   @db.VarChar(255)
+  docstatus                   Int?
+  idx                         Int?
+  naming_series               String?   @db.VarChar(255)
+  salutation                  String?   @db.VarChar(255)
+  customer_name               String?   @db.VarChar(255)
+  customer_group              String?   @db.VarChar(255)
+  bizfly_customer_number      String?   @db.VarChar(255)
+  is_internal_customer        Int?
+  customer_type               String?   @db.VarChar(255)
+  customer_rank               String?   @db.VarChar(255)
+  account_manager             String?   @db.VarChar(255)
+  lead_name                   String?   @db.VarChar(255)
+  opportunity_name            String?   @db.VarChar(255)
+  territory                   String?   @db.VarChar(255)
+  prospect_name               String?   @db.VarChar(255)
+  company_name                String?   @db.VarChar(255)
+  no_of_employees             Int?
+  industry                    String?   @db.VarChar(255)
+  market_segment              String?   @db.VarChar(255)
+  tax_number                  String?   @db.VarChar(255)
+  ceo_name                    String?   @db.VarChar(255)
+  personal_document_type      String?   @db.VarChar(255)
+  birth_date                  DateTime? @db.Timestamp(6)
+  gender                      String?   @db.VarChar(255)
+  personal_id                 String?   @db.VarChar(255)
+  place_of_issuance           String?   @db.VarChar(255)
+  person_name                 String?   @db.VarChar(255)
+  date_of_issuance            DateTime? @db.Timestamp(6)
+  first_source                String?   @db.VarChar(255)
+  customer_website            String?   @db.VarChar(255)
+  customer_journey            String?   @db.VarChar(255)
+  default_currency            String?   @db.VarChar(255)
+  default_bank_account        String?   @db.VarChar(255)
+  default_price_list          String?   @db.VarChar(255)
+  represents_company          Int?
+  customer_pos_id             String?   @db.VarChar(255)
+  website                     String?   @db.VarChar(255)
+  language                    String?   @db.VarChar(255)
+  customer_details            String?   @db.VarChar(255)
+  customer_primary_address    String?   @db.VarChar(255)
+  primary_address             String?   @db.VarChar(1024)
+  image                       String?   @db.VarChar(255)
+  customer_primary_contact    String?   @db.VarChar(255)
+  primary_contact             String?   @db.VarChar(255)
+  mobile_no                   String?   @db.VarChar(255)
+  email_id                    String?   @db.VarChar(255)
+  phone                       String?   @db.VarChar(255)
+  invoice_type                String?   @db.VarChar(255)
+  vat_email                   String?   @db.VarChar(255)
+  vat_name                    String?   @db.VarChar(255)
+  vat_address                 String?   @db.VarChar(255)
+  personal_tax_id             String?   @db.VarChar(255)
+  bank_account                String?   @db.VarChar(255)
+  payment_terms               String?   @db.VarChar(255)
+  loyalty_program             String?   @db.VarChar(255)
+  loyalty_program_tier        String?   @db.VarChar(255)
+  rank                        String?   @db.VarChar(255)
+  purchase_amount_last_12_months Decimal? @db.Decimal(18, 6)
+  rank_expired_date           DateTime? @db.Timestamp(6)
+  priority_login_date         DateTime? @db.Timestamp(6)
+  cumulative_revenue          Decimal? @db.Decimal(18, 6)
+  cashback                    Decimal? @db.Decimal(18, 6)
+  true_cumulative_revenue     Decimal? @db.Decimal(18, 6)
+  withdraw_cashback           Decimal? @db.Decimal(18, 6)
+  referrals_revenue           Decimal? @db.Decimal(18, 6)
+  pending_cashback            Decimal? @db.Decimal(18, 6)
+  priority_bank_account       String?   @db.VarChar(255)
+  default_sales_partner       String?   @db.VarChar(255)
+  default_commission_rate     Decimal?  @db.Decimal(18, 6)
+  so_required                 Int?
+  dn_required                 Int?
+  is_frozen                   Int?
+  disabled                    Int? @db.SmallInt
+  haravan_id                  String?   @db.VarChar(255)
+  bizfly_id                   String?   @db.VarChar(255)
+  tax_id                      String?   @db.VarChar(255)
+  tax_category                String?   @db.VarChar(255)
+  tax_withholding_category    String?   @db.VarChar(255)
+
+  account                     Json?     @db.JsonB
+  portal_users                Json?     @db.JsonB
+  companies                   Json?     @db.JsonB
+  sales_team                  Json?     @db.JsonB
+  coupon_table                Json?     @db.JsonB
+  credit_limits               Json?     @db.JsonB
+
+  database_created_at         DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at         DateTime? @updatedAt @db.Timestamp(6)
+
+  @@index([name])
+  @@index([customer_name])
+  @@index([haravan_id])
+  @@map("customers")
+  @@schema("erpnext")
+}
