@@ -1,19 +1,19 @@
-export function formatOrderTrackingResult(order, nhattinTrackInfo) {
+export function formatOrderTrackingResult(order, nhattinTrackInfo, isAuthorizedAccess = false) {
   return {
     order_id: order.order_id.toString(),
     order_number: order.order_number,
     total_price: Number(order.total_price || 0),
     original_total_price: Number(order.original_total_price || 0),
     shipping_fee: Number(order.shipping_fee || 0),
-    items: (order.items || []).map(normalizeDiamondItem),
+    items: isAuthorizedAccess ? (order.items || []).map(normalizeDiamondItem) : [],
     tracking_logs: nhattinTrackInfo?.status || [],
     expected_receive_date: convertToUTC(nhattinTrackInfo.date_expected),
-    shipping_address_name: maskExceptFirstAndLast(order.shipping_address_name),
-    shipping_address_phone: maskPhoneNumber(order.shipping_address_phone),
+    shipping_address_name: isAuthorizedAccess ? order.shipping_address_name : maskExceptFirstAndLast(order.shipping_address_name),
+    shipping_address_phone: isAuthorizedAccess ? order.shipping_address_phone : maskPhoneNumber(order.shipping_address_phone),
     shipping_address_city: order.shipping_address_city,
-    shipping_address_district: maskFull(order.shipping_address_district),
-    shipping_address_ward: maskFull(order.shipping_address_ward),
-    shipping_address_address: maskFull(order.shipping_address_address1),
+    shipping_address_district: isAuthorizedAccess ? order.shipping_address_district : maskFull(order.shipping_address_district),
+    shipping_address_ward: isAuthorizedAccess ? order.shipping_address_ward : maskFull(order.shipping_address_ward),
+    shipping_address_address: isAuthorizedAccess ? order.shipping_address_address1 : maskFull(order.shipping_address_address1),
     shipping_address_province: order.shipping_address_province,
     payment_method: order.payment_method,
     confirmed_date: order.order_date,
@@ -66,10 +66,16 @@ function maskExceptFirstAndLast(str) {
     return str || "";
   }
 
+  const TOTAL_LENGTH = 10;
   const firstChar = str[0];
   const lastChar = str.slice(-1);
 
-  const middlePart = "*".repeat(str.length - 2);
+  let middlePart = "";
+  if (str.length > TOTAL_LENGTH) {
+    middlePart = "*".repeat(TOTAL_LENGTH - 2);
+  } else {
+    middlePart = "*".repeat(str.length - 2);
+  }
   return `${firstChar}${middlePart}${lastChar}`;
 }
 
@@ -78,7 +84,9 @@ function maskFull(value) {
     return "";
   }
 
-  return "*".repeat(value.length);
+  const TOTAL_LENGTH = 3;
+
+  return "*".repeat(TOTAL_LENGTH);
 }
 
 function normalizeDiamondItem(item) {

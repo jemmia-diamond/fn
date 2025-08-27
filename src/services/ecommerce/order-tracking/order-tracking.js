@@ -14,7 +14,7 @@ export default class OrderTrackingService {
     this.db = Database.instance(env);
   }
 
-  async trackOrder(orderId) {
+  async trackOrder(orderId, isAuthorizedAccess = false) {
     try {
       const latestOrderId = await getLatestOrderId(this.db, orderId);
 
@@ -33,7 +33,7 @@ export default class OrderTrackingService {
         console.error(e);
       }
 
-      return formatOrderTrackingResult(orderInfo, nhattinTrackInfo);
+      return formatOrderTrackingResult(orderInfo, nhattinTrackInfo, isAuthorizedAccess);
     } catch (error) {
       console.error("Error tracking order:", error);
       throw new Error("Failed to track order");

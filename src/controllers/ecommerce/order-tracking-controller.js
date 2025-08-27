@@ -7,9 +7,21 @@ export default class OrderTrackingController {
     if (!id) {
       throw new HTTPException(400, { message: "Order ID is required" });
     }
+
+    const authorization = ctx.req.header("Authorization");
+    let isAuthorizedAccess = false;
+    if (authorization && authorization.startsWith("Bearer ")) {
+      const reqBearerToken = authorization.split(" ")[1];
+      const bearerToken = await ctx.env.BEARER_TOKEN_SECRET.get();
+      if (reqBearerToken !== bearerToken && reqBearerToken !== ctx.env.BEARER_TOKEN) {
+        throw new HTTPException(400, { message: "Invalid Authorization header format" });
+      }
+      isAuthorizedAccess = true;
+    }
+
     const orderTrackingService = new Ecommerce.OrderTrackingService(ctx.env);
     try {
-      const orderDetails = await orderTrackingService.trackOrder(id);
+      const orderDetails = await orderTrackingService.trackOrder(id, isAuthorizedAccess);
       if (!orderDetails) {
         throw new HTTPException(404, { message: "Order not found" });
       }
