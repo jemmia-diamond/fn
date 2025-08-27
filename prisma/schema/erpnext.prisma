@@ -521,11 +521,11 @@ model erpnextContact {
   last_message_time           DateTime? @db.Timestamp(6)
   phone_number_provided_time  DateTime? @db.Timestamp(6)
   department                  String?   @db.VarChar(255)
-  unsubscribed                Int? @db.SmallInt
+  unsubscribed                Int?
   last_outgoing_call_time     DateTime? @db.Timestamp(6)
   last_incoming_call_time     DateTime? @db.Timestamp(6)
   last_summarize_time         DateTime? @db.Timestamp(6)
-  is_replied                  Int? @db.SmallInt
+  is_replied                  Int?
   pancake_conversation_id     String?   @db.VarChar(255)
   pancake_inserted_at         DateTime? @db.Timestamp(6)
   pancake_updated_at          DateTime? @db.Timestamp(6)
@@ -547,15 +547,15 @@ model erpnextContact {
   stringee_from_number        String?   @db.VarChar(50)
   stringee_start_time         DateTime? @db.Timestamp(6)
   stringee_end_time           DateTime? @db.Timestamp(6)
-  stringee_from_internal      Int? @db.SmallInt
-  stringee_to_internal        Int? @db.SmallInt
-  stringee_recorded           Int? @db.SmallInt
-  video_call                  Int? @db.SmallInt
+  stringee_from_internal      Int?
+  stringee_to_internal        Int?
+  stringee_recorded           Int?
+  video_call                  Int?
   google_contacts             String?   @db.VarChar(255)
   google_contacts_id          String?   @db.VarChar(255)
-  pulled_from_google_contacts Int? @db.SmallInt
-  is_primary_contact          Int? @db.SmallInt
-  is_billing_contact          Int? @db.SmallInt
+  pulled_from_google_contacts Int?
+  is_primary_contact          Int?
+  is_billing_contact          Int?
   links                       Json?     @db.JsonB
   phone_numbers               Json?     @db.JsonB 
   phone_nos                   Json?     @db.JsonB

@@ -3,7 +3,7 @@ import utc from "dayjs/plugin/utc.js";
 import { Prisma } from "@prisma-cli";
 import { randomUUID } from "crypto";
 import { mapCustomersToDatabase } from "src/services/erp/selling/customer/utils/customer-mappers";
-import { fetchChildRecordsFromERP } from "src/services/erp/utils/erp-helpers";
+import { fetchChildRecordsFromERP } from "src/services/utils/sql-helpers";
 import { escapeSqlValue } from "src/services/utils/sql-helpers";
 dayjs.extend(utc);
 
