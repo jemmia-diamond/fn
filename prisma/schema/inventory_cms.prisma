@@ -1,0 +1,51 @@
+model inventoryCMSInventoryCheckSheet {
+    uuid                String      @id @default(uuid()) @db.Uuid
+    id                  Int         @unique
+    status              String?
+    sort                String?
+    user_created        DateTime?
+    date_created        DateTime?
+    user_updated        DateTime?
+    date_updated        DateTime?
+    warehouse           String?
+    staff               Int?
+    result              String?
+    code                String?
+    warehouse_id        String?
+    count_in_book       Int?
+    count_for_real      Int?
+    extra               Int?
+    lines               Json?
+
+    @@map("inventory_check_sheets")
+    @@schema("inventory_cms")
+}
+
+model inventoryCMSInventoryCheckLine {
+    uuid                    String      @id @default(uuid()) @db.Uuid
+    id                      Int         @unique
+    status                  String?
+    sort                    String?
+    user_created            DateTime?
+    date_created            DateTime?
+    user_updated            DateTime?
+    date_updated            DateTime?
+    product_name            String?
+    product_id              Int?
+    variant_id              Int?              
+    count_in_book           Int?
+    count_for_real          Int?
+    checked_status          String?
+    sheet_id                Int?
+    variant_name            String?           
+    product_image           String?
+    sku                     String?
+    count_extra_for_real    Int?
+    barcode                 String?
+    category                String?
+    count_in_ordered        String?
+    rfid_tags               Json?
+
+    @@map("inventory_check_lines")
+    @@schema("inventory_cms")
+}

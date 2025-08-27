@@ -1,6 +1,7 @@
 import Larksuite from "services/larksuite";
 import ERP from "services/erp";
 import Ecommerce from "services/ecommerce";
+import InventoryCMS from "services/inventory-cms";
 
 export default {
   scheduled: async (controller, env, _ctx) => {
@@ -58,6 +59,8 @@ export default {
       await ERP.Automation.AssignmentRuleService.enableAssignmentRuleOffHour(env);
       break;
     default:
+      // await InventoryCMS.InventoryCheckSheetService.syncInventoryCheckSheetToDatabase(env);
+      await InventoryCMS.InventoryCheckLineService.syncInventoryCheckLineToDatabase(env);
       break;
     };
   }
