@@ -2,6 +2,19 @@ model erpnextUser {
   uuid  String  @id @default(uuid()) @db.Uuid
   name  String? @unique
   email String?
+  creation DateTime? @db.Timestamp(6)
+  modified DateTime? @db.Timestamp(6)
+  modified_by String?
+  enabled Int? @db.SmallInt
+  full_name String?
+  language String?
+  time_zone String?
+  user_image String?
+  role_profile String?
+  gender String?
+  birth_date DateTime?
+  location String?
+  pancake_id String?
 
   @@map("users")
   @@schema("erpnext")
@@ -11,6 +24,13 @@ model erpnextEmployee {
   uuid    String  @id @default(uuid()) @db.Uuid
   name    String? @unique
   user_id String?
+  creation DateTime? @db.Timestamp(6)
+  modified DateTime? @db.Timestamp(6)
+  modified_by String?
+  employee_name String?
+  department String?
+  status String?
+  gender String?
 
   @@map("employees")
   @@schema("erpnext")
@@ -20,6 +40,18 @@ model erpnextSalesPerson {
   uuid     String  @id @default(uuid()) @db.Uuid
   name     String? @unique
   employee String?
+  creation DateTime? @db.Timestamp(6)
+  modified DateTime? @db.Timestamp(6)
+  modified_by String?
+  sales_person_name String?
+  parent_sales_person String?
+  is_group Int? @db.SmallInt
+  enabled Int? @db.SmallInt
+  sales_region String?
+  bizfly_id String? 
+  department String?
+  old_parent String?
+  targets Json? @db.JsonB
 
   @@map("sales_persons")
   @@schema("erpnext")
