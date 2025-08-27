@@ -23,8 +23,9 @@ export class GetTemplateZalo {
       return {
         phone: this.convertPhoneNumber(data.billing_address?.phone),
         templateData: {
-          name: data.billing_address?.name,
-          order_number: data.id
+          customer_name: data.billing_address?.name,
+          order_number: data.id,
+          name: data.id
         }
       };
     default:
