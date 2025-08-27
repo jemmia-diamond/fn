@@ -536,6 +536,45 @@ model erpnextContact {
   @@schema("erpnext")
 }
 
+model erpnextAddress {
+  uuid                    String    @id @default(uuid()) @db.Uuid
+  name                    String    @unique @db.VarChar(255)
+  owner                   String?   @db.VarChar(255)
+  creation                DateTime? @db.Timestamp(6)
+  modified                DateTime? @db.Timestamp(6)
+  modified_by             String?   @db.VarChar(255)
+  docstatus               Int?
+  idx                     Int?
+  address_type            String?   @db.VarChar(255)
+  address_name            String?   @db.VarChar(255)
+  phone                   String?   @db.VarChar(255)
+  email_id                String?   @db.VarChar(255)
+  address_line2           String?
+  address_title           String?   @db.VarChar(255)
+  city                    String?   @db.VarChar(255)
+  county                  String?   @db.VarChar(255)
+  state                   String?   @db.VarChar(255)
+  pincode                 String?   @db.VarChar(255)
+  country                 String?   @db.VarChar(255)
+  province                String?   @db.VarChar(255)
+  district                String?   @db.VarChar(255)
+  ward                    String?   @db.VarChar(255)
+  address_line1           String?
+  fax                     String?   @db.VarChar(255)
+  tax_category            String?   @db.VarChar(255)
+  is_primary_address      Int?
+  is_shipping_address     Int?
+  disabled                Int?
+  haravan_id              String?   @db.VarChar(255)
+  is_your_company_address Int?
+  links                   Json?     @db.JsonB
+  database_created_at     DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at     DateTime? @updatedAt @db.Timestamp(6)
+
+  @@map("addresses")
+  @@schema("erpnext")
+}
+
 model erpnextSalesOrderNotificationTracking {
   uuid                String   @id @default(uuid()) @db.Uuid
   order_name          String
