@@ -14,9 +14,8 @@ export default class HaravanERPOrderController {
           dispatchType: "DELAYED",
           data: data
         }, { delaySeconds: delayInSeconds });
-      } else {
-        await ctx.env["ORDER_QUEUE"].send(data);
       }
+      await ctx.env["ORDER_QUEUE"].send(data);
       return ctx.json({ message: "Message sent to queue", status: 200 });
     } catch (e) {
       console.error(e);
