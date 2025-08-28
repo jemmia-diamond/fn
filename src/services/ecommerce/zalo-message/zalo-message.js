@@ -142,9 +142,8 @@ export default class SendZaloMessage {
     for (const message of messages) {
 
       try {
-        const payload = message.body;
-        const orderData = payload.data;
-        const dispatchType = payload.dispatchType; // 'DELAYED'
+        const orderData = message.body;
+        const dispatchType = orderData.dispatchType; // 'DELAYED'
 
         if (dispatchType !== "DELAYED") {
           continue;
