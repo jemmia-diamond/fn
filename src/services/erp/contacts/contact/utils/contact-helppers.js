@@ -146,3 +146,18 @@ export async function saveContactsToDatabase(db, contacts) {
     console.error("Error saving leads to database:", error.message);
   }
 }
+
+export async function deleteContactFromDatabase(db, contactName) {
+  try {
+    const contact = await db.erpnextContact.findUnique({
+      where: { name: contactName }
+    });
+    if (contact) {
+      await db.erpnextContact.delete({
+        where: { name: contactName }
+      });
+    }
+  } catch (error) {
+    console.error("Error deleting contact from database:", error.message);
+  }
+}
