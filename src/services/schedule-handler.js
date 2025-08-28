@@ -20,7 +20,7 @@ export default {
       break;
     case "*/20 * * * *": // At every 20th minute
       await ERP.Selling.SalesOrderService.cronSyncSalesOrdersToDatabase(env);
-      await ERP.Selling.CustomerService.cronSyncCustomersToDatabase(env);
+      // await ERP.Selling.CustomerService.cronSyncCustomersToDatabase(env);
       break;
     case "*/30 * * * *": // At every 30th minute
       await ERP.Contacts.AddressService.cronSyncAddressesToDatabase(env);

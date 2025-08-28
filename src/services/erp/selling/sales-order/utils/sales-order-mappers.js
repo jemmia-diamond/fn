@@ -1,7 +1,7 @@
 import { safeValue } from "src/services/utils/data-mappers";
 
-export const mapSalesOrderToDatabase = (salesOrder) => {
-  return {
+export const mapSalesOrdersToDatabase = (salesOrders) => {
+  return salesOrders.map((salesOrder) => ({
     name: salesOrder?.name || null,
     owner: salesOrder?.owner || null,
     creation: safeValue(salesOrder?.creation,"date"),
@@ -150,109 +150,16 @@ export const mapSalesOrderToDatabase = (salesOrder) => {
     source_name: safeValue(salesOrder?.source_name,"string"),
 
     // JSONB fields - Prisma will handle JSON conversion automatically
-    sales_team: safeValue(salesOrder?.sales_team,"string"),
-    ref_sales_orders: safeValue(salesOrder?.ref_sales_orders,"string"),
-    promotions: safeValue(salesOrder?.promotions,"string"),
-    product_categories: safeValue(salesOrder?.product_categories,"string"),
-    packed_items: safeValue(salesOrder?.packed_items,"string"),
-    taxes: safeValue(salesOrder?.taxes,"string"),
-    pricing_rules: safeValue(salesOrder?.pricing_rules,"string"),
-    payment_records: safeValue(salesOrder?.payment_records,"string"),
-    payment_schedule: safeValue(salesOrder?.payment_schedule,"string"),
-    policies: safeValue(salesOrder?.policies,"string"),
-    items: safeValue(salesOrder?.items,"string")
-  };
-};
-
-export const mapSalesOrderItemToDatabase = (salesOrderItem) => {
-  return ({
-    name: salesOrderItem?.name || null,
-    owner: salesOrderItem?.owner || null,
-    creation: safeValue(salesOrderItem?.creation,"date"),
-    modified: safeValue(salesOrderItem?.modified,"date"),
-    modified_by: safeValue(salesOrderItem?.modified_by,"string"),
-    docstatus: safeValue(salesOrderItem?.docstatus,"number"),
-    idx: safeValue(salesOrderItem?.idx,"number"),
-    item_name: safeValue(salesOrderItem?.item_name,"string"),
-    variant_title: safeValue(salesOrderItem?.variant_title,"string"),
-    sku: safeValue(salesOrderItem?.sku,"string"),
-    barcode: safeValue(salesOrderItem?.barcode,"string"),
-    haravan_variant_id: safeValue(salesOrderItem?.haravan_variant_id,"string"),
-    ensure_delivery_based_on_produced_serial_no: safeValue(salesOrderItem?.ensure_delivery_based_on_produced_serial_no,"string"),
-    is_stock_item: safeValue(salesOrderItem?.is_stock_item,"string"),
-    reserve_stock: safeValue(salesOrderItem?.reserve_stock,"string"),
-    qty: safeValue(salesOrderItem?.qty,"number"),
-    stock_uom: safeValue(salesOrderItem?.stock_uom,"string"),
-    uom: safeValue(salesOrderItem?.uom,"string"),
-    conversion_factor: safeValue(salesOrderItem?.conversion_factor,"number"),
-    stock_qty: safeValue(salesOrderItem?.stock_qty,"number"),
-    stock_reserved_qty: safeValue(salesOrderItem?.stock_reserved_qty,"number"),
-    price_list_rate: safeValue(salesOrderItem?.price_list_rate,"number"),
-    base_price_list_rate: safeValue(salesOrderItem?.base_price_list_rate,"number"),
-    discount_percentage: safeValue(salesOrderItem?.discount_percentage,"number"),
-    discount_amount: safeValue(salesOrderItem?.discount_amount,"number"),
-    distributed_discount_amount: safeValue(salesOrderItem?.distributed_discount_amount,"number"),
-    base_rate_with_margin: safeValue(salesOrderItem?.base_rate_with_margin,"number"),
-    margin_type: safeValue(salesOrderItem?.margin_type,"string"),
-    margin_rate_or_amount: safeValue(salesOrderItem?.margin_rate_or_amount,"number"),
-    rate_with_margin: safeValue(salesOrderItem?.rate_with_margin,"number"),
-    rate: safeValue(salesOrderItem?.rate,"number"),
-    amount: safeValue(salesOrderItem?.amount,"number"),
-    base_rate: safeValue(salesOrderItem?.base_rate,"number"),
-    base_amount: safeValue(salesOrderItem?.base_amount,"number"),
-    stock_uom_rate: safeValue(salesOrderItem?.stock_uom_rate,"number"),
-    is_free_item: safeValue(salesOrderItem?.is_free_item,"string"),
-    grant_commission: safeValue(salesOrderItem?.grant_commission,"string"),
-    net_rate: safeValue(salesOrderItem?.net_rate,"number"),
-    net_amount: safeValue(salesOrderItem?.net_amount,"number"),
-    base_net_rate: safeValue(salesOrderItem?.base_net_rate,"number"),
-    base_net_amount: safeValue(salesOrderItem?.base_net_amount,"number"),
-    billed_amt: safeValue(salesOrderItem?.billed_amt,"number"),
-    valuation_rate: safeValue(salesOrderItem?.valuation_rate,"number"),
-    gross_profit: safeValue(salesOrderItem?.gross_profit,"number"),
-    delivered_by_supplier: safeValue(salesOrderItem?.delivered_by_supplier,"string"),
-    weight_per_unit: safeValue(salesOrderItem?.weight_per_unit,"number"),
-    total_weight: safeValue(salesOrderItem?.total_weight,"number"),
-    against_blanket_order: safeValue(salesOrderItem?.against_blanket_order,"string"),
-    blanket_order_rate: safeValue(salesOrderItem?.blanket_order_rate,"number"),
-    actual_qty: safeValue(salesOrderItem?.actual_qty,"number"),
-    company_total_stock: safeValue(salesOrderItem?.company_total_stock,"number"),
-    projected_qty: safeValue(salesOrderItem?.projected_qty,"number"),
-    ordered_qty: safeValue(salesOrderItem?.ordered_qty,"number"),
-    planned_qty: safeValue(salesOrderItem?.planned_qty,"number"),
-    production_plan_qty: safeValue(salesOrderItem?.production_plan_qty,"number"),
-    work_order_qty: safeValue(salesOrderItem?.work_order_qty,"number"),
-    delivered_qty: safeValue(salesOrderItem?.delivered_qty,"number"),
-    produced_qty: safeValue(salesOrderItem?.produced_qty,"number"),
-    returned_qty: safeValue(salesOrderItem?.returned_qty,"number"),
-    picked_qty: safeValue(salesOrderItem?.picked_qty,"number"),
-    page_break: safeValue(salesOrderItem?.page_break,"string"),
-    item_tax_rate: safeValue(salesOrderItem?.item_tax_rate,"number"),
-    transaction_date: safeValue(salesOrderItem?.transaction_date,"date"),
-    cost_center: safeValue(salesOrderItem?.cost_center,"string"),
-    parent: safeValue(salesOrderItem?.parent,"string"),
-    parentfield: safeValue(salesOrderItem?.parentfield,"string"),
-    parenttype: safeValue(salesOrderItem?.parenttype,"string"),
-    doctype: safeValue(salesOrderItem?.doctype,"string")
-  });
-};
-
-export const mapSalesTeamToDatabase = (salesTeam) => {
-  return ({
-    name: safeValue(salesTeam?.name,"string"),
-    owner: safeValue(salesTeam?.owner,"string"),
-    creation: safeValue(salesTeam?.creation,"date"),
-    modified: safeValue(salesTeam?.modified,"date"),
-    modified_by: safeValue(salesTeam?.modified_by,"string"),
-    docstatus: safeValue(salesTeam?.docstatus,"number"),
-    idx: safeValue(salesTeam?.idx,"number"),
-    allocated_amount: safeValue(salesTeam?.allocated_amount,"number"),
-    allocated_percentage: safeValue(salesTeam?.allocated_percentage,"number"),
-    commission_rate: safeValue(salesTeam?.commission_rate,"number"),
-    incentive: safeValue(salesTeam?.incentive,"number"),
-    parentfield: safeValue(salesTeam?.parentfield,"string"),
-    parent: safeValue(salesTeam?.parent,"string"),
-    parenttype: safeValue(salesTeam?.parenttype,"string"),
-    sales_person: safeValue(salesTeam?.sales_person,"string")
-  });
+    sales_team: salesOrder?.sales_team || null,
+    ref_sales_orders: salesOrder?.ref_sales_orders || null,
+    promotions: salesOrder?.promotions || null,
+    product_categories: salesOrder?.product_categories || null,
+    packed_items: salesOrder?.packed_items || null,
+    taxes: salesOrder?.taxes || null,
+    pricing_rules: salesOrder?.pricing_rules || null,
+    payment_records: salesOrder?.payment_records || null,
+    payment_schedule: salesOrder?.payment_schedule || null,
+    policies: salesOrder?.policies || null,
+    items: salesOrder?.items || null
+  }));
 };
