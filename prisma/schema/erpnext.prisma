@@ -239,7 +239,7 @@ model erpnextLeadDemand {
   database_updated_at DateTime? @updatedAt @db.Timestamp(6)
 
   @@index([name])
-  @@map("lead_demands")s
+  @@map("lead_demands")
   @@schema("erpnext")
 }
 
