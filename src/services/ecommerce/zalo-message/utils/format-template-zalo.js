@@ -2,7 +2,7 @@ import {ZALO_TEMPLATE} from "services/ecommerce/zalo-message/enums/zalo-template
 import { ORDER_STATUS } from "src/services/ecommerce/zalo-message/enums/order-status.enum";
 
 export class GetTemplateZalo {
-  static getTemplateZalo(templateId, data) {
+  static getTemplateZalo(templateId, data, extraParams = {}) {
     switch (templateId) {
     case ZALO_TEMPLATE.orderConfirmed:
       return {
@@ -20,12 +20,13 @@ export class GetTemplateZalo {
         }
       };
     case ZALO_TEMPLATE.delivering:
+      const trackingRedirectPath = extraParams.trackingRedirectPath || "";
       return {
         phone: this.convertPhoneNumber(data.billing_address?.phone),
         templateData: {
           customer_name: data.billing_address?.name,
           order_number: String(data.id),
-          name: String(data.id)
+          name: trackingRedirectPath
         }
       };
     case ZALO_TEMPLATE.remindPay:
