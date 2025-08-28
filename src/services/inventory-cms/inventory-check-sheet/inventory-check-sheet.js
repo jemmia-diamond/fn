@@ -40,11 +40,11 @@ export default class InventoryCheckSheetService {
     const client = await InventoryCMSClient.createClient(env);
     const db = Database.instance(env);
 
-    const timeThreadhold = dayjs().utc().subtract(3, "hours").subtract(5, "minutes").format("YYYY-MM-DD HH:mm:ss");
+    const timeThreshold = dayjs().utc().subtract(3, "hours").subtract(5, "minutes").format("YYYY-MM-DD HH:mm:ss");
     const queryObject = {
       filter: {
         date_created: {
-          _gte: timeThreadhold
+          _gte: timeThreshold
         }
       },
       limit: 100
