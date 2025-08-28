@@ -10,26 +10,38 @@ export default class OrderNotificationService {
   }
 
   async sendOrderNotification(orderData) {
-    const source = orderData.source;
-    if (source === "web") {
-
-      const message = `
-      New order from web: ${orderData.order_number}
-      `.trim();
-
-      await this.larkClient.im.message.create({
-        params: {
-          receive_id_type: "chat_id"
-        },
-        data: {
-          receive_id: CHAT_GROUPS.ECOM_ORDER_NOTIFICATION.chat_id,
-          msg_type: "text",
-          content: JSON.stringify({
-            text: message
-          })
-        }
-      });
+    if (orderData.source !== "web") {
+      return;
     }
+
+    const customerData = orderData.customer;
+    if (customerData.first_name.includes("test") || customerData.last_name.includes("test")) {
+      return;
+    }
+
+    const products = orderData.line_items.map((item) => {
+      return `${item.quantity} x ${item.name} - ${item.price}`;
+    });
+    const message = `
+      [🔥NEW ORDER FROM WEB🔥]
+
+      Order number: ${orderData.order_number}
+      Product: ${products.join(", ")}
+      Total price: ${orderData.total_price}
+    `.trim();
+
+    await this.larkClient.im.message.create({
+      params: {
+        receive_id_type: "chat_id"
+      },
+      data: {
+        receive_id: CHAT_GROUPS.ECOM_ORDER_NOTIFICATION.chat_id,
+        msg_type: "text",
+        content: JSON.stringify({
+          text: message
+        })
+      }
+    });
   }
 
   static async orderNotificationDequeue(batch, env) {
