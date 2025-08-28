@@ -11,6 +11,10 @@ export const CHAT_GROUPS = {
     chat_id: "oc_ff35722f14a778cc671688d256d652ed",
     group_name: "[BOT] Kiểm soát tồn kho âm"
   },
+  CUSTOMER_INFO: {
+    chat_id: "oc_0252035b8460aa94568cdb70c88b983b",
+    group_name: "Thông Tin Khách Hàng"
+  },
   ECOM_ORDER_NOTIFICATION: {
     chat_id: "oc_2ec804ef9b7eb205424edfb92ec85e81",
     group_name: "[BOT] Thông báo đơn hàng ecom"
