@@ -1,6 +1,7 @@
 import PancakeClient from "pancake/pancake-client";
 import Database from "services/database";
 import LeadService from "services/erp/crm/lead/lead";
+import AIHUBClient from "services/clients/aihub";
 
 export default class ConversationService {
   constructor(env) {
@@ -169,6 +170,21 @@ export default class ConversationService {
       console.error(error);
       return;
     }
+  }
+
+  async summarizeLead(env, body) {
+    const { data } = body;
+    const { message } = data;
+
+    // Skip if the message is from admin
+    if (message?.from?.admin_id) { return; }
+
+    const aihub = new AIHUBClient(env);
+    return await aihub.makeRequest("/lead-info", {
+      "pageId": body.page_id,
+      "conversationId": message.conversation_id,
+      "webhookUrl": `${env.HOST}/webhook/ai-hub/erp/leads`
+    });
   }
 
   static async dequeueMessageSummaryQueue(batch, env) {
