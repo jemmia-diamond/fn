@@ -18,7 +18,7 @@ export default class OrderTrackingController {
     try {
       const orderDetails = await orderTrackingService.trackOrder(id, reqBearerToken);
       if (!orderDetails) {
-        return ctx.json({ error_code: "order_not_found" }, 400);
+        return ctx.json({ error_code: "order_not_found" }, 404);
       }
       return ctx.json(orderDetails);
     } catch (error) {
