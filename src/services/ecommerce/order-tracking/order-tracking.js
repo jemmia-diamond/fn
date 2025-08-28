@@ -23,7 +23,7 @@ export default class OrderTrackingService {
       if (reqBearerToken) {
         const firstOrder = await getInitialOrder(this.db, orderId);
         if (!firstOrder) {
-          throw new HTTPException(200, { message: "Cannot find first order" });
+          throw new HTTPException(400, { message: "first_order_not_found" });
         }
 
         const bearerToken = await this.env.BEARER_TOKEN_SECRET.get();
@@ -35,7 +35,7 @@ export default class OrderTrackingService {
         );
 
         if (parsedAccessToken !== reqBearerToken) {
-          throw new HTTPException(400, { message: "Invalid access token" });
+          throw new HTTPException(400, { message: "invalid_access_token" });
         }
       }
 

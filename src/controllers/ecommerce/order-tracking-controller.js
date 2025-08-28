@@ -18,15 +18,15 @@ export default class OrderTrackingController {
     try {
       const orderDetails = await orderTrackingService.trackOrder(id, reqBearerToken);
       if (!orderDetails) {
-        throw new HTTPException(200, { message: "Cannot find order" });
+        return ctx.json({ error_code: "order_not_found" }, 400);
       }
       return ctx.json(orderDetails);
     } catch (error) {
       if (error instanceof HTTPException) {
-        throw error;
+        return ctx.json({ error_code: error.message }, error.status );
       }
       console.error("Error tracking order:", error);
-      throw new HTTPException(500, { message: "Failed to track order" });
+      return ctx.json({ message: "Internal Server Error" }, 500 );
     }
   }
 }
