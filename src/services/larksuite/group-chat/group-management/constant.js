@@ -10,5 +10,9 @@ export const CHAT_GROUPS = {
   NEGATIVE_STOCK_ORDERING_CONTROLL: {
     chat_id: "oc_ff35722f14a778cc671688d256d652ed",
     group_name: "[BOT] Kiểm soát tồn kho âm"
+  },
+  ECOM_ORDER_NOTIFICATION: {
+    chat_id: "oc_2ec804ef9b7eb205424edfb92ec85e81",
+    group_name: "[BOT] Thông báo đơn hàng ecom"
   }
 };
