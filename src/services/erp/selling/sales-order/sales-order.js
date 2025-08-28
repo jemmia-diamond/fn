@@ -1,21 +1,16 @@
 import FrappeClient from "src/frappe/frappe-client";
 import { convertIsoToDatetime } from "src/frappe/utils/datetime";
+import LarksuiteService from "services/larksuite/lark";
 import Database from "src/services/database";
-import dayjs from "dayjs";
-import utc from "dayjs/plugin/utc.js";
-
 import AddressService from "src/services/erp/contacts/address/address";
 import ContactService from "src/services/erp/contacts/contact/contact";
 import CustomerService from "src/services/erp/selling/customer/customer";
+import { composeSalesOrderNotification, extractPromotions, validateOrderInfo } from "services/erp/selling/sales-order/utils/sales-order-notification";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc.js";
+import { CHAT_GROUPS} from "services/larksuite/group-chat/group-management/constant";
 
-import {
-  fetchSalesOrdersFromERP,
-  fetchSalesOrderItemsFromERP,
-  fetchSalesTeamFromERP,
-  saveSalesOrdersToDatabase,
-  saveSalesOrderItemsToDatabase,
-  saveSalesTeamToDatabase
-} from "src/services/erp/selling/sales-order/utils/sales-order-helpers";
+import { fetchSalesOrdersFromERP, saveSalesOrdersToDatabase } from "src/services/erp/selling/sales-order/utils/sales-order-helpers";
 
 dayjs.extend(utc);
 
@@ -151,6 +146,56 @@ export default class SalesOrderService {
     };
   };
 
+  async sendNotificationToLark(salesOrderData) {
+    const larkClient = LarksuiteService.createClient(this.env);
+
+    const notificationTracking = await this.db.erpnextSalesOrderNotificationTracking.findFirst({
+      where: {
+        order_name: salesOrderData.name
+      }
+    });
+
+    if (notificationTracking) {
+      return { success: false, message: "Đơn hàng này đã được gửi thông báo từ trước đó!" };
+    }
+
+    const { isValid, message } = validateOrderInfo(salesOrderData);
+    if (!isValid) {
+      return { success: false, message: message };
+    }
+
+    const promotionNames = extractPromotions(salesOrderData);
+    const promotionData = await this.frappeClient.getList("Promotion", {
+      filters: [["name", "in", promotionNames]]
+    });
+    const content = composeSalesOrderNotification(salesOrderData, promotionData);
+
+    const _response = await larkClient.im.message.create({
+      params: {
+        receive_id_type: "chat_id"
+      },
+      data: {
+        receive_id: CHAT_GROUPS.CUSTOMER_INFO.chat_id,
+        msg_type: "text",
+        content: JSON.stringify({
+          text: content
+        })
+      }
+    });
+
+    const messageId = _response.data.message_id;
+
+    await this.db.erpnextSalesOrderNotificationTracking.create({
+      data: {
+        lark_message_id: messageId,
+        order_name: salesOrderData.name,
+        haravan_order_id: salesOrderData.haravan_order_id
+      }
+    });
+
+    return { success: true, message: "Đã gửi thông báo thành công!" };
+  }
+
   async syncSalesOrdersToDatabase(options = {}) {
     // minutesBack = 10 is default value for first sync when no create kv
     const { isSyncType = SalesOrderService.SYNC_TYPE_MANUAL, minutesBack = 10 } = options;
@@ -168,22 +213,8 @@ export default class SalesOrderService {
 
     try {
       const salesOrders = await fetchSalesOrdersFromERP(this.frappeClient, this.doctype, fromDate, toDate, SalesOrderService.ERPNEXT_PAGE_SIZE);
-      const salesOrdersNames = salesOrders.map(salesOrder => salesOrder.name).flat();
-
-      const salesOrdersItems = await fetchSalesOrderItemsFromERP(this.frappeClient, salesOrdersNames);
-      const salesTeams = await fetchSalesTeamFromERP(this.frappeClient, salesOrdersNames);
-
-      // Save Sales Orders
       if (Array.isArray(salesOrders) && salesOrders.length > 0) {
         await saveSalesOrdersToDatabase(this.db, salesOrders);
-      }
-      // Save Sales Order Items
-      if (Array.isArray(salesOrdersItems) && salesOrdersItems.length > 0) {
-        await saveSalesOrderItemsToDatabase(this.db, salesOrdersItems);
-      }
-      // Save Sales Team
-      if (Array.isArray(salesTeams) && salesTeams.length > 0) {
-        await saveSalesTeamToDatabase(this.db, salesTeams);
       }
       if (isSyncType === SalesOrderService.SYNC_TYPE_AUTO) {
         await kv.put(KV_KEY, toDate);

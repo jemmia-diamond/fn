@@ -1,8 +1,14 @@
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
-import { mapSalesOrderToDatabase, mapSalesOrderItemToDatabase, mapSalesTeamToDatabase } from "src/services/erp/selling/sales-order/utils/sales-order-mappers";
+import { Prisma } from "@prisma-cli";
+import { randomUUID } from "crypto";
+import { escapeSqlValue } from "src/services/utils/sql-helpers";
+import { mapSalesOrdersToDatabase } from "src/services/erp/selling/sales-order/utils/sales-order-mappers";
+import { fetchChildRecordsFromERP } from "src/services/utils/sql-helpers";
 
 dayjs.extend(utc);
+
+const CHUNK_SIZE = 500;
 
 export async function fetchSalesOrdersFromERP(frappeClient, doctype, fromDate, toDate, pageSize) {
   try {
@@ -19,7 +25,33 @@ export async function fetchSalesOrdersFromERP(frappeClient, doctype, fromDate, t
         limit_page_length: pageSize,
         order_by: "creation desc"
       });
+
       if (!Array.isArray(batch) || batch.length === 0) break;
+
+      // fetch data from child tables of sales order
+      const orderNames = batch.map(item => item.name);
+      const salesOrderItems = await fetchChildRecordsFromERP(frappeClient, orderNames, "tabSales Order Item");
+      const salesTeams = await fetchChildRecordsFromERP(frappeClient, orderNames, "tabSales Team");
+      const salesOrderPolicies = await fetchChildRecordsFromERP(frappeClient, orderNames, "tabSales Order Policy");
+      const salesOrderPromotions = await fetchChildRecordsFromERP(frappeClient, orderNames, "tabSales Order Promotion");
+
+      // group records by sales order name
+      const groupByParent = arr => arr.reduce((acc, item) => {
+        (acc[item.parent] = acc[item.parent] || []).push(item);
+        return acc;
+      }, {});
+      const salesOrderItemsMap = groupByParent(salesOrderItems);
+      const salesTeamMap = groupByParent(salesTeams);
+      const salesOrderPoliciesMap = groupByParent(salesOrderPolicies);
+      const salesOrderPromotionsMap = groupByParent(salesOrderPromotions);
+
+      // add sales order items and sales team to each sales order
+      batch.forEach(item => {
+        item.items = salesOrderItemsMap[item.name] || [];
+        item.sales_team = salesTeamMap[item.name] || [];
+        item.policies = salesOrderPoliciesMap[item.name] || [];
+        item.promotions = salesOrderPromotionsMap[item.name] || [];
+      });
 
       allSalesOrders.push(...batch);
       start += pageSize;
@@ -31,56 +63,57 @@ export async function fetchSalesOrdersFromERP(frappeClient, doctype, fromDate, t
   }
 }
 
-export async function fetchSalesOrderItemsFromERP(frappeClient, salesOrderNames) {
-  if (!Array.isArray(salesOrderNames) || salesOrderNames.length === 0) {
-    return [];
-  }
-  const quotedNames = salesOrderNames.map(name => `"${name}"`).join(", ");
-  const sql = `SELECT * FROM \`tabSales Order Item\` WHERE parent IN (${quotedNames})`;
-  const salesOrderItems = await frappeClient.executeSQL(sql);
-  return salesOrderItems || [];
-}
-
-export async function fetchSalesTeamFromERP(frappeClient, salesOrderNames) {
-  if (!Array.isArray(salesOrderNames) || salesOrderNames.length === 0) {
-    return [];
-  }
-  const quotedNames = salesOrderNames.map(name => `"${name}"`).join(", ");
-  const sql = `SELECT * FROM \`tabSales Team\` WHERE parent IN (${quotedNames})`;
-  const salesTeams = await frappeClient.executeSQL(sql);
-  return salesTeams || [];
-}
-
 export async function saveSalesOrdersToDatabase(db, salesOrders) {
-  const mappedSalesOrders = salesOrders.map(mapSalesOrderToDatabase);
-  for (const salesOrder of mappedSalesOrders) {
-    await db.erpnextSalesOrders.upsert({
-      where: { name: salesOrder.name },
-      update: salesOrder,
-      create: salesOrder
-    });
+  try {
+    const mappedData = mapSalesOrdersToDatabase(salesOrders);
+    if (mappedData.length === 0) {
+      return;
+    }
+
+    // Process in chunks to avoid SQL statement size limits
+    for (let i = 0; i < mappedData.length; i += CHUNK_SIZE) {
+      const chunk = mappedData.slice(i, i + CHUNK_SIZE);
+
+      // Get fields including both database timestamp columns for INSERT
+      const fields = ["uuid", ...Object.keys(chunk[0]).filter(field =>
+        field !== "database_created_at" && field !== "database_updated_at"
+      ), "database_created_at", "database_updated_at"];
+      const fieldsSql = fields.map(field => `"${field}"`).join(", ");
+
+      // Create VALUES clause with generated UUIDs and timestamps
+      const currentTimestamp = new Date();
+      const values = chunk.map(salesOrder => {
+        const salesOrderWithTimestamps = {
+          uuid: randomUUID(),
+          ...salesOrder,
+          database_created_at: currentTimestamp,
+          database_updated_at: currentTimestamp
+        };
+        const fieldValues = fields.map(field => escapeSqlValue(salesOrderWithTimestamps[field]));
+        return `(${fieldValues.join(", ")})`;
+      }).join(",\n  ");
+
+      // Create UPDATE SET clause for ON CONFLICT (exclude "name", "uuid", and "database_created_at")
+      const updateSetSql = fields
+        .filter(field => field !== "name" && field !== "uuid" && field !== "database_created_at")
+        .map(field => {
+          if (field === "database_updated_at") {
+            return `"${field}" = CURRENT_TIMESTAMP`;
+          }
+          return `"${field}" = EXCLUDED."${field}"`;
+        })
+        .join(", ");
+
+      const query = `
+        INSERT INTO "erpnext"."sales_orders" (${fieldsSql})
+        VALUES ${values}
+        ON CONFLICT (name) DO UPDATE SET
+        ${updateSetSql};
+      `;
+      await db.$queryRaw(Prisma.raw(query));
+    }
+
+  } catch (error) {
+    console.error("Error saving sales orders to database:", error.message);
   }
 }
-
-export async function saveSalesOrderItemsToDatabase(db, salesOrderItems) {
-  const mappedSalesOrderItems = salesOrderItems.map(mapSalesOrderItemToDatabase);
-  for (const salesOrderItem of mappedSalesOrderItems) {
-    await db.erpnextSalesOrderItem.upsert({
-      where: { name: salesOrderItem.name },
-      update: salesOrderItem,
-      create: salesOrderItem
-    });
-  }
-}
-
-export async function saveSalesTeamToDatabase(db, salesTeam) {
-  const mappedSalesTeam = salesTeam.map(mapSalesTeamToDatabase);
-  for (const salesTeam of mappedSalesTeam) {
-    await db.erpnextSalesTeam.upsert({
-      where: { name: salesTeam.name },
-      update: salesTeam,
-      create: salesTeam
-    });
-  }
-}
-

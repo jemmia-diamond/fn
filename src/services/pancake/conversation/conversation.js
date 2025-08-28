@@ -207,9 +207,6 @@ export default class ConversationService {
       const body = message.body;
 
       await Promise.all([
-        conversationService.summarizeLead(env, body).catch(err =>
-          console.error(`summarizeLead failed: ${err}`)
-        ),
         conversationService.processLastCustomerMessage(body.data).catch(err =>
           console.error(`processLastCustomerMessage failed: ${err}`)
         ),

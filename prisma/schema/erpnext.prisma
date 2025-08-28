@@ -228,112 +228,6 @@ model erpnextSalesOrders {
   @@schema("erpnext")
 }
 
-model erpnextSalesOrderItem {
-  uuid                                        String    @id @default(uuid()) @db.Uuid
-  name                                        String?   @unique @db.VarChar(140)
-  owner                                       String?   @db.VarChar(140)
-  creation                                    DateTime? @db.Timestamp(6)
-  modified                                    DateTime? @db.Timestamp(6)
-  modified_by                                 String?   @db.VarChar(140)
-  docstatus                                   Int?      @db.SmallInt
-  idx                                         Int?      @db.SmallInt
-  item_name                                   String?   @db.VarChar(200)
-  variant_title                               String?   @db.VarChar(200)
-  sku                                         String?   @db.VarChar(140)
-  barcode                                     String?   @db.VarChar(140)
-  haravan_variant_id                          BigInt?
-  ensure_delivery_based_on_produced_serial_no Int?      @db.SmallInt
-  is_stock_item                               Int?      @db.SmallInt
-  reserve_stock                               Int?      @db.SmallInt
-  qty                                         Int?
-  stock_uom                                   String?   @db.VarChar(50)
-  uom                                         String?   @db.VarChar(50)
-  conversion_factor                           Decimal?  @db.Decimal(18, 6)
-  stock_qty                                   Int?
-  stock_reserved_qty                          Int?
-  price_list_rate                             Decimal?  @db.Decimal(18, 6)
-  base_price_list_rate                        Decimal?  @db.Decimal(18, 6)
-  discount_percentage                         Decimal?  @db.Decimal(18, 6)
-  discount_amount                             Decimal?  @db.Decimal(18, 6)
-  distributed_discount_amount                 Decimal?  @db.Decimal(18, 6)
-  base_rate_with_margin                       Decimal?  @db.Decimal(18, 6)
-  margin_type                                 String?   @db.VarChar(50)
-  margin_rate_or_amount                       Decimal?  @db.Decimal(18, 6)
-  rate_with_margin                            Decimal?  @db.Decimal(18, 6)
-  rate                                        Decimal?  @db.Decimal(18, 6)
-  amount                                      Decimal?  @db.Decimal(18, 6)
-  base_rate                                   Decimal?  @db.Decimal(18, 6)
-  base_amount                                 Decimal?  @db.Decimal(18, 6)
-  stock_uom_rate                              Decimal?  @db.Decimal(18, 6)
-  is_free_item                                Int?      @db.SmallInt
-  grant_commission                            Int?      @db.SmallInt
-  net_rate                                    Decimal?  @db.Decimal(18, 6)
-  net_amount                                  Decimal?  @db.Decimal(18, 6)
-  base_net_rate                               Decimal?  @db.Decimal(18, 6)
-  base_net_amount                             Decimal?  @db.Decimal(18, 6)
-  billed_amt                                  Decimal?  @db.Decimal(18, 6)
-  valuation_rate                              Decimal?  @db.Decimal(18, 6)
-  gross_profit                                Decimal?  @db.Decimal(18, 6)
-  delivered_by_supplier                       Int?      @db.SmallInt
-  weight_per_unit                             Decimal?  @db.Decimal(18, 6)
-  total_weight                                Decimal?  @db.Decimal(18, 6)
-  against_blanket_order                       Int?      @db.SmallInt
-  blanket_order_rate                          Decimal?  @db.Decimal(18, 6)
-  actual_qty                                  Int?
-  company_total_stock                         Int?
-  projected_qty                               Int?
-  ordered_qty                                 Int?
-  planned_qty                                 Int?
-  production_plan_qty                         Int?
-  work_order_qty                              Int?
-  delivered_qty                               Int?
-  produced_qty                                Int?
-  returned_qty                                Int?
-  picked_qty                                  Int?
-  page_break                                  Int?      @db.SmallInt
-  item_tax_rate                               String?
-  transaction_date                            DateTime? @db.Date
-  cost_center                                 String?   @db.VarChar(140)
-  parent                                      String?   @db.VarChar(140)
-  parentfield                                 String?   @db.VarChar(140)
-  parenttype                                  String?   @db.VarChar(140)
-  doctype                                     String?   @db.VarChar(140)
-  database_created_at                         DateTime? @default(now()) @db.Timestamp(6)
-  database_updated_at                         DateTime? @updatedAt @db.Timestamp(6)
-
-  @@index([barcode])
-  @@index([haravan_variant_id])
-  @@index([item_name])
-  @@index([parent])
-  @@index([sku])
-  @@map("sales_order_items")
-  @@schema("erpnext")
-}
-
-model erpnextSalesTeam {
-  uuid                                        String    @id @default(uuid()) @db.Uuid
-  name                                        String?   @unique @db.VarChar(140)
-  owner                                       String?   @db.VarChar(140)
-  creation                                    DateTime? @db.Timestamp(6)
-  modified                                    DateTime? @db.Timestamp(6)
-  modified_by                                 String?   @db.VarChar(140)
-  docstatus                                   Int?      @db.SmallInt
-  idx                                         Int?      @db.SmallInt
-  allocated_amount                            Decimal?  @db.Decimal(18, 6)
-  allocated_percentage                        Decimal?  @db.Decimal(5, 2)
-  commission_rate                             String?   @db.VarChar(140)
-  incentive                                   Decimal?  @db.Decimal(18, 6)
-  parentfield                                 String?   @db.VarChar(140)
-  parent                                      String?   @db.VarChar(140)
-  parenttype                                  String?   @db.VarChar(140)
-  sales_person                                String?   @db.VarChar(140)
-  database_created_at                         DateTime? @default(now()) @db.Timestamp(6)
-  database_updated_at                         DateTime? @updatedAt @db.Timestamp(6)
-
-  @@map("sales_teams")
-  @@schema("erpnext")
-}
-
 model erpnextLeadDemand {
   uuid                String    @id @default(uuid()) @db.Uuid
   name                String    @unique @db.VarChar(255)
@@ -604,6 +498,18 @@ model erpnextAddress {
   database_updated_at     DateTime? @updatedAt @db.Timestamp(6)
 
   @@map("addresses")
+  @@schema("erpnext")
+}
+
+model erpnextSalesOrderNotificationTracking {
+  uuid                String   @id @default(uuid()) @db.Uuid
+  order_name          String
+  haravan_order_id    String
+  lark_message_id     String
+  database_created_at DateTime @default(now())
+  database_updated_at DateTime @updatedAt
+
+  @@map("sales_order_notification_tracking")
   @@schema("erpnext")
 }
 

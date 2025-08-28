@@ -10,7 +10,7 @@ export default class SendZaloMessage {
     this.env = env;
   }
   static whitelistPhones = ["0862098011", "0829976232"];
-  static whitelistSource = "web";
+  static whitelistSource = ["web"];
 
   static async sendZaloMessage(phone, templateId, templateData, env) {
     try {
@@ -134,9 +134,8 @@ export default class SendZaloMessage {
     for (const message of messages) {
 
       try {
-        const payload = message.body;
-        const orderData = payload.data;
-        const dispatchType = payload.dispatchType; // 'DELAYED'
+        const orderData = message.body;
+        const dispatchType = orderData.dispatchType; // 'DELAYED'
 
         if (dispatchType !== "DELAYED") {
           continue;
