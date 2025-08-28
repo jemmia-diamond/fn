@@ -3,9 +3,9 @@ model inventoryCMSInventoryCheckSheet {
     id                  Int         @unique
     status              String?
     sort                String?
-    user_created        DateTime?
+    user_created        String?
     date_created        DateTime?
-    user_updated        DateTime?
+    user_updated        String?
     date_updated        DateTime?
     warehouse           String?
     staff               Int?
@@ -26,12 +26,12 @@ model inventoryCMSInventoryCheckLine {
     id                      Int         @unique
     status                  String?
     sort                    String?
-    user_created            DateTime?
+    user_created            String?
     date_created            DateTime?
-    user_updated            DateTime?
+    user_updated            String?
     date_updated            DateTime?
     product_name            String?
-    product_id              Int?
+    product_id              String?
     variant_id              Int?              
     count_in_book           Int?
     count_for_real          Int?

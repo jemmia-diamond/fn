@@ -1,4 +1,4 @@
-import DirectusClient from "services/inventory-cms/directus-client/directus-client";
+import InventoryCMSClient from "services/inventory-cms/inventory-cms-client/inventory-cms-client";
 import { COLLECTIONS } from "services/inventory-cms/collections/constant";
 import { readItems } from "@directus/sdk";
 import Database from "services/database";
@@ -37,8 +37,10 @@ export default class InventoryCheckSheetService {
   }
 
   static async syncInventoryCheckSheetToDatabase(env) {
-    const client = await DirectusClient.createClient(env);
-    const timeThreadhold = dayjs().utc().subtract(6, "hours").subtract(5, "minutes").format("YYYY-MM-DD HH:mm:ss");
+    const client = await InventoryCMSClient.createClient(env);
+    const db = Database.instance(env);
+
+    const timeThreadhold = dayjs().utc().subtract(3, "hours").subtract(5, "minutes").format("YYYY-MM-DD HH:mm:ss");
     const queryObject = {
       filter: {
         date_created: {
@@ -63,6 +65,35 @@ export default class InventoryCheckSheetService {
       } while (items && items.length > 0);
     } catch (error) {
       console.error(error);
+    }
+
+    for (const sheet of inventoryCheckSheets) {
+      await db.inventoryCMSInventoryCheckSheet.upsert({
+        where: {
+          id: sheet.id
+        },
+        update: {
+          status: sheet.status
+        },
+        create: {
+          id: sheet.id,
+          status: sheet.status,
+          sort: sheet.sort,
+          user_created: sheet.user_created,
+          date_created: sheet.date_created,
+          user_updated: sheet.user_updated,
+          date_updated: sheet.date_updated,
+          warehouse: sheet.warehouse,
+          staff: sheet.staff,
+          result: sheet.result,
+          code: sheet.code,
+          warehouse_id: sheet.warehouse_id,
+          count_in_book: sheet.count_in_book,
+          count_for_real: sheet.count_for_real,
+          extra: sheet.extra,
+          lines: sheet.lines
+        }
+      });
     }
   }
 }

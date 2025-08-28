@@ -1,15 +1,17 @@
-import DirectusClient from "services/inventory-cms/directus-client/directus-client";
+import InventoryCMSClient from "services/inventory-cms/inventory-cms-client/inventory-cms-client";
 import { COLLECTIONS } from "services/inventory-cms/collections/constant";
 import { readItems } from "@directus/sdk";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
+import Database from "services/database";
 
 dayjs.extend(utc);
 
 export default class InventoryCheckLineService {
   static async syncInventoryCheckLineToDatabase(env) {
-    const client = await DirectusClient.createClient(env);
-    const timeThreadhold = dayjs().utc().subtract(5, "days").subtract(5, "minutes").format("YYYY-MM-DD HH:mm:ss");
+    const client = await InventoryCMSClient.createClient(env);
+    const db = Database.instance(env);
+    const timeThreadhold = dayjs().utc().subtract(5, "hours").subtract(5, "minutes").format("YYYY-MM-DD HH:mm:ss");
     const queryObject = {
       filter: {
         date_created: {
@@ -34,6 +36,41 @@ export default class InventoryCheckLineService {
       } while (items && items.length > 0);
     } catch (error) {
       console.error(error);
+    }
+
+    for (const line of inventoryCheckLines.slice(0, 100)) {
+      await db.inventoryCMSInventoryCheckLine.upsert({
+        where: {
+          id: line.id
+        },
+        update: {
+          status: line.status
+        },
+        create: {
+          id: line.id,
+          status: line.status,
+          sort: line.sort,
+          user_created: line.user_created,
+          date_created: line.date_created,
+          user_updated: line.user_updated,
+          date_updated: line.date_updated,
+          product_name: line.product_name,
+          product_id: line.product_id,
+          variant_id: line.variant_id,
+          count_in_book: line.count_in_book,
+          count_for_real: line.count_for_real,
+          checked_status: line.checked_status,
+          sheet_id: line.sheet_id,
+          variant_name: line.variant_name,
+          product_image: line.product_image,
+          sku: line.sku,
+          count_extra_for_real: line.count_extra_for_real,
+          barcode: line.barcode,
+          category: line.category,
+          count_in_ordered: line.count_in_ordered,
+          rfid_tags: line.rfid_tags
+        }
+      });
     }
   }
 }
