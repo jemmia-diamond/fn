@@ -8,7 +8,8 @@ import Haravan from "src/services/haravan";
 
 export default {
   queue: async (batch, env) => {
-    console.log(JSON.stringify(batch.messages));
+    console.log(`[CLOUDFLARE DEQUEUING]: ${JSON.stringify(batch)}`);
+
     switch (batch.queue) {
     case "order":
       await Ecommerce.OrderNotificationService.orderNotificationDequeue(batch, env);
