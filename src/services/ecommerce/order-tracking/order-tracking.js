@@ -9,7 +9,6 @@ import { OrderTimelineStatus } from "services/ecommerce/order-tracking/enums/ord
 import HaravanClient from "services/haravan/haravan-client";
 import { getInitialOrder } from "services/ecommerce/order-tracking/queries/get-initial-order";
 import crypto from "crypto";
-import { HTTPException } from "hono/http-exception";
 
 export default class OrderTrackingService {
   constructor(env) {
@@ -19,23 +18,21 @@ export default class OrderTrackingService {
 
   async trackOrder(orderId, reqBearerToken) {
     try {
-
+      let isAuthorized = false;
       if (reqBearerToken) {
         const firstOrder = await getInitialOrder(this.db, orderId);
-        if (!firstOrder) {
-          throw new HTTPException(400, { message: "first_order_not_found" });
-        }
+        if (firstOrder) {
+          const bearerToken = await this.env.BEARER_TOKEN_SECRET.get();
+          const parsedAccessToken = this.createTokenForOrderTracking({
+            order_id: firstOrder.id,
+            order_number: firstOrder.order_number
+          },
+          bearerToken
+          );
 
-        const bearerToken = await this.env.BEARER_TOKEN_SECRET.get();
-        const parsedAccessToken = this.createTokenForOrderTracking({
-          order_id: firstOrder.id,
-          order_number: firstOrder.order_number
-        },
-        bearerToken
-        );
-
-        if (parsedAccessToken !== reqBearerToken) {
-          throw new HTTPException(400, { message: "invalid_access_token" });
+          if (parsedAccessToken === reqBearerToken) {
+            isAuthorized = true;
+          }
         }
       }
 
@@ -56,7 +53,7 @@ export default class OrderTrackingService {
         console.error(e);
       }
 
-      return formatOrderTrackingResult(orderInfo, nhattinTrackInfo, reqBearerToken !== null);
+      return formatOrderTrackingResult(orderInfo, nhattinTrackInfo, isAuthorized);
     } catch (error) {
       console.error("Error tracking order:", error);
       throw error;
