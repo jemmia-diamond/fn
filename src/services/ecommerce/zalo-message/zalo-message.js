@@ -4,6 +4,7 @@ import { ZALO_TEMPLATE } from "services/ecommerce/zalo-message/enums/zalo-templa
 import HaravanAPIClient from "services/haravan/api-client/api-client";
 import { getLatestOrderId } from "services/ecommerce/order-tracking/queries/get-latest-orderid";
 import Database from "services/database";
+import crypto from "crypto";
 
 export default class SendZaloMessage {
   constructor(env) {
@@ -84,8 +85,9 @@ export default class SendZaloMessage {
         const templateId = ZALO_TEMPLATE.delivering;
 
         const bearerToken = await env.BEARER_TOKEN_SECRET.get();
+        const hashedToken =  this.createHashForOrderTracking({ order_id: order.id }, bearerToken);
         const extraParams = {
-          trackingRedirectPath: `order-tracking?order_id=${order.id}&token=${bearerToken}`
+          trackingRedirectPath: `order-tracking?order_id=${order.id}&token=${hashedToken}`
         };
 
         const result = GetTemplateZalo.getTemplateZalo(templateId, order, extraParams);
@@ -193,5 +195,19 @@ export default class SendZaloMessage {
         console.error("Failed to process order for Zalo remind pay message:", error);
       }
     }
+  }
+
+  static createHashForOrderTracking(payloadObject, secret) {
+    const hashPayload = JSON.stringify(payloadObject);
+    const hashData = `${hashPayload}`;
+    const hashedToken =  this.generateHash(hashData, secret);
+    return hashedToken;
+  }
+
+  static generateHash(data, secret) {
+    return crypto
+      .createHmac("sha256", secret)
+      .update(data)
+      .digest("hex");
   }
 }
