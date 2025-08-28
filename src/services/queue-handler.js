@@ -11,6 +11,7 @@ export default {
     console.log(JSON.stringify(batch.messages));
     switch (batch.queue) {
     case "order":
+      await Ecommerce.OrderNotificationService.orderNotificationDequeue(batch, env);
       await Ecommerce.SendZaloMessage.dequeueSendZaloDeliveryMessageQueue(batch, env);
       await Haravan.OrderModule.OrderService.dequeueOrderQueue(batch, env);
       await ProductQuote.ProductQuoteOrderService.dequeueOrderQueue(batch, env);
