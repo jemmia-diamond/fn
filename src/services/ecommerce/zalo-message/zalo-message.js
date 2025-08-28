@@ -4,6 +4,8 @@ import { ZALO_TEMPLATE } from "services/ecommerce/zalo-message/enums/zalo-templa
 import HaravanAPIClient from "services/haravan/api-client/api-client";
 import { getLatestOrderId } from "services/ecommerce/order-tracking/queries/get-latest-orderid";
 import Database from "services/database";
+import crypto from "crypto";
+import { getInitialOrder } from "services/ecommerce/order-tracking/queries/get-initial-order";
 
 export default class SendZaloMessage {
   constructor(env) {
@@ -76,15 +78,27 @@ export default class SendZaloMessage {
           continue;
         }
 
-        const madeOrderInDelivery = await this.makeOrderInDelivery(String(order.id), db);
-        if (!madeOrderInDelivery) {
+        // Retrieve oldest order ID in case the order has been re-ordered
+        const firstOrder = await getInitialOrder(db, order.id);
+        if (!firstOrder) {
           continue;
         }
 
         const templateId = ZALO_TEMPLATE.delivering;
-        const result = GetTemplateZalo.getTemplateZalo(templateId, order);
+
+        const bearerToken = await env.BEARER_TOKEN_SECRET.get();
+        const accessToken =  this.createTokenForOrderTracking({
+          order_id: firstOrder.id,
+          order_number: firstOrder.order_number
+        }, bearerToken);
+        const extraParams = {
+          trackingRedirectPath: `order-tracking?order_id=${firstOrder.id}&token=${accessToken}`
+        };
+
+        const result = GetTemplateZalo.getTemplateZalo(templateId, order, extraParams);
         if (result) {
           await this.sendZaloMessage(result.phone, templateId, result.templateData, env);
+          await this.makeOrderInDelivery(String(firstOrder.id), db);
         }
       } catch (error) {
         console.error("Failed to process order for Zalo delivery message:", error);
@@ -186,5 +200,24 @@ export default class SendZaloMessage {
         console.error("Failed to process order for Zalo remind pay message:", error);
       }
     }
+  }
+
+  static createTokenForOrderTracking(payloadObject, secret) {
+    const payloadString = `${payloadObject.order_id}|${payloadObject.order_number}|${JSON.stringify(payloadObject)}`;
+    const base64Payload = Buffer.from(payloadString).toString("base64url");
+    const hashedToken = this.createHashForOrderTracking(payloadString, secret);
+    return `${base64Payload}.${hashedToken}`;
+  }
+
+  static createHashForOrderTracking(payloadString, secret) {
+    const hashedToken =  this.generateHash(payloadString, secret);
+    return hashedToken;
+  }
+
+  static generateHash(data, secret) {
+    return crypto
+      .createHmac("sha256", secret)
+      .update(data)
+      .digest("hex");
   }
 }

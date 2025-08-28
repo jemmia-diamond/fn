@@ -20,7 +20,7 @@ export async function fetchSalesOrdersFromERP(frappeClient, doctype, fromDate, t
     // get list of sales orders
     while (true) {
       const batch = await frappeClient.getList(doctype, {
-        filters,
+        filters: filters,
         limit_start: start,
         limit_page_length: pageSize,
         order_by: "creation desc"
