@@ -82,7 +82,13 @@ export default class SendZaloMessage {
         }
 
         const templateId = ZALO_TEMPLATE.delivering;
-        const result = GetTemplateZalo.getTemplateZalo(templateId, order);
+
+        const bearerToken = await env.BEARER_TOKEN_SECRET.get();
+        const extraParams = {
+          trackingRedirectPath: `order-tracking?order_id=${order.id}&token=${bearerToken}`
+        };
+
+        const result = GetTemplateZalo.getTemplateZalo(templateId, order, extraParams);
         if (result) {
           await this.sendZaloMessage(result.phone, templateId, result.templateData, env);
         }
