@@ -15,7 +15,7 @@ import { fetchSalesOrdersFromERP, saveSalesOrdersToDatabase } from "src/services
 dayjs.extend(utc);
 
 export default class SalesOrderService {
-  static ERPNEXT_PAGE_SIZE = 10;
+  static ERPNEXT_PAGE_SIZE = 100;
   static SYNC_TYPE_AUTO = 1; // auto sync when deploy app
   static SYNC_TYPE_MANUAL = 0; // manual sync when call function
 
