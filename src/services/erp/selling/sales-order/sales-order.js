@@ -10,14 +10,7 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import { CHAT_GROUPS} from "services/larksuite/group-chat/group-management/constant";
 
-import {
-  fetchSalesOrdersFromERP,
-  fetchSalesOrderItemsFromERP,
-  fetchSalesTeamFromERP,
-  saveSalesOrdersToDatabase,
-  saveSalesOrderItemsToDatabase,
-  saveSalesTeamToDatabase
-} from "src/services/erp/selling/sales-order/utils/sales-order-helpers";
+import { fetchSalesOrdersFromERP, saveSalesOrdersToDatabase } from "src/services/erp/selling/sales-order/utils/sales-order-helpers";
 
 dayjs.extend(utc);
 
@@ -220,22 +213,8 @@ export default class SalesOrderService {
 
     try {
       const salesOrders = await fetchSalesOrdersFromERP(this.frappeClient, this.doctype, fromDate, toDate, SalesOrderService.ERPNEXT_PAGE_SIZE);
-      const salesOrdersNames = salesOrders.map(salesOrder => salesOrder.name).flat();
-
-      const salesOrdersItems = await fetchSalesOrderItemsFromERP(this.frappeClient, salesOrdersNames);
-      const salesTeams = await fetchSalesTeamFromERP(this.frappeClient, salesOrdersNames);
-
-      // Save Sales Orders
       if (Array.isArray(salesOrders) && salesOrders.length > 0) {
         await saveSalesOrdersToDatabase(this.db, salesOrders);
-      }
-      // Save Sales Order Items
-      if (Array.isArray(salesOrdersItems) && salesOrdersItems.length > 0) {
-        await saveSalesOrderItemsToDatabase(this.db, salesOrdersItems);
-      }
-      // Save Sales Team
-      if (Array.isArray(salesTeams) && salesTeams.length > 0) {
-        await saveSalesTeamToDatabase(this.db, salesTeams);
       }
       if (isSyncType === SalesOrderService.SYNC_TYPE_AUTO) {
         await kv.put(KV_KEY, toDate);
