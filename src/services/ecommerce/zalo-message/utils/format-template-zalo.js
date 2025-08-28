@@ -9,7 +9,7 @@ export class GetTemplateZalo {
         phone: this.convertPhoneNumber(data.billing_address?.phone),
         templateData: {
           name: data.billing_address?.name,
-          order_number: data.id,
+          order_number: String(data.id),
           address: data.billing_address?.address1,
           product: data.line_items[0].title,
           price: data.total_price.toLocaleString("vi-VN"),
@@ -24,8 +24,8 @@ export class GetTemplateZalo {
         phone: this.convertPhoneNumber(data.billing_address?.phone),
         templateData: {
           customer_name: data.billing_address?.name,
-          order_number: data.id,
-          name: data.id
+          order_number: String(data.id),
+          name: String(data.id)
         }
       };
     case ZALO_TEMPLATE.remindPay:
@@ -38,7 +38,7 @@ export class GetTemplateZalo {
           customer_name: data.billing_address?.name,
           price: data.total_price.toLocaleString("vi-VN"),
           transfer_amount: transferAmount.toLocaleString("vi-VN"),
-          order_number: data.id,
+          order_number: String(data.id),
           note: bankTransferNote,
           bank_transfer_note: bankTransferNote
         }
