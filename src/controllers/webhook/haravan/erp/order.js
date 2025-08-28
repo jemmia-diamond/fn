@@ -8,9 +8,14 @@ export default class HaravanERPOrderController {
     try {
       if (data.haravan_topic === HARAVAN_TOPIC.PAID ) {
         await ctx.env["ZALO_MESSAGE_QUEUE"].send(data);
-      } else {
-        await ctx.env["ORDER_QUEUE"].send(data);
+      } else if (data.haravan_topic === HARAVAN_TOPIC.CREATED) {
+        const delayInSeconds = 1800; // 1800 seconds ~ 30 mins
+        await ctx.env["ZALO_MESSAGE_QUEUE"].send({
+          dispatchType: "DELAYED",
+          data: data
+        }, { delaySeconds: delayInSeconds });
       }
+      await ctx.env["ORDER_QUEUE"].send(data);
       return ctx.json({ message: "Message sent to queue", status: 200 });
     } catch (e) {
       console.error(e);

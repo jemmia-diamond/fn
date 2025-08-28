@@ -607,6 +607,18 @@ model erpnextAddress {
   @@schema("erpnext")
 }
 
+model erpnextSalesOrderNotificationTracking {
+  uuid                String   @id @default(uuid()) @db.Uuid
+  order_name          String
+  haravan_order_id    String
+  lark_message_id     String
+  database_created_at DateTime @default(now())
+  database_updated_at DateTime @updatedAt
+
+  @@map("sales_order_notification_tracking")
+  @@schema("erpnext")
+}
+
 model erpnextCustomer {
   uuid                String    @id @default(uuid()) @db.Uuid
   name                        String    @unique @db.VarChar(255)

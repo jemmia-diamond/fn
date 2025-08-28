@@ -11,6 +11,7 @@ export default {
     console.log(JSON.stringify(batch.messages));
     switch (batch.queue) {
     case "order":
+      await Ecommerce.OrderNotificationService.orderNotificationDequeue(batch, env);
       await Ecommerce.SendZaloMessage.dequeueSendZaloDeliveryMessageQueue(batch, env);
       await Haravan.OrderModule.OrderService.dequeueOrderQueue(batch, env);
       await ProductQuote.ProductQuoteOrderService.dequeueOrderQueue(batch, env);
@@ -23,6 +24,10 @@ export default {
       break;
     case "zalo-message":
       await Ecommerce.SendZaloMessage.dequeueSendZaloMessageQueue(batch, env);
+      await Ecommerce.SendZaloMessage.dequeueSendZaloRemindPayMessageQueue(batch, env);
+      break;
+    case "erpnext-contacts":
+      await ERP.Contacts.ContactService.dequeueContactQueue(batch, env);
       break;
     default:
       break;
