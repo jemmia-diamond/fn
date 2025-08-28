@@ -11,7 +11,7 @@ export default class SendZaloMessage {
     this.env = env;
   }
   static whitelistPhones = ["0862098011", "0829976232"];
-  static whitelistSource = "web";
+  static whitelistSource = ["web"];
 
   static async sendZaloMessage(phone, templateId, templateData, env) {
     try {
@@ -85,9 +85,9 @@ export default class SendZaloMessage {
         const templateId = ZALO_TEMPLATE.delivering;
 
         const bearerToken = await env.BEARER_TOKEN_SECRET.get();
-        const hashedToken =  this.createHashForOrderTracking({ order_id: order.id }, bearerToken);
+        const accessToken =  this.createTokenForOrderTracking({ order_id: order.id }, bearerToken);
         const extraParams = {
-          trackingRedirectPath: `order-tracking?order_id=${order.id}&token=${hashedToken}`
+          trackingRedirectPath: `order-tracking?order_id=${order.id}&token=${accessToken}`
         };
 
         const result = GetTemplateZalo.getTemplateZalo(templateId, order, extraParams);
@@ -197,10 +197,15 @@ export default class SendZaloMessage {
     }
   }
 
-  static createHashForOrderTracking(payloadObject, secret) {
-    const hashPayload = JSON.stringify(payloadObject);
-    const hashData = `${hashPayload}`;
-    const hashedToken =  this.generateHash(hashData, secret);
+  static createTokenForOrderTracking(payloadObject, secret) {
+    const payloadString = JSON.stringify(payloadObject);
+    const base64Payload = Buffer.from(payloadString).toString("base64url");
+    const hashedToken = this.createHashForOrderTracking(payloadString, secret);
+    return `${base64Payload}.${hashedToken}`;
+  }
+
+  static createHashForOrderTracking(payloadString, secret) {
+    const hashedToken =  this.generateHash(payloadString, secret);
     return hashedToken;
   }
 
