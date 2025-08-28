@@ -1,6 +1,7 @@
 import Larksuite from "services/larksuite";
 import ERP from "services/erp";
 import Ecommerce from "services/ecommerce";
+import InventoryCMS from "services/inventory-cms";
 
 export default {
   scheduled: async (controller, env, _ctx) => {
@@ -26,6 +27,9 @@ export default {
       await ERP.Contacts.AddressService.cronSyncAddressesToDatabase(env);
       await Ecommerce.ProductService.refreshMaterializedViews(env);
       break;
+    case "0 */3 * * *": // At every 3rd hour
+      await InventoryCMS.InventoryCheckSheetService.syncInventoryCheckSheetToDatabase(env);
+      await InventoryCMS.InventoryCheckLineService.syncInventoryCheckLineToDatabase(env);
     case "0 17 * * *": // 00:00
       await Larksuite.Contact.UserService.syncUsersToDatabase(env);
       await ERP.Core.UserService.syncLarkIds(env);
