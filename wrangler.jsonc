@@ -6,6 +6,9 @@
   "compatibility_flags": [
     "nodejs_compat"
   ],
+  "limits": {
+    "cpu_ms": 300000, // 300 seconds = 5 minutes
+  },
   "assets": {
     "binding": "ASSETS",
     "directory": "./public"
