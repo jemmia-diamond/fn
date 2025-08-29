@@ -1,8 +1,12 @@
 import LarksuiteService from "services/larksuite/lark";
 import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/constant";
 import { HARAVAN_TOPIC } from "services/ecommerce/enum";
+import { stringSquish } from "services/utils/string-helper";
+import { numberToCurrency } from "services/utils/number-helper";
+import { isTestOrder } from "services/utils/order-intercepter";
 
 export default class OrderNotificationService {
+  static WHITELIST_SOURCES = ["web"];
 
   constructor(env) {
     this.env = env;
@@ -10,26 +14,11 @@ export default class OrderNotificationService {
   }
 
   async sendOrderNotification(orderData) {
-    if (orderData.source !== "web") {
+    if (this.shouldSkipOrder(orderData)) {
       return;
     }
 
-    const customerData = orderData.customer;
-    if (customerData.first_name.includes("test") || customerData.last_name.includes("test")) {
-      return;
-    }
-
-    const products = orderData.line_items.map((item) => {
-      return `${item.quantity} x ${item.name} - ${item.price}`;
-    });
-    const message = `
-      [🔥NEW ORDER FROM WEB🔥]
-
-      Order number: ${orderData.order_number}
-      Product: ${products.join(", ")}
-      Total price: ${orderData.total_price}
-    `.trim();
-
+    const message = this.buildOrderMessage(orderData);
     await this.larkClient.im.message.create({
       params: {
         receive_id_type: "chat_id"
@@ -42,6 +31,31 @@ export default class OrderNotificationService {
         })
       }
     });
+  }
+
+  buildOrderMessage(orderData) {
+    const products = orderData.line_items.map(item => item.title);
+
+    return stringSquish(`
+      [🔥NEW ORDER FROM WEB🔥]
+
+      Order number: ${orderData.order_number}
+      Product: ${products.join(", ")}
+      Customer: ${orderData.billing_address.name}
+      Total price: ${numberToCurrency(orderData.total_price)}
+    `);
+  }
+
+  shouldSkipOrder(orderData) {
+    if (!OrderNotificationService.WHITELIST_SOURCES.includes(orderData.source)) {
+      return true;
+    }
+
+    if (isTestOrder(orderData)) {
+      return true;
+    }
+
+    return false;
   }
 
   static async orderNotificationDequeue(batch, env) {
