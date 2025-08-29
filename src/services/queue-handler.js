@@ -13,7 +13,6 @@ export default {
     switch (batch.queue) {
     case "order":
       await Ecommerce.OrderNotificationService.orderNotificationDequeue(batch, env);
-      await Ecommerce.SendZaloMessage.dequeueSendZaloDeliveryMessageQueue(batch, env);
       await Haravan.OrderModule.OrderService.dequeueOrderQueue(batch, env);
       await ProductQuote.ProductQuoteOrderService.dequeueOrderQueue(batch, env);
       await Ecommerce.IndDayStatService.trackBudget(batch, env);
@@ -26,6 +25,7 @@ export default {
       await Pancake.ConversationService.dequeueMessageSummaryQueue(batch, env);
       break;
     case "zalo-message":
+      await Ecommerce.SendZaloMessage.dequeueSendZaloDeliveryMessageQueue(batch, env);
       await Ecommerce.SendZaloMessage.dequeueSendZaloMessageQueue(batch, env);
       await Ecommerce.SendZaloMessage.dequeueSendZaloRemindPayMessageQueue(batch, env);
       break;

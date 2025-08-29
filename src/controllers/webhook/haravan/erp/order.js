@@ -13,6 +13,7 @@ export default class HaravanERPOrderController {
         data.dispatchType = "DELAYED";
         await ctx.env["ZALO_MESSAGE_QUEUE"].send(data, { delaySeconds: delayInSeconds });
       }
+      await ctx.env["ZALO_MESSAGE_QUEUE"].send(data);
       await ctx.env["ORDER_QUEUE"].send(data);
       return ctx.json({ message: "Message sent to queue", status: 200 });
     } catch (e) {
