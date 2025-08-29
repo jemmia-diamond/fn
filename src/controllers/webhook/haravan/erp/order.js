@@ -12,6 +12,8 @@ export default class HaravanERPOrderController {
         const delayInSeconds = 1800; // 1800 seconds ~ 30 mins
         data.dispatchType = "DELAYED";
         await ctx.env["ZALO_MESSAGE_QUEUE"].send(data, { delaySeconds: delayInSeconds });
+      } else {
+        await ctx.env["ZALO_MESSAGE_QUEUE"].send(data);
       }
       await ctx.env["ORDER_QUEUE"].send(data);
       return ctx.json({ message: "Message sent to queue", status: 200 });

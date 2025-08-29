@@ -37,12 +37,22 @@ export default class SendZaloMessage {
   static async dequeueSendZaloMessageQueue(batch, env) {
     const messages = batch.messages;
     for (const message of messages) {
-      if (!this.eligibleForSendingZaloMessage(message.body)) {
+
+      const order = message.body;
+      if (!this.eligibleForSendingZaloMessage(order)) {
+        continue;
+      }
+
+      if (order.dispatchType === "DELAYED") {
+        continue;
+      }
+
+      if (order.financial_status !== "paid" && order.financial_status !== "partially_paid") {
         continue;
       }
 
       const templateId = ZALO_TEMPLATE.orderConfirmed;
-      const result = GetTemplateZalo.getTemplateZalo(templateId, message.body);
+      const result = GetTemplateZalo.getTemplateZalo(templateId, order);
       if (result) {
         await this.sendZaloMessage(result.phone, templateId, result.templateData, env);
       }
@@ -65,9 +75,14 @@ export default class SendZaloMessage {
           continue;
         }
 
+        if (order.dispatchType === "DELAYED") {
+          continue;
+        }
+
         const haravanFulfillment = this.getLatestFulfillment(order);
 
         if (!haravanFulfillment || !haravanFulfillment.delivering_date) {
+          console.warn("No delivering date found for order:", order.id);
           continue;
         }
 
@@ -75,12 +90,14 @@ export default class SendZaloMessage {
 
         const isOrderInDelivery = await this.checkOrderInDelivery(String(order.id), db);
         if (isOrderInDelivery) {
+          console.warn("Order is already in delivery:", order.id);
           continue;
         }
 
         // Retrieve oldest order ID in case the order has been re-ordered
         const firstOrder = await getInitialOrder(db, order.id);
         if (!firstOrder) {
+          console.warn("No initial order found for order:", order.id);
           continue;
         }
 
@@ -96,6 +113,8 @@ export default class SendZaloMessage {
         };
 
         const result = GetTemplateZalo.getTemplateZalo(templateId, order, extraParams);
+        console.warn("Zalo Delivery Template", result);
+
         if (result) {
           await this.sendZaloMessage(result.phone, templateId, result.templateData, env);
           await this.makeOrderInDelivery(String(firstOrder.id), db);
