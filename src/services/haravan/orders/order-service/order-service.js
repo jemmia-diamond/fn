@@ -22,22 +22,21 @@ export default class OrderService {
       if (targetVariant.inventory_advance.qty_available < 0) {
         negativeOrderedVariants.push(jewelryVariant);
       }
-
-      if (negativeOrderedVariants.length > 0) {
-        const message = negativeStockOrderMessage(order, negativeOrderedVariants);
-        await this.larkClient.im.message.create({
-          params: {
-            receive_id_type: "chat_id"
-          },
-          data: {
-            receive_id: CHAT_GROUPS.NEGATIVE_STOCK_ORDERING_CONTROLL.chat_id,
-            msg_type: "text",
-            content: JSON.stringify({
-              text: message
-            })
-          }
-        });
-      }
+    }
+    if (negativeOrderedVariants.length > 0) {
+      const message = negativeStockOrderMessage(order, negativeOrderedVariants);
+      await this.larkClient.im.message.create({
+        params: {
+          receive_id_type: "chat_id"
+        },
+        data: {
+          receive_id: CHAT_GROUPS.NEGATIVE_STOCK_ORDERING_CONTROLL.chat_id,
+          msg_type: "text",
+          content: JSON.stringify({
+            text: message
+          })
+        }
+      });
     }
   }
 
