@@ -147,7 +147,8 @@ export default class ProductService {
 	          'ring_size', v.ring_size,
 	          'price', CAST(v.price AS INT),
 	          'price_compare_at', CAST(v.price_compare_at AS INT),
-            'applique_material', v.applique_material
+            'applique_material', v.applique_material,
+            'estimated_gold_weight', v.estimated_gold_weight
 	        )
 	      ) AS variants,
 	      JSON_BUILD_OBJECT(
