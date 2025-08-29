@@ -7,19 +7,26 @@ export default class OrderTrackingController {
     if (!id) {
       throw new HTTPException(400, { message: "Order ID is required" });
     }
+
+    const authorization = ctx.req.header("Authorization");
+    let reqBearerToken = null;
+    if (authorization && authorization.startsWith("Bearer ")) {
+      reqBearerToken = authorization.split(" ")[1];
+    }
+
     const orderTrackingService = new Ecommerce.OrderTrackingService(ctx.env);
     try {
-      const orderDetails = await orderTrackingService.trackOrder(id);
+      const orderDetails = await orderTrackingService.trackOrder(id, reqBearerToken);
       if (!orderDetails) {
-        throw new HTTPException(404, { message: "Order not found" });
+        return ctx.json({ error_code: "order_not_found" }, 404);
       }
       return ctx.json(orderDetails);
     } catch (error) {
       if (error instanceof HTTPException) {
-        throw error;
+        return ctx.json({ error_code: error.message }, error.status );
       }
       console.error("Error tracking order:", error);
-      throw new HTTPException(500, { message: "Failed to track order" });
+      return ctx.json({ message: "Internal Server Error" }, 500 );
     }
   }
 }

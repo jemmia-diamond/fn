@@ -7,6 +7,8 @@ import { NhattinDeliveryStatus, NhattinPaymentMethod, OrderOverallStatus } from 
 import { TrackingLog } from "services/ecommerce/order-tracking/dtos/tracking-log";
 import { OrderTimelineStatus } from "services/ecommerce/order-tracking/enums/order-step-status.enum";
 import HaravanClient from "services/haravan/haravan-client";
+import { getInitialOrder } from "services/ecommerce/order-tracking/queries/get-initial-order";
+import crypto from "crypto";
 
 export default class OrderTrackingService {
   constructor(env) {
@@ -14,8 +16,26 @@ export default class OrderTrackingService {
     this.db = Database.instance(env);
   }
 
-  async trackOrder(orderId) {
+  async trackOrder(orderId, reqBearerToken) {
     try {
+      let isAuthorized = false;
+      if (reqBearerToken) {
+        const firstOrder = await getInitialOrder(this.db, orderId);
+        if (firstOrder) {
+          const bearerToken = await this.env.BEARER_TOKEN_SECRET.get();
+          const parsedAccessToken = this.createTokenForOrderTracking({
+            order_id: firstOrder.id,
+            order_number: firstOrder.order_number
+          },
+          bearerToken
+          );
+
+          if (parsedAccessToken === reqBearerToken) {
+            isAuthorized = true;
+          }
+        }
+      }
+
       const latestOrderId = await getLatestOrderId(this.db, orderId);
 
       const orderInfoRows = await getOrderOverallInfo(this.db, latestOrderId);
@@ -33,10 +53,10 @@ export default class OrderTrackingService {
         console.error(e);
       }
 
-      return formatOrderTrackingResult(orderInfo, nhattinTrackInfo);
+      return formatOrderTrackingResult(orderInfo, nhattinTrackInfo, isAuthorized);
     } catch (error) {
       console.error("Error tracking order:", error);
-      throw new Error("Failed to track order");
+      throw error;
     }
   }
 
@@ -144,6 +164,14 @@ export default class OrderTrackingService {
 
       // Handle active orders
       let finalHaravanSteps = this._handleActiveOrder(orderedSteps);
+
+      // Filter steps which are not DELIVERING and DELIVERED if shipping address is null
+      if (!order.shipping_address.address1) {
+        finalHaravanSteps = finalHaravanSteps.filter(step =>
+          step.key !== OrderOverallStatus.DELIVERING.key
+          && step.key !== OrderOverallStatus.DELIVERED.key
+        );
+      }
 
       const takeFromVendorLogs = nhattinTrackingLog.filter(log => log.billStatusId === NhattinDeliveryStatus.TAKE_ORDER_FROM_VENDOR);
 
@@ -394,5 +422,24 @@ export default class OrderTrackingService {
       key: step.key,
       status: isAfterOngoing ? OrderTimelineStatus.UPCOMING : OrderTimelineStatus.PAST
     };
+  }
+
+  createTokenForOrderTracking(payloadObject, secret) {
+    const payloadString = `${payloadObject.order_id}|${payloadObject.order_number}|${JSON.stringify(payloadObject)}`;
+    const base64Payload = Buffer.from(payloadString).toString("base64url");
+    const hashedToken = this.createHashForOrderTracking(payloadString, secret);
+    return `${base64Payload}.${hashedToken}`;
+  }
+
+  createHashForOrderTracking(payloadString, secret) {
+    const hashedToken =  this.generateHash(payloadString, secret);
+    return hashedToken;
+  }
+
+  generateHash(data, secret) {
+    return crypto
+      .createHmac("sha256", secret)
+      .update(data)
+      .digest("hex");
   }
 }
