@@ -27,6 +27,8 @@ Thông tin toàn đơn hàng:
 - Số tiền còn lại: ${formatVietnameseCurrency(salesOrder.balance)}
 - Ngày thanh toán dự kiến: ${expectedPaymentDate}
 - Chương trình khuyến mãi toàn đơn: ${composePromotionContent(orderPromotions)}
+
+Link đơn hàng: https://erp.jemmia.vn/app/sales-order/${salesOrder.name}
     `.trim();
   return content;
 };
