@@ -6,6 +6,8 @@ import { numberToCurrency } from "services/utils/number-helper";
 import { isTestOrder } from "services/utils/order-intercepter";
 
 export default class OrderNotificationService {
+  static WHITELIST_SOURCES = ["web"];
+
   constructor(env) {
     this.env = env;
     this.larkClient = LarksuiteService.createClient(env);
@@ -45,11 +47,15 @@ export default class OrderNotificationService {
   }
 
   shouldSkipOrder(orderData) {
-    if (orderData.source !== "web") {
+    if (!OrderNotificationService.WHITELIST_SOURCES.includes(orderData.source)) {
       return true;
     }
 
-    return isTestOrder(orderData);
+    if (isTestOrder(orderData)) {
+      return true;
+    }
+
+    return false;
   }
 
   static async orderNotificationDequeue(batch, env) {
