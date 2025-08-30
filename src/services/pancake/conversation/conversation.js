@@ -206,14 +206,13 @@ export default class ConversationService {
     for (const message of messages) {
       const body = message.body;
 
-      await Promise.all([
-        conversationService.processLastCustomerMessage(body.data).catch(err =>
-          console.error(`processLastCustomerMessage failed: ${err}`)
-        ),
-        conversationService.syncCustomerToLeadCrm(body).catch(err =>
-          console.error(`syncCustomerToLeadCrm failed: ${err}`)
-        )
-      ]);
+      await conversationService.processLastCustomerMessage(body.data).catch(err =>
+        console.error(`processLastCustomerMessage failed: ${err}`)
+      );
+
+      await conversationService.syncCustomerToLeadCrm(body).catch(err =>
+        console.error(`syncCustomerToLeadCrm failed: ${err}`)
+      );
     }
   }
 }
