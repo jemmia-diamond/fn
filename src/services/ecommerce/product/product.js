@@ -11,10 +11,8 @@ export default class ProductService {
   async getJewelryData(jsonParams) {
     const {dataSql, countSql} = buildQuery(jsonParams);
 
-    const [data, count] = await Promise.all([
-      this.db.$queryRaw`${Prisma.raw(dataSql)}`,
-      this.db.$queryRaw`${Prisma.raw(countSql)}`
-    ]);
+    const data = await this.db.$queryRaw`${Prisma.raw(dataSql)}`;
+    const count = await this.db.$queryRaw`${Prisma.raw(countSql)}`;
 
     return {
       data,
