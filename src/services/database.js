@@ -11,14 +11,18 @@ class Database {
         connectionString: env.DATABASE_URL
       });
 
-      return new PrismaClient({ adapter });
+      return new PrismaClient({
+        adapter,
+        log: ["error"],
+        errorFormat: "minimal"
+      });
     } catch (error) {
       console.error("Failed to initialize database client:", error);
       throw error;
     }
   }
 
-  // Keep this for backward compatibility, but it creates a new instance each time
+  // Create new instance each time for CF Workers compatibility
   static instance(env) {
     return Database.createClient(env);
   }
