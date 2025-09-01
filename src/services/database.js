@@ -8,7 +8,8 @@ class Database {
   static createClient(env) {
     try {
       const adapter = new PrismaNeon({
-        connectionString: env.DATABASE_URL
+        connectionString: env.DATABASE_URL,
+        poolQueryViaFetch: true
       });
 
       return new PrismaClient({
