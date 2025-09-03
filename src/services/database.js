@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma-cli";
 import { PrismaNeon } from "@prisma/adapter-neon";
+import { neon } from "@neondatabase/serverless";
 
 // Example usage:
 // const db = Database.createClient(c.env);
@@ -24,7 +25,17 @@ class Database {
   }
 
   // Create new instance each time for CF Workers compatibility
-  static instance(env) {
+  static instance(env, adapter = null) {
+    if (adapter == "neon") {
+      const sql = neon(env.DATABASE_URL);
+      return {
+        $queryRaw: (strings, ...values) => {
+          const rawValue = values[0];
+          return sql.query(rawValue.text);
+        }
+      };
+    }
+
     return Database.createClient(env);
   }
 }
