@@ -18,7 +18,7 @@ const webhook = app.basePath("/webhook");
 app.use("*", async (c, next) => {
   if (c.env.MIDDLEWARE_API_KEY) {
     init({
-      serviceName: "fn-cloudflare-worker",
+      serviceName: c.env.MIDDLEWARE_SERVICE_NAME,
       accountKey: c.env.MIDDLEWARE_API_KEY,
       target: c.env.MIDDLEWARE_TARGET,
       consoleLogEnabled: false
