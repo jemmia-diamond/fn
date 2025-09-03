@@ -1,10 +1,9 @@
 /* eslint no-console: "off" */
 
 import { createMiddleware } from "hono/factory";
-import { track } from "@middleware.io/agent-apm-worker";
 
 class CustomLogger {
-  createMiddleware() {
+  createMiddleware(trackObject) {
     return createMiddleware(async (c, next) => {
       const startTime = performance.now();
       const requestInfo = this.extractRequestInfo(c);
@@ -14,7 +13,7 @@ class CustomLogger {
       await next();
 
       const duration = performance.now() - startTime;
-      this.logRequest(requestInfo, requestBody, c.res?.status || 0, duration);
+      await this.logRequest(requestInfo, requestBody, c.res?.status || 0, duration, trackObject);
     });
   }
 
@@ -44,7 +43,7 @@ class CustomLogger {
     return "";
   }
 
-  logRequest(requestInfo, requestBody, status, duration) {
+  async logRequest(requestInfo, requestBody, status, duration, trackObject) {
     const { method, path } = requestInfo;
 
     const logParts = [
@@ -63,15 +62,17 @@ class CustomLogger {
 
     // Send custom logs to middleware.io APM
     try {
-      // Log different severity levels based on status code
-      if (status >= 500) {
-        track.logger.error("server error", { "log.file.name": "error.log", method, path, status, duration });
-      } else if (status >= 400) {
-        track.logger.warn("client error", { "log.file.name": "warn.log", method, path, status, duration });
-      } else if (status >= 200 && status < 300) {
-        track.logger.info("success", { method, path, status, duration });
-      } else {
-        track.logger.debug("request", { method, path, status, duration });
+      if (trackObject && trackObject.logger) {
+        // Log different severity levels based on status code
+        if (status >= 500) {
+          trackObject.logger.error("server error", { "log.file.name": "error.log", method, path, status, duration });
+        } else if (status >= 400) {
+          trackObject.logger.warn("client error", { "log.file.name": "warn.log", method, path, status, duration });
+        } else if (status >= 200 && status < 300) {
+          trackObject.logger.info("success", { method, path, status, duration });
+        } else {
+          trackObject.logger.debug("request", { method, path, status, duration });
+        }
       }
     } catch (e) {
       // Fallback to console if middleware tracking fails
@@ -81,5 +82,5 @@ class CustomLogger {
 }
 
 const loggerInstance = new CustomLogger();
-export const loggrageLogger = () => loggerInstance.createMiddleware();
+export const loggrageLogger = (trackObject) => loggerInstance.createMiddleware(trackObject);
 export default loggrageLogger;

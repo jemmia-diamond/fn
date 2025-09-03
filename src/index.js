@@ -1,4 +1,4 @@
-import { init } from "@middleware.io/agent-apm-worker";
+import { init, track } from "@middleware.io/agent-apm-worker";
 import { Hono } from "hono";
 import { bearerAuth } from "hono/bearer-auth";
 
@@ -29,7 +29,7 @@ app.use("*", async (c, next) => {
 
 // Error tracking
 app.use("*", errorTracker);
-app.use(loggrageLogger());
+app.use(loggrageLogger(track));
 
 // Apply CORS to routes using the service
 api.use("*", CorsService.createCorsConfig());
