@@ -34,6 +34,8 @@ export async function fetchSalesOrdersFromERP(frappeClient, doctype, fromDate, t
       const salesTeams = await fetchChildRecordsFromERP(frappeClient, orderNames, "tabSales Team");
       const salesOrderPolicies = await fetchChildRecordsFromERP(frappeClient, orderNames, "tabSales Order Policy");
       const salesOrderPromotions = await fetchChildRecordsFromERP(frappeClient, orderNames, "tabSales Order Promotion");
+      const salesOrderPurposes = await fetchChildRecordsFromERP(frappeClient, orderNames, "tabSales Order Purpose");
+      const salesOrderProductCategories = await fetchChildRecordsFromERP(frappeClient, orderNames, "tabSales Order Product Category");
 
       // group records by sales order name
       const groupByParent = arr => arr.reduce((acc, item) => {
@@ -44,6 +46,8 @@ export async function fetchSalesOrdersFromERP(frappeClient, doctype, fromDate, t
       const salesTeamMap = groupByParent(salesTeams);
       const salesOrderPoliciesMap = groupByParent(salesOrderPolicies);
       const salesOrderPromotionsMap = groupByParent(salesOrderPromotions);
+      const salesOrderPurposesMap = groupByParent(salesOrderPurposes);
+      const salesOrderProductCategoriesMap = groupByParent(salesOrderProductCategories);
 
       // add sales order items and sales team to each sales order
       batch.forEach(item => {
@@ -51,6 +55,8 @@ export async function fetchSalesOrdersFromERP(frappeClient, doctype, fromDate, t
         item.sales_team = salesTeamMap[item.name] || [];
         item.policies = salesOrderPoliciesMap[item.name] || [];
         item.promotions = salesOrderPromotionsMap[item.name] || [];
+        item.sales_order_purposes = salesOrderPurposesMap[item.name] || [];
+        item.product_categories = salesOrderProductCategoriesMap[item.name] || [];
       });
 
       allSalesOrders.push(...batch);
