@@ -31,7 +31,8 @@ class Database {
       return {
         $queryRaw: (strings, ...values) => {
           const rawValue = values[0];
-          return sql.query(rawValue.text);
+
+          return (rawValue.text ? sql.query(rawValue.text) : sql(strings, ...values));
         }
       };
     }
