@@ -125,7 +125,6 @@
       },
       {
         "queue": "message",
-        "max_concurrency": 5,
         "max_batch_size": 1
       },
       {
