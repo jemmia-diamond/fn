@@ -1,6 +1,7 @@
 /* eslint no-console: "off" */
 
 import { createMiddleware } from "hono/factory";
+import { track } from "@middleware.io/agent-apm-worker";
 
 class CustomLogger {
   createMiddleware() {
@@ -57,7 +58,25 @@ class CustomLogger {
       logParts.push(`payload=${requestBody}`);
     }
 
-    console.log(logParts.join(" "));
+    const logMessage = logParts.join(" ");
+    console.log(logMessage);
+
+    // Send custom logs to middleware.io APM
+    try {
+      // Log different severity levels based on status code
+      if (status >= 500) {
+        track.logger.error("server error", { "log.file.name": "error.log", method, path, status, duration });
+      } else if (status >= 400) {
+        track.logger.warn("client error", { "log.file.name": "warn.log", method, path, status, duration });
+      } else if (status >= 200 && status < 300) {
+        track.logger.info("success", { method, path, status, duration });
+      } else {
+        track.logger.debug("request", { method, path, status, duration });
+      }
+    } catch (e) {
+      // Fallback to console if middleware tracking fails
+      console.log("Middleware tracking error:", e);
+    }
   }
 }
 

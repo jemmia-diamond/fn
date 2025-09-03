@@ -1,3 +1,4 @@
+import { init } from "@middleware.io/agent-apm-worker";
 import { Hono } from "hono";
 import { bearerAuth } from "hono/bearer-auth";
 
@@ -13,6 +14,18 @@ const app = new Hono();
 const api = app.basePath("/api");
 const publicApi = app.basePath("/public-api");
 const webhook = app.basePath("/webhook");
+
+app.use("*", async (c, next) => {
+  if (c.env.MIDDLEWARE_API_KEY) {
+    init({
+      serviceName: "fn-cloudflare-worker",
+      accountKey: c.env.MIDDLEWARE_API_KEY,
+      target: c.env.MIDDLEWARE_TARGET,
+      consoleLogEnabled: false
+    });
+  }
+  await next();
+});
 
 // Error tracking
 app.use("*", errorTracker);

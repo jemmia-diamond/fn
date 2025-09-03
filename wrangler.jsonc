@@ -38,7 +38,8 @@
     "NHAT_TIN_API_URL": "https://apiws.ntlogistics.vn/v1",
     "LARK_APP_ID": "cli_a7f8a8df1979902f",
     "LARK_API_ENDPOINT": "https://open.larksuite.com",
-    "INVENTORY_CMS_ENDPOINT": "https://inventory-cms.jemmia.vn"
+    "INVENTORY_CMS_ENDPOINT": "https://inventory-cms.jemmia.vn",
+    "MIDDLEWARE_TARGET": "https://akvuq.middleware.io"
   },
   "secrets_store_secrets": [
     {
