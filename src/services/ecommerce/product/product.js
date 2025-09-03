@@ -5,7 +5,7 @@ import { buildWeddingRingsQuery } from "services/ecommerce/product/utils/wedding
 
 export default class ProductService {
   constructor(env) {
-    this.db = Database.instance(env, "neon");
+    this.db = Database.instance(env);
   }
 
   async getJewelryData(jsonParams) {
