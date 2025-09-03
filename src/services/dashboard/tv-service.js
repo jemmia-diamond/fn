@@ -6,9 +6,10 @@ export default class DashboardTVService {
   }
 
   async getTVData(startDate, endDate) {
-
-    const targetRevenueData = await this.getTargetRevenueData(startDate, endDate);
-    const ordersByDayData = await this.getOrdersByDayData(startDate, endDate);
+    const [targetRevenueData, ordersByDayData] = await Promise.all([
+      this.getTargetRevenueData(startDate, endDate),
+      this.getOrdersByDayData(startDate, endDate)
+    ]);
 
     return {
       targetRevenue: targetRevenueData,
