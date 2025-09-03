@@ -73,26 +73,31 @@ export default class ConversationService {
   }
 
   async processLastCustomerMessage(data) {
-    const message = data.message;
-    if (!message) {
-      console.warn(`No message found in data: ${JSON.stringify(data)}`);
+    try {
+      const message = data.message;
+      if (!message) {
+        console.warn(`No message found in data: ${JSON.stringify(data)}`);
+        return;
+      }
+
+      const from = message.from;
+      if (from?.admin_id) {
+        return;
+      }
+      const conversationId = message.conversation_id;
+      const pageId = message.page_id;
+      const insertedAt = message.inserted_at;
+
+      if (!conversationId || !pageId || !insertedAt) {
+        throw new Error("Page ID: " + pageId + ", Conversation ID: " + conversationId + ", Inserted At: " + insertedAt);
+      }
+      // Store the time of the last customer message
+      const result = await this.updateConversation(conversationId, pageId, insertedAt);
+      return result;
+    } catch (err){
+      console.error(`processLastCustomerMessage failed: ${err}`);
       return;
     }
-
-    const from = message.from;
-    if (from?.admin_id) {
-      return;
-    }
-    const conversationId = message.conversation_id;
-    const pageId = message.page_id;
-    const insertedAt = message.inserted_at;
-
-    if (!conversationId || !pageId || !insertedAt) {
-      throw new Error("Page ID: " + pageId + ", Conversation ID: " + conversationId + ", Inserted At: " + insertedAt);
-    }
-    // Store the time of the last customer message
-    const result = await this.updateConversation(conversationId, pageId, insertedAt);
-    return result;
   }
 
   async syncCustomerToLeadCrm(body) {
@@ -167,7 +172,7 @@ export default class ConversationService {
         await this.upsertFrappeLeadConversation(conversationId, frappeNameId);
       }
     } catch (error) {
-      console.error(error);
+      console.error(`syncCustomerToLeadCrm failed: ${error}`);
       return;
     }
   }
@@ -205,14 +210,16 @@ export default class ConversationService {
     const messages = batch.messages;
     for (const message of messages) {
       const body = message.body;
+      await conversationService.processLastCustomerMessage(body.data);
+    }
+  }
 
-      await conversationService.processLastCustomerMessage(body.data).catch(err =>
-        console.error(`processLastCustomerMessage failed: ${err}`)
-      );
-
-      await conversationService.syncCustomerToLeadCrm(body).catch(err =>
-        console.error(`syncCustomerToLeadCrm failed: ${err}`)
-      );
+  static async dequeueMessageSyncCustomerToLeadCRM(batch, env) {
+    const conversationService = new ConversationService(env);
+    const messages = batch.messages;
+    for (const message of messages) {
+      const body = message.body;
+      await conversationService.syncCustomerToLeadCrm(body);
     }
   }
 }
