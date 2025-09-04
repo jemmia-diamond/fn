@@ -290,4 +290,42 @@ export default class SalesOrderService {
       }
     }
   }
+
+  static async fillSerialNumbersToTemporaryOrderItems(env) {
+    const salesOrderService = new SalesOrderService(env);
+
+    const data = await salesOrderService.db.$queryRaw`
+      SELECT 
+      so.name,
+      jsonb_agg(
+      	COALESCE(jsonb_set(li, '{serial_numbers}', to_jsonb(vs.serial_number::text), true), li.value)
+      ) AS items
+      FROM erpnext.sales_orders so 
+      	CROSS JOIN LATERAL jsonb_array_elements(so.items ) AS li 
+      	LEFT JOIN workplace.temporary_products tp ON li->>'haravan_variant_id' = tp.haravan_variant_id::TEXT 
+      	LEFT JOIN workplace.variant_serials vs ON tp.variant_serial_id = vs.id
+      WHERE 1 = 1
+      AND so.haravan_order_id IN (
+      	SELECT 
+      		so.haravan_order_id 
+      	FROM erpnext.sales_orders so 
+      	CROSS JOIN LATERAL jsonb_array_elements(so.items) AS li 
+      	WHERE li->>'serial_numbers' IS NULL AND li->>'sku' LIKE 'SPT%' AND so.cancelled_status = 'Uncancelled'
+      )
+      GROUP BY so."name"
+      ORDER BY so."name"
+    `;
+
+    for (const order of data) {
+      try {
+        await salesOrderService.frappeClient.update({
+          doctype: salesOrderService.doctype,
+          name: order.name,
+          items: order.items
+        });
+      } catch (error) {
+        console.error(error);
+      }
+    }
+  }
 }
