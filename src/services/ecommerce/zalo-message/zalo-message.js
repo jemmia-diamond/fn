@@ -11,7 +11,6 @@ export default class SendZaloMessage {
   constructor(env) {
     this.env = env;
   }
-  static whitelistPhones = ["0862098011", "0829976232"];
   static whitelistSource = ["web"];
 
   static async sendZaloMessage(phone, templateId, templateData, env) {
