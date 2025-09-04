@@ -26,7 +26,6 @@ export default class SendZaloMessage {
 
   static eligibleForSendingZaloMessage(message) {
     if (this.whitelistSource.includes(message?.source)
-        && this.whitelistPhones.includes(message?.billing_address?.phone)
         && message.ref_order_id === 0) {
       return true;
     }
