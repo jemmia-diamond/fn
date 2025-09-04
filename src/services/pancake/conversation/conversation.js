@@ -72,18 +72,24 @@ export default class ConversationService {
     }
   }
 
-  async processLastCustomerMessage(data) {
+  async processLastCustomerMessage(body) {
     try {
-      const message = data.message;
+      const message = body?.data?.message;
       if (!message) {
-        console.warn(`No message found in data: ${JSON.stringify(data)}`);
+        console.warn(`No message found in data: ${JSON.stringify(body?.data)}`);
         return;
       }
 
-      const from = message.from;
+      const from = body?.data?.message?.from;
       if (from?.admin_id) {
         return;
       }
+
+      // Ignore if it is not messaging
+      if (body?.event_type !== "messaging") {
+        return;
+      }
+
       const conversationId = message.conversation_id;
       const pageId = message.page_id;
       const insertedAt = message.inserted_at;
@@ -210,7 +216,7 @@ export default class ConversationService {
     const messages = batch.messages;
     for (const message of messages) {
       const body = message.body;
-      await conversationService.processLastCustomerMessage(body.data);
+      await conversationService.processLastCustomerMessage(body);
     }
   }
 
