@@ -33,6 +33,7 @@ export const mapSalesOrdersToDatabase = (salesOrders) => {
     expected_delivery_date: safeValue(salesOrder?.expected_delivery_date,"date"),
     cost_center: safeValue(salesOrder?.cost_center,"string"),
     project: safeValue(salesOrder?.project,"string"),
+    consultation_date: safeValue(salesOrder?.consultation_date,"date"),
 
     // Currency and pricing
     currency: safeValue(salesOrder?.currency,"string"),
@@ -121,6 +122,7 @@ export const mapSalesOrdersToDatabase = (salesOrders) => {
     from_date: safeValue(salesOrder?.from_date,"date"),
     to_date: safeValue(salesOrder?.to_date,"date"),
     auto_repeat: safeValue(salesOrder?.auto_repeat,"string"),
+    primary_sales_person: safeValue(salesOrder?.primary_sales_person,"string"),
 
     // Print and display
     letter_head: safeValue(salesOrder?.letter_head,"string"),
@@ -160,6 +162,7 @@ export const mapSalesOrdersToDatabase = (salesOrders) => {
     payment_records: salesOrder?.payment_records || null,
     payment_schedule: salesOrder?.payment_schedule || null,
     policies: salesOrder?.policies || null,
-    items: salesOrder?.items || null
+    items: salesOrder?.items || null,
+    sales_order_purposes: salesOrder?.sales_order_purposes || null
   }));
 };

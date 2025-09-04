@@ -92,6 +92,7 @@ model erpnextSalesOrders {
   expected_delivery_date  DateTime?
   cost_center             String?
   project                 String?
+  consultation_date       DateTime? @db.Date
   
   // Currency and pricing
   currency                String?
@@ -171,6 +172,7 @@ model erpnextSalesOrders {
   billing_status  String?
   
   // Sales and commission
+  primary_sales_person            String?
   sales_partner                   String?
   amount_eligible_for_commission  Decimal? @db.Decimal(18, 6)
   commission_rate                 Decimal? @db.Decimal(18, 6)
@@ -220,6 +222,7 @@ model erpnextSalesOrders {
   payment_schedule    Json? @db.JsonB
   policies            Json? @db.JsonB
   items               Json? @db.JsonB
+  sales_order_purposes Json? @db.JsonB
 
   database_created_at     DateTime? @default(now()) @db.Timestamp(6)
   database_updated_at     DateTime? @updatedAt @db.Timestamp(6)
