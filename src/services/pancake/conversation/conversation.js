@@ -8,7 +8,7 @@ export default class ConversationService {
     this.env = env;
     this.pancakeClient = new PancakeClient(env.PANCAKE_ACCESS_TOKEN);
     this.leadService = new LeadService(env);
-    this.db = Database.instance(env);
+    this.db = Database.instance(env, "neon");
   }
 
   async updateConversation(conversationId, pageId, insertedAt) {
