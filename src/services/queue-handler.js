@@ -19,6 +19,7 @@ export default {
       await ERP.Selling.SalesOrderService.dequeueOrderQueue(batch, env);
       break;
     case "message":
+      await Pancake.ConversationService.dequeueMessageSyncCustomerToLeadCRM(batch, env);
       await Pancake.ConversationService.dequeueMessageQueue(batch, env);
       break;
     case "message-summary":
