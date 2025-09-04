@@ -11,6 +11,7 @@ export default {
       await ERP.Telephony.CallLogService.syncStringeeCallLogs(env);
       await ERP.CRM.LeadService.syncCallLogLead(env);
       await ERP.Selling.SalesOrderService.fillSalesOrderRealDate(env);
+      await ERP.Selling.SalesOrderService.fillSerialNumbersToTemporaryOrderItems(env);
       break;
     case "*/10 * * * *": // At every 10th minute
       await ERP.Selling.SerialService.syncSerialsToERP(env);
