@@ -86,7 +86,7 @@ export default class SendZaloMessage {
           continue;
         }
 
-        const db = Database.instance(env);
+        const db = Database.instance(env, "neon");
 
         const isOrderInDelivery = await this.checkOrderInDelivery(String(order.id), db);
         if (isOrderInDelivery) {
@@ -174,7 +174,7 @@ export default class SendZaloMessage {
           continue;
         }
 
-        const db = Database.instance(env);
+        const db = Database.instance(env, "neon");
 
         const latestOrderId = await getLatestOrderId(db, orderData.id);
 
