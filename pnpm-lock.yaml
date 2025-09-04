@@ -23,6 +23,9 @@ importers:
       '@middleware.io/agent-apm-worker':
         specifier: ^0.0.26
         version: 0.0.26
+      '@neondatabase/serverless':
+        specifier: ^1.0.1
+        version: 1.0.1
       '@prisma/adapter-neon':
         specifier: ^6.15.0
         version: 6.15.0
