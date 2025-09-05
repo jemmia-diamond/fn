@@ -282,6 +282,9 @@ export default class SalesOrderService {
         )
         ORDER BY o.created_at ASC
       `;
+
+      if (!orderChain.length) { continue; }
+
       const firstOfChain = orderChain[0];
       const realOrderDate = dayjs(firstOfChain.created_at).utc().format("YYYY-MM-DD");
       try {
