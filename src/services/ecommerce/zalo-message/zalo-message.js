@@ -6,6 +6,7 @@ import { getLatestOrderId } from "services/ecommerce/order-tracking/queries/get-
 import Database from "services/database";
 import crypto from "crypto";
 import { getInitialOrder } from "services/ecommerce/order-tracking/queries/get-initial-order";
+import { HARAVAN_DISPATCH_TYPE_ZALO_MSG } from "services/ecommerce/enum";
 
 export default class SendZaloMessage {
   constructor(env) {
@@ -32,7 +33,7 @@ export default class SendZaloMessage {
     return false;
   }
 
-  static async dequeueSendZaloMessageQueue(batch, env) {
+  static async dequeueSendZaloConfirmMessageQueue(batch, env) {
     const messages = batch.messages;
     for (const message of messages) {
 
@@ -41,7 +42,7 @@ export default class SendZaloMessage {
         continue;
       }
 
-      if (order.dispatchType === "DELAYED") {
+      if (order.dispatchType !== HARAVAN_DISPATCH_TYPE_ZALO_MSG.PAID) {
         continue;
       }
 
@@ -73,7 +74,7 @@ export default class SendZaloMessage {
           continue;
         }
 
-        if (order.dispatchType === "DELAYED") {
+        if (order.dispatchType === HARAVAN_DISPATCH_TYPE_ZALO_MSG.REMIND_PAY || order.dispatchType === HARAVAN_DISPATCH_TYPE_ZALO_MSG.PAID) {
           continue;
         }
 
@@ -166,9 +167,9 @@ export default class SendZaloMessage {
 
       try {
         const orderData = message.body;
-        const dispatchType = orderData.dispatchType; // 'DELAYED'
+        const dispatchType = orderData.dispatchType;
 
-        if (dispatchType !== "DELAYED") {
+        if (dispatchType !== HARAVAN_DISPATCH_TYPE_ZALO_MSG.REMIND_PAY) {
           continue;
         }
 
