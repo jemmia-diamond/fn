@@ -41,6 +41,12 @@ export default class SalesOrderService {
       refunded: "Refunded",
       pending: "Pending"
     };
+    this.carrierStatusMapper = {
+      notdelivered: "Not Delivered",
+      readytopick: "Ready To Pick",
+      delivering: "Delivering",
+      delivered: "Delivered"
+    };
     this.frappeClient = new FrappeClient(
       {
         url: env.JEMMIA_ERP_BASE_URL,
@@ -92,6 +98,7 @@ export default class SalesOrderService {
       financial_status: this.financialStatusMapper[haravanOrderData.financial_status],
       fulfillment_status: this.fulfillmentStatusMapper[haravanOrderData.fulfillment_status],
       cancelled_status: this.cancelledStatusMapper[haravanOrderData.cancelled_status],
+      carrier_status: haravanOrderData.carrier_status ? this.carrierStatusMapper[haravanOrderData.carrier_status] : this.carrierStatusMapper.notdelivered,
       transaction_date: convertIsoToDatetime(haravanOrderData.created_at, "date"),
       haravan_created_at: convertIsoToDatetime(haravanOrderData.created_at, "datetime"),
       total: haravanOrderData.total_line_items_price,
