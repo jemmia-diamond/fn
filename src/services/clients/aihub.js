@@ -1,6 +1,8 @@
+import axios from "axios";
+import axiosRetry from "axios-retry";
+
 export default class AIHUBClient {
-  #host = "https://aihub.jemmia.vn";
-  #basePath = "/api";
+  #host = "https://aihub.jemmia.vn/api";
   #bearerToken;
   #env;
 
@@ -19,25 +21,31 @@ export default class AIHUBClient {
     };
   }
 
-  async makeRequest(endpoint, data = null) {
-    const url = this.#host + this.#basePath + endpoint;
-    const options = {
-      method: "POST",
+  async #getClient() {
+    const client = axios.create({
+      baseURL: this.#host,
       headers: await this.#getHeaders()
-    };
+    });
 
-    if (data) {
-      options.body = JSON.stringify(data);
-    }
+    axiosRetry(client, {
+      retries: 2,
+      retryDelay: axiosRetry.exponentialDelay,
+      retryCondition: (error) => {
+        return axiosRetry.isNetworkOrIdempotentRequestError(error) ||
+          error.response?.status >= 500;
+      }
+    });
+
+    return client;
+  }
+
+  async makeRequest(endpoint, data = null) {
+    const client = await this.#getClient();
 
     try {
-      const response = await fetch(url, options);
+      const response = await client.post(endpoint, data);
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      return await response.json();
+      return response.data;
     } catch (error) {
       throw new Error(`AIHub API request failed: ${error.message}`);
     }

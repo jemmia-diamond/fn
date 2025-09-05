@@ -1,11 +1,24 @@
-import FrappeClient from "../../../../frappe/frappe-client";
-import { convertIsoToDatetime } from "../../../../frappe/utils/datetime";
+import FrappeClient from "src/frappe/frappe-client";
+import { convertIsoToDatetime } from "src/frappe/utils/datetime";
+import LarksuiteService from "services/larksuite/lark";
+import Database from "src/services/database";
+import AddressService from "src/services/erp/contacts/address/address";
+import ContactService from "src/services/erp/contacts/contact/contact";
+import CustomerService from "src/services/erp/selling/customer/customer";
+import { composeSalesOrderNotification, extractPromotions, validateOrderInfo } from "services/erp/selling/sales-order/utils/sales-order-notification";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc.js";
+import { CHAT_GROUPS} from "services/larksuite/group-chat/group-management/constant";
 
-import AddressService from "../../contacts/address/address";
-import ContactService from "../../contacts/contact/contact";
-import CustomerService from "../customer/customer";
+import { fetchSalesOrdersFromERP, saveSalesOrdersToDatabase } from "src/services/erp/selling/sales-order/utils/sales-order-helpers";
 
-export default class OrderService {
+dayjs.extend(utc);
+
+export default class SalesOrderService {
+  static ERPNEXT_PAGE_SIZE = 100;
+  static SYNC_TYPE_AUTO = 1; // auto sync when deploy app
+  static SYNC_TYPE_MANUAL = 0; // manual sync when call function
+
   constructor(env) {
     this.env = env;
     this.doctype = "Sales Order";
@@ -28,6 +41,12 @@ export default class OrderService {
       refunded: "Refunded",
       pending: "Pending"
     };
+    this.carrierStatusMapper = {
+      notdelivered: "Not Delivered",
+      readytopick: "Ready To Pick",
+      delivering: "Delivering",
+      delivered: "Delivered"
+    };
     this.frappeClient = new FrappeClient(
       {
         url: env.JEMMIA_ERP_BASE_URL,
@@ -35,6 +54,7 @@ export default class OrderService {
         apiSecret: env.JEMMIA_ERP_API_SECRET
       }
     );
+    this.db = Database.instance(env);
   };
 
   async processHaravanOrder(haravanOrderData) {
@@ -52,11 +72,11 @@ export default class OrderService {
     const customerDefaultAdress = customerAddresses[0];
 
     // Create contact and customer with default address
-    const contact = await contactService.processHaravanContact(haravanOrderData.customer, undefined, customerDefaultAdress);
+    const contact = await contactService.processHaravanContact(haravanOrderData.customer);
     const customer = await customerService.processHaravanCustomer(haravanOrderData.customer, contact, customerDefaultAdress);
 
     // Update the customer back to his contact and address
-    await contactService.processHaravanContact(haravanOrderData.customer, customer, customerDefaultAdress);
+    await contactService.processHaravanContact(haravanOrderData.customer, customer);
     await addressService.processHaravanAddress(haravanOrderData.billing_address, customer);
     for (const address of haravanOrderData.customer.addresses) {
       await addressService.processHaravanAddress(address, customer);
@@ -78,6 +98,7 @@ export default class OrderService {
       financial_status: this.financialStatusMapper[haravanOrderData.financial_status],
       fulfillment_status: this.fulfillmentStatusMapper[haravanOrderData.fulfillment_status],
       cancelled_status: this.cancelledStatusMapper[haravanOrderData.cancelled_status],
+      carrier_status: haravanOrderData.carrier_status_code ? this.carrierStatusMapper[haravanOrderData.carrier_status_code] : this.carrierStatusMapper.notdelivered,
       transaction_date: convertIsoToDatetime(haravanOrderData.created_at, "date"),
       haravan_created_at: convertIsoToDatetime(haravanOrderData.created_at, "datetime"),
       total: haravanOrderData.total_line_items_price,
@@ -94,11 +115,15 @@ export default class OrderService {
   }
 
   static async dequeueOrderQueue(batch, env) {
-    const orderService = new OrderService(env);
+    const salesOrderService = new SalesOrderService(env);
     const messages = batch.messages;
     for (const message of messages) {
-      const orderData = message.body;
-      await orderService.processHaravanOrder(orderData);
+      const salesOrderData = message.body;
+      try {
+        await salesOrderService.processHaravanOrder(salesOrderData);
+      } catch (error) {
+        console.error(error);
+      }
     }
   }
 
@@ -127,4 +152,187 @@ export default class OrderService {
       rate: parseInt(lineItemData.price)
     };
   };
+
+  async sendNotificationToLark(salesOrderData) {
+    const larkClient = LarksuiteService.createClient(this.env);
+
+    const notificationTracking = await this.db.erpnextSalesOrderNotificationTracking.findFirst({
+      where: {
+        order_name: salesOrderData.name
+      }
+    });
+
+    if (notificationTracking) {
+      return { success: false, message: "Đơn hàng này đã được gửi thông báo từ trước đó!" };
+    }
+
+    const { isValid, message } = validateOrderInfo(salesOrderData);
+    if (!isValid) {
+      return { success: false, message: message };
+    }
+
+    const promotionNames = extractPromotions(salesOrderData);
+    const promotionData = await this.frappeClient.getList("Promotion", {
+      filters: [["name", "in", promotionNames]]
+    });
+    const content = composeSalesOrderNotification(salesOrderData, promotionData);
+
+    const _response = await larkClient.im.message.create({
+      params: {
+        receive_id_type: "chat_id"
+      },
+      data: {
+        receive_id: CHAT_GROUPS.SUPPORT_ERP.chat_id,
+        msg_type: "text",
+        content: JSON.stringify({
+          text: content
+        })
+      }
+    });
+
+    const messageId = _response.data.message_id;
+
+    await this.db.erpnextSalesOrderNotificationTracking.create({
+      data: {
+        lark_message_id: messageId,
+        order_name: salesOrderData.name,
+        haravan_order_id: salesOrderData.haravan_order_id
+      }
+    });
+
+    return { success: true, message: "Đã gửi thông báo thành công!" };
+  }
+
+  async syncSalesOrdersToDatabase(options = {}) {
+    // minutesBack = 10 is default value for first sync when no create kv
+    const { isSyncType = SalesOrderService.SYNC_TYPE_MANUAL, minutesBack = 10 } = options;
+    const kv = this.env.FN_KV;
+    const KV_KEY = "sales_order_sync:last_date";
+    const toDate = dayjs().utc().format("YYYY-MM-DD HH:mm:ss");
+    let fromDate;
+
+    if (isSyncType === SalesOrderService.SYNC_TYPE_AUTO) {
+      const lastDate = await kv.get(KV_KEY);
+      fromDate = lastDate || dayjs().utc().subtract(minutesBack, "minutes").format("YYYY-MM-DD HH:mm:ss"); // first time when deploy app, we need define fromDate, if not, we will get all data from ERP
+    } else {
+      fromDate = dayjs().utc().subtract(minutesBack, "minutes").format("YYYY-MM-DD HH:mm:ss");
+    }
+
+    try {
+      const salesOrders = await fetchSalesOrdersFromERP(this.frappeClient, this.doctype, fromDate, toDate, SalesOrderService.ERPNEXT_PAGE_SIZE);
+      if (Array.isArray(salesOrders) && salesOrders.length > 0) {
+        await saveSalesOrdersToDatabase(this.db, salesOrders);
+      }
+      if (isSyncType === SalesOrderService.SYNC_TYPE_AUTO) {
+        await kv.put(KV_KEY, toDate);
+      }
+    } catch (error) {
+      console.error("Error syncing sales orders to database:", error.message);
+      // Handle when cronjon failed in 1 hour => we need to update the last date to the current date
+      if (isSyncType === SalesOrderService.SYNC_TYPE_AUTO && dayjs(toDate).diff(dayjs(await kv.get(KV_KEY)), "hour") >= 1) {
+        await kv.put(KV_KEY, toDate);
+      }
+    }
+  };
+
+  static async cronSyncSalesOrdersToDatabase(env) {
+    const syncService = new SalesOrderService(env);
+    return await syncService.syncSalesOrdersToDatabase({
+      minutesBack: 10,
+      isSyncType: SalesOrderService.SYNC_TYPE_AUTO
+    });
+  }
+
+  static async fillSalesOrderRealDate(env) {
+    const salesOrderService = new SalesOrderService(env);
+    const salesOrders = [];
+    try {
+      const orders = await salesOrderService.frappeClient.getList("Sales Order", {
+        filters: [
+          ["real_order_date", "is", "not set"],
+          ["cancelled_status", "=", "uncancelled"]
+        ]
+      });
+      salesOrders.push(...orders);
+    } catch (error) {
+      console.error(error);
+      return;
+    }
+
+    for (const salesOrder of salesOrders) {
+      const haravanId = Number(salesOrder.haravan_order_id);
+
+      const orderChain = await salesOrderService.db.$queryRaw`
+        WITH RECURSIVE order_chain AS (
+	        SELECT id, ref_order_id 
+	        FROM haravan.orders 
+	        WHERE id = ${haravanId}
+	        UNION ALL 
+	        SELECT o.id, o.ref_order_id
+	        FROM haravan.orders o
+	        	INNER JOIN order_chain oc ON o.id = oc.ref_order_id
+        )
+        SELECT 
+        o.id ,
+        o.order_number ,
+        o.created_at 
+        FROM haravan.orders o 
+        WHERE o.id IN (
+        	SELECT id FROM order_chain
+        )
+        ORDER BY o.created_at ASC
+      `;
+      const firstOfChain = orderChain[0];
+      const realOrderDate = dayjs(firstOfChain.created_at).utc().format("YYYY-MM-DD");
+      try {
+        await salesOrderService.frappeClient.update(
+          {
+            doctype: "Sales Order",
+            name: salesOrder.name,
+            real_order_date: realOrderDate
+          }
+        );
+      } catch (error) {
+        console.error(error);
+      }
+    }
+  }
+
+  static async fillSerialNumbersToTemporaryOrderItems(env) {
+    const salesOrderService = new SalesOrderService(env);
+
+    const data = await salesOrderService.db.$queryRaw`
+      SELECT 
+      so.name,
+      jsonb_agg(
+      	COALESCE(jsonb_set(li, '{serial_numbers}', to_jsonb(vs.serial_number::text), true), li.value)
+      ) AS items
+      FROM erpnext.sales_orders so 
+      	CROSS JOIN LATERAL jsonb_array_elements(so.items ) AS li 
+      	LEFT JOIN workplace.temporary_products tp ON li->>'haravan_variant_id' = tp.haravan_variant_id::TEXT 
+      	LEFT JOIN workplace.variant_serials vs ON tp.variant_serial_id = vs.id
+      WHERE 1 = 1
+      AND so.haravan_order_id IN (
+      	SELECT 
+      		so.haravan_order_id 
+      	FROM erpnext.sales_orders so 
+      	CROSS JOIN LATERAL jsonb_array_elements(so.items) AS li 
+      	WHERE li->>'serial_numbers' IS NULL AND li->>'sku' LIKE 'SPT%' AND so.cancelled_status = 'Uncancelled'
+      )
+      GROUP BY so."name"
+      ORDER BY so."name"
+    `;
+
+    for (const order of data) {
+      try {
+        await salesOrderService.frappeClient.update({
+          doctype: salesOrderService.doctype,
+          name: order.name,
+          items: order.items
+        });
+      } catch (error) {
+        console.error(error);
+      }
+    }
+  }
 }

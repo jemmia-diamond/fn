@@ -1,4 +1,4 @@
-import ConversationAssignmentController from "./conversation-assignment";
+import ConversationAssignmentController from "controllers/pancake/conversation-assignment";
 
 export default {
   ConversationAssignmentController

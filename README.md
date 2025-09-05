@@ -33,6 +33,39 @@ Start the development server with:
 pnpm run dev
 ```
 
+ORM and migration with Prisma:
+
+- Sync your local/dev database with
+```bash
+pnpx prisma migrate deploy
+```
+```bash
+# 1 migration found in prisma/migrations
+
+# Applying migration `20250807023446_00001`
+
+# The following migration(s) have been applied:
+
+# migrations/
+#   └─ 20250807023446_00001/
+#     └─ migration.sql
+      
+# All migrations have been successfully applied.
+```
+
+- After modifying existing or add new model
+
+```bash
+pnpx prisma migrate dev --name <MIGRATION_NAME>
+# pnpx prisma migrate dev --name init
+# pnpx prisma migrate dev --name 00001
+# Prisma will generate DDL script for futher migration on different environments
+```
+
+> [!IMPORTANT]
+>
+> Prisma manage migration via a table named public._prisma_migrations, so please don't touch it in the production environment database.
+
 Build Prisma with:
 ```bash
 pnpx prisma generate
@@ -122,11 +155,19 @@ app.delete("/resources/:id", YourController.destroy) // Delete
 
 1. Create a new branch for your feature
 2. Make your changes following the project structure
-3. Run ESLint locally before submitting your PR:
-```bash
-pnpm run lint
-```
-4. Push your changes and open a Pull Request
+3. Code quality check
+- Before each commit, ESLint will run automatically
+- If linting fails, please run this command or manually fix the lint errors:  
+  ```bash
+  pnpm run format
+  ```
+4. Commit your changes:
+- Instead of writing commit messages manually, run:
+  ```bash
+  git commit
+  ```
+- This will open an interactive prompt where you select the commit type (feat, fix, docs, …), scope, and description.
+5. Push your changes and open a Pull Request
 
 ## Deployment
 

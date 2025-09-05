@@ -3,7 +3,7 @@
 import { createMiddleware } from "hono/factory";
 
 class CustomLogger {
-  createMiddleware() {
+  createMiddleware(trackObject) {
     return createMiddleware(async (c, next) => {
       const startTime = performance.now();
       const requestInfo = this.extractRequestInfo(c);
@@ -13,7 +13,7 @@ class CustomLogger {
       await next();
 
       const duration = performance.now() - startTime;
-      this.logRequest(requestInfo, requestBody, c.res?.status || 0, duration);
+      await this.logRequest(requestInfo, requestBody, c.res?.status || 0, duration, trackObject);
     });
   }
 
@@ -43,7 +43,7 @@ class CustomLogger {
     return "";
   }
 
-  logRequest(requestInfo, requestBody, status, duration) {
+  async logRequest(requestInfo, requestBody, status, duration, trackObject) {
     const { method, path } = requestInfo;
 
     const logParts = [
@@ -57,10 +57,30 @@ class CustomLogger {
       logParts.push(`payload=${requestBody}`);
     }
 
-    console.log(logParts.join(" "));
+    const logMessage = logParts.join(" ");
+    console.log(logMessage);
+
+    // Send custom logs to middleware.io APM
+    try {
+      if (trackObject && trackObject.logger) {
+        // Log different severity levels based on status code
+        if (status >= 500) {
+          trackObject.logger.error("server error", { "log.file.name": "error.log", method, path, status, duration });
+        } else if (status >= 400) {
+          trackObject.logger.warn("client error", { "log.file.name": "warn.log", method, path, status, duration });
+        } else if (status >= 200 && status < 300) {
+          trackObject.logger.info("success", { method, path, status, duration });
+        } else {
+          trackObject.logger.debug("request", { method, path, status, duration });
+        }
+      }
+    } catch (e) {
+      // Fallback to console if middleware tracking fails
+      console.log("Middleware tracking error:", e);
+    }
   }
 }
 
 const loggerInstance = new CustomLogger();
-export const loggrageLogger = () => loggerInstance.createMiddleware();
+export const loggrageLogger = (trackObject) => loggerInstance.createMiddleware(trackObject);
 export default loggrageLogger;

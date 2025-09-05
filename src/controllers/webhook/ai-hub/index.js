@@ -1,5 +1,5 @@
-import verifyAIHubWebhook from "../../../auth/aihub-auth";
-import AIHubERPUpdateLeadController from "./erp/update-lead";
+import verifyAIHubWebhook from "auth/aihub-auth";
+import AIHubERPUpdateLeadController from "controllers/webhook/ai-hub/erp/update-lead";
 
 export default class AIHubWebhook {
   static register(webhook) {

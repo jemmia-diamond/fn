@@ -1,9 +1,9 @@
-import Database from "../../../database";
-import FrappeClient from "../../../../frappe/frappe-client";
+import Database from "services/database";
+import FrappeClient from "frappe/frappe-client";
 import { Prisma } from "@prisma-cli";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
-import { SHIFTS, ASSIGNMENT_RULES } from "./enum";
+import { SHIFTS, ASSIGNMENT_RULES } from "services/erp/automation/assigment-rule/enum";
 
 dayjs.extend(utc);
 
@@ -63,17 +63,19 @@ export default class AssignmentRuleService {
     const users = await this.getAssignedUsers(defaultAssignmentRule.regionNames);
     const attendingUsers = await this.getAttendingUsers(dayNo, month, shifts);
     const assignedUsers = users.filter((userId) => attendingUsers.some((attendedUser) => attendedUser.email === userId));
-    if (assignedUsers.length) {
-      const updatedAssignmentRule = await this.frappeClient.update(
-        {
-          "doctype": this.doctype,
-          "name": defaultAssignmentRule.name,
-          "users": assignedUsers.map((user) => ({ user }))
-        }
-      );
-      return updatedAssignmentRule;
+
+    if (!assignedUsers.length) {
+      assignedUsers.push(this.defaultUser);
     }
-    return null;
+
+    const updatedAssignmentRule = await this.frappeClient.update(
+      {
+        "doctype": this.doctype,
+        "name": defaultAssignmentRule.name,
+        "users": assignedUsers.map((user) => ({ user }))
+      }
+    );
+    return updatedAssignmentRule;
   }
 
   async updateAssignmentRules(shifts) {

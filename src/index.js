@@ -1,43 +1,39 @@
+import { init, track } from "@middleware.io/agent-apm-worker";
 import { Hono } from "hono";
 import { bearerAuth } from "hono/bearer-auth";
-import { cors } from "hono/cors";
 
-import Routes from "./routes";
-import errorTracker from "./services/error-tracker";
-import loggrageLogger from "./services/custom-logger";
+import Routes from "src/routes";
+import errorTracker from "services/error-tracker";
+import loggrageLogger from "services/custom-logger";
+import CorsService from "services/cors-service";
 
-import queueHandler from "./services/queue-handler";
-import scheduleHandler from "./services/schedule-handler";
+import queueHandler from "services/queue-handler";
+import scheduleHandler from "services/schedule-handler";
 
 const app = new Hono();
 const api = app.basePath("/api");
+const publicApi = app.basePath("/public-api");
 const webhook = app.basePath("/webhook");
+
+app.use("*", async (c, next) => {
+  if (c.env.MIDDLEWARE_API_KEY) {
+    init({
+      serviceName: c.env.MIDDLEWARE_SERVICE_NAME,
+      accountKey: c.env.MIDDLEWARE_API_KEY,
+      target: c.env.MIDDLEWARE_TARGET,
+      consoleLogEnabled: false
+    });
+  }
+  await next();
+});
 
 // Error tracking
 app.use("*", errorTracker);
-app.use(loggrageLogger());
+app.use(loggrageLogger(track));
 
-// CORS
-api.use("*", cors({
-  origin: (origin, c) => {
-    const corsOrigin = c.env.CORS_ORIGINS.split(",");
-
-    if (corsOrigin.includes(origin)) {
-      return origin;
-    }
-
-    // Handle wildcard, eg: *.jemmia.vn
-    for (const o of corsOrigin.filter((o) => o.startsWith("https://*.") )) {
-      if (origin.endsWith(o.replace("https://*", ""))) {
-        return origin;
-      }
-    }
-
-    return null;
-  },
-  allowHeaders: ["Content-Type", "Authorization"],
-  allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
-}));
+// Apply CORS to routes using the service
+api.use("*", CorsService.createCorsConfig());
+publicApi.use("*", CorsService.createCorsConfig());
 
 // Authentication
 api.use("*",
@@ -51,7 +47,9 @@ api.use("*",
 );
 
 // Routes registration
+Routes.AppRoutes.register(app);
 Routes.APIRoutes.register(api);
+Routes.PublicAPIRoutes.register(publicApi);
 Routes.WebhookRoutes.register(webhook);
 
 // Cron trigger and Queue Integrations
