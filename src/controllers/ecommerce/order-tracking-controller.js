@@ -1,5 +1,6 @@
 import Ecommerce from "services/ecommerce";
 import { HTTPException } from "hono/http-exception";
+import { isInteger } from "services/utils/num-helper";
 
 export default class OrderTrackingController {
   static async show(ctx) {
@@ -8,7 +9,7 @@ export default class OrderTrackingController {
       throw new HTTPException(400, { message: "Order ID is required" });
     }
 
-    if (!Number.isInteger(Number(id))) {
+    if (!isInteger(id)) {
       throw new HTTPException(404, { message: "Invalid order ID" });
     }
 
