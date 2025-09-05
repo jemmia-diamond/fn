@@ -5,18 +5,15 @@ export function buildQuery(jsonParams) {
 
   const dataSql = `
     SELECT  
-      CAST(p.haravan_product_id AS INT) AS id,
+      CAST(p.haravan_product_id AS int) AS id,
       p.title,
       d.design_code,
       p.handle,
       d.diamond_holder,
       d.ring_band_type,
       p.haravan_product_type AS product_type,
-      CASE 
-        WHEN e.product_id IS NULL THEN FALSE 
-        ELSE TRUE 
-      END AS has_360,
       img.images,
+      p.has_360,
       JSON_AGG(
         JSON_BUILD_OBJECT(
           'id', CAST(v.haravan_variant_id AS INT),
@@ -27,9 +24,8 @@ export function buildQuery(jsonParams) {
           'price_compare_at', CAST(v.price_compare_at AS INT)
         )
       ) AS variants
-    FROM ecom.products p
-      INNER JOIN workplace.designs d ON d.id = p.design_id
-      LEFT JOIN workplace.ecom_360 e ON p.workplace_id = e.product_id
+    FROM ecom.materialized_products p 
+      INNER JOIN workplace.designs d ON p.design_id = d.id
 
       -- Subquery for pre-aggregated images
       INNER JOIN (
@@ -42,8 +38,8 @@ export function buildQuery(jsonParams) {
 
       INNER JOIN LATERAL (
         SELECT *
-        FROM ecom.variants v
-        WHERE v.hararvan_product_id = p.haravan_product_id
+        FROM ecom.materialized_variants v
+        WHERE v.haravan_product_id = p.haravan_product_id
         ORDER BY v.fineness ${finenessOrder}, v.price DESC
       ) v ON TRUE
     WHERE 1 = 1
@@ -52,9 +48,8 @@ export function buildQuery(jsonParams) {
     GROUP BY 
       p.haravan_product_id, p.title, d.design_code, p.handle, 
       d.diamond_holder, d.ring_band_type, p.haravan_product_type,
-      CASE WHEN e.product_id IS NULL THEN FALSE ELSE TRUE END,
       p.max_price, p.min_price, p.max_price_18, p.max_price_14, 
-      p.qty_onhand, p.image_updated_at, img.images
+      p.qty_onhand, img.images, p.has_360
     ${sortString}
     ${paginationString}
   `;
