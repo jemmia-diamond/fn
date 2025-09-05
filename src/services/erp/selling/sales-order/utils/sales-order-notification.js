@@ -4,7 +4,7 @@ import { SKU_LENGTH, SKU_PREFIX } from "services/haravan/products/product-varian
 
 dayjs.extend(utc);
 
-export const composeSalesOrderNotification = (salesOrder, promotionData, customer) => {
+export const composeSalesOrderNotification = (salesOrder, promotionData, leadSource, policyData, productCategoryData) => {
   const time = dayjs().format("DD-MM-YYYY HH:mm:ss");
   const orderNumber = salesOrder.order_number;
 
@@ -27,15 +27,15 @@ ${salesOrder.items.map((item, idx) => composeItemContent(item, idx + 1)).join("\
 - Số tiền đã cọc: ${formatVietnameseCurrency(salesOrder.paid_amount)}
 - Số tiền còn lại: ${formatVietnameseCurrency(salesOrder.balance)}
 - Ngày thanh toán dự kiến: ${expectedPaymentDate}
-- Kênh tiếp cận đầu tiên: ${customer.first_source}
+- Kênh tiếp cận đầu tiên: ${leadSource.source_name}
 
-* Đặc điểm sản phẩm đơn hàng: 
-${composeChildrenContent(salesOrder.product_categories, "title")}
+* Đặc điểm sản phẩm đơn hàng:
+${composeChildrenContent(policyData, "title")}
 
-* Chính sách bảo hành: 
-${composeChildrenContent(salesOrder.policies, "title")}
+* Chính sách bảo hành:
+${composeChildrenContent(productCategoryData, "title")}
 
-* Chương trình khuyến mãi toàn đơn: 
+* Chương trình khuyến mãi toàn đơn:
 ${composeChildrenContent(orderPromotions, "title")}
 
 Link đơn hàng: https://erp.jemmia.vn/app/sales-order/${salesOrder.name}
@@ -48,7 +48,7 @@ const composeItemContent = (item, idx) => {
     return `
 ${idx}. ${item.item_name}
 Mã gốc: ${item.variant_title}
-`;
+`.trim().replace(/\n+/g, "\n");
   }
 
   const serialNumbers = item.serial_numbers ? item.serial_numbers.split("\n").join(", ") : "";
