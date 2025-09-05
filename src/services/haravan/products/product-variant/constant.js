@@ -3,5 +3,7 @@ export const SKU_LENGTH = {
 };
 
 export const SKU_PREFIX = {
-  TEMPORARY_JEWELRY: "SPT"
+  TEMPORARY_JEWELRY: "SPT",
+  DIAMOND: "AJ",
+  GIFT: "QT"
 };
