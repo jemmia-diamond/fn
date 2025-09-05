@@ -618,3 +618,62 @@ model erpnextCustomer {
   @@map("customers")
   @@schema("erpnext")
 }
+
+model erpnextPromotion {
+  uuid              String    @id @default(uuid()) @db.Uuid
+  name              String    @unique @db.VarChar(255)
+  owner             String?   @db.VarChar(255)
+  creation          DateTime? @db.Timestamp(6)
+  modified          DateTime? @db.Timestamp(6)
+  modified_by       String?   @db.VarChar(255)
+  docstatus         Int?
+  idx               Int?
+  title             String?   @db.VarChar(255)
+  scope             String?   @db.VarChar(255)
+  is_active         Int?
+  is_expired        Int?
+  priority          String?   @db.VarChar(255)
+  discount_type     String?   @db.VarChar(255)
+  discount_amount   Decimal?  @db.Decimal(18, 6)
+  discount_percent  Decimal?  @db.Decimal(18, 6)
+  start_date        DateTime? @db.Date
+  end_date          DateTime? @db.Date
+  description       String?   @db.Text
+  bizfly_id         String?   @db.VarChar(255)
+
+  @@index([name])
+  @@map("promotions")
+  @@schema("erpnext")
+}
+
+model erpnextPurchasePurpose {
+  uuid         String    @id @default(uuid()) @db.Uuid
+  name         String    @unique @db.VarChar(255)
+  owner        String?   @db.VarChar(255)
+  creation     DateTime? @db.Timestamp(6)
+  modified     DateTime? @db.Timestamp(6)
+  modified_by  String?   @db.VarChar(255)
+  docstatus    Int?
+  idx          Int?
+  title        String?   @db.VarChar(255)
+
+  @@index([name])
+  @@map("purchase_purposes")
+  @@schema("erpnext")
+}
+
+model erpnextProductCategory {
+  uuid         String    @id @default(uuid()) @db.Uuid
+  name         String    @unique @db.VarChar(255)
+  owner        String?   @db.VarChar(255)
+  creation     DateTime? @db.Timestamp(6)
+  modified     DateTime? @db.Timestamp(6)
+  modified_by  String?   @db.VarChar(255)
+  docstatus    Int?
+  idx          Int?
+  title        String?   @db.VarChar(255)
+
+  @@index([name])
+  @@map("product_categories")
+  @@schema("erpnext")
+}
