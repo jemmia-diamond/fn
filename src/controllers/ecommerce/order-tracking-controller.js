@@ -8,6 +8,10 @@ export default class OrderTrackingController {
       throw new HTTPException(400, { message: "Order ID is required" });
     }
 
+    if (!Number.isInteger(Number(id))) {
+      throw new HTTPException(404, { message: "Invalid order ID" });
+    }
+
     const authorization = ctx.req.header("Authorization");
     let reqBearerToken = null;
     if (authorization && authorization.startsWith("Bearer ")) {
