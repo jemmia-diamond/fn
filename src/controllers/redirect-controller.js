@@ -8,6 +8,8 @@ export default class RedirectController {
   static async show(ctx) {
     const routeName = ctx.req.param("name");
     const params = ctx.req.query();
+
+    params.token &&= await ctx.env.FN_KV.get(params.token) ?? params.token;
     const searchParams = new URLSearchParams(params).toString();
 
     let url = RedirectController.MAPPINGS[routeName];

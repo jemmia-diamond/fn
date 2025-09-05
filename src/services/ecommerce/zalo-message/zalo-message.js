@@ -103,7 +103,7 @@ export default class SendZaloMessage {
         const templateId = ZALO_TEMPLATE.delivering;
 
         const bearerToken = await env.BEARER_TOKEN_SECRET.get();
-        const accessToken =  this.createTokenForOrderTracking({
+        const accessToken = await this.createTokenForOrderTracking({
           order_id: firstOrder.id,
           order_number: firstOrder.order_number
         }, bearerToken);
@@ -220,11 +220,16 @@ export default class SendZaloMessage {
     }
   }
 
-  static createTokenForOrderTracking(payloadObject, secret) {
+  static async createTokenForOrderTracking(payloadObject, secret) {
     const payloadString = `${payloadObject.order_id}|${payloadObject.order_number}|${JSON.stringify(payloadObject)}`;
     const base64Payload = Buffer.from(payloadString).toString("base64url");
     const hashedToken = this.createHashForOrderTracking(payloadString, secret);
-    return `${base64Payload}.${hashedToken}`;
+
+    const uuid = crypto.randomUUID();
+    const accessToken = `${base64Payload}.${hashedToken}`;
+    await this.env.FN_KV.put(uuid, accessToken);
+
+    return uuid;
   }
 
   static createHashForOrderTracking(payloadString, secret) {
