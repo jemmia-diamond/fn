@@ -166,23 +166,38 @@ export default class SalesOrderService {
       return { success: false, message: "Đơn hàng này đã được gửi thông báo từ trước đó!" };
     }
 
-    const { isValid, message } = validateOrderInfo(salesOrderData);
+    const customer = await this.frappeClient.getDoc("Customer", salesOrderData.customer);
+
+    const { isValid, message } = validateOrderInfo(salesOrderData, customer);
     if (!isValid) {
       return { success: false, message: message };
     }
+
+    const leadSource = await this.frappeClient.getDoc("Lead Source", customer.first_source);
+
+    const policyNames = salesOrderData.policies.map(policy => policy.policy);
+    const policyData = await this.frappeClient.getList("Policy", {
+      filters: [["name", "in", policyNames]]
+    });
+
+    const productCategoryNames = salesOrderData.product_categories.map(productCategory => productCategory.product_category);
+    const productCategoryData = await this.frappeClient.getList("Product Category", {
+      filters: [["name", "in", productCategoryNames]]
+    });
 
     const promotionNames = extractPromotions(salesOrderData);
     const promotionData = await this.frappeClient.getList("Promotion", {
       filters: [["name", "in", promotionNames]]
     });
-    const content = composeSalesOrderNotification(salesOrderData, promotionData);
+
+    const content = composeSalesOrderNotification(salesOrderData, promotionData, leadSource, policyData, productCategoryData);
 
     const _response = await larkClient.im.message.create({
       params: {
         receive_id_type: "chat_id"
       },
       data: {
-        receive_id: CHAT_GROUPS.SUPPORT_ERP.chat_id,
+        receive_id: CHAT_GROUPS.SUPPORT_ERP_SALES.chat_id,
         msg_type: "text",
         content: JSON.stringify({
           text: content
@@ -282,6 +297,9 @@ export default class SalesOrderService {
         )
         ORDER BY o.created_at ASC
       `;
+
+      if (!orderChain.length) { continue; }
+
       const firstOfChain = orderChain[0];
       const realOrderDate = dayjs(firstOfChain.created_at).utc().format("YYYY-MM-DD");
       try {

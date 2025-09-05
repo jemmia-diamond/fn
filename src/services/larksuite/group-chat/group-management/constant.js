@@ -3,9 +3,13 @@ export const CHAT_GROUPS = {
     chat_id: "oc_7f6dd355251aa766220a84dcae2403e1",
     group_name: "Testing Group"
   },
-  SUPPORT_ERP: {
+  SUPPORT_ERP_PRESALES: {
     chat_id: "oc_d21fac86f4f26dc94676027a6c467e29",
     group_name: "ERP - Hỗ trợ Presales"
+  },
+  SUPPORT_ERP_SALES: {
+    chat_id: "oc_e0a0ee1dd1a94b80d15433f44242d9a5",
+    group_name: "ERP - Hỗ trợ Sales"
   },
   NEGATIVE_STOCK_ORDERING_CONTROLL: {
     chat_id: "oc_ff35722f14a778cc671688d256d652ed",

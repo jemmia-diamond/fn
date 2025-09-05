@@ -1,11 +1,16 @@
 import Ecommerce from "services/ecommerce";
 import { HTTPException } from "hono/http-exception";
+import { isInteger } from "services/utils/num-helper";
 
 export default class OrderTrackingController {
   static async show(ctx) {
     const { id } = ctx.req.param();
     if (!id) {
       throw new HTTPException(400, { message: "Order ID is required" });
+    }
+
+    if (!isInteger(id)) {
+      throw new HTTPException(404, { message: "Invalid order ID" });
     }
 
     const authorization = ctx.req.header("Authorization");
