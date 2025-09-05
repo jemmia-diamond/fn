@@ -4,7 +4,7 @@ import { SKU_LENGTH, SKU_PREFIX } from "services/haravan/products/product-varian
 
 dayjs.extend(utc);
 
-export const composeSalesOrderNotification = (salesOrder, promotionData) => {
+export const composeSalesOrderNotification = (salesOrder, promotionData, customer) => {
   const time = dayjs().format("DD-MM-YYYY HH:mm:ss");
   const orderNumber = salesOrder.order_number;
 
@@ -20,13 +20,23 @@ Mã khách hàng: ${salesOrder.customer}
 
 ${salesOrder.items.map((item, idx) => composeItemContent(item, idx + 1)).join("\n\n")}
 
-Thông tin toàn đơn hàng:
+* Thông tin toàn đơn hàng:
 - Tổng đơn hàng: ${formatVietnameseCurrency(salesOrder.grand_total)}
+- Ngày tư vấn: ${salesOrder.consultation_date}
 - Chiết khấu đơn hàng: ${salesOrder.discount_amount}
 - Số tiền đã cọc: ${formatVietnameseCurrency(salesOrder.paid_amount)}
 - Số tiền còn lại: ${formatVietnameseCurrency(salesOrder.balance)}
 - Ngày thanh toán dự kiến: ${expectedPaymentDate}
-- Chương trình khuyến mãi toàn đơn: ${composePromotionContent(orderPromotions)}
+- Kênh tiếp cận đầu tiên: ${customer.first_source}
+
+* Đặc điểm sản phẩm đơn hàng: 
+${composeChildrenContent(salesOrder.product_categories, "title")}
+
+* Chính sách bảo hành: 
+${composeChildrenContent(salesOrder.policies, "title")}
+
+* Chương trình khuyến mãi toàn đơn: 
+${composeChildrenContent(orderPromotions, "title")}
 
 Link đơn hàng: https://erp.jemmia.vn/app/sales-order/${salesOrder.name}
     `.trim();
@@ -34,6 +44,13 @@ Link đơn hàng: https://erp.jemmia.vn/app/sales-order/${salesOrder.name}
 };
 
 const composeItemContent = (item, idx) => {
+  if (item.sku.startsWith(SKU_PREFIX.GIFT)) {
+    return `
+${idx}. ${item.item_name}
+Mã gốc: ${item.variant_title}
+`;
+  }
+
   const serialNumbers = item.serial_numbers ? item.serial_numbers.split("\n").join(", ") : "";
   const content = `
 ${idx}. ${item.item_name}
@@ -41,19 +58,14 @@ Mã gốc: ${item.variant_title}
 SKU: ${item.sku}
 Số lượng: ${item.qty}
 ${serialNumbers ? `Số serial: ${serialNumbers}` : ""}
-Giá gốc: ${formatVietnameseCurrency(item.price_list_rate)}
+Giá: ${formatVietnameseCurrency(item.price_list_rate)}
 Giá khuyến mãi: ${formatVietnameseCurrency(item.rate)}
     `.trim().replace(/\n+/g, "\n");
   return content;
 };
 
-const composePromotionContent = (promotions) => {
-  const titles = promotions.map((promotion) => promotion.title);
-  return titles.join(", ");
-};
-
 function formatVietnameseCurrency(amount) {
-  return amount.toLocaleString("vi-VN", { style: "currency", currency: "VND" });
+  return amount.toLocaleString("vi-VN", { style: "currency", currency: "VND" }) + " VNĐ";
 }
 
 export const extractPromotions = (salesOrder) => {
@@ -73,23 +85,38 @@ export const extractPromotions = (salesOrder) => {
   return promotionNames;
 };
 
-export function validateOrderInfo(salesOrderData) {
+export function validateOrderInfo(salesOrderData, customer) {
   let message = null;
   let isValid = false;
 
+  if (!customer.first_source) {
+    message = "Chưa nhập mã kênh tiếp cận đầu tiên cho khách hàng";
+    return { isValid, message };
+  }
+
+  if (!salesOrderData.policies.length) {
+    message = "Chưa nhập chính sách đơn hàng";
+    return { isValid, message };
+  }
+
   if (!salesOrderData.product_categories.length) {
     message = "Chưa nhập đặc điểm sản phẩm đơn hàng";
-    return {isValid, message};
+    return { isValid, message };
   }
 
   if (!salesOrderData.expected_delivery_date) {
     message = "Chưa nhập ngày giao hàng";
-    return {isValid, message};
+    return { isValid, message };
   }
 
   if (!salesOrderData.expected_payment_date) {
     message = "Chưa nhập ngày thanh toán";
-    return {isValid, message};
+    return { isValid, message };
+  }
+
+  if (!salesOrderData.consultation_date) {
+    message = "Chưa nhập ngày tư vấn";
+    return { isValid, message };
   }
 
   const lineItems = salesOrderData.items;
@@ -98,10 +125,25 @@ export function validateOrderInfo(salesOrderData) {
   for (const jewelryItem of jewelryItems) {
     if (!jewelryItem.serial_numbers) {
       message = "Chưa nhập serial number";
-      return {isValid, message};
+      return { isValid, message };
+    }
+  }
+
+  const jewelryAndDiamondItems = lineItems.filter((item) => (item.sku.length === SKU_LENGTH.JEWELRY_AND_DIAMOND || item.sku.startsWith(SKU_PREFIX.DIAMOND)));
+  for (const item of jewelryAndDiamondItems) {
+    if (!(item.promotion_1 || item.promotion_2 || item.promotion_3 || item.promotion_4)) {
+      message = "Chưa nhập chuong trinh khuyến mãi cho sản phẩm trang sức hoặc kim cương";
+      return { isValid, message };
     }
   }
 
   isValid = true;
-  return {isValid, message};
+  return { isValid, message };
+}
+
+function composeChildrenContent(children, key) {
+  return children
+    .map((child) => "- " + child[key])
+    .join("\n")
+    .trim();
 }

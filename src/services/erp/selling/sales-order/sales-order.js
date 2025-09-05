@@ -159,7 +159,9 @@ export default class SalesOrderService {
       return { success: false, message: "Đơn hàng này đã được gửi thông báo từ trước đó!" };
     }
 
-    const { isValid, message } = validateOrderInfo(salesOrderData);
+    const customer = await this.frappeClient.get("Customer", salesOrderData.customer);
+
+    const { isValid, message } = validateOrderInfo(salesOrderData, customer);
     if (!isValid) {
       return { success: false, message: message };
     }
@@ -168,14 +170,15 @@ export default class SalesOrderService {
     const promotionData = await this.frappeClient.getList("Promotion", {
       filters: [["name", "in", promotionNames]]
     });
-    const content = composeSalesOrderNotification(salesOrderData, promotionData);
+
+    const content = composeSalesOrderNotification(salesOrderData, promotionData, customer);
 
     const _response = await larkClient.im.message.create({
       params: {
         receive_id_type: "chat_id"
       },
       data: {
-        receive_id: CHAT_GROUPS.SUPPORT_ERP.chat_id,
+        receive_id: CHAT_GROUPS.SUPPORT_ERP_SALES.chat_id,
         msg_type: "text",
         content: JSON.stringify({
           text: content
