@@ -22,7 +22,7 @@ ${salesOrder.items.map((item, idx) => composeItemContent(item, idx + 1, promotio
 
 * Thông tin toàn đơn hàng:
 - Tổng đơn hàng: ${formatVietnameseCurrency(salesOrder.grand_total)}
-- Ngày tư vấn: ${salesOrder.consultation_date}
+- Ngày tư vấn: ${dayjs(salesOrder.consultation_date).format("DD-MM-YYYY")}
 - Chiết khấu đơn hàng: ${salesOrder.discount_amount}
 - Số tiền đã cọc: ${formatVietnameseCurrency(salesOrder.paid_amount)}
 - Số tiền còn lại: ${formatVietnameseCurrency(salesOrder.balance)}
