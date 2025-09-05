@@ -190,7 +190,7 @@ export default class SalesOrderService {
         receive_id_type: "chat_id"
       },
       data: {
-        receive_id: CHAT_GROUPS.TESTING_GROUP.chat_id,
+        receive_id: CHAT_GROUPS.SUPPORT_ERP_SALES.chat_id,
         msg_type: "text",
         content: JSON.stringify({
           text: content
