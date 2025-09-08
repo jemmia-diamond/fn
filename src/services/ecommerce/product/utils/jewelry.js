@@ -5,15 +5,15 @@ export function buildQuery(jsonParams) {
 
   const dataSql = `
     SELECT  
-      CAST(p.haravan_product_id AS int) AS id,
+      CAST(p.haravan_product_id AS INT) AS id,
       p.title,
       d.design_code,
       p.handle,
       d.diamond_holder,
       d.ring_band_type,
       p.haravan_product_type AS product_type,
-      img.images,
       p.has_360,
+      img.images,
       JSON_AGG(
         JSON_BUILD_OBJECT(
           'id', CAST(v.haravan_variant_id AS INT),
