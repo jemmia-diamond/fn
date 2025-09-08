@@ -2,6 +2,7 @@ import Larksuite from "services/larksuite";
 import ERP from "services/erp";
 import Ecommerce from "services/ecommerce";
 import InventoryCMS from "services/inventory-cms";
+import DatabaseOperations from "services/db-operations";
 
 export default {
   scheduled: async (controller, env, _ctx) => {
@@ -23,10 +24,12 @@ export default {
     case "*/20 * * * *": // At every 20th minute
       await ERP.Selling.SalesOrderService.cronSyncSalesOrdersToDatabase(env);
       await ERP.Selling.CustomerService.cronSyncCustomersToDatabase(env);
+      await DatabaseOperations.MaterializedViewService.refresh20Minutes(env);
       break;
     case "*/30 * * * *": // At every 30th minute
       await ERP.Contacts.AddressService.cronSyncAddressesToDatabase(env);
       await Ecommerce.ProductService.refreshMaterializedViews(env);
+      await DatabaseOperations.MaterializedViewService.refresh30Minutes(env);
       break;
     case "0 */3 * * *": // At every 3rd hour
       await InventoryCMS.InventoryCheckSheetService.syncInventoryCheckSheetToDatabase(env);
