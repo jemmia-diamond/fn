@@ -55,15 +55,17 @@ export function buildQuery(jsonParams) {
   `;
 
   const countSql = `
-      SELECT CAST(COUNT(*) OVER() AS INT) AS total
-      FROM ecom.products p 
-        INNER JOIN workplace.designs d ON d.id = p.design_id
-        LEFT JOIN workplace.ecom_360 e ON p.workplace_id = e.product_id
-        INNER JOIN haravan.images i ON i.product_id = p.haravan_product_id
-        INNER JOIN ecom.variants v ON v.hararvan_product_id = p.haravan_product_id
-      WHERE 1 = 1 ${filterString}
-      GROUP BY p.haravan_product_id
-      LIMIT 1
+      SELECT 
+	      COUNT(DISTINCT p.haravan_product_id) AS total,
+	      ARRAY_AGG(DISTINCT v.material_color ) AS material_colors,
+	      ARRAY_AGG(DISTINCT v.fineness) AS fineness
+      FROM ecom.materialized_products p 
+          INNER JOIN workplace.designs d ON d.id = p.design_id
+          INNER JOIN haravan.images i ON i.product_id = p.haravan_product_id
+          INNER JOIN ecom.materialized_variants v ON v.haravan_product_id = p.haravan_product_id
+      WHERE 1 = 1 
+        AND (p.haravan_product_type != 'Nhẫn Cưới' OR (p.haravan_product_type = 'Nhẫn Cưới' AND d.gender = 'Nam'))
+      ${filterString}
     `;
 
   return {
@@ -78,6 +80,10 @@ export function aggregateQuery(jsonParams) {
   let paginationString = "";
   let handleFinenessPriority = "18K";
   let sortedColumn = "p.max_price_18";
+
+  if (jsonParams.is_in_stock) {
+    filterString += "AND p.qty_onhand > 0\n";
+  }
 
   if (jsonParams.categories && jsonParams.categories.length > 0) {
     filterString += `AND p.category IN ('${jsonParams.categories.join("','")}')\n`;

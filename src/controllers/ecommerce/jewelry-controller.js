@@ -11,6 +11,7 @@ export default class JewelryController {
       genders: params.gender ? params.gender.split(",") : [],
       fineness: params.fineness ? params.fineness.split(",") : [],
       pages: params.pages ? params.pages.split(",") : [],
+      is_in_stock: params.is_in_stock ? params.is_in_stock === "true" : null,
       pagination: {
         from: params.from ? parseInt(params.from, 10) : 1,
         limit: params.limit ? parseInt(params.limit, 10) : 24
