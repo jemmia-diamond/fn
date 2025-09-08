@@ -51,7 +51,8 @@ export default class LeadService {
       SELECT dl.link_name
       FROM \`tabContact\` c
         JOIN \`tabDynamic Link\` dl ON c.name = dl.parent AND dl.parenttype = 'Contact'
-      WHERE c.pancake_conversation_id = '${conversationId}';
+      WHERE c.pancake_conversation_id = '${conversationId}
+      LIMIT 1';
     `;
     const leads = await this.frappeClient.executeSQL(query);
     if (leads.length) {
