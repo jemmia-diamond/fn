@@ -16,16 +16,20 @@ export default class ProductService {
 
     return {
       data,
-      count: count.length ? Number(count[0].total) : 0
+      count: count.length ? Number(count[0].total) : 0,
+      material_colors: count.length ? count[0].material_colors : [],
+      fineness: count.length ? count[0].fineness : []
     };
   }
 
   async getJewelry(jsonParams) {
-    const {data, count} = await this.getJewelryData(jsonParams);
+    const {data, count, material_colors, fineness} = await this.getJewelryData(jsonParams);
     return {
       data,
       metadata: {
         total: count,
+        material_colors: material_colors,
+        fineness: fineness,
         pagination: jsonParams.pagination
       }
     };
