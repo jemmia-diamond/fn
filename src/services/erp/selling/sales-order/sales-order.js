@@ -98,7 +98,7 @@ export default class SalesOrderService {
       financial_status: this.financialStatusMapper[haravanOrderData.financial_status],
       fulfillment_status: this.fulfillmentStatusMapper[haravanOrderData.fulfillment_status],
       cancelled_status: this.cancelledStatusMapper[haravanOrderData.cancelled_status],
-      carrier_status: haravanOrderData.carrier_status_code ? this.carrierStatusMapper[haravanOrderData.carrier_status_code] : this.carrierStatusMapper.notdelivered,
+      carrier_status: haravanOrderData.fulfillments.length ? this.carrierStatusMapper[haravanOrderData.fulfillments[0].carrier_status_code] : this.carrierStatusMapper.notdelivered,
       transaction_date: convertIsoToDatetime(haravanOrderData.created_at, "date"),
       haravan_created_at: convertIsoToDatetime(haravanOrderData.created_at, "datetime"),
       total: haravanOrderData.total_line_items_price,
