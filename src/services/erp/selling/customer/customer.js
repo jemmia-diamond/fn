@@ -23,6 +23,7 @@ export default class CustomerService {
     );
     this.defaultCustomerName = "Khách Vãng Lai";
     this.db = Database.instance(env);
+    this.genderMap = ["Female", "Male"];
   };
 
   async processHaravanCustomer(customerData, contact, address) {
@@ -35,7 +36,9 @@ export default class CustomerService {
       customer_type: "Individual",
       language: "vietnamese",
       customer_primary_contact: contact.name,
-      customer_primary_address: address.name
+      customer_primary_address: address.name,
+      birth_date: dayjs(customerData.birthday).format("YYYY-MM-DD"),
+      gender: customerData.gender ? this.genderMap[customerData.gender] : null
     };
 
     const customer = await this.frappeClient.upsert(mappedCustomerData, "haravan_id");
