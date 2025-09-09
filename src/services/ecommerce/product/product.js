@@ -1,7 +1,7 @@
 import Database from "services/database";
 import { Prisma } from "@prisma-cli";
 import { buildQuery } from "services/ecommerce/product/utils/jewelry";
-import { buildWeddingRingsQuery, buildWeddingRingPairQuery } from "services/ecommerce/product/utils/wedding-ring";
+import { buildWeddingRingsQuery } from "services/ecommerce/product/utils/wedding-ring";
 
 export default class ProductService {
   constructor(env) {
@@ -120,12 +120,6 @@ export default class ProductService {
         pagination: jsonParams.pagination
       }
     };
-  }
-
-  async getWeddingRingsById(id) {
-    const sql = buildWeddingRingPairQuery(id);
-    const result = await this.db.$queryRaw`${Prisma.raw(sql)}`;
-    return result?.[0] || null;
   }
 
   async getJewelryById(id) {
