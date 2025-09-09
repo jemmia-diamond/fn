@@ -23,7 +23,10 @@ export default class CustomerService {
     );
     this.defaultCustomerName = "Khách Vãng Lai";
     this.db = Database.instance(env);
-    this.genderMap = ["Female", "Male"];
+    this.genderMap = {
+      0: "Female",
+      1: "Male"
+    };
   };
 
   async processHaravanCustomer(customerData, contact, address) {
