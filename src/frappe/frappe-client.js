@@ -192,7 +192,8 @@ export default class FrappeClient {
       if (data.exc) throw new Error(data.exc);
       return data.message || data.data || null;
     } catch (e) {
-      throw this.parseErrorMessage(e);
+      const parsed = this.parseErrorMessage(e) || (e && e.message) || text;
+      throw new Error(parsed);
     }
   }
   async executeSQL(sql) {
