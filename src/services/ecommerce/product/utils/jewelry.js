@@ -55,10 +55,10 @@ export function buildQuery(jsonParams) {
   `;
 
   const countSql = `
-      SELECT 
+      SELECT
 	      COUNT(DISTINCT p.haravan_product_id) AS total,
-	      ARRAY_AGG(DISTINCT v.material_color ) AS material_colors,
-	      ARRAY_AGG(DISTINCT v.fineness) AS fineness
+	      (SELECT ARRAY_AGG(DISTINCT mv.material_color ) FROM ecom.materialized_variants mv) AS material_colors,
+	      (SELECT ARRAY_AGG(DISTINCT mv.fineness ) FROM ecom.materialized_variants mv) AS fineness
       FROM ecom.materialized_products p 
           INNER JOIN workplace.designs d ON d.id = p.design_id
           INNER JOIN haravan.images i ON i.product_id = p.haravan_product_id

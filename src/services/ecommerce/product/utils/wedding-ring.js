@@ -110,6 +110,18 @@ export function aggregateQuery(jsonParams) {
     }
   }
 
+  if (jsonParams.product_ids.length) {
+    filterString += `
+    AND d.wedding_ring_id IN (
+	    SELECT
+		    d.wedding_ring_id 
+      FROM workplace.products p 
+		    INNER JOIN workplace.designs d ON p.design_id = d.id 
+	    WHERE p.haravan_product_id IN (${jsonParams.product_ids.join(",")})
+    )
+    `;
+  }
+
   return {
     filterString,
     sortString,
