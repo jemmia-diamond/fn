@@ -40,7 +40,8 @@
     "LARK_API_ENDPOINT": "https://open.larksuite.com",
     "INVENTORY_CMS_ENDPOINT": "https://inventory-cms.jemmia.vn",
     "MIDDLEWARE_SERVICE_NAME": "fn-cloudflare-worker",
-    "MIDDLEWARE_TARGET": "https://akvuq.middleware.io"
+    "MIDDLEWARE_TARGET": "https://akvuq.middleware.io",
+    "LARK_TBDH_GROUP_CHAT_ID": "oc_0252035b8460aa94568cdb70c88b983b"
   },
   "secrets_store_secrets": [
     {
@@ -155,7 +156,8 @@
       "30 1 * * *",
       "30 5 * * *",
       "0 10 * * *",
-      "0 14 * * *"
+      "0 14 * * *",
+      "*/5 * * * *"
     ]
   }
 }
