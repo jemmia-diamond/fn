@@ -9,10 +9,14 @@ export default class AIHubERPUpdateLeadController {
       throw new HTTPException(400, "Conversation id is required");
     }
 
-    let leadService = new LeadService(ctx.env);
-    const res = await leadService.updateLeadInfoFromSummary(body.data, conversationId);
+    try {
+      let leadService = new LeadService(ctx.env);
+      const res = await leadService.updateLeadInfoFromSummary(body.data, conversationId);
 
-    return ctx.json(res);
+      return ctx.json(res);
+    } catch {
+      throw new HTTPException(500, "Failed to update lead info");
+    }
   }
 }
 
