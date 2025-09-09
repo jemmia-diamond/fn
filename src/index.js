@@ -4,6 +4,7 @@ import { bearerAuth } from "hono/bearer-auth";
 
 import Routes from "src/routes";
 import errorTracker from "services/error-tracker";
+import errorHandler from "middlewares/error-handler";
 import loggrageLogger from "services/custom-logger";
 import CorsService from "services/cors-service";
 
@@ -26,6 +27,9 @@ app.use("*", async (c, next) => {
   }
   await next();
 });
+
+// Global error handler (must be first)
+app.use("*", errorHandler);
 
 // Error tracking
 app.use("*", errorTracker);
