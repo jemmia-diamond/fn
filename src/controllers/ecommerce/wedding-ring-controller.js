@@ -21,7 +21,12 @@ export default class WeddingRingController {
         min: params.min_price ? Number(params.min_price) : null,
         max: params.max_price ? Number(params.max_price) : null
       },
-      product_ids: params.product_ids ? params.product_ids.split(",") : []
+      product_ids: params.product_ids
+        ? params.product_ids
+            .split(",")
+            .map((v) => Number(v.trim()))
+            .filter((n) => Number.isInteger(n) && n > 0)
+        : []
     };
 
     const {isValidated, message} = validateParams(jsonParams);
