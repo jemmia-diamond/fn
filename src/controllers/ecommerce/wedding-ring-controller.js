@@ -23,9 +23,9 @@ export default class WeddingRingController {
       },
       product_ids: params.product_ids
         ? params.product_ids
-            .split(",")
-            .map((v) => Number(v.trim()))
-            .filter((n) => Number.isInteger(n) && n > 0)
+          .split(",")
+          .map((v) => Number(v.trim()))
+          .filter((n) => Number.isInteger(n) && n > 0)
         : []
     };
 
