@@ -55,7 +55,8 @@ export default class AssignmentRuleService {
       AND uds.day_no = ${dayNo}
       AND uds."month" = ${month}
       AND g.group_name = 'Phòng Kinh Doanh'
-      AND s.shift_name IN (${Prisma.join(shifts)})`;
+      AND s.shift_name IN (${Prisma.join(shifts)})
+    `;
     return emails;
   }
 

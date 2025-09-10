@@ -52,19 +52,19 @@ export function buildWeddingRingsQuery(jsonParams) {
     GROUP BY wr.id, wr.title, wr.max_price, wr.min_price, wr.qty_onhand
     ${sortString}
     ${paginationString}
-    
+
   `;
 
   const countSql = `
-      SELECT CAST(COUNT(*) OVER() AS INT) AS total
-      FROM workplace.products p 
-        INNER JOIN workplace.designs d ON p.design_id = d.id 
-        INNER JOIN ecom.materialized_wedding_rings wr ON d.wedding_ring_id = wr.id 
-      WHERE 1 = 1
-      ${filterString}
-      GROUP BY wr.id, wr.title
-      LIMIT 1
-    `;
+    SELECT CAST(COUNT(*) OVER() AS INT) AS total
+    FROM workplace.products p 
+      INNER JOIN workplace.designs d ON p.design_id = d.id 
+      INNER JOIN ecom.materialized_wedding_rings wr ON d.wedding_ring_id = wr.id 
+    WHERE 1 = 1
+    ${filterString}
+    GROUP BY wr.id, wr.title
+    LIMIT 1
+  `;
 
   return {
     dataSql,
@@ -112,13 +112,13 @@ export function aggregateQuery(jsonParams) {
 
   if (jsonParams.product_ids.length) {
     filterString += `
-    AND d.wedding_ring_id IN (
-	    SELECT
-		    d.wedding_ring_id 
-      FROM workplace.products p 
-		    INNER JOIN workplace.designs d ON p.design_id = d.id 
-	    WHERE p.haravan_product_id IN (${jsonParams.product_ids.join(",")})
-    )
+      AND d.wedding_ring_id IN (
+       SELECT
+        d.wedding_ring_id 
+        FROM workplace.products p 
+        INNER JOIN workplace.designs d ON p.design_id = d.id 
+       WHERE p.haravan_product_id IN (${jsonParams.product_ids.join(",")})
+      )
     `;
   }
 
