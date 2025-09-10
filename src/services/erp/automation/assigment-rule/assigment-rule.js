@@ -46,6 +46,7 @@ export default class AssignmentRuleService {
   async getAttendingUsers(dayNo, month, shifts) {
     const emails = await this.db.$queryRaw`
       SELECT 
+      u.user_id,
       u.enterprise_email AS email
       FROM larksuite.users u 
       	INNER JOIN larksuite.user_daily_shifts uds ON u.user_id = uds.user_id
@@ -60,9 +61,10 @@ export default class AssignmentRuleService {
     return emails;
   }
 
-  async updateAssignmentRule(defaultAssignmentRule, shifts, dayNo, month) {
+  async updateAssignmentRule(defaultAssignmentRule, shifts, dayNo, month, offUsers) {
     const users = await this.getAssignedUsers(defaultAssignmentRule.regionNames);
-    const attendingUsers = await this.getAttendingUsers(dayNo, month, shifts);
+    const allAttendingUsers = await this.getAttendingUsers(dayNo, month, shifts);
+    const attendingUsers = allAttendingUsers.filter((attendedUser) => !offUsers.some((offUser) => offUser.user_id === attendedUser.user_id));
     const assignedUsers = users.filter((userId) => attendingUsers.some((attendedUser) => attendedUser.email === userId));
 
     if (!assignedUsers.length) {
@@ -83,10 +85,21 @@ export default class AssignmentRuleService {
     const timeThreshold = dayjs.utc();
     const dayNo = timeThreshold.date();
     const month = Number(timeThreshold.format("YYYYMM"));
+    const timeThresholdStr = timeThreshold.format("YYYY-MM-DDTHH:mm:ssZ");
+    const offUsers = await this.db.$queryRaw`
+      SELECT
+      i.user_id
+      FROM larksuite.instances i
+      WHERE i.approval_name = 'Đề Xuất Nghỉ Phép' AND i.status = 'APPROVED'
+      AND i.form_data->>'start' < ${timeThresholdStr} AND i.form_data ->>'end' > ${timeThresholdStr}
+    `;
+
+    const offUsersList = offUsers.map((user) => user.user_id);
+
     // Update assignment rules for three region
-    await this.updateAssignmentRule(ASSIGNMENT_RULES.Lead_Facebook_Tiktok_ZaloKOC_Website_ZaloOA_HN, shifts, dayNo, month);
-    await this.updateAssignmentRule(ASSIGNMENT_RULES.Lead_Facebook_Tiktok_ZaloKOC_Website_ZaloOA_HCM, shifts, dayNo, month);
-    await this.updateAssignmentRule(ASSIGNMENT_RULES.Lead_Facebook_CT, shifts, dayNo, month);
+    await this.updateAssignmentRule(ASSIGNMENT_RULES.Lead_Facebook_Tiktok_ZaloKOC_Website_ZaloOA_HN, shifts, dayNo, month, offUsersList);
+    await this.updateAssignmentRule(ASSIGNMENT_RULES.Lead_Facebook_Tiktok_ZaloKOC_Website_ZaloOA_HCM, shifts, dayNo, month, offUsersList);
+    await this.updateAssignmentRule(ASSIGNMENT_RULES.Lead_Facebook_CT, shifts, dayNo, month, offUsersList);
   }
 
   // Static methods for external usage
