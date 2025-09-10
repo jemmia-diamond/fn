@@ -2,12 +2,13 @@ import { init, track } from "@middleware.io/agent-apm-worker";
 import { Hono } from "hono";
 import { bearerAuth } from "hono/bearer-auth";
 
-import Routes from "src/routes";
-import errorTracker from "services/error-tracker";
+import errorTracker from "middlewares/error-tracker";
 import errorHandler from "middlewares/error-handler";
+
 import loggrageLogger from "services/custom-logger";
 import CorsService from "services/cors-service";
 
+import Routes from "src/routes";
 import queueHandler from "services/queue-handler";
 import scheduleHandler from "services/schedule-handler";
 
