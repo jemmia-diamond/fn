@@ -192,7 +192,7 @@ export default class ProductQuoteRemindReorderService {
 
     const haravanVariantIdsToUpdate = [];
     for (const row of giaNotifyResult) {
-      const message = this.composeSendDiamondMessage(giaList, row.gia_report_no);
+      const message = this.composeSendDiamondMessage(row.gia_report_no);
       if (row.lark_message_id && !haravanVariantIdsToUpdate.includes(row.haravan_variant_id)) {
         const success = await larkClient.im.message.reply({
           path: {
