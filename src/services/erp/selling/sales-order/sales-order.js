@@ -8,7 +8,8 @@ import CustomerService from "src/services/erp/selling/customer/customer";
 import { composeSalesOrderNotification, extractPromotions, validateOrderInfo } from "services/erp/selling/sales-order/utils/sales-order-notification";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
-import { CHAT_GROUPS} from "services/larksuite/group-chat/group-management/constant";
+import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/constant";
+import { mergeObjects } from "src/services/erp/selling/sales-order/utils/sales-order-helpers";
 
 import { fetchSalesOrdersFromERP, saveSalesOrdersToDatabase } from "src/services/erp/selling/sales-order/utils/sales-order-helpers";
 
@@ -348,6 +349,135 @@ export default class SalesOrderService {
           name: order.name,
           items: order.items
         });
+      } catch (error) {
+        console.error(error);
+      }
+    }
+  }
+
+  async processReOrder(salesOrderData) {
+    const name = salesOrderData.name;
+    const haravanOrderId = salesOrderData.haravan_order_id;
+
+    const orderChain = await this.frappeClient.executeSQL(
+      `
+        WITH RECURSIVE order_chain AS (
+	        SELECT haravan_order_id, haravan_ref_order_id 
+	        FROM \`tabSales Order\`
+	        WHERE haravan_order_id = '${haravanOrderId}'
+	        UNION ALL 
+	        SELECT o.haravan_order_id, o.haravan_ref_order_id
+	        FROM \`tabSales Order\` o
+	        	INNER JOIN order_chain oc ON o.haravan_order_id = oc.haravan_ref_order_id
+        )
+        SELECT 
+        o.name ,
+        o.expected_delivery_date ,
+        o.consultation_date ,
+        o.deposit_location ,
+        o.delivery_location ,
+        o.expected_payment_date ,
+        o.real_order_date ,
+        o.primary_sales_person
+        FROM \`tabSales Order\` o 
+        WHERE o.haravan_order_id IN (
+        	SELECT haravan_order_id FROM order_chain
+        )
+        ORDER BY o.creation ASC
+      `
+    );
+
+    const salesOrderNames = orderChain.map((order) => `'${order.name}'`);
+    const salesOrderNameExpression = salesOrderNames.join(",");
+
+    const promotions = await this.frappeClient.executeSQL(
+      `
+      SELECT 
+      DISTINCT promotion
+      FROM \`tabSales Order Promotion\`
+      WHERE parent IN (${salesOrderNameExpression})
+      `
+    );
+
+    const salesOrderPurposes = await this.frappeClient.executeSQL(
+      `
+      SELECT 
+      DISTINCT purchase_purpose
+      FROM \`tabSales Order Purpose\`
+      WHERE parent IN (${salesOrderNameExpression})
+      `
+    );
+
+    const salesOrderProductCategories = await this.frappeClient.executeSQL(
+      `
+      SELECT 
+      DISTINCT product_category
+      FROM \`tabSales Order Product Category\`
+      WHERE parent IN (${salesOrderNameExpression})
+      `
+    );
+
+    const salesOrderPolicies = await this.frappeClient.executeSQL(
+      `
+      SELECT 
+      DISTINCT policy
+      FROM \`tabSales Order Policy\`
+      WHERE parent IN (${salesOrderNameExpression})
+      `
+    );
+
+    const salesOrderSalesTeams = await this.frappeClient.executeSQL(
+      `
+      SELECT 
+      DISTINCT sales_team
+      FROM \`tabSales Team\`
+      WHERE parent IN (${salesOrderNameExpression})
+      `
+    );
+
+    const combinedOrder = mergeObjects(orderChain);
+    combinedOrder.ref_sales_orders = orderChain.slice(0, -1).map((order) => ({ sales_order: order.name }));
+    combinedOrder.promotions = promotions.map((promotion) => ({ promotion: promotion.promotion }));
+    combinedOrder.sales_order_purposes = salesOrderPurposes.map((purpose) => ({ purchase_purpose: purpose.purchase_purpose }));
+    combinedOrder.product_categories = salesOrderProductCategories.map((category) => ({ product_category: category.product_category }));
+    combinedOrder.policies = salesOrderPolicies.map((policy) => ({ policy: policy.policy }));
+    combinedOrder.sales_teams = salesOrderSalesTeams.map((salesTeam) => (
+      {
+        sales_person: salesTeam.sales_person,
+        allocated_percentage: salesTeam.allocated_percentage,
+        allocated_amount: salesTeam.allocated_amount,
+        commission_rate: salesTeam.commission_rate,
+        incentives: salesTeam.incentives,
+        contact_no: salesTeam.contact_no
+      }));
+
+    await this.frappeClient.update({
+      doctype: this.doctype,
+      name,
+      ...combinedOrder
+    });
+  }
+
+  static async processReOrders(env) {
+    const salesOrderService = new SalesOrderService(env);
+    const timeThreshold = "2025-07-01";
+    const reOrdersData = await salesOrderService.frappeClient.executeSQL(
+      `
+      SELECT
+      DISTINCT so.name, so.haravan_order_id
+      FROM \`tabSales Order\` so 
+      LEFT JOIN \`tabSales Order Reference\` sof on so.name = sof.parent
+      WHERE 1 = 1
+      AND sof.name is null
+      AND so.haravan_ref_order_id != '0'
+      AND so.transaction_date >= '${timeThreshold}'
+      AND so.cancelled_status = 'Uncancelled'
+      `
+    );
+
+    for (const order of reOrdersData) {
+      try {
+        await salesOrderService.processReOrder(order);
       } catch (error) {
         console.error(error);
       }
