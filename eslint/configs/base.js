@@ -3,6 +3,7 @@ import unusedImports from "eslint-plugin-unused-imports";
 import noRelativeImports from "../rules/no-relative-imports.js";
 import noVietnameseText from "../rules/no-vietnamese-text.js";
 import stylistic from "@stylistic/eslint-plugin";
+import unicorn from "eslint-plugin-unicorn";
 
 export default function getBaseConfig() {
   return {
@@ -11,6 +12,7 @@ export default function getBaseConfig() {
     plugins: {
       "unused-imports": unusedImports,
       "@stylistic": stylistic,
+      "unicorn": unicorn,
       "custom": {
         rules: {
           "no-relative-imports": noRelativeImports,
@@ -38,6 +40,10 @@ export default function getBaseConfig() {
       "eol-last": ["error", "always"],
       "no-console": ["error", { "allow": ["warn", "error"] }],
       "indent": ["error", 2],
+      "unicorn/template-indent": ["warn", {
+        "selectors": ["TemplateLiteral"],
+        "indent": 2
+      }],
       "no-trailing-spaces": "error",
       "key-spacing": "error",
       "custom/no-relative-imports": "error",
