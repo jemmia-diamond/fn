@@ -70,6 +70,7 @@ export default class ProductQuoteRemindReorderService {
       serial_with_order AS (
       SELECT hrv_orders.id AS order_id, hrv_orders.name, vs_f.serial_number, vs_f.sku, vs_f.barcode, vs_f.variant_serial_id FROM vs_filtered AS vs_f
       LEFT JOIN haravan.orders as hrv_orders ON vs_f.order_reference = hrv_orders.name 
+      WHERE hrv_orders.cancelled_status = 'uncancelled' 
       ),                    
       line_item_temp AS (
           SELECT * FROM haravan.line_items as hl
@@ -180,6 +181,7 @@ export default class ProductQuoteRemindReorderService {
                   ON sp.haravan_variant_id = lpv.variant_id
               LEFT JOIN haravan.orders ord
                   ON lpv.order_id = ord.id
+              WHERE ord.cancelled_status = 'uncancelled'
           )
 
           SELECT crm.*, jo.gia_report_no as gia_report_no, jo.haravan_variant_id as haravan_variant_id 
