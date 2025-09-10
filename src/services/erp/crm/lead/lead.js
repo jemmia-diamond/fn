@@ -26,24 +26,14 @@ export default class LeadService {
   }
 
   async updateLeadInfoFromSummary(data, conversationId) {
-    try {
-      let res = await this.frappeClient.postRequest("", {
-        cmd: "erpnext.crm.doctype.lead.lead_methods.update_lead_from_summary",
-        data: JSON.stringify({
-          ...data,
-          conversation_id: conversationId
-        })
-      });
-      return { success: true, data: res };
-    } catch (error) {
-      console.warn("Failed to update lead info from summary:", error, {
-        error: error.message,
-        conversationId,
-        data
-      });
-
-      return { success: false, error: error.message };
-    }
+    let res = await this.frappeClient.postRequest("", {
+      cmd: "erpnext.crm.doctype.lead.lead_methods.update_lead_from_summary",
+      data: JSON.stringify({
+        ...data,
+        conversation_id: conversationId
+      })
+    });
+    return { success: true, data: res };
   }
 
   async findLeadByConversationId(conversationId) {

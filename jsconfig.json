@@ -5,6 +5,7 @@
       "auth/*": ["src/auth/*"],
       "controllers/*": ["src/controllers/*"],
       "frappe/*": ["src/frappe/*"],
+      "middlewares/*": ["src/middlewares/*"],
       "pancake/*": ["src/pancake/*"],
       "routes/*": ["src/routes/*"],
       "services/*": ["src/services/*"],
