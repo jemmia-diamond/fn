@@ -1,6 +1,7 @@
 import Database from "services/database";
 import LarksuiteService from "services/larksuite/lark";
 import { Prisma } from "@prisma-cli";
+import { stringSquish } from "services/utils/string-helper";
 
 export default class ProductQuoteRemindReorderService {
   constructor(env) {
@@ -38,11 +39,11 @@ export default class ProductQuoteRemindReorderService {
 
   async processJewelryNotifications(db, timestamp, larkClient, groupId) {
     const inventoryCheckLines = await db.$queryRaw`
-        SELECT ics.rfid_tags, ics.sku, ics.barcode 
-        FROM inventory_cms.inventory_check_lines as ics
-        WHERE date_created >= ${timestamp}
-        ORDER BY ics.date_created DESC;
-  `;
+      SELECT ics.rfid_tags, ics.sku, ics.barcode 
+      FROM inventory_cms.inventory_check_lines as ics
+      WHERE date_created >= ${timestamp}
+      ORDER BY ics.date_created DESC;
+    `;
 
     let listFinalEncodedBarcode = [];
     for (const line of inventoryCheckLines) {
@@ -92,7 +93,7 @@ export default class ProductQuoteRemindReorderService {
       LEFT JOIN workplace.temporary_products as tp ON swo.variant_serial_id = tp.variant_serial_id 
       WHERE tp.is_notify_lark_reorder = false OR tp.is_notify_lark_reorder IS NULL
       )                
-                  
+
       SELECT DISTINCT ON (vs_with_temp_orders.serial_number) 
                       vs_with_temp_orders.serial_number, 
                       vs_with_temp_orders.name, 
@@ -106,7 +107,7 @@ export default class ProductQuoteRemindReorderService {
                       LEFT JOIN larksuite.crm_lark_message AS clm 
                       ON vs_with_temp_orders.order_id = clm.order_id 
                       WHERE clm.parent_id IS NULL;
-  `;
+    `;
 
     const notifyResult = await db.$queryRaw`${Prisma.raw(dataSql)}`;
 
@@ -135,9 +136,11 @@ export default class ProductQuoteRemindReorderService {
     }
 
     if (variantSerialIdsToUpdate.length > 0) {
-      const updateSql = `UPDATE workplace.temporary_products 
-            SET is_notify_lark_reorder = true 
-            WHERE variant_serial_id IN (${variantSerialIdsToUpdate.map(item => `'${item}'`).join(", ")})`;
+      const updateSql = `
+        UPDATE workplace.temporary_products 
+                    SET is_notify_lark_reorder = true 
+                    WHERE variant_serial_id IN (${variantSerialIdsToUpdate.map(item => `'${item}'`).join(", ")})
+      `;
       await db.$queryRaw`${Prisma.raw(updateSql)}`;
     }
     return variantSerialIdsToUpdate;
@@ -165,29 +168,29 @@ export default class ProductQuoteRemindReorderService {
       .join(" OR ");
 
     const dataSql = `
-          WITH selected_products AS (
-              SELECT haravan_variant_id, gia_report_no
-              FROM workplace.temporary_products
-              WHERE (${conditions}) 
-              AND (is_notify_lark_reorder IS NULL OR is_notify_lark_reorder = false) 
-          ),
-          joined_orders AS (
-              SELECT 
-                  lpv.order_id, 
-                  sp.haravan_variant_id, 
-                  sp.gia_report_no
-              FROM selected_products sp
-              LEFT JOIN haravan.line_items lpv 
-                  ON sp.haravan_variant_id = lpv.variant_id
-              LEFT JOIN haravan.orders ord
-                  ON lpv.order_id = ord.id
-              WHERE ord.cancelled_status = 'uncancelled'
-          )
+      WITH selected_products AS (
+          SELECT haravan_variant_id, gia_report_no
+          FROM workplace.temporary_products
+          WHERE (${conditions}) 
+          AND (is_notify_lark_reorder IS NULL OR is_notify_lark_reorder = false) 
+      ),
+      joined_orders AS (
+          SELECT 
+              lpv.order_id, 
+              sp.haravan_variant_id, 
+              sp.gia_report_no
+          FROM selected_products sp
+          LEFT JOIN haravan.line_items lpv 
+              ON sp.haravan_variant_id = lpv.variant_id
+          LEFT JOIN haravan.orders ord
+              ON lpv.order_id = ord.id
+          WHERE ord.cancelled_status = 'uncancelled'
+      )
 
-          SELECT crm.*, jo.gia_report_no as gia_report_no, jo.haravan_variant_id as haravan_variant_id 
-          FROM joined_orders jo
-          LEFT JOIN larksuite.crm_lark_message crm ON jo.order_id = crm.order_id 
-          WHERE crm.parent_id is NULL;
+      SELECT crm.*, jo.gia_report_no as gia_report_no, jo.haravan_variant_id as haravan_variant_id 
+      FROM joined_orders jo
+      LEFT JOIN larksuite.crm_lark_message crm ON jo.order_id = crm.order_id 
+      WHERE crm.parent_id is NULL;
     `;
 
     const giaNotifyResult = await db.$queryRaw`${Prisma.raw(dataSql)}`;
@@ -217,28 +220,31 @@ export default class ProductQuoteRemindReorderService {
 
     if (haravanVariantIdsToUpdate.length > 0) {
       const updateSql = `
-            UPDATE workplace.temporary_products 
-            SET is_notify_lark_reorder = true 
-            WHERE haravan_variant_id IN (${haravanVariantIdsToUpdate.map(item => `'${item}'`).join(", ")})`;
+        UPDATE workplace.temporary_products 
+        SET is_notify_lark_reorder = true 
+        WHERE haravan_variant_id IN (${haravanVariantIdsToUpdate.map(item => `'${item}'`).join(", ")})
+      `;
       await db.$queryRaw`${Prisma.raw(updateSql)}`;
     }
     return haravanVariantIdsToUpdate;
   }
 
   composeSendJewelryMessage(serialNumber, barcode, sku) {
-    return `<b>HÀNG VỀ</b>
-Số serial: ${serialNumber}
-Barcode: ${barcode} 
-SKU: ${sku}
-Vui lòng đặt lại đơn hàng
-`;
+    return stringSquish(`
+      <b>HÀNG VỀ</b>
+      Số serial: ${serialNumber}
+      Barcode: ${barcode} 
+      SKU: ${sku}
+      Vui lòng đặt lại đơn hàng
+    `);
   }
 
   composeSendDiamondMessage(giaReportNo) {
-    return `<b>HÀNG VỀ</b>
-Kim cương có mã GIA${giaReportNo}
-Vui lòng đặt lại đơn hàng
-`;
+    return stringSquish(`
+      <b>HÀNG VỀ</b>
+      Kim cương có mã GIA${giaReportNo}
+      Vui lòng đặt lại đơn hàng
+    `);
   }
 
   preprocessGiaList (giaList) {
