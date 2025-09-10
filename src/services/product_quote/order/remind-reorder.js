@@ -211,10 +211,6 @@ export default class ProductQuoteRemindReorderService {
           haravanVariantIdsToUpdate.push(row.haravan_variant_id);
         }
       }
-      try {
-      } catch (e) {
-        console.error(`Failed to send Lark reply for GIA ${row.gia_report_no}:`, e.code, e.msg);
-      }
     }
 
     if (haravanVariantIdsToUpdate.length > 0) {
