@@ -31,9 +31,9 @@ export default class InventoryCheckSheetService {
       lines: JSON.stringify(payload.lines)
     };
     await this.db.$queryRaw`
-        INSERT INTO inventory.inventory_check_sheets (id, staff, count_in_book, count_for_real, extra, warehouse, warehouse_id, code, created_at, updated_at, lines)
-        VALUES ( ${sheetData.id}, ${sheetData.staff}, ${sheetData.count_in_book}, ${sheetData.count_for_real}, ${sheetData.extra}, ${sheetData.warehouse}, ${sheetData.warehouse_id}, ${sheetData.code}, ${sheetData.created_at}, ${sheetData.updated_at}, ${sheetData.lines});
-      `;
+      INSERT INTO inventory.inventory_check_sheets (id, staff, count_in_book, count_for_real, extra, warehouse, warehouse_id, code, created_at, updated_at, lines)
+      VALUES ( ${sheetData.id}, ${sheetData.staff}, ${sheetData.count_in_book}, ${sheetData.count_for_real}, ${sheetData.extra}, ${sheetData.warehouse}, ${sheetData.warehouse_id}, ${sheetData.code}, ${sheetData.created_at}, ${sheetData.updated_at}, ${sheetData.lines});
+    `;
   }
 
   static async syncInventoryCheckSheetToDatabase(env) {

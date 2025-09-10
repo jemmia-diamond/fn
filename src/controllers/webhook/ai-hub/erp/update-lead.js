@@ -3,20 +3,16 @@ import LeadService from "services/erp/crm/lead/lead";
 
 export default class AIHubERPUpdateLeadController {
   static async create(ctx) {
-    let body = await ctx.req.json();
+    const body = await ctx.req.json();
     const conversationId = body["conversationId"];
     if (!conversationId) {
       throw new HTTPException(400, "Conversation id is required");
     }
 
-    try {
-      let leadService = new LeadService(ctx.env);
-      const res = await leadService.updateLeadInfoFromSummary(body.data, conversationId);
+    const leadService = new LeadService(ctx.env);
+    const res = await leadService.updateLeadInfoFromSummary(body.data, conversationId);
 
-      return ctx.json(res);
-    } catch {
-      throw new HTTPException(500, "Failed to update lead info");
-    }
+    return ctx.json(res);
   }
 }
 

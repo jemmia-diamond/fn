@@ -1,10 +1,11 @@
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import { SKU_LENGTH, SKU_PREFIX } from "services/haravan/products/product-variant/constant";
+import { stringSquish } from "services/utils/string-helper";
 
 dayjs.extend(utc);
 
-export const composeSalesOrderNotification = (salesOrder, promotionData, leadSource, policyData, productCategoryData) => {
+export const composeSalesOrderNotification = (salesOrder, promotionData, leadSource, policyData, productCategoryData, customer, primarySalesPerson) => {
   const time = dayjs().format("DD-MM-YYYY HH:mm:ss");
   const orderNumber = salesOrder.order_number;
 
@@ -13,56 +14,58 @@ export const composeSalesOrderNotification = (salesOrder, promotionData, leadSou
 
   const expectedPaymentDate = dayjs(salesOrder.expected_payment_date).format("DD-MM-YYYY");
 
-  const content = `
-<b>[${time}] JEMMIA xác nhận đơn hàng #${orderNumber}</b>
+  const content = stringSquish(`
+    <b>[${time}] JEMMIA xác nhận đơn hàng #${orderNumber}</b>
 
-Mã khách hàng: ${salesOrder.customer}
+    Mã khách hàng: ${salesOrder.customer}
 
-${salesOrder.items.map((item, idx) => composeItemContent(item, idx + 1, promotionData.filter((promotion) => [item.promotion_1, item.promotion_2, item.promotion_3, item.promotion_4].includes(promotion.name)))).join("\n\n")}
+    ${salesOrder.items.map((item, idx) => composeItemContent(item, idx + 1, promotionData.filter((promotion) => [item.promotion_1, item.promotion_2, item.promotion_3, item.promotion_4].includes(promotion.name)))).join("\n\n")}
 
-* Thông tin toàn đơn hàng:
-- Tổng đơn hàng: ${formatVietnameseCurrency(salesOrder.grand_total)}
-- Ngày tư vấn: ${dayjs(salesOrder.consultation_date).format("DD-MM-YYYY")}
-- Chiết khấu đơn hàng: ${salesOrder.discount_amount}
-- Số tiền đã cọc: ${formatVietnameseCurrency(salesOrder.paid_amount)}
-- Số tiền còn lại: ${formatVietnameseCurrency(salesOrder.balance)}
-- Ngày thanh toán dự kiến: ${expectedPaymentDate}
-- Kênh tiếp cận đầu tiên: ${leadSource.source_name}
+    * <b>Thông tin toàn đơn hàng</b>:
+    - Tổng đơn hàng: ${formatVietnameseCurrency(salesOrder.grand_total)}
+    - Ngày tư vấn: ${dayjs(salesOrder.consultation_date).format("DD-MM-YYYY")}
+    - Chiết khấu đơn hàng: ${salesOrder.discount_amount}
+    - Số tiền đã cọc: ${formatVietnameseCurrency(salesOrder.paid_amount)}
+    - Số tiền còn lại: ${formatVietnameseCurrency(salesOrder.balance)}
+    - Ngày thanh toán dự kiến: ${expectedPaymentDate}
+    - Kênh tiếp cận đầu tiên: ${leadSource.source_name}
+    - Hành trình khách hàng: ${customer.customer_journey}
 
-* Đặc điểm sản phẩm đơn hàng:
-${composeChildrenContent(policyData, "title")}
+    * <b>Đặc điểm sản phẩm đơn hàng</b>:
+    ${composeChildrenContent(productCategoryData, "title")}
 
-* Chính sách bảo hành:
-${composeChildrenContent(productCategoryData, "title")}
+    * <b>Chính sách bảo hành</b>:
+    ${composeChildrenContent(policyData, "title")}
 
-* Chương trình khuyến mãi toàn đơn:
-${composeChildrenContent(orderPromotions, "title")}
+    * <b>Chương trình khuyến mãi toàn đơn</b>:
+    ${composeChildrenContent(orderPromotions, "title")}
 
-Link đơn hàng: https://erp.jemmia.vn/app/sales-order/${salesOrder.name}
-    `.trim();
+    Nhân viên phụ trách chính: ${primarySalesPerson.sales_person_name}
+    Link đơn hàng: https://erp.jemmia.vn/app/sales-order/${salesOrder.name}
+  `);
   return content;
 };
 
 const composeItemContent = (item, idx, promotionData) => {
   if (item.sku.startsWith(SKU_PREFIX.GIFT)) {
     return `
-${idx}. ${item.item_name}
-Mã gốc: ${item.variant_title}
-`.trim().replace(/\n+/g, "\n");
+      ${idx}. ${item.item_name}
+      Mã gốc: ${item.variant_title}
+    `.replace(/\n+/g, "\n");
   }
 
   const serialNumbers = item.serial_numbers ? item.serial_numbers.split("\n").join(", ") : "";
   const content = `
-${idx}. ${item.item_name}
-Mã gốc: ${item.variant_title}
-SKU: ${item.sku}
-Số lượng: ${item.qty}
-${serialNumbers ? `Số serial: ${serialNumbers}` : ""}
-Giá: ${formatVietnameseCurrency(item.price_list_rate)}
-Giá khuyến mãi: ${formatVietnameseCurrency(item.rate)}
-CTKM:
-${composeChildrenContent(promotionData, "title")}
-`.trim().replace(/\n+/g, "\n");
+    ${idx}. ${item.item_name}
+    Mã gốc: ${item.variant_title}
+    SKU: ${item.sku}
+    Số lượng: ${item.qty}
+    ${serialNumbers ? `Số serial: ${serialNumbers}` : ""}
+    Giá: ${formatVietnameseCurrency(item.price_list_rate)}
+    Giá khuyến mãi: ${formatVietnameseCurrency(item.rate)}
+    CTKM:
+    ${composeChildrenContent(promotionData, "title")}
+  `.replace(/\n+/g, "\n");
   return content;
 };
 
@@ -91,8 +94,18 @@ export function validateOrderInfo(salesOrderData, customer) {
   let message = null;
   let isValid = false;
 
+  if (!customer.customer_journey) {
+    message = "Chưa nhập hành trình khách hàng";
+    return { isValid, message };
+  }
+
   if (!customer.first_source) {
     message = "Chưa nhập mã kênh tiếp cận đầu tiên cho khách hàng";
+    return { isValid, message };
+  }
+
+  if (!salesOrderData.primary_sales_person) {
+    message = "Chưa nhập nhân viên phụ trách chính";
     return { isValid, message };
   }
 
@@ -146,6 +159,5 @@ export function validateOrderInfo(salesOrderData, customer) {
 function composeChildrenContent(children, key) {
   return children
     .map((child) => "- " + child[key])
-    .join("\n")
-    .trim();
+    .join("\n");
 }
