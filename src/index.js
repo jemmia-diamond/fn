@@ -29,12 +29,9 @@ app.use("*", async (c, next) => {
   await next();
 });
 
-// Global error handler (must be first)
-app.use("*", errorHandler);
-
-// Error tracking
-app.use("*", errorTracker);
 app.use(loggrageLogger(track));
+app.use("*", errorTracker);
+app.use("*", errorHandler);
 
 // Apply CORS to routes using the service
 api.use("*", CorsService.createCorsConfig());
