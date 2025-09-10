@@ -34,7 +34,7 @@ export default class SerialService {
       AND (vs.id IN (SELECT tp.variant_serial_id FROM workplace.temporary_products tp) OR vs.variant_id IS NOT NULL)
       AND (vs.database_created_at > ${timeThreshold} OR vs.updated_at > ${timeThreshold})
       ORDER BY vs.serial_number
-        `;
+    `;
     return result;
   }
 

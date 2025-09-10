@@ -55,18 +55,18 @@ export function buildQuery(jsonParams) {
   `;
 
   const countSql = `
-      SELECT
-	      COUNT(DISTINCT p.haravan_product_id) AS total,
-	      (SELECT ARRAY_AGG(DISTINCT mv.material_color ) FROM ecom.materialized_variants mv) AS material_colors,
-	      (SELECT ARRAY_AGG(DISTINCT mv.fineness ) FROM ecom.materialized_variants mv) AS fineness
-      FROM ecom.materialized_products p 
-          INNER JOIN workplace.designs d ON d.id = p.design_id
-          INNER JOIN haravan.images i ON i.product_id = p.haravan_product_id
-          INNER JOIN ecom.materialized_variants v ON v.haravan_product_id = p.haravan_product_id
-      WHERE 1 = 1 
-        AND (p.haravan_product_type != 'Nhẫn Cưới' OR (p.haravan_product_type = 'Nhẫn Cưới' AND d.gender = 'Nam'))
-      ${filterString}
-    `;
+    SELECT
+     COUNT(DISTINCT p.haravan_product_id) AS total,
+     (SELECT ARRAY_AGG(DISTINCT mv.material_color ) FROM ecom.materialized_variants mv) AS material_colors,
+     (SELECT ARRAY_AGG(DISTINCT mv.fineness ) FROM ecom.materialized_variants mv) AS fineness
+    FROM ecom.materialized_products p 
+        INNER JOIN workplace.designs d ON d.id = p.design_id
+        INNER JOIN haravan.images i ON i.product_id = p.haravan_product_id
+        INNER JOIN ecom.materialized_variants v ON v.haravan_product_id = p.haravan_product_id
+    WHERE 1 = 1 
+      AND (p.haravan_product_type != 'Nhẫn Cưới' OR (p.haravan_product_type = 'Nhẫn Cưới' AND d.gender = 'Nam'))
+    ${filterString}
+  `;
 
   return {
     dataSql,

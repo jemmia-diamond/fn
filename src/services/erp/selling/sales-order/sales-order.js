@@ -282,13 +282,13 @@ export default class SalesOrderService {
 
       const orderChain = await salesOrderService.db.$queryRaw`
         WITH RECURSIVE order_chain AS (
-	        SELECT id, ref_order_id 
-	        FROM haravan.orders 
-	        WHERE id = ${haravanId}
-	        UNION ALL 
-	        SELECT o.id, o.ref_order_id
-	        FROM haravan.orders o
-	        	INNER JOIN order_chain oc ON o.id = oc.ref_order_id
+         SELECT id, ref_order_id 
+         FROM haravan.orders 
+         WHERE id = ${haravanId}
+         UNION ALL 
+         SELECT o.id, o.ref_order_id
+         FROM haravan.orders o
+         	INNER JOIN order_chain oc ON o.id = oc.ref_order_id
         )
         SELECT 
         o.id ,

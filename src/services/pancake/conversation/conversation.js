@@ -13,10 +13,10 @@ export default class ConversationService {
 
   async updateConversation(conversationId, pageId, insertedAt) {
     const result = await this.db.$queryRaw`
-            UPDATE pancake.conversation c
-            SET last_sent_at = ${insertedAt}
-            WHERE c.id = ${conversationId} AND c.page_id = ${pageId};
-        `;
+      UPDATE pancake.conversation c
+      SET last_sent_at = ${insertedAt}
+      WHERE c.id = ${conversationId} AND c.page_id = ${pageId};
+    `;
     return result;
   }
 
