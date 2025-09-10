@@ -30,7 +30,8 @@ export default class ScheduleService {
       await db.$executeRaw`
         INSERT INTO larksuite.user_daily_shifts (day_no, group_id, month, shift_id, user_id)
         VALUES (${schedule.day_no}, ${schedule.group_id}, ${schedule.month}, ${schedule.shift_id}, ${schedule.user_id})
-        ON CONFLICT (day_no, group_id, month, user_id) DO UPDATE SET shift_id = EXCLUDED.shift_id`;
+        ON CONFLICT (day_no, group_id, month, user_id) DO UPDATE SET shift_id = EXCLUDED.shift_id
+      `;
     }
   }
 
