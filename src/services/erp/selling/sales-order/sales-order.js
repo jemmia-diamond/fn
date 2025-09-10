@@ -364,15 +364,15 @@ export default class SalesOrderService {
 
     const larkClient = await LarksuiteService.createClientV2(env);
     try {
-      const now = new Date();
-      const midnightDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
-      const midnightTimestamp = midnightDate.toISOString();
+      const tenMinutesAgoDate = new Date();
+      tenMinutesAgoDate.setMinutes(tenMinutesAgoDate.getMinutes() - 10);
+      const tenMinutesAgoTimestamp = tenMinutesAgoDate.toISOString();
 
       // JEWELRY (Serial-based)
-      const jewelryIdsToUpdate = await service.processJewelryNotifications(db, midnightTimestamp, larkClient, env.LARK_TBDH_GROUP_CHAT_ID);
+      const jewelryIdsToUpdate = await service.processJewelryNotifications(db, tenMinutesAgoTimestamp, larkClient, env.LARK_TBDH_GROUP_CHAT_ID);
 
       // DIAMOND (GIA-based)
-      const diamondIdsToUpdate = await service.processDiamondNotifications(db, midnightTimestamp, larkClient, env.LARK_TBDH_GROUP_CHAT_ID);
+      const diamondIdsToUpdate = await service.processDiamondNotifications(db, tenMinutesAgoTimestamp, larkClient, env.LARK_TBDH_GROUP_CHAT_ID);
 
       return {
         success: true,
