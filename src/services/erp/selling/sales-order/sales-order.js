@@ -365,13 +365,13 @@ export default class SalesOrderService {
     const orderChain = await this.frappeClient.executeSQL(
       `
         WITH RECURSIVE order_chain AS (
-	        SELECT haravan_order_id, haravan_ref_order_id 
-	        FROM \`tabSales Order\`
-	        WHERE haravan_order_id = '${haravanOrderId}'
-	        UNION ALL 
-	        SELECT o.haravan_order_id, o.haravan_ref_order_id
-	        FROM \`tabSales Order\` o
-	        	INNER JOIN order_chain oc ON o.haravan_order_id = oc.haravan_ref_order_id
+         SELECT haravan_order_id, haravan_ref_order_id 
+         FROM \`tabSales Order\`
+         WHERE haravan_order_id = '${haravanOrderId}'
+         UNION ALL 
+         SELECT o.haravan_order_id, o.haravan_ref_order_id
+         FROM \`tabSales Order\` o
+         	INNER JOIN order_chain oc ON o.haravan_order_id = oc.haravan_ref_order_id
         )
         SELECT 
         o.name ,
@@ -395,46 +395,46 @@ export default class SalesOrderService {
 
     const promotions = await this.frappeClient.executeSQL(
       `
-      SELECT 
-      DISTINCT promotion
-      FROM \`tabSales Order Promotion\`
-      WHERE parent IN (${salesOrderNameExpression})
+        SELECT 
+        DISTINCT promotion
+        FROM \`tabSales Order Promotion\`
+        WHERE parent IN (${salesOrderNameExpression})
       `
     );
 
     const salesOrderPurposes = await this.frappeClient.executeSQL(
       `
-      SELECT 
-      DISTINCT purchase_purpose
-      FROM \`tabSales Order Purpose\`
-      WHERE parent IN (${salesOrderNameExpression})
+        SELECT 
+        DISTINCT purchase_purpose
+        FROM \`tabSales Order Purpose\`
+        WHERE parent IN (${salesOrderNameExpression})
       `
     );
 
     const salesOrderProductCategories = await this.frappeClient.executeSQL(
       `
-      SELECT 
-      DISTINCT product_category
-      FROM \`tabSales Order Product Category\`
-      WHERE parent IN (${salesOrderNameExpression})
+        SELECT 
+        DISTINCT product_category
+        FROM \`tabSales Order Product Category\`
+        WHERE parent IN (${salesOrderNameExpression})
       `
     );
 
     const salesOrderPolicies = await this.frappeClient.executeSQL(
       `
-      SELECT 
-      DISTINCT policy
-      FROM \`tabSales Order Policy\`
-      WHERE parent IN (${salesOrderNameExpression})
+        SELECT 
+        DISTINCT policy
+        FROM \`tabSales Order Policy\`
+        WHERE parent IN (${salesOrderNameExpression})
       `
     );
 
     const salesOrderSalesTeams = await this.frappeClient.executeSQL(
       `
-      SELECT 
-      DISTINCT sales_team
-      FROM \`tabSales Team\`
-      WHERE parent IN (${salesOrderNameExpression})
+        SELECT 
+        DISTINCT sales_team
+        FROM \`tabSales Team\`
+        WHERE parent IN (${salesOrderNameExpression})
       `
     );
 
@@ -466,15 +466,15 @@ export default class SalesOrderService {
     const timeThreshold = "2025-07-01";
     const reOrdersData = await salesOrderService.frappeClient.executeSQL(
       `
-      SELECT
-      DISTINCT so.name, so.haravan_order_id
-      FROM \`tabSales Order\` so 
-      LEFT JOIN \`tabSales Order Reference\` sof on so.name = sof.parent
-      WHERE 1 = 1
-      AND sof.name is null
-      AND so.haravan_ref_order_id != '0'
-      AND so.transaction_date >= '${timeThreshold}'
-      AND so.cancelled_status = 'Uncancelled'
+        SELECT
+        DISTINCT so.name, so.haravan_order_id
+        FROM \`tabSales Order\` so 
+        LEFT JOIN \`tabSales Order Reference\` sof on so.name = sof.parent
+        WHERE 1 = 1
+        AND sof.name is null
+        AND so.haravan_ref_order_id != '0'
+        AND so.transaction_date >= '${timeThreshold}'
+        AND so.cancelled_status = 'Uncancelled'
       `
     );
 
