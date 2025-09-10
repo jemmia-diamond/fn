@@ -15,7 +15,7 @@ export default class ProductQuoteRemindReorderService {
     const larkClient = await LarksuiteService.createClientV2(env);
     try {
       const now = new Date();
-      const midnightDate = new Date(now.getFullYear(), now.getMonth(), now.getDay(), 0, 0, 0);
+      const midnightDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
       const midnightTimestamp = midnightDate.toISOString();
 
       // JEWELRY (Serial-based)
