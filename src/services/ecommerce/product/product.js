@@ -107,7 +107,9 @@ export default class ProductService {
 
     return {
       data,
-      count: count.length ? Number(count[0].total) : 0
+      count: count.length ? Number(count[0].total) : 0,
+      material_colors: count.length ? count[0].material_colors : [],
+      fineness: count.length ? count[0].fineness : []
     };
   }
 
@@ -117,7 +119,9 @@ export default class ProductService {
       data,
       metadata: {
         total: count,
-        pagination: jsonParams.pagination
+        pagination: jsonParams.pagination,
+        material_colors: jsonParams.material_colors,
+        fineness: jsonParams.fineness
       }
     };
   }

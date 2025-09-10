@@ -56,14 +56,15 @@ export function buildWeddingRingsQuery(jsonParams) {
   `;
 
   const countSql = `
-    SELECT CAST(COUNT(*) OVER() AS INT) AS total
+    SELECT 
+      CAST(COUNT(DISTINCT wr.id) AS INT) AS total,
+      (SELECT ARRAY_AGG(DISTINCT mwr.fineness) FROM ecom.materialized_wedding_rings mwr WHERE mwr.fineness NOT LIKE '%,%' ) AS fineness,
+      (SELECT ARRAY_AGG(DISTINCT mwr.material_colors ) FROM ecom.materialized_wedding_rings mwr WHERE mwr.material_colors NOT LIKE '%,%' ) AS material_colors
     FROM workplace.products p 
       INNER JOIN workplace.designs d ON p.design_id = d.id 
       INNER JOIN ecom.materialized_wedding_rings wr ON d.wedding_ring_id = wr.id 
     WHERE 1 = 1
     ${filterString}
-    GROUP BY wr.id, wr.title
-    LIMIT 1
   `;
 
   return {
