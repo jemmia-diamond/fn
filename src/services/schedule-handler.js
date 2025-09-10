@@ -3,7 +3,6 @@ import ERP from "services/erp";
 import Ecommerce from "services/ecommerce";
 import InventoryCMS from "services/inventory-cms";
 import DatabaseOperations from "services/db-operations";
-import ProductQuote from "services/product_quote";
 
 export default {
   scheduled: async (controller, env, _ctx) => {
@@ -71,7 +70,7 @@ export default {
       await ERP.Automation.AssignmentRuleService.enableAssignmentRuleOffHour(env);
       break;
     case "*/5 * * * *": // At every 5 minutes
-      await ProductQuote.ProductQuoteRemindReorderService.remindReorderOnHandTempProduct(env);
+      await ERP.Selling.SalesOrderService.remindReorderOnHandTempProduct(env);
       break;
     default:
       break;
