@@ -190,7 +190,10 @@ export default class SalesOrderService {
       filters: [["name", "in", promotionNames]]
     });
 
-    const content = composeSalesOrderNotification(salesOrderData, promotionData, leadSource, policyData, productCategoryData);
+    const primarySalesPersonName = salesOrderData.primary_sales_person;
+    const primarySalesPerson = await this.frappeClient.getDoc("Sales Person", primarySalesPersonName);
+
+    const content = composeSalesOrderNotification(salesOrderData, promotionData, leadSource, policyData, productCategoryData, customer, primarySalesPerson);
 
     const _response = await larkClient.im.message.create({
       params: {

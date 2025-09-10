@@ -4,7 +4,7 @@ import { SKU_LENGTH, SKU_PREFIX } from "services/haravan/products/product-varian
 
 dayjs.extend(utc);
 
-export const composeSalesOrderNotification = (salesOrder, promotionData, leadSource, policyData, productCategoryData) => {
+export const composeSalesOrderNotification = (salesOrder, promotionData, leadSource, policyData, productCategoryData, customer, primarySalesPerson) => {
   const time = dayjs().format("DD-MM-YYYY HH:mm:ss");
   const orderNumber = salesOrder.order_number;
 
@@ -20,7 +20,7 @@ Mã khách hàng: ${salesOrder.customer}
 
 ${salesOrder.items.map((item, idx) => composeItemContent(item, idx + 1, promotionData.filter((promotion) => [item.promotion_1, item.promotion_2, item.promotion_3, item.promotion_4].includes(promotion.name)))).join("\n\n")}
 
-* Thông tin toàn đơn hàng:
+* <b>Thông tin toàn đơn hàng</b>:
 - Tổng đơn hàng: ${formatVietnameseCurrency(salesOrder.grand_total)}
 - Ngày tư vấn: ${dayjs(salesOrder.consultation_date).format("DD-MM-YYYY")}
 - Chiết khấu đơn hàng: ${salesOrder.discount_amount}
@@ -28,16 +28,18 @@ ${salesOrder.items.map((item, idx) => composeItemContent(item, idx + 1, promotio
 - Số tiền còn lại: ${formatVietnameseCurrency(salesOrder.balance)}
 - Ngày thanh toán dự kiến: ${expectedPaymentDate}
 - Kênh tiếp cận đầu tiên: ${leadSource.source_name}
+- Hành trình khách hàng: ${customer.customer_journey}
 
-* Đặc điểm sản phẩm đơn hàng:
-${composeChildrenContent(policyData, "title")}
-
-* Chính sách bảo hành:
+* <b>Đặc điểm sản phẩm đơn hàng</b>:
 ${composeChildrenContent(productCategoryData, "title")}
 
-* Chương trình khuyến mãi toàn đơn:
+* <b>Chính sách bảo hành</b>:
+${composeChildrenContent(policyData, "title")}
+
+* <b>Chương trình khuyến mãi toàn đơn</b>:
 ${composeChildrenContent(orderPromotions, "title")}
 
+Nhân viên phụ trách chính: ${primarySalesPerson.sales_person_name}
 Link đơn hàng: https://erp.jemmia.vn/app/sales-order/${salesOrder.name}
     `.trim();
   return content;
@@ -91,8 +93,18 @@ export function validateOrderInfo(salesOrderData, customer) {
   let message = null;
   let isValid = false;
 
+  if (!customer.customer_journey) {
+    message = "Chưa nhập hành trình khách hàng";
+    return { isValid, message };
+  }
+
   if (!customer.first_source) {
     message = "Chưa nhập mã kênh tiếp cận đầu tiên cho khách hàng";
+    return { isValid, message };
+  }
+
+  if (!salesOrderData.primary_sales_person) {
+    message = "Chưa nhập nhân viên phụ trách chính";
     return { isValid, message };
   }
 
