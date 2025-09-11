@@ -485,12 +485,16 @@ export default class SalesOrderService {
     }
 
     if (variantSerialIdsToUpdate.length > 0) {
-      const updateSql = `
-        UPDATE workplace.temporary_products 
-                    SET is_notify_lark_reorder = true 
-                    WHERE variant_serial_id IN (${variantSerialIdsToUpdate.map(item => `'${item}'`).join(", ")})
-      `;
-      await db.$queryRaw`${Prisma.raw(updateSql)}`;
+      await db.temporaryProducts.updateMany({
+        where: {
+          variant_serial_id: {
+            in: variantSerialIdsToUpdate
+          }
+        },
+        data: {
+          is_notify_lark_reorder: true
+        }
+      });
     }
     return variantSerialIdsToUpdate;
   }
@@ -568,12 +572,16 @@ export default class SalesOrderService {
     }
 
     if (haravanVariantIdsToUpdate.length > 0) {
-      const updateSql = `
-        UPDATE workplace.temporary_products 
-        SET is_notify_lark_reorder = true 
-        WHERE haravan_variant_id IN (${haravanVariantIdsToUpdate.map(item => `'${item}'`).join(", ")})
-      `;
-      await db.$queryRaw`${Prisma.raw(updateSql)}`;
+      await db.temporaryProducts.updateMany({
+        where: {
+          haravan_variant_id: {
+            in: haravanVariantIdsToUpdate
+          }
+        },
+        data: {
+          is_notify_lark_reorder: true
+        }
+      });
     }
     return haravanVariantIdsToUpdate;
   }
