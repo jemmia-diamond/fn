@@ -5,7 +5,7 @@ import { stringSquish } from "services/utils/string-helper";
 
 dayjs.extend(utc);
 
-export const composeSalesOrderNotification = (salesOrder, promotionData, leadSource, policyData, productCategoryData, customer, primarySalesPerson) => {
+export const composeSalesOrderNotification = (salesOrder, promotionData, leadSource, policyData, productCategoryData, customer, primarySalesPerson, secondarySalesPeople) => {
   const time = dayjs().format("DD-MM-YYYY HH:mm:ss");
   const orderNumber = salesOrder.order_number;
 
@@ -13,6 +13,8 @@ export const composeSalesOrderNotification = (salesOrder, promotionData, leadSou
   const orderPromotions = promotionData.filter((promotion) => orderPromotionNames.includes(promotion.name));
 
   const expectedPaymentDate = dayjs(salesOrder.expected_payment_date).format("DD-MM-YYYY");
+
+  const secondarySalesPeopleNameList = secondarySalesPeople.map((salesPerson) => salesPerson.sales_person_name);
 
   const content = stringSquish(`
     <b>[${time}] JEMMIA xác nhận đơn hàng #${orderNumber}</b>
@@ -40,8 +42,11 @@ export const composeSalesOrderNotification = (salesOrder, promotionData, leadSou
     * <b>Chương trình khuyến mãi toàn đơn</b>:
     ${composeChildrenContent(orderPromotions, "title")}
 
-    Nhân viên phụ trách chính: ${primarySalesPerson.sales_person_name}
-    Link đơn hàng: https://erp.jemmia.vn/app/sales-order/${salesOrder.name}
+    * Nhân viên phụ trách:
+    - Chính: ${primarySalesPerson.sales_person_name}
+    ${secondarySalesPeopleNameList.length ? "- Phụ: " + secondarySalesPeopleNameList.join(", ") : ""}
+
+    * Link đơn hàng: https://erp.jemmia.vn/app/sales-order/${salesOrder.name}
   `);
   return content;
 };
@@ -93,6 +98,11 @@ export const extractPromotions = (salesOrder) => {
 export function validateOrderInfo(salesOrderData, customer) {
   let message = null;
   let isValid = false;
+
+  if (!salesOrderData.sales_team.length) {
+    message = "Chưa nhập chia doanh số";
+    return { isValid, message };
+  }
 
   if (!customer.customer_journey) {
     message = "Chưa nhập hành trình khách hàng";
