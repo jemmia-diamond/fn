@@ -136,7 +136,7 @@ export default class ContactService {
     } catch (error) {
       console.error("Error syncing leads to database:", error.message);
       // Handle when cronjon failed in 1 hour => we need to update the last date to the current date
-      if (isSyncType === LeadService.SYNC_TYPE_AUTO && dayjs(toDate).diff(dayjs(await kv.get(KV_KEY)), "hour") >= 1) {
+      if (isSyncType === ContactService.SYNC_TYPE_AUTO && dayjs(toDate).diff(dayjs(await kv.get(KV_KEY)), "hour") >= 1) {
         await kv.put(KV_KEY, toDate);
       }
     }

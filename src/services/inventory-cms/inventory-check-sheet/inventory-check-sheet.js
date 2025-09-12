@@ -11,7 +11,7 @@ dayjs.extend(utc);
 export default class InventoryCheckSheetService {
   constructor(env) {
     this.env = env;
-    this.db = Database.instance(env);
+    this.db = Database.instance(env, "neon");
   }
 
   async processInventoryCheckSheetToDatabase(data) {

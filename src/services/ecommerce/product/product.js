@@ -107,17 +107,21 @@ export default class ProductService {
 
     return {
       data,
-      count: count.length ? Number(count[0].total) : 0
+      count: count.length ? Number(count[0].total) : 0,
+      material_colors: count.length ? count[0].material_colors : [],
+      fineness: count.length ? count[0].fineness : []
     };
   }
 
   async getWeddingRings(jsonParams) {
-    const {data, count} = await this.getWeddingRingsData(jsonParams);
+    const {data, count, material_colors, fineness} = await this.getWeddingRingsData(jsonParams);
     return {
       data,
       metadata: {
         total: count,
-        pagination: jsonParams.pagination
+        pagination: jsonParams.pagination,
+        material_colors: material_colors,
+        fineness: fineness
       }
     };
   }
