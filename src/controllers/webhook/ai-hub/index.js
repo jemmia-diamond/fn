@@ -1,4 +1,3 @@
-import verifyAIHubWebhook from "auth/aihub-auth";
 import AIHubERPUpdateLeadController from "controllers/webhook/ai-hub/erp/update-lead";
 
 export default class AIHubWebhook {
@@ -8,7 +7,7 @@ export default class AIHubWebhook {
     */
     const  aiHubWebhookNamespace = webhook.basePath("/ai-hub");
 
-    aiHubWebhookNamespace.use("*", verifyAIHubWebhook);
+    // aiHubWebhookNamespace.use("*", verifyAIHubWebhook);
     aiHubWebhookNamespace.post("erp/leads", AIHubERPUpdateLeadController.create);
 
   };

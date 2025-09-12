@@ -69,7 +69,7 @@ export default {
     case "0 14 * * *": // 21:00
       await ERP.Automation.AssignmentRuleService.enableAssignmentRuleOffHour(env);
       break;
-    case "*/5 * * * *": // At every 5 minutes
+    case "*/5 * * * * *": // At every 5 minutes
       await ERP.Selling.SalesOrderService.remindReorderOnHandTempProduct(env);
       break;
     default:

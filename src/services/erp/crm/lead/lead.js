@@ -15,9 +15,9 @@ export default class LeadService {
     this.env = env;
     this.doctype = "Lead";
     this.frappeClient = new FrappeClient({
-      url: this.env.JEMMIA_ERP_BASE_URL,
-      apiKey: this.env.JEMMIA_ERP_API_KEY,
-      apiSecret: this.env.JEMMIA_ERP_API_SECRET
+      url: "http://dev.localhost:8000/",
+      apiKey: "09610f2d1f36929",
+      apiSecret: "7ec76a2e56406cf"
     });
     this.db = Database.instance(env);
     this.WebsiteFormLeadSource = "CRM-LEAD-SOURCE-0000023";
