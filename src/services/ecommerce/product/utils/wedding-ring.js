@@ -1,5 +1,5 @@
 export function buildWeddingRingsQuery(jsonParams) {
-  const {filterString, sortString, paginationString} = aggregateQuery(jsonParams);
+  const { filterString, sortString, paginationString } = aggregateQuery(jsonParams);
 
   const dataSql = `
     SELECT 

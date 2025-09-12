@@ -8,7 +8,7 @@ import CustomerService from "src/services/erp/selling/customer/customer";
 import { composeSalesOrderNotification, extractPromotions, validateOrderInfo } from "services/erp/selling/sales-order/utils/sales-order-notification";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
-import { CHAT_GROUPS} from "services/larksuite/group-chat/group-management/constant";
+import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/constant";
 
 import { fetchSalesOrdersFromERP, saveSalesOrdersToDatabase } from "src/services/erp/selling/sales-order/utils/sales-order-helpers";
 

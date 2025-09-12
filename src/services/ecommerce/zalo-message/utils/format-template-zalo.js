@@ -1,4 +1,4 @@
-import {ZALO_TEMPLATE} from "services/ecommerce/zalo-message/enums/zalo-template.enum";
+import { ZALO_TEMPLATE } from "services/ecommerce/zalo-message/enums/zalo-template.enum";
 import { ORDER_STATUS } from "src/services/ecommerce/zalo-message/enums/order-status.enum";
 
 export class GetTemplateZalo {

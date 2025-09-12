@@ -63,7 +63,7 @@ export default class LeadService {
     }
     try {
       const lead = await this.frappeClient.update(currentLead);
-      return { success: true, data: lead};
+      return { success: true, data: lead };
     } catch (error) {
       return {
         success: false,

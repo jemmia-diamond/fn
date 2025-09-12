@@ -44,7 +44,7 @@ export const NhattinDeliveryStatus = Object.freeze({
 });
 
 export const NhattinPaymentMethod = Object.freeze({
-  NGTTN: { id: 10, name: "Người Gửi Thanh Toán Ngay"},
+  NGTTN: { id: 10, name: "Người Gửi Thanh Toán Ngay" },
   NGTTS: { id: 11, name: "Người Gửi Thanh Toán Sau" },
   NNTTN: { id: 20, name: "Người Nhận Thanh Toán Ngay" }
 });
