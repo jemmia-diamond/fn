@@ -138,6 +138,8 @@ export default class ProductService {
          	WHEN d.ring_band_type = 'None' THEN NULL
          	ELSE d.ring_band_type
       	END AS ring_band_type,
+        d.main_stone,
+        d.stone_quantity,
         p.haravan_product_type AS product_type,
        'Round' AS shape_of_main_stone,
         p.has_360,
@@ -179,7 +181,7 @@ export default class ProductService {
         AND p.haravan_product_id = ${id}
       GROUP BY
       	p.haravan_product_id, p.title, d.design_code, p.handle,
-        d.diamond_holder, d.ring_band_type, p.haravan_product_type,
+        d.diamond_holder, d.ring_band_type, d.main_stone, d.stone_quantity, p.haravan_product_type,
         p.max_price, p.min_price, p.max_price_18, p.max_price_14,
         p.qty_onhand, img.images, p.has_360, p.estimated_gold_weight,
         p.primary_collection, p.primary_collection_handle
