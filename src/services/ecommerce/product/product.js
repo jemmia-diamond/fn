@@ -128,61 +128,60 @@ export default class ProductService {
 
   async getJewelryById(id) {
     const result = await this.db.$queryRaw`
-       SELECT
+      SELECT
+        -- Product identifiers
         CAST(p.haravan_product_id AS INT) AS id,
         p.title,
-        d.design_code,
         p.handle,
-        d.diamond_holder,
-        CASE
-         	WHEN d.ring_band_type = 'None' THEN NULL
-         	ELSE d.ring_band_type
-      	END AS ring_band_type,
         p.haravan_product_type AS product_type,
-       'Round' AS shape_of_main_stone,
+
+        -- Design information
+        d.design_code,
+        d.diamond_holder,
+        NULLIF(d.ring_band_type, 'None') AS ring_band_type,
+
+        -- Product attributes
+        'Round' AS shape_of_main_stone,
         p.has_360,
-        img.images,
         p.estimated_gold_weight,
-        JSON_AGG(
-          JSON_BUILD_OBJECT(
-            'id', CAST(v.haravan_variant_id AS INT),
-            'fineness', v.fineness,
-            'material_color', v.material_color,
-            'ring_size', v.ring_size,
-            'price', CAST(v.price AS INT),
-            'price_compare_at', CAST(v.price_compare_at AS INT),
-             'applique_material', v.applique_material,
-             'estimated_gold_weight', v.estimated_gold_weight
+
+        -- Images from design_images (filtered by design_id)
+        COALESCE(
+          (SELECT ARRAY_AGG(img_elem ->> 'url')
+           FROM workplace.design_images di
+           CROSS JOIN LATERAL json_array_elements(di.retouch::json) AS img_elem
+           WHERE di.design_id = d.id),
+          ARRAY[]::text[]
+        ) AS images,
+
+        -- Variants (pre-filtered by product_id)
+        COALESCE(
+          (SELECT JSON_AGG(
+            JSON_BUILD_OBJECT(
+              'id', CAST(v.haravan_variant_id AS INT),
+              'fineness', v.fineness,
+              'material_color', v.material_color,
+              'ring_size', v.ring_size,
+              'price', CAST(v.price AS INT),
+              'price_compare_at', CAST(v.price_compare_at AS INT),
+              'applique_material', v.applique_material,
+              'estimated_gold_weight', v.estimated_gold_weight
+            ) ORDER BY v.fineness, v.price DESC
           )
+          FROM ecom.materialized_variants v
+          WHERE v.haravan_product_id = ${id}),
+          '[]'::json
         ) AS variants,
+
+        -- Primary collection
         JSON_BUILD_OBJECT(
-             'name', p.primary_collection,
-             'handle', p.primary_collection_handle
-      	) AS primary_collection
+          'name', p.primary_collection,
+          'handle', p.primary_collection_handle
+        ) AS primary_collection
+
       FROM ecom.materialized_products p
         INNER JOIN workplace.designs d ON d.id = p.design_id
-        INNER JOIN (
-          SELECT
-            i.product_id,
-            array_agg(i.src ORDER BY i.src) AS images
-          FROM haravan.images i
-          GROUP BY i.product_id
-        ) img ON img.product_id = p.haravan_product_id
-
-        INNER JOIN LATERAL (
-          SELECT *
-          FROM ecom.materialized_variants v
-          WHERE v.haravan_product_id = p.haravan_product_id
-          ORDER BY v.fineness, v.price DESC
-        ) v ON TRUE
-      WHERE 1 = 1
-        AND p.haravan_product_id = ${id}
-      GROUP BY
-      	p.haravan_product_id, p.title, d.design_code, p.handle,
-        d.diamond_holder, d.ring_band_type, p.haravan_product_type,
-        p.max_price, p.min_price, p.max_price_18, p.max_price_14,
-        p.qty_onhand, img.images, p.has_360, p.estimated_gold_weight,
-        p.primary_collection, p.primary_collection_handle
+      WHERE p.haravan_product_id = ${id}
     `;
     return result?.[0] || null;
   }
