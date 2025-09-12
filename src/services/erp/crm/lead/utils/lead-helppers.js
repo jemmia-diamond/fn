@@ -122,3 +122,14 @@ export async function saveLeadsToDatabase(db, leads) {
     console.error("Error saving leads to database:", error.message);
   }
 }
+
+export function areAllFieldsEmpty(obj) {
+  return Object.values(obj).every(
+    value =>
+      value === null ||
+      value === undefined ||
+      (typeof value === "string" && value.trim() === "") ||
+      (Array.isArray(value) && value.length === 0)
+  );
+}
+
