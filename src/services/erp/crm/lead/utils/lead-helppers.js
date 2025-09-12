@@ -124,6 +124,10 @@ export async function saveLeadsToDatabase(db, leads) {
 }
 
 export function areAllFieldsEmpty(obj) {
+  if (!obj || typeof obj !== "object") {
+    return true;
+  }
+
   return Object.values(obj).every(
     value =>
       value === null ||

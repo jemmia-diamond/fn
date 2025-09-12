@@ -184,18 +184,20 @@ export default class ConversationService {
   }
 
   async summarizeLead(env, body) {
-    const { data } = body;
-    const { message } = data;
-
     // Skip if webhook's event_type is not "messaging"
     if (body?.event_type !== "messaging") {
       return;
     }
 
+    const { data } = body;
+    const { message } = data;
+
     // Skip if the message is from admin
     if (message?.from?.admin_id) { return; }
 
-    const conversationId = message.conversation_id;
+    const conversationId = message?.conversation_id;
+
+    if (!conversationId) { return; }
 
     const existingDocName = await this.findExistingLead({
       conversationId: conversationId

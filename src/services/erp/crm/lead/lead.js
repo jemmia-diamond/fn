@@ -26,6 +26,9 @@ export default class LeadService {
   }
 
   async updateLeadInfoFromSummary(data, conversationId) {
+
+    if (!data) return;
+
     const allowedFields = [
       "budget_from",
       "budget_to",
@@ -45,7 +48,7 @@ export default class LeadService {
     });
 
     if (areAllFieldsEmpty(summariedInfo)) {
-      return;
+      return { success: true };
     }
 
     let res = await this.frappeClient.postRequest("", {
