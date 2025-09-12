@@ -1,0 +1,36 @@
+model temporaryProducts {
+  id                     Int              @id @default(autoincrement())
+  haravan_product_id     Int?
+  haravan_variant_id     Int?
+  customer_name          String?
+  variant_title          String?
+  customer_phone         String?          @db.VarChar
+  code                   String?
+  price                  Decimal?         @default(0) @db.Decimal
+  product_information    String?
+  design_id              Int?
+  category               String?
+  applique_material      String?
+  material_color         String?
+  size_type              String?
+  ring_size              Decimal?         @db.Decimal
+  fineness               String?
+  database_created_at    DateTime?        @default(now()) @db.Timestamp(6)
+  design_code            String?
+  summary                String?
+  lark_base_record_id    String?          @unique(map: "unique_lark_base_record_id")
+  use_case               String?
+  variant_serial_id      Int?             @unique @map("variant_serial_id")
+  ticket_type            String?
+  product_group          String?
+  gia_report_no          String?
+  ref_design_code        String?
+  request_code           String?
+  is_create_product      String?
+  is_notify_lark_reorder Boolean?         @map("is_notify_lark_reorder")
+  variant_serials        variant_serials? @relation(fields: [variant_serial_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_variant_serial")
+  designs                designs?         @relation(fields: [design_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+
+  @@map("temporary_products")
+  @@schema("workplace")
+}
