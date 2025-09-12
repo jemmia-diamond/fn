@@ -114,14 +114,14 @@ export default class ProductService {
   }
 
   async getWeddingRings(jsonParams) {
-    const {data, count} = await this.getWeddingRingsData(jsonParams);
+    const {data, count, material_colors, fineness} = await this.getWeddingRingsData(jsonParams);
     return {
       data,
       metadata: {
         total: count,
         pagination: jsonParams.pagination,
-        material_colors: jsonParams.material_colors,
-        fineness: jsonParams.fineness
+        material_colors: material_colors,
+        fineness: fineness
       }
     };
   }

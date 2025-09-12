@@ -95,6 +95,10 @@ export function aggregateQuery(jsonParams) {
     filterString += `AND (${expression})\n`;
   }
 
+  if (jsonParams.is_in_stock) {
+    filterString += "AND wr.qty_onhand > 0\n";
+  }
+
   if (jsonParams.price?.min) {
     filterString += `AND wr.min_price >= ${jsonParams.price.min}\n`;
   }
