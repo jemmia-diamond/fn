@@ -123,9 +123,3 @@ export async function saveSalesOrdersToDatabase(db, salesOrders) {
     console.error("Error saving sales orders to database:", error.message);
   }
 }
-
-export function mergeObjects(objects) {
-  return objects.reduce((acc, obj) => {
-    return { ...acc, ...Object.fromEntries(Object.entries(obj).filter(([_, v]) => v !== null)) };
-  }, {});
-}

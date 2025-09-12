@@ -9,7 +9,7 @@ import { composeSalesOrderNotification, extractPromotions, validateOrderInfo } f
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/constant";
-import { mergeObjects } from "src/services/erp/selling/sales-order/utils/sales-order-helpers";
+import { mergeObjects, removeKeysWithNull } from "services/utils/object-helper";
 
 import { fetchSalesOrdersFromERP, saveSalesOrdersToDatabase } from "src/services/erp/selling/sales-order/utils/sales-order-helpers";
 
@@ -438,7 +438,7 @@ export default class SalesOrderService {
       `
     );
 
-    const combinedOrder = mergeObjects(orderChain);
+    const combinedOrder = mergeObjects(orderChain.map((order) => removeKeysWithNull(order)));
     combinedOrder.ref_sales_orders = orderChain.slice(0, -1).map((order) => ({ sales_order: order.name }));
     combinedOrder.promotions = promotions.map((promotion) => ({ promotion: promotion.promotion }));
     combinedOrder.sales_order_purposes = salesOrderPurposes.map((purpose) => ({ purchase_purpose: purpose.purchase_purpose }));

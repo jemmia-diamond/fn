@@ -71,6 +71,7 @@ export default {
       await ERP.Automation.AssignmentRuleService.enableAssignmentRuleOffHour(env);
       break;
     default:
+      await ERP.Selling.SalesOrderService.processReOrders(env);
       break;
     };
   }
