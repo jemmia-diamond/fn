@@ -1,6 +1,7 @@
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import { SKU_LENGTH, SKU_PREFIX } from "services/haravan/products/product-variant/constant";
+import { numberToCurrency } from "services/utils/number-helper";
 import { stringSquish } from "services/utils/string-helper";
 
 dayjs.extend(utc);
