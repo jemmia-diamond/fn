@@ -75,7 +75,7 @@ const composeItemContent = (item, idx, promotionData) => {
 };
 
 function formatVietnameseCurrency(amount) {
-  return amount.toLocaleString("vi-VN", { style: "currency", currency: "VND" }) + " VNĐ";
+  return amount.toLocaleString("vi-VN", { maximumFractionDigits: 0 }) + " VNĐ";
 }
 
 export const extractPromotions = (salesOrder) => {
