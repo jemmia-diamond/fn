@@ -3,6 +3,11 @@ export function buildQuery(jsonParams) {
 
   const finenessOrder = handleFinenessPriority === "14K" ? "ASC" : "DESC";
 
+  let joinWithEcomProductSql = "";
+  if (jsonParams.pages && jsonParams.pages.length > 0) {
+    joinWithEcomProductSql = "LEFT JOIN ecom.products p2 ON p.haravan_product_id = p2.haravan_product_id";
+  }
+
   const dataSql = `
     SELECT  
       CAST(p.haravan_product_id AS INT) AS id,
@@ -25,7 +30,8 @@ export function buildQuery(jsonParams) {
         )
       ) AS variants
     FROM ecom.materialized_products p 
-      INNER JOIN workplace.designs d ON p.design_id = d.id
+      INNER JOIN workplace.designs d ON p.design_id = d.id 
+      ${joinWithEcomProductSql}
 
       -- Subquery for pre-aggregated images
       INNER JOIN (
@@ -61,6 +67,7 @@ export function buildQuery(jsonParams) {
      (SELECT ARRAY_AGG(DISTINCT mv.fineness ) FROM ecom.materialized_variants mv) AS fineness
     FROM ecom.materialized_products p 
         INNER JOIN workplace.designs d ON d.id = p.design_id
+        ${joinWithEcomProductSql}
         INNER JOIN haravan.images i ON i.product_id = p.haravan_product_id
         INNER JOIN ecom.materialized_variants v ON v.haravan_product_id = p.haravan_product_id
     WHERE 1 = 1 
@@ -90,7 +97,7 @@ export function aggregateQuery(jsonParams) {
   }
 
   if (jsonParams.pages && jsonParams.pages.length > 0) {
-    filterString += `AND p.pages IN ('${jsonParams.pages.join("','")}')\n`;
+    filterString += `AND p2.pages IN ('${jsonParams.pages.join("','")}')\n`;
   }
 
   if (jsonParams.product_types && jsonParams.product_types.length > 0) {
