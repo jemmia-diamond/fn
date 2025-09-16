@@ -1,12 +1,7 @@
 export function buildQuery(jsonParams) {
-  const { filterString, sortString, paginationString, handleFinenessPriority } = aggregateQuery(jsonParams);
+  const { filterString, sortString, paginationString, handleFinenessPriority, joinWithEcomProductSql } = aggregateQuery(jsonParams);
 
   const finenessOrder = handleFinenessPriority === "14K" ? "ASC" : "DESC";
-
-  let joinWithEcomProductSql = "";
-  if (jsonParams.pages && jsonParams.pages.length > 0) {
-    joinWithEcomProductSql = "LEFT JOIN ecom.products p2 ON p.haravan_product_id = p2.haravan_product_id";
-  }
 
   const dataSql = `
     SELECT  
@@ -96,8 +91,10 @@ export function aggregateQuery(jsonParams) {
     filterString += `AND p.category IN ('${jsonParams.categories.join("','")}')\n`;
   }
 
+  let joinWithEcomProductSql = "";
   if (jsonParams.pages && jsonParams.pages.length > 0) {
     filterString += `AND p2.pages IN ('${jsonParams.pages.join("','")}')\n`;
+    joinWithEcomProductSql = "LEFT JOIN ecom.products p2 ON p.haravan_product_id = p2.haravan_product_id";
   }
 
   if (jsonParams.product_types && jsonParams.product_types.length > 0) {
@@ -151,6 +148,7 @@ export function aggregateQuery(jsonParams) {
     filterString,
     sortString,
     paginationString,
-    handleFinenessPriority
+    handleFinenessPriority,
+    joinWithEcomProductSql
   };
 }
