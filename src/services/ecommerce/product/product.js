@@ -9,7 +9,7 @@ export default class ProductService {
   }
 
   async getJewelryData(jsonParams) {
-    const {dataSql, countSql} = buildQuery(jsonParams);
+    const { dataSql, countSql } = buildQuery(jsonParams);
 
     const data = await this.db.$queryRaw`${Prisma.raw(dataSql)}`;
     const count = await this.db.$queryRaw`${Prisma.raw(countSql)}`;
@@ -23,7 +23,7 @@ export default class ProductService {
   }
 
   async getJewelry(jsonParams) {
-    const {data, count, material_colors, fineness} = await this.getJewelryData(jsonParams);
+    const { data, count, material_colors, fineness } = await this.getJewelryData(jsonParams);
     return {
       data,
       metadata: {
@@ -100,7 +100,7 @@ export default class ProductService {
   }
 
   async getWeddingRingsData(jsonParams) {
-    const {dataSql, countSql} = buildWeddingRingsQuery(jsonParams);
+    const { dataSql, countSql } = buildWeddingRingsQuery(jsonParams);
 
     const data = await this.db.$queryRaw`${Prisma.raw(dataSql)}`;
     const count = await this.db.$queryRaw`${Prisma.raw(countSql)}`;
@@ -114,7 +114,7 @@ export default class ProductService {
   }
 
   async getWeddingRings(jsonParams) {
-    const {data, count, material_colors, fineness} = await this.getWeddingRingsData(jsonParams);
+    const { data, count, material_colors, fineness } = await this.getWeddingRingsData(jsonParams);
     return {
       data,
       metadata: {

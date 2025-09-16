@@ -8,7 +8,7 @@ import CustomerService from "src/services/erp/selling/customer/customer";
 import { composeSalesOrderNotification, extractPromotions, validateOrderInfo } from "services/erp/selling/sales-order/utils/sales-order-notification";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
-import { CHAT_GROUPS} from "services/larksuite/group-chat/group-management/constant";
+import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/constant";
 
 import { fetchSalesOrdersFromERP, saveSalesOrdersToDatabase } from "src/services/erp/selling/sales-order/utils/sales-order-helpers";
 
@@ -193,7 +193,15 @@ export default class SalesOrderService {
     const primarySalesPersonName = salesOrderData.primary_sales_person;
     const primarySalesPerson = await this.frappeClient.getDoc("Sales Person", primarySalesPersonName);
 
-    const content = composeSalesOrderNotification(salesOrderData, promotionData, leadSource, policyData, productCategoryData, customer, primarySalesPerson);
+    const secondarySalesPersonNames = salesOrderData.sales_team
+      .filter(salesPerson => salesPerson.sales_person !== salesOrderData.primary_sales_person)
+      .map(salesPerson => salesPerson.sales_person);
+
+    const secondarySalesPeople = await this.frappeClient.getList("Sales Person", {
+      filters: [["name", "in", secondarySalesPersonNames]]
+    });
+
+    const content = composeSalesOrderNotification(salesOrderData, promotionData, leadSource, policyData, productCategoryData, customer, primarySalesPerson, secondarySalesPeople);
 
     const _response = await larkClient.im.message.create({
       params: {

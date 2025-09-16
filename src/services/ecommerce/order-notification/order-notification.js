@@ -3,7 +3,7 @@ import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/cons
 import { HARAVAN_TOPIC } from "services/ecommerce/enum";
 import { stringSquish } from "services/utils/string-helper";
 import { numberToCurrency } from "services/utils/number-helper";
-import { isTestOrder } from "services/utils/order-intercepter";
+import { isTestOrder, isReorder } from "services/utils/order-intercepter";
 
 export default class OrderNotificationService {
   static WHITELIST_SOURCES = ["web"];
@@ -52,6 +52,10 @@ export default class OrderNotificationService {
     }
 
     if (isTestOrder(orderData)) {
+      return true;
+    }
+
+    if (isReorder(orderData)) {
       return true;
     }
 

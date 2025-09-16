@@ -40,6 +40,8 @@ export default function getBaseConfig() {
       "eol-last": ["error", "always"],
       "no-console": ["error", { "allow": ["warn", "error"] }],
       "indent": ["error", 2],
+      "@stylistic/array-bracket-spacing": ["error", "never"],
+      "@stylistic/object-curly-spacing": ["error", "always"],
       "unicorn/template-indent": ["error", {
         "selectors": ["TemplateLiteral"],
         "indent": 2
