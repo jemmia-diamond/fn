@@ -1,5 +1,5 @@
 export function buildQuery(jsonParams) {
-  const { filterString, sortString, paginationString, handleFinenessPriority, joinWithEcomProductSql } = aggregateQuery(jsonParams);
+  const { filterString, sortString, paginationString, handleFinenessPriority, collectionJoinEcomProductsClause } = aggregateQuery(jsonParams);
 
   const finenessOrder = handleFinenessPriority === "14K" ? "ASC" : "DESC";
 
@@ -26,7 +26,7 @@ export function buildQuery(jsonParams) {
       ) AS variants
     FROM ecom.materialized_products p 
       INNER JOIN workplace.designs d ON p.design_id = d.id 
-      ${joinWithEcomProductSql}
+      ${collectionJoinEcomProductsClause}
 
       -- Subquery for pre-aggregated images
       INNER JOIN (
@@ -62,7 +62,7 @@ export function buildQuery(jsonParams) {
      (SELECT ARRAY_AGG(DISTINCT mv.fineness ) FROM ecom.materialized_variants mv) AS fineness
     FROM ecom.materialized_products p 
         INNER JOIN workplace.designs d ON d.id = p.design_id
-        ${joinWithEcomProductSql}
+        ${collectionJoinEcomProductsClause}
         INNER JOIN haravan.images i ON i.product_id = p.haravan_product_id
         INNER JOIN ecom.materialized_variants v ON v.haravan_product_id = p.haravan_product_id
     WHERE 1 = 1 
@@ -82,6 +82,7 @@ export function aggregateQuery(jsonParams) {
   let paginationString = "";
   let handleFinenessPriority = "18K";
   let sortedColumn = "p.max_price_18";
+  let collectionJoinEcomProductsClause = "";
 
   if (jsonParams.is_in_stock) {
     filterString += "AND p.qty_onhand > 0\n";
@@ -91,10 +92,9 @@ export function aggregateQuery(jsonParams) {
     filterString += `AND p.category IN ('${jsonParams.categories.join("','")}')\n`;
   }
 
-  let joinWithEcomProductSql = "";
   if (jsonParams.pages && jsonParams.pages.length > 0) {
     filterString += `AND p2.pages IN ('${jsonParams.pages.join("','")}')\n`;
-    joinWithEcomProductSql = "LEFT JOIN ecom.products p2 ON p.haravan_product_id = p2.haravan_product_id";
+    collectionJoinEcomProductsClause = "LEFT JOIN ecom.products p2 ON p.haravan_product_id = p2.haravan_product_id";
   }
 
   if (jsonParams.product_types && jsonParams.product_types.length > 0) {
@@ -149,6 +149,6 @@ export function aggregateQuery(jsonParams) {
     sortString,
     paginationString,
     handleFinenessPriority,
-    joinWithEcomProductSql
+    collectionJoinEcomProductsClause
   };
 }
