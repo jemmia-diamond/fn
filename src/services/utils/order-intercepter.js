@@ -12,8 +12,7 @@ export function isTestOrder(orderData) {
 }
 
 export function isReorder(orderData) {
-  const orderId = orderData.id;
-  const lastOrderId = orderData.customer.last_order_id;
+  const refOrderId = orderData.ref_order_id;
 
-  return (orderId != lastOrderId);
+  return (refOrderId !== 0);
 }
