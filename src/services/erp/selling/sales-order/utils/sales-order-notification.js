@@ -24,11 +24,11 @@ export const composeSalesOrderNotification = (salesOrder, promotionData, leadSou
     ${salesOrder.items.map((item, idx) => composeItemContent(item, idx + 1, promotionData.filter((promotion) => [item.promotion_1, item.promotion_2, item.promotion_3, item.promotion_4].includes(promotion.name)))).join("\n\n")}
 
     * <b>Thông tin toàn đơn hàng</b>:
-    - Tổng đơn hàng: ${formatVietnameseCurrency(salesOrder.grand_total)}
+    - Tổng đơn hàng: ${numberToCurrency(salesOrder.grand_total)}
     - Ngày tư vấn: ${dayjs(salesOrder.consultation_date).format("DD-MM-YYYY")}
     - Chiết khấu đơn hàng: ${salesOrder.discount_amount}
-    - Số tiền đã cọc: ${formatVietnameseCurrency(salesOrder.paid_amount)}
-    - Số tiền còn lại: ${formatVietnameseCurrency(salesOrder.balance)}
+    - Số tiền đã cọc: ${numberToCurrency(salesOrder.paid_amount)}
+    - Số tiền còn lại: ${numberToCurrency(salesOrder.balance)}
     - Ngày thanh toán dự kiến: ${expectedPaymentDate}
     - Kênh tiếp cận đầu tiên: ${leadSource.source_name}
     - Hành trình khách hàng: ${customer.customer_journey}
@@ -66,17 +66,13 @@ const composeItemContent = (item, idx, promotionData) => {
     SKU: ${item.sku}
     Số lượng: ${item.qty}
     ${serialNumbers ? `Số serial: ${serialNumbers}` : ""}
-    Giá: ${formatVietnameseCurrency(item.price_list_rate)}
-    Giá khuyến mãi: ${formatVietnameseCurrency(item.rate)}
+    Giá: ${numberToCurrency(item.price_list_rate)}
+    Giá khuyến mãi: ${numberToCurrency(item.rate)}
     CTKM:
     ${composeChildrenContent(promotionData, "title")}
   `.replace(/\n+/g, "\n");
   return content;
 };
-
-function formatVietnameseCurrency(amount) {
-  return amount.toLocaleString("vi-VN", { maximumFractionDigits: 0 }) + " VNĐ";
-}
 
 export const extractPromotions = (salesOrder) => {
   const promotionNames = [];
