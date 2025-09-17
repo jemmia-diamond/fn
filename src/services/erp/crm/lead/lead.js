@@ -176,6 +176,12 @@ export default class LeadService {
   }
 
   async processWebsiteLead(data) {
+    if (!data.raw_data) return;
+
+    if (!data?.raw_data?.phone) {
+      return;
+    }
+
     const contactService = new ContactService(this.env);
     const location = data.raw_data.location;
     const provinces = await this.frappeClient.getList("Province", {
