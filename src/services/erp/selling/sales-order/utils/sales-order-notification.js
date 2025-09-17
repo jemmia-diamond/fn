@@ -1,11 +1,12 @@
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import { SKU_LENGTH, SKU_PREFIX } from "services/haravan/products/product-variant/constant";
+import { numberToCurrency } from "services/utils/number-helper";
 import { stringSquish } from "services/utils/string-helper";
 
 dayjs.extend(utc);
 
-export const composeSalesOrderNotification = (salesOrder, promotionData, leadSource, policyData, productCategoryData, customer, primarySalesPerson) => {
+export const composeSalesOrderNotification = (salesOrder, promotionData, leadSource, policyData, productCategoryData, customer, primarySalesPerson, secondarySalesPeople) => {
   const time = dayjs().format("DD-MM-YYYY HH:mm:ss");
   const orderNumber = salesOrder.order_number;
 
@@ -13,6 +14,8 @@ export const composeSalesOrderNotification = (salesOrder, promotionData, leadSou
   const orderPromotions = promotionData.filter((promotion) => orderPromotionNames.includes(promotion.name));
 
   const expectedPaymentDate = dayjs(salesOrder.expected_payment_date).format("DD-MM-YYYY");
+
+  const secondarySalesPeopleNameList = secondarySalesPeople.map((salesPerson) => salesPerson.sales_person_name);
 
   const content = stringSquish(`
     <b>[${time}] JEMMIA xác nhận đơn hàng #${orderNumber}</b>
@@ -22,11 +25,11 @@ export const composeSalesOrderNotification = (salesOrder, promotionData, leadSou
     ${salesOrder.items.map((item, idx) => composeItemContent(item, idx + 1, promotionData.filter((promotion) => [item.promotion_1, item.promotion_2, item.promotion_3, item.promotion_4].includes(promotion.name)))).join("\n\n")}
 
     * <b>Thông tin toàn đơn hàng</b>:
-    - Tổng đơn hàng: ${formatVietnameseCurrency(salesOrder.grand_total)}
+    - Tổng đơn hàng: ${numberToCurrency(salesOrder.grand_total)}
     - Ngày tư vấn: ${dayjs(salesOrder.consultation_date).format("DD-MM-YYYY")}
     - Chiết khấu đơn hàng: ${salesOrder.discount_amount}
-    - Số tiền đã cọc: ${formatVietnameseCurrency(salesOrder.paid_amount)}
-    - Số tiền còn lại: ${formatVietnameseCurrency(salesOrder.balance)}
+    - Số tiền đã cọc: ${numberToCurrency(salesOrder.paid_amount)}
+    - Số tiền còn lại: ${numberToCurrency(salesOrder.balance)}
     - Ngày thanh toán dự kiến: ${expectedPaymentDate}
     - Kênh tiếp cận đầu tiên: ${leadSource.source_name}
     - Hành trình khách hàng: ${customer.customer_journey}
@@ -40,8 +43,11 @@ export const composeSalesOrderNotification = (salesOrder, promotionData, leadSou
     * <b>Chương trình khuyến mãi toàn đơn</b>:
     ${composeChildrenContent(orderPromotions, "title")}
 
-    Nhân viên phụ trách chính: ${primarySalesPerson.sales_person_name}
-    Link đơn hàng: https://erp.jemmia.vn/app/sales-order/${salesOrder.name}
+    * Nhân viên phụ trách:
+    - Chính: ${primarySalesPerson.sales_person_name}
+    ${secondarySalesPeopleNameList.length ? "- Phụ: " + secondarySalesPeopleNameList.join(", ") : ""}
+
+    * Link đơn hàng: https://erp.jemmia.vn/app/sales-order/${salesOrder.name}
   `);
   return content;
 };
@@ -61,17 +67,13 @@ const composeItemContent = (item, idx, promotionData) => {
     SKU: ${item.sku}
     Số lượng: ${item.qty}
     ${serialNumbers ? `Số serial: ${serialNumbers}` : ""}
-    Giá: ${formatVietnameseCurrency(item.price_list_rate)}
-    Giá khuyến mãi: ${formatVietnameseCurrency(item.rate)}
+    Giá: ${numberToCurrency(item.price_list_rate)}
+    Giá khuyến mãi: ${numberToCurrency(item.rate)}
     CTKM:
     ${composeChildrenContent(promotionData, "title")}
   `.replace(/\n+/g, "\n");
   return content;
 };
-
-function formatVietnameseCurrency(amount) {
-  return amount.toLocaleString("vi-VN", { style: "currency", currency: "VND" }) + " VNĐ";
-}
 
 export const extractPromotions = (salesOrder) => {
   const promotionNames = [];
@@ -93,6 +95,11 @@ export const extractPromotions = (salesOrder) => {
 export function validateOrderInfo(salesOrderData, customer) {
   let message = null;
   let isValid = false;
+
+  if (!salesOrderData.sales_team.length) {
+    message = "Chưa nhập chia doanh số";
+    return { isValid, message };
+  }
 
   if (!customer.customer_journey) {
     message = "Chưa nhập hành trình khách hàng";

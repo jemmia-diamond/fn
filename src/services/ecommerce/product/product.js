@@ -9,7 +9,7 @@ export default class ProductService {
   }
 
   async getJewelryData(jsonParams) {
-    const {dataSql, countSql} = buildQuery(jsonParams);
+    const { dataSql, countSql } = buildQuery(jsonParams);
 
     const data = await this.db.$queryRaw`${Prisma.raw(dataSql)}`;
     const count = await this.db.$queryRaw`${Prisma.raw(countSql)}`;
@@ -23,7 +23,7 @@ export default class ProductService {
   }
 
   async getJewelry(jsonParams) {
-    const {data, count, material_colors, fineness} = await this.getJewelryData(jsonParams);
+    const { data, count, material_colors, fineness } = await this.getJewelryData(jsonParams);
     return {
       data,
       metadata: {
@@ -100,24 +100,28 @@ export default class ProductService {
   }
 
   async getWeddingRingsData(jsonParams) {
-    const {dataSql, countSql} = buildWeddingRingsQuery(jsonParams);
+    const { dataSql, countSql } = buildWeddingRingsQuery(jsonParams);
 
     const data = await this.db.$queryRaw`${Prisma.raw(dataSql)}`;
     const count = await this.db.$queryRaw`${Prisma.raw(countSql)}`;
 
     return {
       data,
-      count: count.length ? Number(count[0].total) : 0
+      count: count.length ? Number(count[0].total) : 0,
+      material_colors: count.length ? count[0].material_colors : [],
+      fineness: count.length ? count[0].fineness : []
     };
   }
 
   async getWeddingRings(jsonParams) {
-    const {data, count} = await this.getWeddingRingsData(jsonParams);
+    const { data, count, material_colors, fineness } = await this.getWeddingRingsData(jsonParams);
     return {
       data,
       metadata: {
         total: count,
-        pagination: jsonParams.pagination
+        pagination: jsonParams.pagination,
+        material_colors: material_colors,
+        fineness: fineness
       }
     };
   }
@@ -134,6 +138,8 @@ export default class ProductService {
          	WHEN d.ring_band_type = 'None' THEN NULL
          	ELSE d.ring_band_type
       	END AS ring_band_type,
+        d.main_stone,
+        d.stone_quantity,
         p.haravan_product_type AS product_type,
        'Round' AS shape_of_main_stone,
         p.has_360,
@@ -175,7 +181,7 @@ export default class ProductService {
         AND p.haravan_product_id = ${id}
       GROUP BY
       	p.haravan_product_id, p.title, d.design_code, p.handle,
-        d.diamond_holder, d.ring_band_type, p.haravan_product_type,
+        d.diamond_holder, d.ring_band_type, d.main_stone, d.stone_quantity, p.haravan_product_type,
         p.max_price, p.min_price, p.max_price_18, p.max_price_14,
         p.qty_onhand, img.images, p.has_360, p.estimated_gold_weight,
         p.primary_collection, p.primary_collection_handle

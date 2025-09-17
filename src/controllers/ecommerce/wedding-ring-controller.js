@@ -13,6 +13,7 @@ export default class WeddingRingController {
       },
       fineness: params.fineness ? params.fineness.split(",") : [],
       material_colors: params.material_colors ? params.material_colors.split(",") : [],
+      is_in_stock: params.is_in_stock ? params.is_in_stock === "true" : null,
       sort: {
         by: params.sort_by || "price",
         order: params.sort_order || "asc"
@@ -29,7 +30,7 @@ export default class WeddingRingController {
         : []
     };
 
-    const {isValidated, message} = validateParams(jsonParams);
+    const { isValidated, message } = validateParams(jsonParams);
     if (!isValidated) {
       return ctx.json({ message: message }, 400);
     }

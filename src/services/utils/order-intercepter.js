@@ -10,3 +10,9 @@ export function isTestOrder(orderData) {
 
   return testFields.some(field => field.includes("test"));
 }
+
+export function isReorder(orderData) {
+  const refOrderId = orderData.ref_order_id;
+
+  return (refOrderId !== 0);
+}
