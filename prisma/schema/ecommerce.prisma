@@ -1,0 +1,9 @@
+model orderTracking {
+  uuid               String @id @default(uuid()) @db.Uuid
+  haravanOrderId     String @map("haravan_order_id")
+  haravanOrderStatus String @map("haravan_order_status")
+
+  @@unique([haravanOrderId, haravanOrderStatus], map: "order_tracking_haravan_order_id_key")
+  @@map("order_tracking")
+  @@schema("ecommerce")
+}
