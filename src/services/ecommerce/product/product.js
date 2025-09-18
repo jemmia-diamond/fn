@@ -130,7 +130,7 @@ export default class ProductService {
     const result = await this.db.$queryRaw`
        SELECT
         CAST(p.haravan_product_id AS INT) AS id,
-        p.title,
+        p.ecom_title as title,
         d.design_code,
         p.handle,
         d.diamond_holder,
@@ -180,7 +180,7 @@ export default class ProductService {
       WHERE 1 = 1
         AND p.haravan_product_id = ${id}
       GROUP BY
-      	p.haravan_product_id, p.title, d.design_code, p.handle,
+      	p.haravan_product_id, p.title, d.design_code, p.handle, p.ecom_title,
         d.diamond_holder, d.ring_band_type, d.main_stone, d.stone_quantity, p.haravan_product_type,
         p.max_price, p.min_price, p.max_price_18, p.max_price_14,
         p.qty_onhand, img.images, p.has_360, p.estimated_gold_weight,
