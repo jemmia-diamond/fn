@@ -23,7 +23,8 @@ export default class JewelryController {
       sort: {
         by: params.sort_by || "price",
         order: params.sort_order || "asc"
-      }
+      },
+      design_tags: params.design_tags ? params.design_tags.split(",") : []
     };
 
     const productService = new Ecommerce.ProductService(ctx.env);
