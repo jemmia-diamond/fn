@@ -6,7 +6,7 @@ export function buildQuery(jsonParams) {
   const dataSql = `
     SELECT  
       CAST(p.haravan_product_id AS INT) AS id,
-      p.title,
+      p.ecom_title as title,
       d.design_code,
       p.handle,
       d.diamond_holder,
