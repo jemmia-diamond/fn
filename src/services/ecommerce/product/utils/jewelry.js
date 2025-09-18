@@ -47,7 +47,7 @@ export function buildQuery(jsonParams) {
       AND (p.haravan_product_type != 'Nhẫn Cưới' OR (p.haravan_product_type = 'Nhẫn Cưới' AND d.gender = 'Nam'))
       ${filterString}
     GROUP BY 
-      p.haravan_product_id, p.title, d.design_code, p.handle, 
+      p.haravan_product_id, p.title, d.design_code, p.handle, p.ecom_title,
       d.diamond_holder, d.ring_band_type, p.haravan_product_type,
       p.max_price, p.min_price, p.max_price_18, p.max_price_14, 
       p.qty_onhand, img.images, p.has_360
