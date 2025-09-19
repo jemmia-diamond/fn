@@ -125,6 +125,10 @@ export function aggregateQuery(jsonParams) {
     filterString += `AND d.gender IN ('${jsonParams.genders.join("','")}')\n`;
   }
 
+  if (jsonParams.design_tags && jsonParams.design_tags.length > 0) {
+    filterString += `AND d.tag IN ('${jsonParams.design_tags.join("','")}')\n`;
+  }
+
   if (jsonParams.sort) {
     if (jsonParams.sort.by === "price") {
       sortString += `ORDER BY ${sortedColumn} ${jsonParams.sort.order === "asc" ? "ASC" : "DESC"}\n`;

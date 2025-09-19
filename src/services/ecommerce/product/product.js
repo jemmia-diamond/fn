@@ -35,9 +35,10 @@ export default class ProductService {
     };
   }
 
-  async searchJewelry(searchKey, limit) {
+  async searchJewelry(searchKey, limit, page) {
     const lowerSearchKey = searchKey.toLowerCase();
     const likePattern = `%${lowerSearchKey}%`;
+    const offset = (page - 1) * limit;
     const result = await this.db.$queryRaw`
       SELECT
         CAST(p.haravan_product_id AS INT) AS id,
@@ -53,7 +54,7 @@ export default class ProductService {
         END AS has_360,
         img.images,
         var.variants
-      FROM ecom.products p
+      FROM ecom.materialized_products p
         INNER JOIN workplace.designs d ON d.id = p.design_id
         LEFT JOIN workplace.ecom_360 e ON p.workplace_id = e.product_id
 
@@ -69,7 +70,7 @@ export default class ProductService {
         -- Subquery for pre-aggregated variants
         INNER JOIN (
           SELECT
-            v.hararvan_product_id,
+            v.haravan_product_id,
             JSON_AGG(
               JSON_BUILD_OBJECT(
                 'id', CAST(v.haravan_variant_id AS INT),
@@ -80,12 +81,13 @@ export default class ProductService {
                 'price_compare_at', CAST(v.price_compare_at AS INT)
               )
             ) AS variants
-          FROM ecom.variants v
-          GROUP BY v.hararvan_product_id
-        ) var ON var.hararvan_product_id = p.haravan_product_id
+          FROM ecom.materialized_variants v
+          GROUP BY v.haravan_product_id
+        ) var ON var.haravan_product_id = p.haravan_product_id
 
       WHERE lower(concat(p.title, d.design_code, p.haravan_product_type)) LIKE ${likePattern}
-      LIMIT ${limit};
+      LIMIT ${limit}
+      OFFSET ${offset};
     `;
     return result;
   }
