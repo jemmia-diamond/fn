@@ -7,6 +7,9 @@ export default class LeadController {
     const queryParams = await ctx.req.query();
     const conversationId = queryParams.conversation_id;
     if (conversationId) {
+      if (conversationId === "REDACTED") {
+        throw new HTTPException(400, { message: "Invalid or redacted conversation ID." });
+      }
       try {
         const lead = await leadService.findLeadByConversationId(conversationId);
         if (lead) {
