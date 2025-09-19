@@ -35,9 +35,10 @@ export default class ProductService {
     };
   }
 
-  async searchJewelry(searchKey, limit) {
+  async searchJewelry(searchKey, limit, page) {
     const lowerSearchKey = searchKey.toLowerCase();
     const likePattern = `%${lowerSearchKey}%`;
+    const offset = (page - 1) * limit;
     const result = await this.db.$queryRaw`
       SELECT
         CAST(p.haravan_product_id AS INT) AS id,
@@ -85,7 +86,8 @@ export default class ProductService {
         ) var ON var.haravan_product_id = p.haravan_product_id
 
       WHERE lower(concat(p.title, d.design_code, p.haravan_product_type)) LIKE ${likePattern}
-      LIMIT ${limit};
+      LIMIT ${limit}
+      OFFSET ${offset};
     `;
     return result;
   }
