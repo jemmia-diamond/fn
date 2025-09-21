@@ -8,7 +8,7 @@ export function isTestOrder(orderData) {
     billingAddress.name
   ];
 
-  return testFields.some(field => field.includes("test"));
+  return testFields.some(field => field.toLowerCase().includes("test"));
 }
 
 export function isReorder(orderData) {
