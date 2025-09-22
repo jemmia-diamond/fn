@@ -15,7 +15,6 @@ export default {
       await Ecommerce.OrderNotificationService.orderNotificationDequeue(batch, env);
       await Haravan.OrderModule.OrderService.dequeueOrderQueue(batch, env);
       await ProductQuote.ProductQuoteOrderService.dequeueOrderQueue(batch, env);
-      await Ecommerce.IndDayStatService.trackBudget(batch, env);
       await ERP.Selling.SalesOrderService.dequeueOrderQueue(batch, env);
       break;
     case "message":
