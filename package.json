@@ -40,9 +40,9 @@
     "husky": "^9.1.7",
     "lint-staged": "^16.1.5",
     "prisma": "^6.15.0",
-    "wrangler": "^4.17.0"
+    "wrangler": "^4.38.0"
   },
-  "packageManager": "pnpm@10.15.0",
+  "packageManager": "pnpm@10.17.0",
   "prisma": {
     "schema": "./prisma/schema/"
   },
