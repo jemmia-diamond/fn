@@ -239,13 +239,17 @@ export default class OrderTrackingService {
 
     // Set ready to pick & picking
     const readyToPickIndex = haravanSteps.findIndex(step => step.key === OrderOverallStatus.READY_TO_PICK.key);
+
     const pickingIndex = haravanSteps.findIndex(step => step.key === OrderOverallStatus.PICKING.key);
+
     const pickTime = takeFromVendorLogs?.[0]?.getDateTimeObject().toISOString();
+
     if (readyToPickIndex > -1 && pickTime) {
       if (!haravanSteps[readyToPickIndex].time || haravanSteps[readyToPickIndex].time > pickTime) {
         haravanSteps[readyToPickIndex].time = pickTime;
       }
     }
+
     if (pickingIndex > -1 && pickTime) {
       if (!haravanSteps[pickingIndex].time || haravanSteps[pickingIndex].time > pickTime) {
         haravanSteps[pickingIndex].time = pickTime;
@@ -294,7 +298,7 @@ export default class OrderTrackingService {
     return [
       ...beforeDeliveringSteps,
       ...afterDeliveringSteps
-    ];
+    ].filter(step => !(step.time === null && step.status === OrderTimelineStatus.PAST));
   }
 
   /**
