@@ -55,6 +55,7 @@ export default class SalesOrderService {
       }
     );
     this.db = Database.instance(env);
+    this.dbNeon = Database.instance(env, "neon");
   };
 
   async processHaravanOrder(haravanOrderData) {
@@ -247,7 +248,7 @@ export default class SalesOrderService {
     try {
       const salesOrders = await fetchSalesOrdersFromERP(this.frappeClient, this.doctype, fromDate, toDate, SalesOrderService.ERPNEXT_PAGE_SIZE);
       if (Array.isArray(salesOrders) && salesOrders.length > 0) {
-        await saveSalesOrdersToDatabase(this.db, salesOrders);
+        await saveSalesOrdersToDatabase(this.dbNeon, salesOrders);
       }
       if (isSyncType === SalesOrderService.SYNC_TYPE_AUTO) {
         await kv.put(KV_KEY, toDate);
@@ -264,8 +265,8 @@ export default class SalesOrderService {
   static async cronSyncSalesOrdersToDatabase(env) {
     const syncService = new SalesOrderService(env);
     return await syncService.syncSalesOrdersToDatabase({
-      minutesBack: 10,
-      isSyncType: SalesOrderService.SYNC_TYPE_AUTO
+      minutesBack: 10000,
+      isSyncType: SalesOrderService.SYNC_TYPE_MANUAL
     });
   }
 

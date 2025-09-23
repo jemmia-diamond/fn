@@ -1,6 +1,5 @@
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
-import { Prisma } from "@prisma-cli";
 import { randomUUID } from "crypto";
 import { mapLeadsToDatabase } from "src/services/erp/crm/lead/utils/lead-mappers";
 import { escapeSqlValue } from "src/services/utils/sql-helpers";
@@ -115,7 +114,7 @@ export async function saveLeadsToDatabase(db, leads) {
         ON CONFLICT (name) DO UPDATE SET
         ${updateSetSql};
       `;
-      await db.$queryRaw(Prisma.raw(query));
+      await db.$queryRaw("", { text: query });
     }
 
   } catch (error) {
