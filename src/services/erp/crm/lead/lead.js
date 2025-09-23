@@ -62,17 +62,23 @@ export default class LeadService {
   }
 
   async findLeadByConversationId(conversationId) {
-    const contacts = await this.frappeClient.getList("Contact", {
-      filters: [["pancake_conversation_id", "=", conversationId]]
-    });
-    if (contacts.length) {
-      const contact = await this.frappeClient.getDoc("Contact", contacts[0].name);
-      const linkedLeads = contact.links.filter(link => link.link_doctype === this.doctype);
-      if (linkedLeads.length) {
-        return await this.frappeClient.getDoc(this.doctype, linkedLeads[0].link_name);
+    try {
+      const contacts = await this.frappeClient.getList("Contact", {
+        filters: [["pancake_conversation_id", "=", conversationId]]
+      });
+      if (contacts.length) {
+        const contact = await this.frappeClient.getDoc("Contact", contacts[0].name);
+        const linkedLeads = (contact.links || []).filter(
+          link => link.link_doctype === this.doctype
+        );
+        if (linkedLeads.length) {
+          return await this.frappeClient.getDoc(this.doctype, linkedLeads[0].link_name);
+        }
       }
+      return null;
+    } catch {
+      return null;
     }
-    return null;
   }
 
   async updateLeadFromSalesaya(name, data) {

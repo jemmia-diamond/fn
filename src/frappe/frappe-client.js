@@ -165,8 +165,7 @@ export default class FrappeClient {
     let arr;
     try {
       arr = JSON.parse(jsonPart);
-    } catch (e) {
-      console.error("Invalid JSON:", e);
+    } catch {
       return null;
     }
     const traceback = arr[0];
