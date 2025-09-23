@@ -321,9 +321,9 @@ export default class OrderTrackingService {
     return {
       ready_to_confirm: order.created_at,
       confirmed: order.confirmed_at,
-      ready_to_pick: fulfillment.ready_to_pick_date || null,
-      picking: fulfillment.picking_date || null,
-      delivering: fulfillment.delivering_date || null,
+      ready_to_pick: null,
+      picking: null,
+      delivering: null,
       delivered: fulfillment.delivered_date || null,
       cancel: fulfillment.cancel_date || null,
       not_meet_customer: fulfillment.not_meet_customer_date || null,
@@ -351,22 +351,29 @@ export default class OrderTrackingService {
   _handleCancelledOrder(order, orderedSteps) {
     const cancelledTime = new Date(order.cancelled_at);
 
-    // Get all valid steps up to cancellation time
-    const validSteps = orderedSteps
+    let validSteps = [...orderedSteps];
+
+    const index = validSteps.findIndex(
+      step => step.title === OrderOverallStatus.CANCELLED.label
+    );
+
+    if (index !== -1) {
+      validSteps[index] = {
+        ...validSteps[index],
+        time: cancelledTime,
+        status: OrderTimelineStatus.ONGOING
+      };
+    }
+
+    validSteps = validSteps
       .filter(step => step.time !== null && new Date(step.time) <= cancelledTime)
       .map(step => ({
-        title: step.title,
-        time: step.time,
-        key: step.key,
-        status: OrderTimelineStatus.PAST
+        ...step,
+        status:
+          step.title === OrderOverallStatus.CANCELLED.label
+            ? OrderTimelineStatus.ONGOING
+            : OrderTimelineStatus.PAST
       }));
-
-    // Add cancellation step
-    validSteps.push({
-      title: OrderOverallStatus.CANCELLED.label,
-      time: order.cancelled_at,
-      status: OrderTimelineStatus.ONGOING
-    });
 
     return validSteps;
   }
