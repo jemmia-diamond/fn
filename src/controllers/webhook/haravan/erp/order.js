@@ -44,7 +44,7 @@ export default class HaravanERPOrderController {
     });
     const parts = formatter.formatToParts(now);
     const get = (t) => parts.find(p => p.type === t).value;
-    const localNow = new Date(`${get("year")}-${get("month")}-${get("day")}T${get("hour")}:${get("minute")}:${get("second")}`);
+    const localNow = new Date(`${get("year")}-${get("month")}-${get("day")}T${get("hour")}:${get("minute")}:${get("second")}+07:00`);
 
     const scheduledTime = new Date(localNow.getTime() + initialDelayInSeconds * 1000);
     const scheduledHour = scheduledTime.getHours();
