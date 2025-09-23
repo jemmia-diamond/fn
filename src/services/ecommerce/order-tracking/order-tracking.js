@@ -232,47 +232,39 @@ export default class OrderTrackingService {
 
     if ([
       OrderOverallStatus.READY_TO_CONFIRM.key,
-      OrderOverallStatus.CONFIRMED.key,
-      OrderOverallStatus.READY_TO_PICK.key
+      OrderOverallStatus.CONFIRMED.key
     ].includes(ongoingStep.key)) {
       return haravanSteps;
     }
 
-    const deliveringIndex = haravanSteps.findIndex(step => step.key === OrderOverallStatus.DELIVERING.key);
-    if (deliveringIndex <= -1) {
-      return haravanSteps;
+    // Set ready to pick & picking
+    const readyToPickIndex = haravanSteps.findIndex(step => step.key === OrderOverallStatus.READY_TO_PICK.key);
+    const pickingIndex = haravanSteps.findIndex(step => step.key === OrderOverallStatus.PICKING.key);
+    const pickTime = takeFromVendorLogs?.[0]?.getDateTimeObject().toISOString();
+    if (readyToPickIndex > -1 && pickTime) {
+      if (!haravanSteps[readyToPickIndex].time || haravanSteps[readyToPickIndex].time > pickTime) {
+        haravanSteps[readyToPickIndex].time = pickTime;
+      }
+    }
+    if (pickingIndex > -1 && pickTime) {
+      if (!haravanSteps[pickingIndex].time || haravanSteps[pickingIndex].time > pickTime) {
+        haravanSteps[pickingIndex].time = pickTime;
+      }
     }
 
-    const vendorTime = takeFromVendorLogs?.[0]?.getDateTimeObject().toISOString();
-    if (vendorTime) {
-      const currentStep = haravanSteps[deliveringIndex];
-      if (!currentStep.time || currentStep.time > vendorTime) {
-        currentStep.time = vendorTime;
+    // Set start delivering date
+    const deliveringIndex = haravanSteps.findIndex(step => step.key === OrderOverallStatus.DELIVERING.key);
+    if (deliveringIndex > -1) {
+      const deliveringTime = transitLogs?.[0]?.getDateTimeObject().toISOString();
+      if (deliveringTime) {
+        if (!haravanSteps[deliveringIndex].time || haravanSteps[deliveringIndex].time > deliveringTime) {
+          haravanSteps[deliveringIndex].time = deliveringTime;
+        }
       }
     }
 
     let beforeDeliveringSteps = haravanSteps.slice(0, deliveringIndex + 1);
     let afterDeliveringSteps = haravanSteps.slice(deliveringIndex + 1);
-
-    // Step to receive order from vendor Jemmia
-    if (takeFromVendorLogs && takeFromVendorLogs.length > 0) {
-      const newStep = {
-        title: takeFromVendorLogs[0].operation,
-        time: takeFromVendorLogs[0].getDateTimeObject().toISOString(),
-        key: OrderOverallStatus.DELIVERING.key,
-        status: OrderTimelineStatus.PAST
-      };
-
-      // ready pick -> (picked) -> delivering
-      const readyToPickIndex = beforeDeliveringSteps.findIndex(step => step.key === OrderOverallStatus.READY_TO_PICK.key);
-      if (readyToPickIndex > -1) {
-        beforeDeliveringSteps = [
-          ...beforeDeliveringSteps.slice(0, readyToPickIndex + 1),
-          newStep,
-          ...beforeDeliveringSteps.slice(readyToPickIndex + 1)
-        ];
-      }
-    }
 
     // Steps to transit order
     if (transitLogs && transitLogs.length > 0) {
@@ -321,7 +313,7 @@ export default class OrderTrackingService {
     return {
       ready_to_confirm: order.created_at,
       confirmed: order.confirmed_at,
-      ready_to_pick: null,
+      ready_to_pick: fulfillment.ready_to_pick_date || null,
       picking: null,
       delivering: null,
       delivered: fulfillment.delivered_date || null,
