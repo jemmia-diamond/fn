@@ -2,6 +2,7 @@ import Database from "services/database";
 import { getOrderOverallInfo } from "services/ecommerce/order-tracking/queries/get-order-overall-info";
 import { getLatestOrderId } from "services/ecommerce/order-tracking/queries/get-latest-orderid";
 import { formatOrderTrackingResult } from "services/ecommerce/order-tracking/utils/format-order-tracking";
+import NhattinClient from "services/nhattin/nhattin-client";
 import { NhattinDeliveryStatus, NhattinPaymentMethod, OrderOverallStatus } from "services/ecommerce/order-tracking/enums/order-delivery-status.enum";
 import { TrackingLog } from "services/ecommerce/order-tracking/dtos/tracking-log";
 import { OrderTimelineStatus } from "services/ecommerce/order-tracking/enums/order-step-status.enum";
@@ -67,7 +68,7 @@ export default class OrderTrackingService {
     return totalOriginalPrice;
   }
 
-  async getNhatTinDeliveryStatus(trackingNumber, bearerToken) {
+  async getNhattinOrderInfo(trackingNumber, bearerToken) {
     try {
       const response = await fetch(
         `${this.env.HOST}/api/delivery/nhattin?bill_code=${trackingNumber}`, {
@@ -82,6 +83,35 @@ export default class OrderTrackingService {
       return data;
     } catch (err) {
       console.error(err);
+      return null;
+    }
+  }
+
+  async getNhatTinDeliveryStatus(trackingNumber) {
+    try {
+      if (!trackingNumber) return;
+
+      const nhattinEmail = this.env.NHAT_TIN_LOGISTIC_EMAIL;
+      const nhattinPartnerId = this.env.NHAT_TIN_PARTNER_ID;
+      const nhattinBaseUrl = this.env.NHAT_TIN_API_URL;
+      const nhattinPassword = await this.env.NHAT_TIN_LOGISTIC_PASSWORD_SECRET.get();
+
+      if (!nhattinEmail || !nhattinPartnerId || !nhattinBaseUrl || !nhattinPassword) {
+        throw new Error("Missing Nhattin API credentials");
+      }
+
+      const nhattinClient = new NhattinClient(
+        nhattinEmail,
+        nhattinPassword,
+        nhattinPartnerId,
+        nhattinBaseUrl
+      );
+
+      const bill = await nhattinClient.trackBill(trackingNumber);
+
+      return bill;
+    } catch (error) {
+      console.error(error);
       return null;
     }
   }
@@ -108,7 +138,7 @@ export default class OrderTrackingService {
 
       const trackingNumber = haravanFulfillment.tracking_number;
 
-      const nhattinBillTrack = trackingNumber && await this.getNhatTinDeliveryStatus(trackingNumber, bearerToken);
+      const nhattinBillTrack = trackingNumber && await this.getNhattinOrderInfo(trackingNumber, bearerToken);
 
       let nhattinTrackingLog = [];
       const nhattinTrackingData = nhattinBillTrack?.data?.at(-1);
