@@ -105,9 +105,8 @@ export default class SendZaloMessage {
         const bearerToken = await env.BEARER_TOKEN_SECRET.get();
         const accessToken = await this.createTokenForOrderTracking({
           order_id: firstOrder.id,
-          order_number: firstOrder.order_number,
-          env
-        }, bearerToken);
+          order_number: firstOrder.order_number
+        }, bearerToken, env);
         const extraParams = {
           trackingRedirectPath: `order-tracking?order_id=${firstOrder.id}&token=${accessToken}`
         };
