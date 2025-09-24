@@ -90,6 +90,14 @@
       "id": "929367ba02c94a6997a40942aef533a7"
     }
   ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "MESSAGE_BATCHER",
+        "class_name": "DebounceDurableObject",
+      }
+    ]
+  },
   "queues": {
     "producers": [
       {
