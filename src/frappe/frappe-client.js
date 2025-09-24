@@ -186,10 +186,14 @@ export default class FrappeClient {
   }
 
   async postProcess(res) {
+    if (!res.ok) {
+      throw new Error(`Frappe API Error ${res.status}: ${res.statusText}`);
+    }
+
     const text = await res.text();
     try {
       const data = JSON.parse(text);
-      if (data.exc) throw new Error(data.exc);
+      if (data.exc) throw new Error(`Frappe Exception: ${data.exc}`);
       return data.message || data.data || null;
     } catch (e) {
       throw this.parseErrorMessage(e);
