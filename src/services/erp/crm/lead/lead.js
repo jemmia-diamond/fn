@@ -20,7 +20,6 @@ export default class LeadService {
       apiSecret: this.env.JEMMIA_ERP_API_SECRET
     });
     this.db = Database.instance(env);
-    this.dbNeon = Database.instance(env, "neon");
     this.WebsiteFormLeadSource = "CRM-LEAD-SOURCE-0000023";
     this.defaultLeadOwner = "tech@jemmia.vn";
     this.CallLogLeadSource = "CRM-LEAD-SOURCE-0000022";
@@ -282,7 +281,7 @@ export default class LeadService {
     try {
       const leads = await fetchLeadsFromERP(this.frappeClient, this.doctype, fromDate, toDate, LeadService.ERPNEXT_PAGE_SIZE);
       if (Array.isArray(leads) && leads.length > 0) {
-        await saveLeadsToDatabase(this.dbNeon, leads);
+        await saveLeadsToDatabase(this.db, leads);
       }
 
       if (isSyncType === LeadService.SYNC_TYPE_AUTO) {

@@ -23,7 +23,6 @@ export default class CustomerService {
     );
     this.defaultCustomerName = "Khách Vãng Lai";
     this.db = Database.instance(env);
-    this.dbNeon = Database.instance(env, "neon");
     this.genderMap = {
       0: "Female",
       1: "Male"
@@ -66,7 +65,7 @@ export default class CustomerService {
     try {
       const customers = await fetchCustomersFromERP(this.frappeClient, this.doctype, fromDate, toDate, CustomerService.ERPNEXT_PAGE_SIZE);
       if (Array.isArray(customers) && customers.length > 0) {
-        await saveCustomersToDatabase(this.dbNeon, customers);
+        await saveCustomersToDatabase(this.db, customers);
       }
 
       if (isSyncType === CustomerService.SYNC_TYPE_AUTO) {
