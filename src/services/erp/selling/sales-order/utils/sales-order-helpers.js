@@ -116,7 +116,7 @@ export async function saveSalesOrdersToDatabase(db, salesOrders) {
         ON CONFLICT (name) DO UPDATE SET
         ${updateSetSql};
       `;
-      await db.$queryRaw(Prisma.raw(query));
+      await db.$queryRaw`${Prisma.raw(query)}`;
     }
 
   } catch (error) {
