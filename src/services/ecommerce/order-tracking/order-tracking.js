@@ -19,10 +19,10 @@ export default class OrderTrackingService {
   async trackOrder(orderId, reqBearerToken) {
     try {
       let isAuthorized = false;
+      const bearerToken = await this.env.BEARER_TOKEN_SECRET.get();
       if (reqBearerToken) {
         const firstOrder = await getInitialOrder(this.db, orderId);
         if (firstOrder) {
-          const bearerToken = await this.env.BEARER_TOKEN_SECRET.get();
           const parsedAccessToken = this.createTokenForOrderTracking({
             order_id: firstOrder.id,
             order_number: firstOrder.order_number
@@ -48,7 +48,7 @@ export default class OrderTrackingService {
 
       let nhattinTrackInfo = {};
       try {
-        nhattinTrackInfo = await this.getOrderDeliveryStatus(latestOrderId);
+        nhattinTrackInfo = await this.getOrderDeliveryStatus(latestOrderId, bearerToken);
       } catch (e) {
         console.error(e);
       }
@@ -66,6 +66,25 @@ export default class OrderTrackingService {
       totalOriginalPrice += Number(item.original_price || 0) * Number(item.quantity || 0);
     });
     return totalOriginalPrice;
+  }
+
+  async getNhattinOrderInfo(trackingNumber, bearerToken) {
+    try {
+      const response = await fetch(
+        `${this.env.HOST}/api/delivery/nhattin?bill_code=${trackingNumber}`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${bearerToken}`
+          }
+        }
+      );
+      const data = JSON.parse(await response.text());
+      return data;
+    } catch (err) {
+      console.error(err);
+      return null;
+    }
   }
 
   async getNhatTinDeliveryStatus(trackingNumber) {
@@ -107,7 +126,7 @@ export default class OrderTrackingService {
     return haravanClient.makeRequest(endpoint);
   }
 
-  async getOrderDeliveryStatus(orderId) {
+  async getOrderDeliveryStatus(orderId, bearerToken) {
     try {
       const { order } = await this.getOrder(orderId);
 
@@ -119,7 +138,7 @@ export default class OrderTrackingService {
 
       const trackingNumber = haravanFulfillment.tracking_number;
 
-      const nhattinBillTrack = trackingNumber && await this.getNhatTinDeliveryStatus(trackingNumber);
+      const nhattinBillTrack = trackingNumber && await this.getNhattinOrderInfo(trackingNumber, bearerToken);
 
       let nhattinTrackingLog = [];
       const nhattinTrackingData = nhattinBillTrack?.data?.at(-1);
