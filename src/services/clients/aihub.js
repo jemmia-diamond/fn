@@ -20,6 +20,12 @@ export default class AIHUBClient {
       }
     }
 
+    if (!this.#bearerToken) {
+      this.#bearerToken = this.#env.BEARER_TOKEN;
+    }
+
+    if (!this.#bearerToken) return null;
+
     return {
       "Content-Type": "application/json",
       "Authorization": `Bearer ${this.#bearerToken}`
@@ -27,9 +33,13 @@ export default class AIHUBClient {
   }
 
   async #getClient() {
+    const requestHeader = await this.#getHeaders();
+
+    if (!requestHeader) return null;
+
     const client = axios.create({
       baseURL: this.#host,
-      headers: await this.#getHeaders()
+      headers: requestHeader
     });
 
     axiosRetry(client, {
@@ -46,6 +56,8 @@ export default class AIHUBClient {
 
   async makeRequest(endpoint, data = null) {
     const client = await this.#getClient();
+
+    if (!client) return null;
 
     try {
       const response = await client.post(endpoint, data);
