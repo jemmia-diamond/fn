@@ -222,4 +222,12 @@ export default class FrappeClient {
       return [];
     }
   }
+
+  async delete(doctype, name) {
+    return this.postRequest("", {
+      cmd: "frappe.client.delete",
+      doctype: doctype,
+      name: name
+    });
+  }
 }

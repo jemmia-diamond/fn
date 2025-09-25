@@ -70,7 +70,7 @@ export default class ContactService {
     return contact;
   }
 
-  async processWebsiteContact(data, lead) {
+  async processWebsiteContact(data, lead, defaultWebsiteLeadSource) {
     const contactData = {
       doctype: this.doctype,
       custom_uuid: data.custom_uuid,
@@ -88,6 +88,21 @@ export default class ContactService {
     // reference contact with lead
     const contactWithLinks = await this.frappeClient.getDoc(this.doctype, contact.name);
     await this.frappeClient.update(this.reference(contactWithLinks, lead));
+
+    // Delete linked contacts from website but without custom_uuid
+    const contactsWithSamePhoneAndSource = await this.frappeClient.getList(this.doctype, {
+      filters: [
+        ["Contact Phone", "phone", "=", data.raw_data.phone],
+        ["source", "=", defaultWebsiteLeadSource]
+      ],
+      fields: ["name", "custom_uuid"]
+    });
+
+    for (const invalidContact of contactsWithSamePhoneAndSource) {
+      if (!invalidContact.custom_uuid) {
+        await this.frappeClient.delete(this.doctype, invalidContact.name);
+      }
+    }
   }
 
   async processCallLogContact(data, lead) {
