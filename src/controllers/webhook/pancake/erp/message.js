@@ -1,5 +1,5 @@
 import { HTTPException } from "hono/http-exception";
-import { DebounceService } from "src/durable-objects";
+import { DebounceActions, DebounceService } from "src/durable-objects";
 
 export default class PancakeERPMessageController {
   static async create(ctx) {
@@ -14,15 +14,7 @@ export default class PancakeERPMessageController {
         }
 
         const key = `conversation-${conversationId}`;
-
-        await DebounceService.debounceToQueue(
-          ctx.env,
-          key,
-          data,
-          "MESSAGE_SUMMARY_QUEUE",
-          3000
-        );
-
+        await DebounceService.debounce(ctx.env, key, data, DebounceActions.SEND_TO_MESSAGE_SUMMARY_QUEUE, 3000);
       }
       return ctx.json({ message: "Message Received" });
     } catch {
