@@ -1,5 +1,5 @@
 import { DurableObject } from "cloudflare:workers";
-import { DebounceActions } from "durable-objects/debounce/debounce-action";
+import { DebounceActions } from "src/durable-objects/debounce/debounce-action";
 
 export class DebounceDurableObject extends DurableObject {
   constructor(state, env) {

@@ -14,7 +14,13 @@ export default class PancakeERPMessageController {
         }
 
         const key = `conversation-${conversationId}`;
-        await DebounceService.debounce(ctx.env, key, data, DebounceActions.SEND_TO_MESSAGE_SUMMARY_QUEUE, 3000);
+        await DebounceService.debounce({
+          env: ctx.env,
+          key: key,
+          data: data,
+          actionType: DebounceActions.SEND_TO_MESSAGE_SUMMARY_QUEUE,
+          delay: 3000
+        });
       }
       return ctx.json({ message: "Message Received" });
     } catch {
