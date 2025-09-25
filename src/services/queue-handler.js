@@ -19,9 +19,9 @@ export default {
       break;
     case "message":
       await Pancake.ConversationService.dequeueMessageSyncCustomerToLeadCRM(batch, env);
-      await Pancake.ConversationService.dequeueMessageQueue(batch, env);
       break;
     case "message-summary":
+      await Pancake.ConversationService.dequeueMessageQueue(batch, env);
       await Pancake.ConversationService.dequeueMessageSummaryQueue(batch, env);
       break;
     case "zalo-message":

@@ -4,7 +4,8 @@
   "main": "src/index.js",
   "compatibility_date": "2025-05-20",
   "compatibility_flags": [
-    "nodejs_compat"
+    "nodejs_compat",
+    "durable_object_alarms"
   ],
   "limits": {
     "cpu_ms": 300000, // 300 seconds = 5 minutes
@@ -90,6 +91,14 @@
       "id": "929367ba02c94a6997a40942aef533a7"
     }
   ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "DEBOUNCE",
+        "class_name": "DebounceDurableObject",
+      }
+    ]
+  },
   "queues": {
     "producers": [
       {

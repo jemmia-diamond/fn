@@ -1,12 +1,26 @@
 import { HTTPException } from "hono/http-exception";
+import { DebounceActions, DebounceService } from "src/durable-objects";
 
 export default class PancakeERPMessageController {
   static async create(ctx) {
     const data = await ctx.req.json();
     try {
       if (data.event_type === "messaging") {
-        await ctx.env["MESSAGE_SUMMARY_QUEUE"].send(data);
         await ctx.env["MESSAGE_QUEUE"].send(data);
+        const conversationId = data?.data?.conversation?.id;
+
+        if (!conversationId) {
+          throw new Error("Conversation ID is required for message batching");
+        }
+
+        const key = `conversation-${conversationId}`;
+        await DebounceService.debounce({
+          env: ctx.env,
+          key: key,
+          data: data,
+          actionType: DebounceActions.SEND_TO_MESSAGE_SUMMARY_QUEUE,
+          delay: 3000
+        });
       }
       return ctx.json({ message: "Message Received" });
     } catch {

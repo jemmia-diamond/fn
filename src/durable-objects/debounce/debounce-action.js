@@ -1,0 +1,3 @@
+export const DebounceActions = {
+  SEND_TO_MESSAGE_SUMMARY_QUEUE: "SEND_TO_MESSAGE_SUMMARY_QUEUE"
+};
