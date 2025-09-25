@@ -15,29 +15,7 @@ export class DebounceService {
       const durableObjectId = env.DEBOUNCE.idFromName(key);
       const durableObject = env.DEBOUNCE.get(durableObjectId);
 
-      const payload = {
-        key,
-        data,
-        delay,
-        queueName
-      };
-
-      const response = await durableObject.fetch(env.HOST, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "User-Agent": "DebounceService/1.0"
-        },
-        body: JSON.stringify(payload)
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Debounce request failed: ${response.status} ${errorText}`);
-      }
-
-      return await response.json();
-
+      await durableObject.debounce({ key, data, delay, queueName });
     } catch (error) {
       console.error("Failed to debounce data:", {
         error: error.message,

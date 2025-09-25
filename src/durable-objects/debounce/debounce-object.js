@@ -1,36 +1,22 @@
-export class DebounceDurableObject {
+import { DurableObject } from "cloudflare:workers";
+
+export class DebounceDurableObject extends DurableObject {
   constructor(state, env) {
-    this.state = state;
-    this.env = env;
+    super(state, env);
     this.latestData = new Map();
     this.defaultDelay = 3000;
-  }
-
-  async fetch(request) {
-    const { key, data, delay, queueName } = await request.json();
-
-    await this.debounce({
-      key,
-      data,
-      delay: delay || this.defaultDelay,
-      queueName
-    });
-
-    return new Response(JSON.stringify({ success: true }), {
-      headers: { "Content-Type": "application/json" }
-    });
   }
 
   async debounce({ key, data, delay, queueName }) {
     this.latestData.set(key, { data, queueName });
 
-    const existingAlarm = await this.state.storage.getAlarm();
+    const existingAlarm = await this.ctx.storage.getAlarm();
     if (existingAlarm) {
-      await this.state.storage.deleteAlarm();
+      await this.ctx.storage.deleteAlarm();
     }
 
     const alarmTime = Date.now() + delay;
-    await this.state.storage.setAlarm(alarmTime);
+    await this.ctx.storage.setAlarm(alarmTime);
   }
 
   async alarm() {
