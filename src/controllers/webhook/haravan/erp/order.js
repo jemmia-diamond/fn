@@ -51,7 +51,7 @@ export default class HaravanERPOrderController {
     const scheduledMinute = scheduledTime.getMinutes();
 
     if (((scheduledHour < 21) || (scheduledHour === 21 && scheduledMinute <= 55)) && ((scheduledHour > 6) || (scheduledHour === 6 && scheduledMinute >= 5)))  {
-      return { delayInSeconds: initialDelayInSeconds };
+      return { delaySeconds: initialDelayInSeconds };
     }
 
     const nextAvailableTime = new Date(scheduledTime);
@@ -61,6 +61,6 @@ export default class HaravanERPOrderController {
       nextAvailableTime.setDate(nextAvailableTime.getDate() + 1);
     }
 
-    return { delayInSeconds: Math.floor((nextAvailableTime - localNow) / 1000) };
+    return { delaySeconds: Math.floor((nextAvailableTime - localNow) / 1000) };
   }
 };

@@ -6,7 +6,7 @@ import { mapAddressesToDatabase } from "src/services/erp/contacts/address/utils/
 import { escapeSqlValue } from "src/services/utils/sql-helpers";
 dayjs.extend(utc);
 
-const CHUNK_SIZE = 500;
+const CHUNK_SIZE = 100;
 
 export async function fetchAddressesFromERP(frappeClient, doctype, fromDate, toDate, pageSize) {
   try {
@@ -117,7 +117,7 @@ export async function saveAddressesToDatabase(db, addresses) {
         ON CONFLICT (name) DO UPDATE SET
         ${updateSetSql};
       `;
-      await db.$queryRaw(Prisma.raw(query));
+      await db.$queryRaw`${Prisma.raw(query)}`;
     }
 
   } catch (error) {

@@ -87,16 +87,22 @@ export default class SendZaloMessage {
 
         const db = Database.instance(env, "neon");
 
-        const isOrderInDelivery = await this.checkOrderInDelivery(String(order.id), db);
-        if (isOrderInDelivery) {
-          console.warn("Order is already in delivery:", order.id);
-          continue;
+        // Retrieve oldest order ID in case the order has been re-ordered
+        let firstOrder = {
+          id: order.id,
+          order_number: order.order_number
+        };
+        if (order.ref_order_id) {
+          firstOrder = await getInitialOrder(db, order.id);
+          if (!firstOrder) {
+            console.warn("No initial order found for order:", order.id);
+            continue;
+          }
         }
 
-        // Retrieve oldest order ID in case the order has been re-ordered
-        const firstOrder = await getInitialOrder(db, order.id);
-        if (!firstOrder) {
-          console.warn("No initial order found for order:", order.id);
+        const isOrderInDelivery = await this.checkOrderInDelivery(String(firstOrder.id), db);
+        if (isOrderInDelivery) {
+          console.warn("Order is already in delivery:", firstOrder.id);
           continue;
         }
 

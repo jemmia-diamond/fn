@@ -6,7 +6,7 @@ import { mapLeadsToDatabase } from "src/services/erp/crm/lead/utils/lead-mappers
 import { escapeSqlValue } from "src/services/utils/sql-helpers";
 dayjs.extend(utc);
 
-const CHUNK_SIZE = 500;
+const CHUNK_SIZE = 100;
 
 export async function fetchLeadsFromERP(frappeClient, doctype, fromDate, toDate, pageSize) {
   try {
@@ -115,7 +115,7 @@ export async function saveLeadsToDatabase(db, leads) {
         ON CONFLICT (name) DO UPDATE SET
         ${updateSetSql};
       `;
-      await db.$queryRaw(Prisma.raw(query));
+      await db.$queryRaw`${Prisma.raw(query)}`;
     }
 
   } catch (error) {
