@@ -166,5 +166,13 @@
       "0 10 * * *",
       "0 14 * * *"
     ]
-  }
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_classes": [
+        "DebounceDurableObject"
+      ]
+    }
+  ]
 }
