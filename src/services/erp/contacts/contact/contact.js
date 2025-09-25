@@ -70,7 +70,7 @@ export default class ContactService {
     return contact;
   }
 
-  async processWebsiteContact(data, lead, defaultWebsiteLeadSource) {
+  async processWebsiteContact(data, lead) {
     const contactData = {
       doctype: this.doctype,
       custom_uuid: data.custom_uuid,
@@ -84,24 +84,28 @@ export default class ContactService {
       ],
       source: lead.source
     };
-    const contact = await this.frappeClient.upsert(contactData, "custom_uuid");
-    // reference contact with lead
-    const contactWithLinks = await this.frappeClient.getDoc(this.doctype, contact.name);
-    await this.frappeClient.update(this.reference(contactWithLinks, lead));
 
-    // Delete linked contacts from website but without custom_uuid
-    const contactsWithSamePhoneAndSource = await this.frappeClient.getList(this.doctype, {
+    const defaultContact = await this.frappeClient.getList(this.doctype, {
       filters: [
+        ["Dynamic Link", "link_name", "=", lead.name],
         ["Contact Phone", "phone", "=", data.raw_data.phone],
-        ["source", "=", defaultWebsiteLeadSource]
-      ],
-      fields: ["name", "custom_uuid"]
+        ["source", "=", lead.source],
+        ["custom_uuid", "=", null]
+      ]
     });
 
-    for (const invalidContact of contactsWithSamePhoneAndSource) {
-      if (!invalidContact.custom_uuid) {
-        await this.frappeClient.delete(this.doctype, invalidContact.name);
+    if (defaultContact.length > 0) {
+      for (const contact of defaultContact) {
+        await this.frappeClient.update({
+          ...contact,
+          ...contactData
+        });
       }
+    } else {
+      const contact = await this.frappeClient.upsert(contactData, "custom_uuid");
+      // reference contact with lead
+      const contactWithLinks = await this.frappeClient.getDoc(this.doctype, contact.name);
+      await this.frappeClient.update(this.reference(contactWithLinks, lead));
     }
   }
 

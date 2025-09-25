@@ -182,47 +182,52 @@ export default class LeadService {
       return;
     }
 
-    const contactService = new ContactService(this.env);
-    const location = data.raw_data.location;
-    const provinces = await this.frappeClient.getList("Province", {
-      filters: [["province_name", "LIKE", `%${location}%`]]
-    });
-
-    const leadData = {
-      doctype: this.doctype,
-      source: this.WebsiteFormLeadSource,
-      first_name: data.raw_data.name,
-      phone: data.raw_data.phone,
-      lead_owner: this.defaultLeadOwner,
-      province: provinces.length ? provinces[0].name : null,
-      first_reach_at: dayjs(data.database_created_at).utc().format("YYYY-MM-DD HH:mm:ss")
-    };
-
-    const notes = [];
-    if (data.raw_data.join_date) {
-      notes.push({
-        note: "Join Date: " + data.raw_data.join_date
+    try {
+      const contactService = new ContactService(this.env);
+      const location = data.raw_data.location;
+      const provinces = await this.frappeClient.getList("Province", {
+        filters: [["province_name", "LIKE", `%${location}%`]]
       });
-    }
 
-    if (data.raw_data.demand) {
-      notes.push({
-        note: "Demand: " + data.raw_data.demand
-      });
-    }
+      const leadData = {
+        doctype: this.doctype,
+        source: this.WebsiteFormLeadSource,
+        first_name: data.raw_data.name,
+        phone: data.raw_data.phone,
+        lead_owner: this.defaultLeadOwner,
+        province: provinces.length ? provinces[0].name : null,
+        first_reach_at: dayjs(data.database_created_at).utc().format("YYYY-MM-DD HH:mm:ss")
+      };
 
-    if (data.raw_data.diamond_note) {
-      notes.push({
-        note: "Diamond: " + data.raw_data.diamond_note
-      });
-    }
+      const notes = [];
+      if (data.raw_data.join_date) {
+        notes.push({
+          note: "Join Date: " + data.raw_data.join_date
+        });
+      }
 
-    if (notes.length) {
-      leadData.notes = notes;
-    }
+      if (data.raw_data.demand) {
+        notes.push({
+          note: "Demand: " + data.raw_data.demand
+        });
+      }
 
-    const lead = await this.frappeClient.upsert(leadData, "phone");
-    await contactService.processWebsiteContact(data, lead, this.WebsiteFormLeadSource);
+      if (data.raw_data.diamond_note) {
+        notes.push({
+          note: "Diamond: " + data.raw_data.diamond_note
+        });
+      }
+
+      if (notes.length) {
+        leadData.notes = notes;
+      }
+
+      const lead = await this.frappeClient.upsert(leadData, "phone");
+      await contactService.processWebsiteContact(data, lead);
+    } catch (e) {
+      console.error(e);
+      return;
+    }
   }
 
   static async syncWebsiteLeads(env) {
