@@ -1,4 +1,5 @@
 import { HTTPException } from "hono/http-exception";
+import { MessageBatcherService } from "src/durable-objects";
 
 export default class PancakeERPMessageController {
   static async create(ctx) {
@@ -6,19 +7,7 @@ export default class PancakeERPMessageController {
     try {
       if (data.event_type === "messaging") {
         await ctx.env["MESSAGE_QUEUE"].send(data);
-        const key = `conversation-${data?.data?.conversation?.id}`;
-        const durableObjectId = ctx.env.MESSAGE_BATCHER.idFromName(key);
-        const durableObject = ctx.env.MESSAGE_BATCHER.get(durableObjectId);
-        await durableObject.fetch(ctx.env.HOST, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            key: key,
-            data: data,
-            delay: 3000,
-            sendType: "MESSAGE_SUMMARY_QUEUE"
-          })
-        });
+        await MessageBatcherService.queueMessage(ctx.env, data, "MESSAGE_SUMMARY_QUEUE");
       }
       return ctx.json({ message: "Message Received" });
     } catch {
