@@ -93,7 +93,7 @@
   "durable_objects": {
     "bindings": [
       {
-        "name": "MESSAGE_BATCHER",
+        "name": "DEBOUNCE",
         "class_name": "DebounceDurableObject",
       }
     ]

@@ -1,58 +1,49 @@
-export class MessageBatcherService {
+// Debounce Service
+
+export class DebounceService {
   /**
-   * Queue a message for debounced processing
+   * Debounce data and send to a queue
    *
    * @param {Object} env - Worker environment
-   * @param {Object} data - Message data to be debounced
-   * @param {String} sendType - QUEUE value
+   * @param {string} key - Unique key for the debounce operation
+   * @param {*} data - Data to be debounced
+   * @param {string} queueName - Name of the queue to send to
+   * @param {number} delay - Debounce delay in milliseconds (optional)
    */
-  static async queueMessage(env, data, sendType) {
+  static async debounceToQueue(env, key, data, queueName, delay = 3000) {
     try {
-      const conversationId = data?.data?.conversation?.id ;
-
-      if (!conversationId) {
-        throw new Error("Conversation ID is required for message batching");
-      }
-
-      const key = `conversation-${conversationId}`;
-
-      // Get durable object instance
-      const durableObjectId = env.MESSAGE_BATCHER.idFromName(key);
-      const durableObject = env.MESSAGE_BATCHER.get(durableObjectId);
+      const durableObjectId = env.DEBOUNCE.idFromName(key);
+      const durableObject = env.DEBOUNCE.get(durableObjectId);
 
       const payload = {
         key,
         data,
-        delay: env.DEFAULT_MESSAGE_DELAY,
-        sendType
+        delay,
+        queueName
       };
 
       const response = await durableObject.fetch(env.HOST, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "User-Agent": "MessageBatcherService/1.0"
+          "User-Agent": "DebounceService/1.0"
         },
         body: JSON.stringify(payload)
       });
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`Durable Object request failed: ${response.status} ${errorText}`);
+        throw new Error(`Debounce request failed: ${response.status} ${errorText}`);
       }
 
-      const result = await response.json();
-
-      return {
-        success: true,
-        key,
-        result
-      };
+      return await response.json();
 
     } catch (error) {
-      console.error("Failed to queue message for debouncing:", {
+      console.error("Failed to debounce data:", {
         error: error.message,
-        data: data
+        key,
+        data,
+        queueName
       });
 
       throw error;

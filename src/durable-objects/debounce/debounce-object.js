@@ -5,28 +5,24 @@ export class DebounceDurableObject {
     this.timers = new Map();
     this.latestData = new Map();
     this.defaultDelay = 3000;
-    this.sendMap = {
-      MESSAGE_SUMMARY_QUEUE: async (data) => await this.env["MESSAGE_SUMMARY_QUEUE"].send(data)
-    };
   }
 
   async fetch(request) {
-    const { key, data, delay, sendType } = await request.json();;
-    const sendFn = this.sendMap[sendType];
+    const { key, data, delay, queueName } = await request.json();
+
     await this.debounce({
       key,
       data,
       delay: delay || this.defaultDelay,
-      sendFn
+      queueName
     });
 
     return new Response(JSON.stringify({ success: true }), {
       headers: { "Content-Type": "application/json" }
     });
-
   }
 
-  async debounce({ key, data, delay, sendFn }) {
+  async debounce({ key, data, delay, queueName }) {
     this.latestData.set(key, data);
 
     if (this.timers.has(key)) {
@@ -36,11 +32,11 @@ export class DebounceDurableObject {
     const timer = setTimeout(async () => {
       try {
         const latest = this.latestData.get(key);
-        if (latest) {
-          await sendFn(latest);
+        if (latest && queueName) {
+          await this.env[queueName].send(latest);
         }
       } catch (err) {
-        console.error(`Failed to send debounced message for key=${key}:`, err);
+        console.error(`Failed to send debounced data to queue ${queueName} for key=${key}:`, err);
       } finally {
         this.cleanup(key);
       }
