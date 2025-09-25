@@ -84,10 +84,29 @@ export default class ContactService {
       ],
       source: lead.source
     };
-    const contact = await this.frappeClient.upsert(contactData, "custom_uuid");
-    // reference contact with lead
-    const contactWithLinks = await this.frappeClient.getDoc(this.doctype, contact.name);
-    await this.frappeClient.update(this.reference(contactWithLinks, lead));
+
+    const defaultContact = await this.frappeClient.getList(this.doctype, {
+      filters: [
+        ["Dynamic Link", "link_name", "=", lead.name],
+        ["Contact Phone", "phone", "=", data.raw_data.phone],
+        ["source", "=", lead.source],
+        ["custom_uuid", "=", null]
+      ]
+    });
+
+    if (defaultContact.length > 0) {
+      for (const contact of defaultContact) {
+        await this.frappeClient.update({
+          ...contact,
+          ...contactData
+        });
+      }
+    } else {
+      const contact = await this.frappeClient.upsert(contactData, "custom_uuid");
+      // reference contact with lead
+      const contactWithLinks = await this.frappeClient.getDoc(this.doctype, contact.name);
+      await this.frappeClient.update(this.reference(contactWithLinks, lead));
+    }
   }
 
   async processCallLogContact(data, lead) {
