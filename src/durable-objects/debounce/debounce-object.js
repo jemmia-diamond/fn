@@ -2,7 +2,6 @@ export class DebounceDurableObject {
   constructor(state, env) {
     this.state = state;
     this.env = env;
-    this.timers = new Map();
     this.latestData = new Map();
     this.defaultDelay = 3000;
   }
@@ -23,30 +22,36 @@ export class DebounceDurableObject {
   }
 
   async debounce({ key, data, delay, queueName }) {
-    this.latestData.set(key, data);
+    this.latestData.set(key, { data, queueName });
 
-    if (this.timers.has(key)) {
-      clearTimeout(this.timers.get(key));
+    const existingAlarm = await this.state.storage.getAlarm();
+    if (existingAlarm) {
+      await this.state.storage.deleteAlarm();
     }
 
-    const timer = setTimeout(async () => {
+    const alarmTime = Date.now() + delay;
+    await this.state.storage.setAlarm(alarmTime);
+  }
+
+  async alarm() {
+    const keysToProcess = Array.from(this.latestData.keys());
+
+    for (const key of keysToProcess) {
+      const messageInfo = this.latestData.get(key);
+      if (!messageInfo) continue;
+
       try {
-        const latest = this.latestData.get(key);
-        if (latest && queueName) {
-          await this.env[queueName].send(latest);
-        }
-      } catch (err) {
-        console.error(`Failed to send debounced data to queue ${queueName} for key=${key}:`, err);
-      } finally {
+        const { data, queueName } = messageInfo;
+        await this.env[queueName].send(data);
+        this.cleanup(key);
+      } catch (error) {
+        console.error(`Failed to send debounced data for key=${key}:`, error);
         this.cleanup(key);
       }
-    }, delay);
-
-    this.timers.set(key, timer);
+    }
   }
 
   cleanup(key) {
-    this.timers.delete(key);
     this.latestData.delete(key);
   }
 }
