@@ -19,7 +19,7 @@ export default class PancakeERPMessageController {
           key: key,
           data: data,
           actionType: DebounceActions.SEND_TO_MESSAGE_SUMMARY_QUEUE,
-          delay: 3000
+          delay: 30000
         });
       }
       return ctx.json({ message: "Message Received" });
