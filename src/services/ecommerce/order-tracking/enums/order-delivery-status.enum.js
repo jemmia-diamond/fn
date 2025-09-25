@@ -11,6 +11,10 @@ export const OrderOverallStatus = Object.freeze({
     key: "ready_to_pick",
     label: "Chờ lấy hàng"
   },
+  PICKING: {
+    key: "picking",
+    label: "Đang lấy hàng"
+  },
   DELIVERING: {
     key: "delivering",
     label: "Đang giao hàng"
