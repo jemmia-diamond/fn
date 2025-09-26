@@ -222,7 +222,11 @@ export default class LeadService {
         leadData.notes = notes;
       }
 
-      const lead = await this.frappeClient.upsert(leadData, "phone");
+      const ignoredFields = [
+        "first_reach_at", "source"
+      ];
+
+      const lead = await this.frappeClient.upsert(leadData, "phone", ignoredFields);
       await contactService.processWebsiteContact(data, lead);
     } catch (e) {
       console.error(e);
