@@ -87,16 +87,22 @@ export default class SendZaloMessage {
 
         const db = Database.instance(env, "neon");
 
-        const isOrderInDelivery = await this.checkOrderInDelivery(String(order.id), db);
-        if (isOrderInDelivery) {
-          console.warn("Order is already in delivery:", order.id);
-          continue;
+        // Retrieve oldest order ID in case the order has been re-ordered
+        let firstOrder = {
+          id: order.id,
+          order_number: order.order_number
+        };
+        if (order.ref_order_id) {
+          firstOrder = await getInitialOrder(db, order.id);
+          if (!firstOrder) {
+            console.warn("No initial order found for order:", order.id);
+            continue;
+          }
         }
 
-        // Retrieve oldest order ID in case the order has been re-ordered
-        const firstOrder = await getInitialOrder(db, order.id);
-        if (!firstOrder) {
-          console.warn("No initial order found for order:", order.id);
+        const isOrderInDelivery = await this.checkOrderInDelivery(String(firstOrder.id), db);
+        if (isOrderInDelivery) {
+          console.warn("Order is already in delivery:", firstOrder.id);
           continue;
         }
 
@@ -106,7 +112,7 @@ export default class SendZaloMessage {
         const accessToken = await this.createTokenForOrderTracking({
           order_id: firstOrder.id,
           order_number: firstOrder.order_number
-        }, bearerToken);
+        }, bearerToken, env);
         const extraParams = {
           trackingRedirectPath: `order-tracking?order_id=${firstOrder.id}&token=${accessToken}`
         };
@@ -220,14 +226,14 @@ export default class SendZaloMessage {
     }
   }
 
-  static async createTokenForOrderTracking(payloadObject, secret) {
+  static async createTokenForOrderTracking(payloadObject, secret, env) {
     const payloadString = `${payloadObject.order_id}|${payloadObject.order_number}|${JSON.stringify(payloadObject)}`;
     const base64Payload = Buffer.from(payloadString).toString("base64url");
     const hashedToken = this.createHashForOrderTracking(payloadString, secret);
 
     const uuid = crypto.randomUUID();
     const accessToken = `${base64Payload}.${hashedToken}`;
-    await this.env.FN_KV.put(uuid, accessToken);
+    await env.FN_KV.put(uuid, accessToken);
 
     return uuid;
   }

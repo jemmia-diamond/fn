@@ -1,12 +1,12 @@
 export function buildQuery(jsonParams) {
-  const { filterString, sortString, paginationString, handleFinenessPriority } = aggregateQuery(jsonParams);
+  const { filterString, sortString, paginationString, handleFinenessPriority, collectionJoinEcomProductsClause } = aggregateQuery(jsonParams);
 
   const finenessOrder = handleFinenessPriority === "14K" ? "ASC" : "DESC";
 
   const dataSql = `
     SELECT  
       CAST(p.haravan_product_id AS INT) AS id,
-      p.title,
+      p.ecom_title as title,
       d.design_code,
       p.handle,
       d.diamond_holder,
@@ -25,7 +25,8 @@ export function buildQuery(jsonParams) {
         )
       ) AS variants
     FROM ecom.materialized_products p 
-      INNER JOIN workplace.designs d ON p.design_id = d.id
+      INNER JOIN workplace.designs d ON p.design_id = d.id 
+      ${collectionJoinEcomProductsClause}
 
       -- Subquery for pre-aggregated images
       INNER JOIN (
@@ -46,7 +47,7 @@ export function buildQuery(jsonParams) {
       AND (p.haravan_product_type != 'Nhẫn Cưới' OR (p.haravan_product_type = 'Nhẫn Cưới' AND d.gender = 'Nam'))
       ${filterString}
     GROUP BY 
-      p.haravan_product_id, p.title, d.design_code, p.handle, 
+      p.haravan_product_id, p.title, d.design_code, p.handle, p.ecom_title,
       d.diamond_holder, d.ring_band_type, p.haravan_product_type,
       p.max_price, p.min_price, p.max_price_18, p.max_price_14, 
       p.qty_onhand, img.images, p.has_360
@@ -61,6 +62,7 @@ export function buildQuery(jsonParams) {
      (SELECT ARRAY_AGG(DISTINCT mv.fineness ) FROM ecom.materialized_variants mv) AS fineness
     FROM ecom.materialized_products p 
         INNER JOIN workplace.designs d ON d.id = p.design_id
+        ${collectionJoinEcomProductsClause}
         INNER JOIN haravan.images i ON i.product_id = p.haravan_product_id
         INNER JOIN ecom.materialized_variants v ON v.haravan_product_id = p.haravan_product_id
     WHERE 1 = 1 
@@ -80,6 +82,7 @@ export function aggregateQuery(jsonParams) {
   let paginationString = "";
   let handleFinenessPriority = "18K";
   let sortedColumn = "p.max_price_18";
+  let collectionJoinEcomProductsClause = "";
 
   if (jsonParams.is_in_stock) {
     filterString += "AND p.qty_onhand > 0\n";
@@ -90,7 +93,8 @@ export function aggregateQuery(jsonParams) {
   }
 
   if (jsonParams.pages && jsonParams.pages.length > 0) {
-    filterString += `AND p.pages IN ('${jsonParams.pages.join("','")}')\n`;
+    filterString += `AND p2.pages IN ('${jsonParams.pages.join("','")}')\n`;
+    collectionJoinEcomProductsClause = "LEFT JOIN ecom.products p2 ON p.haravan_product_id = p2.haravan_product_id";
   }
 
   if (jsonParams.product_types && jsonParams.product_types.length > 0) {
@@ -121,6 +125,10 @@ export function aggregateQuery(jsonParams) {
     filterString += `AND d.gender IN ('${jsonParams.genders.join("','")}')\n`;
   }
 
+  if (jsonParams.design_tags && jsonParams.design_tags.length > 0) {
+    filterString += `AND d.tag IN ('${jsonParams.design_tags.join("','")}')\n`;
+  }
+
   if (jsonParams.sort) {
     if (jsonParams.sort.by === "price") {
       sortString += `ORDER BY ${sortedColumn} ${jsonParams.sort.order === "asc" ? "ASC" : "DESC"}\n`;
@@ -144,6 +152,7 @@ export function aggregateQuery(jsonParams) {
     filterString,
     sortString,
     paginationString,
-    handleFinenessPriority
+    handleFinenessPriority,
+    collectionJoinEcomProductsClause
   };
 }

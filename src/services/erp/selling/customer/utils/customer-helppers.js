@@ -7,7 +7,7 @@ import { fetchChildRecordsFromERP } from "src/services/utils/sql-helpers";
 import { escapeSqlValue } from "src/services/utils/sql-helpers";
 dayjs.extend(utc);
 
-const CHUNK_SIZE = 500;
+const CHUNK_SIZE = 100;
 
 export async function fetchCustomersFromERP(frappeClient, doctype, fromDate, toDate, pageSize) {
   try {
@@ -107,7 +107,7 @@ export async function saveCustomersToDatabase(db, customers) {
         ON CONFLICT (name) DO UPDATE SET
         ${updateSetSql};
       `;
-      await db.$queryRaw(Prisma.raw(query));
+      await db.$queryRaw`${Prisma.raw(query)}`;
     }
 
   } catch (error) {

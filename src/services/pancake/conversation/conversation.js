@@ -184,16 +184,31 @@ export default class ConversationService {
   }
 
   async summarizeLead(env, body) {
+    // Skip if webhook's event_type is not "messaging"
+    if (body?.event_type !== "messaging") {
+      return;
+    }
+
     const { data } = body;
     const { message } = data;
 
     // Skip if the message is from admin
     if (message?.from?.admin_id) { return; }
 
+    const conversationId = message?.conversation_id;
+
+    if (!conversationId) { return; }
+
+    const existingDocName = await this.findExistingLead({
+      conversationId: conversationId
+    });
+
+    if (!existingDocName) return;
+
     const aihub = new AIHUBClient(env);
     return await aihub.makeRequest("/lead-info", {
       "pageId": body.page_id,
-      "conversationId": message.conversation_id,
+      "conversationId": conversationId,
       "webhookUrl": `${env.HOST}/webhook/ai-hub/erp/leads`
     });
   }

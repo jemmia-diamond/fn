@@ -30,7 +30,7 @@ export default class WeddingRingController {
         : []
     };
 
-    const {isValidated, message} = validateParams(jsonParams);
+    const { isValidated, message } = validateParams(jsonParams);
     if (!isValidated) {
       return ctx.json({ message: message }, 400);
     }

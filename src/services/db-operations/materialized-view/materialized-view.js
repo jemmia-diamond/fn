@@ -18,7 +18,7 @@ export default class MaterializedViewService {
     ];
     for (const view of views) {
       try {
-        await db.$queryRaw(Prisma.raw(`REFRESH MATERIALIZED VIEW ${view};`));
+        await db.$queryRaw`${Prisma.raw(`REFRESH MATERIALIZED VIEW ${view};`)}`;
       } catch (error) {
         console.error(`Failed to refresh materialized view ${view}:`, error);
       }
@@ -33,7 +33,7 @@ export default class MaterializedViewService {
     ];
     for (const view of views) {
       try {
-        await db.$queryRaw(Prisma.raw(`REFRESH MATERIALIZED VIEW ${view};`));
+        await db.$queryRaw`${Prisma.raw(`REFRESH MATERIALIZED VIEW ${view};`)}`;
       } catch (error) {
         console.error(`Failed to refresh materialized view ${view}:`, error);
       }

@@ -3,7 +3,7 @@ import Database from "services/database";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import ContactService from "services/erp/contacts/contact/contact";
-import { fetchLeadsFromERP, saveLeadsToDatabase } from "services/erp/crm/lead/utils/lead-helppers";
+import { areAllFieldsEmpty, fetchLeadsFromERP, saveLeadsToDatabase } from "services/erp/crm/lead/utils/lead-helppers";
 
 dayjs.extend(utc);
 
@@ -26,10 +26,35 @@ export default class LeadService {
   }
 
   async updateLeadInfoFromSummary(data, conversationId) {
+
+    if (!data) return;
+
+    const allowedFields = [
+      "budget_from",
+      "budget_to",
+      "interested_products",
+      "province",
+      "purpose",
+      "expected_receiving_date"
+    ];
+
+    const summariedInfo = { ...data };
+
+    // Remove any field not in allowedFields
+    Object.keys(summariedInfo).forEach(key => {
+      if (!allowedFields.includes(key)) {
+        delete summariedInfo[key];
+      }
+    });
+
+    if (areAllFieldsEmpty(summariedInfo)) {
+      return { success: true };
+    }
+
     let res = await this.frappeClient.postRequest("", {
       cmd: "erpnext.crm.doctype.lead.lead_methods.update_lead_from_summary",
       data: JSON.stringify({
-        ...data,
+        ...summariedInfo,
         conversation_id: conversationId
       })
     });
@@ -63,7 +88,7 @@ export default class LeadService {
     }
     try {
       const lead = await this.frappeClient.update(currentLead);
-      return { success: true, data: lead};
+      return { success: true, data: lead };
     } catch (error) {
       return {
         success: false,
@@ -151,6 +176,12 @@ export default class LeadService {
   }
 
   async processWebsiteLead(data) {
+    if (!data.raw_data) return;
+
+    if (!data?.raw_data?.phone) {
+      return;
+    }
+
     const contactService = new ContactService(this.env);
     const location = data.raw_data.location;
     const provinces = await this.frappeClient.getList("Province", {

@@ -1,4 +1,4 @@
-import {ZALO_TEMPLATE} from "services/ecommerce/zalo-message/enums/zalo-template.enum";
+import { ZALO_TEMPLATE } from "services/ecommerce/zalo-message/enums/zalo-template.enum";
 import { ORDER_STATUS } from "src/services/ecommerce/zalo-message/enums/order-status.enum";
 
 export class GetTemplateZalo {
@@ -39,7 +39,7 @@ export class GetTemplateZalo {
         templateData: {
           customer_name: data.billing_address?.name,
           price: data.total_price.toLocaleString("vi-VN"),
-          transfer_amount: transferAmount.toLocaleString("vi-VN"),
+          transfer_amount: transferAmount.toString(),
           order_number: String(data.id),
           note: messageNote,
           bank_transfer_note: bankTransferNote

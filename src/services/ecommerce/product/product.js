@@ -9,7 +9,7 @@ export default class ProductService {
   }
 
   async getJewelryData(jsonParams) {
-    const {dataSql, countSql} = buildQuery(jsonParams);
+    const { dataSql, countSql } = buildQuery(jsonParams);
 
     const data = await this.db.$queryRaw`${Prisma.raw(dataSql)}`;
     const count = await this.db.$queryRaw`${Prisma.raw(countSql)}`;
@@ -23,7 +23,7 @@ export default class ProductService {
   }
 
   async getJewelry(jsonParams) {
-    const {data, count, material_colors, fineness} = await this.getJewelryData(jsonParams);
+    const { data, count, material_colors, fineness } = await this.getJewelryData(jsonParams);
     return {
       data,
       metadata: {
@@ -35,9 +35,10 @@ export default class ProductService {
     };
   }
 
-  async searchJewelry(searchKey, limit) {
+  async searchJewelry(searchKey, limit, page) {
     const lowerSearchKey = searchKey.toLowerCase();
     const likePattern = `%${lowerSearchKey}%`;
+    const offset = (page - 1) * limit;
     const result = await this.db.$queryRaw`
       SELECT
         CAST(p.haravan_product_id AS INT) AS id,
@@ -53,7 +54,7 @@ export default class ProductService {
         END AS has_360,
         img.images,
         var.variants
-      FROM ecom.products p
+      FROM ecom.materialized_products p
         INNER JOIN workplace.designs d ON d.id = p.design_id
         LEFT JOIN workplace.ecom_360 e ON p.workplace_id = e.product_id
 
@@ -69,7 +70,7 @@ export default class ProductService {
         -- Subquery for pre-aggregated variants
         INNER JOIN (
           SELECT
-            v.hararvan_product_id,
+            v.haravan_product_id,
             JSON_AGG(
               JSON_BUILD_OBJECT(
                 'id', CAST(v.haravan_variant_id AS INT),
@@ -80,12 +81,13 @@ export default class ProductService {
                 'price_compare_at', CAST(v.price_compare_at AS INT)
               )
             ) AS variants
-          FROM ecom.variants v
-          GROUP BY v.hararvan_product_id
-        ) var ON var.hararvan_product_id = p.haravan_product_id
+          FROM ecom.materialized_variants v
+          GROUP BY v.haravan_product_id
+        ) var ON var.haravan_product_id = p.haravan_product_id
 
       WHERE lower(concat(p.title, d.design_code, p.haravan_product_type)) LIKE ${likePattern}
-      LIMIT ${limit};
+      LIMIT ${limit}
+      OFFSET ${offset};
     `;
     return result;
   }
@@ -100,7 +102,7 @@ export default class ProductService {
   }
 
   async getWeddingRingsData(jsonParams) {
-    const {dataSql, countSql} = buildWeddingRingsQuery(jsonParams);
+    const { dataSql, countSql } = buildWeddingRingsQuery(jsonParams);
 
     const data = await this.db.$queryRaw`${Prisma.raw(dataSql)}`;
     const count = await this.db.$queryRaw`${Prisma.raw(countSql)}`;
@@ -114,7 +116,7 @@ export default class ProductService {
   }
 
   async getWeddingRings(jsonParams) {
-    const {data, count, material_colors, fineness} = await this.getWeddingRingsData(jsonParams);
+    const { data, count, material_colors, fineness } = await this.getWeddingRingsData(jsonParams);
     return {
       data,
       metadata: {
@@ -138,6 +140,8 @@ export default class ProductService {
          	WHEN d.ring_band_type = 'None' THEN NULL
          	ELSE d.ring_band_type
       	END AS ring_band_type,
+        d.main_stone,
+        d.stone_quantity,
         p.haravan_product_type AS product_type,
        'Round' AS shape_of_main_stone,
         p.has_360,
@@ -179,7 +183,7 @@ export default class ProductService {
         AND p.haravan_product_id = ${id}
       GROUP BY
       	p.haravan_product_id, p.title, d.design_code, p.handle,
-        d.diamond_holder, d.ring_band_type, p.haravan_product_type,
+        d.diamond_holder, d.ring_band_type, d.main_stone, d.stone_quantity, p.haravan_product_type,
         p.max_price, p.min_price, p.max_price_18, p.max_price_14,
         p.qty_onhand, img.images, p.has_360, p.estimated_gold_weight,
         p.primary_collection, p.primary_collection_handle
