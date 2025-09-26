@@ -4,7 +4,8 @@ import { DebounceActions } from "src/durable-objects/debounce/debounce-action";
 export class DebounceDurableObject extends DurableObject {
   constructor(state, env) {
     super(state, env);
-    this.latestData = new Map();
+    this.state = state;
+    this.env = env;
     this.defaultDelay = 3000;
     this.actions = {
       [DebounceActions.SEND_TO_MESSAGE_SUMMARY_QUEUE]: async (data) => {
@@ -14,42 +15,43 @@ export class DebounceDurableObject extends DurableObject {
   }
 
   async debounce({ key, data, delay, actionType }) {
-    this.latestData.set(key, { data, actionType });
+    await this.state.storage.put(key, { data, actionType });
 
-    const existingAlarm = await this.ctx.storage.getAlarm();
+    const existingAlarm = await this.state.storage.getAlarm();
     if (existingAlarm) {
-      await this.ctx.storage.deleteAlarm();
+      await this.state.storage.deleteAlarm();
     }
 
-    const alarmTime = Date.now() + delay;
-    await this.ctx.storage.setAlarm(alarmTime);
+    const alarmTime = Date.now() + (delay ?? this.defaultDelay);
+    await this.state.storage.setAlarm(alarmTime);
   }
 
   async alarm() {
-    const keysToProcess = Array.from(this.latestData.keys());
+    try {
+      const storedTasks = await this.state.storage.list();
 
-    for (const key of keysToProcess) {
-      const messageInfo = this.latestData.get(key);
-      if (!messageInfo) continue;
+      for (const [key, storedTask] of storedTasks) {
+        try {
+          const { data, actionType } = storedTask;
 
-      try {
-        const { data, actionType } = messageInfo;
+          const action = this.actions[actionType];
+          if (!action) {
+            throw new Error(`Unknown action type: ${actionType}`);
+          }
 
-        const action = this.actions[actionType];
-        if (!action) {
-          throw new Error(`Unknown action type: ${actionType}`);
+          await action(data);
+          await this.cleanup(key);
+        } catch (error) {
+          console.error(`Failed to execute debounced callback for key=${key}:`, error);
+          await this.cleanup(key);
         }
-
-        await action(data);
-        this.cleanup(key);
-      } catch (error) {
-        console.error(`Failed to execute debounced callback for key=${key}:`, error);
-        this.cleanup(key);
       }
+    } catch (error) {
+      console.error("Failed to process alarm:", error);
     }
   }
 
-  cleanup(key) {
-    this.latestData.delete(key);
+  async cleanup(key) {
+    await this.state.storage.delete(key);
   }
 }

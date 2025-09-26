@@ -14,6 +14,7 @@ export default class AIHUBClient {
     if (!this.#bearerToken) {
       try {
         this.#bearerToken = await this.#env.BEARER_TOKEN_SECRET.get();
+        this.#bearerToken ||= this.#env.BEARER_TOKEN;
       } catch {
         // Fallback to BEARER_TOKEN environment variable
         this.#bearerToken = this.#env.BEARER_TOKEN;
@@ -52,6 +53,8 @@ export default class AIHUBClient {
 
       return response.data;
     } catch (error) {
+      // Log the headers from the failed request
+      console.error("AIHub API request failed with headers:", error.config?.headers);
       throw new Error(`AIHub API request failed: ${error.message}`);
     }
   }
