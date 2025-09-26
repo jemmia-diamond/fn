@@ -27,23 +27,27 @@ export class DebounceDurableObject extends DurableObject {
   }
 
   async alarm() {
-    const storedTasks = await this.state.storage.list();
+    try {
+      const storedTasks = await this.state.storage.list();
 
-    for (const [key, storedTask] of storedTasks) {
-      try {
-        const { data, actionType } = storedTask;
+      for (const [key, storedTask] of storedTasks) {
+        try {
+          const { data, actionType } = storedTask;
 
-        const action = this.actions[actionType];
-        if (!action) {
-          throw new Error(`Unknown action type: ${actionType}`);
+          const action = this.actions[actionType];
+          if (!action) {
+            throw new Error(`Unknown action type: ${actionType}`);
+          }
+
+          await action(data);
+          await this.cleanup(key);
+        } catch (error) {
+          console.error(`Failed to execute debounced callback for key=${key}:`, error);
+          await this.cleanup(key);
         }
-
-        await action(data);
-        await this.cleanup(key);
-      } catch (error) {
-        console.error(`Failed to execute debounced callback for key=${key}:`, error);
-        await this.cleanup(key);
       }
+    } catch (error) {
+      console.error("Failed to process alarm:", error);
     }
   }
 
