@@ -149,7 +149,8 @@ export default class SalesOrderService {
       qty: lineItemData.quantity,
       price_list_rate: parseInt(lineItemData.price_original),
       discount_amount: parseInt(lineItemData.price_original - lineItemData.price),
-      rate: parseInt(lineItemData.price)
+      rate: parseInt(lineItemData.price),
+      type: lineItemData.type
     };
   };
 
