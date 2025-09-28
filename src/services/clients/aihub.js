@@ -54,7 +54,7 @@ export default class AIHUBClient {
       return response.data;
     } catch (error) {
       // Log the headers from the failed request
-      console.error("AIHub API request failed with headers:", error.config?.headers);
+      console.error("AIHub API request failed with headers:", this.#bearerToken);
       throw new Error(`AIHub API request failed: ${error.message}`);
     }
   }
