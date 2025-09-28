@@ -42,7 +42,7 @@
     "prisma": "^6.15.0",
     "wrangler": "^4.38.0"
   },
-  "packageManager": "pnpm@10.17.0",
+  "packageManager": "pnpm@10.17.1",
   "prisma": {
     "schema": "./prisma/schema/"
   },
