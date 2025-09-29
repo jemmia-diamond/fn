@@ -8,6 +8,7 @@ import Database from "services/database";
 dayjs.extend(utc);
 
 export default class InventoryCheckLineService {
+  static PAGE_SIZE = 50;
   static async syncInventoryCheckLineToDatabase(env) {
     const client = await InventoryCMSClient.createClient(env);
     const db = Database.instance(env);
@@ -18,7 +19,7 @@ export default class InventoryCheckLineService {
           _gte: timeThreshold
         }
       },
-      limit: 1000
+      limit: InventoryCheckLineService.PAGE_SIZE
     };
 
     // fetch all inventory check lines created in the last 6 hours with pagination
