@@ -459,12 +459,10 @@ export default class SalesOrderService {
                       vs_with_temp_orders.sku,
                       vs_with_temp_orders.variant_serial_id,
                       clm.lark_message_id, 
-                      clm.order_id, 
-                      clm.parent_id 
+                      clm.haravan_order_id 
                       FROM vs_with_temp_orders  
-                      LEFT JOIN larksuite.crm_lark_message AS clm 
-                      ON vs_with_temp_orders.order_id = clm.order_id 
-                      WHERE clm.parent_id IS NULL;
+                      LEFT JOIN erpnext.sales_order_notification_tracking AS clm 
+                      ON vs_with_temp_orders.order_id = clm.order_id;
     `;
 
     const notifyResult = await db.$queryRaw`${Prisma.raw(dataSql)}`;
@@ -551,7 +549,7 @@ export default class SalesOrderService {
   
       SELECT crm.*, jo.gia_report_no as gia_report_no, jo.haravan_variant_id as haravan_variant_id 
       FROM joined_orders jo
-      LEFT JOIN larksuite.crm_lark_message crm ON jo.order_id = crm.order_id;
+      LEFT JOIN erpnext.sales_order_notification_tracking crm ON jo.order_id = crm.order_id;
     `;
 
     const giaNotifyResult = await db.$queryRaw`${Prisma.raw(dataSql)}`;
