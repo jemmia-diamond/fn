@@ -510,8 +510,8 @@ export default class SalesOrderService {
 
   async processDiamondNotifications(db, timestamp,larkClient, groupId) {
     const giaResult = await db.$queryRaw`
-      SELECT li.sku FROM haravan.line_items AS li 
-      LEFT JOIN haravan.warehouse_inventories AS hw ON li.variant_id = hw.variant_id 
+      SELECT li.sku FROM haravan.variants AS li 
+      LEFT JOIN haravan.warehouse_inventories AS hw ON li.id = hw.variant_id 
       WHERE li.sku LIKE '%-GIA%' AND li.database_updated_at >= ${timestamp}
       GROUP BY li.sku 
       HAVING SUM(hw.qty_onhand) > 0;
