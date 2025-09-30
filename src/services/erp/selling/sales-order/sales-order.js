@@ -156,7 +156,7 @@ export default class SalesOrderService {
   };
 
   async sendNotificationToLark(salesOrderData) {
-    const larkClient = LarksuiteService.createClient(this.env);
+    const larkClient = await LarksuiteService.createClientV2(this.env);
 
     const notificationTracking = await this.db.erpnextSalesOrderNotificationTracking.findFirst({
       where: {
@@ -371,7 +371,7 @@ export default class SalesOrderService {
     const service = new SalesOrderService(env);
     const db = service.db;
 
-    const larkClient = LarksuiteService.createClient(env);
+    const larkClient = await LarksuiteService.createClientV2(env);
     try {
       const tenMinutesAgoDate = new Date();
       tenMinutesAgoDate.setMinutes(tenMinutesAgoDate.getMinutes() - 10);
@@ -385,8 +385,8 @@ export default class SalesOrderService {
 
       return {
         success: true,
-        jewelryNotifiedCount: jewelryIdsToUpdate.length,
-        diamondsNotifiedCount: diamondIdsToUpdate.length
+        jewelryNotifiedCount: (jewelryIdsToUpdate ?? []).length,
+        diamondsNotifiedCount: (diamondIdsToUpdate ?? []).length
       };
 
     } catch (error) {
@@ -422,47 +422,48 @@ export default class SalesOrderService {
 
     const dataSql = `
       WITH vs_filtered AS (
-          SELECT vs.serial_number, vs.order_reference, v.sku, v.barcode, vs.id as variant_serial_id FROM workplace.variant_serials AS vs 
-          LEFT JOIN workplace.variants as v ON vs.variant_id = v.id 
+          SELECT 
+              vs.serial_number, 
+              vs.order_reference, 
+              v.sku, 
+              v.barcode, 
+              vs.id AS variant_serial_id 
+          FROM workplace.variant_serials AS vs 
+          LEFT JOIN workplace.variants AS v ON vs.variant_id = v.id 
           WHERE vs.final_encoded_barcode IN (${resultString})
       ),
-      serial_with_order AS (
-      SELECT hrv_orders.id AS order_id, hrv_orders.name, vs_f.serial_number, vs_f.sku, vs_f.barcode, vs_f.variant_serial_id FROM vs_filtered AS vs_f
-      LEFT JOIN haravan.orders as hrv_orders ON vs_f.order_reference = hrv_orders.name 
-      WHERE hrv_orders.cancelled_status = 'uncancelled' 
-      ),                    
-      line_item_temp AS (
-          SELECT * FROM haravan.line_items as hl
-          LEFT JOIN bizflycrm.line_items as bl on hl.variant_id::TEXT = bl.variant_id
-          WHERE title LIKE '%Tạm%' AND serial_number_value IS NOT NULL and serial_number_value != ''
-      ),
-      vs_with_temp_orders AS (
-      SELECT 
-          swo.order_id,
-          swo.name,
-          swo.serial_number,
-          swo.barcode,
-          swo.sku,
-          swo.variant_serial_id 
-      FROM 
-          line_item_temp AS lit
-      JOIN 
-          serial_with_order AS swo ON lit.serial_number_value LIKE '%' || swo.serial_number || '%' 
-      LEFT JOIN workplace.temporary_products as tp ON swo.variant_serial_id = tp.variant_serial_id 
-      WHERE tp.is_notify_lark_reorder = false OR tp.is_notify_lark_reorder IS NULL
-      )                
-  
-      SELECT DISTINCT ON (vs_with_temp_orders.serial_number) 
-                      vs_with_temp_orders.serial_number, 
-                      vs_with_temp_orders.name, 
-                      vs_with_temp_orders.barcode,
-                      vs_with_temp_orders.sku,
-                      vs_with_temp_orders.variant_serial_id,
-                      clm.lark_message_id, 
-                      clm.haravan_order_id 
-                      FROM vs_with_temp_orders  
-                      LEFT JOIN erpnext.sales_order_notification_tracking AS clm 
-                      ON vs_with_temp_orders.order_id = clm.order_id;
+      orders_with_matching_items AS (
+          SELECT 
+              sale_ord.haravan_order_id AS order_id, 
+              sale_ord.name, 
+              vs_f.serial_number, 
+              vs_f.sku, 
+              vs_f.barcode, 
+              vs_f.variant_serial_id
+          FROM vs_filtered AS vs_f
+          LEFT JOIN erpnext.sales_orders AS sale_ord ON vs_f.order_reference = sale_ord.order_number
+          LEFT JOIN workplace.temporary_products AS tp ON vs_f.variant_serial_id = tp.variant_serial_id
+          WHERE sale_ord.cancelled_status = 'uncancelled'
+            AND (tp.is_notify_lark_reorder = false OR tp.is_notify_lark_reorder IS NULL)
+            AND EXISTS (
+                SELECT 1
+                FROM jsonb_array_elements(sale_ord.items) AS item_data
+                WHERE (item_data->>'item_name')::text LIKE '%Tạm%'
+                  AND (item_data->>'serial_numbers') IS NOT NULL 
+                  AND (item_data->>'serial_numbers')::text != ''
+            )
+      )
+      SELECT DISTINCT ON (owmi.serial_number) 
+          owmi.serial_number, 
+          owmi.name, 
+          owmi.barcode,
+          owmi.sku,
+          owmi.variant_serial_id,
+          clm.lark_message_id, 
+          clm.haravan_order_id 
+      FROM orders_with_matching_items AS owmi
+      LEFT JOIN erpnext.sales_order_notification_tracking AS clm ON owmi.order_id::TEXT = clm.haravan_order_id
+      ORDER BY owmi.serial_number, clm.lark_message_id DESC;
     `;
 
     const notifyResult = await db.$queryRaw`${Prisma.raw(dataSql)}`;
@@ -549,7 +550,7 @@ export default class SalesOrderService {
   
       SELECT crm.*, jo.gia_report_no as gia_report_no, jo.haravan_variant_id as haravan_variant_id 
       FROM joined_orders jo
-      LEFT JOIN erpnext.sales_order_notification_tracking crm ON jo.order_id = crm.order_id;
+      LEFT JOIN erpnext.sales_order_notification_tracking crm ON jo.order_id::TEXT = crm.haravan_order_id;
     `;
 
     const giaNotifyResult = await db.$queryRaw`${Prisma.raw(dataSql)}`;
