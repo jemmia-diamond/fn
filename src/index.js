@@ -11,6 +11,7 @@ import CorsService from "services/cors-service";
 import Routes from "src/routes";
 import queueHandler from "services/queue-handler";
 import scheduleHandler from "services/schedule-handler";
+import { DebounceDurableObject } from "src/durable-objects";
 
 const app = new Hono();
 const api = app.basePath("/api");
@@ -60,3 +61,6 @@ export default {
   queue: queueHandler.queue,
   scheduled: scheduleHandler.scheduled
 };
+
+// Export Durable Object classes
+export { DebounceDurableObject };

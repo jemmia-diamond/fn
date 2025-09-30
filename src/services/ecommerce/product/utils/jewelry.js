@@ -6,7 +6,7 @@ export function buildQuery(jsonParams) {
   const dataSql = `
     SELECT  
       CAST(p.haravan_product_id AS INT) AS id,
-      p.title,
+      p.ecom_title as title,
       d.design_code,
       p.handle,
       d.diamond_holder,
@@ -47,7 +47,7 @@ export function buildQuery(jsonParams) {
       AND (p.haravan_product_type != 'Nhẫn Cưới' OR (p.haravan_product_type = 'Nhẫn Cưới' AND d.gender = 'Nam'))
       ${filterString}
     GROUP BY 
-      p.haravan_product_id, p.title, d.design_code, p.handle, 
+      p.haravan_product_id, p.title, d.design_code, p.handle, p.ecom_title,
       d.diamond_holder, d.ring_band_type, p.haravan_product_type,
       p.max_price, p.min_price, p.max_price_18, p.max_price_14, 
       p.qty_onhand, img.images, p.has_360
@@ -123,6 +123,10 @@ export function aggregateQuery(jsonParams) {
 
   if (jsonParams.genders && jsonParams.genders.length > 0) {
     filterString += `AND d.gender IN ('${jsonParams.genders.join("','")}')\n`;
+  }
+
+  if (jsonParams.design_tags && jsonParams.design_tags.length > 0) {
+    filterString += `AND d.tag IN ('${jsonParams.design_tags.join("','")}')\n`;
   }
 
   if (jsonParams.sort) {

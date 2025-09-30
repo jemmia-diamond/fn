@@ -19,10 +19,10 @@ export default class OrderTrackingService {
   async trackOrder(orderId, reqBearerToken) {
     try {
       let isAuthorized = false;
+      const bearerToken = await this.env.BEARER_TOKEN_SECRET.get();
       if (reqBearerToken) {
         const firstOrder = await getInitialOrder(this.db, orderId);
         if (firstOrder) {
-          const bearerToken = await this.env.BEARER_TOKEN_SECRET.get();
           const parsedAccessToken = this.createTokenForOrderTracking({
             order_id: firstOrder.id,
             order_number: firstOrder.order_number
@@ -48,7 +48,7 @@ export default class OrderTrackingService {
 
       let nhattinTrackInfo = {};
       try {
-        nhattinTrackInfo = await this.getOrderDeliveryStatus(latestOrderId);
+        nhattinTrackInfo = await this.getOrderDeliveryStatus(latestOrderId, bearerToken);
       } catch (e) {
         console.error(e);
       }
@@ -66,6 +66,25 @@ export default class OrderTrackingService {
       totalOriginalPrice += Number(item.original_price || 0) * Number(item.quantity || 0);
     });
     return totalOriginalPrice;
+  }
+
+  async getNhattinOrderInfo(trackingNumber, bearerToken) {
+    try {
+      const response = await fetch(
+        `${this.env.HOST}/api/delivery/nhattin?bill_code=${trackingNumber}`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${bearerToken}`
+          }
+        }
+      );
+      const data = JSON.parse(await response.text());
+      return data;
+    } catch (err) {
+      console.error(err);
+      return null;
+    }
   }
 
   async getNhatTinDeliveryStatus(trackingNumber) {
@@ -107,7 +126,7 @@ export default class OrderTrackingService {
     return haravanClient.makeRequest(endpoint);
   }
 
-  async getOrderDeliveryStatus(orderId) {
+  async getOrderDeliveryStatus(orderId, bearerToken) {
     try {
       const { order } = await this.getOrder(orderId);
 
@@ -119,7 +138,7 @@ export default class OrderTrackingService {
 
       const trackingNumber = haravanFulfillment.tracking_number;
 
-      const nhattinBillTrack = trackingNumber && await this.getNhatTinDeliveryStatus(trackingNumber);
+      const nhattinBillTrack = trackingNumber && await this.getNhattinOrderInfo(trackingNumber, bearerToken);
 
       let nhattinTrackingLog = [];
       const nhattinTrackingData = nhattinBillTrack?.data?.at(-1);
@@ -213,47 +232,43 @@ export default class OrderTrackingService {
 
     if ([
       OrderOverallStatus.READY_TO_CONFIRM.key,
-      OrderOverallStatus.CONFIRMED.key,
-      OrderOverallStatus.READY_TO_PICK.key
+      OrderOverallStatus.CONFIRMED.key
     ].includes(ongoingStep.key)) {
       return haravanSteps;
     }
 
-    const deliveringIndex = haravanSteps.findIndex(step => step.key === OrderOverallStatus.DELIVERING.key);
-    if (deliveringIndex <= -1) {
-      return haravanSteps;
+    // Set ready to pick & picking
+    const readyToPickIndex = haravanSteps.findIndex(step => step.key === OrderOverallStatus.READY_TO_PICK.key);
+
+    const pickingIndex = haravanSteps.findIndex(step => step.key === OrderOverallStatus.PICKING.key);
+
+    const pickTime = takeFromVendorLogs?.[0]?.getDateTimeObject().toISOString();
+
+    if (readyToPickIndex > -1 && pickTime) {
+      if (!haravanSteps[readyToPickIndex].time || haravanSteps[readyToPickIndex].time > pickTime) {
+        haravanSteps[readyToPickIndex].time = pickTime;
+      }
     }
 
-    const vendorTime = takeFromVendorLogs?.[0]?.getDateTimeObject().toISOString();
-    if (vendorTime) {
-      const currentStep = haravanSteps[deliveringIndex];
-      if (!currentStep.time || currentStep.time > vendorTime) {
-        currentStep.time = vendorTime;
+    if (pickingIndex > -1 && pickTime) {
+      if (!haravanSteps[pickingIndex].time || haravanSteps[pickingIndex].time > pickTime) {
+        haravanSteps[pickingIndex].time = pickTime;
+      }
+    }
+
+    // Set start delivering date
+    const deliveringIndex = haravanSteps.findIndex(step => step.key === OrderOverallStatus.DELIVERING.key);
+    if (deliveringIndex > -1) {
+      const deliveringTime = transitLogs?.[0]?.getDateTimeObject().toISOString();
+      if (deliveringTime) {
+        if (!haravanSteps[deliveringIndex].time || haravanSteps[deliveringIndex].time > deliveringTime) {
+          haravanSteps[deliveringIndex].time = deliveringTime;
+        }
       }
     }
 
     let beforeDeliveringSteps = haravanSteps.slice(0, deliveringIndex + 1);
     let afterDeliveringSteps = haravanSteps.slice(deliveringIndex + 1);
-
-    // Step to receive order from vendor Jemmia
-    if (takeFromVendorLogs && takeFromVendorLogs.length > 0) {
-      const newStep = {
-        title: takeFromVendorLogs[0].operation,
-        time: takeFromVendorLogs[0].getDateTimeObject().toISOString(),
-        key: OrderOverallStatus.DELIVERING.key,
-        status: OrderTimelineStatus.PAST
-      };
-
-      // ready pick -> (picked) -> delivering
-      const readyToPickIndex = beforeDeliveringSteps.findIndex(step => step.key === OrderOverallStatus.READY_TO_PICK.key);
-      if (readyToPickIndex > -1) {
-        beforeDeliveringSteps = [
-          ...beforeDeliveringSteps.slice(0, readyToPickIndex + 1),
-          newStep,
-          ...beforeDeliveringSteps.slice(readyToPickIndex + 1)
-        ];
-      }
-    }
 
     // Steps to transit order
     if (transitLogs && transitLogs.length > 0) {
@@ -283,7 +298,7 @@ export default class OrderTrackingService {
     return [
       ...beforeDeliveringSteps,
       ...afterDeliveringSteps
-    ];
+    ].filter(step => !(step.time === null && step.status === OrderTimelineStatus.PAST));
   }
 
   /**
@@ -303,8 +318,8 @@ export default class OrderTrackingService {
       ready_to_confirm: order.created_at,
       confirmed: order.confirmed_at,
       ready_to_pick: fulfillment.ready_to_pick_date || null,
-      picking: fulfillment.picking_date || null,
-      delivering: fulfillment.delivering_date || null,
+      picking: null,
+      delivering: null,
       delivered: fulfillment.delivered_date || null,
       cancel: fulfillment.cancel_date || null,
       not_meet_customer: fulfillment.not_meet_customer_date || null,
@@ -332,22 +347,29 @@ export default class OrderTrackingService {
   _handleCancelledOrder(order, orderedSteps) {
     const cancelledTime = new Date(order.cancelled_at);
 
-    // Get all valid steps up to cancellation time
-    const validSteps = orderedSteps
+    let validSteps = [...orderedSteps];
+
+    const index = validSteps.findIndex(
+      step => step.title === OrderOverallStatus.CANCELLED.label
+    );
+
+    if (index !== -1) {
+      validSteps[index] = {
+        ...validSteps[index],
+        time: cancelledTime,
+        status: OrderTimelineStatus.ONGOING
+      };
+    }
+
+    validSteps = validSteps
       .filter(step => step.time !== null && new Date(step.time) <= cancelledTime)
       .map(step => ({
-        title: step.title,
-        time: step.time,
-        key: step.key,
-        status: OrderTimelineStatus.PAST
+        ...step,
+        status:
+          step.title === OrderOverallStatus.CANCELLED.label
+            ? OrderTimelineStatus.ONGOING
+            : OrderTimelineStatus.PAST
       }));
-
-    // Add cancellation step
-    validSteps.push({
-      title: OrderOverallStatus.CANCELLED.label,
-      time: order.cancelled_at,
-      status: OrderTimelineStatus.ONGOING
-    });
 
     return validSteps;
   }

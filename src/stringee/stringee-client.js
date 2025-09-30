@@ -40,6 +40,10 @@ export default class StringeeClient {
   }
 
   async postProcess(res) {
+    if (!res.ok) {
+      throw new Error(`Error ${res.status}: ${res.statusText}`);
+    }
+
     const text = await res.text();
     try {
       const data = JSON.parse(text);
