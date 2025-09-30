@@ -20,8 +20,8 @@ export function buildQuery(jsonParams) {
           'fineness', v.fineness,
           'material_color', v.material_color,
           'ring_size', v.ring_size,
-          'price', CAST(v.price AS INT),
-          'price_compare_at', CAST(v.price_compare_at AS INT),
+          'price', CAST(v.price AS Decimal),
+          'price_compare_at', CAST(v.price_compare_at AS Decimal),
           'qty_onhand', v.qty_onhand
         )
       ) AS variants
