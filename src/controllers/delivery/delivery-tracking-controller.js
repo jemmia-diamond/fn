@@ -4,12 +4,19 @@ import { HTTPException } from "hono/http-exception";
 export default class DeliveryTrackingController {
   static async show(ctx) {
     const id = ctx.req.query("bill_code");
+    const { email, partner_id, password } = ctx.req.headers;
+
     if (!id) {
       throw new HTTPException(400, { message: "Bill Code is required" });
     }
     const orderTrackingService = new Ecommerce.OrderTrackingService(ctx.env);
     try {
-      const bill = await orderTrackingService.getNhatTinDeliveryStatus(id);
+      const bill = await orderTrackingService.getNhatTinDeliveryStatus(
+        id,
+        email,
+        password,
+        partner_id
+      );
       if (!bill) {
         throw new HTTPException(404, { message: "Bill not found" });
       }

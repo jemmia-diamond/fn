@@ -52,3 +52,9 @@ export const NhattinPaymentMethod = Object.freeze({
   NGTTS: { id: 11, name: "Người Gửi Thanh Toán Sau" },
   NNTTN: { id: 20, name: "Người Nhận Thanh Toán Ngay" }
 });
+
+export const HaravanDeliverySendLocation = Object.freeze({
+  HO_CHI_MINH: "nhat_tin_jemmia_hcm",
+  HANOI: "nhat_tin_jemmia_hn",
+  CAN_THO: "nhat_tin_jemmia_ct"
+});

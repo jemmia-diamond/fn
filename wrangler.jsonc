@@ -36,6 +36,12 @@
     "ZNS_OA_ID": "2838947343790196672",
     "NHAT_TIN_LOGISTIC_EMAIL": "jemmia",
     "NHAT_TIN_PARTNER_ID": "305081",
+    "NHAT_TIN_JEMMIA_HCM_EMAIl": "jemmia_hcm",
+    "NHAT_TIN_JEMMIA_HCM_PARTNER_ID": "308859",
+    "NHAT_TIN_JEMMIA_HN_EMAIl": "jemmia_hn",
+    "NHAT_TIN_JEMMIA_HN_PARTNER_ID": "310549",
+    "NHAT_TIN_JEMMIA_CT_EMAIl": "jemmia_ct",
+    "NHAT_TIN_JEMMIA_CT_PARTNER_ID": "310550",
     "NHAT_TIN_API_URL": "https://apiws.ntlogistics.vn/v1",
     "LARK_APP_ID": "cli_a7f8a8df1979902f",
     "LARK_API_ENDPOINT": "https://open.larksuite.com",
@@ -73,6 +79,21 @@
       "binding": "NHAT_TIN_LOGISTIC_PASSWORD_SECRET",
       "store_id": "dff6fef7003446178302a7874af64fde",
       "secret_name": "NHAT_TIN_LOGISTIC_PASSWORD"
+    },
+    {
+      "binding": "NHAT_TIN_JEMMIA_HCM_PASSWORD_SECRET",
+      "store_id": "dff6fef7003446178302a7874af64fde",
+      "secret_name": "NHAT_TIN_JEMMIA_HCM_PASSWORD"
+    },
+    {
+      "binding": "NHAT_TIN_JEMMIA_HN_PASSWORD_SECRET",
+      "store_id": "dff6fef7003446178302a7874af64fde",
+      "secret_name": "NHAT_TIN_JEMMIA_HN_PASSWORD"
+    },
+    {
+      "binding": "NHAT_TIN_JEMMIA_CT_PASSWORD_SECRET",
+      "store_id": "dff6fef7003446178302a7874af64fde",
+      "secret_name": "NHAT_TIN_JEMMIA_CT_PASSWORD"
     },
     {
       "binding": "LARK_APP_SECRET_SECRET",

@@ -3,7 +3,7 @@ import { getOrderOverallInfo } from "services/ecommerce/order-tracking/queries/g
 import { getLatestOrderId } from "services/ecommerce/order-tracking/queries/get-latest-orderid";
 import { formatOrderTrackingResult } from "services/ecommerce/order-tracking/utils/format-order-tracking";
 import NhattinClient from "services/nhattin/nhattin-client";
-import { NhattinDeliveryStatus, NhattinPaymentMethod, OrderOverallStatus } from "services/ecommerce/order-tracking/enums/order-delivery-status.enum";
+import { HaravanDeliverySendLocation, NhattinDeliveryStatus, NhattinPaymentMethod, OrderOverallStatus } from "services/ecommerce/order-tracking/enums/order-delivery-status.enum";
 import { TrackingLog } from "services/ecommerce/order-tracking/dtos/tracking-log";
 import { OrderTimelineStatus } from "services/ecommerce/order-tracking/enums/order-step-status.enum";
 import HaravanClient from "services/haravan/haravan-client";
@@ -68,15 +68,23 @@ export default class OrderTrackingService {
     return totalOriginalPrice;
   }
 
-  async getNhattinOrderInfo(trackingNumber, bearerToken) {
+  async getNhattinOrderInfo(trackingNumber, bearerToken, nhattinEmail, nhattinPassword, nhattinPartnerId) {
     try {
+      const headers = {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${bearerToken}`
+      };
+
+      if (nhattinEmail && nhattinPassword && nhattinPartnerId) {
+        headers["username"] = nhattinEmail;
+        headers["password"] = nhattinPassword;
+        headers["partner_id"] = nhattinPartnerId;
+      }
+
       const response = await fetch(
         `${this.env.HOST}/api/delivery/nhattin?bill_code=${trackingNumber}`, {
           method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${bearerToken}`
-          }
+          headers: headers
         }
       );
       const data = JSON.parse(await response.text());
@@ -87,14 +95,19 @@ export default class OrderTrackingService {
     }
   }
 
-  async getNhatTinDeliveryStatus(trackingNumber) {
+  async getNhatTinDeliveryStatus(
+    trackingNumber,
+    email,
+    password,
+    partnerId
+  ) {
     try {
       if (!trackingNumber) return;
 
-      const nhattinEmail = this.env.NHAT_TIN_LOGISTIC_EMAIL;
-      const nhattinPartnerId = this.env.NHAT_TIN_PARTNER_ID;
+      const nhattinEmail = email ?? this.env.NHAT_TIN_LOGISTIC_EMAIL;
+      const nhattinPartnerId = partnerId ?? this.env.NHAT_TIN_PARTNER_ID;
       const nhattinBaseUrl = this.env.NHAT_TIN_API_URL;
-      const nhattinPassword = await this.env.NHAT_TIN_LOGISTIC_PASSWORD_SECRET.get();
+      const nhattinPassword = password ?? (await this.env.NHAT_TIN_LOGISTIC_PASSWORD_SECRET.get());
 
       if (!nhattinEmail || !nhattinPartnerId || !nhattinBaseUrl || !nhattinPassword) {
         throw new Error("Missing Nhattin API credentials");
@@ -138,7 +151,48 @@ export default class OrderTrackingService {
 
       const trackingNumber = haravanFulfillment.tracking_number;
 
-      const nhattinBillTrack = trackingNumber && await this.getNhattinOrderInfo(trackingNumber, bearerToken);
+      const orderTags = order.tags;
+
+      const foundTag = this.getDeliverySendLocationByTag(orderTags);
+
+      let nhattinBillTrack = null;
+      if (!foundTag) {
+        // If tag is not found, fallback to default account
+        nhattinBillTrack = trackingNumber && await this.getNhattinOrderInfo(trackingNumber, bearerToken);
+
+        // If bill is not found, fallback to iterate over 3 accounts
+        if (nhattinBillTrack) {
+          for (const defaultTag of Object.values(HaravanDeliverySendLocation)) {
+            const nhattinEmail = this.env[`${defaultTag.toUpperCase()}_EMAIL`];
+            const nhattinPassword = await this.env[`${defaultTag.toUpperCase()}_PASSWORD_SECRET`].get();
+            const nhattinPartnerId = this.env[`${defaultTag.toUpperCase()}_PARTNER_ID`];
+
+            nhattinBillTrack = await this.getNhattinOrderInfo(
+              trackingNumber,
+              bearerToken,
+              nhattinEmail,
+              nhattinPassword,
+              nhattinPartnerId
+            );
+
+            if (nhattinBillTrack) {
+              break;
+            }
+          }
+        }
+      } else {
+        const nhattinEmail = this.env[`${foundTag.toUpperCase()}_EMAIL`];
+        const nhattinPassword = await this.env[`${foundTag.toUpperCase()}_PASSWORD_SECRET`].get();
+        const nhattinPartnerId = this.env[`${foundTag.toUpperCase()}_PARTNER_ID`];
+
+        nhattinBillTrack = trackingNumber && await this.getNhattinOrderInfo(
+          trackingNumber,
+          bearerToken,
+          nhattinEmail,
+          nhattinPassword,
+          nhattinPartnerId
+        );
+      }
 
       let nhattinTrackingLog = [];
       const nhattinTrackingData = nhattinBillTrack?.data?.at(-1);
@@ -463,5 +517,12 @@ export default class OrderTrackingService {
       .createHmac("sha256", secret)
       .update(data)
       .digest("hex");
+  }
+
+  getDeliverySendLocationByTag(orderTags) {
+    if (!orderTags) return null;
+    const tagList = orderTags.split(",").map((t) => t.trim());
+    const validTags = Object.values(HaravanDeliverySendLocation);
+    return tagList.find(tag => validTags.includes(tag)) || null;
   }
 }
