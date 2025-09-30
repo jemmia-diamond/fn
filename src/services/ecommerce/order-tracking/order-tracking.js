@@ -156,42 +156,34 @@ export default class OrderTrackingService {
       const foundTag = this.getDeliverySendLocationByTag(orderTags);
 
       let nhattinBillTrack = null;
-      if (!foundTag) {
-        // If tag is not found, fallback to default account
-        nhattinBillTrack = trackingNumber && await this.getNhattinOrderInfo(trackingNumber, bearerToken);
 
-        // If bill is not found, fallback to iterate over 3 accounts
-        if (nhattinBillTrack) {
-          for (const defaultTag of Object.values(HaravanDeliverySendLocation)) {
-            const nhattinEmail = this.env[`${defaultTag.toUpperCase()}_EMAIL`];
-            const nhattinPassword = await this.env[`${defaultTag.toUpperCase()}_PASSWORD_SECRET`].get();
-            const nhattinPartnerId = this.env[`${defaultTag.toUpperCase()}_PARTNER_ID`];
+      if (trackingNumber) {
+        const getCredentialsForTag = async (tag) => {
+          if (!tag) {
+            return [];
+          }
+          const tagUpper = tag.toUpperCase();
+          const email = this.env[`${tagUpper}_EMAIL`];
+          const password = await this.env[`${tagUpper}_PASSWORD_SECRET`].get();
+          const partnerId = this.env[`${tagUpper}_PARTNER_ID`];
+          return [email, password, partnerId];
+        };
 
-            nhattinBillTrack = await this.getNhattinOrderInfo(
-              trackingNumber,
-              bearerToken,
-              nhattinEmail,
-              nhattinPassword,
-              nhattinPartnerId
-            );
+        const tagsToAttempt = foundTag
+          ? [foundTag]
+          : [null, ...Object.values(HaravanDeliverySendLocation)];
 
-            if (nhattinBillTrack) {
-              break;
-            }
+        for (const tag of tagsToAttempt) {
+          const credentials = await getCredentialsForTag(tag);
+          nhattinBillTrack = await this.getNhattinOrderInfo(
+            trackingNumber,
+            bearerToken,
+            ...credentials
+          );
+          if (nhattinBillTrack) {
+            break;
           }
         }
-      } else {
-        const nhattinEmail = this.env[`${foundTag.toUpperCase()}_EMAIL`];
-        const nhattinPassword = await this.env[`${foundTag.toUpperCase()}_PASSWORD_SECRET`].get();
-        const nhattinPartnerId = this.env[`${foundTag.toUpperCase()}_PARTNER_ID`];
-
-        nhattinBillTrack = trackingNumber && await this.getNhattinOrderInfo(
-          trackingNumber,
-          bearerToken,
-          nhattinEmail,
-          nhattinPassword,
-          nhattinPartnerId
-        );
       }
 
       let nhattinTrackingLog = [];
