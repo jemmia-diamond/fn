@@ -371,17 +371,17 @@ export default class SalesOrderService {
     const service = new SalesOrderService(env);
     const db = service.db;
 
-    const larkClient = await LarksuiteService.createClientV2(env);
+    const larkClient = LarksuiteService.createClient(env);
     try {
       const tenMinutesAgoDate = new Date();
       tenMinutesAgoDate.setMinutes(tenMinutesAgoDate.getMinutes() - 10);
       const tenMinutesAgoTimestamp = tenMinutesAgoDate.toISOString();
 
       // JEWELRY (Serial-based)
-      const jewelryIdsToUpdate = await service.processJewelryNotifications(db, tenMinutesAgoTimestamp, larkClient, env.LARK_TBDH_GROUP_CHAT_ID);
+      const jewelryIdsToUpdate = await service.processJewelryNotifications(db, tenMinutesAgoTimestamp, larkClient, CHAT_GROUPS.SUPPORT_ERP_SALES.chat_id);
 
       // DIAMOND (GIA-based)
-      const diamondIdsToUpdate = await service.processDiamondNotifications(db, tenMinutesAgoTimestamp, larkClient, env.LARK_TBDH_GROUP_CHAT_ID);
+      const diamondIdsToUpdate = await service.processDiamondNotifications(db, tenMinutesAgoTimestamp, larkClient, CHAT_GROUPS.SUPPORT_ERP_SALES.chat_id);
 
       return {
         success: true,
@@ -508,7 +508,7 @@ export default class SalesOrderService {
     return variantSerialIdsToUpdate;
   }
 
-  async processDiamondNotifications(db, timestamp,larkClient, groupId) {
+  async processDiamondNotifications(db, timestamp, larkClient, groupId) {
     const giaResult = await db.$queryRaw`
       SELECT li.sku FROM haravan.variants AS li 
       LEFT JOIN haravan.warehouse_inventories AS hw ON li.id = hw.variant_id 
@@ -551,8 +551,7 @@ export default class SalesOrderService {
   
       SELECT crm.*, jo.gia_report_no as gia_report_no, jo.haravan_variant_id as haravan_variant_id 
       FROM joined_orders jo
-      LEFT JOIN larksuite.crm_lark_message crm ON jo.order_id = crm.order_id 
-      WHERE crm.parent_id is NULL;
+      LEFT JOIN larksuite.crm_lark_message crm ON jo.order_id = crm.order_id;
     `;
 
     const giaNotifyResult = await db.$queryRaw`${Prisma.raw(dataSql)}`;
