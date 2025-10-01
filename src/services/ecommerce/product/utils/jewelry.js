@@ -137,16 +137,18 @@ export function aggregateQuery(jsonParams) {
   }
 
   if (jsonParams.ring_head_styles && jsonParams.ring_head_styles.length > 0) {
+    const normalizedHeadStyles = jsonParams.ring_head_styles.map(style => style.trim().toLowerCase());
     filterString += "AND (\n";
-    filterString += `  (d.ring_head_style IS NOT NULL AND d.ring_head_style != '' AND POSITION(' - ' IN d.ring_head_style) > 0 AND SPLIT_PART(d.ring_head_style, ' - ', 2) IN ('${jsonParams.ring_head_styles.join("','")}'))\n`;
-    filterString += `  OR (d.ring_head_style IS NOT NULL AND d.ring_head_style != '' AND POSITION(' - ' IN d.ring_head_style) = 0 AND d.ring_head_style IN ('${jsonParams.ring_head_styles.join("','")}'))\n`;
+    filterString += `  (d.ring_head_style IS NOT NULL AND d.ring_head_style != '' AND POSITION(' - ' IN d.ring_head_style) > 0 AND LOWER(SPLIT_PART(d.ring_head_style, ' - ', 2)) IN ('${normalizedHeadStyles.join("','")}'))\n`;
+    filterString += `  OR (d.ring_head_style IS NOT NULL AND d.ring_head_style != '' AND POSITION(' - ' IN d.ring_head_style) = 0 AND LOWER(d.ring_head_style) IN ('${normalizedHeadStyles.join("','")}'))\n`;
     filterString += ")\n";
   }
 
   if (jsonParams.ring_band_styles && jsonParams.ring_band_styles.length > 0) {
+    const normalizedBandStyles = jsonParams.ring_band_styles.map(style => style.trim().toLowerCase());
     filterString += "AND (\n";
-    filterString += `  (d.ring_band_style IS NOT NULL AND d.ring_band_style != '' AND POSITION(' - ' IN d.ring_band_style) > 0 AND SPLIT_PART(d.ring_band_style, ' - ', 2) IN ('${jsonParams.ring_band_styles.join("','")}'))\n`;
-    filterString += `  OR (d.ring_band_style IS NOT NULL AND d.ring_band_style != '' AND POSITION(' - ' IN d.ring_band_style) = 0 AND d.ring_band_style IN ('${jsonParams.ring_band_styles.join("','")}'))\n`;
+    filterString += `  (d.ring_band_style IS NOT NULL AND d.ring_band_style != '' AND POSITION(' - ' IN d.ring_band_style) > 0 AND LOWER(SPLIT_PART(d.ring_band_style, ' - ', 2)) IN ('${normalizedBandStyles.join("','")}'))\n`;
+    filterString += `  OR (d.ring_band_style IS NOT NULL AND d.ring_band_style != '' AND POSITION(' - ' IN d.ring_band_style) = 0 AND LOWER(d.ring_band_style) IN ('${normalizedBandStyles.join("','")}'))\n`;
     filterString += ")\n";
   }
 
