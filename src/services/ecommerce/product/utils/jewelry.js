@@ -136,6 +136,20 @@ export function aggregateQuery(jsonParams) {
     filterString += `AND d.tag IN ('${jsonParams.design_tags.join("','")}')\n`;
   }
 
+  if (jsonParams.ring_head_styles && jsonParams.ring_head_styles.length > 0) {
+    filterString += "AND (\n";
+    filterString += `  (d.ring_head_style IS NOT NULL AND d.ring_head_style != '' AND POSITION(' - ' IN d.ring_head_style) > 0 AND SPLIT_PART(d.ring_head_style, ' - ', 2) IN ('${jsonParams.ring_head_styles.join("','")}'))\n`;
+    filterString += `  OR (d.ring_head_style IS NOT NULL AND d.ring_head_style != '' AND POSITION(' - ' IN d.ring_head_style) = 0 AND d.ring_head_style IN ('${jsonParams.ring_head_styles.join("','")}'))\n`;
+    filterString += ")\n";
+  }
+
+  if (jsonParams.ring_band_styles && jsonParams.ring_band_styles.length > 0) {
+    filterString += "AND (\n";
+    filterString += `  (d.ring_band_style IS NOT NULL AND d.ring_band_style != '' AND POSITION(' - ' IN d.ring_band_style) > 0 AND SPLIT_PART(d.ring_band_style, ' - ', 2) IN ('${jsonParams.ring_band_styles.join("','")}'))\n`;
+    filterString += `  OR (d.ring_band_style IS NOT NULL AND d.ring_band_style != '' AND POSITION(' - ' IN d.ring_band_style) = 0 AND d.ring_band_style IN ('${jsonParams.ring_band_styles.join("','")}'))\n`;
+    filterString += ")\n";
+  }
+
   if (jsonParams.sort) {
     if (jsonParams.sort.by === "price") {
       sortString += `ORDER BY ${sortedColumn} ${jsonParams.sort.order === "asc" ? "ASC" : "DESC"}\n`;
