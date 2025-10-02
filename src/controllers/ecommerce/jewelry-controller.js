@@ -26,7 +26,10 @@ export default class JewelryController {
       },
       design_tags: params.design_tags ? params.design_tags.split(",") : [],
       ring_head_styles: params.ring_head_styles ? params.ring_head_styles.split(",") : [],
-      ring_band_styles: params.ring_band_styles ? params.ring_band_styles.split(",") : []
+      ring_band_styles: params.ring_band_styles ? params.ring_band_styles.split(",") : [],
+      excluded_ring_head_styles: params.excluded_ring_head_styles ? params.excluded_ring_head_styles.split(",") : [],
+      excluded_ring_band_styles: params.excluded_ring_band_styles ? params.excluded_ring_band_styles.split(",") : []
+
     };
 
     const productService = new Ecommerce.ProductService(ctx.env);
