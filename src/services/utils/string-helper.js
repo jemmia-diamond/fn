@@ -8,6 +8,6 @@ export function stringSquishLarkMessage(str) {
     .replace(/<br\s*\/?>/gi, "\n\n")
     .replace(/\\n/g, "\n")
     .split("\n")
-    .map(line => line.replace(/[ \t]+/g, " ").trimEnd())
+    .map(line => line.trim().replace(/[ \t]+/g, " "))
     .join("\n");
 }
