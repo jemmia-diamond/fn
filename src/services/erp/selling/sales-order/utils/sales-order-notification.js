@@ -43,24 +43,24 @@ export const composeSalesOrderNotification = (salesOrder, promotionData, leadSou
   `;
 
   content += `
-    * <b>Đặc điểm sản phẩm đơn hàng</b>:\\n${composeChildrenContent(productCategoryData, "title")}
+    * <b>Đặc điểm sản phẩm đơn hàng</b>:\n${composeChildrenContent(productCategoryData, "title")}
   `;
 
   content += `
-    * <b>Chính sách bảo hành</b>:\\n${composeChildrenContent(policyData, "title")}
+    * <b>Chính sách bảo hành</b>:\n${composeChildrenContent(policyData, "title")}
   `;
 
   const ordPromotion = orderPromotions && Array.isArray(orderPromotions) && orderPromotions.length > 0 ?
     composeChildrenContent(orderPromotions, "title")
     : " - Không";
   content += `
-    * <b>Chương trình khuyến mãi toàn đơn</b>:\\n${ordPromotion}
+    * <b>Chương trình khuyến mãi toàn đơn</b>:\n${ordPromotion}
   `;
 
   const secondSales = secondarySalesPeopleNameList.length ?
-    `\\n - Phụ: ${secondarySalesPeopleNameList.join(", ")}` : "";
+    `\n - Phụ: ${secondarySalesPeopleNameList.join(", ")}` : "";
   content += `
-    * Nhân viên phụ trách:\\n- Chính: ${primarySalesPerson.sales_person_name}${secondSales}
+    * Nhân viên phụ trách:\n- Chính: ${primarySalesPerson.sales_person_name}${secondSales}
   `;
 
   content += `
@@ -183,5 +183,5 @@ export function validateOrderInfo(salesOrderData, customer) {
 function composeChildrenContent(children, key) {
   return children
     .map((child) => " - " + child[key])
-    .join("\\n");
+    .join("\n");
 }
