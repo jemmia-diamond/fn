@@ -155,7 +155,7 @@ export default class SalesOrderService {
   };
 
   async sendNotificationToLark(salesOrderData) {
-    const larkClient = LarksuiteService.createClient(this.env);
+    const larkClient = await LarksuiteService.createClientV2(this.env);
 
     const notificationTracking = await this.db.erpnextSalesOrderNotificationTracking.findFirst({
       where: {
@@ -209,7 +209,7 @@ export default class SalesOrderService {
         receive_id_type: "chat_id"
       },
       data: {
-        receive_id: CHAT_GROUPS.SUPPORT_ERP_SALES.chat_id,
+        receive_id: CHAT_GROUPS.CUSTOMER_INFO.chat_id,
         msg_type: "text",
         content: JSON.stringify({
           text: content

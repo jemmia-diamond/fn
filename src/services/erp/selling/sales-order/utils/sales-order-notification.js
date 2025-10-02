@@ -19,11 +19,11 @@ export const composeSalesOrderNotification = (salesOrder, promotionData, leadSou
 
   const content = stringSquish(`
     <b>[${time}] JEMMIA xác nhận đơn hàng #${orderNumber}</b>
-    </br>
+
     Mã khách hàng: ${salesOrder.customer}
-    </br>
+
     ${salesOrder.items.map((item, idx) => composeItemContent(item, idx + 1, promotionData.filter((promotion) => [item.promotion_1, item.promotion_2, item.promotion_3, item.promotion_4].includes(promotion.name)))).join("\n\n")}
-    </br>
+
     * <b>Thông tin toàn đơn hàng</b>:
     - Tổng đơn hàng: ${numberToCurrency(salesOrder.grand_total)}
     - Ngày tư vấn: ${dayjs(salesOrder.consultation_date).format("DD-MM-YYYY")}
@@ -33,20 +33,20 @@ export const composeSalesOrderNotification = (salesOrder, promotionData, leadSou
     - Ngày thanh toán dự kiến: ${expectedPaymentDate}
     - Kênh tiếp cận đầu tiên: ${leadSource.source_name}
     - Hành trình khách hàng: ${customer.customer_journey}
-    </br>
+
     * <b>Đặc điểm sản phẩm đơn hàng</b>:
     ${composeChildrenContent(productCategoryData, "title")}
-    </br>
+
     * <b>Chính sách bảo hành</b>:
     ${composeChildrenContent(policyData, "title")}
-    </br>
+
     * <b>Chương trình khuyến mãi toàn đơn</b>:
     ${composeChildrenContent(orderPromotions, "title")}
-    </br>
+
     * Nhân viên phụ trách:
     - Chính: ${primarySalesPerson.sales_person_name}
     ${secondarySalesPeopleNameList.length ? "- Phụ: " + secondarySalesPeopleNameList.join(", ") : ""}
-    </br>
+
     * Link đơn hàng: https://erp.jemmia.vn/app/sales-order/${salesOrder.name}
   `);
   return content;
@@ -71,7 +71,7 @@ const composeItemContent = (item, idx, promotionData) => {
     Giá khuyến mãi: ${numberToCurrency(item.rate)}
     CTKM:
     ${composeChildrenContent(promotionData, "title")}
-    </br>
+
   `.replace(/\n+/g, "\n");
   return content;
 };
