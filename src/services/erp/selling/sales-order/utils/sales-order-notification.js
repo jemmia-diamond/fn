@@ -36,7 +36,7 @@ export const composeSalesOrderNotification = (salesOrder, promotionData, leadSou
     - Ngày tư vấn: ${dayjs(salesOrder.consultation_date).format("DD-MM-YYYY")}
     - Chiết khấu đơn hàng: ${salesOrder.discount_amount}
     - Số tiền đã cọc: ${numberToCurrency(salesOrder.paid_amount || salesOrder.deposit_amount || 0)}
-    - Số tiền còn lại: ${numberToCurrency(salesOrder.balance)}
+    - Số tiền còn lại: ${numberToCurrency(salesOrder.grand_total - (salesOrder.paid_amount || salesOrder.deposit_amount || 0))}
     - Ngày thanh toán dự kiến: ${expectedPaymentDate}
     - Kênh tiếp cận đầu tiên: ${leadSource.source_name}
     - Hành trình khách hàng: ${customer.customer_journey}
