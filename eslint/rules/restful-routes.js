@@ -25,7 +25,6 @@ class RestfulRoutesValidator {
       "get": ["index", "show"],
       "post": ["create"],
       "patch": ["update"],
-      "put": ["update"],
       "delete": ["destroy"]
     };
   }
