@@ -36,7 +36,7 @@ export default class CardController {
     const cardService = new Ecommerce.CardService(ctx.env);
     try {
       const result = await cardService.update(id, data);
-      return ctx.json({ success: true, data: result }, 200);
+      return ctx.json(result, 200);
     } catch (error) {
       console.error("Error updating data:", error);
       throw new HTTPException(500, { message: "Failed to update data", error: error.message });

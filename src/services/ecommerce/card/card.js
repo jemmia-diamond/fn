@@ -7,33 +7,29 @@ export default class CardService {
 
   async create(rawData) {
     try {
-      const query = `
+      const result = await this.db.$queryRaw`
         INSERT INTO ecom.leads (raw_data)
-        VALUES ($1)
-        RETURNING id, custom_uuid, database_created_at;
+        VALUES (${JSON.stringify(rawData)})
+        RETURNING custom_uuid, raw_data;
       `;
-      const values = [rawData];
-      const result = await this.db.query(query, values);
-      return result.rows[0];
+      return result[0];
     } catch (error) {
-      console.error("Error creating card:", error);
-      throw new Error("Failed to create card");
+      console.error("Error creating lead:", error);
+      throw new Error("Failed to create lead");
     }
   }
 
   async readById(customUuid) {
     try {
-      const query = `
-        SELECT id, raw_data, custom_uuid, database_created_at
+      const result = await this.db.$queryRaw`
+        SELECT raw_data, custom_uuid
         FROM ecom.leads
-        WHERE custom_uuid = $1;
+        WHERE custom_uuid = ${customUuid};
       `;
-      const values = [customUuid];
-      const result = await this.db.query(query, values);
-      if (result.rows.length === 0) {
+      if (result.length === 0) {
         throw new Error("Card not found");
       }
-      return result.rows[0];
+      return result[0];
     } catch (error) {
       console.error("Error reading card:", error);
       throw new Error("Failed to read card");
@@ -42,21 +38,23 @@ export default class CardService {
 
   async update(customUuid, rawData) {
     try {
-      const query = `
+      const result = await this.db.$queryRaw`
         UPDATE ecom.leads
-        SET raw_data = $1
-        WHERE custom_uuid = $2
-        RETURNING id, raw_data, custom_uuid, database_created_at;
+        SET raw_data = ${JSON.stringify(rawData)}
+        WHERE custom_uuid = ${customUuid}
+        RETURNING raw_data, custom_uuid;
       `;
-      const values = [rawData, customUuid];
-      const result = await this.db.query(query, values);
-      if (result.rows.length === 0) {
-        throw new Error("Card not found");
+
+      if (result.length === 0) {
+        throw new Error("Lead not found for the given UUID");
       }
-      return result.rows[0];
+      return result[0];
     } catch (error) {
-      console.error("Error updating card:", error);
-      throw new Error("Failed to update card");
+      console.error("Error updating lead:", error);
+      if (error.message.includes("Lead not found")) {
+        throw error;
+      }
+      throw new Error("Failed to update lead");
     }
   }
 }
