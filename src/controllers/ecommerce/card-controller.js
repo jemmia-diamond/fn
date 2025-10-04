@@ -29,4 +29,17 @@ export default class CardController {
       throw new HTTPException(500, { message: "Failed to fetch data", error: error.message });
     }
   }
+
+  static async update(ctx) {
+    const { id } = ctx.req.param();
+    const data = await ctx.req.json();
+    const cardService = new Ecommerce.CardService(ctx.env);
+    try {
+      const result = await cardService.update(id, data);
+      return ctx.json(result, 200);
+    } catch (error) {
+      console.error("Error updating data:", error);
+      throw new HTTPException(500, { message: "Failed to update data", error: error.message });
+    }
+  }
 }
