@@ -135,6 +135,23 @@ export function aggregateQuery(jsonParams) {
     filterString += ")\n";
   }
 
+  if (jsonParams.excluded_ring_band_styles && jsonParams.excluded_ring_band_styles.length > 0) {
+    const normalizedExcludedBandStyles = jsonParams.excluded_ring_band_styles.map(style => style.trim().toLowerCase());
+    filterString += `
+      AND (
+        d.ring_band_style IS NULL OR
+        d.ring_band_style = '' OR
+        LOWER(
+          CASE
+            WHEN POSITION(' - ' IN d.ring_band_style) > 0
+            THEN SPLIT_PART(d.ring_band_style, ' - ', 2)
+            ELSE d.ring_band_style
+          END
+        ) NOT IN ('${normalizedExcludedBandStyles.join("','")}')
+      )
+    `;
+  }
+
   return {
     filterString,
     sortString,

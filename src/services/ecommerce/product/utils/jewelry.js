@@ -152,6 +152,40 @@ export function aggregateQuery(jsonParams) {
     filterString += ")\n";
   }
 
+  if (jsonParams.excluded_ring_head_styles && jsonParams.excluded_ring_head_styles.length > 0) {
+    const normalizedExcludedHeadStyles = jsonParams.excluded_ring_head_styles.map(style => style.trim().toLowerCase());
+    filterString += `
+      AND (
+        d.ring_head_style IS NULL OR
+        d.ring_head_style = '' OR
+        LOWER(
+          CASE
+            WHEN POSITION(' - ' IN d.ring_head_style) > 0
+            THEN SPLIT_PART(d.ring_head_style, ' - ', 2)
+            ELSE d.ring_head_style
+          END
+        ) NOT IN ('${normalizedExcludedHeadStyles.join("','")}')
+      )
+    `;
+  }
+
+  if (jsonParams.excluded_ring_band_styles && jsonParams.excluded_ring_band_styles.length > 0) {
+    const normalizedExcludedBandStyles = jsonParams.excluded_ring_band_styles.map(style => style.trim().toLowerCase());
+    filterString += `
+      AND (
+        d.ring_band_style IS NULL OR
+        d.ring_band_style = '' OR
+        LOWER(
+          CASE
+            WHEN POSITION(' - ' IN d.ring_band_style) > 0
+            THEN SPLIT_PART(d.ring_band_style, ' - ', 2)
+            ELSE d.ring_band_style
+          END
+        ) NOT IN ('${normalizedExcludedBandStyles.join("','")}')
+      )
+    `;
+  }
+
   if (jsonParams.sort) {
     if (jsonParams.sort.by === "price") {
       sortString += `ORDER BY ${sortedColumn} ${jsonParams.sort.order === "asc" ? "ASC" : "DESC"}\n`;
