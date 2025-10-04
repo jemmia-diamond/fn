@@ -35,4 +35,26 @@ export default class CardService {
       throw new Error("Failed to read card");
     }
   }
+
+  async update(customUuid, rawData) {
+    try {
+      const result = await this.db.$queryRaw`
+        UPDATE ecom.leads
+        SET raw_data = ${JSON.stringify(rawData)}
+        WHERE custom_uuid = ${customUuid}
+        RETURNING raw_data, custom_uuid;
+      `;
+
+      if (result.length === 0) {
+        throw new Error("Lead not found for the given UUID");
+      }
+      return result[0];
+    } catch (error) {
+      console.error("Error updating lead:", error);
+      if (error.message.includes("Lead not found")) {
+        throw error;
+      }
+      throw new Error("Failed to update lead");
+    }
+  }
 }
