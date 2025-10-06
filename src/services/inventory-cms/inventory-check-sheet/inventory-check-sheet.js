@@ -9,6 +9,7 @@ import utc from "dayjs/plugin/utc.js";
 dayjs.extend(utc);
 
 export default class InventoryCheckSheetService {
+  static PAGE_SIZE = 50;
   constructor(env) {
     this.env = env;
     this.db = Database.instance(env, "neon");
@@ -47,7 +48,8 @@ export default class InventoryCheckSheetService {
           _gte: timeThreshold
         }
       },
-      limit: 100
+      limit: InventoryCheckSheetService.PAGE_SIZE,
+      deep: { lines: { _limit: -1 } }
     };
 
     // fetch all inventory check sheets created in the last 6 hours with pagination
