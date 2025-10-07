@@ -5,7 +5,7 @@ export function stringSquish(str) {
 export function stringSquishLarkMessage(str) {
   return str
     .trim()
-    .replace(/<br\s*\/?>/gi, "\n\n")
+    .replace(/<br\s*\/?br\s*\/?>/gi, "\n\n")
     .split("\n")
     .map(line => line.trim().replace(/[ \t]+/g, " "))
     .join("\n");
