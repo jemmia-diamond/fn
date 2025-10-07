@@ -28,8 +28,13 @@ export default class JewelryController {
       ring_head_styles: params.ring_head_styles ? params.ring_head_styles.split(",") : [],
       ring_band_styles: params.ring_band_styles ? params.ring_band_styles.split(",") : [],
       excluded_ring_head_styles: params.excluded_ring_head_styles ? params.excluded_ring_head_styles.split(",") : [],
-      excluded_ring_band_styles: params.excluded_ring_band_styles ? params.excluded_ring_band_styles.split(",") : []
-
+      excluded_ring_band_styles: params.excluded_ring_band_styles ? params.excluded_ring_band_styles.split(",") : [],
+      product_ids: params.product_ids
+        ? params.product_ids
+          .split(",")
+          .map((v) => Number(v.trim()))
+          .filter((n) => Number.isInteger(n) && n > 0)
+        : []
     };
 
     const productService = new Ecommerce.ProductService(ctx.env);
