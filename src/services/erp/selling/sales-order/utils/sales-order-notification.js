@@ -3,11 +3,14 @@ import utc from "dayjs/plugin/utc.js";
 import { SKU_LENGTH, SKU_PREFIX } from "services/haravan/products/product-variant/constant";
 import { numberToCurrency } from "services/utils/number-helper";
 import { stringSquishLarkMessage } from "services/utils/string-helper";
+import timezone from "dayjs/plugin/timezone.js";
 
 dayjs.extend(utc);
+dayjs.extend(timezone);
 
 export const composeSalesOrderNotification = (salesOrder, promotionData, leadSource, policyData, productCategoryData, customer, primarySalesPerson, secondarySalesPeople) => {
-  const time = dayjs().format("DD-MM-YYYY HH:mm:ss");
+  const hcmTime = dayjs().tz("Asia/Ho_Chi_Minh");
+  const time = hcmTime.format("DD-MM-YYYY HH:mm:ss");
   const orderNumber = salesOrder.order_number;
 
   const orderPromotionNames = salesOrder.promotions.map((promotion) => promotion.promotion);
