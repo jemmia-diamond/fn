@@ -1,5 +1,5 @@
 export function buildQuery(jsonParams) {
-  const { filterString, sortString, paginationString, handleFinenessPriority, collectionJoinEcomProductsClause, havingString } = aggregateQuery(jsonParams);
+  const { filterString, sortString, paginationString, handleFinenessPriority, collectionJoinEcomProductsClause, linkedCollectionJoinEcomProductsClause, havingString } = aggregateQuery(jsonParams);
 
   const finenessOrder = handleFinenessPriority === "14K" ? "ASC" : "DESC";
 
@@ -28,6 +28,7 @@ export function buildQuery(jsonParams) {
     FROM ecom.materialized_products p 
       INNER JOIN workplace.designs d ON p.design_id = d.id 
       ${collectionJoinEcomProductsClause}
+      ${linkedCollectionJoinEcomProductsClause}
 
       -- Subquery for pre-aggregated images
       INNER JOIN (
@@ -67,6 +68,7 @@ export function buildQuery(jsonParams) {
         FROM ecom.materialized_products p 
             INNER JOIN workplace.designs d ON d.id = p.design_id
             ${collectionJoinEcomProductsClause}
+            ${linkedCollectionJoinEcomProductsClause}
             INNER JOIN ecom.materialized_variants v ON v.haravan_product_id = p.haravan_product_id
         WHERE 1 = 1 
           AND (p.haravan_product_type != 'Nhẫn Cưới' OR (p.haravan_product_type = 'Nhẫn Cưới' AND d.gender = 'Nam'))
@@ -90,6 +92,7 @@ export function aggregateQuery(jsonParams) {
   let sortedColumn = "p.max_price_18";
   let collectionJoinEcomProductsClause = "";
   let havingString = "";
+  let linkedCollectionJoinEcomProductsClause = "";
 
   if (jsonParams.is_in_stock) {
     havingString += "HAVING SUM(v.qty_onhand) > 0\n";
@@ -134,6 +137,12 @@ export function aggregateQuery(jsonParams) {
 
   if (jsonParams.design_tags && jsonParams.design_tags.length > 0) {
     filterString += `AND d.tag IN ('${jsonParams.design_tags.join("','")}')\n`;
+  }
+
+  if (jsonParams.linked_collections && jsonParams.linked_collections.length > 0) {
+    linkedCollectionJoinEcomProductsClause += "INNER JOIN workplace._nc_m2m_haravan_collect_products linked_cp ON linked_cp.products_id = p.workplace_id \n";
+    linkedCollectionJoinEcomProductsClause += "INNER JOIN workplace.haravan_collections hc ON hc.id = linked_cp.haravan_collections_id \n";
+    filterString += `AND hc.title IN ('${jsonParams.linked_collections.join("','")}')\n`;
   }
 
   if (jsonParams.ring_head_styles && jsonParams.ring_head_styles.length > 0) {
@@ -215,6 +224,7 @@ export function aggregateQuery(jsonParams) {
     paginationString,
     handleFinenessPriority,
     collectionJoinEcomProductsClause,
+    linkedCollectionJoinEcomProductsClause,
     havingString
   };
 }
