@@ -196,6 +196,12 @@ export function aggregateQuery(jsonParams) {
     sortString += "ORDER BY p.image_updated_at DESC\n";
   }
 
+  if (jsonParams.product_ids.length) {
+    filterString += `
+      AND p.haravan_product_id IN (${jsonParams.product_ids.join(",")})
+    `;
+  }
+
   if (jsonParams.pagination) {
     paginationString += `LIMIT ${jsonParams.pagination.limit} `;
     if (jsonParams.pagination.from !== 1) {
