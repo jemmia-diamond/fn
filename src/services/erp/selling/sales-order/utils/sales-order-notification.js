@@ -188,14 +188,16 @@ function composeChildrenContent(children, key) {
 }
 
 function extractVariantNameForGIA(text) {
+  if (typeof text !== "string") return "";
   const regex = /^(\S+)/;
   const match = text.match(regex);
-  return match ? match[1] : null;
+  return match ? match[1] : "";
 }
 
 function extractVariantNameForJewelry(text) {
+  if (typeof text !== "string") return "";
   const regex = /^(.+? - .+? - .+?) - /;
   const match = text.match(regex);
-  return match ? match[1] : null;
+  return match ? match[1] : "";
 }
 
