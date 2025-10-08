@@ -81,7 +81,15 @@ const composeItemContent = (item, idx, promotionData) => {
   const serialNumbers = item.serial_numbers ? item.serial_numbers.split("\n").join(", ") : "";
   const content = `
     ${idx}. ${item.item_name}
-    Mã gốc: ${ item.sku.startsWith(SKU_PREFIX.DIAMOND) ? extractVariantNameForGIA(item.variant_title) : extractVariantNameForJewelry(item.variant_title)}
+    Mã gốc: ${
+      (() => {
+        const title = item?.variant_title || "";
+        const extracted = item.sku.startsWith(SKU_PREFIX.DIAMOND)
+          ? extractVariantNameForGIA(title)
+          : extractVariantNameForJewelry(title);
+        return extracted || title || "N/A";
+      })()
+    }
     SKU: ${item.sku}
     Số lượng: ${item.qty}
     Số serial: ${serialNumbers} 
