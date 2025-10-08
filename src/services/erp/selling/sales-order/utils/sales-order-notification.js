@@ -83,7 +83,7 @@ const composeItemContent = (item, idx, promotionData) => {
   const serialNumbers = item.serial_numbers ? item.serial_numbers.split("\n").join(", ") : "";
   const content = `
     ${idx}. ${item.item_name}
-    Mã gốc: ${item.variant_title}
+    Mã gốc: ${ item.sku.startsWith(SKU_PREFIX.DIAMOND) ? extractVariantNameForGIA(item.variant_title) : extractVariantNameForJewelry(item.variant_title)}
     SKU: ${item.sku}
     Số lượng: ${item.qty}
     Số serial: ${serialNumbers} 
@@ -188,3 +188,16 @@ function composeChildrenContent(children, key) {
     .map((child) => " - " + child[key])
     .join("\n");
 }
+
+function extractVariantNameForGIA(text) {
+  const regex = /^(\S+)/;
+  const match = text.match(regex);
+  return match ? match[1] : null;
+}
+
+function extractVariantNameForJewelry(text) {
+  const regex = /^(.+? - .+? - .+?) - /;
+  const match = text.match(regex);
+  return match ? match[1] : null;
+}
+
