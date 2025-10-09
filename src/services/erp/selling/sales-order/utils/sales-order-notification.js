@@ -67,6 +67,14 @@ export const composeSalesOrderNotification = (salesOrder, promotionData, leadSou
   content += `
     * Link đơn hàng: https://erp.jemmia.vn/app/sales-order/${salesOrder.name}
   `;
+
+  const attachments = salesOrder.attachments && Array.isArray(salesOrder.attachments) && salesOrder.attachments.length > 0 ?
+    salesOrder.attachments.map((attachment) => attachment.file_url).join("\n") : "Không có";
+
+  content += `
+    * Hình ảnh đính kèm:\n${attachments}
+  `;
+
   return stringSquishLarkMessage(content);
 };
 
