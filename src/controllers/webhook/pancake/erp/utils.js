@@ -1,5 +1,5 @@
 export const shouldReceiveWebhook = (body) => {
-  if (body?.event_type === "messaging") {
+  if (body?.event_type !== "messaging") {
     return false;
   }
 
