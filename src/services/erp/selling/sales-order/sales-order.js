@@ -5,7 +5,7 @@ import Database from "src/services/database";
 import AddressService from "src/services/erp/contacts/address/address";
 import ContactService from "src/services/erp/contacts/contact/contact";
 import CustomerService from "src/services/erp/selling/customer/customer";
-import { composeSalesOrderNotification, extractPromotions, validateOrderInfo } from "services/erp/selling/sales-order/utils/sales-order-notification";
+import { composeOrderUpdateMessage, composeSalesOrderNotification, extractPromotions, validateOrderInfo } from "services/erp/selling/sales-order/utils/sales-order-notification";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/constant";
@@ -163,7 +163,18 @@ export default class SalesOrderService {
       }
     });
 
+    let promotionData = null;
     if (notificationTracking) {
+      const promotionNames = extractPromotions(salesOrderData);
+      promotionData = await this.frappeClient.getList("Promotion", {
+        filters: [["name", "in", promotionNames]]
+      });
+      const composedReplyMessage = composeOrderUpdateMessage(notificationTracking.prev_order || {}, salesOrderData);
+
+      if (composedReplyMessage) {
+        // Reply to the root message in the group chat
+      }
+
       return { success: false, message: "Đơn hàng này đã được gửi thông báo từ trước đó!" };
     }
 
@@ -187,9 +198,11 @@ export default class SalesOrderService {
     });
 
     const promotionNames = extractPromotions(salesOrderData);
-    const promotionData = await this.frappeClient.getList("Promotion", {
-      filters: [["name", "in", promotionNames]]
-    });
+    if (!promotionData) {
+      promotionData = await this.frappeClient.getList("Promotion", {
+        filters: [["name", "in", promotionNames]]
+      });
+    }
 
     const primarySalesPersonName = salesOrderData.primary_sales_person;
     const primarySalesPerson = await this.frappeClient.getDoc("Sales Person", primarySalesPersonName);

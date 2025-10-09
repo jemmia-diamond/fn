@@ -86,15 +86,10 @@ const composeItemContent = (item, idx, promotionData) => {
     `;
   }
 
-  const title = item?.variant_title || "";
-  const extracted = item.sku.startsWith(SKU_PREFIX.DIAMOND)
-    ? extractVariantNameForGIA(title)
-    : extractVariantNameForJewelry(title);
-
   const serialNumbers = item.serial_numbers ? item.serial_numbers.split("\n").join(", ") : "";
   const content = `
     ${idx}. ${item.item_name}
-    Mã gốc: ${extracted || title || "N/A"}
+    Mã gốc: ${extractVariantTitle(item)}
     SKU: ${item.sku}
     Số lượng: ${item.qty}
     Số serial: ${serialNumbers} 
@@ -214,3 +209,132 @@ function extractVariantNameForJewelry(text) {
   return match ? match[1] : "";
 }
 
+export const composeOrderUpdateMessage = (prevOrder, salesOrder) => {
+  const attachmentMessage =  composeAttachmentMessage(prevOrder.attachments || [], salesOrder.attachments || []);
+  const lineItemMessage = composeLineItemsChangeMessage(prevOrder.items || [], salesOrder.items || []);
+
+  let content = "";
+  if (lineItemMessage) {
+    content += `${lineItemMessage}`;
+  }
+
+  if (attachmentMessage) {
+    content += `${attachmentMessage}`;
+  }
+
+  return content;
+};
+
+const composeAttachmentMessage = (prevAttachments, attachments) => {
+  const prevAttachmentUrls = (prevAttachments || []).map((attachment) => attachment.file_url);
+  const newAttachmentUrls = (attachments || []).map((attachment) => attachment.file_url);
+
+  const addedAttachments = newAttachmentUrls.filter((url) => !prevAttachmentUrls.includes(url));
+  const removedAttachments = prevAttachmentUrls.filter((url) => !newAttachmentUrls.includes(url));
+
+  let message = "";
+
+  if (addedAttachments.length > 0) {
+    message += `* Hình ảnh đính kèm mới:\n${addedAttachments.join("\n")}`;
+  }
+
+  if (removedAttachments.length > 0) {
+    message += `* Hình ảnh đính kèm đã bị xoá:\n${removedAttachments.join("\n")}`;
+  }
+
+  return message;
+};
+
+const composeLineItemsChangeMessage = (oldItems, newItems) => {
+  let message = "";
+  const addedItems = newItems.filter(newItem => !oldItems.find(oldItem => oldItem.name === newItem.name));
+  const removedItems = oldItems.filter(oldItem => !newItems.find(newItem => newItem.name === oldItem.name));
+  const updatedItems = newItems.filter(newItem => oldItems.find(oldItem => oldItem.name === newItem.name));
+
+  if (addedItems.length > 0) {
+    message += "\n* Sản phẩm được thêm mới:\n";
+    addedItems.forEach(item => {
+      message += `${item.item_name}\n`;
+      message += `Mã gốc: ${extractVariantTitle(item)}\n`;
+      message += `SKU: ${item.sku}\n`;
+      message += `Số lượng: ${item.qty}\n`;
+      message += `Số serial: ${item.serial_numbers || "N/A"}\n`;
+      message += `Giá: ${numberToCurrency(item.price_list_rate)}\n`;
+      message += `Giá khuyến mãi: ${numberToCurrency(item.rate)}\n`;
+      message += `CTKM: ${[item.promotion_1, item.promotion_2, item.promotion_3, item.promotion_4].filter(Boolean).join(", ") || "N/A"}\n\n`;
+    });
+  }
+
+  if (removedItems.length > 0) {
+    message += "\n* Sản phẩm bị loại bỏ:\n";
+    removedItems.forEach(item => {
+      message += `- ${item.item_name} (SKU: ${item.sku})\n`;
+    });
+  }
+
+  if (updatedItems.length > 0) {
+    message += "\n* Sản phẩm được cập nhật:\n";
+    updatedItems.forEach(newItem => {
+      const oldItem = oldItems.find(oldItem => oldItem.name === newItem.name);
+      if (oldItem) {
+        const changes = [];
+
+        if (newItem.variant_title !== oldItem.variant_title) {
+          changes.push(`Mã gốc: ${extractVariantTitle(oldItem)} → ${extractVariantTitle(newItem)}`);
+        }
+        if (newItem.sku !== oldItem.sku) {
+          changes.push(`SKU: ${oldItem.sku} → ${newItem.sku}`);
+        }
+        if (newItem.qty !== oldItem.qty) {
+          changes.push(`Số lượng: ${oldItem.qty} → ${newItem.qty}`);
+        }
+        if (newItem.serial_numbers !== oldItem.serial_numbers) {
+          changes.push(`Số serial: ${oldItem.serial_numbers || "N/A"} → ${newItem.serial_numbers || "N/A"}`);
+        }
+        if (newItem.price_list_rate !== oldItem.price_list_rate) {
+          changes.push(`Giá: ${numberToCurrency(oldItem.price_list_rate)} → ${numberToCurrency(newItem.price_list_rate)}`);
+        }
+        if (newItem.rate !== oldItem.rate) {
+          changes.push(`Giá khuyến mãi: ${numberToCurrency(oldItem.rate)} → ${numberToCurrency(newItem.rate)}`);
+        }
+
+        // Promotions
+        const oldPromotions = [oldItem.promotion_1, oldItem.promotion_2, oldItem.promotion_3, oldItem.promotion_4].filter(Boolean);
+        const newPromotions = [newItem.promotion_1, newItem.promotion_2, newItem.promotion_3, newItem.promotion_4].filter(Boolean);
+
+        const addedPromotions = newPromotions.filter(promo => !oldPromotions.includes(promo));
+        const removedPromotions = oldPromotions.filter(promo => !newPromotions.includes(promo));
+
+        if (addedPromotions.length > 0 || removedPromotions.length > 0) {
+          let promotionChanges = "";
+          if (addedPromotions.length > 0) {
+            promotionChanges += `Thêm khuyến mãi: ${addedPromotions.join(", ")}\n`;
+          }
+          if (removedPromotions.length > 0) {
+            promotionChanges += `Xóa khuyến mãi: ${removedPromotions.join(", ")}\n`;
+          }
+          changes.push(promotionChanges.trim());
+        }
+
+        if (changes.length > 0) {
+          changes.unshift(`${newItem.item_name}`);
+          changes.forEach(change => {
+            message += `  - ${change}\n`;
+          });
+        }
+      }
+    });
+  }
+
+  return message;
+
+};
+
+const extractVariantTitle = (item) => {
+  const title = item?.variant_title || "";
+  const extracted = item.sku.startsWith(SKU_PREFIX.DIAMOND) || item.sku.startsWith(SKU_PREFIX.DIAMOND_TEMPORARY)
+    ? extractVariantNameForGIA(title)
+    : extractVariantNameForJewelry(title);
+
+  return extracted || title || "N/A";
+};
