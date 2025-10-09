@@ -2,6 +2,7 @@ import PancakeClient from "pancake/pancake-client";
 import Database from "services/database";
 import LeadService from "services/erp/crm/lead/lead";
 import AIHUBClient from "services/clients/aihub";
+import { shouldReceiveWebhook } from "controllers/webhook/pancake/erp/utils";
 
 export default class ConversationService {
   constructor(env) {
@@ -108,26 +109,15 @@ export default class ConversationService {
 
   async syncCustomerToLeadCrm(body) {
     try {
-      const adminId = body?.data?.message?.from?.admin_id;
-      // Ignore message from admin
-      if (adminId) {
-        return;
-      }
+      const receiveWebhook = shouldReceiveWebhook(body);
 
-      // Ignore if it is not messaging
-      if (body?.event_type !== "messaging") {
+      if (!receiveWebhook) {
         return;
       }
 
       const conversationId = body?.data?.conversation?.id;
-      if (!conversationId || conversationId.trim() === "") {
-        return;
-      }
 
       const pageId = body?.page_id;
-      if (!pageId || pageId.trim() === "") {
-        return;
-      }
 
       const hasPhone = body?.data?.message?.has_phone;
       if (hasPhone === undefined || hasPhone === false) {

@@ -1,5 +1,6 @@
 import { HTTPException } from "hono/http-exception";
 import { DebounceActions, DebounceService } from "src/durable-objects";
+import { shouldReceiveWebhook } from "controllers/webhook/pancake/erp/utils";
 
 export default class PancakeERPMessageController {
   static async create(ctx) {
@@ -7,11 +8,14 @@ export default class PancakeERPMessageController {
     try {
       if (data.event_type === "messaging") {
         await ctx.env["MESSAGE_QUEUE"].send(data);
-        const conversationId = data?.data?.conversation?.id;
 
-        if (!conversationId) {
-          throw new Error("Conversation ID is required for message batching");
+        const receiveWebhook = shouldReceiveWebhook(data);
+
+        if (!receiveWebhook) {
+          return;
         }
+
+        const conversationId = data?.data?.conversation?.id;
 
         const key = `conversation-${conversationId}`;
         await DebounceService.debounce({
