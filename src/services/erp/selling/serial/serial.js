@@ -43,19 +43,19 @@ export default class SerialService {
     const serialService = new SerialService(env);
     const serials = await serialService.getSerialsToUpdate(timeThreshold);
 
-    const results = await Promise.allSettled(serials.map(serial =>
+    const promises = serials.map(serial =>
       serialService.frappeClient.upsert({
         doctype: serialService.doctype,
         serial_number: serial.serial_number,
         sku: serial.sku,
         design_code: serial.design_code
-      }, "serial_number")
-    ));
+      }, "serial_number").catch(e => {
+        console.error((`Error upserting serial ${serial.serial_number}: `, e));
+      })
+    );
 
-    results.forEach((result, index) => {
-      if (result.status === "rejected") {
-        console.error(`Failed to upsert serial: ${serials[index].serial_number}. Reason:`, result.reason);
-      }
-    });
+    await Promise.all(
+      promises
+    );
   }
 }
