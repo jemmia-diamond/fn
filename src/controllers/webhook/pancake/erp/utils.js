@@ -1,4 +1,8 @@
 export const shouldReceiveWebhook = (body) => {
+  if (body?.event_type === "messaging") {
+    return false;
+  }
+
   const adminId = body?.data?.message?.from?.admin_id;
   // Ignore message from admin
   if (adminId) {

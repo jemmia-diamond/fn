@@ -75,19 +75,15 @@ export default class ConversationService {
 
   async processLastCustomerMessage(body) {
     try {
+      const receiveWebhook = shouldReceiveWebhook(body);
+
+      if (!receiveWebhook) {
+        return;
+      }
+
       const message = body?.data?.message;
       if (!message) {
         console.warn(`No message found in data: ${JSON.stringify(body?.data)}`);
-        return;
-      }
-
-      const from = body?.data?.message?.from;
-      if (from?.admin_id) {
-        return;
-      }
-
-      // Ignore if it is not messaging
-      if (body?.event_type !== "messaging") {
         return;
       }
 
@@ -95,7 +91,7 @@ export default class ConversationService {
       const pageId = message.page_id;
       const insertedAt = message.inserted_at;
 
-      if (!conversationId || !pageId || !insertedAt) {
+      if (!insertedAt) {
         throw new Error("Page ID: " + pageId + ", Conversation ID: " + conversationId + ", Inserted At: " + insertedAt);
       }
       // Store the time of the last customer message
@@ -174,20 +170,16 @@ export default class ConversationService {
   }
 
   async summarizeLead(env, body) {
-    // Skip if webhook's event_type is not "messaging"
-    if (body?.event_type !== "messaging") {
+    const receiveWebhook = shouldReceiveWebhook(body);
+
+    if (!receiveWebhook) {
       return;
     }
 
     const { data } = body;
     const { message } = data;
 
-    // Skip if the message is from admin
-    if (message?.from?.admin_id) { return; }
-
     const conversationId = message?.conversation_id;
-
-    if (!conversationId) { return; }
 
     const existingDocName = await this.findExistingLead({
       conversationId: conversationId

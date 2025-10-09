@@ -7,13 +7,13 @@ export default class PancakeERPMessageController {
     const data = await ctx.req.json();
     try {
       if (data.event_type === "messaging") {
-        await ctx.env["MESSAGE_QUEUE"].send(data);
-
         const receiveWebhook = shouldReceiveWebhook(data);
 
         if (!receiveWebhook) {
           return;
         }
+
+        await ctx.env["MESSAGE_QUEUE"].send(data);
 
         const conversationId = data?.data?.conversation?.id;
 
