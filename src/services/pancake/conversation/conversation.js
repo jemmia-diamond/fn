@@ -2,6 +2,7 @@ import PancakeClient from "pancake/pancake-client";
 import Database from "services/database";
 import LeadService from "services/erp/crm/lead/lead";
 import AIHUBClient from "services/clients/aihub";
+import { shouldReceiveWebhook } from "controllers/webhook/pancake/erp/utils";
 
 export default class ConversationService {
   constructor(env) {
@@ -74,19 +75,15 @@ export default class ConversationService {
 
   async processLastCustomerMessage(body) {
     try {
+      const receiveWebhook = shouldReceiveWebhook(body);
+
+      if (!receiveWebhook) {
+        return;
+      }
+
       const message = body?.data?.message;
       if (!message) {
         console.warn(`No message found in data: ${JSON.stringify(body?.data)}`);
-        return;
-      }
-
-      const from = body?.data?.message?.from;
-      if (from?.admin_id) {
-        return;
-      }
-
-      // Ignore if it is not messaging
-      if (body?.event_type !== "messaging") {
         return;
       }
 
@@ -94,7 +91,7 @@ export default class ConversationService {
       const pageId = message.page_id;
       const insertedAt = message.inserted_at;
 
-      if (!conversationId || !pageId || !insertedAt) {
+      if (!insertedAt) {
         throw new Error("Page ID: " + pageId + ", Conversation ID: " + conversationId + ", Inserted At: " + insertedAt);
       }
       // Store the time of the last customer message
@@ -108,26 +105,15 @@ export default class ConversationService {
 
   async syncCustomerToLeadCrm(body) {
     try {
-      const adminId = body?.data?.message?.from?.admin_id;
-      // Ignore message from admin
-      if (adminId) {
-        return;
-      }
+      const receiveWebhook = shouldReceiveWebhook(body);
 
-      // Ignore if it is not messaging
-      if (body?.event_type !== "messaging") {
+      if (!receiveWebhook) {
         return;
       }
 
       const conversationId = body?.data?.conversation?.id;
-      if (!conversationId || conversationId.trim() === "") {
-        return;
-      }
 
       const pageId = body?.page_id;
-      if (!pageId || pageId.trim() === "") {
-        return;
-      }
 
       const hasPhone = body?.data?.message?.has_phone;
       if (hasPhone === undefined || hasPhone === false) {
@@ -184,20 +170,16 @@ export default class ConversationService {
   }
 
   async summarizeLead(env, body) {
-    // Skip if webhook's event_type is not "messaging"
-    if (body?.event_type !== "messaging") {
+    const receiveWebhook = shouldReceiveWebhook(body);
+
+    if (!receiveWebhook) {
       return;
     }
 
     const { data } = body;
     const { message } = data;
 
-    // Skip if the message is from admin
-    if (message?.from?.admin_id) { return; }
-
     const conversationId = message?.conversation_id;
-
-    if (!conversationId) { return; }
 
     const existingDocName = await this.findExistingLead({
       conversationId: conversationId
