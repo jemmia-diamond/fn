@@ -10,7 +10,7 @@ export default class PancakeERPMessageController {
         const receiveWebhook = shouldReceiveWebhook(data);
 
         if (!receiveWebhook) {
-          return;
+          return ctx.json({ message: "Message Ignored" });
         }
 
         await ctx.env["MESSAGE_QUEUE"].send(data);
