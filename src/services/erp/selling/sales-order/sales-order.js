@@ -108,7 +108,8 @@ export default class SalesOrderService {
       total_amount: haravanOrderData.total_price,
       grand_total: haravanOrderData.total_price,
       paid_amount: paidAmount,
-      balance: haravanOrderData.total_price - paidAmount
+      balance: haravanOrderData.total_price - paidAmount,
+      real_order_date: dayjs(haravanOrderData.created_at).utc().format("YYYY-MM-DD")
     };
     const order = await this.frappeClient.upsert(mappedOrderData, "haravan_order_id", ["items"]);
     return order;
