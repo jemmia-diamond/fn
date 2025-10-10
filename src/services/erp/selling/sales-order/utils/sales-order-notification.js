@@ -239,6 +239,9 @@ const composeAttachmentMessage = (prevAttachments, attachments) => {
   }
 
   if (removedAttachments.length > 0) {
+    if (message) {
+      message += "\n";
+    }
     message += `* Hình ảnh đính kèm đã bị xoá:\n${removedAttachments.join("\n")}`;
   }
 
