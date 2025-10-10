@@ -69,7 +69,7 @@ export const composeSalesOrderNotification = (salesOrder, promotionData, leadSou
   `;
 
   const attachments = salesOrder.attachments && Array.isArray(salesOrder.attachments) && salesOrder.attachments.length > 0 ?
-    salesOrder.attachments.map((attachment) => attachment.file_url).join("\n") : "Không có";
+    salesOrder.attachments.map((attachment) => attachment.file_url).join("\n") : "- Không";
 
   content += `
     * Hình ảnh đính kèm:\n${attachments}
@@ -209,17 +209,17 @@ function extractVariantNameForJewelry(text) {
   return match ? match[1] : "";
 }
 
-export const composeOrderUpdateMessage = (prevOrder, salesOrder) => {
+export const composeOrderUpdateMessage = (prevOrder, salesOrder, promotionData) => {
   const attachmentMessage =  composeAttachmentMessage(prevOrder.attachments || [], salesOrder.attachments || []);
-  const lineItemMessage = composeLineItemsChangeMessage(prevOrder.items || [], salesOrder.items || []);
+  const lineItemMessage = composeLineItemsChangeMessage(prevOrder.items || [], salesOrder.items || [], promotionData);
 
   let content = "";
   if (lineItemMessage) {
-    content += `${lineItemMessage}`;
+    content += `${lineItemMessage}\n`;
   }
 
   if (attachmentMessage) {
-    content += `${attachmentMessage}`;
+    content += `${attachmentMessage}\n`;
   }
 
   return content;
@@ -245,35 +245,42 @@ const composeAttachmentMessage = (prevAttachments, attachments) => {
   return message;
 };
 
-const composeLineItemsChangeMessage = (oldItems, newItems) => {
+const composeLineItemsChangeMessage = (oldItems, newItems, promotionData) => {
   let message = "";
   const addedItems = newItems.filter(newItem => !oldItems.find(oldItem => oldItem.name === newItem.name));
   const removedItems = oldItems.filter(oldItem => !newItems.find(newItem => newItem.name === oldItem.name));
   const updatedItems = newItems.filter(newItem => oldItems.find(oldItem => oldItem.name === newItem.name));
 
   if (addedItems.length > 0) {
-    message += "\n* Sản phẩm được thêm mới:\n";
+    message += "* <b>Sản phẩm được thêm mới: </b>\n";
     addedItems.forEach(item => {
-      message += `${item.item_name}\n`;
+      message += `<i>${item.item_name}</i>\n`;
       message += `Mã gốc: ${extractVariantTitle(item)}\n`;
       message += `SKU: ${item.sku}\n`;
       message += `Số lượng: ${item.qty}\n`;
       message += `Số serial: ${item.serial_numbers || "N/A"}\n`;
       message += `Giá: ${numberToCurrency(item.price_list_rate)}\n`;
       message += `Giá khuyến mãi: ${numberToCurrency(item.rate)}\n`;
-      message += `CTKM: ${[item.promotion_1, item.promotion_2, item.promotion_3, item.promotion_4].filter(Boolean).join(", ") || "N/A"}\n\n`;
+
+      const itemPromotions = promotionData.filter((promotion) => [item.promotion_1, item.promotion_2, item.promotion_3, item.promotion_4].includes(promotion.name));
+      if (itemPromotions && itemPromotions.length > 0) {
+        message += "CTKM: \n";
+        message += `${composeChildrenContent(itemPromotions, "title")}`;
+      }
     });
+    message += "\n";
   }
 
   if (removedItems.length > 0) {
-    message += "\n* Sản phẩm bị loại bỏ:\n";
+    message += "* <b>Sản phẩm bị loại bỏ: </b>\n";
     removedItems.forEach(item => {
       message += `- ${item.item_name} (SKU: ${item.sku})\n`;
     });
+    message += "\n";
   }
 
   if (updatedItems.length > 0) {
-    message += "\n* Sản phẩm được cập nhật:\n";
+    let itemMessges = "";
     updatedItems.forEach(newItem => {
       const oldItem = oldItems.find(oldItem => oldItem.name === newItem.name);
       if (oldItem) {
@@ -307,23 +314,27 @@ const composeLineItemsChangeMessage = (oldItems, newItems) => {
 
         if (addedPromotions.length > 0 || removedPromotions.length > 0) {
           let promotionChanges = "";
-          if (addedPromotions.length > 0) {
-            promotionChanges += `Thêm khuyến mãi: ${addedPromotions.join(", ")}\n`;
-          }
-          if (removedPromotions.length > 0) {
-            promotionChanges += `Xóa khuyến mãi: ${removedPromotions.join(", ")}\n`;
+          if (newPromotions.length > 0) {
+            promotionChanges += "CTKM: \n";
+            promotionChanges += `${composeChildrenContent(promotionData.filter((promotion) => newPromotions.includes(promotion.name)), "title")}\n`;
           }
           changes.push(promotionChanges.trim());
         }
 
         if (changes.length > 0) {
-          changes.unshift(`${newItem.item_name}`);
+          changes.unshift(`<i>${newItem.item_name}</i>`);
           changes.forEach(change => {
-            message += `  - ${change}\n`;
+            itemMessges += `${change}\n`;
           });
         }
       }
     });
+
+    if (itemMessges) {
+      message += "* <b>Sản phẩm được cập nhật:</b>\n";
+      message += itemMessges;
+      message += "\n";
+    }
   }
 
   return message;
