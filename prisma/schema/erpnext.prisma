@@ -511,6 +511,7 @@ model erpnextSalesOrderNotificationTracking {
   lark_message_id     String
   database_created_at DateTime @default(now())
   database_updated_at DateTime @updatedAt
+  order_data          Json?   @db.JsonB
 
   @@map("sales_order_notification_tracking")
   @@schema("erpnext")

@@ -5,7 +5,7 @@ import Database from "src/services/database";
 import AddressService from "src/services/erp/contacts/address/address";
 import ContactService from "src/services/erp/contacts/contact/contact";
 import CustomerService from "src/services/erp/selling/customer/customer";
-import { composeSalesOrderNotification, extractPromotions, validateOrderInfo } from "services/erp/selling/sales-order/utils/sales-order-notification";
+import { composeOrderUpdateMessage, composeSalesOrderNotification, extractPromotions, validateOrderInfo } from "services/erp/selling/sales-order/utils/sales-order-notification";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/constant";
@@ -164,7 +164,48 @@ export default class SalesOrderService {
       }
     });
 
+    let promotionData = null;
     if (notificationTracking) {
+      const promotionNames = extractPromotions(salesOrderData);
+      promotionData = await this.frappeClient.getList("Promotion", {
+        filters: [["name", "in", promotionNames]]
+      });
+      const composedReplyMessage = composeOrderUpdateMessage(notificationTracking.order_data || {}, salesOrderData, promotionData);
+
+      if (composedReplyMessage) {
+        // Reply to the root message in the group chat
+        const replyResponse = await larkClient.im.message.reply({
+          path: {
+            message_id: notificationTracking.lark_message_id
+          },
+          data: {
+            receive_id: CHAT_GROUPS.CUSTOMER_INFO.chat_id,
+            msg_type: "text",
+            reply_in_thread: true,
+            content: JSON.stringify({
+              text: composedReplyMessage
+            })
+          }
+        });
+
+        if (replyResponse.msg === "success") {
+        // Update
+          await this.db.erpnextSalesOrderNotificationTracking.updateMany({
+            where: {
+              id: notificationTracking.id
+            },
+            data: {
+              order_data: {
+                items: salesOrderData.items,
+                attachments: salesOrderData.attachments
+              }
+            }
+          });
+        }
+
+        return { success: true, message: "Gửi cập nhật đơn thành công!" };
+      }
+
       return { success: false, message: "Đơn hàng này đã được gửi thông báo từ trước đó!" };
     }
 
@@ -188,9 +229,11 @@ export default class SalesOrderService {
     });
 
     const promotionNames = extractPromotions(salesOrderData);
-    const promotionData = await this.frappeClient.getList("Promotion", {
-      filters: [["name", "in", promotionNames]]
-    });
+    if (!promotionData) {
+      promotionData = await this.frappeClient.getList("Promotion", {
+        filters: [["name", "in", promotionNames]]
+      });
+    }
 
     const primarySalesPersonName = salesOrderData.primary_sales_person;
     const primarySalesPerson = await this.frappeClient.getDoc("Sales Person", primarySalesPersonName);
@@ -224,7 +267,11 @@ export default class SalesOrderService {
       data: {
         lark_message_id: messageId,
         order_name: salesOrderData.name,
-        haravan_order_id: salesOrderData.haravan_order_id
+        haravan_order_id: salesOrderData.haravan_order_id,
+        order_data: {
+          items: salesOrderData.items,
+          attachments: salesOrderData.attachments
+        }
       }
     });
 
