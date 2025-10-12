@@ -7,7 +7,7 @@
     "deploy": "wrangler deploy --minify",
     "lint": "eslint",
     "lint:staged": "lint-staged",
-    "prepare": "husky install",
+    "prepare": "husky",
     "format": "eslint --fix"
   },
   "dependencies": {
