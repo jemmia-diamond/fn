@@ -1,4 +1,3 @@
-import { track } from "@middleware.io/agent-apm-worker";
 import { Hono } from "hono";
 import { bearerAuth } from "hono/bearer-auth";
 
