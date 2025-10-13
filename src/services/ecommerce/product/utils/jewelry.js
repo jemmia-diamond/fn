@@ -22,6 +22,7 @@ export function buildQuery(jsonParams) {
           'ring_size', v.ring_size,
           'price', CAST(v.price AS Decimal),
           'price_compare_at', CAST(v.price_compare_at AS Decimal),
+          'qty_available', v.qty_available,
           'qty_onhand', v.qty_onhand
         )
       ) AS variants
@@ -95,7 +96,7 @@ export function aggregateQuery(jsonParams) {
   let linkedCollectionJoinEcomProductsClause = "";
 
   if (jsonParams.is_in_stock) {
-    havingString += "HAVING SUM(v.qty_onhand) > 0\n";
+    havingString += "HAVING SUM(v.qty_available) > 0\n";
   }
 
   if (jsonParams.categories && jsonParams.categories.length > 0) {

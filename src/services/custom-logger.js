@@ -60,7 +60,7 @@ class CustomLogger {
     const logMessage = logParts.join(" ");
     console.log(logMessage);
 
-    // Send custom logs to middleware.io APM
+    // Send custom logs
     try {
       if (trackObject && trackObject.logger) {
         // Log different severity levels based on status code
@@ -76,11 +76,11 @@ class CustomLogger {
       }
     } catch (e) {
       // Fallback to console if middleware tracking fails
-      console.log("Middleware tracking error:", e);
+      console.log("Custom tracking error:", e);
     }
   }
 }
 
 const loggerInstance = new CustomLogger();
-export const loggrageLogger = (trackObject) => loggerInstance.createMiddleware(trackObject);
+export const loggrageLogger = (trackObject = null) => loggerInstance.createMiddleware(trackObject);
 export default loggrageLogger;
