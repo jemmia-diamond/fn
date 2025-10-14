@@ -27,7 +27,9 @@ export default class WeddingRingController {
           .split(",")
           .map((v) => Number(v.trim()))
           .filter((n) => Number.isInteger(n) && n > 0)
-        : []
+        : [],
+      ring_band_styles: params.ring_band_styles ? params.ring_band_styles.split(",") : [],
+      excluded_ring_band_styles: params.excluded_ring_band_styles ? params.excluded_ring_band_styles.split(",") : []
     };
 
     const { isValidated, message } = validateParams(jsonParams);

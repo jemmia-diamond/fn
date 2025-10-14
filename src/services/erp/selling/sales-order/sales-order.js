@@ -109,7 +109,8 @@ export default class SalesOrderService {
       total_amount: haravanOrderData.total_price,
       grand_total: haravanOrderData.total_price,
       paid_amount: paidAmount,
-      balance: haravanOrderData.total_price - paidAmount
+      balance: haravanOrderData.total_price - paidAmount,
+      real_order_date: dayjs(haravanOrderData.created_at).utc().format("YYYY-MM-DD")
     };
     const order = await this.frappeClient.upsert(mappedOrderData, "haravan_order_id", ["items"]);
     return order;
@@ -210,7 +211,7 @@ export default class SalesOrderService {
         receive_id_type: "chat_id"
       },
       data: {
-        receive_id: CHAT_GROUPS.SUPPORT_ERP_SALES.chat_id,
+        receive_id: CHAT_GROUPS.CUSTOMER_INFO.chat_id,
         msg_type: "text",
         content: JSON.stringify({
           text: content

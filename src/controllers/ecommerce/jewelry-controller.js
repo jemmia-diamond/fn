@@ -24,7 +24,18 @@ export default class JewelryController {
         by: params.sort_by || "price",
         order: params.sort_order || "asc"
       },
-      design_tags: params.design_tags ? params.design_tags.split(",") : []
+      design_tags: params.design_tags ? params.design_tags.split(",") : [],
+      ring_head_styles: params.ring_head_styles ? params.ring_head_styles.split(",") : [],
+      ring_band_styles: params.ring_band_styles ? params.ring_band_styles.split(",") : [],
+      excluded_ring_head_styles: params.excluded_ring_head_styles ? params.excluded_ring_head_styles.split(",") : [],
+      excluded_ring_band_styles: params.excluded_ring_band_styles ? params.excluded_ring_band_styles.split(",") : [],
+      product_ids: params.product_ids
+        ? params.product_ids
+          .split(",")
+          .map((v) => Number(v.trim()))
+          .filter((n) => Number.isInteger(n) && n > 0)
+        : [],
+      linked_collections: params.linked_collections ? params.linked_collections.split(",") : []
     };
 
     const productService = new Ecommerce.ProductService(ctx.env);

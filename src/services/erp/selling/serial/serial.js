@@ -27,7 +27,7 @@ export default class SerialService {
       d.design_code
       FROM workplace.variant_serials vs
       	LEFT JOIN workplace.variants v ON vs.variant_id = v.id
-      	INNER JOIN haravan.variants v2 ON v.haravan_variant_id = v2.id
+      	LEFT JOIN haravan.variants v2 ON v.haravan_variant_id = v2.id
       	LEFT JOIN workplace.products p ON v.product_id = p.id
       	LEFT JOIN workplace.designs d ON p.design_id = d.id
       WHERE 1 = 1
@@ -42,13 +42,20 @@ export default class SerialService {
     const timeThreshold = dayjs().utc().subtract(10, "minutes").subtract(1, "minute").format("YYYY-MM-DD HH:mm:ss");
     const serialService = new SerialService(env);
     const serials = await serialService.getSerialsToUpdate(timeThreshold);
-    await Promise.all(serials.map(serial =>
+
+    const promises = serials.map(serial =>
       serialService.frappeClient.upsert({
         doctype: serialService.doctype,
         serial_number: serial.serial_number,
         sku: serial.sku,
         design_code: serial.design_code
-      }, "serial_number")
-    ));
+      }, "serial_number").catch(e => {
+        console.error((`Error upserting serial ${serial.serial_number}: `, e));
+      })
+    );
+
+    await Promise.all(
+      promises
+    );
   }
 }

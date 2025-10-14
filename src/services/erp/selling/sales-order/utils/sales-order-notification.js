@@ -2,12 +2,11 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import { SKU_LENGTH, SKU_PREFIX } from "services/haravan/products/product-variant/constant";
 import { numberToCurrency } from "services/utils/number-helper";
-import { stringSquish } from "services/utils/string-helper";
+import { stringSquishLarkMessage } from "services/utils/string-helper";
 
 dayjs.extend(utc);
 
 export const composeSalesOrderNotification = (salesOrder, promotionData, leadSource, policyData, productCategoryData, customer, primarySalesPerson, secondarySalesPeople) => {
-  const time = dayjs().format("DD-MM-YYYY HH:mm:ss");
   const orderNumber = salesOrder.order_number;
 
   const orderPromotionNames = salesOrder.promotions.map((promotion) => promotion.promotion);
@@ -15,41 +14,60 @@ export const composeSalesOrderNotification = (salesOrder, promotionData, leadSou
 
   const expectedPaymentDate = dayjs(salesOrder.expected_payment_date).format("DD-MM-YYYY");
 
+  const realOrderDate = dayjs(salesOrder.real_order_date).format("DD-MM-YYYY");
+
   const secondarySalesPeopleNameList = secondarySalesPeople.map((salesPerson) => salesPerson.sales_person_name);
 
-  const content = stringSquish(`
-    <b>[${time}] JEMMIA xác nhận đơn hàng #${orderNumber}</b>
+  let content = "";
+  content += `
+    <b>[${realOrderDate}] JEMMIA xác nhận đơn hàng #${orderNumber}</b>
+  `;
 
+  content += `
     Mã khách hàng: ${salesOrder.customer}
+  `;
 
-    ${salesOrder.items.map((item, idx) => composeItemContent(item, idx + 1, promotionData.filter((promotion) => [item.promotion_1, item.promotion_2, item.promotion_3, item.promotion_4].includes(promotion.name)))).join("\n\n")}
+  salesOrder.items.map((item, idx) => {
+    content += composeItemContent(item, idx + 1, promotionData.filter((promotion) => [item.promotion_1, item.promotion_2, item.promotion_3, item.promotion_4].includes(promotion.name)));
+  });
 
+  content += `
     * <b>Thông tin toàn đơn hàng</b>:
     - Tổng đơn hàng: ${numberToCurrency(salesOrder.grand_total)}
     - Ngày tư vấn: ${dayjs(salesOrder.consultation_date).format("DD-MM-YYYY")}
     - Chiết khấu đơn hàng: ${salesOrder.discount_amount}
-    - Số tiền đã cọc: ${numberToCurrency(salesOrder.paid_amount)}
-    - Số tiền còn lại: ${numberToCurrency(salesOrder.balance)}
+    - Số tiền đã cọc: ${numberToCurrency(salesOrder.paid_amount || salesOrder.deposit_amount || 0)}
+    - Số tiền còn lại: ${numberToCurrency(salesOrder.grand_total - (salesOrder.paid_amount || salesOrder.deposit_amount || 0))}
     - Ngày thanh toán dự kiến: ${expectedPaymentDate}
     - Kênh tiếp cận đầu tiên: ${leadSource.source_name}
     - Hành trình khách hàng: ${customer.customer_journey}
+  `;
 
-    * <b>Đặc điểm sản phẩm đơn hàng</b>:
-    ${composeChildrenContent(productCategoryData, "title")}
+  content += `
+    * <b>Đặc điểm sản phẩm đơn hàng</b>:\n${composeChildrenContent(productCategoryData, "title")}
+  `;
 
-    * <b>Chính sách bảo hành</b>:
-    ${composeChildrenContent(policyData, "title")}
+  content += `
+    * <b>Chính sách bảo hành</b>:\n${composeChildrenContent(policyData, "title")}
+  `;
 
-    * <b>Chương trình khuyến mãi toàn đơn</b>:
-    ${composeChildrenContent(orderPromotions, "title")}
+  const ordPromotion = orderPromotions && Array.isArray(orderPromotions) && orderPromotions.length > 0 ?
+    composeChildrenContent(orderPromotions, "title")
+    : " - Không";
+  content += `
+    * <b>Chương trình khuyến mãi toàn đơn</b>:\n${ordPromotion}
+  `;
 
-    * Nhân viên phụ trách:
-    - Chính: ${primarySalesPerson.sales_person_name}
-    ${secondarySalesPeopleNameList.length ? "- Phụ: " + secondarySalesPeopleNameList.join(", ") : ""}
+  const secondSales = secondarySalesPeopleNameList.length ?
+    `\n - Phụ: ${secondarySalesPeopleNameList.join(", ")}` : "";
+  content += `
+    * Nhân viên phụ trách:\n- Chính: ${primarySalesPerson.sales_person_name}${secondSales}
+  `;
 
+  content += `
     * Link đơn hàng: https://erp.jemmia.vn/app/sales-order/${salesOrder.name}
-  `);
-  return content;
+  `;
+  return stringSquishLarkMessage(content);
 };
 
 const composeItemContent = (item, idx, promotionData) => {
@@ -57,21 +75,26 @@ const composeItemContent = (item, idx, promotionData) => {
     return `
       ${idx}. ${item.item_name}
       Mã gốc: ${item.variant_title}
-    `.replace(/\n+/g, "\n");
+    `;
   }
+
+  const title = item?.variant_title || "";
+  const extracted = item.sku.startsWith(SKU_PREFIX.DIAMOND)
+    ? extractVariantNameForGIA(title)
+    : extractVariantNameForJewelry(title);
 
   const serialNumbers = item.serial_numbers ? item.serial_numbers.split("\n").join(", ") : "";
   const content = `
     ${idx}. ${item.item_name}
-    Mã gốc: ${item.variant_title}
+    Mã gốc: ${extracted || title || "N/A"}
     SKU: ${item.sku}
     Số lượng: ${item.qty}
-    ${serialNumbers ? `Số serial: ${serialNumbers}` : ""}
+    Số serial: ${serialNumbers} 
     Giá: ${numberToCurrency(item.price_list_rate)}
     Giá khuyến mãi: ${numberToCurrency(item.rate)}
     CTKM:
     ${composeChildrenContent(promotionData, "title")}
-  `.replace(/\n+/g, "\n");
+  `;
   return content;
 };
 
@@ -165,6 +188,21 @@ export function validateOrderInfo(salesOrderData, customer) {
 
 function composeChildrenContent(children, key) {
   return children
-    .map((child) => "- " + child[key])
+    .map((child) => " - " + child[key])
     .join("\n");
 }
+
+function extractVariantNameForGIA(text) {
+  if (typeof text !== "string") return "";
+  const regex = /^(\S+)/;
+  const match = text.match(regex);
+  return match ? match[1] : "";
+}
+
+function extractVariantNameForJewelry(text) {
+  if (typeof text !== "string") return "";
+  const regex = /^(.+? - .+? - .+?) - /;
+  const match = text.match(regex);
+  return match ? match[1] : "";
+}
+

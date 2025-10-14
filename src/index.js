@@ -1,11 +1,9 @@
-import { init, track } from "@middleware.io/agent-apm-worker";
 import { Hono } from "hono";
 import { bearerAuth } from "hono/bearer-auth";
 
 import errorTracker from "middlewares/error-tracker";
 import errorHandler from "middlewares/error-handler";
 
-import loggrageLogger from "services/custom-logger";
 import CorsService from "services/cors-service";
 
 import Routes from "src/routes";
@@ -18,19 +16,6 @@ const api = app.basePath("/api");
 const publicApi = app.basePath("/public-api");
 const webhook = app.basePath("/webhook");
 
-app.use("*", async (c, next) => {
-  if (c.env.MIDDLEWARE_API_KEY) {
-    init({
-      serviceName: c.env.MIDDLEWARE_SERVICE_NAME,
-      accountKey: c.env.MIDDLEWARE_API_KEY,
-      target: c.env.MIDDLEWARE_TARGET,
-      consoleLogEnabled: false
-    });
-  }
-  await next();
-});
-
-app.use(loggrageLogger(track));
 app.use("*", errorTracker);
 app.use("*", errorHandler);
 

@@ -1,5 +1,5 @@
 export function buildQuery(jsonParams) {
-  const { filterString, sortString, paginationString, handleFinenessPriority, collectionJoinEcomProductsClause, havingString } = aggregateQuery(jsonParams);
+  const { filterString, sortString, paginationString, handleFinenessPriority, collectionJoinEcomProductsClause, linkedCollectionJoinEcomProductsClause, havingString } = aggregateQuery(jsonParams);
 
   const finenessOrder = handleFinenessPriority === "14K" ? "ASC" : "DESC";
 
@@ -22,12 +22,14 @@ export function buildQuery(jsonParams) {
           'ring_size', v.ring_size,
           'price', CAST(v.price AS Decimal),
           'price_compare_at', CAST(v.price_compare_at AS Decimal),
+          'qty_available', v.qty_available,
           'qty_onhand', v.qty_onhand
         )
       ) AS variants
     FROM ecom.materialized_products p 
       INNER JOIN workplace.designs d ON p.design_id = d.id 
       ${collectionJoinEcomProductsClause}
+      ${linkedCollectionJoinEcomProductsClause}
 
       -- Subquery for pre-aggregated images
       INNER JOIN (
@@ -67,6 +69,7 @@ export function buildQuery(jsonParams) {
         FROM ecom.materialized_products p 
             INNER JOIN workplace.designs d ON d.id = p.design_id
             ${collectionJoinEcomProductsClause}
+            ${linkedCollectionJoinEcomProductsClause}
             INNER JOIN ecom.materialized_variants v ON v.haravan_product_id = p.haravan_product_id
         WHERE 1 = 1 
           AND (p.haravan_product_type != 'Nhẫn Cưới' OR (p.haravan_product_type = 'Nhẫn Cưới' AND d.gender = 'Nam'))
@@ -90,9 +93,10 @@ export function aggregateQuery(jsonParams) {
   let sortedColumn = "p.max_price_18";
   let collectionJoinEcomProductsClause = "";
   let havingString = "";
+  let linkedCollectionJoinEcomProductsClause = "";
 
   if (jsonParams.is_in_stock) {
-    havingString += "HAVING SUM(v.qty_onhand) > 0\n";
+    havingString += "HAVING SUM(v.qty_available) > 0\n";
   }
 
   if (jsonParams.categories && jsonParams.categories.length > 0) {
@@ -136,6 +140,62 @@ export function aggregateQuery(jsonParams) {
     filterString += `AND d.tag IN ('${jsonParams.design_tags.join("','")}')\n`;
   }
 
+  if (jsonParams.linked_collections && jsonParams.linked_collections.length > 0) {
+    linkedCollectionJoinEcomProductsClause += "INNER JOIN workplace._nc_m2m_haravan_collect_products linked_cp ON linked_cp.products_id = p.workplace_id \n";
+    linkedCollectionJoinEcomProductsClause += "INNER JOIN workplace.haravan_collections hc ON hc.id = linked_cp.haravan_collections_id \n";
+    filterString += `AND hc.title IN ('${jsonParams.linked_collections.join("','")}')\n`;
+  }
+
+  if (jsonParams.ring_head_styles && jsonParams.ring_head_styles.length > 0) {
+    const normalizedHeadStyles = jsonParams.ring_head_styles.map(style => style.trim().toLowerCase());
+    filterString += "AND (\n";
+    filterString += `  (d.ring_head_style IS NOT NULL AND d.ring_head_style != '' AND POSITION(' - ' IN d.ring_head_style) > 0 AND LOWER(SPLIT_PART(d.ring_head_style, ' - ', 2)) IN ('${normalizedHeadStyles.join("','")}'))\n`;
+    filterString += `  OR (d.ring_head_style IS NOT NULL AND d.ring_head_style != '' AND POSITION(' - ' IN d.ring_head_style) = 0 AND LOWER(d.ring_head_style) IN ('${normalizedHeadStyles.join("','")}'))\n`;
+    filterString += ")\n";
+  }
+
+  if (jsonParams.ring_band_styles && jsonParams.ring_band_styles.length > 0) {
+    const normalizedBandStyles = jsonParams.ring_band_styles.map(style => style.trim().toLowerCase());
+    filterString += "AND (\n";
+    filterString += `  (d.ring_band_style IS NOT NULL AND d.ring_band_style != '' AND POSITION(' - ' IN d.ring_band_style) > 0 AND LOWER(SPLIT_PART(d.ring_band_style, ' - ', 2)) IN ('${normalizedBandStyles.join("','")}'))\n`;
+    filterString += `  OR (d.ring_band_style IS NOT NULL AND d.ring_band_style != '' AND POSITION(' - ' IN d.ring_band_style) = 0 AND LOWER(d.ring_band_style) IN ('${normalizedBandStyles.join("','")}'))\n`;
+    filterString += ")\n";
+  }
+
+  if (jsonParams.excluded_ring_head_styles && jsonParams.excluded_ring_head_styles.length > 0) {
+    const normalizedExcludedHeadStyles = jsonParams.excluded_ring_head_styles.map(style => style.trim().toLowerCase());
+    filterString += `
+      AND (
+        d.ring_head_style IS NULL OR
+        d.ring_head_style = '' OR
+        LOWER(
+          CASE
+            WHEN POSITION(' - ' IN d.ring_head_style) > 0
+            THEN SPLIT_PART(d.ring_head_style, ' - ', 2)
+            ELSE d.ring_head_style
+          END
+        ) NOT IN ('${normalizedExcludedHeadStyles.join("','")}')
+      )
+    `;
+  }
+
+  if (jsonParams.excluded_ring_band_styles && jsonParams.excluded_ring_band_styles.length > 0) {
+    const normalizedExcludedBandStyles = jsonParams.excluded_ring_band_styles.map(style => style.trim().toLowerCase());
+    filterString += `
+      AND (
+        d.ring_band_style IS NULL OR
+        d.ring_band_style = '' OR
+        LOWER(
+          CASE
+            WHEN POSITION(' - ' IN d.ring_band_style) > 0
+            THEN SPLIT_PART(d.ring_band_style, ' - ', 2)
+            ELSE d.ring_band_style
+          END
+        ) NOT IN ('${normalizedExcludedBandStyles.join("','")}')
+      )
+    `;
+  }
+
   if (jsonParams.sort) {
     if (jsonParams.sort.by === "price") {
       sortString += `ORDER BY ${sortedColumn} ${jsonParams.sort.order === "asc" ? "ASC" : "DESC"}\n`;
@@ -144,6 +204,12 @@ export function aggregateQuery(jsonParams) {
     }
   } else {
     sortString += "ORDER BY p.image_updated_at DESC\n";
+  }
+
+  if (jsonParams.product_ids.length) {
+    filterString += `
+      AND p.haravan_product_id IN (${jsonParams.product_ids.join(",")})
+    `;
   }
 
   if (jsonParams.pagination) {
@@ -159,6 +225,7 @@ export function aggregateQuery(jsonParams) {
     paginationString,
     handleFinenessPriority,
     collectionJoinEcomProductsClause,
+    linkedCollectionJoinEcomProductsClause,
     havingString
   };
 }
