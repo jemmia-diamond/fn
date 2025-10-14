@@ -133,13 +133,14 @@ export default class SalesOrderService {
         filters: [["haravan_order_id", "=", String(haravanId)]],
         limit_page_length: 1
       });
-      if (Array.isArray(existing) && existing.length > 0) {
-        return await this.frappeClient.getDoc(this.doctype, existing[0].name);
+      if (Array.isArray(existing) && existing.length > 0 && existing[0]?.name) {
+        return await this.frappeClient.getDoc(this.doctype, String(existing[0].name));
       }
+      return null;
     } catch (error) {
-      console.error(error);
+      console.error("Failed to fetch ERP Sales Order by Haravan ID:", error);
+      throw error;
     }
-    return null;
   }
 
   static async dequeueOrderQueue(batch, env) {
