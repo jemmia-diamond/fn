@@ -93,7 +93,12 @@ export default class SalesOrderService {
       return total + (Number.isFinite(amt) ? amt : 0);
     }, 0);
 
-    const existingOrder = await this.fetchErpSaleOrderByHaravanId(haravanOrderData.id);
+    // Validate Haravan order id
+    const haravanId = haravanOrderData?.id;
+    if (haravanId == null || (typeof haravanId !== "string" && typeof haravanId !== "number")) {
+      throw new Error("Invalid Haravan order id");
+    }
+    const existingOrder = await this.fetchErpSaleOrderByHaravanId(haravanId);
 
     const mappedOrderData = {
       doctype: this.doctype,
