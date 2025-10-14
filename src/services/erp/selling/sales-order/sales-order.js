@@ -89,6 +89,8 @@ export default class SalesOrderService {
       return kind === "capture" || kind === "authorization";
     });
     const paidAmount = paymentTransactions.reduce((total, t) => {
+      const kind = (t?.kind || "").toString().toLowerCase();
+      if (kind !== "capture") return total;
       const amt = Number(t?.amount ?? 0);
       return total + (Number.isFinite(amt) ? amt : 0);
     }, 0);
