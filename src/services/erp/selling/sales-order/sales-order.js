@@ -423,10 +423,17 @@ export default class SalesOrderService {
       const idStr = String(rawId).trim();
       if (!idStr) { return null; }
 
-      const amount = Number(t?.amount);
-      if (!Number.isFinite(amount) || amount < 0) { return null; }
+      const amountNum = Number(t?.amount);
+      if (!Number.isFinite(amountNum) || amountNum < 0) { return null; }
 
-      return { ...t, id: idStr, amount };
+      const createdAt = typeof t?.created_at === "string" ? t.created_at.trim() : "";
+      if (!createdAt || Number.isNaN(Date.parse(createdAt))) { return null; }
+
+      const gateway = (t?.gateway ?? "").toString();
+      const kind = (t?.kind ?? "").toString().toLowerCase();
+      if (!kind) { return null; }
+
+      return { ...t, id: idStr, amount: amountNum, created_at: createdAt, gateway, kind };
     } catch {
       return null;
     }
