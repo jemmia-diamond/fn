@@ -82,10 +82,12 @@ export default class SalesOrderService {
       await addressService.processHaravanAddress(address, customer);
     }
 
-    const paymentTransactions = haravanOrderData.transactions.filter(transaction => transaction.kind.toLowerCase() === "capture");
+    const paymentTransactions = haravanOrderData.transactions.filter(transaction => {
+      const kind = transaction.kind;
+      return kind === "capture" || kind === "authorization";
+    });
     const paidAmount = paymentTransactions.reduce((total, transaction) => total + transaction.amount, 0);
     const existingOrder = await this.fetchErpSaleOrderByHaravanId(haravanOrderData.id);
-    const haravanCaptureTransactions = haravanOrderData.transactions.filter(t => t.kind.toLowerCase() === "capture");
 
     const mappedOrderData = {
       doctype: this.doctype,
@@ -104,7 +106,7 @@ export default class SalesOrderService {
       transaction_date: convertIsoToDatetime(haravanOrderData.created_at, "date"),
       haravan_created_at: convertIsoToDatetime(haravanOrderData.created_at, "datetime"),
       total: haravanOrderData.total_line_items_price,
-      payment_records: this.mapPaymentRecordFields(existingOrder, haravanCaptureTransactions),
+      payment_records: this.mapPaymentRecordFields(existingOrder, paymentTransactions),
       contact_person: contact.name,
       customer_address: customerDefaultAdress.name,
       total_amount: haravanOrderData.total_price,
@@ -145,46 +147,28 @@ export default class SalesOrderService {
     }
   }
 
-  mapPaymentRecordFields = (existingOrder, hrvTransactionData) => {
-    const _mapPaymentRecordFields = (_hrvTransactionData) => {
-      return {
+  mapPaymentRecordFields = (existingOrder, hrvTransactionData = []) => {
+    const existingMap = new Map(
+      (existingOrder?.payment_records || [])
+        .filter(row => row.transaction_id)
+        .map(row => [String(row.transaction_id), row.name])
+    );
+
+    return hrvTransactionData.map(t => {
+      const rec = {
         doctype: this.linkedTableDoctype.paymentRecords,
-        date: convertIsoToDatetime(_hrvTransactionData["created_at"]),
-        amount: _hrvTransactionData["amount"],
-        gateway: _hrvTransactionData["gateway"],
-        kind: _hrvTransactionData["kind"],
-        transaction_id: _hrvTransactionData["id"]
+        date: convertIsoToDatetime(t.created_at),
+        amount: t.amount,
+        gateway: t.gateway,
+        kind: t.kind,
+        transaction_id: t.id
       };
-    };
-
-    //New order
-    if (!existingOrder) {
-      return hrvTransactionData.map(_mapPaymentRecordFields);
-    }
-
-    const existing = Array.isArray(existingOrder.payment_records) ? existingOrder.payment_records : [];
-
-    // Map by transaction_id to attach existing 'name'
-    const existingTransactions = new Map();
-    for (const row of existing) {
-      if (row.transaction_id) {
-        existingTransactions.set(String(row.transaction_id), row);
+      const existingName = existingMap.get(String(t.id));
+      if (existingName) {
+        rec.name = existingName;
       }
-    }
-
-    // Final payload: keep 'name' for existing rows, omit 'name' for new rows
-    const payloadRecords = [];
-    for (const t of hrvTransactionData) {
-      const txnId = String(t.id);
-      const mapped = _mapPaymentRecordFields(t);
-      const existingRow = existingTransactions.get(txnId);
-      if (existingRow) {
-        mapped.name = existingRow.name;
-      }
-      payloadRecords.push(mapped);
-    }
-
-    return payloadRecords;
+      return rec;
+    });
   };
 
   mapLineItemsFields = (lineItemData) => {
