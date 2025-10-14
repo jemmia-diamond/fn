@@ -166,6 +166,11 @@ export function validateOrderInfo(salesOrderData, customer) {
 
   const lineItems = salesOrderData.items;
 
+  if (lineItems.some(item => item.sku === null)) {
+    message = "Chưa nhập SKU sản phẩm, vui lòng kiểm tra lại";
+    return { isValid, message };
+  }
+
   const jewelryItems = lineItems.filter((item) => (item.sku?.length === SKU_LENGTH.JEWELRY || item.sku?.startsWith(SKU_PREFIX.TEMPORARY_JEWELRY)));
   for (const jewelryItem of jewelryItems) {
     if (!jewelryItem.serial_numbers) {
