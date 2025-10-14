@@ -352,3 +352,7 @@ const extractVariantTitle = (item) => {
 
   return extracted || title || "N/A";
 };
+
+export const composeReplyReorderMessage = (salesOrderData) => {
+  return `Đã đặt lại đơn ${salesOrderData.order_number}`;
+};
