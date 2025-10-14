@@ -170,7 +170,7 @@ export default class SalesOrderService {
         }
       });
 
-      if (!notificationOrderTracking) {
+      if (notificationOrderTracking) {
         return {
           success: false,
           message: "Đơn này đã thông báo"
