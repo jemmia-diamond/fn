@@ -84,6 +84,8 @@ export default class SalesOrderService {
 
     const paymentTransactions = haravanOrderData.transactions.filter(transaction => transaction.kind.toLowerCase() === "capture");
     const paidAmount = paymentTransactions.reduce((total, transaction) => total + transaction.amount, 0);
+    const existingOrder = await this.fetchErpSaleOrderByHaravanId(haravanOrderData.id);
+    const haravanCaptureTransactions = haravanOrderData.transactions.filter(t => t.kind.toLowerCase() === "capture");
 
     const mappedOrderData = {
       doctype: this.doctype,
@@ -102,7 +104,7 @@ export default class SalesOrderService {
       transaction_date: convertIsoToDatetime(haravanOrderData.created_at, "date"),
       haravan_created_at: convertIsoToDatetime(haravanOrderData.created_at, "datetime"),
       total: haravanOrderData.total_line_items_price,
-      payment_records: haravanOrderData.transactions.filter(transaction => transaction.kind.toLowerCase() === "capture").map(this.mapPaymentRecordFields),
+      payment_records: this.mapPaymentRecordFields(existingOrder, haravanCaptureTransactions),
       contact_person: contact.name,
       customer_address: customerDefaultAdress.name,
       total_amount: haravanOrderData.total_price,
@@ -111,112 +113,25 @@ export default class SalesOrderService {
       balance: haravanOrderData.total_price - paidAmount,
       real_order_date: dayjs(haravanOrderData.created_at).utc().format("YYYY-MM-DD")
     };
-    const order = await this.frappeClient.upsert(mappedOrderData, "haravan_order_id", ["items", "payment_records"]);
-    // After ensuring Sales Order exists/updated, update payment_records incrementally
-    await this.updatePaymentRecords(order.name, haravanOrderData.transactions.filter(t => t.kind.toLowerCase() === "capture"));
+    const order = await this.frappeClient.upsert(mappedOrderData, "haravan_order_id", ["items"]);
     return order;
   }
 
-  // Incremental update for payment records: add new, update changed, remove missing
-  async updatePaymentRecords(orderName, captureTransactions) {
-    // Fetch existing Sales Order doc to get child rows with names
-    const existingOrder = await this.frappeClient.getDoc(this.doctype, orderName);
-    const existing = Array.isArray(existingOrder.payment_records) ? existingOrder.payment_records : [];
-
-    // Build maps by transaction_id (unique from Haravan)
-    const existingByTxn = new Map();
-    for (const row of existing) {
-      if (row.transaction_id) {
-        existingByTxn.set(String(row.transaction_id), row);
+  async fetchErpSaleOrderByHaravanId(haravanId) {
+    try {
+      const existing = await this.frappeClient.getList(this.doctype, {
+        filters: [["haravan_order_id", "=", String(haravanId)]],
+        limit_page_length: 1
+      });
+      if (Array.isArray(existing) && existing.length > 0) {
+        return await this.frappeClient.getDoc(this.doctype, existing[0].name);
       }
+    } catch (error) {
+      console.error(error);
     }
-
-    const incomingByTxn = new Map();
-    for (const t of captureTransactions) {
-      incomingByTxn.set(String(t.id), t);
-    }
-
-    // Determine adds/updates/removals
-    const toAdd = [];
-    const toUpdate = [];
-    const toRemove = [];
-
-    // Add or update
-    for (const [txnId, t] of incomingByTxn.entries()) {
-      const existingRow = existingByTxn.get(txnId);
-      const mapped = this.mapPaymentRecordFields(t);
-      if (!existingRow) {
-        // new child row
-        toAdd.push(mapped);
-      } else {
-        // compare fields; if changed, update that child row by name
-        const fieldsChanged = (
-          existingRow.amount !== mapped.amount ||
-          existingRow.gateway !== mapped.gateway ||
-          existingRow.kind !== mapped.kind ||
-          existingRow.date !== mapped.date
-        );
-        if (fieldsChanged) {
-          toUpdate.push({ ...mapped, name: existingRow.name });
-        }
-        // Remove from removal consideration
-        existingByTxn.delete(txnId);
-      }
-    }
-
-    // Remaining in existingByTxn are not in incoming; mark for removal
-    for (const [_, row] of existingByTxn.entries()) {
-      toRemove.push(row);
-    }
-
-    // Execute changes
-    // 1) Remove
-    for (const row of toRemove) {
-      try {
-        await this.frappeClient.delete(this.linkedTableDoctype.paymentRecords, row.name);
-      } catch (e) {
-        console.error("Failed to delete payment record", row.name, e);
-      }
-    }
-
-    // 2) Update existing rows (PUT requires parent doctype context)
-    if (toUpdate.length > 0) {
-      for (const row of toUpdate) {
-        try {
-          await this.frappeClient.update({
-            doctype: this.linkedTableDoctype.paymentRecords,
-            name: row.name,
-            date: row.date,
-            amount: row.amount,
-            gateway: row.gateway,
-            kind: row.kind,
-            transaction_id: row.transaction_id,
-            parent: orderName,
-            parenttype: this.doctype,
-            parentfield: "payment_records"
-          });
-        } catch (e) {
-          console.error("Failed to update payment record", row.name, e);
-        }
-      }
-    }
-
-    // 3) Add new rows via child insert to avoid replacing entire child table
-    if (toAdd.length > 0) {
-      for (const row of toAdd) {
-        try {
-          await this.frappeClient.insert({
-            ...row,
-            parent: orderName,
-            parenttype: this.doctype,
-            parentfield: "payment_records"
-          });
-        } catch (e) {
-          console.error("Failed to insert payment record", e);
-        }
-      }
-    }
+    return null;
   }
+
   static async dequeueOrderQueue(batch, env) {
     const salesOrderService = new SalesOrderService(env);
     const messages = batch.messages;
@@ -230,15 +145,46 @@ export default class SalesOrderService {
     }
   }
 
-  mapPaymentRecordFields = (hrvTransactionData) => {
-    return {
-      doctype: this.linkedTableDoctype.paymentRecords,
-      date: convertIsoToDatetime(hrvTransactionData["created_at"]),
-      amount: hrvTransactionData["amount"],
-      gateway: hrvTransactionData["gateway"],
-      kind: hrvTransactionData["kind"],
-      transaction_id: hrvTransactionData["id"]
+  mapPaymentRecordFields = (existingOrder, hrvTransactionData) => {
+    const _mapPaymentRecordFields = (_hrvTransactionData) => {
+      return {
+        doctype: this.linkedTableDoctype.paymentRecords,
+        date: convertIsoToDatetime(_hrvTransactionData["created_at"]),
+        amount: _hrvTransactionData["amount"],
+        gateway: _hrvTransactionData["gateway"],
+        kind: _hrvTransactionData["kind"],
+        transaction_id: _hrvTransactionData["id"]
+      };
     };
+
+    //New order
+    if (!existingOrder) {
+      return hrvTransactionData.map(_mapPaymentRecordFields);
+    }
+
+    const existing = Array.isArray(existingOrder.payment_records) ? existingOrder.payment_records : [];
+
+    // Map by transaction_id to attach existing 'name'
+    const existingTransactions = new Map();
+    for (const row of existing) {
+      if (row.transaction_id) {
+        existingTransactions.set(String(row.transaction_id), row);
+      }
+    }
+
+    // Final payload: keep 'name' for existing rows, omit 'name' for new rows
+    const payloadRecords = [];
+    for (const t of hrvTransactionData) {
+      const txnId = String(t.id);
+      const mapped = _mapPaymentRecordFields(t);
+      const existingRow = existingTransactions.get(txnId);
+      if (existingRow) {
+        mapped.name = existingRow.name;
+      }
+      payloadRecords.push(mapped);
+    }
+
+    return payloadRecords;
   };
 
   mapLineItemsFields = (lineItemData) => {
