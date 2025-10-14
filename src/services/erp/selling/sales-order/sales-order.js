@@ -138,7 +138,6 @@ export default class SalesOrderService {
       }
       return null;
     } catch (error) {
-      console.error("Failed to fetch ERP Sales Order by Haravan ID:", error);
       throw error;
     }
   }
@@ -156,36 +155,36 @@ export default class SalesOrderService {
     }
   }
 
-  mapPaymentRecordFields = (existingOrder, hrvTransactionData = []) => {
+  mapPaymentRecordFields = (existingOrder, sanitizedTransactions = []) => {
     const existingList = existingOrder?.payment_records || [];
     const existingMap = new Map(
       existingList
-        .filter(row => row.transaction_id)
-        .map(row => [String(row.transaction_id), row.name])
+        .filter(row => row.transaction_id != null)
+        .map(row => [row.transaction_id, row.name])
     );
 
-    const sanitizedTransactions = hrvTransactionData
-      .map(t => this.sanitizeHrvPaymentTransaction(t))
-      .filter(Boolean);
+    return sanitizedTransactions
+      .map(t => {
+        const date = convertIsoToDatetime(t.created_at);
+        if (!date) return null;
 
-    return sanitizedTransactions.map(t => {
-      const rec = {
-        doctype: this.linkedTableDoctype.paymentRecords,
-        date: convertIsoToDatetime(t.created_at),
-        amount: t.amount,
-        gateway: t.gateway,
-        kind: t.kind
-      };
-      const existingName = existingMap.get(String(t.id));
-      if (existingName) {
-        rec.name = existingName;
-        const existingRow = existingList.find(r => r.name === existingName);
-        rec.transaction_id = existingRow?.transaction_id ?? t.id;
-      } else {
-        rec.transaction_id = t.id;
-      }
-      return rec;
-    });
+        const transactionId = t.id;
+        const rec = {
+          doctype: this.linkedTableDoctype.paymentRecords,
+          date,
+          amount: t.amount,
+          gateway: t.gateway,
+          kind: t.kind,
+          transaction_id: transactionId
+        };
+
+        const existingName = existingMap.get(transactionId);
+        if (existingName) {
+          rec.name = existingName;
+        }
+        return rec;
+      })
+      .filter(Boolean);
   };
 
   mapLineItemsFields = (lineItemData) => {
@@ -418,15 +417,9 @@ export default class SalesOrderService {
 
   sanitizeHrvPaymentTransaction(t) {
     try {
-      const rawId = t?.id;
-      let id;
-      if (typeof rawId === "number" && Number.isSafeInteger(rawId) && rawId >= 0) {
-        id = rawId;
-      } else {
-        const idStr = (typeof rawId === "string" ? rawId : String(rawId ?? "")).trim();
-        if (!idStr) { return null; }
-        id = idStr;
-      }
+      //Validate id is number
+      const idNum = Number(t?.id);
+      if (!Number.isFinite(idNum) || idNum < 0) { return null; }
 
       const amountNum = Number(t?.amount);
       if (!Number.isFinite(amountNum) || amountNum < 0) { return null; }
@@ -434,11 +427,11 @@ export default class SalesOrderService {
       const createdAt = typeof t?.created_at === "string" ? t.created_at.trim() : "";
       if (!createdAt || Number.isNaN(Date.parse(createdAt))) { return null; }
 
-      const gateway = (t?.gateway ?? "").toString();
-      const kind = (t?.kind ?? "").toString().toLowerCase();
-      if (!kind) { return null; }
+      const gateway = (t?.gateway ?? "").toString().trim();
+      const kind = (t?.kind ?? "").toString().toLowerCase().trim();
+      if (kind !== "capture" || !gateway) { return null; }
 
-      return { ...t, id, amount: amountNum, created_at: createdAt, gateway, kind };
+      return { ...t, id: idNum, amount: amountNum, created_at: createdAt, gateway, kind };
     } catch {
       return null;
     }
