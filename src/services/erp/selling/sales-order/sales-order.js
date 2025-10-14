@@ -162,11 +162,12 @@ export default class SalesOrderService {
     const haravanRefOrderId = salesOrderData.haravan_ref_order_id;
 
     // Handle case reorder
-    if (haravanRefOrderId) {
-
+    if (haravanRefOrderId && Number(haravanRefOrderId) > 0) {
       const notificationOrderTracking = await this.db.erpnextSalesOrderNotificationTracking.findFirst({
         where: {
-          haravan_order_id: salesOrderData.haravan_order_id
+          haravan_order_id: {
+            equals: String(salesOrderData.haravan_order_id)
+          }
         }
       });
 
@@ -189,7 +190,9 @@ export default class SalesOrderService {
 
       const firstNotificationOrderTracking = await this.db.erpnextSalesOrderNotificationTracking.findFirst({
         where: {
-          haravan_order_id: firstOrder.id
+          haravan_order_id: {
+            equals: String(firstOrder.id)
+          }
         }
       });
 
