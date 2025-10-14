@@ -142,6 +142,16 @@ export default class FrappeClient {
     return this.postProcess(res);
   }
 
+  // Add DELETE method to remove specific records (including child table rows)
+  async delete(doctype, name) {
+    const url = `${this.url}/api/resource/${encodeURIComponent(doctype)}/${encodeURIComponent(name)}`;
+    const res = await fetch(url, {
+      method: "DELETE",
+      headers: this.headers
+    });
+    return this.postProcess(res);
+  }
+
   chunk(arr, size) {
     const chunks = [];
     for (let i = 0; i < arr.length; i += size) {
