@@ -84,23 +84,18 @@ export default class SalesOrderService {
 
     // Validate and normalize transactions
     const transactions = Array.isArray(haravanOrderData.transactions) ? haravanOrderData.transactions : [];
-    const paymentTransactions = transactions.filter(t => {
-      const kind = (t?.kind || "").toString().toLowerCase();
-      return kind === "capture" || kind === "authorization";
-    });
-    const paidAmount = paymentTransactions.reduce((total, t) => {
-      const kind = (t?.kind || "").toString().toLowerCase();
-      if (kind !== "capture") return total;
-      const amt = Number(t?.amount ?? 0);
-      return total + (Number.isFinite(amt) ? amt : 0);
+    const sanitizedPaymentTransactions = transactions
+      .map(t => this.sanitizeHrvPaymentTransaction(t))
+      .filter(Boolean);
+
+    // paidAmount from Vietnamdong
+    const paidAmount = sanitizedPaymentTransactions.reduce((total, t) => {
+      if (t.kind !== "capture") return total;
+      // normalize amount
+      return total + Math.round(t.amount);
     }, 0);
 
-    // Validate Haravan order id
-    const haravanId = haravanOrderData?.id;
-    if (haravanId == null || (typeof haravanId !== "string" && typeof haravanId !== "number")) {
-      throw new Error("Invalid Haravan order id");
-    }
-    const existingOrder = await this.fetchErpSaleOrderByHaravanId(haravanId);
+    const existingOrder = await this.fetchErpSaleOrderByHaravanId(haravanOrderData.id);
 
     const mappedOrderData = {
       doctype: this.doctype,
@@ -119,7 +114,7 @@ export default class SalesOrderService {
       transaction_date: convertIsoToDatetime(haravanOrderData.created_at, "date"),
       haravan_created_at: convertIsoToDatetime(haravanOrderData.created_at, "datetime"),
       total: haravanOrderData.total_line_items_price,
-      payment_records: this.mapPaymentRecordFields(existingOrder, paymentTransactions),
+      payment_records: this.mapPaymentRecordFields(existingOrder, sanitizedPaymentTransactions),
       contact_person: contact.name,
       customer_address: customerDefaultAdress.name,
       total_amount: haravanOrderData.total_price,
@@ -161,8 +156,9 @@ export default class SalesOrderService {
   }
 
   mapPaymentRecordFields = (existingOrder, hrvTransactionData = []) => {
+    const existingList = existingOrder?.payment_records || [];
     const existingMap = new Map(
-      (existingOrder?.payment_records || [])
+      existingList
         .filter(row => row.transaction_id)
         .map(row => [String(row.transaction_id), row.name])
     );
@@ -177,12 +173,15 @@ export default class SalesOrderService {
         date: convertIsoToDatetime(t.created_at),
         amount: t.amount,
         gateway: t.gateway,
-        kind: t.kind,
-        transaction_id: t.id
+        kind: t.kind
       };
       const existingName = existingMap.get(String(t.id));
       if (existingName) {
         rec.name = existingName;
+        const existingRow = existingList.find(r => r.name === existingName);
+        rec.transaction_id = existingRow?.transaction_id ?? t.id;
+      } else {
+        rec.transaction_id = t.id;
       }
       return rec;
     });
@@ -419,9 +418,14 @@ export default class SalesOrderService {
   sanitizeHrvPaymentTransaction(t) {
     try {
       const rawId = t?.id;
-      if (!(typeof rawId === "string" || typeof rawId === "number")) { return null; }
-      const idStr = String(rawId).trim();
-      if (!idStr) { return null; }
+      let id;
+      if (typeof rawId === "number" && Number.isSafeInteger(rawId) && rawId >= 0) {
+        id = rawId;
+      } else {
+        const idStr = (typeof rawId === "string" ? rawId : String(rawId ?? "")).trim();
+        if (!idStr) { return null; }
+        id = idStr;
+      }
 
       const amountNum = Number(t?.amount);
       if (!Number.isFinite(amountNum) || amountNum < 0) { return null; }
@@ -433,7 +437,7 @@ export default class SalesOrderService {
       const kind = (t?.kind ?? "").toString().toLowerCase();
       if (!kind) { return null; }
 
-      return { ...t, id: idStr, amount: amountNum, created_at: createdAt, gateway, kind };
+      return { ...t, id, amount: amountNum, created_at: createdAt, gateway, kind };
     } catch {
       return null;
     }
