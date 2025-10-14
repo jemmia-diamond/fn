@@ -82,11 +82,17 @@ export default class SalesOrderService {
       await addressService.processHaravanAddress(address, customer);
     }
 
-    const paymentTransactions = haravanOrderData.transactions.filter(transaction => {
-      const kind = transaction.kind;
+    // Validate and normalize transactions
+    const transactions = Array.isArray(haravanOrderData.transactions) ? haravanOrderData.transactions : [];
+    const paymentTransactions = transactions.filter(t => {
+      const kind = (t?.kind || "").toString().toLowerCase();
       return kind === "capture" || kind === "authorization";
     });
-    const paidAmount = paymentTransactions.reduce((total, transaction) => total + transaction.amount, 0);
+    const paidAmount = paymentTransactions.reduce((total, t) => {
+      const amt = Number(t?.amount ?? 0);
+      return total + (Number.isFinite(amt) ? amt : 0);
+    }, 0);
+
     const existingOrder = await this.fetchErpSaleOrderByHaravanId(haravanOrderData.id);
 
     const mappedOrderData = {
