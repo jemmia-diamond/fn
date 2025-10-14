@@ -154,7 +154,11 @@ export default class SalesOrderService {
         .map(row => [String(row.transaction_id), row.name])
     );
 
-    return hrvTransactionData.map(t => {
+    const sanitizedTransactions = hrvTransactionData
+      .map(t => this.sanitizeHrvPaymentTransaction(t))
+      .filter(Boolean);
+
+    return sanitizedTransactions.map(t => {
       const rec = {
         doctype: this.linkedTableDoctype.paymentRecords,
         date: convertIsoToDatetime(t.created_at),
@@ -396,6 +400,20 @@ export default class SalesOrderService {
       } catch (error) {
         console.error(error);
       }
+    }
+  }
+
+  sanitizeHrvPaymentTransaction(t) {
+    try {
+      const id = t?.id;
+      if (!Number.isSafeInteger(id) || id < 0) { return null; }
+
+      const amount = Number(t?.amount);
+      if (!Number.isFinite(amount) || amount < 0) { return null; }
+
+      return { ...t, id, amount };
+    } catch {
+      return null;
     }
   }
 }
