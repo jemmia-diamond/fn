@@ -418,13 +418,15 @@ export default class SalesOrderService {
 
   sanitizeHrvPaymentTransaction(t) {
     try {
-      const id = t?.id;
-      if (!Number.isSafeInteger(id) || id < 0) { return null; }
+      const rawId = t?.id;
+      if (!(typeof rawId === "string" || typeof rawId === "number")) { return null; }
+      const idStr = String(rawId).trim();
+      if (!idStr) { return null; }
 
       const amount = Number(t?.amount);
       if (!Number.isFinite(amount) || amount < 0) { return null; }
 
-      return { ...t, id, amount };
+      return { ...t, id: idStr, amount };
     } catch {
       return null;
     }
