@@ -43,6 +43,8 @@ export default class OrderNotificationService {
       Product: ${products.join(", ")}
       Customer: ${orderData.billing_address.name}
       Total price: ${numberToCurrency(orderData.total_price)}
+
+      Link: https://jemmia.vn/admin/orders/${orderData.id}
     `);
   }
 
