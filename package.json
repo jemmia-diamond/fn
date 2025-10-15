@@ -10,7 +10,7 @@
     "prepare": "husky",
     "format": "eslint --fix",
     "sentry:sourcemaps": "_SENTRY_RELEASE=$(sentry-cli releases propose-version) && sentry-cli releases new $_SENTRY_RELEASE --org=jemmia --project=jemmia-fn && sentry-cli sourcemaps upload --org=jemmia --project=jemmia-fn --release=$_SENTRY_RELEASE --strip-prefix 'dist/..' dist",
-    "postdeploy": "bun run sentry:sourcemaps"
+    "postdeploy": "pnpm run sentry:sourcemaps"
   },
   "dependencies": {
     "@directus/sdk": "^20.0.2",
