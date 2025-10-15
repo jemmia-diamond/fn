@@ -513,6 +513,8 @@ model erpnextSalesOrderNotificationTracking {
   database_updated_at DateTime @updatedAt
   order_data          Json?   @db.JsonB
 
+  @@index([order_name])
+  @@index([haravan_order_id])
   @@map("sales_order_notification_tracking")
   @@schema("erpnext")
 }
