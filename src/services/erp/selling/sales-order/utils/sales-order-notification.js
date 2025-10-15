@@ -79,7 +79,7 @@ export const composeSalesOrderNotification = (salesOrder, promotionData, leadSou
 };
 
 const composeItemContent = (item, idx, promotionData) => {
-  if (item.sku.startsWith(SKU_PREFIX.GIFT)) {
+  if (item.sku?.startsWith(SKU_PREFIX.GIFT)) {
     return `
       ${idx}. ${item.item_name}
       Mã gốc: ${item.variant_title}
@@ -169,7 +169,12 @@ export function validateOrderInfo(salesOrderData, customer) {
 
   const lineItems = salesOrderData.items;
 
-  const jewelryItems = lineItems.filter((item) => (item.sku.length === SKU_LENGTH.JEWELRY || item.sku.startsWith(SKU_PREFIX.TEMPORARY_JEWELRY)));
+  if (lineItems.some(item => item.sku === null)) {
+    message = "Chưa nhập SKU sản phẩm, vui lòng kiểm tra lại";
+    return { isValid, message };
+  }
+
+  const jewelryItems = lineItems.filter((item) => (item.sku?.length === SKU_LENGTH.JEWELRY || item.sku?.startsWith(SKU_PREFIX.TEMPORARY_JEWELRY)));
   for (const jewelryItem of jewelryItems) {
     if (!jewelryItem.serial_numbers) {
       message = "Chưa nhập serial number";
@@ -177,7 +182,7 @@ export function validateOrderInfo(salesOrderData, customer) {
     }
   }
 
-  const jewelryAndDiamondItems = lineItems.filter((item) => (item.sku.length === SKU_LENGTH.JEWELRY || item.sku.startsWith(SKU_PREFIX.DIAMOND)));
+  const jewelryAndDiamondItems = lineItems.filter((item) => (item.sku?.length === SKU_LENGTH.JEWELRY || item.sku?.startsWith(SKU_PREFIX.DIAMOND)));
   for (const item of jewelryAndDiamondItems) {
     if (!(item.promotion_1 || item.promotion_2 || item.promotion_3 || item.promotion_4)) {
       message = "Chưa nhập chương trình khuyến mãi cho sản phẩm trang sức hoặc kim cương";
@@ -346,7 +351,7 @@ const composeLineItemsChangeMessage = (oldItems, newItems, promotionData) => {
 
 const extractVariantTitle = (item) => {
   const title = item?.variant_title || "";
-  const extracted = item.sku.startsWith(SKU_PREFIX.DIAMOND) || item.sku.startsWith(SKU_PREFIX.DIAMOND_TEMPORARY)
+  const extracted = item.sku?.startsWith(SKU_PREFIX.DIAMOND) || item.sku?.startsWith(SKU_PREFIX.DIAMOND_TEMPORARY)
     ? extractVariantNameForGIA(title)
     : extractVariantNameForJewelry(title);
 
