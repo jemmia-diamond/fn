@@ -10,6 +10,7 @@ import Routes from "src/routes";
 import queueHandler from "services/queue-handler";
 import scheduleHandler from "services/schedule-handler";
 import { DebounceDurableObject } from "src/durable-objects";
+import { HTTPException } from "hono/http-exception";
 
 import * as Sentry from "@sentry/cloudflare";
 
@@ -24,14 +25,6 @@ const app = new Hono()
     // Or just report errors which are not instances of HTTPException
     // Sentry.captureException(err);
     return c.json({ error: "Internal server error" }, 500);
-  })
-  // Bind global context via Hono middleware
-  .use((c, next) => {
-    Sentry.setUser({
-      email: c.session.user.email
-    });
-    Sentry.setTag("project_id", c.session.projectId);
-    return next();
   });
 
 const api = app.basePath("/api");
