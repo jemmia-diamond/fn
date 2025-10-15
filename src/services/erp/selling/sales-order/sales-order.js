@@ -271,7 +271,7 @@ export default class SalesOrderService {
         // Update
           await this.db.erpnextSalesOrderNotificationTracking.updateMany({
             where: {
-              id: notificationTracking.id
+              uuid: notificationTracking.uuid
             },
             data: {
               order_data: {
