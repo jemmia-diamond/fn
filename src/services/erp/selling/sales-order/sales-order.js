@@ -11,7 +11,8 @@ import utc from "dayjs/plugin/utc.js";
 import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/constant";
 
 import { fetchSalesOrdersFromERP, saveSalesOrdersToDatabase } from "src/services/erp/selling/sales-order/utils/sales-order-helpers";
-
+import { Prisma } from "@prisma-cli";
+import { stringSquish } from "services/utils/string-helper";
 dayjs.extend(utc);
 
 export default class SalesOrderService {
@@ -413,4 +414,254 @@ export default class SalesOrderService {
       }
     }
   }
+
+  static async remindReorderOnHandTempProduct(env) {
+    const service = new SalesOrderService(env);
+    const db = service.db;
+
+    const larkClient = await LarksuiteService.createClientV2(env);
+    try {
+      const tenMinutesAgoDate = new Date();
+      tenMinutesAgoDate.setMinutes(tenMinutesAgoDate.getMinutes() - 10);
+      const tenMinutesAgoTimestamp = tenMinutesAgoDate.toISOString();
+
+      // JEWELRY (Serial-based)
+      const jewelryIdsToUpdate = await service.processJewelryNotifications(db, tenMinutesAgoTimestamp, larkClient, CHAT_GROUPS.SUPPORT_ERP_SALES.chat_id);
+
+      // DIAMOND (GIA-based)
+      const diamondIdsToUpdate = await service.processDiamondNotifications(db, tenMinutesAgoTimestamp, larkClient, CHAT_GROUPS.SUPPORT_ERP_SALES.chat_id);
+
+      return {
+        success: true,
+        jewelryNotifiedCount: (jewelryIdsToUpdate ?? []).length,
+        diamondsNotifiedCount: (diamondIdsToUpdate ?? []).length
+      };
+
+    } catch (error) {
+      console.error("Error in remindReorderOnHandTempProduct:", error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  async processJewelryNotifications(db, timestamp, larkClient, groupId) {
+    const inventoryCheckLines = await db.$queryRaw`
+      SELECT ics.rfid_tags, ics.sku, ics.barcode 
+      FROM inventory_cms.inventory_check_lines as ics
+      WHERE date_created >= ${timestamp}
+      ORDER BY ics.date_created DESC;
+    `;
+
+    let listFinalEncodedBarcode = [];
+    for (const line of inventoryCheckLines) {
+      if (line.sku.split("-").length === 1) {
+        let rfidTagsList = Array.isArray(line.rfid_tags) ? line.rfid_tags : JSON.parse(line.rfid_tags || "[]");
+        if (rfidTagsList.length > 0) listFinalEncodedBarcode.push(...rfidTagsList);
+      }
+    }
+
+    if (listFinalEncodedBarcode.length === 0) {
+      return [];
+    }
+
+    const upperCaseBarcodes = listFinalEncodedBarcode.map(item => item.toUpperCase());
+    const resultString = upperCaseBarcodes
+      .map(item => `'${item.toUpperCase()}'`)
+      .join(", ");
+
+    const dataSql = `
+      WITH vs_filtered AS (
+          SELECT 
+              vs.serial_number, 
+              vs.order_reference, 
+              v.sku, 
+              v.barcode, 
+              vs.id AS variant_serial_id 
+          FROM workplace.variant_serials AS vs 
+          LEFT JOIN workplace.variants AS v ON vs.variant_id = v.id 
+          WHERE vs.final_encoded_barcode IN (${resultString})
+      ),
+      orders_with_matching_items AS (
+          SELECT 
+              sale_ord.haravan_order_id AS order_id, 
+              sale_ord.name, 
+              vs_f.serial_number, 
+              vs_f.sku, 
+              vs_f.barcode, 
+              vs_f.variant_serial_id
+          FROM vs_filtered AS vs_f
+          LEFT JOIN erpnext.sales_orders AS sale_ord ON vs_f.order_reference = sale_ord.order_number
+          LEFT JOIN workplace.temporary_products AS tp ON vs_f.variant_serial_id = tp.variant_serial_id
+          WHERE sale_ord.cancelled_status = 'uncancelled'
+            AND (tp.is_notify_lark_reorder = false OR tp.is_notify_lark_reorder IS NULL)
+            AND EXISTS (
+                SELECT 1
+                FROM jsonb_array_elements(sale_ord.items) AS item_data
+                WHERE (item_data->>'item_name')::text LIKE '%Tạm%'
+                  AND (item_data->>'serial_numbers') IS NOT NULL 
+                  AND (item_data->>'serial_numbers')::text != ''
+            )
+      )
+      SELECT DISTINCT ON (owmi.serial_number) 
+          owmi.serial_number, 
+          owmi.name, 
+          owmi.barcode,
+          owmi.sku,
+          owmi.variant_serial_id,
+          clm.lark_message_id, 
+          clm.haravan_order_id 
+      FROM orders_with_matching_items AS owmi
+      LEFT JOIN erpnext.sales_order_notification_tracking AS clm ON owmi.order_id::TEXT = clm.haravan_order_id
+      ORDER BY owmi.serial_number, clm.lark_message_id DESC;
+    `;
+
+    const notifyResult = await db.$queryRaw`${Prisma.raw(dataSql)}`;
+
+    const variantSerialIdsToUpdate = [];
+
+    for (const row of notifyResult) {
+      const message = this.composeSendJewelryMessage(row.serial_number, row.barcode.toUpperCase(), row.sku);
+      if (row.lark_message_id && !variantSerialIdsToUpdate.includes(row.variant_serial_id)) {
+        const success = await larkClient.im.message.reply({
+          path: {
+            message_id: row.lark_message_id
+          },
+          data: {
+            receive_id: groupId,
+            msg_type: "text",
+            reply_in_thread: true,
+            content: JSON.stringify({
+              text: message
+            })
+          }
+        });
+        if (success) {
+          variantSerialIdsToUpdate.push(row.variant_serial_id);
+        }
+      }
+    }
+
+    if (variantSerialIdsToUpdate.length > 0) {
+      await db.temporaryProducts.updateMany({
+        where: {
+          variant_serial_id: {
+            in: variantSerialIdsToUpdate
+          }
+        },
+        data: {
+          is_notify_lark_reorder: true
+        }
+      });
+    }
+    return variantSerialIdsToUpdate;
+  }
+
+  async processDiamondNotifications(db, timestamp, larkClient, groupId) {
+    const giaResult = await db.$queryRaw`
+      SELECT li.sku FROM haravan.variants AS li 
+      LEFT JOIN haravan.warehouse_inventories AS hw ON li.id = hw.variant_id 
+      WHERE li.sku LIKE '%-GIA%' AND li.database_updated_at >= ${timestamp}
+      GROUP BY li.sku 
+      HAVING SUM(hw.qty_onhand) > 0;
+    `;
+
+    let giaList = giaResult.map(line => line.sku.split("-")[1]).filter(part => part && part.startsWith("GIA"));
+    giaList = this.preprocessGiaList(giaList);
+
+    if (giaList.length === 0) {
+      console.warn("No new diamond GIA numbers found to process.");
+      return [];
+    }
+
+    const conditions = giaList
+      .map(gia => `gia_report_no LIKE '%${gia}%'`)
+      .join(" OR ");
+
+    const dataSql = `
+      WITH selected_products AS (
+          SELECT haravan_variant_id, gia_report_no
+          FROM workplace.temporary_products
+          WHERE (${conditions}) 
+          AND (is_notify_lark_reorder IS NULL OR is_notify_lark_reorder = false) 
+      ),
+      joined_orders AS (
+          SELECT 
+              lpv.order_id, 
+              sp.haravan_variant_id, 
+              sp.gia_report_no
+          FROM selected_products sp
+          LEFT JOIN haravan.line_items lpv 
+              ON sp.haravan_variant_id = lpv.variant_id
+          LEFT JOIN haravan.orders ord
+              ON lpv.order_id = ord.id
+          WHERE ord.cancelled_status = 'uncancelled'
+      )
+  
+      SELECT crm.*, jo.gia_report_no as gia_report_no, jo.haravan_variant_id as haravan_variant_id 
+      FROM joined_orders jo
+      LEFT JOIN erpnext.sales_order_notification_tracking crm ON jo.order_id::TEXT = crm.haravan_order_id;
+    `;
+
+    const giaNotifyResult = await db.$queryRaw`${Prisma.raw(dataSql)}`;
+
+    const haravanVariantIdsToUpdate = [];
+    for (const row of giaNotifyResult) {
+      const message = this.composeSendDiamondMessage(row.gia_report_no);
+      if (row.lark_message_id && !haravanVariantIdsToUpdate.includes(row.haravan_variant_id)) {
+        const success = await larkClient.im.message.reply({
+          path: {
+            message_id: row.lark_message_id
+          },
+          data: {
+            receive_id: groupId,
+            msg_type: "text",
+            reply_in_thread: true,
+            content: JSON.stringify({
+              text: message
+            })
+          }
+        });
+        if (success) {
+          haravanVariantIdsToUpdate.push(row.haravan_variant_id);
+        }
+      }
+    }
+
+    if (haravanVariantIdsToUpdate.length > 0) {
+      await db.temporaryProducts.updateMany({
+        where: {
+          haravan_variant_id: {
+            in: haravanVariantIdsToUpdate
+          }
+        },
+        data: {
+          is_notify_lark_reorder: true
+        }
+      });
+    }
+    return haravanVariantIdsToUpdate;
+  }
+
+  composeSendJewelryMessage(serialNumber, barcode, sku) {
+    return stringSquish(`
+      <b>HÀNG VỀ</b>
+      Số serial: ${serialNumber}
+      Barcode: ${barcode} 
+      SKU: ${sku}
+      Vui lòng đặt lại đơn hàng
+    `);
+  }
+
+  composeSendDiamondMessage(giaReportNo) {
+    return stringSquish(`
+      <b>HÀNG VỀ</b>
+      Kim cương có mã GIA${giaReportNo}
+      Vui lòng đặt lại đơn hàng
+    `);
+  }
+
+  preprocessGiaList (giaList) {
+    return giaList.map(gia => {
+      return gia.startsWith("GIA") ? gia.slice(3) : gia;
+    });
+  };
 }
