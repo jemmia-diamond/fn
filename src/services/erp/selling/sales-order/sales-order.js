@@ -179,7 +179,7 @@ export default class SalesOrderService {
       }
 
       // find the very first order in history
-      const refOrders = await getRefOrderChain(this.db, Number(haravanRefOrderId));
+      const refOrders = await getRefOrderChain(this.db, Number(salesOrderData.haravan_order_id));
 
       if (!refOrders || refOrders.length === 0) {
         return {
@@ -188,15 +188,18 @@ export default class SalesOrderService {
         };
       }
 
-      const refOrderstNotificationOrderTracking = await this.db.erpnextSalesOrderNotificationTracking.findFirst({
+      const refOrderstNotificationOrderTracking = await this.db.erpnextSalesOrderNotificationTracking.findMany({
         where: {
           haravan_order_id: {
             in: refOrders?.map(order => String(order.id))
           }
+        },
+        orderBy: {
+          database_created_at: "asc"
         }
       });
 
-      if (refOrderstNotificationOrderTracking) {
+      if (refOrderstNotificationOrderTracking && refOrderstNotificationOrderTracking.length > 0) {
         // Reply to the root message in the group chat
         const composedReplyMessage = composeReplyReorderMessage(salesOrderData);
         const replyResponse = await larkClient.im.message.reply({
