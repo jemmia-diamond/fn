@@ -275,6 +275,7 @@ const composeLineItemsChangeMessage = (oldItems, newItems, promotionData) => {
         message += "CTKM: \n";
         message += `${composeChildrenContent(itemPromotions, "title")}`;
       }
+      message += "\n";
     });
     message += "\n";
   }
@@ -334,6 +335,7 @@ const composeLineItemsChangeMessage = (oldItems, newItems, promotionData) => {
           changes.forEach(change => {
             itemMessges += `${change}\n`;
           });
+          itemMessges += "\n";
         }
       }
     });
