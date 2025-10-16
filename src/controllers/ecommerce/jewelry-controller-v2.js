@@ -42,4 +42,17 @@ export default class JewelryControllerV2 {
     const result = await productService.getJewelryV2(jsonParams);
     return ctx.json(result);
   }
+
+  static async show(ctx) {
+    const { id } = ctx.req.param();
+    if (isNaN(Number(id))) {
+      return ctx.json({ error: "Invalid id. Must be a number." }, 400);
+    }
+    const productService = new Ecommerce.ProductService(ctx.env);
+    const result = await productService.getJewelryByIdV2(id);
+    if (!result) {
+      return ctx.json({ error: "Jewelry not found" }, 404);
+    }
+    return ctx.json({ data: result }, 200);
+  }
 }
