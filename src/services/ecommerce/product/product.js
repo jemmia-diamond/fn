@@ -1,6 +1,7 @@
 import Database from "services/database";
 import { Prisma } from "@prisma-cli";
 import { buildQuery } from "services/ecommerce/product/utils/jewelry";
+import { buildQueryV2 } from "services/ecommerce/product/utils/jewelry-v2";
 import { buildWeddingRingsQuery } from "services/ecommerce/product/utils/wedding-ring";
 
 export default class ProductService {
@@ -196,5 +197,35 @@ export default class ProductService {
     await db.$queryRaw`REFRESH MATERIALIZED VIEW ecom.materialized_products;`;
     await db.$queryRaw`REFRESH MATERIALIZED VIEW ecom.materialized_variants;`;
     await db.$queryRaw`REFRESH MATERIALIZED VIEW ecom.materialized_wedding_rings;`;
+  }
+
+  static async listV2() {
+  }
+
+  async getJewelryDataV2(jsonParams) {
+    const { dataSql, countSql } = buildQueryV2(jsonParams);
+
+    const data = await this.db.$queryRaw`${Prisma.raw(dataSql)}`;
+    const count = await this.db.$queryRaw`${Prisma.raw(countSql)}`;
+
+    return {
+      data,
+      count: count.length ? Number(count[0].total) : 0,
+      material_colors: count.length ? count[0].material_colors : [],
+      fineness: count.length ? count[0].fineness : []
+    };
+  }
+
+  async getJewelryV2(jsonParams) {
+    const { data, count, material_colors, fineness } = await this.getJewelryDataV2(jsonParams);
+    return {
+      data,
+      metadata: {
+        total: count,
+        material_colors: material_colors,
+        fineness: fineness,
+        pagination: jsonParams.pagination
+      }
+    };
   }
 }
