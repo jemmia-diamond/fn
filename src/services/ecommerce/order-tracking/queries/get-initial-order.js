@@ -23,3 +23,26 @@ export async function getInitialOrder(db, orderId) {
 
   return orders.length ? orders[0] : null;
 }
+
+export async function getRefOrderChain(db, orderId) {
+  const orders = await db.$queryRaw`
+    WITH RECURSIVE order_chain AS (
+        SELECT id, ref_order_id, order_number, created_at
+        FROM haravan.orders 
+        WHERE id = ${orderId}
+        UNION ALL 
+        SELECT o.id, o.ref_order_id, o.order_number, o.created_at
+        FROM haravan.orders o
+            INNER JOIN order_chain oc ON o.id = oc.ref_order_id
+    )
+    SELECT 
+        id,
+        order_number,
+        created_at 
+    FROM order_chain
+    WHERE id != ${orderId}
+    ORDER BY created_at ASC
+  `;
+
+  return orders;
+}
