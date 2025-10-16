@@ -18,18 +18,22 @@ export default class ProductService {
       data,
       count: count.length ? Number(count[0].total) : 0,
       material_colors: count.length ? count[0].material_colors : [],
-      fineness: count.length ? count[0].fineness : []
+      fineness: count.length ? count[0].fineness : [],
+      ring_band_style: count.length ? this.normalizeRingStyles(count[0].ring_band_style) : [],
+      ring_head_style: count.length ? this.normalizeRingStyles(count[0].ring_head_style) : []
     };
   }
 
   async getJewelry(jsonParams) {
-    const { data, count, material_colors, fineness } = await this.getJewelryData(jsonParams);
+    const { data, count, material_colors, fineness, ring_band_style, ring_head_style } = await this.getJewelryData(jsonParams);
     return {
       data,
       metadata: {
         total: count,
         material_colors: material_colors,
         fineness: fineness,
+        ring_band_style: ring_band_style,
+        ring_head_style: ring_head_style,
         pagination: jsonParams.pagination
       }
     };
@@ -197,4 +201,18 @@ export default class ProductService {
     await db.$queryRaw`REFRESH MATERIALIZED VIEW ecom.materialized_variants;`;
     await db.$queryRaw`REFRESH MATERIALIZED VIEW ecom.materialized_wedding_rings;`;
   }
+
+  normalizeRingStyles = (styles) => {
+    if (!styles || !Array.isArray(styles)) return [];
+    const normalizedStyles = styles
+      .map((style) => this.extractValueFromRingStyle(style))
+      .filter((style) => style);
+    return Array.from(new Set(normalizedStyles));
+  };
+
+  extractValueFromRingStyle = (style) => {
+    if (!style) return null;
+    const parts = style.split(" - ");
+    return parts.length > 1 ? parts[1].trim() : parts[0].trim();
+  };
 }
