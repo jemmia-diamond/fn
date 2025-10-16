@@ -193,5 +193,8 @@
         "DebounceDurableObject"
       ]
     }
-  ]
+  ],
+  "version_metadata": {
+    "binding": "CF_VERSION_METADATA",
+  },
 }
