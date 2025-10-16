@@ -156,7 +156,7 @@ export const mapSalesOrdersToDatabase = (salesOrders) => {
     ref_sales_orders: salesOrder?.ref_sales_orders || null,
     promotions: salesOrder?.promotions || null,
     product_categories: salesOrder?.product_categories || null,
-    debt_history: salesOrder?.debt_history || null,
+    debt_histories: salesOrder?.debt_histories || null,
     packed_items: salesOrder?.packed_items || null,
     taxes: salesOrder?.taxes || null,
     pricing_rules: salesOrder?.pricing_rules || null,

@@ -59,7 +59,7 @@ export async function fetchSalesOrdersFromERP(frappeClient, doctype, fromDate, t
         item.promotions = salesOrderPromotionsMap[item.name] || [];
         item.sales_order_purposes = salesOrderPurposesMap[item.name] || [];
         item.product_categories = salesOrderProductCategoriesMap[item.name] || [];
-        item.debt_history = debtHistoryMap[item.name] || [];
+        item.debt_histories = debtHistoryMap[item.name] || [];
       });
 
       allSalesOrders.push(...batch);

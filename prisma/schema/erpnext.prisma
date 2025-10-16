@@ -220,7 +220,7 @@ model erpnextSalesOrders {
   pricing_rules       Json? @db.JsonB
   payment_records     Json? @db.JsonB
   payment_schedule    Json? @db.JsonB
-  debt_history        Json? @db.JsonB
+  debt_histories        Json? @db.JsonB
   policies            Json? @db.JsonB
   items               Json? @db.JsonB
   sales_order_purposes Json? @db.JsonB
