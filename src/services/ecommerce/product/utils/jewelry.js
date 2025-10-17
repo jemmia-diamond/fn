@@ -63,7 +63,9 @@ export function buildQuery(jsonParams) {
     SELECT
     COUNT(*) AS total,
      (SELECT ARRAY_AGG(DISTINCT mv.material_color ) FROM ecom.materialized_variants mv) AS material_colors,
-     (SELECT ARRAY_AGG(DISTINCT mv.fineness ) FROM ecom.materialized_variants mv) AS fineness
+     (SELECT ARRAY_AGG(DISTINCT mv.fineness ) FROM ecom.materialized_variants mv) AS fineness,
+     (SELECT ARRAY_AGG(DISTINCT mv.ring_band_style ) FROM ecom.materialized_variants mv) AS ring_band_style,
+     (SELECT ARRAY_AGG(DISTINCT mv.ring_head_style ) FROM ecom.materialized_variants mv) AS ring_head_style 
     FROM (
         SELECT p.haravan_product_id
         FROM ecom.materialized_products p 
