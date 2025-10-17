@@ -1,5 +1,6 @@
 // Import aggregateQuery from jewelry.js to reuse filter logic
 import { aggregateQuery } from "services/ecommerce/product/utils/jewelry";
+import { JEWELRY_IMAGE } from "src/controllers/ecommerce/constant";
 
 export function buildQueryV2(jsonParams) {
   const { filterString, sortString, paginationString, handleFinenessPriority, collectionJoinEcomProductsClause, linkedCollectionJoinEcomProductsClause, havingString } = aggregateQuery(jsonParams);
@@ -31,8 +32,8 @@ export function buildQueryV2(jsonParams) {
               COALESCE(
                 array_agg(
                   CASE 
-                    WHEN item.value->>'url' LIKE 'https://jemmia-workplace.%' THEN
-                      REPLACE(item.value->>'url', 'https://jemmia-workplace.90814f99c119cd5dc08362580f81a76f.r2.cloudflarestorage.com', 'https://cdn.jemmia.vn')
+                    WHEN item.value->>'url' LIKE '${JEWELRY_IMAGE.WORKPLACE_URL_PREFIX}%' THEN
+                      REPLACE(item.value->>'url', '${JEWELRY_IMAGE.WORKPLACE_FULL_URL}', '${ECOMMERCE_CONFIG.CDN_URL}')
                     ELSE item.value->>'url'
                   END
                 ) FILTER (WHERE jsonb_typeof(item.value) = 'object' AND item.value->>'url' IS NOT NULL),
