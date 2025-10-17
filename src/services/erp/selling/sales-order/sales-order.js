@@ -11,7 +11,7 @@ import utc from "dayjs/plugin/utc.js";
 import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/constant";
 
 import { fetchSalesOrdersFromERP, saveSalesOrdersToDatabase } from "src/services/erp/selling/sales-order/utils/sales-order-helpers";
-import { getInitialOrder } from "services/ecommerce/order-tracking/queries/get-initial-order";
+import { getRefOrderChain } from "services/ecommerce/order-tracking/queries/get-initial-order";
 
 dayjs.extend(utc);
 
@@ -179,62 +179,60 @@ export default class SalesOrderService {
       }
 
       // find the very first order in history
-      const firstOrder = await getInitialOrder(this.db, Number(haravanRefOrderId));
+      const refOrders = await getRefOrderChain(this.db, Number(salesOrderData.haravan_order_id));
 
-      if (!firstOrder) {
+      if (!refOrders || refOrders.length === 0) {
         return {
           success: false,
           message: `Không tìm thấy đơn gốc của đơn ${salesOrderData.order_number}`
         };
       }
 
-      const firstNotificationOrderTracking = await this.db.erpnextSalesOrderNotificationTracking.findFirst({
+      const refOrderstNotificationOrderTracking = await this.db.erpnextSalesOrderNotificationTracking.findMany({
         where: {
           haravan_order_id: {
-            equals: String(firstOrder.id)
+            in: refOrders?.map(order => String(order.id))
           }
-        }
-      });
-
-      if (!firstNotificationOrderTracking) {
-        return {
-          success: false,
-          message: `Đơn gốc ${firstOrder.order_number} chưa được thông báo. Vui lòng kiểm tra lại`
-        };
-      }
-
-      // Reply to the root message in the group chat
-      const composedReplyMessage = composeReplyReorderMessage(salesOrderData);
-      const replyResponse = await larkClient.im.message.reply({
-        path: {
-          message_id: firstNotificationOrderTracking.lark_message_id
         },
-        data: {
-          receive_id: CHAT_GROUPS.CUSTOMER_INFO.chat_id,
-          msg_type: "text",
-          reply_in_thread: true,
-          content: JSON.stringify({
-            text: composedReplyMessage
-          })
+        orderBy: {
+          database_created_at: "asc"
         }
       });
 
-      // Save ref order to tracking
-      if (replyResponse.msg === "success") {
-        await this.db.erpnextSalesOrderNotificationTracking.create({
+      if (refOrderstNotificationOrderTracking && refOrderstNotificationOrderTracking.length > 0) {
+        // Reply to the root message in the group chat
+        const composedReplyMessage = composeReplyReorderMessage(salesOrderData);
+        const replyResponse = await larkClient.im.message.reply({
+          path: {
+            message_id: refOrderstNotificationOrderTracking[0].lark_message_id
+          },
           data: {
-            lark_message_id: replyResponse.data.message_id,
-            order_name: salesOrderData.name,
-            haravan_order_id: salesOrderData.haravan_order_id,
-            order_data: {
-              items: salesOrderData.items,
-              attachments: salesOrderData.attachments
-            }
+            receive_id: CHAT_GROUPS.CUSTOMER_INFO.chat_id,
+            msg_type: "text",
+            reply_in_thread: true,
+            content: JSON.stringify({
+              text: composedReplyMessage
+            })
           }
         });
-        return { success: true, message: "Thông báo đơn đặt lại thành công!" };
+
+        // Save ref order to tracking
+        if (replyResponse.msg === "success") {
+          await this.db.erpnextSalesOrderNotificationTracking.create({
+            data: {
+              lark_message_id: replyResponse.data.message_id,
+              order_name: salesOrderData.name,
+              haravan_order_id: salesOrderData.haravan_order_id,
+              order_data: {
+                items: salesOrderData.items,
+                attachments: salesOrderData.attachments
+              }
+            }
+          });
+          return { success: true, message: "Thông báo đơn đặt lại thành công!" };
+        }
+        return { success: false, message: "Thông báo đơn đặt lại thất bại!" };
       }
-      return { success: false, message: "Thông báo đơn đặt lại thất bại!" };
     }
 
     const notificationTracking = await this.db.erpnextSalesOrderNotificationTracking.findFirst({

@@ -220,9 +220,22 @@ model erpnextSalesOrders {
   pricing_rules       Json? @db.JsonB
   payment_records     Json? @db.JsonB
   payment_schedule    Json? @db.JsonB
+  debt_histories        Json? @db.JsonB
   policies            Json? @db.JsonB
   items               Json? @db.JsonB
   sales_order_purposes Json? @db.JsonB
+
+  // Indexes for performance optimization
+  @@index([customer])                                    // For customer lookup queries
+  @@index([haravan_order_id])                           // For Haravan integration lookups
+  @@index([order_number])                               // For order number searches
+  @@index([status])                                     // For status filtering
+  @@index([delivery_status])                            // For delivery status filtering
+  @@index([financial_status])                           // For financial status filtering
+  @@index([fulfillment_status])                         // For fulfillment status filtering
+  @@index([cancelled_status])                           // For cancelled status filtering
+  @@index([customer, transaction_date])                 // Composite for customer order history
+
 
   database_created_at     DateTime? @default(now()) @db.Timestamp(6)
   database_updated_at     DateTime? @updatedAt @db.Timestamp(6)
