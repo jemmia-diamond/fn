@@ -3,6 +3,7 @@ import { Prisma } from "@prisma-cli";
 import { buildQuery } from "services/ecommerce/product/utils/jewelry";
 import { buildQueryV2 } from "services/ecommerce/product/utils/jewelry-v2";
 import { buildWeddingRingsQuery } from "services/ecommerce/product/utils/wedding-ring";
+import { JEWELRY_IMAGE } from "src/controllers/ecommerce/constant";
 
 export default class ProductService {
   constructor(env) {
@@ -199,9 +200,6 @@ export default class ProductService {
     await db.$queryRaw`REFRESH MATERIALIZED VIEW ecom.materialized_wedding_rings;`;
   }
 
-  static async listV2() {
-  }
-
   async getJewelryDataV2(jsonParams) {
     const { dataSql, countSql } = buildQueryV2(jsonParams);
 
@@ -263,8 +261,8 @@ export default class ProductService {
                  COALESCE(
                    array_agg(
                      CASE 
-                       WHEN item.value->>'url' LIKE 'https://jemmia-workplace.%' THEN
-                         REPLACE(item.value->>'url', 'https://jemmia-workplace.90814f99c119cd5dc08362580f81a76f.r2.cloudflarestorage.com', 'https://cdn.jemmia.vn')
+                       WHEN item.value->>'url' LIKE '${JEWELRY_IMAGE.WORKPLACE_URL_PREFIX}.%' THEN
+                         REPLACE(item.value->>'url', '${JEWELRY_IMAGE.WORKPLACE_FULL_URL}', '${ECOMMERCE_CONFIG.CDN_URL}')
                        ELSE item.value->>'url'
                      END
                    ) FILTER (WHERE jsonb_typeof(item.value) = 'object' AND item.value->>'url' IS NOT NULL),
