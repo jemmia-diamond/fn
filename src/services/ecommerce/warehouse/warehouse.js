@@ -1,4 +1,6 @@
 import Database from "services/database";
+import { Prisma } from "@prisma-cli";
+import { buildQuery } from "services/ecommerce/warehouse/utils/warehouse";
 
 export default class WarehouseService {
   constructor(env) {
@@ -6,19 +8,8 @@ export default class WarehouseService {
   }
 
   async getAvailableWarehouses(productId) {
-    const results = await this.db.$queryRaw`
-      SELECT
-        v.id AS variant_id,
-        wi.qty_available,
-        wi.loc_id,
-        w.name
-      FROM haravan.variants v
-      JOIN haravan.warehouse_inventories wi ON wi.variant_id = v.id
-      JOIN haravan.warehouses w ON w.id = wi.loc_id
-      WHERE v.product_id = ${productId}
-        AND wi.qty_available > 0
-      ORDER BY v.id, w.name;
-    `;
+    const dataSql = buildQuery(productId);
+    const results = await this.db.$queryRaw`${Prisma.raw(dataSql)}`;
 
     return results.map(r => ({
       variant_id: Number(r.variant_id),

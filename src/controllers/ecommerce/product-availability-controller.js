@@ -1,6 +1,6 @@
 import Ecommerce from "services/ecommerce";
 
-export default class WarehouseAvailabilityController {
+export default class ProductAvailabilityController {
   static async show(ctx) {
     const { id } = ctx.req.param();
 
