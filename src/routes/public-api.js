@@ -6,6 +6,7 @@ export default class PublicAPIRoutes {
 
     ecommerceNamespaceApi.get("/product/jewelries", Ecommerce.JewelryController.index);
     ecommerceNamespaceApi.get("/products/jewelries/:id", Ecommerce.JewelryController.show);
+    ecommerceNamespaceApi.get("/products/:id/availability", Ecommerce.WarehouseAvailabilityController.show);
 
     ecommerceNamespaceApi.get("/ind-day-stats", Ecommerce.IndDayStatController.show);
     ecommerceNamespaceApi.get("/order-trackings/:id", Ecommerce.OrderTrackingController.show);
