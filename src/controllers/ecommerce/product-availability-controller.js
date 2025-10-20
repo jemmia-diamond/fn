@@ -1,7 +1,7 @@
 import Ecommerce from "services/ecommerce";
 
 export default class ProductAvailabilityController {
-  static async show(ctx) {
+  static async index(ctx) {
     const { id } = ctx.req.param();
 
     if (isNaN(Number(id))) {
