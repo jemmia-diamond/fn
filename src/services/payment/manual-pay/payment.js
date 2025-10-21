@@ -6,7 +6,7 @@ import utc from "dayjs/plugin/utc.js";
 
 dayjs.extend(utc);
 
-export default class PaymentService {
+export default class ManualPaymentService {
   /**
    * Fetches records from the Lark Manual Payment table and upserts them into the
    * `manualPaymentTransaction` table in the database.
