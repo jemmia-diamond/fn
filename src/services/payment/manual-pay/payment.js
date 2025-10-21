@@ -7,6 +7,9 @@ import utc from "dayjs/plugin/utc.js";
 dayjs.extend(utc);
 
 export default class ManualPaymentService {
+  static PAGE_SIZE = 100;
+  static INTERVAL_IN_MINUTES = 30;
+
   /**
    * Fetches records from the Lark Manual Payment table and upserts them into the
    * `manualPaymentTransaction` table in the database.
@@ -16,7 +19,7 @@ export default class ManualPaymentService {
   static async syncManualPaymentsToDatabase(env) {
     const db = Database.instance(env);
     const larkClient = await LarksuiteService.createClientV2(env);
-    const timeThreshold = dayjs().utc().subtract(30, "minutes").valueOf();
+    const timeThreshold = dayjs().utc().subtract(ManualPaymentService.INTERVAL_IN_MINUTES, "minutes").subtract(5, "minutes").valueOf();
     const manualPaymentTable = TABLES.MANUAL_PAYMENT;
 
     if (!manualPaymentTable) {
@@ -34,7 +37,7 @@ export default class ManualPaymentService {
           params: {
             user_id_type: "user_id",
             page_token: pageToken,
-            page_size: 100
+            page_size: ManualPaymentService.PAGE_SIZE
           },
           data: {
             filter: {
