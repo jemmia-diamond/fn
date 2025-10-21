@@ -54,6 +54,7 @@ export default class APIRoutes {
     nhattinNamespaceApi.get("/nhattin", Delivery.DeliveryTrackingController.show);
 
     const paymentApi = api.basePath("/payments");
-    paymentApi.get("/manual", Payment.DeliveryTrackingController.show);
+    paymentApi.post("/manual", Payment.ManualPaymentController.create);
+    paymentApi.patch("/manual/:id", Payment.ManualPaymentController.update);
   };
 };
