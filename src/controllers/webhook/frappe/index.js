@@ -8,5 +8,6 @@ export default class FrappeWebhook {
     frappeWebhookNamespace.use("*", verifyHmacBase64Auth("X-Frappe-Webhook-Signature", "FRAPPE_WEBHOOK_SECRET"));
     frappeWebhookNamespace.post("/pancake/conversation_assignments", FrappePancakeConversationAssignmentController.create);
     frappeWebhookNamespace.post("/erp/contacts", FrappeERPContactsController.create);
+    frappeWebhookNamespace.post("/erp/sales-order", FrappeERPSalesOrderController.create);
   }
 }
