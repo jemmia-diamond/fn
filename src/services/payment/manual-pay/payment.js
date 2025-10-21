@@ -117,8 +117,12 @@ export default class ManualPaymentService {
   static async createManualPayment(env, data) {
     const db = Database.instance(env);
     try {
-      const newPayment = await db.manualPaymentTransaction.create({
-        data: {
+      const newPayment = await db.manualPaymentTransaction.upsert({
+        where: {
+          lark_record_id: data.lark_record_id
+        },
+        update: data,
+        create: {
           ...data,
           misa_synced: data.misa_synced ?? false
         }

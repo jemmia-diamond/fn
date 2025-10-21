@@ -1,10 +1,54 @@
-import PaymentService from "services/payment";
+import PaymentServices from "services/payment";
 
 export default class ManualPaymentController {
+  /**
+   * Parses and type-casts payment data from a multipart form body.
+   * @param {object} body - The raw body from `c.req.parseBody()`.
+   * @returns {object} A cleaned and typed data object for the service layer.
+   * @private
+   */
+  static _parseAndTypecast(body) {
+    const paymentData = { ...body };
+
+    const amountStr = body.transfer_amount;
+    if (amountStr != null && amountStr !== "") {
+      paymentData.transfer_amount = parseFloat(amountStr);
+    } else {
+      delete paymentData.transfer_amount;
+    }
+
+    ["send_date", "receive_date", "created_date", "updated_date"].forEach(field => {
+      const dateStr = body[field];
+      if (dateStr != null && dateStr !== "") {
+        paymentData[field] = new Date(dateStr);
+      } else {
+        delete paymentData[field];
+      }
+    });
+
+    if (body.misa_synced != null) {
+      paymentData.misa_synced = body.misa_synced === "true";
+    } else {
+      delete paymentData.misa_synced;
+    }
+
+    Object.keys(paymentData).forEach(key => {
+      const value = paymentData[key];
+      if (value === undefined || (value instanceof Date && isNaN(value.getTime())) || (typeof value === "number" && isNaN(value))) {
+        delete paymentData[key];
+      }
+    });
+
+    return paymentData;
+  }
+
   static async create(c) {
     try {
-      const body = await c.req.json();
-      const newPayment = await PaymentService.ManualPaymentService.createManualPayment(c.env, body);
+      const body = await c.req.parseBody();
+
+      const paymentData = ManualPaymentController._parseAndTypecast(body);
+
+      const newPayment = await PaymentServices.ManualPaymentService.createManualPayment(c.env, paymentData);
 
       if (newPayment) {
         return c.json(newPayment, 201);
@@ -13,22 +57,21 @@ export default class ManualPaymentController {
       }
     } catch (error) {
       console.error("Error in PaymentController.create:", error);
-      if (error instanceof SyntaxError) {
-        return c.json({ error: "Invalid JSON in request body" }, 400);
-      }
       return c.json({ error: "An unexpected error occurred" }, 500);
     }
   }
 
   static async update(c) {
     try {
-      const { uuid } = c.req.param();
-      if (!uuid) {
-        return c.json({ error: "Missing 'uuid' parameter in URL" }, 400);
+      const { id } = c.req.param();
+      if (!id) {
+        return c.json({ error: "Missing 'id' parameter in URL" }, 400);
       }
-      const body = await c.req.json();
+      const body = await c.req.parseBody();
 
-      const updatedPayment = await ManualPaymentService.updateManualPayment(c.env, uuid, body);
+      const paymentData = ManualPaymentController._parseAndTypecast(body);
+
+      const updatedPayment = await PaymentServices.ManualPaymentService.updateManualPayment(c.env, id, paymentData);
 
       if (updatedPayment) {
         return c.json(updatedPayment, 200);
@@ -37,11 +80,7 @@ export default class ManualPaymentController {
       }
     } catch (error) {
       console.error("Error in PaymentController.update:", error);
-      if (error instanceof SyntaxError) {
-        return c.json({ error: "Invalid JSON in request body" }, 400);
-      }
       return c.json({ error: "An unexpected error occurred" }, 500);
     }
   }
 }
-
