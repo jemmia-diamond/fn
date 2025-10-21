@@ -4,6 +4,7 @@ import OrderTrackingService from "services/ecommerce/order-tracking/order-tracki
 import SendZaloMessage from "services/ecommerce/zalo-message/zalo-message";
 import OrderNotificationService from "services/ecommerce/order-notification/order-notification";
 import CardService from "services/ecommerce/card/card";
+import WarehouseService from "services/ecommerce/warehouse/warehouse";
 
 export default {
   ProductService: ProductService,
@@ -11,5 +12,6 @@ export default {
   OrderTrackingService: OrderTrackingService,
   SendZaloMessage: SendZaloMessage,
   OrderNotificationService: OrderNotificationService,
-  CardService: CardService
+  CardService: CardService,
+  WarehouseService: WarehouseService
 };

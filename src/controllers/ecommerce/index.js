@@ -6,6 +6,7 @@ import WeddingRingController from "controllers/ecommerce/wedding-ring-controller
 import IndDayStatController from "controllers/ecommerce/ind-day-stat-controller";
 import OrderTrackingController from "controllers/ecommerce/order-tracking-controller";
 import CardController from "controllers/ecommerce/card-controller";
+import ProductAvailabilityController from "controllers/ecommerce/product-availability-controller";
 
 export default {
   JewelryController: JewelryController,
@@ -15,5 +16,6 @@ export default {
   WeddingRingController: WeddingRingController,
   IndDayStatController: IndDayStatController,
   OrderTrackingController: OrderTrackingController,
-  CardController: CardController
+  CardController: CardController,
+  ProductAvailabilityController: ProductAvailabilityController
 };
