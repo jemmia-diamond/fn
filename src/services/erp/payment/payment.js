@@ -104,4 +104,49 @@ export default class PaymentService {
       return;
     }
   }
+
+  /**
+   * Creates a single manual payment transaction in the database.
+   * @param {object} env - The environment configuration.
+   * @param {object} data - The data for the new payment transaction, matching the Prisma model.
+   * @returns {Promise<object|null>} The created payment transaction or null on error.
+   */
+  static async createManualPayment(env, data) {
+    const db = Database.instance(env);
+    try {
+      const newPayment = await db.manualPaymentTransaction.create({
+        data: {
+          ...data,
+          misa_synced: data.misa_synced ?? false
+        }
+      });
+      return newPayment;
+    } catch (error) {
+      console.error("Error creating manual payment transaction:", error);
+      return null;
+    }
+  }
+
+  /**
+   * Updates a single manual payment transaction in the database by its UUID.
+   * @param {object} env - The environment configuration.
+   * @param {string} uuid - The UUID of the payment transaction to update.
+   * @param {object} data - The data to update.
+   * @returns {Promise<object|null>} The updated payment transaction or null on error.
+   */
+  static async updateManualPayment(env, uuid, data) {
+    const db = Database.instance(env);
+    try {
+      const updatedPayment = await db.manualPaymentTransaction.update({
+        where: {
+          uuid: uuid
+        },
+        data: data
+      });
+      return updatedPayment;
+    } catch (error) {
+      console.error(`Error updating manual payment transaction with UUID ${uuid}:`, error);
+      return null;
+    }
+  }
 }
