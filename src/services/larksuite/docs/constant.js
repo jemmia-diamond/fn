@@ -6,5 +6,9 @@ export const TABLES = {
   TEMP_PRODUCT_QUOTE: {
     table_id: "tblWqLuhHZYquTSc",
     app_token: "QPSDbhGD2adxzpsNoCIlk81Pgzh"
+  },
+  MANUAL_PAYMENT: {
+    table_id: "tbltEB1BSxNLzVvj",
+    app_token: "SfjFbVLUHaGbhksKPnBlPDEdgZd"
   }
 };
