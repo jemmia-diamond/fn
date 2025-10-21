@@ -2,7 +2,7 @@
 CREATE SCHEMA IF NOT EXISTS "payment";
 
 -- CreateTable
-CREATE TABLE "payment"."manual_payment" (
+CREATE TABLE "payment"."manual_payments" (
     "uuid" UUID NOT NULL,
     "payment_type" VARCHAR(255),
     "branch" VARCHAR(255),
@@ -23,11 +23,11 @@ CREATE TABLE "payment"."manual_payment" (
     "misa_sync_guid" VARCHAR(255),
     "misa_sync_error_msg" TEXT,
 
-    CONSTRAINT "manual_payment_pkey" PRIMARY KEY ("uuid")
+    CONSTRAINT "manual_payments_pkey" PRIMARY KEY ("uuid")
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "manual_payment_lark_record_id_key" ON "payment"."manual_payment"("lark_record_id");
+CREATE UNIQUE INDEX "manual_payments_lark_record_id_key" ON "payment"."manual_payments"("lark_record_id");
 
 -- CreateIndex
-CREATE INDEX "manual_payment_uuid_idx" ON "payment"."manual_payment"("uuid");
+CREATE INDEX "manual_payments_uuid_idx" ON "payment"."manual_payments"("uuid");
