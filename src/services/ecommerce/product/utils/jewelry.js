@@ -47,7 +47,7 @@ export function buildQuery(jsonParams) {
         ORDER BY v.fineness ${finenessOrder}, v.price DESC
       ) v ON TRUE
     WHERE 1 = 1
-      AND (p.haravan_product_type != 'Nhẫn Cưới' OR (p.haravan_product_type = 'Nhẫn Cưới' AND d.gender = 'Nam'))
+      AND (p.haravan_product_type != 'Nhẫn Cưới')
       ${filterString}
     GROUP BY 
       p.haravan_product_id, p.title, d.design_code, p.handle, p.ecom_title,
@@ -72,7 +72,7 @@ export function buildQuery(jsonParams) {
             ${linkedCollectionJoinEcomProductsClause}
             INNER JOIN ecom.materialized_variants v ON v.haravan_product_id = p.haravan_product_id
         WHERE 1 = 1 
-          AND (p.haravan_product_type != 'Nhẫn Cưới' OR (p.haravan_product_type = 'Nhẫn Cưới' AND d.gender = 'Nam'))
+          AND (p.haravan_product_type != 'Nhẫn Cưới')
         ${filterString}
         GROUP BY p.haravan_product_id
         ${havingString}
