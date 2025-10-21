@@ -16,7 +16,7 @@ export default class PaymentService {
   static async syncManualPaymentsToDatabase(env) {
     const db = Database.instance(env);
     const larkClient = await LarksuiteService.createClientV2(env);
-    const timeThreshold = dayjs().utc().subtract(1, "day").subtract(5, "minutes").valueOf(); // Re-introducing the time threshold
+    const timeThreshold = dayjs().utc().subtract(30, "minutes").valueOf();
     const manualPaymentTable = TABLES.MANUAL_PAYMENT;
 
     if (!manualPaymentTable) {
