@@ -22,6 +22,6 @@ model manualPaymentTransaction {
   misa_sync_error_msg String?   @db.Text
 
   @@index([uuid])
-  @@map("manual_payment")
+  @@map("manual_payments")
   @@schema("payment")
 }
