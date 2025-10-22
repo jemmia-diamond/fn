@@ -83,8 +83,20 @@ export default class SalesOrderService {
       await addressService.processHaravanAddress(address, customer);
     }
 
-    const paymentTransactions = haravanOrderData.transactions.filter(transaction => transaction.kind.toLowerCase() === "capture");
-    const paidAmount = paymentTransactions.reduce((total, transaction) => total + transaction.amount, 0);
+    // Validate and normalize transactions
+    const transactions = Array.isArray(haravanOrderData.transactions) ? haravanOrderData.transactions : [];
+    const sanitizedPaymentTransactions = transactions
+      .map(t => this.sanitizeHrvPaymentTransaction(t))
+      .filter(Boolean);
+
+    // paidAmount from Vietnamdong
+    const paidAmount = sanitizedPaymentTransactions.reduce((total, t) => {
+      if (t.kind !== "capture") return total;
+      // normalize amount
+      return total + Math.round(t.amount);
+    }, 0);
+
+    const existingOrder = await this.fetchErpSaleOrderByHaravanId(haravanOrderData.id);
 
     const mappedOrderData = {
       doctype: this.doctype,
@@ -103,7 +115,7 @@ export default class SalesOrderService {
       transaction_date: convertIsoToDatetime(haravanOrderData.created_at, "date"),
       haravan_created_at: convertIsoToDatetime(haravanOrderData.created_at, "datetime"),
       total: haravanOrderData.total_line_items_price,
-      payment_records: haravanOrderData.transactions.filter(transaction => transaction.kind.toLowerCase() === "capture").map(this.mapPaymentRecordFields),
+      payment_records: this.mapPaymentRecordFields(existingOrder, sanitizedPaymentTransactions),
       contact_person: contact.name,
       customer_address: customerDefaultAdress.name,
       total_amount: haravanOrderData.total_price,
@@ -114,6 +126,21 @@ export default class SalesOrderService {
     };
     const order = await this.frappeClient.upsert(mappedOrderData, "haravan_order_id", ["items"]);
     return order;
+  }
+
+  async fetchErpSaleOrderByHaravanId(haravanId) {
+    try {
+      const existing = await this.frappeClient.getList(this.doctype, {
+        filters: [["haravan_order_id", "=", String(haravanId)]],
+        limit_page_length: 1
+      });
+      if (Array.isArray(existing) && existing.length > 0 && existing[0]?.name) {
+        return await this.frappeClient.getDoc(this.doctype, String(existing[0].name));
+      }
+      return null;
+    } catch (error) {
+      throw error;
+    }
   }
 
   static async dequeueOrderQueue(batch, env) {
@@ -129,15 +156,36 @@ export default class SalesOrderService {
     }
   }
 
-  mapPaymentRecordFields = (hrvTransactionData) => {
-    return {
-      doctype: this.linkedTableDoctype.paymentRecords,
-      date: convertIsoToDatetime(hrvTransactionData["created_at"]),
-      amount: hrvTransactionData["amount"],
-      gateway: hrvTransactionData["gateway"],
-      kind: hrvTransactionData["kind"],
-      transaction_id: hrvTransactionData["id"]
-    };
+  mapPaymentRecordFields = (existingOrder, sanitizedTransactions = []) => {
+    const existingList = existingOrder?.payment_records || [];
+    const existingMap = new Map(
+      existingList
+        .filter(row => row.transaction_id != null)
+        .map(row => [row.transaction_id, row.name])
+    );
+
+    return sanitizedTransactions
+      .map(t => {
+        const date = convertIsoToDatetime(t.created_at);
+        if (!date) return null;
+
+        const transactionId = t.id;
+        const rec = {
+          doctype: this.linkedTableDoctype.paymentRecords,
+          date,
+          amount: t.amount,
+          gateway: t.gateway,
+          kind: t.kind,
+          transaction_id: transactionId
+        };
+
+        const existingName = existingMap.get(transactionId);
+        if (existingName) {
+          rec.name = existingName;
+        }
+        return rec;
+      })
+      .filter(Boolean);
   };
 
   mapLineItemsFields = (lineItemData) => {
@@ -488,6 +536,28 @@ export default class SalesOrderService {
       } catch (error) {
         console.error(error);
       }
+    }
+  }
+
+  sanitizeHrvPaymentTransaction(t) {
+    try {
+      //Validate id is number
+      const idNum = Number(t?.id);
+      if (!Number.isFinite(idNum) || idNum < 0) { return null; }
+
+      const amountNum = Number(t?.amount);
+      if (!Number.isFinite(amountNum) || amountNum < 0) { return null; }
+
+      const createdAt = typeof t?.created_at === "string" ? t.created_at.trim() : "";
+      if (!createdAt || Number.isNaN(Date.parse(createdAt))) { return null; }
+
+      const gateway = (t?.gateway ?? "").toString().trim();
+      const kind = (t?.kind ?? "").toString().toLowerCase().trim();
+      if (kind !== "capture" || !gateway) { return null; }
+
+      return { ...t, id: idNum, amount: amountNum, created_at: createdAt, gateway, kind };
+    } catch {
+      return null;
     }
   }
 }
