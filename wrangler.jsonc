@@ -144,6 +144,10 @@
         "queue": "erpnext-crm",
         "binding": "ERPNEXT_CRM_QUEUE"
       },
+      {
+        "queue": "erpnext-sales-order",
+        "binding": "ERPNEXT_SALES_ORDER_QUEUE"
+      }
     ],
     "consumers": [
       {
@@ -166,6 +170,9 @@
       },
       {
         "queue": "erpnext-crm"
+      },
+      {
+        "queue": "erpnext-sales-order"
       }
     ]
   },
