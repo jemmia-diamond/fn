@@ -1,6 +1,6 @@
 import PaymentServices from "services/payment";
 
-export default class ManualPaymentController {
+export default class ManualPaymentsController {
   /**
    * Parses and type-casts payment data from a multipart form body.
    * @param {object} body - The raw body from `c.req.parseBody()`.

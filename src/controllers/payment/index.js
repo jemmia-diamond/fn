@@ -1,5 +1,5 @@
-import ManualPaymentController from "controllers/payment/manual-pay/manual-payment-controller";
+import ManualPaymentsController from "controllers/payment/manual-pay/manual-payment-controller";
 
 export default {
-  ManualPaymentController
+  ManualPaymentsController
 };
