@@ -6,6 +6,7 @@ import Pancake from "controllers/pancake";
 import Dashboard from "controllers/dashboard";
 import Ecommerce from "controllers/ecommerce";
 import Delivery from "controllers/delivery";
+import Payment from "controllers/payment";
 
 export default class APIRoutes {
   static register(api) {
@@ -51,5 +52,9 @@ export default class APIRoutes {
 
     const nhattinNamespaceApi = api.basePath("/delivery");
     nhattinNamespaceApi.get("/nhattin", Delivery.DeliveryTrackingController.show);
+
+    const paymentApi = api.basePath("/payments");
+    paymentApi.post("/manual-payments", Payment.ManualPaymentsController.create);
+    paymentApi.patch("/manual-payments/:id", Payment.ManualPaymentsController.update);
   };
 };
