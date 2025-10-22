@@ -304,7 +304,7 @@ const composeLineItemsChangeMessage = (oldItems, newItems, promotionData) => {
         if (newItem.qty !== oldItem.qty) {
           changes.push(`Số lượng: ${oldItem.qty} → ${newItem.qty}`);
         }
-        if (newItem.serial_numbers !== oldItem.serial_numbers) {
+        if ((newItem.serial_numbers || "") !== (oldItem.serial_numbers || "")) {
           changes.push(`Số serial: ${oldItem.serial_numbers || "N/A"} → ${newItem.serial_numbers || "N/A"}`);
         }
         if (newItem.price_list_rate !== oldItem.price_list_rate) {
@@ -331,7 +331,7 @@ const composeLineItemsChangeMessage = (oldItems, newItems, promotionData) => {
         }
 
         if (changes.length > 0) {
-          changes.unshift(`<i>${newItem.item_name}</i>`);
+          changes.unshift(`<i>${newItem.item_name} - ${newItem.variant_title}</i>`);
           changes.forEach(change => {
             itemMessges += `${change}\n`;
           });
@@ -358,8 +358,4 @@ const extractVariantTitle = (item) => {
     : extractVariantNameForJewelry(title);
 
   return extracted || title || "N/A";
-};
-
-export const composeReplyReorderMessage = (salesOrderData) => {
-  return `Đã đặt lại đơn ${salesOrderData.order_number}`;
 };
