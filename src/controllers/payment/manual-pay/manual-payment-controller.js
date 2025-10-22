@@ -46,7 +46,7 @@ export default class ManualPaymentsController {
     try {
       const body = await c.req.parseBody();
 
-      const paymentData = ManualPaymentController._parseAndTypecast(body);
+      const paymentData = ManualPaymentsController._parseAndTypecast(body);
 
       const newPayment = await PaymentServices.ManualPaymentService.createManualPayment(c.env, paymentData);
 
@@ -69,7 +69,7 @@ export default class ManualPaymentsController {
       }
       const body = await c.req.parseBody();
 
-      const paymentData = ManualPaymentController._parseAndTypecast(body);
+      const paymentData = ManualPaymentsController._parseAndTypecast(body);
 
       const updatedPayment = await PaymentServices.ManualPaymentService.updateManualPayment(c.env, id, paymentData);
 
