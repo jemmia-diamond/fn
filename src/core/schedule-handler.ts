@@ -1,9 +1,10 @@
-import Larksuite from "services/larksuite";
-import ERP from "services/erp";
-import Ecommerce from "services/ecommerce";
-import InventoryCMS from "services/inventory-cms";
-import DatabaseOperations from "services/db-operations";
-import Payment from "services/payment";
+// @ts-nocheck
+import Larksuite from "../../packages/v2/src/services/larksuite/index.js";
+import ERP from "../../packages/v2/src/services/erp/index.js";
+import Ecommerce from "../../packages/v2/src/services/ecommerce/index.js";
+import InventoryCMS from "../../packages/v2/src/services/inventory-cms/index.js";
+import DatabaseOperations from "../../packages/v2/src/services/db-operations/index.js";
+import Payment from "../../packages/v2/src/services/payment/index.js";
 
 export default {
   scheduled: async (controller, env, _ctx) => {

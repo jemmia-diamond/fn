@@ -1,10 +1,9 @@
-/* eslint no-console: "off" */
-
-import ERP from "src/services/erp";
-import Pancake from "src/services/pancake";
-import ProductQuote from "src/services/product_quote";
-import Ecommerce from "src/services/ecommerce";
-import Haravan from "src/services/haravan";
+// @ts-nocheck
+import ERP from "../../packages/v2/src/services/erp";
+import Pancake from "../../packages/v2/src/services/pancake";
+import ProductQuote from "../../packages/v2/src/services/product_quote";
+import Ecommerce from "../../packages/v2/src/services/ecommerce";
+import Haravan from "../../packages/v2/src/services/haravan";
 
 export default {
   queue: async (batch, env) => {
