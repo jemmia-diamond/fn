@@ -210,9 +210,17 @@ export default class ManualPaymentService {
     if (!haravanOrderId) {
       throw new BadRequestException("Haravan Order ID is missing.");
     }
-    if (!transferAmount || transferAmount <= 0) {
+
+    if (!transferAmount) {
+      throw new BadRequestException("Transaction is missing.");
+    }
+
+    const parsedTransferAmount = parseInt(transferAmount);
+
+    if (parsedTransferAmount <= 0) {
       throw new BadRequestException("Transaction amount must be a positive number.");
     }
+
     const validPaymentMethods = ["Tiền Mặt", "Cà Thẻ Tại Cửa Hàng", "Cà Thẻ Online", "COD HTC"];
     if (!paymentType || !validPaymentMethods.includes(paymentType)) {
       throw new BadRequestException(`Invalid payment method. Must be one of: ${validPaymentMethods.join(", ")}`);
@@ -237,7 +245,7 @@ export default class ManualPaymentService {
     if (order.financial_status === "paid") throw new BadRequestException("Order is already paid.");
     if (order.financial_status === "refunded") throw new BadRequestException("Order is already refunded.");
     if (order.closed_status === "closed") throw new BadRequestException("Order is closed.");
-    if (transferAmount > order.total_price) {
+    if (parsedTransferAmount > parseInt(order.total_price)) {
       throw new BadRequestException("Transaction amount exceeds order total price.");
     }
 
@@ -252,7 +260,7 @@ export default class ManualPaymentService {
 
     const transactionPayload = {
       transaction: {
-        amount: transferAmount,
+        amount: parsedTransferAmount,
         kind: "capture",
         gateway: paymentType
       }
