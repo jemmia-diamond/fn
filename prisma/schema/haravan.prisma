@@ -208,7 +208,7 @@ model Order {
   database_created_at                    DateTime? @default(now()) @db.Timestamp(6)
   database_updated_at                    DateTime? @default(now()) @db.Timestamp(6)
 
-  qr_generator qrPaymentTransaction?
+  qr_payments qrPaymentTransaction[]
   misa_user misaUser? @relation("OrderToMisaUser", fields: [user_id], references: [haravan_id], map: "orders_misa_user_fkey")
   user User? @relation("OrderToUser", fields: [user_id], references: [id], map: "orders_haravan_user_fkey")
 

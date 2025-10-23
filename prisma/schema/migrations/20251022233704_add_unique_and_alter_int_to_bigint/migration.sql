@@ -5,7 +5,6 @@ ALTER TABLE "haravan"."users" ALTER COLUMN "id" SET DATA TYPE BIGINT;
 ALTER TABLE "misa"."users" ALTER COLUMN "haravan_id" SET DATA TYPE BIGINT;
 
 -- Create Indexes
-CREATE UNIQUE INDEX IF NOT EXISTS "qr_generator_haravan_order_id_key" ON "ecom"."qr_generator"("haravan_order_id");
 CREATE INDEX IF NOT EXISTS "ix_ecom_qr_generator_id" ON "ecom"."qr_generator"("id");
 CREATE UNIQUE INDEX IF NOT EXISTS "ix_haravan_customers_id" ON "haravan"."customers"("id");
 CREATE INDEX IF NOT EXISTS "ix_haravan_customers_uuid" ON "haravan"."customers"("uuid");
