@@ -3,14 +3,14 @@ import { Context } from 'hono';
 
 export class ExampleController {
   public hello(ctx: Context) {
-    return new SuccessResponse({ message: ctx.req.path });
+    return new SuccessResponse({ message: 'Custom message' + ctx.req.path });
   }
 
-  public helloPost(ctx: Context) {
-    return new SuccessResponse({ message: ctx.req.path });
+  public helloPost() {
+    return new SuccessResponse({ message: 'Custom message'});
   }
 
-  public helloException(ctx: Context) {
+  public helloException() {
     throw new BadRequestException('Custom message', [
       {
         code: 'CODE',

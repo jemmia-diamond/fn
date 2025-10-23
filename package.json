@@ -49,11 +49,9 @@
     "schema": "./prisma/schema/"
   },
   "lint-staged": {
-    "*.{js,ts,jsx,tsx}": "eslint --fix",
-    "!src/index.ts": "echo Skipping src/index.ts",
-    "!src/core/queue-handler.ts": "echo Skipping src/core/queue-handler.ts",
-    "!src/core/schedule-handler.ts": "echo Skipping src/core/schedule-handler.ts",
-    "!packages/v2/**": "echo Skipping packages/v2/**"
+    "*.{js,ts,jsx,tsx}": [
+      "eslint --fix"
+    ]
   },
   "config": {
     "commitizen": {

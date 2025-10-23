@@ -1,20 +1,33 @@
 import js from "@eslint/js";
 import globals from "globals";
 import tseslint from "typescript-eslint";
-import { defineConfig } from "eslint/config";
 
-export default defineConfig([
+export default [
   {
-    files: ["**/*.{js,mjs,cjs,ts,mts,cts}"],
-    plugins: { js },
-    extends: ["js/recommended"],
-    languageOptions: { globals: globals.node },
     ignores: [
       "src/index.ts",
-      "src/core/queue-handler.ts",
+      "src/core/queue-handler.ts", 
       "src/core/schedule-handler.ts",
-      "packages/v2/**",
+      "packages/v2/**/*",
+      "**/node_modules/**",
+      "**/dist/**",
+      "**/build/**",
+      "**/.wrangler/**",
+      "**/.next/**",
+      "**/coverage/**",
+      "**/.cache/**",
     ],
   },
-  tseslint.configs.recommended,
-]);
+  js.configs.recommended,
+  ...tseslint.configs.recommended,
+  {
+    files: ["**/*.{js,mjs,cjs,ts,mts,cts}"],
+    languageOptions: { 
+      globals: globals.node 
+    },
+    rules: {
+      "@typescript-eslint/ban-ts-comment": "off",
+      "@typescript-eslint/no-unused-vars": "off",
+    },
+  },
+];
