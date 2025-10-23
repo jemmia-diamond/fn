@@ -3,6 +3,7 @@ import Database from "services/database";
 import { TABLES } from "services/larksuite/docs/constant";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
+import { BadRequestException } from "src/exception/exceptions";
 
 dayjs.extend(utc);
 
@@ -144,16 +145,134 @@ export default class ManualPaymentService {
   static async updateManualPayment(env, uuid, data) {
     const db = Database.instance(env);
     try {
-      const updatedPayment = await db.manualPaymentTransaction.update({
-        where: {
-          uuid: uuid
-        },
-        data: data
+
+      const paymentBeforeUpdate = await db.manualPaymentTransaction.findUnique({
+        where: { uuid }
       });
+
+      if (!paymentBeforeUpdate) {
+        return null;
+      }
+
+      if (paymentBeforeUpdate.transfer_status === "Xác nhận") {
+        return null;
+      }
+
+      const dataForFirstUpdate = {
+        ...data
+      };
+
+      delete dataForFirstUpdate.transfer_status;
+
+      // Update other fields
+      const updatedPayment = await db.manualPaymentTransaction.update({
+        where: { uuid: uuid },
+        data: dataForFirstUpdate
+      });
+
+      const shouldCreateTransaction =
+      data.transfer_status === "Xác nhận" &&
+      paymentBeforeUpdate.transfer_status !== "Xác nhận";
+
+      if (shouldCreateTransaction) {
+        await ManualPaymentService.createManualTransactionsToHaravanOrder(
+          env,
+          db,
+          updatedPayment.haravan_order_id,
+          updatedPayment.transfer_amount,
+          updatedPayment.payment_type
+        );
+        const finalUpdatedPayment = await db.manualPaymentTransaction.update({
+          where: { uuid: uuid },
+          data: {
+            transfer_status: data.transfer_status
+          }
+        });
+
+        return finalUpdatedPayment;
+      }
+
       return updatedPayment;
     } catch (error) {
-      console.error(`Error updating manual payment transaction with UUID ${uuid}:`, error);
-      return null;
+      console.error(`Error during update or Haravan transaction creation for UUID ${uuid}:`, error.message);
+      throw error;
     }
+  }
+
+  static async createManualTransactionsToHaravanOrder(
+    env,
+    db,
+    haravanOrderId,
+    transferAmount,
+    paymentType
+  ) {
+
+    if (!haravanOrderId) {
+      throw new BadRequestException("Haravan Order ID is missing.");
+    }
+    if (!transferAmount || transferAmount <= 0) {
+      throw new BadRequestException("Transaction amount must be a positive number.");
+    }
+    const validPaymentMethods = ["Tiền Mặt", "Cà Thẻ Tại Cửa Hàng", "Cà Thẻ Online", "COD HTC"];
+    if (!paymentType || !validPaymentMethods.includes(paymentType)) {
+      throw new BadRequestException(`Invalid payment method. Must be one of: ${validPaymentMethods.join(", ")}`);
+    }
+
+    const orderId = parseInt(haravanOrderId, 10);
+    if (isNaN(orderId)) {
+      throw new BadRequestException("Haravan Order ID must be a number.");
+    }
+
+    const orderResult = await db.$queryRaw`
+      SELECT id, cancelled_status, financial_status, closed_status, total_price 
+      FROM haravan.orders 
+      WHERE id = ${orderId}
+    `;
+    const order = orderResult[0];
+
+    if (!order) {
+      throw new BadRequestException(`Order with ID ${orderId} not found.`);
+    }
+    if (order.cancelled_status === "cancelled") throw new BadRequestException("Order is cancelled.");
+    if (order.financial_status === "paid") throw new BadRequestException("Order is already paid.");
+    if (order.financial_status === "refunded") throw new BadRequestException("Order is already refunded.");
+    if (order.closed_status === "closed") throw new BadRequestException("Order is closed.");
+    if (transferAmount > order.total_price) {
+      throw new BadRequestException("Transaction amount exceeds order total price.");
+    }
+
+    const HRV_API_KEY = await env.HARAVAN_TOKEN_SECRET.get();
+    const HARAVAN_API_BASE_URL = env.HARAVAN_API_BASE_URL;
+
+    if (!HARAVAN_API_BASE_URL || !HRV_API_KEY) {
+      throw new BadRequestException("Haravan API credentials or base URL are not configured in the environment.");
+    }
+
+    const apiUrl = `${HARAVAN_API_BASE_URL}/com/orders/${orderId}/transactions.json`;
+
+    const transactionPayload = {
+      transaction: {
+        amount: transferAmount,
+        kind: "capture",
+        gateway: paymentType
+      }
+    };
+
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${HRV_API_KEY}`
+      },
+      body: JSON.stringify(transactionPayload)
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      throw new BadRequestException(`Failed to create Haravan transaction. Status: ${response.status}, Body: ${errorBody}`);
+    }
+
+    const responseData = await response.json();
+    return responseData.transaction;
   }
 }

@@ -1,4 +1,5 @@
 import PaymentServices from "services/payment";
+import { BadRequestException } from "src/exception/exceptions";
 
 export default class ManualPaymentsController {
   /**
@@ -71,7 +72,11 @@ export default class ManualPaymentsController {
 
       const paymentData = ManualPaymentsController._parseAndTypecast(body);
 
-      const updatedPayment = await PaymentServices.ManualPaymentService.updateManualPayment(c.env, id, paymentData);
+      const updatedPayment = await PaymentServices.ManualPaymentService.updateManualPayment(
+        c.env,
+        id,
+        paymentData
+      );
 
       if (updatedPayment) {
         return c.json(updatedPayment, 200);
@@ -80,6 +85,11 @@ export default class ManualPaymentsController {
       }
     } catch (error) {
       console.error("Error in PaymentController.update:", error);
+
+      if (error instanceof BadRequestException) {
+        return c.json({ error: error.message }, error.statusCode);
+      }
+
       return c.json({ error: "An unexpected error occurred" }, 500);
     }
   }
