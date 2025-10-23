@@ -10,13 +10,13 @@ export default class QrPaymentFetchingService {
    * Get QR generators that is not synced to MISA (with startDate and endDate)
    * @returns qrPaymentTransaction[]
    */
-  async byDateRangeAndNotSyncedAndNotSynced(startDate = null, endDate = null) {
+  async byDateRangeAndNotSynced(startDate = null, endDate = null) {
     try {
       const qrGenerators = await this.db.qrPaymentTransaction.findMany({
         where: {
           transfer_status: "success",
-          haravan_order_status: {
-            not: "Chờ xác nhận"
+          haravan_order: {
+            financial_status: { in: ["paid", "partially_paid"] }
           },
           misa_synced: false,
           created_at: {
