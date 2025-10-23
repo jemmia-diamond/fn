@@ -17,6 +17,8 @@
     "db:pull": "prisma db pull"
   },
   "dependencies": {
+    "@commitlint/cli": "^20.1.0",
+    "@commitlint/config-conventional": "^20.0.0",
     "@hono/standard-validator": "^0.1.5",
     "@prisma/adapter-neon": "^6.18.0",
     "@prisma/client": "^6.17.1",
@@ -32,6 +34,7 @@
   "devDependencies": {
     "@eslint/js": "^9.38.0",
     "eslint": "^9.38.0",
+    "eslint-plugin-unicorn": "^61.0.2",
     "globals": "^16.4.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.5",

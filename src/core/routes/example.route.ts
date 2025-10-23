@@ -1,4 +1,4 @@
-import { validate } from 'core/middleware/validate.middleware';
+import { validate } from 'core/middlewares/validate.middleware';
 import { Route } from 'core/types/route.type';
 import { ExampleController } from 'example/controllers/example.controller';
 import { ExamplePayload } from 'example/dto/example.dto';

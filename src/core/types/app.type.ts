@@ -4,7 +4,7 @@ import { BlankEnv, BlankSchema, Schema } from "hono/types";
 
 type AppToMount = App | { path: string; honoApp: Hono };
 
-interface AppArgs {
+interface AppArguments {
   /**
    * Base path
    */
@@ -24,7 +24,7 @@ interface AppArgs {
 export class App<E extends Env = BlankEnv, S extends Schema = BlankSchema>  extends Hono<{ Bindings: E, Schema: S }> {
   private _path: string;
 
-  public constructor(args: AppArgs) {
+  public constructor(args: AppArguments) {
     super();
     this._path = args.path;
 
@@ -64,13 +64,13 @@ export class App<E extends Env = BlankEnv, S extends Schema = BlankSchema>  exte
    * @param apps Apps to register
    */
   private registerApps(apps: AppToMount[]) {
-    apps.forEach((app) => {
+    for (const app of apps) {
       if (app instanceof App) {
         this.mountApp(app);
       } else if (app.honoApp) {
         this.mount(app.path, app.honoApp.fetch);
       }
-    });
+    }
   }
 
   /**
@@ -78,9 +78,9 @@ export class App<E extends Env = BlankEnv, S extends Schema = BlankSchema>  exte
    * @param route route to register
    */
   private registerRoutes(_routes: (new () => Route)[]) {
-    _routes.forEach((route) => {
+    for (const route of _routes) {
       const instance = new route();
       this.route(instance.basePath, instance.app);
-    });
+    }
   }
 }
