@@ -11,5 +11,6 @@ export class ExampleRoute extends Route {
 
     super.get('/hello', this.controller.hello);
     super.post('/hello', validate('json', ExamplePayload), this.controller.helloPost);
+    super.get('/hello-exception', this.controller.helloException);
   }
 }
