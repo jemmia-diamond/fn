@@ -1,22 +1,42 @@
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
-import { SKU_LENGTH, SKU_PREFIX } from "services/haravan/products/product-variant/constant";
+import {
+  SKU_LENGTH,
+  SKU_PREFIX,
+} from "services/haravan/products/product-variant/constant";
 import { numberToCurrency } from "services/utils/number-helper";
 import { stringSquishLarkMessage } from "services/utils/string-helper";
 
 dayjs.extend(utc);
 
-export const composeSalesOrderNotification = (salesOrder, promotionData, leadSource, policyData, productCategoryData, customer, primarySalesPerson, secondarySalesPeople) => {
+export const composeSalesOrderNotification = (
+  salesOrder,
+  promotionData,
+  leadSource,
+  policyData,
+  productCategoryData,
+  customer,
+  primarySalesPerson,
+  secondarySalesPeople,
+) => {
   const orderNumber = salesOrder.order_number;
 
-  const orderPromotionNames = salesOrder.promotions.map((promotion) => promotion.promotion);
-  const orderPromotions = promotionData.filter((promotion) => orderPromotionNames.includes(promotion.name));
+  const orderPromotionNames = salesOrder.promotions.map(
+    (promotion) => promotion.promotion,
+  );
+  const orderPromotions = promotionData.filter((promotion) =>
+    orderPromotionNames.includes(promotion.name),
+  );
 
-  const expectedPaymentDate = dayjs(salesOrder.expected_payment_date).format("DD-MM-YYYY");
+  const expectedPaymentDate = dayjs(salesOrder.expected_payment_date).format(
+    "DD-MM-YYYY",
+  );
 
   const realOrderDate = dayjs(salesOrder.real_order_date).format("DD-MM-YYYY");
 
-  const secondarySalesPeopleNameList = secondarySalesPeople.map((salesPerson) => salesPerson.sales_person_name);
+  const secondarySalesPeopleNameList = secondarySalesPeople.map(
+    (salesPerson) => salesPerson.sales_person_name,
+  );
 
   let content = "";
   content += `
@@ -28,7 +48,18 @@ export const composeSalesOrderNotification = (salesOrder, promotionData, leadSou
   `;
 
   salesOrder.items.map((item, idx) => {
-    content += composeItemContent(item, idx + 1, promotionData.filter((promotion) => [item.promotion_1, item.promotion_2, item.promotion_3, item.promotion_4].includes(promotion.name)));
+    content += composeItemContent(
+      item,
+      idx + 1,
+      promotionData.filter((promotion) =>
+        [
+          item.promotion_1,
+          item.promotion_2,
+          item.promotion_3,
+          item.promotion_4,
+        ].includes(promotion.name),
+      ),
+    );
   });
 
   content += `
@@ -51,15 +82,19 @@ export const composeSalesOrderNotification = (salesOrder, promotionData, leadSou
     * <b>Chính sách bảo hành</b>:\n${composeChildrenContent(policyData, "title")}
   `;
 
-  const ordPromotion = orderPromotions && Array.isArray(orderPromotions) && orderPromotions.length > 0 ?
-    composeChildrenContent(orderPromotions, "title")
-    : " - Không";
+  const ordPromotion =
+    orderPromotions &&
+    Array.isArray(orderPromotions) &&
+    orderPromotions.length > 0
+      ? composeChildrenContent(orderPromotions, "title")
+      : " - Không";
   content += `
     * <b>Chương trình khuyến mãi toàn đơn</b>:\n${ordPromotion}
   `;
 
-  const secondSales = secondarySalesPeopleNameList.length ?
-    `\n - Phụ: ${secondarySalesPeopleNameList.join(", ")}` : "";
+  const secondSales = secondarySalesPeopleNameList.length
+    ? `\n - Phụ: ${secondarySalesPeopleNameList.join(", ")}`
+    : "";
   content += `
     * Nhân viên phụ trách:\n- Chính: ${primarySalesPerson.sales_person_name}${secondSales}
   `;
@@ -68,8 +103,14 @@ export const composeSalesOrderNotification = (salesOrder, promotionData, leadSou
     * Link đơn hàng: https://erp.jemmia.vn/app/sales-order/${salesOrder.name}
   `;
 
-  const attachments = salesOrder.attachments && Array.isArray(salesOrder.attachments) && salesOrder.attachments.length > 0 ?
-    salesOrder.attachments.map((attachment) => attachment.file_url).join("\n") : "- Không";
+  const attachments =
+    salesOrder.attachments &&
+    Array.isArray(salesOrder.attachments) &&
+    salesOrder.attachments.length > 0
+      ? salesOrder.attachments
+          .map((attachment) => attachment.file_url)
+          .join("\n")
+      : "- Không";
 
   content += `
     * Hình ảnh đính kèm:\n${attachments}
@@ -86,7 +127,9 @@ const composeItemContent = (item, idx, promotionData) => {
     `;
   }
 
-  const serialNumbers = item.serial_numbers ? item.serial_numbers.split("\n").join(", ") : "";
+  const serialNumbers = item.serial_numbers
+    ? item.serial_numbers.split("\n").join(", ")
+    : "";
   const content = `
     ${idx}. ${item.item_name}
     Mã gốc: ${extractVariantTitle(item)}
@@ -105,10 +148,18 @@ export const extractPromotions = (salesOrder) => {
   const promotionNames = [];
   const items = salesOrder.items;
   for (const item of items) {
-    if (item.promotion_1) { promotionNames.push(item.promotion_1); };
-    if (item.promotion_2) { promotionNames.push(item.promotion_2); };
-    if (item.promotion_3) { promotionNames.push(item.promotion_3); };
-    if (item.promotion_4) { promotionNames.push(item.promotion_4); };
+    if (item.promotion_1) {
+      promotionNames.push(item.promotion_1);
+    }
+    if (item.promotion_2) {
+      promotionNames.push(item.promotion_2);
+    }
+    if (item.promotion_3) {
+      promotionNames.push(item.promotion_3);
+    }
+    if (item.promotion_4) {
+      promotionNames.push(item.promotion_4);
+    }
   }
 
   const promotions = salesOrder.promotions;
@@ -169,12 +220,16 @@ export function validateOrderInfo(salesOrderData, customer) {
 
   const lineItems = salesOrderData.items;
 
-  if (lineItems.some(item => item.sku === null)) {
+  if (lineItems.some((item) => item.sku === null)) {
     message = "Chưa nhập SKU sản phẩm, vui lòng kiểm tra lại";
     return { isValid, message };
   }
 
-  const jewelryItems = lineItems.filter((item) => (item.sku?.length === SKU_LENGTH.JEWELRY || item.sku?.startsWith(SKU_PREFIX.TEMPORARY_JEWELRY)));
+  const jewelryItems = lineItems.filter(
+    (item) =>
+      item.sku?.length === SKU_LENGTH.JEWELRY ||
+      item.sku?.startsWith(SKU_PREFIX.TEMPORARY_JEWELRY),
+  );
   for (const jewelryItem of jewelryItems) {
     if (!jewelryItem.serial_numbers) {
       message = "Chưa nhập serial number";
@@ -182,10 +237,22 @@ export function validateOrderInfo(salesOrderData, customer) {
     }
   }
 
-  const jewelryAndDiamondItems = lineItems.filter((item) => (item.sku?.length === SKU_LENGTH.JEWELRY || item.sku?.startsWith(SKU_PREFIX.DIAMOND)));
+  const jewelryAndDiamondItems = lineItems.filter(
+    (item) =>
+      item.sku?.length === SKU_LENGTH.JEWELRY ||
+      item.sku?.startsWith(SKU_PREFIX.DIAMOND),
+  );
   for (const item of jewelryAndDiamondItems) {
-    if (!(item.promotion_1 || item.promotion_2 || item.promotion_3 || item.promotion_4)) {
-      message = "Chưa nhập chương trình khuyến mãi cho sản phẩm trang sức hoặc kim cương";
+    if (
+      !(
+        item.promotion_1 ||
+        item.promotion_2 ||
+        item.promotion_3 ||
+        item.promotion_4
+      )
+    ) {
+      message =
+        "Chưa nhập chương trình khuyến mãi cho sản phẩm trang sức hoặc kim cương";
       return { isValid, message };
     }
   }
@@ -195,9 +262,7 @@ export function validateOrderInfo(salesOrderData, customer) {
 }
 
 function composeChildrenContent(children, key) {
-  return children
-    .map((child) => " - " + child[key])
-    .join("\n");
+  return children.map((child) => " - " + child[key]).join("\n");
 }
 
 function extractVariantNameForGIA(text) {
@@ -214,9 +279,20 @@ function extractVariantNameForJewelry(text) {
   return match ? match[1] : "";
 }
 
-export const composeOrderUpdateMessage = (prevOrder, salesOrder, promotionData) => {
-  const attachmentMessage =  composeAttachmentMessage(prevOrder.attachments || [], salesOrder.attachments || []);
-  const lineItemMessage = composeLineItemsChangeMessage(prevOrder.items || [], salesOrder.items || [], promotionData);
+export const composeOrderUpdateMessage = (
+  prevOrder,
+  salesOrder,
+  promotionData,
+) => {
+  const attachmentMessage = composeAttachmentMessage(
+    prevOrder.attachments || [],
+    salesOrder.attachments || [],
+  );
+  const lineItemMessage = composeLineItemsChangeMessage(
+    prevOrder.items || [],
+    salesOrder.items || [],
+    promotionData,
+  );
 
   let content = "";
   if (lineItemMessage) {
@@ -231,11 +307,19 @@ export const composeOrderUpdateMessage = (prevOrder, salesOrder, promotionData) 
 };
 
 const composeAttachmentMessage = (prevAttachments, attachments) => {
-  const prevAttachmentUrls = (prevAttachments || []).map((attachment) => attachment.file_url);
-  const newAttachmentUrls = (attachments || []).map((attachment) => attachment.file_url);
+  const prevAttachmentUrls = (prevAttachments || []).map(
+    (attachment) => attachment.file_url,
+  );
+  const newAttachmentUrls = (attachments || []).map(
+    (attachment) => attachment.file_url,
+  );
 
-  const addedAttachments = newAttachmentUrls.filter((url) => !prevAttachmentUrls.includes(url));
-  const removedAttachments = prevAttachmentUrls.filter((url) => !newAttachmentUrls.includes(url));
+  const addedAttachments = newAttachmentUrls.filter(
+    (url) => !prevAttachmentUrls.includes(url),
+  );
+  const removedAttachments = prevAttachmentUrls.filter(
+    (url) => !newAttachmentUrls.includes(url),
+  );
 
   let message = "";
 
@@ -255,13 +339,19 @@ const composeAttachmentMessage = (prevAttachments, attachments) => {
 
 const composeLineItemsChangeMessage = (oldItems, newItems, promotionData) => {
   let message = "";
-  const addedItems = newItems.filter(newItem => !oldItems.find(oldItem => oldItem.name === newItem.name));
-  const removedItems = oldItems.filter(oldItem => !newItems.find(newItem => newItem.name === oldItem.name));
-  const updatedItems = newItems.filter(newItem => oldItems.find(oldItem => oldItem.name === newItem.name));
+  const addedItems = newItems.filter(
+    (newItem) => !oldItems.find((oldItem) => oldItem.name === newItem.name),
+  );
+  const removedItems = oldItems.filter(
+    (oldItem) => !newItems.find((newItem) => newItem.name === oldItem.name),
+  );
+  const updatedItems = newItems.filter((newItem) =>
+    oldItems.find((oldItem) => oldItem.name === newItem.name),
+  );
 
   if (addedItems.length > 0) {
     message += "* <b>Sản phẩm được thêm mới: </b>\n";
-    addedItems.forEach(item => {
+    addedItems.forEach((item) => {
       message += `<i>${item.item_name}</i>\n`;
       message += `Mã gốc: ${extractVariantTitle(item)}\n`;
       message += `SKU: ${item.sku}\n`;
@@ -270,7 +360,14 @@ const composeLineItemsChangeMessage = (oldItems, newItems, promotionData) => {
       message += `Giá: ${numberToCurrency(item.price_list_rate)}\n`;
       message += `Giá khuyến mãi: ${numberToCurrency(item.rate)}\n`;
 
-      const itemPromotions = promotionData.filter((promotion) => [item.promotion_1, item.promotion_2, item.promotion_3, item.promotion_4].includes(promotion.name));
+      const itemPromotions = promotionData.filter((promotion) =>
+        [
+          item.promotion_1,
+          item.promotion_2,
+          item.promotion_3,
+          item.promotion_4,
+        ].includes(promotion.name),
+      );
       if (itemPromotions && itemPromotions.length > 0) {
         message += "CTKM: \n";
         message += `${composeChildrenContent(itemPromotions, "title")}`;
@@ -282,7 +379,7 @@ const composeLineItemsChangeMessage = (oldItems, newItems, promotionData) => {
 
   if (removedItems.length > 0) {
     message += "* <b>Sản phẩm bị loại bỏ: </b>\n";
-    removedItems.forEach(item => {
+    removedItems.forEach((item) => {
       message += `- ${item.item_name} (SKU: ${item.sku})\n`;
     });
     message += "\n";
@@ -290,13 +387,15 @@ const composeLineItemsChangeMessage = (oldItems, newItems, promotionData) => {
 
   if (updatedItems.length > 0) {
     let itemMessges = "";
-    updatedItems.forEach(newItem => {
-      const oldItem = oldItems.find(oldItem => oldItem.name === newItem.name);
+    updatedItems.forEach((newItem) => {
+      const oldItem = oldItems.find((oldItem) => oldItem.name === newItem.name);
       if (oldItem) {
         const changes = [];
 
         if (newItem.variant_title !== oldItem.variant_title) {
-          changes.push(`Mã gốc: ${extractVariantTitle(oldItem)} → ${extractVariantTitle(newItem)}`);
+          changes.push(
+            `Mã gốc: ${extractVariantTitle(oldItem)} → ${extractVariantTitle(newItem)}`,
+          );
         }
         if (newItem.sku !== oldItem.sku) {
           changes.push(`SKU: ${oldItem.sku} → ${newItem.sku}`);
@@ -305,34 +404,59 @@ const composeLineItemsChangeMessage = (oldItems, newItems, promotionData) => {
           changes.push(`Số lượng: ${oldItem.qty} → ${newItem.qty}`);
         }
         if (newItem.serial_numbers !== oldItem.serial_numbers) {
-          changes.push(`Số serial: ${oldItem.serial_numbers || "N/A"} → ${newItem.serial_numbers || "N/A"}`);
+          changes.push(
+            `Số serial: ${oldItem.serial_numbers || "N/A"} → ${newItem.serial_numbers || "N/A"}`,
+          );
         }
         if (newItem.price_list_rate !== oldItem.price_list_rate) {
-          changes.push(`Giá: ${numberToCurrency(oldItem.price_list_rate)} → ${numberToCurrency(newItem.price_list_rate)}`);
+          changes.push(
+            `Giá: ${numberToCurrency(oldItem.price_list_rate)} → ${numberToCurrency(newItem.price_list_rate)}`,
+          );
         }
         if (newItem.rate !== oldItem.rate) {
-          changes.push(`Giá khuyến mãi: ${numberToCurrency(oldItem.rate)} → ${numberToCurrency(newItem.rate)}`);
+          changes.push(
+            `Giá khuyến mãi: ${numberToCurrency(oldItem.rate)} → ${numberToCurrency(newItem.rate)}`,
+          );
         }
 
         // Promotions
-        const oldPromotions = [oldItem.promotion_1, oldItem.promotion_2, oldItem.promotion_3, oldItem.promotion_4].filter(Boolean);
-        const newPromotions = [newItem.promotion_1, newItem.promotion_2, newItem.promotion_3, newItem.promotion_4].filter(Boolean);
+        const oldPromotions = [
+          oldItem.promotion_1,
+          oldItem.promotion_2,
+          oldItem.promotion_3,
+          oldItem.promotion_4,
+        ].filter(Boolean);
+        const newPromotions = [
+          newItem.promotion_1,
+          newItem.promotion_2,
+          newItem.promotion_3,
+          newItem.promotion_4,
+        ].filter(Boolean);
 
-        const addedPromotions = newPromotions.filter(promo => !oldPromotions.includes(promo));
-        const removedPromotions = oldPromotions.filter(promo => !newPromotions.includes(promo));
+        const addedPromotions = newPromotions.filter(
+          (promo) => !oldPromotions.includes(promo),
+        );
+        const removedPromotions = oldPromotions.filter(
+          (promo) => !newPromotions.includes(promo),
+        );
 
         if (addedPromotions.length > 0 || removedPromotions.length > 0) {
           let promotionChanges = "";
           if (newPromotions.length > 0) {
             promotionChanges += "CTKM: \n";
-            promotionChanges += `${composeChildrenContent(promotionData.filter((promotion) => newPromotions.includes(promotion.name)), "title")}\n`;
+            promotionChanges += `${composeChildrenContent(
+              promotionData.filter((promotion) =>
+                newPromotions.includes(promotion.name),
+              ),
+              "title",
+            )}\n`;
           }
           changes.push(promotionChanges.trim());
         }
 
         if (changes.length > 0) {
           changes.unshift(`<i>${newItem.item_name}</i>`);
-          changes.forEach(change => {
+          changes.forEach((change) => {
             itemMessges += `${change}\n`;
           });
           itemMessges += "\n";
@@ -348,14 +472,15 @@ const composeLineItemsChangeMessage = (oldItems, newItems, promotionData) => {
   }
 
   return message;
-
 };
 
 const extractVariantTitle = (item) => {
   const title = item?.variant_title || "";
-  const extracted = item.sku?.startsWith(SKU_PREFIX.DIAMOND) || item.sku?.startsWith(SKU_PREFIX.DIAMOND_TEMPORARY)
-    ? extractVariantNameForGIA(title)
-    : extractVariantNameForJewelry(title);
+  const extracted =
+    item.sku?.startsWith(SKU_PREFIX.DIAMOND) ||
+    item.sku?.startsWith(SKU_PREFIX.DIAMOND_TEMPORARY)
+      ? extractVariantNameForGIA(title)
+      : extractVariantNameForJewelry(title);
 
   return extracted || title || "N/A";
 };

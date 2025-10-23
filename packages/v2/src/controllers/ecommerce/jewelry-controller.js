@@ -6,36 +6,50 @@ export default class JewelryController {
 
     const jsonParams = {
       categories: params.categories ? params.categories.split(",") : [],
-      product_types: params.product_types ? params.product_types.split(",") : [],
-      material_colors: params.material_colors ? params.material_colors.split(",") : [],
+      product_types: params.product_types
+        ? params.product_types.split(",")
+        : [],
+      material_colors: params.material_colors
+        ? params.material_colors.split(",")
+        : [],
       genders: params.gender ? params.gender.split(",") : [],
       fineness: params.fineness ? params.fineness.split(",") : [],
       pages: params.pages ? params.pages.split(",") : [],
       is_in_stock: params.is_in_stock ? params.is_in_stock === "true" : null,
       pagination: {
         from: params.from ? parseInt(params.from, 10) : 1,
-        limit: params.limit ? parseInt(params.limit, 10) : 24
+        limit: params.limit ? parseInt(params.limit, 10) : 24,
       },
       price: {
         min: params.min_price ? parseInt(params.min_price) : null,
-        max: params.max_price ? parseInt(params.max_price) : null
+        max: params.max_price ? parseInt(params.max_price) : null,
       },
       sort: {
         by: params.sort_by || "price",
-        order: params.sort_order || "asc"
+        order: params.sort_order || "asc",
       },
       design_tags: params.design_tags ? params.design_tags.split(",") : [],
-      ring_head_styles: params.ring_head_styles ? params.ring_head_styles.split(",") : [],
-      ring_band_styles: params.ring_band_styles ? params.ring_band_styles.split(",") : [],
-      excluded_ring_head_styles: params.excluded_ring_head_styles ? params.excluded_ring_head_styles.split(",") : [],
-      excluded_ring_band_styles: params.excluded_ring_band_styles ? params.excluded_ring_band_styles.split(",") : [],
+      ring_head_styles: params.ring_head_styles
+        ? params.ring_head_styles.split(",")
+        : [],
+      ring_band_styles: params.ring_band_styles
+        ? params.ring_band_styles.split(",")
+        : [],
+      excluded_ring_head_styles: params.excluded_ring_head_styles
+        ? params.excluded_ring_head_styles.split(",")
+        : [],
+      excluded_ring_band_styles: params.excluded_ring_band_styles
+        ? params.excluded_ring_band_styles.split(",")
+        : [],
       product_ids: params.product_ids
         ? params.product_ids
-          .split(",")
-          .map((v) => Number(v.trim()))
-          .filter((n) => Number.isInteger(n) && n > 0)
+            .split(",")
+            .map((v) => Number(v.trim()))
+            .filter((n) => Number.isInteger(n) && n > 0)
         : [],
-      linked_collections: params.linked_collections ? params.linked_collections.split(",") : []
+      linked_collections: params.linked_collections
+        ? params.linked_collections.split(",")
+        : [],
     };
 
     const productService = new Ecommerce.ProductService(ctx.env);

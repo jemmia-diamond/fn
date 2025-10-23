@@ -1,3 +1,3 @@
 export const ORDER_STATUS = {
-  PAID: "Đã thanh toán"
+  PAID: "Đã thanh toán",
 };

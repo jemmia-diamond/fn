@@ -15,7 +15,7 @@ export default class DeliveryTrackingController {
         id,
         email,
         password,
-        partner_id
+        partner_id,
       );
       if (!bill) {
         throw new HTTPException(404, { message: "Bill not found" });

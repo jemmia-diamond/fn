@@ -13,13 +13,23 @@ export default class ScheduleService {
     const tenantAccessToken = await LarksuiteService.getTenantAccessToken(env);
 
     const currentDate = dayjs().utc();
-    const timeThresholdStart = Number(currentDate.subtract(1, "day").format("YYYYMMDD"));
-    const timeThresholdEnd = Number(currentDate.add(1, "day").format("YYYYMMDD"));
+    const timeThresholdStart = Number(
+      currentDate.subtract(1, "day").format("YYYYMMDD"),
+    );
+    const timeThresholdEnd = Number(
+      currentDate.add(1, "day").format("YYYYMMDD"),
+    );
 
     const userIds = await ScheduleService.getUsersIds(db);
     const schedulesSets = [];
     for (const userId of userIds) {
-      const userSchedule = await ScheduleService.getUserSchedule(larkClient, tenantAccessToken, userId, timeThresholdStart, timeThresholdEnd);
+      const userSchedule = await ScheduleService.getUserSchedule(
+        larkClient,
+        tenantAccessToken,
+        userId,
+        timeThresholdStart,
+        timeThresholdEnd,
+      );
       schedulesSets.push(userSchedule);
     }
     const schedules = schedulesSets.flat().filter(Boolean);
@@ -37,21 +47,28 @@ export default class ScheduleService {
 
   static async getUsersIds(db) {
     const users = await db.$queryRaw`SELECT user_id FROM larksuite.users`;
-    return users.map(user => user.user_id);
+    return users.map((user) => user.user_id);
   }
 
-  static async getUserSchedule(larkClient, tenantAccessToken, userId, from, to) {
-    const reponse = await larkClient.attendance.userDailyShift.query({
-      params: {
-        employee_type: "employee_id"
+  static async getUserSchedule(
+    larkClient,
+    tenantAccessToken,
+    userId,
+    from,
+    to,
+  ) {
+    const reponse = await larkClient.attendance.userDailyShift.query(
+      {
+        params: {
+          employee_type: "employee_id",
+        },
+        data: {
+          user_ids: [userId],
+          check_date_from: from,
+          check_date_to: to,
+        },
       },
-      data: {
-        user_ids: [userId],
-        check_date_from: from,
-        check_date_to: to
-      }
-    },
-    lark.withTenantToken(tenantAccessToken)
+      lark.withTenantToken(tenantAccessToken),
     );
     return reponse.data.user_daily_shifts;
   }

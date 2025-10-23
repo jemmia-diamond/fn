@@ -21,7 +21,7 @@ export const transformLeaveFormData = (form) => {
     unit: accessNestedKey(widgetsObj, widgetFieldMapper.unit),
     reason: accessNestedKey(widgetsObj, widgetFieldMapper.reason),
     interval: Number(accessNestedKey(widgetsObj, widgetFieldMapper.interval)),
-    name: accessNestedKey(widgetsObj, widgetFieldMapper.name)
+    name: accessNestedKey(widgetsObj, widgetFieldMapper.name),
   };
 };
 
@@ -30,13 +30,22 @@ export const transformPaymentFormData = (form) => {
   const widgetFieldMapper = APPROVALS.PAYMENT_APPROVAL.widgetFieldMapper;
   return {
     type: accessNestedKey(widgetsObj, widgetFieldMapper.type),
-    purchase_occurrence: accessNestedKey(widgetsObj, widgetFieldMapper.purchase_occurrence),
+    purchase_occurrence: accessNestedKey(
+      widgetsObj,
+      widgetFieldMapper.purchase_occurrence,
+    ),
     reason: accessNestedKey(widgetsObj, widgetFieldMapper.reason),
     description: accessNestedKey(widgetsObj, widgetFieldMapper.description),
-    qualified_document: accessNestedKey(widgetsObj, widgetFieldMapper.qualified_document),
+    qualified_document: accessNestedKey(
+      widgetsObj,
+      widgetFieldMapper.qualified_document,
+    ),
     total_amount: accessNestedKey(widgetsObj, widgetFieldMapper.total_amount),
     payment_info: accessNestedKey(widgetsObj, widgetFieldMapper.payment_info),
-    expected_payment_date: accessNestedKey(widgetsObj, widgetFieldMapper.expected_payment_date)
+    expected_payment_date: accessNestedKey(
+      widgetsObj,
+      widgetFieldMapper.expected_payment_date,
+    ),
   };
 };
 
@@ -46,8 +55,13 @@ export const transformPurchaseFormData = (form) => {
   return {
     reason: accessNestedKey(widgetsObj, widgetFieldMapper.reason),
     description: accessNestedKey(widgetsObj, widgetFieldMapper.description),
-    estimated_amount: accessNestedKey(widgetsObj, widgetFieldMapper.estimated_amount),
-    expected_receive_date: accessNestedKey(widgetsObj, widgetFieldMapper.expected_receive_date)
+    estimated_amount: accessNestedKey(
+      widgetsObj,
+      widgetFieldMapper.estimated_amount,
+    ),
+    expected_receive_date: accessNestedKey(
+      widgetsObj,
+      widgetFieldMapper.expected_receive_date,
+    ),
   };
 };
-

@@ -13,5 +13,5 @@ export default {
   SendZaloMessage: SendZaloMessage,
   OrderNotificationService: OrderNotificationService,
   CardService: CardService,
-  WarehouseService: WarehouseService
+  WarehouseService: WarehouseService,
 };

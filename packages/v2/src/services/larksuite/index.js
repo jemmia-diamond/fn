@@ -9,5 +9,5 @@ export default {
   Attendance: Attendance,
   LarksuiteService: LarksuiteService,
   Approval: Approval,
-  Docs: Docs
+  Docs: Docs,
 };

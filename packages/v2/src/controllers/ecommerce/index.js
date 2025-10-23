@@ -17,5 +17,5 @@ export default {
   IndDayStatController: IndDayStatController,
   OrderTrackingController: OrderTrackingController,
   CardController: CardController,
-  ProductAvailabilityController: ProductAvailabilityController
+  ProductAvailabilityController: ProductAvailabilityController,
 };

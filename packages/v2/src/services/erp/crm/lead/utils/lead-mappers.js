@@ -22,7 +22,9 @@ export const mapLeadsToDatabase = (leads) => {
     job_title: safeValue(lead.job_title),
     last_name: safeValue(lead.last_name),
     gender: safeValue(lead.gender),
-    qualified_lead_date: lead.qualified_lead_date ? new Date(lead.qualified_lead_date) : null,
+    qualified_lead_date: lead.qualified_lead_date
+      ? new Date(lead.qualified_lead_date)
+      : null,
     first_reach_at: lead.first_reach_at ? new Date(lead.first_reach_at) : null,
     lead_owner: safeValue(lead.lead_owner),
     source: safeValue(lead.source),
@@ -30,14 +32,18 @@ export const mapLeadsToDatabase = (leads) => {
     customer: safeValue(lead.customer),
     request_type: safeValue(lead.request_type),
     lead_name: safeValue(lead.lead_name),
-    lead_received_date: lead.lead_received_date ? new Date(lead.lead_received_date) : null,
+    lead_received_date: lead.lead_received_date
+      ? new Date(lead.lead_received_date)
+      : null,
     lead_source_name: safeValue(lead.lead_source_name),
     lead_source_platform: safeValue(lead.lead_source_platform),
     qualification_status: safeValue(lead.qualification_status),
     qualified_by: safeValue(lead.qualified_by),
     qualified_on: lead.qualified_on ? new Date(lead.qualified_on) : null,
     purpose_lead: safeValue(lead.purpose_lead),
-    expected_delivery_date: lead.expected_delivery_date ? new Date(lead.expected_delivery_date) : null,
+    expected_delivery_date: lead.expected_delivery_date
+      ? new Date(lead.expected_delivery_date)
+      : null,
     budget_lead: safeValue(lead.budget_lead),
     province: safeValue(lead.province),
     region: safeValue(lead.region),
@@ -55,7 +61,9 @@ export const mapLeadsToDatabase = (leads) => {
     first_channel: safeValue(lead.first_channel),
     personal_id: safeValue(lead.personal_id),
     place_of_issuance: safeValue(lead.place_of_issuance),
-    date_of_issuance: lead.date_of_issuance ? new Date(lead.date_of_issuance) : null,
+    date_of_issuance: lead.date_of_issuance
+      ? new Date(lead.date_of_issuance)
+      : null,
     website: safeValue(lead.website),
     bank_name: safeValue(lead.bank_name),
     bank_branch: safeValue(lead.bank_branch),
@@ -79,6 +87,6 @@ export const mapLeadsToDatabase = (leads) => {
     preferred_product_type: lead.preferred_product_type || null,
     doctype: lead.doctype || null,
     notes: lead.notes || null,
-    user_tags: lead.user_tags || null
+    user_tags: lead.user_tags || null,
   }));
 };

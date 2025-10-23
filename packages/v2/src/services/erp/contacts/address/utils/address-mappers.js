@@ -30,9 +30,12 @@ export const mapAddressesToDatabase = (addresses) => {
     is_shipping_address: safeValue(address.is_shipping_address, "number"),
     disabled: safeValue(address.disabled, "number"),
     haravan_id: safeValue(address.haravan_id, "string"),
-    is_your_company_address: safeValue(address.is_your_company_address, "number"),
+    is_your_company_address: safeValue(
+      address.is_your_company_address,
+      "number",
+    ),
     links: address.links || null,
     database_created_at: safeValue(address.database_created_at, "date"),
-    database_updated_at: safeValue(address.database_updated_at, "date")
+    database_updated_at: safeValue(address.database_updated_at, "date"),
   }));
 };

@@ -10,31 +10,33 @@ export default class PromotionService {
   constructor(env) {
     this.env = env;
     this.doctype = "Promotion";
-    this.frappeClient = new FrappeClient(
-      {
-        url: env.JEMMIA_ERP_BASE_URL,
-        apiKey: env.JEMMIA_ERP_API_KEY,
-        apiSecret: env.JEMMIA_ERP_API_SECRET
-      }
-    );
+    this.frappeClient = new FrappeClient({
+      url: env.JEMMIA_ERP_BASE_URL,
+      apiKey: env.JEMMIA_ERP_API_KEY,
+      apiSecret: env.JEMMIA_ERP_API_SECRET,
+    });
     this.db = Database.instance(env);
   }
 
   static async syncPromotionToDatabase(env) {
-    const timeThreshold = dayjs().subtract(1, "day").utc().format("YYYY-MM-DD HH:mm:ss");
+    const timeThreshold = dayjs()
+      .subtract(1, "day")
+      .utc()
+      .format("YYYY-MM-DD HH:mm:ss");
     const promotionService = new PromotionService(env);
 
     let promotions = [];
     let page = 1;
     const pageSize = PromotionService.ERPNEXT_PAGE_SIZE;
     while (true) {
-      const result = await promotionService.frappeClient.getList(promotionService.doctype, {
-        limit_start: (page - 1) * pageSize,
-        limit_page_length: pageSize,
-        filters: [
-          ["modified", ">=", timeThreshold]
-        ]
-      });
+      const result = await promotionService.frappeClient.getList(
+        promotionService.doctype,
+        {
+          limit_start: (page - 1) * pageSize,
+          limit_page_length: pageSize,
+          filters: [["modified", ">=", timeThreshold]],
+        },
+      );
       promotions = promotions.concat(result);
       if (result.length < pageSize) break;
       page++;
@@ -57,17 +59,19 @@ export default class PromotionService {
         discount_type: promotion.discount_type,
         discount_amount: promotion.discount_amount,
         discount_percent: promotion.discount_percent,
-        start_date: promotion.start_date ? new Date(promotion.start_date) : null,
+        start_date: promotion.start_date
+          ? new Date(promotion.start_date)
+          : null,
         end_date: promotion.end_date ? new Date(promotion.end_date) : null,
         description: promotion.description,
-        bizfly_id: promotion.bizfly_id
+        bizfly_id: promotion.bizfly_id,
       };
       await promotionService.db.erpnextPromotion.upsert({
         where: {
-          name: promotionData.name
+          name: promotionData.name,
         },
         update: promotionData,
-        create: promotionData
+        create: promotionData,
       });
     }
   }

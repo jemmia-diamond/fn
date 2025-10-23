@@ -4,5 +4,5 @@ import booksController from "controllers/namespace/books-controller";
 
 export default {
   authorsController,
-  booksController
+  booksController,
 };

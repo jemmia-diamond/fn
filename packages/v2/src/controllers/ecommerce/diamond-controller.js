@@ -6,7 +6,10 @@ export default class DiamondController {
     const gia_no = params?.gia_no;
 
     if (!gia_no) {
-      return ctx.json({ message: "Invalid or missing `gia_no` parameter" }, 400);
+      return ctx.json(
+        { message: "Invalid or missing `gia_no` parameter" },
+        400,
+      );
     }
 
     const productService = new Ecommerce.ProductService(ctx.env);

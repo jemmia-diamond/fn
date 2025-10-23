@@ -3,5 +3,5 @@ import Orders from "services/haravan/orders";
 
 export default {
   HaravanClient: HaravanClient,
-  OrderModule: Orders
+  OrderModule: Orders,
 };

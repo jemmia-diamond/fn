@@ -15,7 +15,7 @@ export default class StringeeClient {
       jti: this.apiKeySID + "-" + now,
       iss: this.apiKeySID,
       exp: exp,
-      rest_api: true
+      rest_api: true,
     };
     const accessToken = await Jwt.sign(payload, this.apiKeySecret, "HS256");
     return accessToken;
@@ -23,7 +23,7 @@ export default class StringeeClient {
 
   async generateHeaders() {
     return {
-      "X-STRINGEE-AUTH": await this.getAccessToken()
+      "X-STRINGEE-AUTH": await this.getAccessToken(),
     };
   }
 

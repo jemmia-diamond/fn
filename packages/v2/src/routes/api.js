@@ -25,34 +25,73 @@ export default class APIRoutes {
     jemmiaERPNamespaceApi.get("/leads", ERP.LeadController.index);
     jemmiaERPNamespaceApi.patch("/leads/:id", ERP.LeadController.update);
 
-    jemmiaERPNamespaceApi.post("/sales_orders", ERP.SalesOrderController.create);
-    jemmiaERPNamespaceApi.post("/sales_orders/:id/notifications", ERP.SalesOrderNotificationController.create);
+    jemmiaERPNamespaceApi.post(
+      "/sales_orders",
+      ERP.SalesOrderController.create,
+    );
+    jemmiaERPNamespaceApi.post(
+      "/sales_orders/:id/notifications",
+      ERP.SalesOrderNotificationController.create,
+    );
 
     const pancakeNamespaceApi = api.basePath("/pancake");
-    pancakeNamespaceApi.post("/conversation_assignments", Pancake.ConversationAssignmentController.create);
+    pancakeNamespaceApi.post(
+      "/conversation_assignments",
+      Pancake.ConversationAssignmentController.create,
+    );
 
     const dashboardNamespaceApi = api.basePath("/dashboard");
     dashboardNamespaceApi.get("/tv", Dashboard.TVController.show);
 
     const ecommerceNamespaceApi = api.basePath("/ecommerce");
     ecommerceNamespaceApi.get("/search", Ecommerce.SearchController.index);
-    ecommerceNamespaceApi.get("/product/jewelries", Ecommerce.JewelryController.index); // [DEPRECATED]
-    ecommerceNamespaceApi.get("/product/diamonds", Ecommerce.DiamondController.index);
-    ecommerceNamespaceApi.get("/product/wedding_rings", Ecommerce.WeddingRingController.index);
+    ecommerceNamespaceApi.get(
+      "/product/jewelries",
+      Ecommerce.JewelryController.index,
+    ); // [DEPRECATED]
+    ecommerceNamespaceApi.get(
+      "/product/diamonds",
+      Ecommerce.DiamondController.index,
+    );
+    ecommerceNamespaceApi.get(
+      "/product/wedding_rings",
+      Ecommerce.WeddingRingController.index,
+    );
 
-    ecommerceNamespaceApi.get("/products/diamonds", Ecommerce.DiamondController.index);
-    ecommerceNamespaceApi.get("/products/jewelries", Ecommerce.JewelryController.index);
-    ecommerceNamespaceApi.get("/products/wedding_rings", Ecommerce.WeddingRingController.index);
-    ecommerceNamespaceApi.delete("/ind-day-stats", Ecommerce.IndDayStatController.destroy);
+    ecommerceNamespaceApi.get(
+      "/products/diamonds",
+      Ecommerce.DiamondController.index,
+    );
+    ecommerceNamespaceApi.get(
+      "/products/jewelries",
+      Ecommerce.JewelryController.index,
+    );
+    ecommerceNamespaceApi.get(
+      "/products/wedding_rings",
+      Ecommerce.WeddingRingController.index,
+    );
+    ecommerceNamespaceApi.delete(
+      "/ind-day-stats",
+      Ecommerce.IndDayStatController.destroy,
+    );
 
     ecommerceNamespaceApi.get("/cards/:id", Ecommerce.CardController.show);
     ecommerceNamespaceApi.post("/cards", Ecommerce.CardController.create);
     ecommerceNamespaceApi.patch("/cards/:id", Ecommerce.CardController.update);
 
-    ecommerceNamespaceApi.get("/v2/products/jewelries", Ecommerce.JewelryControllerV2.index);
-    ecommerceNamespaceApi.get("/v2/products/jewelries/:id", Ecommerce.JewelryControllerV2.show);
+    ecommerceNamespaceApi.get(
+      "/v2/products/jewelries",
+      Ecommerce.JewelryControllerV2.index,
+    );
+    ecommerceNamespaceApi.get(
+      "/v2/products/jewelries/:id",
+      Ecommerce.JewelryControllerV2.show,
+    );
 
     const nhattinNamespaceApi = api.basePath("/delivery");
-    nhattinNamespaceApi.get("/nhattin", Delivery.DeliveryTrackingController.show);
-  };
-};
+    nhattinNamespaceApi.get(
+      "/nhattin",
+      Delivery.DeliveryTrackingController.show,
+    );
+  }
+}

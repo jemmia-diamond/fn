@@ -1,9 +1,9 @@
-import { App } from "../core/types/app.type";
-import { ExampleController } from "./controllers/example.controller";
+import { ExampleRoute } from 'core/routes/example.route';
+import { App } from '../core/types/app.type';
 
 const exampleApp = new App({
-    path: '/example',
-    controllers: [ExampleController],
+  path: '/example',
+  routes: [ExampleRoute],
 });
 
 export default exampleApp;

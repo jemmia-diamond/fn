@@ -1,19 +1,35 @@
-export function formatOrderTrackingResult(order, nhattinTrackInfo, isAuthorizedAccess = false) {
+export function formatOrderTrackingResult(
+  order,
+  nhattinTrackInfo,
+  isAuthorizedAccess = false,
+) {
   return {
     order_id: order.order_id.toString(),
     order_number: order.order_number,
     total_price: Number(order.total_price || 0),
     original_total_price: Number(order.original_total_price || 0),
     shipping_fee: Number(order.shipping_fee || 0),
-    items: isAuthorizedAccess ? (order.items || []).map(normalizeDiamondItem) : [],
+    items: isAuthorizedAccess
+      ? (order.items || []).map(normalizeDiamondItem)
+      : [],
     tracking_logs: nhattinTrackInfo?.status || [],
     expected_receive_date: convertToUTC(nhattinTrackInfo.date_expected),
-    shipping_address_name: isAuthorizedAccess ? order.shipping_address_name : maskExceptFirstAndLast(order.shipping_address_name),
-    shipping_address_phone: isAuthorizedAccess ? order.shipping_address_phone : maskPhoneNumber(order.shipping_address_phone),
+    shipping_address_name: isAuthorizedAccess
+      ? order.shipping_address_name
+      : maskExceptFirstAndLast(order.shipping_address_name),
+    shipping_address_phone: isAuthorizedAccess
+      ? order.shipping_address_phone
+      : maskPhoneNumber(order.shipping_address_phone),
     shipping_address_city: order.shipping_address_city,
-    shipping_address_district: isAuthorizedAccess ? order.shipping_address_district : maskFull(order.shipping_address_district),
-    shipping_address_ward: isAuthorizedAccess ? order.shipping_address_ward : maskFull(order.shipping_address_ward),
-    shipping_address_address: isAuthorizedAccess ? order.shipping_address_address1 : maskFull(order.shipping_address_address1),
+    shipping_address_district: isAuthorizedAccess
+      ? order.shipping_address_district
+      : maskFull(order.shipping_address_district),
+    shipping_address_ward: isAuthorizedAccess
+      ? order.shipping_address_ward
+      : maskFull(order.shipping_address_ward),
+    shipping_address_address: isAuthorizedAccess
+      ? order.shipping_address_address1
+      : maskFull(order.shipping_address_address1),
     shipping_address_province: order.shipping_address_province,
     payment_method: order.payment_method,
     confirmed_date: order.order_date,
@@ -23,7 +39,9 @@ export function formatOrderTrackingResult(order, nhattinTrackInfo, isAuthorizedA
     cancel_reason: order.cancel_reason,
     overall_status: nhattinTrackInfo.overall_status,
     p_link_image: isAuthorizedAccess ? nhattinTrackInfo.p_link_image : null,
-    bill_image_link: isAuthorizedAccess ? nhattinTrackInfo.bill_image_link : null,
+    bill_image_link: isAuthorizedAccess
+      ? nhattinTrackInfo.bill_image_link
+      : null,
     document_image_link: nhattinTrackInfo.document_image_link,
     delivery_date: convertToUTC(nhattinTrackInfo.date_delivery),
     pickup_date: convertToUTC(nhattinTrackInfo.date_pickup),
@@ -35,7 +53,7 @@ export function formatOrderTrackingResult(order, nhattinTrackInfo, isAuthorizedA
     insurance_fee: nhattinTrackInfo.insurance_fee,
     cod_amt: nhattinTrackInfo.cod_amt,
     cod_fee: nhattinTrackInfo.cod_fee,
-    shipping_type: mapShippingType(nhattinTrackInfo.service)
+    shipping_type: mapShippingType(nhattinTrackInfo.service),
   };
 }
 
@@ -99,6 +117,9 @@ function normalizeDiamondItem(item) {
   return {
     ...item,
     title: NATURAL_DIAMOND_TITLE,
-    variant_title: item.name.replace(new RegExp(`^${NATURAL_DIAMOND_TITLE}\\s*`), "")
+    variant_title: item.name.replace(
+      new RegExp(`^${NATURAL_DIAMOND_TITLE}\\s*`),
+      "",
+    ),
   };
 }

@@ -3,30 +3,27 @@
   "name": "fn",
   "main": "src/index.js",
   "compatibility_date": "2025-05-20",
-  "compatibility_flags": [
-    "nodejs_compat",
-    "durable_object_alarms"
-  ],
+  "compatibility_flags": ["nodejs_compat", "durable_object_alarms"],
   "limits": {
     "cpu_ms": 300000, // 300 seconds = 5 minutes
   },
   "assets": {
     "binding": "ASSETS",
-    "directory": "./public"
+    "directory": "./public",
   },
   "observability": {
-    "enabled": true
+    "enabled": true,
   },
   "tail_consumers": [
     {
-      "service": "fn-tail"
-    }
+      "service": "fn-tail",
+    },
   ],
   "routes": [
     {
       "pattern": "fn.jemmia.vn",
-      "custom_domain": true
-    }
+      "custom_domain": true,
+    },
   ],
   "vars": {
     "HOST": "https://fn.jemmia.vn",
@@ -45,129 +42,129 @@
     "NHAT_TIN_API_URL": "https://apiws.ntlogistics.vn/v1",
     "LARK_APP_ID": "cli_a7f8a8df1979902f",
     "LARK_API_ENDPOINT": "https://open.larksuite.com",
-    "INVENTORY_CMS_ENDPOINT": "https://inventory-cms.jemmia.vn"
+    "INVENTORY_CMS_ENDPOINT": "https://inventory-cms.jemmia.vn",
   },
   "secrets_store_secrets": [
     {
       "binding": "BEARER_TOKEN_SECRET",
       "store_id": "dff6fef7003446178302a7874af64fde",
-      "secret_name": "BEARER_TOKEN"
+      "secret_name": "BEARER_TOKEN",
     },
     {
       "binding": "STRINGEE_KEY_SECRET",
       "store_id": "dff6fef7003446178302a7874af64fde",
-      "secret_name": "STRINGEE_KEY"
+      "secret_name": "STRINGEE_KEY",
     },
     {
       "binding": "STRINGEE_SID_SECRET",
       "store_id": "dff6fef7003446178302a7874af64fde",
-      "secret_name": "STRINGEE_SID"
+      "secret_name": "STRINGEE_SID",
     },
     {
       "binding": "HARAVAN_TOKEN_SECRET",
       "store_id": "dff6fef7003446178302a7874af64fde",
-      "secret_name": "HARAVAN_TOKEN"
+      "secret_name": "HARAVAN_TOKEN",
     },
     {
       "binding": "ZNS_SECRET_KEY_SECRET",
       "store_id": "dff6fef7003446178302a7874af64fde",
-      "secret_name": "ZNS_SECRET_KEY"
+      "secret_name": "ZNS_SECRET_KEY",
     },
     {
       "binding": "NHAT_TIN_LOGISTIC_PASSWORD_SECRET",
       "store_id": "dff6fef7003446178302a7874af64fde",
-      "secret_name": "NHAT_TIN_LOGISTIC_PASSWORD"
+      "secret_name": "NHAT_TIN_LOGISTIC_PASSWORD",
     },
     {
       "binding": "NHAT_TIN_JEMMIA_HCM_PASSWORD_SECRET",
       "store_id": "dff6fef7003446178302a7874af64fde",
-      "secret_name": "NHAT_TIN_JEMMIA_HCM_PASSWORD"
+      "secret_name": "NHAT_TIN_JEMMIA_HCM_PASSWORD",
     },
     {
       "binding": "NHAT_TIN_JEMMIA_HN_PASSWORD_SECRET",
       "store_id": "dff6fef7003446178302a7874af64fde",
-      "secret_name": "NHAT_TIN_JEMMIA_HN_PASSWORD"
+      "secret_name": "NHAT_TIN_JEMMIA_HN_PASSWORD",
     },
     {
       "binding": "NHAT_TIN_JEMMIA_CT_PASSWORD_SECRET",
       "store_id": "dff6fef7003446178302a7874af64fde",
-      "secret_name": "NHAT_TIN_JEMMIA_CT_PASSWORD"
+      "secret_name": "NHAT_TIN_JEMMIA_CT_PASSWORD",
     },
     {
       "binding": "LARK_APP_SECRET_SECRET",
       "store_id": "dff6fef7003446178302a7874af64fde",
-      "secret_name": "LARK_APP_SECRET"
+      "secret_name": "LARK_APP_SECRET",
     },
     {
       "binding": "INVENTORY_CMS_STATIC_TOKEN_SECRET",
       "store_id": "dff6fef7003446178302a7874af64fde",
-      "secret_name": "INVENTORY_CMS_STATIC_TOKEN"
-    }
+      "secret_name": "INVENTORY_CMS_STATIC_TOKEN",
+    },
   ],
   "kv_namespaces": [
     {
       "binding": "FN_KV",
-      "id": "929367ba02c94a6997a40942aef533a7"
-    }
+      "id": "929367ba02c94a6997a40942aef533a7",
+    },
   ],
   "durable_objects": {
     "bindings": [
       {
         "name": "DEBOUNCE",
         "class_name": "DebounceDurableObject",
-      }
-    ]
+      },
+    ],
   },
   "queues": {
     "producers": [
       {
         "queue": "order",
-        "binding": "ORDER_QUEUE"
+        "binding": "ORDER_QUEUE",
       },
       {
         "queue": "message",
-        "binding": "MESSAGE_QUEUE"
+        "binding": "MESSAGE_QUEUE",
       },
       {
         "queue": "zalo-message",
-        "binding": "ZALO_MESSAGE_QUEUE"
+        "binding": "ZALO_MESSAGE_QUEUE",
       },
       {
         "queue": "message-summary",
-        "binding": "MESSAGE_SUMMARY_QUEUE"
+        "binding": "MESSAGE_SUMMARY_QUEUE",
       },
       {
         "queue": "erpnext-contacts",
-        "binding": "ERPNEXT_CONTACTS_QUEUE"
+        "binding": "ERPNEXT_CONTACTS_QUEUE",
       },
       {
         "queue": "erpnext-crm",
-        "binding": "ERPNEXT_CRM_QUEUE"
+        "binding": "ERPNEXT_CRM_QUEUE",
       },
     ],
     "consumers": [
       {
         "queue": "order",
         "max_concurrency": 1,
-        "max_batch_size": 1
+        "max_batch_size": 1,
       },
       {
         "queue": "message",
-        "max_batch_size": 1
+        "max_batch_size": 1,
       },
       {
         "queue": "zalo-message",
       },
       {
-        "queue": "message-summary"
+        "queue": "message-summary",
       },
       {
-        "queue": "erpnext-contacts"
+        "queue": "erpnext-contacts",
       },
       {
-        "queue": "erpnext-crm"
-      }
-    ]
+        "queue": "erpnext-crm",
+      },
+    ],
   },
   "triggers": {
     "crons": [
@@ -183,15 +180,13 @@
       "30 1 * * *",
       "30 5 * * *",
       "0 10 * * *",
-      "0 14 * * *"
-    ]
+      "0 14 * * *",
+    ],
   },
   "migrations": [
     {
       "tag": "v1",
-      "new_classes": [
-        "DebounceDurableObject"
-      ]
-    }
-  ]
+      "new_classes": ["DebounceDurableObject"],
+    },
+  ],
 }

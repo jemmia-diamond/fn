@@ -21,20 +21,20 @@ export default class OrderNotificationService {
     const message = this.buildOrderMessage(orderData);
     await this.larkClient.im.message.create({
       params: {
-        receive_id_type: "chat_id"
+        receive_id_type: "chat_id",
       },
       data: {
         receive_id: CHAT_GROUPS.ECOM_ORDER_NOTIFICATION.chat_id,
         msg_type: "text",
         content: JSON.stringify({
-          text: message
-        })
-      }
+          text: message,
+        }),
+      },
     });
   }
 
   buildOrderMessage(orderData) {
-    const products = orderData.line_items.map(item => item.title);
+    const products = orderData.line_items.map((item) => item.title);
 
     return stringSquish(`
       [🔥NEW ORDER FROM WEB🔥]
@@ -49,7 +49,9 @@ export default class OrderNotificationService {
   }
 
   shouldSkipOrder(orderData) {
-    if (!OrderNotificationService.WHITELIST_SOURCES.includes(orderData.source)) {
+    if (
+      !OrderNotificationService.WHITELIST_SOURCES.includes(orderData.source)
+    ) {
       return true;
     }
 

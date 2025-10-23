@@ -1,6 +1,9 @@
 import FrappeClient from "frappe/frappe-client";
 import Database from "services/database";
-import { fetchCustomersFromERP, saveCustomersToDatabase } from "src/services/erp/selling/customer/utils/customer-helppers";
+import {
+  fetchCustomersFromERP,
+  saveCustomersToDatabase,
+} from "src/services/erp/selling/customer/utils/customer-helppers";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 
@@ -14,23 +17,23 @@ export default class CustomerService {
   constructor(env) {
     this.env = env;
     this.doctype = "Customer";
-    this.frappeClient = new FrappeClient(
-      {
-        url: env.JEMMIA_ERP_BASE_URL,
-        apiKey: env.JEMMIA_ERP_API_KEY,
-        apiSecret: env.JEMMIA_ERP_API_SECRET
-      }
-    );
+    this.frappeClient = new FrappeClient({
+      url: env.JEMMIA_ERP_BASE_URL,
+      apiKey: env.JEMMIA_ERP_API_KEY,
+      apiSecret: env.JEMMIA_ERP_API_SECRET,
+    });
     this.defaultCustomerName = "Khách Vãng Lai";
     this.db = Database.instance(env);
     this.genderMap = {
       0: "Female",
-      1: "Male"
+      1: "Male",
     };
-  };
+  }
 
   async processHaravanCustomer(customerData, contact, address) {
-    const nameParts = [customerData.last_name, customerData.first_name].filter(Boolean);
+    const nameParts = [customerData.last_name, customerData.first_name].filter(
+      Boolean,
+    );
     const customerName = nameParts.join(" ") || this.defaultCustomerName;
     const mappedCustomerData = {
       doctype: this.doctype,
@@ -40,16 +43,22 @@ export default class CustomerService {
       language: "vietnamese",
       customer_primary_contact: contact.name,
       customer_primary_address: address.name,
-      birth_date: customerData.birthday ? dayjs(customerData.birthday).format("YYYY-MM-DD") : null,
-      gender: customerData.gender ? this.genderMap[customerData.gender] : null
+      birth_date: customerData.birthday
+        ? dayjs(customerData.birthday).format("YYYY-MM-DD")
+        : null,
+      gender: customerData.gender ? this.genderMap[customerData.gender] : null,
     };
 
-    const customer = await this.frappeClient.upsert(mappedCustomerData, "haravan_id");
+    const customer = await this.frappeClient.upsert(
+      mappedCustomerData,
+      "haravan_id",
+    );
     return customer;
   }
 
   async syncCustomersToDatabase(options = {}) {
-    const { isSyncType = CustomerService.SYNC_TYPE_AUTO, minutesBack = 10 } = options;
+    const { isSyncType = CustomerService.SYNC_TYPE_AUTO, minutesBack = 10 } =
+      options;
     const kv = this.env.FN_KV;
     const KV_KEY = "customer_sync:last_date";
     const toDate = dayjs().utc().format("YYYY-MM-DD HH:mm:ss");
@@ -57,13 +66,27 @@ export default class CustomerService {
 
     if (isSyncType === CustomerService.SYNC_TYPE_AUTO) {
       const lastDate = await kv.get(KV_KEY);
-      fromDate = lastDate || dayjs().utc().subtract(minutesBack, "minutes").format("YYYY-MM-DD HH:mm:ss");
+      fromDate =
+        lastDate ||
+        dayjs()
+          .utc()
+          .subtract(minutesBack, "minutes")
+          .format("YYYY-MM-DD HH:mm:ss");
     } else {
-      fromDate = dayjs().utc().subtract(minutesBack, "minutes").format("YYYY-MM-DD HH:mm:ss");
+      fromDate = dayjs()
+        .utc()
+        .subtract(minutesBack, "minutes")
+        .format("YYYY-MM-DD HH:mm:ss");
     }
 
     try {
-      const customers = await fetchCustomersFromERP(this.frappeClient, this.doctype, fromDate, toDate, CustomerService.ERPNEXT_PAGE_SIZE);
+      const customers = await fetchCustomersFromERP(
+        this.frappeClient,
+        this.doctype,
+        fromDate,
+        toDate,
+        CustomerService.ERPNEXT_PAGE_SIZE,
+      );
       if (Array.isArray(customers) && customers.length > 0) {
         await saveCustomersToDatabase(this.db, customers);
       }
@@ -74,7 +97,10 @@ export default class CustomerService {
     } catch (error) {
       console.error("Error syncing customers to database:", error.message);
       // Handle when cronjon failed in 2 hour => we need to update the last date to the current date
-      if (isSyncType === CustomerService.SYNC_TYPE_AUTO && dayjs(toDate).diff(dayjs(await kv.get(KV_KEY)), "hour") >= 2) {
+      if (
+        isSyncType === CustomerService.SYNC_TYPE_AUTO &&
+        dayjs(toDate).diff(dayjs(await kv.get(KV_KEY)), "hour") >= 2
+      ) {
         await kv.put(KV_KEY, toDate);
       }
     }
@@ -84,7 +110,7 @@ export default class CustomerService {
     const syncService = new CustomerService(env);
     return await syncService.syncCustomersToDatabase({
       minutesBack: 10,
-      isSyncType: CustomerService.SYNC_TYPE_AUTO
+      isSyncType: CustomerService.SYNC_TYPE_AUTO,
     });
   }
 }

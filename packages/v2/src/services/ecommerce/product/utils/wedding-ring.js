@@ -1,5 +1,6 @@
 export function buildWeddingRingsQuery(jsonParams) {
-  const { filterString, sortString, paginationString } = aggregateQuery(jsonParams);
+  const { filterString, sortString, paginationString } =
+    aggregateQuery(jsonParams);
 
   const dataSql = `
     SELECT 
@@ -69,7 +70,7 @@ export function buildWeddingRingsQuery(jsonParams) {
 
   return {
     dataSql,
-    countSql
+    countSql,
   };
 }
 
@@ -86,12 +87,16 @@ export function aggregateQuery(jsonParams) {
   }
 
   if (jsonParams.fineness && jsonParams.fineness.length > 0) {
-    const expression = jsonParams.fineness.map((f) => `wr.fineness LIKE '%${f}%'`).join(" OR ");
+    const expression = jsonParams.fineness
+      .map((f) => `wr.fineness LIKE '%${f}%'`)
+      .join(" OR ");
     filterString += `AND (${expression})\n`;
   }
 
   if (jsonParams.material_colors && jsonParams.material_colors.length > 0) {
-    const expression = jsonParams.material_colors.map((color) => `wr.material_colors LIKE '%${color}%'`).join(" OR ");
+    const expression = jsonParams.material_colors
+      .map((color) => `wr.material_colors LIKE '%${color}%'`)
+      .join(" OR ");
     filterString += `AND (${expression})\n`;
   }
 
@@ -128,15 +133,23 @@ export function aggregateQuery(jsonParams) {
   }
 
   if (jsonParams.ring_band_styles && jsonParams.ring_band_styles.length > 0) {
-    const normalizedBandStyles = jsonParams.ring_band_styles.map(style => style.trim().toLowerCase());
+    const normalizedBandStyles = jsonParams.ring_band_styles.map((style) =>
+      style.trim().toLowerCase(),
+    );
     filterString += "AND (\n";
     filterString += `  (d.ring_band_style IS NOT NULL AND d.ring_band_style != '' AND POSITION(' - ' IN d.ring_band_style) > 0 AND LOWER(SPLIT_PART(d.ring_band_style, ' - ', 2)) IN ('${normalizedBandStyles.join("','")}'))\n`;
     filterString += `  OR (d.ring_band_style IS NOT NULL AND d.ring_band_style != '' AND POSITION(' - ' IN d.ring_band_style) = 0 AND LOWER(d.ring_band_style) IN ('${normalizedBandStyles.join("','")}'))\n`;
     filterString += ")\n";
   }
 
-  if (jsonParams.excluded_ring_band_styles && jsonParams.excluded_ring_band_styles.length > 0) {
-    const normalizedExcludedBandStyles = jsonParams.excluded_ring_band_styles.map(style => style.trim().toLowerCase());
+  if (
+    jsonParams.excluded_ring_band_styles &&
+    jsonParams.excluded_ring_band_styles.length > 0
+  ) {
+    const normalizedExcludedBandStyles =
+      jsonParams.excluded_ring_band_styles.map((style) =>
+        style.trim().toLowerCase(),
+      );
     filterString += `
       AND (
         d.ring_band_style IS NULL OR
@@ -155,6 +168,6 @@ export function aggregateQuery(jsonParams) {
   return {
     filterString,
     sortString,
-    paginationString
+    paginationString,
   };
 }

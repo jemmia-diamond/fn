@@ -4,14 +4,14 @@ export default function getRoutesConfig() {
   return {
     files: ["src/routes/**/*.js"],
     plugins: {
-      "restful": {
+      restful: {
         rules: {
-          "routes": RestfulRoutesValidator
-        }
-      }
+          routes: RestfulRoutesValidator,
+        },
+      },
     },
     rules: {
-      "restful/routes": "error"
-    }
+      "restful/routes": "error",
+    },
   };
 }

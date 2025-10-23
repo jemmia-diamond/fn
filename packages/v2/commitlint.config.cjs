@@ -15,8 +15,8 @@ const config = {
         "build",
         "ci",
         "chore",
-        "revert"
-      ]
+        "revert",
+      ],
     ],
     "type-empty": [2, "never"],
     "subject-empty": [2, "never"],
@@ -24,8 +24,8 @@ const config = {
     "scope-empty": [0],
     "header-max-length": [2, "always", 100],
     "body-leading-blank": [1, "always"],
-    "footer-leading-blank": [1, "always"]
-  }
+    "footer-leading-blank": [1, "always"],
+  },
 };
 
 module.exports = config;

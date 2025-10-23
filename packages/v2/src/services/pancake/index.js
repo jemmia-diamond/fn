@@ -3,5 +3,5 @@ import ConversationService from "services/pancake/conversation/conversation";
 
 export default {
   ConversationAssignmentService: ConversationAssignmentService,
-  ConversationService: ConversationService
+  ConversationService: ConversationService,
 };

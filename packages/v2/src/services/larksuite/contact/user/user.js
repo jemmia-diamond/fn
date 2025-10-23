@@ -16,17 +16,17 @@ export default class UserService {
         params: {
           user_id_type: "user_id",
           department_id_type: "department_id",
-          department_id: departmentId
-        }
+          department_id: departmentId,
+        },
       };
 
       const responses = await LarksuiteService.requestWithPagination(
         larkClient.contact.user.findByDepartment,
         payload,
-        pageSize
+        pageSize,
       );
 
-      const users = responses.flatMap(res => (res?.data?.items || []));
+      const users = responses.flatMap((res) => res?.data?.items || []);
       usersArrays.push(...users);
     }
 
@@ -42,7 +42,8 @@ export default class UserService {
 
   static async getDepartmentIds(env) {
     const db = Database.instance(env);
-    const departements = await db.$queryRaw`SELECT department_id FROM larksuite.departments`;
-    return departements.map(departement => departement.department_id);
+    const departements =
+      await db.$queryRaw`SELECT department_id FROM larksuite.departments`;
+    return departements.map((departement) => departement.department_id);
   }
 }

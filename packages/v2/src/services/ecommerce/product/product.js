@@ -20,20 +20,21 @@ export default class ProductService {
       data,
       count: count.length ? Number(count[0].total) : 0,
       material_colors: count.length ? count[0].material_colors : [],
-      fineness: count.length ? count[0].fineness : []
+      fineness: count.length ? count[0].fineness : [],
     };
   }
 
   async getJewelry(jsonParams) {
-    const { data, count, material_colors, fineness } = await this.getJewelryData(jsonParams);
+    const { data, count, material_colors, fineness } =
+      await this.getJewelryData(jsonParams);
     return {
       data,
       metadata: {
         total: count,
         material_colors: material_colors,
         fineness: fineness,
-        pagination: jsonParams.pagination
-      }
+        pagination: jsonParams.pagination,
+      },
     };
   }
 
@@ -113,20 +114,21 @@ export default class ProductService {
       data,
       count: count.length ? Number(count[0].total) : 0,
       material_colors: count.length ? count[0].material_colors : [],
-      fineness: count.length ? count[0].fineness : []
+      fineness: count.length ? count[0].fineness : [],
     };
   }
 
   async getWeddingRings(jsonParams) {
-    const { data, count, material_colors, fineness } = await this.getWeddingRingsData(jsonParams);
+    const { data, count, material_colors, fineness } =
+      await this.getWeddingRingsData(jsonParams);
     return {
       data,
       metadata: {
         total: count,
         pagination: jsonParams.pagination,
         material_colors: material_colors,
-        fineness: fineness
-      }
+        fineness: fineness,
+      },
     };
   }
 
@@ -210,20 +212,21 @@ export default class ProductService {
       data,
       count: count.length ? Number(count[0].total) : 0,
       material_colors: count.length ? count[0].material_colors : [],
-      fineness: count.length ? count[0].fineness : []
+      fineness: count.length ? count[0].fineness : [],
     };
   }
 
   async getJewelryV2(jsonParams) {
-    const { data, count, material_colors, fineness } = await this.getJewelryDataV2(jsonParams);
+    const { data, count, material_colors, fineness } =
+      await this.getJewelryDataV2(jsonParams);
     return {
       data,
       metadata: {
         total: count,
         material_colors: material_colors,
         fineness: fineness,
-        pagination: jsonParams.pagination
-      }
+        pagination: jsonParams.pagination,
+      },
     };
   }
 

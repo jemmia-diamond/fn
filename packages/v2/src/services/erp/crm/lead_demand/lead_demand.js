@@ -10,45 +10,47 @@ export default class LeadDemandService {
   constructor(env) {
     this.env = env;
     this.doctype = "Lead Demand";
-    this.frappeClient = new FrappeClient(
-      {
-        url: env.JEMMIA_ERP_BASE_URL,
-        apiKey: env.JEMMIA_ERP_API_KEY,
-        apiSecret: env.JEMMIA_ERP_API_SECRET
-      }
-    );
+    this.frappeClient = new FrappeClient({
+      url: env.JEMMIA_ERP_BASE_URL,
+      apiKey: env.JEMMIA_ERP_API_KEY,
+      apiSecret: env.JEMMIA_ERP_API_SECRET,
+    });
     this.db = Database.instance(env);
   }
 
   static async syncLeadDemandToDatabase(env) {
-    const timeThreshold = dayjs().subtract(1, "day").utc().format("YYYY-MM-DD HH:mm:ss");
+    const timeThreshold = dayjs()
+      .subtract(1, "day")
+      .utc()
+      .format("YYYY-MM-DD HH:mm:ss");
     const leadDemandService = new LeadDemandService(env);
-    const leadDemands = await leadDemandService.frappeClient.getList("Lead Demand", {
-      limit_page_length: LeadDemandService.ERPNEXT_PAGE_SIZE,
-      filters: [
-        ["modified", ">=", timeThreshold]
-      ]
-    });
+    const leadDemands = await leadDemandService.frappeClient.getList(
+      "Lead Demand",
+      {
+        limit_page_length: LeadDemandService.ERPNEXT_PAGE_SIZE,
+        filters: [["modified", ">=", timeThreshold]],
+      },
+    );
     if (leadDemands.length > 0) {
       for (const leadDemand of leadDemands) {
         await leadDemandService.db.erpnextLeadDemand.upsert({
           where: {
-            name: leadDemand.name
+            name: leadDemand.name,
           },
           update: {
             name: leadDemand.name,
             owner: leadDemand.owner,
             creation: new Date(leadDemand.creation),
             modified: new Date(leadDemand.modified),
-            demand_label: leadDemand.demand_label
+            demand_label: leadDemand.demand_label,
           },
           create: {
             name: leadDemand.name,
             owner: leadDemand.owner,
             creation: new Date(leadDemand.creation),
             modified: new Date(leadDemand.modified),
-            demand_label: leadDemand.demand_label
-          }
+            demand_label: leadDemand.demand_label,
+          },
         });
       }
     }
