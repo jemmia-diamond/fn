@@ -6,6 +6,8 @@ model misaUser {
     database_created_at DateTime? @default(now())
     database_updated_at DateTime? @updatedAt
 
+    haravan_orders      Order[] @relation("OrderToMisaUser")
+
     @@map("users")
     @@schema("misa")
 }

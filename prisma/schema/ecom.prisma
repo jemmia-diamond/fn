@@ -9,7 +9,7 @@ model ecomQrGenerator {
   transfer_status           String?   @db.VarChar
   haravan_order_number      String?   @db.VarChar
   haravan_order_status      String?   @db.VarChar
-  haravan_order_id          BigInt?
+  haravan_order_id          BigInt?   @unique
   haravan_order_total_price BigInt?
   created_at                DateTime? @default(now()) @db.Timestamp(6)
   updated_at                DateTime? @default(now()) @db.Timestamp(6)
@@ -18,6 +18,8 @@ model ecomQrGenerator {
   qr_url                    String?
   lark_record_id            String?   @db.VarChar(255)
   all_lark_record_id        String?   @db.VarChar(255)
+
+  haravan_order Order? @relation(fields: [haravan_order_id], references: [id])
 
   @@index([id], map: "ix_ecom_qr_generator_id")
   @@map("qr_generator")
