@@ -5,20 +5,14 @@ import Database from "src/services/database";
 import AddressService from "src/services/erp/contacts/address/address";
 import ContactService from "src/services/erp/contacts/contact/contact";
 import CustomerService from "src/services/erp/selling/customer/customer";
-import {
-  composeOrderUpdateMessage,
-  composeReplyReorderMessage,
-  composeSalesOrderNotification,
-  extractPromotions,
-  validateOrderInfo,
-} from "services/erp/selling/sales-order/utils/sales-order-notification";
+import { composeOrderUpdateMessage, composeSalesOrderNotification, extractPromotions, validateOrderInfo } from "services/erp/selling/sales-order/utils/sales-order-notification";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/constant";
 
 import {
   fetchSalesOrdersFromERP,
-  saveSalesOrdersToDatabase,
+  saveSalesOrdersToDatabase
 } from "src/services/erp/selling/sales-order/utils/sales-order-helpers";
 import { getRefOrderChain } from "services/ecommerce/order-tracking/queries/get-initial-order";
 
@@ -34,33 +28,33 @@ export default class SalesOrderService {
     this.doctype = "Sales Order";
     this.linkedTableDoctype = {
       lineItems: "Sales Order Item",
-      paymentRecords: "Sales Order Payment Record",
+      paymentRecords: "Sales Order Payment Record"
     };
     this.cancelledStatusMapper = {
       uncancelled: "Uncancelled",
-      cancelled: "Cancelled",
+      cancelled: "Cancelled"
     };
     this.fulfillmentStatusMapper = {
       fulfilled: "Fulfilled",
-      notfulfilled: "Not Fulfilled",
+      notfulfilled: "Not Fulfilled"
     };
     this.financialStatusMapper = {
       paid: "Paid",
       partially_paid: "Partially Paid",
       partially_refunded: "Partially Refunded",
       refunded: "Refunded",
-      pending: "Pending",
+      pending: "Pending"
     };
     this.carrierStatusMapper = {
       notdelivered: "Not Delivered",
       readytopick: "Ready To Pick",
       delivering: "Delivering",
-      delivered: "Delivered",
+      delivered: "Delivered"
     };
     this.frappeClient = new FrappeClient({
       url: env.JEMMIA_ERP_BASE_URL,
       apiKey: env.JEMMIA_ERP_API_KEY,
-      apiSecret: env.JEMMIA_ERP_API_SECRET,
+      apiSecret: env.JEMMIA_ERP_API_SECRET
     });
     this.db = Database.instance(env);
   }
@@ -73,45 +67,45 @@ export default class SalesOrderService {
 
     // Create billing address and customer's addresses
     await addressService.processHaravanAddress(
-      haravanOrderData.billing_address,
+      haravanOrderData.billing_address
     );
     let customerAddresses = [];
     for (const address of haravanOrderData.customer.addresses) {
       customerAddresses.push(
-        await addressService.processHaravanAddress(address),
+        await addressService.processHaravanAddress(address)
       );
     }
     const customerDefaultAdress = customerAddresses[0];
 
     // Create contact and customer with default address
     const contact = await contactService.processHaravanContact(
-      haravanOrderData.customer,
+      haravanOrderData.customer
     );
     const customer = await customerService.processHaravanCustomer(
       haravanOrderData.customer,
       contact,
-      customerDefaultAdress,
+      customerDefaultAdress
     );
 
     // Update the customer back to his contact and address
     await contactService.processHaravanContact(
       haravanOrderData.customer,
-      customer,
+      customer
     );
     await addressService.processHaravanAddress(
       haravanOrderData.billing_address,
-      customer,
+      customer
     );
     for (const address of haravanOrderData.customer.addresses) {
       await addressService.processHaravanAddress(address, customer);
     }
 
     const paymentTransactions = haravanOrderData.transactions.filter(
-      (transaction) => transaction.kind.toLowerCase() === "capture",
+      (transaction) => transaction.kind.toLowerCase() === "capture"
     );
     const paidAmount = paymentTransactions.reduce(
       (total, transaction) => total + transaction.amount,
-      0,
+      0
     );
 
     const mappedOrderData = {
@@ -132,16 +126,16 @@ export default class SalesOrderService {
         this.cancelledStatusMapper[haravanOrderData.cancelled_status],
       carrier_status: haravanOrderData.fulfillments.length
         ? this.carrierStatusMapper[
-            haravanOrderData.fulfillments[0].carrier_status_code
-          ]
+          haravanOrderData.fulfillments[0].carrier_status_code
+        ]
         : this.carrierStatusMapper.notdelivered,
       transaction_date: convertIsoToDatetime(
         haravanOrderData.created_at,
-        "date",
+        "date"
       ),
       haravan_created_at: convertIsoToDatetime(
         haravanOrderData.created_at,
-        "datetime",
+        "datetime"
       ),
       total: haravanOrderData.total_line_items_price,
       payment_records: haravanOrderData.transactions
@@ -155,12 +149,12 @@ export default class SalesOrderService {
       balance: haravanOrderData.total_price - paidAmount,
       real_order_date: dayjs(haravanOrderData.created_at)
         .utc()
-        .format("YYYY-MM-DD"),
+        .format("YYYY-MM-DD")
     };
     const order = await this.frappeClient.upsert(
       mappedOrderData,
       "haravan_order_id",
-      ["items"],
+      ["items"]
     );
     return order;
   }
@@ -178,6 +172,18 @@ export default class SalesOrderService {
     }
   }
 
+  static async dequeueSalesOrderNotificationQueue(batch, env) {
+    const salesOrderService = new SalesOrderService(env);
+    for (const message of batch.messages) {
+      try {
+        const orderData = message.body;
+        await salesOrderService.sendNotificationToLark(orderData, true);
+      } catch (error) {
+        console.error(error);
+      }
+    }
+  }
+
   mapPaymentRecordFields = (hrvTransactionData) => {
     return {
       doctype: this.linkedTableDoctype.paymentRecords,
@@ -185,7 +191,7 @@ export default class SalesOrderService {
       amount: hrvTransactionData["amount"],
       gateway: hrvTransactionData["gateway"],
       kind: hrvTransactionData["kind"],
-      transaction_id: hrvTransactionData["id"],
+      transaction_id: hrvTransactionData["id"]
     };
   };
 
@@ -200,46 +206,30 @@ export default class SalesOrderService {
       qty: lineItemData.quantity,
       price_list_rate: parseInt(lineItemData.price_original),
       discount_amount: parseInt(
-        lineItemData.price_original - lineItemData.price,
+        lineItemData.price_original - lineItemData.price
       ),
       rate: parseInt(lineItemData.price),
-      type: lineItemData.type,
+      type: lineItemData.type
     };
   };
 
-  async sendNotificationToLark(salesOrderData) {
+  async sendNotificationToLark(salesOrderData, isUpdateMessage = false) {
     const larkClient = await LarksuiteService.createClientV2(this.env);
 
     const haravanRefOrderId = salesOrderData.haravan_ref_order_id;
 
     // Handle case reorder
     if (haravanRefOrderId && Number(haravanRefOrderId) > 0) {
-      const notificationOrderTracking =
-        await this.db.erpnextSalesOrderNotificationTracking.findFirst({
-          where: {
-            haravan_order_id: {
-              equals: String(salesOrderData.haravan_order_id),
-            },
-          },
-        });
-
-      if (notificationOrderTracking) {
-        return {
-          success: false,
-          message: "Đơn này đã thông báo",
-        };
-      }
-
       // find the very first order in history
       const refOrders = await getRefOrderChain(
         this.db,
-        Number(salesOrderData.haravan_order_id),
+        Number(salesOrderData.haravan_order_id)
       );
 
       if (!refOrders || refOrders.length === 0) {
         return {
           success: false,
-          message: `Không tìm thấy đơn gốc của đơn ${salesOrderData.order_number}`,
+          message: `Không tìm thấy đơn gốc của đơn ${salesOrderData.order_number}`
         };
       }
 
@@ -247,36 +237,63 @@ export default class SalesOrderService {
         await this.db.erpnextSalesOrderNotificationTracking.findMany({
           where: {
             haravan_order_id: {
-              in: refOrders?.map((order) => String(order.id)),
-            },
+              in: refOrders?.map((order) => String(order.id))
+            }
           },
           orderBy: {
-            database_created_at: "asc",
-          },
+            database_created_at: "asc"
+          }
         });
 
-      if (
-        refOrderstNotificationOrderTracking &&
-        refOrderstNotificationOrderTracking.length > 0
-      ) {
-        // Reply to the root message in the group chat
-        const composedReplyMessage = composeReplyReorderMessage(salesOrderData);
+      if (refOrderstNotificationOrderTracking && refOrderstNotificationOrderTracking.length > 0) {
+        const currentOrderTracking = await this.db.erpnextSalesOrderNotificationTracking.findFirst({
+          where: {
+            order_name: salesOrderData.name
+          }
+        });
+
+        const isOrderTracked = !!currentOrderTracking;
+
+        let content = null;
+        if (isOrderTracked) {
+          content = await this.composeUpdateOrderContent(currentOrderTracking.order_data, salesOrderData);
+        } else {
+          content = await this.composeNewOrderContent(salesOrderData);
+        }
+
+        if (!content) {
+          return { success: true, message: "Không có gì thay đổi!" };
+        }
+
         const replyResponse = await larkClient.im.message.reply({
           path: {
-            message_id: refOrderstNotificationOrderTracking[0].lark_message_id,
+            message_id: refOrderstNotificationOrderTracking[0].lark_message_id
           },
           data: {
             receive_id: CHAT_GROUPS.CUSTOMER_INFO.chat_id,
             msg_type: "text",
             reply_in_thread: true,
             content: JSON.stringify({
-              text: composedReplyMessage,
-            }),
-          },
+              text: content
+            })
+          }
         });
 
-        // Save ref order to tracking
         if (replyResponse.msg === "success") {
+          if (isOrderTracked) {
+            await this.db.erpnextSalesOrderNotificationTracking.updateMany({
+              where: {
+                uuid: currentOrderTracking.uuid
+              },
+              data: {
+                order_data: {
+                  items: salesOrderData.items,
+                  attachments: salesOrderData.attachments
+                }
+              }
+            });
+            return { success: true, message: "Cập nhật đơn thành công!" };
+          }
           await this.db.erpnextSalesOrderNotificationTracking.create({
             data: {
               lark_message_id: replyResponse.data.message_id,
@@ -284,14 +301,18 @@ export default class SalesOrderService {
               haravan_order_id: salesOrderData.haravan_order_id,
               order_data: {
                 items: salesOrderData.items,
-                attachments: salesOrderData.attachments,
-              },
-            },
+                attachments: salesOrderData.attachments
+              }
+            }
           });
           return {
             success: true,
-            message: "Thông báo đơn đặt lại thành công!",
+            message: "Thông báo đơn đặt lại thành công!"
           };
+        }
+
+        if (isOrderTracked) {
+          return { success: false, message: "Cập nhật đơn thất bại!" };
         }
         return { success: false, message: "Thông báo đơn đặt lại thất bại!" };
       }
@@ -300,50 +321,41 @@ export default class SalesOrderService {
     const notificationTracking =
       await this.db.erpnextSalesOrderNotificationTracking.findFirst({
         where: {
-          order_name: salesOrderData.name,
-        },
+          order_name: salesOrderData.name
+        }
       });
 
-    let promotionData = null;
     if (notificationTracking) {
-      const promotionNames = extractPromotions(salesOrderData);
-      promotionData = await this.frappeClient.getList("Promotion", {
-        filters: [["name", "in", promotionNames]],
-      });
-      const composedReplyMessage = composeOrderUpdateMessage(
-        notificationTracking.order_data || {},
-        salesOrderData,
-        promotionData,
-      );
+      const composedReplyMessage = await this.composeUpdateOrderContent(notificationTracking.order_data || {}, salesOrderData);
 
       if (composedReplyMessage) {
         // Reply to the root message in the group chat
         const replyResponse = await larkClient.im.message.reply({
           path: {
-            message_id: notificationTracking.lark_message_id,
+            message_id: notificationTracking.lark_message_id
           },
           data: {
             receive_id: CHAT_GROUPS.CUSTOMER_INFO.chat_id,
             msg_type: "text",
             reply_in_thread: true,
             content: JSON.stringify({
-              text: composedReplyMessage,
-            }),
-          },
+              text: composedReplyMessage
+            })
+          }
         });
 
         if (replyResponse.msg === "success") {
           // Update
           await this.db.erpnextSalesOrderNotificationTracking.updateMany({
             where: {
-              uuid: notificationTracking.uuid,
+              uuid: notificationTracking.uuid
             },
             data: {
               order_data: {
                 items: salesOrderData.items,
-                attachments: salesOrderData.attachments,
-              },
-            },
+                attachments: salesOrderData.attachments
+              }
+            }
           });
         }
 
@@ -352,89 +364,34 @@ export default class SalesOrderService {
 
       return {
         success: false,
-        message: "Đơn hàng này đã được gửi thông báo từ trước đó!",
+        message: "Đơn hàng này đã được gửi thông báo từ trước đó!"
       };
     }
 
-    const customer = await this.frappeClient.getDoc(
-      "Customer",
-      salesOrderData.customer,
-    );
+    if (isUpdateMessage) {
+      return { success: true, message: "Ok" };
+    }
+
+    const customer = await this.frappeClient.getDoc("Customer", salesOrderData.customer);
 
     const { isValid, message } = validateOrderInfo(salesOrderData, customer);
     if (!isValid) {
       return { success: false, message: message };
     }
 
-    const leadSource = await this.frappeClient.getDoc(
-      "Lead Source",
-      customer.first_source,
-    );
-
-    const policyNames = salesOrderData.policies.map((policy) => policy.policy);
-    const policyData = await this.frappeClient.getList("Policy", {
-      filters: [["name", "in", policyNames]],
-    });
-
-    const productCategoryNames = salesOrderData.product_categories.map(
-      (productCategory) => productCategory.product_category,
-    );
-    const productCategoryData = await this.frappeClient.getList(
-      "Product Category",
-      {
-        filters: [["name", "in", productCategoryNames]],
-      },
-    );
-
-    const promotionNames = extractPromotions(salesOrderData);
-    if (!promotionData) {
-      promotionData = await this.frappeClient.getList("Promotion", {
-        filters: [["name", "in", promotionNames]],
-      });
-    }
-
-    const primarySalesPersonName = salesOrderData.primary_sales_person;
-    const primarySalesPerson = await this.frappeClient.getDoc(
-      "Sales Person",
-      primarySalesPersonName,
-    );
-
-    const secondarySalesPersonNames = salesOrderData.sales_team
-      .filter(
-        (salesPerson) =>
-          salesPerson.sales_person !== salesOrderData.primary_sales_person,
-      )
-      .map((salesPerson) => salesPerson.sales_person);
-
-    const secondarySalesPeople = await this.frappeClient.getList(
-      "Sales Person",
-      {
-        filters: [["name", "in", secondarySalesPersonNames]],
-      },
-    );
-
-    const content = composeSalesOrderNotification(
-      salesOrderData,
-      promotionData,
-      leadSource,
-      policyData,
-      productCategoryData,
-      customer,
-      primarySalesPerson,
-      secondarySalesPeople,
-    );
+    const content = await this.composeNewOrderContent(salesOrderData, customer);
 
     const _response = await larkClient.im.message.create({
       params: {
-        receive_id_type: "chat_id",
+        receive_id_type: "chat_id"
       },
       data: {
         receive_id: CHAT_GROUPS.CUSTOMER_INFO.chat_id,
         msg_type: "text",
         content: JSON.stringify({
-          text: content,
-        }),
-      },
+          text: content
+        })
+      }
     });
 
     const messageId = _response.data.message_id;
@@ -446,9 +403,9 @@ export default class SalesOrderService {
         haravan_order_id: salesOrderData.haravan_order_id,
         order_data: {
           items: salesOrderData.items,
-          attachments: salesOrderData.attachments,
-        },
-      },
+          attachments: salesOrderData.attachments
+        }
+      }
     });
 
     return { success: true, message: "Đã gửi thông báo thành công!" };
@@ -458,7 +415,7 @@ export default class SalesOrderService {
     // minutesBack = 10 is default value for first sync when no create kv
     const {
       isSyncType = SalesOrderService.SYNC_TYPE_MANUAL,
-      minutesBack = 10,
+      minutesBack = 10
     } = options;
     const kv = this.env.FN_KV;
     const KV_KEY = "sales_order_sync:last_date";
@@ -486,7 +443,7 @@ export default class SalesOrderService {
         this.doctype,
         fromDate,
         toDate,
-        SalesOrderService.ERPNEXT_PAGE_SIZE,
+        SalesOrderService.ERPNEXT_PAGE_SIZE
       );
       if (Array.isArray(salesOrders) && salesOrders.length > 0) {
         await saveSalesOrdersToDatabase(this.db, salesOrders);
@@ -510,7 +467,7 @@ export default class SalesOrderService {
     const syncService = new SalesOrderService(env);
     return await syncService.syncSalesOrdersToDatabase({
       minutesBack: 10,
-      isSyncType: SalesOrderService.SYNC_TYPE_AUTO,
+      isSyncType: SalesOrderService.SYNC_TYPE_AUTO
     });
   }
 
@@ -523,9 +480,9 @@ export default class SalesOrderService {
         {
           filters: [
             ["real_order_date", "is", "not set"],
-            ["cancelled_status", "=", "uncancelled"],
-          ],
-        },
+            ["cancelled_status", "=", "uncancelled"]
+          ]
+        }
       );
       salesOrders.push(...orders);
     } catch (error) {
@@ -569,7 +526,7 @@ export default class SalesOrderService {
         await salesOrderService.frappeClient.update({
           doctype: "Sales Order",
           name: salesOrder.name,
-          real_order_date: realOrderDate,
+          real_order_date: realOrderDate
         });
       } catch (error) {
         console.error(error);
@@ -607,11 +564,55 @@ export default class SalesOrderService {
         await salesOrderService.frappeClient.update({
           doctype: salesOrderService.doctype,
           name: order.name,
-          items: order.items,
+          items: order.items
         });
       } catch (error) {
         console.error(error);
       }
     }
+  }
+
+  async composeUpdateOrderContent(oldSalesOrderData, salesOrderData) {
+    const promotionNames = extractPromotions(salesOrderData);
+    const promotionData = await this.frappeClient.getList("Promotion", {
+      filters: [["name", "in", promotionNames]]
+    });
+    return composeOrderUpdateMessage(oldSalesOrderData, salesOrderData, promotionData);
+  }
+
+  async composeNewOrderContent(salesOrderData, orderCustomer) {
+    const customer = orderCustomer ?? (await this.frappeClient.getDoc("Customer", salesOrderData.customer));
+
+    const leadSource = await this.frappeClient.getDoc("Lead Source", customer.first_source);
+
+    const policyNames = salesOrderData.policies.map(policy => policy.policy);
+    const policyData = await this.frappeClient.getList("Policy", {
+      filters: [["name", "in", policyNames]]
+    });
+
+    const productCategoryNames = salesOrderData.product_categories.map(productCategory => productCategory.product_category);
+    const productCategoryData = await this.frappeClient.getList("Product Category", {
+      filters: [["name", "in", productCategoryNames]]
+    });
+
+    const promotionNames = extractPromotions(salesOrderData);
+    const promotionData = await this.frappeClient.getList("Promotion", {
+      filters: [["name", "in", promotionNames]]
+    });
+
+    const primarySalesPersonName = salesOrderData.primary_sales_person;
+    const primarySalesPerson = await this.frappeClient.getDoc("Sales Person", primarySalesPersonName);
+
+    const secondarySalesPersonNames = salesOrderData.sales_team
+      .filter(salesPerson => salesPerson.sales_person !== salesOrderData.primary_sales_person)
+      .map(salesPerson => salesPerson.sales_person);
+
+    const secondarySalesPeople = await this.frappeClient.getList("Sales Person", {
+      filters: [["name", "in", secondarySalesPersonNames]]
+    });
+
+    const content = composeSalesOrderNotification(salesOrderData, promotionData, leadSource, policyData, productCategoryData, customer, primarySalesPerson, secondarySalesPeople);
+
+    return content;
   }
 }

@@ -6,6 +6,7 @@ import Pancake from "controllers/pancake";
 import Dashboard from "controllers/dashboard";
 import Ecommerce from "controllers/ecommerce";
 import Delivery from "controllers/delivery";
+import Payment from "controllers/payment";
 
 export default class APIRoutes {
   static register(api) {
@@ -27,17 +28,17 @@ export default class APIRoutes {
 
     jemmiaERPNamespaceApi.post(
       "/sales_orders",
-      ERP.SalesOrderController.create,
+      ERP.SalesOrderController.create
     );
     jemmiaERPNamespaceApi.post(
       "/sales_orders/:id/notifications",
-      ERP.SalesOrderNotificationController.create,
+      ERP.SalesOrderNotificationController.create
     );
 
     const pancakeNamespaceApi = api.basePath("/pancake");
     pancakeNamespaceApi.post(
       "/conversation_assignments",
-      Pancake.ConversationAssignmentController.create,
+      Pancake.ConversationAssignmentController.create
     );
 
     const dashboardNamespaceApi = api.basePath("/dashboard");
@@ -47,32 +48,32 @@ export default class APIRoutes {
     ecommerceNamespaceApi.get("/search", Ecommerce.SearchController.index);
     ecommerceNamespaceApi.get(
       "/product/jewelries",
-      Ecommerce.JewelryController.index,
+      Ecommerce.JewelryController.index
     ); // [DEPRECATED]
     ecommerceNamespaceApi.get(
       "/product/diamonds",
-      Ecommerce.DiamondController.index,
+      Ecommerce.DiamondController.index
     );
     ecommerceNamespaceApi.get(
       "/product/wedding_rings",
-      Ecommerce.WeddingRingController.index,
+      Ecommerce.WeddingRingController.index
     );
 
     ecommerceNamespaceApi.get(
       "/products/diamonds",
-      Ecommerce.DiamondController.index,
+      Ecommerce.DiamondController.index
     );
     ecommerceNamespaceApi.get(
       "/products/jewelries",
-      Ecommerce.JewelryController.index,
+      Ecommerce.JewelryController.index
     );
     ecommerceNamespaceApi.get(
       "/products/wedding_rings",
-      Ecommerce.WeddingRingController.index,
+      Ecommerce.WeddingRingController.index
     );
     ecommerceNamespaceApi.delete(
       "/ind-day-stats",
-      Ecommerce.IndDayStatController.destroy,
+      Ecommerce.IndDayStatController.destroy
     );
 
     ecommerceNamespaceApi.get("/cards/:id", Ecommerce.CardController.show);
@@ -81,17 +82,18 @@ export default class APIRoutes {
 
     ecommerceNamespaceApi.get(
       "/v2/products/jewelries",
-      Ecommerce.JewelryControllerV2.index,
+      Ecommerce.JewelryControllerV2.index
     );
     ecommerceNamespaceApi.get(
       "/v2/products/jewelries/:id",
-      Ecommerce.JewelryControllerV2.show,
+      Ecommerce.JewelryControllerV2.show
     );
 
     const nhattinNamespaceApi = api.basePath("/delivery");
-    nhattinNamespaceApi.get(
-      "/nhattin",
-      Delivery.DeliveryTrackingController.show,
-    );
-  }
-}
+    nhattinNamespaceApi.get("/nhattin", Delivery.DeliveryTrackingController.show);
+
+    const paymentApi = api.basePath("/payments");
+    paymentApi.post("/manual-payments", Payment.ManualPaymentsController.create);
+    paymentApi.patch("/manual-payments/:id", Payment.ManualPaymentsController.update);
+  };
+};
