@@ -24,7 +24,7 @@ export async function getInitialOrder(db, orderId) {
   return orders.length ? orders[0] : null;
 }
 
-export async function getRefOrderChain(db, orderId) {
+export async function getRefOrderChain(db, orderId, includeSelf = false) {
   const orders = await db.$queryRaw`
     WITH RECURSIVE order_chain AS (
         SELECT id, ref_order_id, order_number, created_at
@@ -40,7 +40,7 @@ export async function getRefOrderChain(db, orderId) {
         order_number,
         created_at 
     FROM order_chain
-    WHERE id != ${orderId}
+    ${includeSelf ? "" : `WHERE id != ${orderId}`}
     ORDER BY created_at ASC
   `;
 
