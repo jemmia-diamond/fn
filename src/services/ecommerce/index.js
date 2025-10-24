@@ -6,6 +6,7 @@ import OrderNotificationService from "services/ecommerce/order-notification/orde
 import CardService from "services/ecommerce/card/card";
 import WarehouseService from "services/ecommerce/warehouse/warehouse";
 import QrPaymentFetchingService from "services/ecommerce/qr_payment/fetch-service";
+import ManualPaymentFetchingService from "services/ecommerce/manual_payment/fetch-service";
 
 export default {
   ProductService: ProductService,
@@ -15,5 +16,6 @@ export default {
   OrderNotificationService: OrderNotificationService,
   CardService: CardService,
   WarehouseService: WarehouseService,
-  QrPaymentFetchingService
+  QrPaymentFetchingService,
+  ManualPaymentFetchingService
 };
