@@ -112,7 +112,7 @@ export default class SalesOrderService {
       paid_amount: paidAmount,
       balance: haravanOrderData.total_price - paidAmount,
       real_order_date: dayjs(haravanOrderData.created_at).utc().format("YYYY-MM-DD"),
-      ref_sales_orders: await this.mapRefSalesOrder(haravanOrderData.ref_order_id)
+      ref_sales_orders: await this.mapRefSalesOrder(haravanOrderData.id)
     };
     const order = await this.frappeClient.upsert(mappedOrderData, "haravan_order_id", ["items"]);
     return order;
@@ -158,9 +158,11 @@ export default class SalesOrderService {
     try {
       const refOrders = await getRefOrderChain(this.db, Number(refOrderId));
 
-      if (!refOrders) return [];
+      if (!refOrders) {
+        return [];
+      };
 
-      const erpRefOrders = await this.db.erpnextSalesOrder.findMany({
+      const erpRefOrders = await this.db.erpnextSalesOrders.findMany({
         where: {
           haravan_order_id: {
             in: refOrders?.map(order => String(order.id))
@@ -171,11 +173,12 @@ export default class SalesOrderService {
       return refOrders.map((o) => {
         const { name } = erpRefOrders.find(order => order.haravan_order_id === String(o.id));
         return {
-          link_doctype: "Sales Order Reference",
-          link_name: name
+          doctype: "Sales Order Reference",
+          sales_order: name
         };
       });
-    } catch {
+    } catch (e) {
+      console.error(e);
       return [];
     }
   };
