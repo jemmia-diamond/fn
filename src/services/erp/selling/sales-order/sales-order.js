@@ -25,7 +25,8 @@ export default class SalesOrderService {
     this.doctype = "Sales Order";
     this.linkedTableDoctype = {
       lineItems: "Sales Order Item",
-      paymentRecords: "Sales Order Payment Record"
+      paymentRecords: "Sales Order Payment Record",
+      refSalesOrder: "Ref Sales Order"
     };
     this.cancelledStatusMapper = {
       uncancelled: "Uncancelled",
@@ -110,7 +111,8 @@ export default class SalesOrderService {
       grand_total: haravanOrderData.total_price,
       paid_amount: paidAmount,
       balance: haravanOrderData.total_price - paidAmount,
-      real_order_date: dayjs(haravanOrderData.created_at).utc().format("YYYY-MM-DD")
+      real_order_date: dayjs(haravanOrderData.created_at).utc().format("YYYY-MM-DD"),
+      ref_sales_orders: await this.mapRefSalesOrder(haravanOrderData.ref_order_id)
     };
     const order = await this.frappeClient.upsert(mappedOrderData, "haravan_order_id", ["items"]);
     return order;
@@ -150,6 +152,25 @@ export default class SalesOrderService {
       kind: hrvTransactionData["kind"],
       transaction_id: hrvTransactionData["id"]
     };
+  };
+
+  mapRefSalesOrder = async (refOrderId) => {
+    const refOrders = await getRefOrderChain(this.db, Number(refOrderId));
+    const erpRefOrders = await this.db.erpnextSalesOrder.findMany({
+      where: {
+        haravan_order_id: {
+          in: refOrders?.map(order => String(order.id))
+        }
+      }
+    });
+
+    return refOrders.map((o) => {
+      const { name } = erpRefOrders.find(order => order.haravan_order_id === String(o.id));
+      return {
+        link_doctype: "Sales Order Reference",
+        link_name: name
+      };
+    });
   };
 
   mapLineItemsFields = (lineItemData) => {
