@@ -33,6 +33,13 @@ export default class ManualPaymentsController {
       delete paymentData.misa_synced;
     }
 
+    const haravanOrderIdStr = body.haravan_order_id;
+    if (haravanOrderIdStr != null && haravanOrderIdStr !== "") {
+      paymentData.haravan_order_id = BigInt(haravanOrderIdStr);
+    } else {
+      delete paymentData.haravan_order_id;
+    }
+
     Object.keys(paymentData).forEach(key => {
       const value = paymentData[key];
       if (value === undefined || (value instanceof Date && isNaN(value.getTime())) || (typeof value === "number" && isNaN(value))) {
