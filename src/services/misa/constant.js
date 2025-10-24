@@ -71,3 +71,24 @@ export const CREDIT_ACCOUNT_MAP = {
     unit_name: "Cửa hàng HN", unit_code: "0302_002"
   }
 };
+
+export const MANUAL_PAYMENT_DEBIT_MAP = {
+  "Hồ Chí Minh": 1111000,
+  "Hà Nội": 1111100,
+  "Cần Thơ": 1111300
+};
+
+export const MANUAL_PAYMENT_CREDIT_MAP = {
+  "Hồ Chí Minh": {
+    credit_account: "1310001", unit_id: "9af12d4c-11bc-447a-be41-11396d8dffca",
+    unit_name: "Cửa hàng HCM", unit_code: "0302_001"
+  },
+  "Hà Nội": {
+    credit_account: "1310101", unit_id: "72a31f58-9432-4df0-861b-9d6b9f228546",
+    unit_name: "Cửa hàng HN", unit_code: "0302_002"
+  },
+  "Cần Thơ": {
+    credit_account: "1310002", unit_id: "06bb3daa-fd49-469a-b9fa-ad9e6dd8bc24",
+    unit_name: "Cửa hàng Cần Thơ", unit_code: "0302_003"
+  }
+};
