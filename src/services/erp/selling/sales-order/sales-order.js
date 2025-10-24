@@ -156,7 +156,7 @@ export default class SalesOrderService {
 
   mapRefSalesOrder = async (refOrderId) => {
     try {
-      const refOrders = await getRefOrderChain(this.db, Number(refOrderId));
+      const refOrders = await getRefOrderChain(this.db, Number(refOrderId), true);
 
       if (!refOrders) {
         return [];

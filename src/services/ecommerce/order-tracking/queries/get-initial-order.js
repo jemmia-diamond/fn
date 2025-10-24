@@ -1,3 +1,5 @@
+import { Prisma } from "@prisma-cli";
+
 export async function getInitialOrder(db, orderId) {
   const orders = await db.$queryRaw`
     WITH RECURSIVE order_chain AS (
@@ -25,7 +27,7 @@ export async function getInitialOrder(db, orderId) {
 }
 
 export async function getRefOrderChain(db, orderId, includeSelf = false) {
-  const orders = await db.$queryRaw`
+  let sql = `
     WITH RECURSIVE order_chain AS (
         SELECT id, ref_order_id, order_number, created_at
         FROM haravan.orders 
@@ -40,9 +42,13 @@ export async function getRefOrderChain(db, orderId, includeSelf = false) {
         order_number,
         created_at 
     FROM order_chain
-    ${includeSelf ? "" : `WHERE id != ${orderId}`}
-    ORDER BY created_at ASC
   `;
 
-  return orders;
+  if (!includeSelf) {
+    sql += `\nWHERE id != ${orderId}`;
+  }
+
+  sql += "\nORDER BY created_at ASC";
+
+  return await db.$queryRaw`${Prisma.raw(sql)}`;
 }
