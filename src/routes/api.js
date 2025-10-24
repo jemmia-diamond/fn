@@ -50,9 +50,6 @@ export default class APIRoutes {
     ecommerceNamespaceApi.post("/cards", Ecommerce.CardController.create);
     ecommerceNamespaceApi.patch("/cards/:id", Ecommerce.CardController.update);
 
-    ecommerceNamespaceApi.get("/v2/products/jewelries", Ecommerce.JewelryControllerV2.index);
-    ecommerceNamespaceApi.get("/v2/products/jewelries/:id", Ecommerce.JewelryControllerV2.show);
-
     const nhattinNamespaceApi = api.basePath("/delivery");
     nhattinNamespaceApi.get("/nhattin", Delivery.DeliveryTrackingController.show);
 

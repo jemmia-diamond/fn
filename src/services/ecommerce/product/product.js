@@ -3,7 +3,7 @@ import { Prisma } from "@prisma-cli";
 import { buildQuery } from "services/ecommerce/product/utils/jewelry";
 import { buildQueryV2 } from "services/ecommerce/product/utils/jewelry-v2";
 import { buildWeddingRingsQuery } from "services/ecommerce/product/utils/wedding-ring";
-import { JEWELRY_IMAGE } from "src/controllers/ecommerce/constant";
+import { JEWELRY_IMAGE, ECOMMERCE_CONFIG } from "src/controllers/ecommerce/constant";
 
 export default class ProductService {
   constructor(env) {
@@ -228,6 +228,11 @@ export default class ProductService {
   }
 
   async getJewelryByIdV2(id) {
+    const productId = parseInt(id, 10);
+    const workplaceUrlPrefix = JEWELRY_IMAGE.WORKPLACE_URL_PREFIX;
+    const workplaceFullUrl = JEWELRY_IMAGE.WORKPLACE_FULL_URL;
+    const cdnUrl = ECOMMERCE_CONFIG.CDN_URL;
+
     const result = await this.db.$queryRaw`
        SELECT
         CAST(p.haravan_product_id AS INT) AS id,
@@ -261,8 +266,8 @@ export default class ProductService {
                  COALESCE(
                    array_agg(
                      CASE 
-                       WHEN item.value->>'url' LIKE '${JEWELRY_IMAGE.WORKPLACE_URL_PREFIX}.%' THEN
-                         REPLACE(item.value->>'url', '${JEWELRY_IMAGE.WORKPLACE_FULL_URL}', '${ECOMMERCE_CONFIG.CDN_URL}')
+                       WHEN item.value->>'url' LIKE ${workplaceUrlPrefix} || '.%' THEN
+                         REPLACE(item.value->>'url', ${workplaceFullUrl}, ${cdnUrl})
                        ELSE item.value->>'url'
                      END
                    ) FILTER (WHERE jsonb_typeof(item.value) = 'object' AND item.value->>'url' IS NOT NULL),
@@ -302,7 +307,7 @@ export default class ProductService {
           ORDER BY v.fineness, v.price DESC
         ) v ON TRUE
       WHERE 1 = 1
-        AND p.haravan_product_id = ${id}
+        AND p.haravan_product_id = ${productId}
       GROUP BY
       	p.haravan_product_id, p.title, d.design_code, p.handle,
         d.diamond_holder, d.ring_band_type, d.main_stone, d.stone_quantity, p.haravan_product_type,
