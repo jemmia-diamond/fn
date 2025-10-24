@@ -155,22 +155,29 @@ export default class SalesOrderService {
   };
 
   mapRefSalesOrder = async (refOrderId) => {
-    const refOrders = await getRefOrderChain(this.db, Number(refOrderId));
-    const erpRefOrders = await this.db.erpnextSalesOrder.findMany({
-      where: {
-        haravan_order_id: {
-          in: refOrders?.map(order => String(order.id))
-        }
-      }
-    });
+    try {
+      const refOrders = await getRefOrderChain(this.db, Number(refOrderId));
 
-    return refOrders.map((o) => {
-      const { name } = erpRefOrders.find(order => order.haravan_order_id === String(o.id));
-      return {
-        link_doctype: "Sales Order Reference",
-        link_name: name
-      };
-    });
+      if (!refOrders) return [];
+
+      const erpRefOrders = await this.db.erpnextSalesOrder.findMany({
+        where: {
+          haravan_order_id: {
+            in: refOrders?.map(order => String(order.id))
+          }
+        }
+      });
+
+      return refOrders.map((o) => {
+        const { name } = erpRefOrders.find(order => order.haravan_order_id === String(o.id));
+        return {
+          link_doctype: "Sales Order Reference",
+          link_name: name
+        };
+      });
+    } catch {
+      return [];
+    }
   };
 
   mapLineItemsFields = (lineItemData) => {
