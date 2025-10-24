@@ -18,6 +18,13 @@ export default class ManualPaymentsController {
       delete paymentData.transfer_amount;
     }
 
+    const haravanOrderIdStr = body.haravan_order_id;
+    if (haravanOrderIdStr != null && haravanOrderIdStr !== "") {
+      paymentData.haravan_order_id = parseInt(haravanOrderIdStr, 10);
+    } else {
+      delete paymentData.haravan_order_id;
+    }
+
     ["send_date", "receive_date", "created_date", "updated_date"].forEach(field => {
       const dateStr = body[field];
       if (dateStr != null && dateStr !== "") {
