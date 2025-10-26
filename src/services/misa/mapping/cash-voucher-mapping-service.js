@@ -25,9 +25,10 @@ export default class CashVoucherMappingService {
     const bankInfo = bankMap[v.bank_account] || null;
     const bankName = bankInfo ? (bankInfo.bank_branch_name ? `${bankInfo.bank_name} - ${bankInfo.bank_branch_name}` : bankInfo.bank_name) : "Không tìm thấy ngân hàng";
 
-    return {
+    const generatedGuid = crypto.randomUUID();
+    const misaVoucher = {
       voucher_type,
-      org_refid: crypto.randomUUID(),
+      org_refid: generatedGuid,
       org_reftype: ref_type,
       branch_id: null,
       reason_type_id: 14,
@@ -66,5 +67,7 @@ export default class CashVoucherMappingService {
         }
       ]
     };
+
+    return { misaVoucher, originalId: v.uuid, generatedGuid };
   }
 }

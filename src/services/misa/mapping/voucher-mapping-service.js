@@ -32,9 +32,10 @@ export default class VoucherMappingService {
     const bankInfo = bankMap[v.bank_account_number];
     const bankName = bankInfo ? (bankInfo.bank_branch_name ? `${bankInfo.bank_name} - ${bankInfo.bank_branch_name}` : bankInfo.bank_name) : "Bank name not found";
 
-    return {
+    const generatedGuid = crypto.randomUUID();
+    const misaVoucher = {
       voucher_type,
-      org_refid: crypto.randomUUID(),
+      org_refid: generatedGuid,
       org_reftype: ref_type,
       branch_id: null,
       reason_type_id: 29,
@@ -72,5 +73,7 @@ export default class VoucherMappingService {
         }
       ]
     };
+
+    return { misaVoucher, originalId: v.id, generatedGuid };
   }
 }
