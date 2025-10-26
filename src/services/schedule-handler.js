@@ -64,9 +64,13 @@ export default {
       break;
     case "30 5 * * *": // 12:30
       await ERP.Automation.AssignmentRuleService.updateAssignmentRulesMidDay(env);
+      await new Ecommerce.MisaVoucherCreator(env).beginLunchbreak();
       break;
-    case "0 10 * * *": // 17:00
-      await ERP.Automation.AssignmentRuleService.updateAssignmentRulesEndDay(env);
+    case "30 6 * * *": // 13:30
+      await new Ecommerce.MisaVoucherCreator(env).endLunchbreak();
+      break;
+    case "0 11 * * *": // 18:00
+      await new Ecommerce.MisaVoucherCreator(env).endOfDay();
       break;
     case "0 14 * * *": // 21:00
       await ERP.Automation.AssignmentRuleService.enableAssignmentRuleOffHour(env);
