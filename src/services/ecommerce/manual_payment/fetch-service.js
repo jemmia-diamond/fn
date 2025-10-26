@@ -25,6 +25,7 @@ export default class ManualPaymentFetchingService {
           }
         },
         select: {
+          uuid: true,
           haravan_order_name: true,
           transfer_amount: true,
           branch: true,
