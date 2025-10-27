@@ -1,4 +1,4 @@
-import VoucherMappingService from "services/misamapping/voucher-mapping-service";
+import VoucherMappingService from "services/misa/mapping/voucher-mapping-service";
 
 export default {
   VoucherMappingService
