@@ -33,6 +33,13 @@ export default class ManualPaymentsController {
       delete paymentData.misa_synced;
     }
 
+    const haravanOrderIdStr = body.haravan_order_id;
+    if (haravanOrderIdStr != null && haravanOrderIdStr !== "") {
+      paymentData.haravan_order_id = BigInt(haravanOrderIdStr);
+    } else {
+      delete paymentData.haravan_order_id;
+    }
+
     Object.keys(paymentData).forEach(key => {
       const value = paymentData[key];
       if (value === undefined || (value instanceof Date && isNaN(value.getTime())) || (typeof value === "number" && isNaN(value))) {
@@ -52,7 +59,7 @@ export default class ManualPaymentsController {
       const newPayment = await PaymentServices.ManualPaymentService.createManualPayment(c.env, paymentData);
 
       if (newPayment) {
-        return c.json(newPayment, 201);
+        return c.json(ManualPaymentsController._serializePayment(newPayment), 201);
       } else {
         return c.json({ error: "Failed to create payment" }, 500);
       }
@@ -79,7 +86,7 @@ export default class ManualPaymentsController {
       );
 
       if (updatedPayment) {
-        return c.json(updatedPayment, 200);
+        return c.json(ManualPaymentsController._serializePayment(updatedPayment), 200);
       } else {
         return c.json({ error: "Payment not found or update failed" }, 404);
       }
@@ -92,5 +99,16 @@ export default class ManualPaymentsController {
 
       return c.json({ error: "An unexpected error occurred" }, 500);
     }
+  }
+
+  static _serializePayment(payment) {
+    if (!payment) {
+      return null;
+    }
+    const serializableData = { ...payment };
+    if (serializableData.haravan_order_id != null) {
+      serializableData.haravan_order_id = serializableData.haravan_order_id.toString();
+    }
+    return serializableData;
   }
 }

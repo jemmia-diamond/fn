@@ -66,6 +66,8 @@ export default class ManualPaymentService {
                 return null;
               };
 
+              const rawOrderId = fields["ORDER ID"]?.value?.[0];
+
               const data = {
                 payment_type: getText(fields["Loại Thanh Toán"]),
                 branch: getText(fields["Chi Nhánh"]),
@@ -78,7 +80,7 @@ export default class ManualPaymentService {
                 bank_name: getText(fields["Ngân Hàng"]?.value),
                 transfer_amount: fields["Số Tiền Giao Dịch"],
                 transfer_note: Array.isArray(fields["Nội Dung CK"]) ? fields["Nội Dung CK"].map(i => i.text || "").join("") : fields["Nội Dung CK"],
-                haravan_order_id: fields["ORDER ID"]?.value?.[0]?.toString() ?? null,
+                haravan_order_id: rawOrderId != null ? BigInt(rawOrderId) : null,
                 haravan_order_name: getText(fields["ORDER"]),
                 transfer_status: getText(fields["Trạng Thái Thủ Công"])
               };
@@ -210,34 +212,37 @@ export default class ManualPaymentService {
     if (!haravanOrderId) {
       throw new BadRequestException("Haravan Order ID is missing.");
     }
-    if (!transferAmount || transferAmount <= 0) {
+
+    if (!transferAmount) {
+      throw new BadRequestException("Transaction is missing.");
+    }
+
+    const parsedTransferAmount = parseInt(transferAmount);
+
+    if (parsedTransferAmount <= 0) {
       throw new BadRequestException("Transaction amount must be a positive number.");
     }
+
     const validPaymentMethods = ["Tiền Mặt", "Cà Thẻ Tại Cửa Hàng", "Cà Thẻ Online", "COD HTC"];
     if (!paymentType || !validPaymentMethods.includes(paymentType)) {
       throw new BadRequestException(`Invalid payment method. Must be one of: ${validPaymentMethods.join(", ")}`);
     }
 
-    const orderId = parseInt(haravanOrderId, 10);
-    if (isNaN(orderId)) {
-      throw new BadRequestException("Haravan Order ID must be a number.");
-    }
-
     const orderResult = await db.$queryRaw`
       SELECT id, cancelled_status, financial_status, closed_status, total_price 
       FROM haravan.orders 
-      WHERE id = ${orderId}
+      WHERE id = ${haravanOrderId}
     `;
     const order = orderResult[0];
 
     if (!order) {
-      throw new BadRequestException(`Order with ID ${orderId} not found.`);
+      throw new BadRequestException(`Order with ID ${haravanOrderId} not found.`);
     }
     if (order.cancelled_status === "cancelled") throw new BadRequestException("Order is cancelled.");
     if (order.financial_status === "paid") throw new BadRequestException("Order is already paid.");
     if (order.financial_status === "refunded") throw new BadRequestException("Order is already refunded.");
     if (order.closed_status === "closed") throw new BadRequestException("Order is closed.");
-    if (transferAmount > order.total_price) {
+    if (parsedTransferAmount > parseInt(order.total_price)) {
       throw new BadRequestException("Transaction amount exceeds order total price.");
     }
 
@@ -248,11 +253,11 @@ export default class ManualPaymentService {
       throw new BadRequestException("Haravan API credentials or base URL are not configured in the environment.");
     }
 
-    const apiUrl = `${HARAVAN_API_BASE_URL}/com/orders/${orderId}/transactions.json`;
+    const apiUrl = `${HARAVAN_API_BASE_URL}/com/orders/${haravanOrderId}/transactions.json`;
 
     const transactionPayload = {
       transaction: {
-        amount: transferAmount,
+        amount: parsedTransferAmount,
         kind: "capture",
         gateway: paymentType
       }
