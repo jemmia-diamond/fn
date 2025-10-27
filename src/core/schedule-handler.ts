@@ -6,7 +6,6 @@ import ERP from "../../packages/v2/src/services/erp/index.js";
 import Ecommerce from "../../packages/v2/src/services/ecommerce/index.js";
 import InventoryCMS from "../../packages/v2/src/services/inventory-cms/index.js";
 import DatabaseOperations from "../../packages/v2/src/services/db-operations/index.js";
-import Payment from "../../packages/v2/src/services/payment/index.js";
 
 export default {
   scheduled: async (controller, env, _ctx) => {
@@ -36,7 +35,6 @@ export default {
         await ERP.Contacts.AddressService.cronSyncAddressesToDatabase(env);
         await Ecommerce.ProductService.refreshMaterializedViews(env);
         await DatabaseOperations.MaterializedViewService.refresh30Minutes(env);
-        await Payment.ManualPaymentService.syncManualPaymentsToDatabase(env);
         break;
       case "0 */3 * * *": // At every 3rd hour
         await InventoryCMS.InventoryCheckSheetService.syncInventoryCheckSheetToDatabase(
