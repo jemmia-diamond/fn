@@ -69,6 +69,8 @@ export default {
     case "30 6 * * *": // 13:30
       await new Ecommerce.MisaVoucherCreator(env).runAfternoonBatch();
       break;
+    case "0 10 * * *": // 17:00
+      await ERP.Automation.AssignmentRuleService.updateAssignmentRulesEndDay(env);
     case "0 11 * * *": // 18:00
       await new Ecommerce.MisaVoucherCreator(env).runEndOfDayBatch();
       break;
