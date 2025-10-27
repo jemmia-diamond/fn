@@ -12,6 +12,7 @@ import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/cons
 
 import { fetchSalesOrdersFromERP, saveSalesOrdersToDatabase } from "src/services/erp/selling/sales-order/utils/sales-order-helpers";
 import { getRefOrderChain } from "services/ecommerce/order-tracking/queries/get-initial-order";
+import { sendLarkImageFromUrl } from "services/erp/selling/sales-order/utils/sales-order-image-notification";
 
 dayjs.extend(utc);
 
@@ -206,17 +207,35 @@ export default class SalesOrderService {
         const isOrderTracked = !!currentOrderTracking;
 
         let content = null;
+        let diffAttachments = null;
         if (isOrderTracked) {
-          content = await this.composeUpdateOrderContent(currentOrderTracking.order_data, salesOrderData);
+          ({ content, diffAttachments } = await this.composeUpdateOrderContent(
+            currentOrderTracking.order_data,
+            salesOrderData
+          ));
         } else {
           content = await this.composeNewOrderContent(salesOrderData);
         }
 
-        if (!content) {
+        if (!content && !diffAttachments) {
           return { success: true, message: "Không có gì thay đổi!" };
         }
 
-        const replyResponse = await larkClient.im.message.reply({
+        const isSendImagesSuccess = []
+        for (const attachmentUrl of diffAttachments.added_file) {
+          const isSendEachImageSuccess = await sendLarkImageFromUrl(
+            {
+              larkClient: larkClient,
+              imageUrl: attachmentUrl,
+              chatId: CHAT_GROUPS.CUSTOMER_INFO.chat_id,
+              env: this.env,
+              rootMessageId: refOrderstNotificationOrderTracking[0].lark_message_id
+            }
+          );
+          isSendImagesSuccess.push(isSendEachImageSuccess);
+        }
+
+        const replyResponse = content && await larkClient.im.message.reply({
           path: {
             message_id: refOrderstNotificationOrderTracking[0].lark_message_id
           },
@@ -230,7 +249,7 @@ export default class SalesOrderService {
           }
         });
 
-        if (replyResponse.msg === "success") {
+        if ((content && replyResponse.msg === "success") || (isSendImagesSuccess.every(Boolean))) {
           if (isOrderTracked) {
             await this.db.erpnextSalesOrderNotificationTracking.updateMany({
               where: {
@@ -273,11 +292,30 @@ export default class SalesOrderService {
     });
 
     if (notificationTracking) {
-      const composedReplyMessage = await this.composeUpdateOrderContent(notificationTracking.order_data || {}, salesOrderData);
+      const { content, diffAttachments } = await this.composeUpdateOrderContent(notificationTracking.order_data || {}, salesOrderData);
 
-      if (composedReplyMessage) {
+      if (!content && !diffAttachments) {
+        return { success: false, message: "Đơn hàng này đã được gửi thông báo từ trước đó!" };  
+      }
+
+      const isSendImagesSuccess = []
+      if (diffAttachments.added_file) {
+        for (const attachmentUrl of diffAttachments.added_file) {
+          const isSendEachImageSuccess =  await sendLarkImageFromUrl(
+            {
+              larkClient: larkClient,
+              imageUrl: attachmentUrl,
+              chatId: CHAT_GROUPS.CUSTOMER_INFO.chat_id,
+              env: this.env,
+              rootMessageId: notificationTracking.lark_message_id
+            }
+          );
+          isSendImagesSuccess.push(isSendEachImageSuccess);
+        }
+      }
+
         // Reply to the root message in the group chat
-        const replyResponse = await larkClient.im.message.reply({
+        const replyResponse = content && await larkClient.im.message.reply({
           path: {
             message_id: notificationTracking.lark_message_id
           },
@@ -286,12 +324,12 @@ export default class SalesOrderService {
             msg_type: "text",
             reply_in_thread: true,
             content: JSON.stringify({
-              text: composedReplyMessage
+              text: content
             })
           }
         });
 
-        if (replyResponse.msg === "success") {
+        if ((content && replyResponse.msg === "success") || (isSendImagesSuccess.every(Boolean))) {
         // Update
           await this.db.erpnextSalesOrderNotificationTracking.updateMany({
             where: {
@@ -304,10 +342,8 @@ export default class SalesOrderService {
               }
             }
           });
+          return { success: true, message: "Gửi cập nhật đơn thành công!" };
         }
-
-        return { success: true, message: "Gửi cập nhật đơn thành công!" };
-      }
 
       return { success: false, message: "Đơn hàng này đã được gửi thông báo từ trước đó!" };
     }
