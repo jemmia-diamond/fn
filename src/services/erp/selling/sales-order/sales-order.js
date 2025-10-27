@@ -221,19 +221,18 @@ export default class SalesOrderService {
           return { success: true, message: "Không có gì thay đổi!" };
         }
 
-        const isSendImagesSuccess = []
-        for (const attachmentUrl of diffAttachments.added_file) {
-          const isSendEachImageSuccess = await sendLarkImageFromUrl(
-            {
-              larkClient: larkClient,
+        const isSendImagesSuccess = diffAttachments.added_file ? 
+        await Promise.all(
+          diffAttachments.added_file.map((attachmentUrl) =>
+            sendLarkImageFromUrl({
+              larkClient,
               imageUrl: attachmentUrl,
               chatId: CHAT_GROUPS.CUSTOMER_INFO.chat_id,
               env: this.env,
               rootMessageId: refOrderstNotificationOrderTracking[0].lark_message_id
-            }
-          );
-          isSendImagesSuccess.push(isSendEachImageSuccess);
-        }
+            })
+          )
+        ) : [];
 
         const replyResponse = content && await larkClient.im.message.reply({
           path: {
@@ -298,22 +297,20 @@ export default class SalesOrderService {
         return { success: false, message: "Đơn hàng này đã được gửi thông báo từ trước đó!" };  
       }
 
-      const isSendImagesSuccess = []
-      if (diffAttachments.added_file) {
-        for (const attachmentUrl of diffAttachments.added_file) {
-          const isSendEachImageSuccess =  await sendLarkImageFromUrl(
-            {
-              larkClient: larkClient,
+      const isSendImagesSuccess = diffAttachments.added_file
+      ? await Promise.all(
+          diffAttachments.added_file.map((attachmentUrl) =>
+            sendLarkImageFromUrl({
+              larkClient,
               imageUrl: attachmentUrl,
               chatId: CHAT_GROUPS.CUSTOMER_INFO.chat_id,
               env: this.env,
               rootMessageId: notificationTracking.lark_message_id
-            }
-          );
-          isSendImagesSuccess.push(isSendEachImageSuccess);
-        }
-      }
-
+            })
+          )
+        )
+      : [];
+    
         // Reply to the root message in the group chat
         const replyResponse = content && await larkClient.im.message.reply({
           path: {
