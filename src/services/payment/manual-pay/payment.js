@@ -177,7 +177,7 @@ export default class ManualPaymentService {
       paymentBeforeUpdate.transfer_status !== "Xác nhận";
 
       if (shouldCreateTransaction) {
-        if (updatedPayment.haravan_order_name == "Đơn hàng cọc") {
+        if (updatedPayment.haravan_order_name === "Đơn hàng cọc") {
           throw new BadRequestException("Deposit order cannot be mapped!");
         }
 
