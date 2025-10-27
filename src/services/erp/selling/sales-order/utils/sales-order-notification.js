@@ -223,7 +223,7 @@ export const composeOrderUpdateMessage = (prevOrder, salesOrder, promotionData) 
     content += `${lineItemMessage}\n`;
   }
 
-  return {content, diffAttachments};
+  return { content, diffAttachments };
 };
 
 const diffInAttachments = (prevAttachments, attachments) => {

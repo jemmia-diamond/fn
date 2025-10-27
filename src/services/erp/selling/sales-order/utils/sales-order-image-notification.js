@@ -20,7 +20,7 @@ async function downloadImageAsBuffer({ imageUrl }) {
     const buffer = await response.arrayBuffer();
     return buffer;
   } catch (err) {
-    console.error("❌ Failed to download image:", err.message);
+    console.error("Failed to download image:", err.message);
     return null;
   }
 }
@@ -31,7 +31,7 @@ async function downloadImageAsBuffer({ imageUrl }) {
 async function uploadLarkImage({ larkClient, imageBuffer, env }) {
   const tenantAccessToken = await getTenantAccessToken({ larkClient, env });
   if (!tenantAccessToken) {
-    console.error("❌ Could not obtain tenant access token for upload.");
+    console.error("Could not obtain tenant access token for upload.");
     return null;
   }
 
@@ -52,7 +52,7 @@ async function uploadLarkImage({ larkClient, imageBuffer, env }) {
     const data = await response.json();
 
     if (!response.ok) {
-      console.error("❌ Upload request failed:", response.status, response.statusText);
+      console.error("Upload request failed:", response.status, response.statusText);
       console.error("Lark API Response Data:", data);
       return null;
     }
@@ -60,14 +60,14 @@ async function uploadLarkImage({ larkClient, imageBuffer, env }) {
     if (data.code === 0) {
       return data.data.image_key;
     } else {
-      console.error(`❌ Lark API error: ${data.msg}`);
+      console.error(`Lark API error: ${data.msg}`);
       if (data.error) {
         console.error("Lark Error Details:", data.error);
       }
       return null;
     }
   } catch (err) {
-    console.error("❌ Upload request failed:", err.message);
+    console.error("Upload request failed:", err.message);
     if (err.response) {
       console.error("Lark API Response Data:", err.response.data);
     }
@@ -81,7 +81,7 @@ async function uploadLarkImage({ larkClient, imageBuffer, env }) {
 async function sendLarkImageMessage({ larkClient, chatId, imageKey, rootMessageId, env, isReply }) {
   const tenantAccessToken = await getTenantAccessToken({ larkClient, env });
   if (!tenantAccessToken) {
-    console.error("❌ Could not obtain tenant access token for sending message.");
+    console.error("Could not obtain tenant access token for sending message.");
     return;
   }
 
@@ -116,12 +116,12 @@ async function sendLarkImageMessage({ larkClient, chatId, imageKey, rootMessageI
     const data = await response.json();
 
     if (!response.ok) {
-      console.error("❌ Sending/replying request failed:", response.status, response.statusText);
+      console.error("Sending/replying request failed:", response.status, response.statusText);
       console.error("Lark API Response Data:", data);
       return;
     }
   } catch (err) {
-    console.error("❌ Sending/replying request failed:", err.message);
+    console.error("Sending/replying request failed:", err.message);
   }
 }
 
