@@ -221,18 +221,18 @@ export default class SalesOrderService {
           return { success: true, message: "Không có gì thay đổi!" };
         }
 
-        const isSendImagesSuccess = diffAttachments.added_file ? 
-        await Promise.all(
-          diffAttachments.added_file.map((attachmentUrl) =>
-            sendLarkImageFromUrl({
-              larkClient,
-              imageUrl: attachmentUrl,
-              chatId: CHAT_GROUPS.CUSTOMER_INFO.chat_id,
-              env: this.env,
-              rootMessageId: refOrderstNotificationOrderTracking[0].lark_message_id
-            })
-          )
-        ) : [];
+        const isSendImagesSuccess = diffAttachments.added_file ?
+          await Promise.all(
+            diffAttachments.added_file.map((attachmentUrl) =>
+              sendLarkImageFromUrl({
+                larkClient,
+                imageUrl: attachmentUrl,
+                chatId: CHAT_GROUPS.CUSTOMER_INFO.chat_id,
+                env: this.env,
+                rootMessageId: refOrderstNotificationOrderTracking[0].lark_message_id
+              })
+            )
+          ) : [];
 
         const replyResponse = content && await larkClient.im.message.reply({
           path: {
@@ -294,11 +294,11 @@ export default class SalesOrderService {
       const { content, diffAttachments } = await this.composeUpdateOrderContent(notificationTracking.order_data || {}, salesOrderData);
 
       if (!content && !diffAttachments) {
-        return { success: false, message: "Đơn hàng này đã được gửi thông báo từ trước đó!" };  
+        return { success: false, message: "Đơn hàng này đã được gửi thông báo từ trước đó!" };
       }
 
       const isSendImagesSuccess = diffAttachments.added_file
-      ? await Promise.all(
+        ? await Promise.all(
           diffAttachments.added_file.map((attachmentUrl) =>
             sendLarkImageFromUrl({
               larkClient,
@@ -309,38 +309,38 @@ export default class SalesOrderService {
             })
           )
         )
-      : [];
-    
-        // Reply to the root message in the group chat
-        const replyResponse = content && await larkClient.im.message.reply({
-          path: {
-            message_id: notificationTracking.lark_message_id
+        : [];
+
+      // Reply to the root message in the group chat
+      const replyResponse = content && await larkClient.im.message.reply({
+        path: {
+          message_id: notificationTracking.lark_message_id
+        },
+        data: {
+          receive_id: CHAT_GROUPS.CUSTOMER_INFO.chat_id,
+          msg_type: "text",
+          reply_in_thread: true,
+          content: JSON.stringify({
+            text: content
+          })
+        }
+      });
+
+      if ((content && replyResponse.msg === "success") || (isSendImagesSuccess.every(Boolean))) {
+        // Update
+        await this.db.erpnextSalesOrderNotificationTracking.updateMany({
+          where: {
+            uuid: notificationTracking.uuid
           },
           data: {
-            receive_id: CHAT_GROUPS.CUSTOMER_INFO.chat_id,
-            msg_type: "text",
-            reply_in_thread: true,
-            content: JSON.stringify({
-              text: content
-            })
+            order_data: {
+              items: salesOrderData.items,
+              attachments: salesOrderData.attachments
+            }
           }
         });
-
-        if ((content && replyResponse.msg === "success") || (isSendImagesSuccess.every(Boolean))) {
-        // Update
-          await this.db.erpnextSalesOrderNotificationTracking.updateMany({
-            where: {
-              uuid: notificationTracking.uuid
-            },
-            data: {
-              order_data: {
-                items: salesOrderData.items,
-                attachments: salesOrderData.attachments
-              }
-            }
-          });
-          return { success: true, message: "Gửi cập nhật đơn thành công!" };
-        }
+        return { success: true, message: "Gửi cập nhật đơn thành công!" };
+      }
 
       return { success: false, message: "Đơn hàng này đã được gửi thông báo từ trước đó!" };
     }
