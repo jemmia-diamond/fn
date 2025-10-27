@@ -1,7 +1,3 @@
-const LARK_IMAGE_UPLOAD_URL = "https://open.larksuite.com/open-apis/image/v4/put/";
-const LARK_MESSAGE_SEND_URL = "https://open.larksuite.com/open-apis/message/v4/send/";
-const LARK_MESSAGE_REPLY_URL = (messageId) => `https://open.larksuite.com/open-apis/im/v1/messages/${messageId}/reply`;
-
 async function getTenantAccessToken({ larkClient, env }) {
   const res = await larkClient.auth.tenantAccessToken.internal({
     data: {
@@ -45,7 +41,7 @@ async function uploadLarkImage({ larkClient, imageBuffer, env }) {
   form.append("image", imageBlob, "image.jpg");
 
   try {
-    const response = await fetch(LARK_IMAGE_UPLOAD_URL, {
+    const response = await fetch(`${env.LARK_API_ENDPOINT}/open-apis/image/v4/put/`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${tenantAccessToken}`
@@ -93,14 +89,14 @@ async function sendLarkImageMessage({ larkClient, chatId, imageKey, rootMessageI
   let payload;
 
   if (isReply && rootMessageId) {
-    url = LARK_MESSAGE_REPLY_URL(rootMessageId);
+    url = `${env.LARK_API_ENDPOINT}/open-apis/im/v1/messages/${rootMessageId}/reply`;
     payload = {
       msg_type: "image",
       content: JSON.stringify({ image_key: imageKey }),
       reply_in_thread: true
     };
   } else {
-    url = LARK_MESSAGE_SEND_URL;
+    url = `${env.LARK_API_ENDPOINT}/open-apis/message/v4/send/`;
     payload = {
       chat_id: chatId,
       msg_type: "image",
