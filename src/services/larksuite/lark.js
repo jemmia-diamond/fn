@@ -37,7 +37,7 @@ export default class LarksuiteService {
     return res.tenant_access_token;
   }
 
-  static async getTenantAccessToken({ larkClient, env }) {
+  static async getTenantAccessTokenFromClient({ larkClient, env }) {
     const res = await larkClient.auth.tenantAccessToken.internal({
       data: {
         app_id: env.LARKSUITE_APP_ID,

@@ -22,7 +22,7 @@ export class ImageMessagingService {
      * Uploads an image file to Lark and returns the image_key.
      */
   static async uploadLarkImage({ larkClient, imageBuffer, env }) {
-    const tenantAccessToken = await LarksuiteService.getTenantAccessToken({ larkClient, env });
+    const tenantAccessToken = await LarksuiteService.getTenantAccessTokenFromClient({ larkClient, env });
     if (!tenantAccessToken) {
       console.error("Could not obtain tenant access token for upload.");
       return null;
@@ -72,7 +72,7 @@ export class ImageMessagingService {
      * Sends an image message to a Lark chat.
      */
   static async sendLarkImageMessage({ larkClient, chatId, imageKey, rootMessageId, env, isReply }) {
-    const tenantAccessToken = await LarksuiteService.getTenantAccessToken({ larkClient, env });
+    const tenantAccessToken = await LarksuiteService.getTenantAccessTokenFromClient({ larkClient, env });
     if (!tenantAccessToken) {
       console.error("Could not obtain tenant access token for sending message.");
       return;
