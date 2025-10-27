@@ -3,7 +3,7 @@ import { MANUAL_PAYMENT_CREDIT_MAP, MANUAL_PAYMENT_DEBIT_MAP } from "services/mi
 export default class CashVoucherMappingService {
   static transforManualToVoucher(v, bankMap, voucher_type = 5, ref_type = 1010) {
     // Company credit and debit account
-    // this muanl using v.branch (branch is actually vietnamese province)
+    // manual payment using "branch" field (branch is actually vietnamese province)
     const debitAccount = MANUAL_PAYMENT_DEBIT_MAP[v.branch] || null;
     const creditInfo = MANUAL_PAYMENT_CREDIT_MAP[v.branch] || null;
 
