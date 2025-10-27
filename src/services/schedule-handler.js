@@ -61,16 +61,16 @@ export default {
       await ERP.Automation.AssignmentRuleService.disableAssignmentRuleOffHour(env);
       await ERP.Automation.AssignmentRuleService.updateAssignmentRulesStartDay(env);
       await ERP.Automation.AssignmentRuleService.reAssignOffHourLeads(env);
+      await new Ecommerce.MisaVoucherCreator(env).runMorningBatch();
       break;
     case "30 5 * * *": // 12:30
       await ERP.Automation.AssignmentRuleService.updateAssignmentRulesMidDay(env);
-      await new Ecommerce.MisaVoucherCreator(env).beginLunchbreak();
       break;
     case "30 6 * * *": // 13:30
-      await new Ecommerce.MisaVoucherCreator(env).endLunchbreak();
+      await new Ecommerce.MisaVoucherCreator(env).runAfternoonBatch();
       break;
     case "0 11 * * *": // 18:00
-      await new Ecommerce.MisaVoucherCreator(env).endOfDay();
+      await new Ecommerce.MisaVoucherCreator(env).runEndOfDayBatch();
       break;
     case "0 14 * * *": // 21:00
       await ERP.Automation.AssignmentRuleService.enableAssignmentRuleOffHour(env);

@@ -15,32 +15,32 @@ export default class MisaVoucherCreator {
   }
 
   /**
-   * Kicks off voucher creation for the period before the lunch break.
-   * (Yesterday 18:00 to Today 12:30)
+   * Kicks off voucher creation for the morning batch.
+   * (Yesterday 18:00 to Today 08:30)
    */
-  async beginLunchbreak() {
+  async runMorningBatch() {
     const now = dayjs().utc();
     const startDate = now.subtract(1, "day").hour(18).minute(0).second(0);
-    const endDate = now.hour(12).minute(30).second(0);
+    const endDate = now.hour(8).minute(30).second(0);
     await this._createVouchersForDateRange(startDate.toDate(), endDate.toDate());
   }
 
   /**
-   * Kicks off voucher creation for the period during the lunch break.
-   * (Today 12:30 to Today 13:30)
+   * Kicks off voucher creation for the afternoon batch.
+   * (Today 08:30 to Today 13:30)
    */
-  async endLunchbreak() {
+  async runAfternoonBatch() {
     const now = dayjs().utc();
-    const startDate = now.hour(12).minute(30).second(0);
+    const startDate = now.hour(8).minute(30).second(0);
     const endDate = now.hour(13).minute(30).second(0);
     await this._createVouchersForDateRange(startDate.toDate(), endDate.toDate());
   }
 
   /**
-   * Kicks off voucher creation for the final period of the workday.
+   * Kicks off voucher creation for the end-of-day batch.
    * (Today 13:30 to Today 18:00)
    */
-  async endOfDay() {
+  async runEndOfDayBatch() {
     const now = dayjs().utc();
     const startDate = now.hour(13).minute(30).second(0);
     const endDate = now.hour(18).minute(0).second(0);
