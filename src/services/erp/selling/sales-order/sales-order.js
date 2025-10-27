@@ -12,7 +12,7 @@ import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/cons
 
 import { fetchSalesOrdersFromERP, saveSalesOrdersToDatabase } from "src/services/erp/selling/sales-order/utils/sales-order-helpers";
 import { getRefOrderChain } from "services/ecommerce/order-tracking/queries/get-initial-order";
-import { sendLarkImageFromUrl } from "services/erp/selling/sales-order/utils/sales-order-image-notification";
+import Larksuite from "services/larksuite";
 
 dayjs.extend(utc);
 
@@ -255,7 +255,7 @@ export default class SalesOrderService {
         const isSendImagesSuccess = diffAttachments.added_file ?
           await Promise.all(
             diffAttachments.added_file.map((attachmentUrl) =>
-              sendLarkImageFromUrl({
+              Larksuite.Messaging.ImageMessagingService.sendLarkImageFromUrl({
                 larkClient,
                 imageUrl: attachmentUrl,
                 chatId: CHAT_GROUPS.CUSTOMER_INFO.chat_id,
@@ -331,7 +331,7 @@ export default class SalesOrderService {
       const isSendImagesSuccess = diffAttachments.added_file
         ? await Promise.all(
           diffAttachments.added_file.map((attachmentUrl) =>
-            sendLarkImageFromUrl({
+            Larksuite.Messaging.ImageMessagingService.sendLarkImageFromUrl({
               larkClient,
               imageUrl: attachmentUrl,
               chatId: CHAT_GROUPS.CUSTOMER_INFO.chat_id,

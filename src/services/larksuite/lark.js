@@ -37,6 +37,16 @@ export default class LarksuiteService {
     return res.tenant_access_token;
   }
 
+  static async getTenantAccessToken({ larkClient, env }) {
+    const res = await larkClient.auth.tenantAccessToken.internal({
+      data: {
+        app_id: env.LARKSUITE_APP_ID,
+        app_secret: await env.LARK_APP_SECRET_SECRET.get()
+      }
+    });
+    return res.tenant_access_token;
+  }
+
   static async requestWithPagination(fn, payload, pageSize) {
     const _payload = payload;
     let pageToken = null;
