@@ -19,7 +19,7 @@ export default class ManualPaymentFetchingService {
             financial_status: { in: ["paid", "partially_paid"] }
           },
           misa_synced: false,
-          created_date: {
+          receive_date: {
             gte: startDate,
             lte: endDate
           }
@@ -31,7 +31,7 @@ export default class ManualPaymentFetchingService {
           bank_name: true,
           bank_account: true,
           transfer_note: true,
-          created_date: true,
+          receive_date: true,
           updated_date: true,
           haravan_order: {
             select: {
