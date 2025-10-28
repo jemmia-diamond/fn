@@ -39,8 +39,7 @@ export default class CustomerService {
       customer_type: "Individual",
       language: "vietnamese",
       customer_primary_contact: contact.name,
-      customer_primary_address: address.name,
-      gender: customerData.gender !== null && customerData.gender !== undefined ? this.genderMap[customerData.gender] : null
+      customer_primary_address: address.name
     };
 
     const birthDate = customerData.birthday ? dayjs(customerData.birthday).format("YYYY-MM-DD") : null;
