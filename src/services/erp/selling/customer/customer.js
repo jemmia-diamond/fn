@@ -40,9 +40,18 @@ export default class CustomerService {
       language: "vietnamese",
       customer_primary_contact: contact.name,
       customer_primary_address: address.name,
-      birth_date: customerData.birthday ? dayjs(customerData.birthday).format("YYYY-MM-DD") : null,
-      gender: customerData.gender ? this.genderMap[customerData.gender] : null
+      gender: customerData.gender !== null && customerData.gender !== undefined ? this.genderMap[customerData.gender] : null
     };
+
+    const birthDate = customerData.birthday ? dayjs(customerData.birthday).format("YYYY-MM-DD") : null;
+    if (birthDate) {
+      mappedCustomerData.birth_date = birthDate;
+    }
+
+    const customerGender = customerData.gender !== null && customerData.gender !== undefined && this.genderMap[customerData.gender];
+    if (customerGender) {
+      mappedCustomerData.gender = customerGender;
+    }
 
     const customer = await this.frappeClient.upsert(mappedCustomerData, "haravan_id");
     return customer;
