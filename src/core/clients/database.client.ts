@@ -1,6 +1,6 @@
-import { PrismaClient } from '@prisma-cli';
 import { PrismaNeon } from '@prisma/adapter-neon';
 import { AppBindings } from 'core/bindings/app.binding';
+import { PrismaClient } from 'prisma/schema/generated/client/client';
 
 export class DatabaseClient {
   private static _client: PrismaClient;
