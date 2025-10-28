@@ -172,12 +172,17 @@ export default class SalesOrderService {
       });
 
       return refOrders.map((o) => {
-        const { name } = erpRefOrders.find(order => order.haravan_order_id === String(o.id));
+        const refOrder = erpRefOrders.find(order => order.haravan_order_id === String(o.id));
+
+        if (!refOrder) {
+          return null;
+        }
+
         return {
           doctype: "Sales Order Reference",
-          sales_order: name
+          sales_order: refOrder.name
         };
-      });
+      }).filter(order => order !== null);
     } catch (e) {
       console.error(e);
       return [];
