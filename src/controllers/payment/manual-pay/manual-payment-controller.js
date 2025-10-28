@@ -1,5 +1,9 @@
 import PaymentServices from "services/payment";
 import { BadRequestException } from "src/exception/exceptions";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc.js";
+
+dayjs.extend(utc);
 
 export default class ManualPaymentsController {
   /**
@@ -19,12 +23,18 @@ export default class ManualPaymentsController {
     }
 
     ["send_date", "receive_date", "created_date", "updated_date"].forEach(field => {
-      const dateStr = body[field];
-      if (dateStr != null && dateStr !== "") {
-        paymentData[field] = new Date(dateStr);
-      } else {
-        delete paymentData[field];
+      let rawValue = body[field];
+      if (rawValue != null && rawValue !== "") {
+        const timestamp = Number(rawValue);
+        if (Number.isFinite(timestamp)) {
+          const date = dayjs.unix(timestamp / 1000).utc().toDate();
+          if (!isNaN(date.getTime())) {
+            paymentData[field] = date;
+            return;
+          }
+        }
       }
+      delete paymentData[field];
     });
 
     if (body.misa_synced != null) {
