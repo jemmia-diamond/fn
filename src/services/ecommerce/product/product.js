@@ -3,7 +3,7 @@ import { Prisma } from "@prisma-cli";
 import { buildQuery } from "services/ecommerce/product/utils/jewelry";
 import { buildQueryV2 } from "services/ecommerce/product/utils/jewelry-v2";
 import { buildWeddingRingsQuery } from "services/ecommerce/product/utils/wedding-ring";
-import { JEWELRY_IMAGE, ECOMMERCE_CONFIG } from "src/controllers/ecommerce/constant";
+import { JEWELRY_IMAGE } from "src/controllers/ecommerce/constant";
 
 export default class ProductService {
   constructor(env) {
@@ -231,7 +231,7 @@ export default class ProductService {
     const productId = parseInt(id, 10);
     const workplaceUrlPrefix = JEWELRY_IMAGE.WORKPLACE_URL_PREFIX;
     const workplaceFullUrl = JEWELRY_IMAGE.WORKPLACE_FULL_URL;
-    const cdnUrl = ECOMMERCE_CONFIG.CDN_URL;
+    const cdnUrl = JEWELRY_IMAGE.CDN_URL;
 
     const result = await this.db.$queryRaw`
        SELECT
