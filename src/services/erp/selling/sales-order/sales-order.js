@@ -13,6 +13,7 @@ import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/cons
 import { fetchSalesOrdersFromERP, saveSalesOrdersToDatabase } from "src/services/erp/selling/sales-order/utils/sales-order-helpers";
 import { getRefOrderChain } from "services/ecommerce/order-tracking/queries/get-initial-order";
 import Larksuite from "services/larksuite";
+import { R2ObjectStorage } from "services/R2-object/r2_object";
 
 dayjs.extend(utc);
 
@@ -328,6 +329,10 @@ export default class SalesOrderService {
         return { success: false, message: "Đơn hàng này đã được gửi thông báo từ trước đó!" };
       }
 
+      for (const fileUrl of diffAttachments.added_file) {
+        await R2ObjectStorage.getObjectFromR2(this.env, SalesOrderService._extractR2KeyFromUrl(fileUrl));
+      }
+
       const isSendImagesSuccess = diffAttachments.added_file
         ? await Promise.all(
           diffAttachments.added_file.map((attachmentUrl) =>
@@ -597,5 +602,22 @@ export default class SalesOrderService {
     const content = composeSalesOrderNotification(salesOrderData, promotionData, leadSource, policyData, productCategoryData, customer, primarySalesPerson, secondarySalesPeople);
 
     return content;
+  }
+
+  static _extractR2KeyFromUrl(url) {
+    try {
+      const urlObj = new URL(url);
+      const r2KeyParam = urlObj.searchParams.get("key");
+      if (r2KeyParam) {
+        return r2KeyParam;
+      }
+      if (urlObj.pathname.length > 1) {
+        return urlObj.pathname.substring(1);
+      }
+      return null;
+    } catch (e) {
+      console.error(`Failed to parse URL "${url}" for R2 key extraction:`, e);
+      return null;
+    }
   }
 }
