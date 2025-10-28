@@ -61,13 +61,13 @@ app.get("/debug-sentry", () => {
 // Cron trigger and Queue Integrations, wrapped with Sentry
 export default Sentry.withSentry(
   (env) => {
-    const versionId = env?.CF_VERSION_METADATA?.id;
+    // Use SENTRY_RELEASE from environment variable to match with sourcemaps upload
+    const release = env.SENTRY_RELEASE;
     return {
       dsn: env.SENTRY_DSN,
-      release: versionId,
-      // Adds request headers and IP for users
-      // See: https://docs.sentry.io/platforms/javascript/guides/cloudflare/configuration/options/#sendDefaultPii
-      sendDefaultPii: true
+      release: release,
+      sendDefaultPii: true,
+      tracesSampleRate: 0.1
     };
   },
   {
