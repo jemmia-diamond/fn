@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/cloudflare";
 import { Hono } from "hono";
 import { bearerAuth } from "hono/bearer-auth";
 
@@ -11,8 +12,6 @@ import queueHandler from "services/queue-handler";
 import scheduleHandler from "services/schedule-handler";
 import { DebounceDurableObject } from "src/durable-objects";
 import { HTTPException } from "hono/http-exception";
-
-import * as Sentry from "@sentry/cloudflare";
 
 const app = new Hono()
   // Add an onError hook to report unhandled exceptions to Sentry.
@@ -64,10 +63,7 @@ export default Sentry.withSentry(
       release: versionId,
       // Adds request headers and IP for users
       // See: https://docs.sentry.io/platforms/javascript/guides/cloudflare/configuration/options/#sendDefaultPii
-      sendDefaultPii: true,
-      // Performance tracing
-      // See: https://docs.sentry.io/platforms/javascript/guides/cloudflare/configuration/options/#tracesSampleRate
-      tracesSampleRate: 1.0
+      sendDefaultPii: true
     };
   },
   {
