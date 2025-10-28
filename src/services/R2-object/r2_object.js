@@ -1,8 +1,8 @@
 export class R2ObjectStorage {
 
   static getObjectFromR2 = async (env, key) => {
-    if (!env || !env.R2_STORAGE) {
-      console.error("Error: R2 binding 'R2_STORAGE' not found on env object!");
+    if (!env || !env.JEMMIA_ERP_R2_STORAGE) {
+      console.error("Error: R2 binding 'JEMMIA_ERP_R2_STORAGE' not found on env object!");
       return null;
     }
 
@@ -12,7 +12,7 @@ export class R2ObjectStorage {
     }
 
     try {
-      const object = await env.R2_STORAGE.get(key);
+      const object = await env.JEMMIA_ERP_R2_STORAGE.get(key);
       if (object === null) {
         console.warn(`Object with key "${key}" not found in R2.`);
         return null;
