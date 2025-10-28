@@ -54,10 +54,6 @@ Routes.APIRoutes.register(api);
 Routes.PublicAPIRoutes.register(publicApi);
 Routes.WebhookRoutes.register(webhook);
 
-app.get("/debug-sentry", () => {
-  throw new Error("My Sentry error!");
-});
-
 // Cron trigger and Queue Integrations, wrapped with Sentry
 export default Sentry.withSentry(
   (env) => {
