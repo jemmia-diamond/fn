@@ -1,22 +1,6 @@
 import LarksuiteService from "services/larksuite/lark";
 
 export class ImageMessagingService {
-  /**
-     * Downloads an image from a URL and saves it locally.
-     */
-  static async downloadImageAsBuffer({ imageUrl }) {
-    try {
-      const response = await fetch(imageUrl);
-      if (!response.ok) {
-        throw new Error(`Failed to download image: ${response.status} ${response.statusText}`);
-      }
-      const buffer = await response.arrayBuffer();
-      return buffer;
-    } catch (err) {
-      console.error("Failed to download image:", err.message);
-      return null;
-    }
-  }
 
   /**
      * Uploads an image file to Lark and returns the image_key.
@@ -121,11 +105,8 @@ export class ImageMessagingService {
   /**
      * Combined function to download → upload → send image to Lark chat.
      */
-  static async sendLarkImageFromUrl({ larkClient, imageUrl, chatId, rootMessageId, env, isReply = true }) {
+  static async sendLarkImageFromUrl({ larkClient, imageBuffer, chatId, rootMessageId, env, isReply = true }) {
     try {
-      const imageBuffer = await ImageMessagingService.downloadImageAsBuffer({ imageUrl });
-
-      if (!imageBuffer) return false;
 
       const imageKey = await ImageMessagingService.uploadLarkImage({ larkClient, imageBuffer, env });
       if (!imageKey) return false;

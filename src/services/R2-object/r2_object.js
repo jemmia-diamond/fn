@@ -1,13 +1,27 @@
 export class R2ObjectStorage {
 
   static getObjectFromR2 = async (env, key) => {
-    const object = await env.R2_STORAGE.get(key);
-
-    if (!object) {
+    if (!env || !env.R2_STORAGE) {
+      console.error("Error: R2 binding 'R2_STORAGE' not found on env object!");
       return null;
     }
 
-    const arrayBuffer = await object.arrayBuffer();
-    return arrayBuffer;
+    if (!key) {
+      console.error("Error: No key provided to getObjectFromR2.");
+      return null;
+    }
+
+    try {
+      const object = await env.R2_STORAGE.get(key);
+      if (object === null) {
+        console.warn(`Object with key "${key}" not found in R2.`);
+        return null;
+      }
+
+      return object.arrayBuffer();
+    } catch (err) {
+      console.error(`Error fetching object with key "${key}" from R2:`, err);
+      return null;
+    }
   };
 }

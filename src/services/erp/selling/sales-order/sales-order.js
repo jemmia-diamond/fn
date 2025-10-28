@@ -253,18 +253,22 @@ export default class SalesOrderService {
           return { success: true, message: "Không có gì thay đổi!" };
         }
 
-        const isSendImagesSuccess = diffAttachments.added_file ?
-          await Promise.all(
-            diffAttachments.added_file.map((attachmentUrl) =>
-              Larksuite.Messaging.ImageMessagingService.sendLarkImageFromUrl({
+        const isSendImagesSuccess = diffAttachments.added_file
+          ? await Promise.all(
+            diffAttachments.added_file.map(async (fileUrl) => {
+              const r2Key = SalesOrderService._extractR2KeyFromUrl(fileUrl);
+              const imageBuffer = await R2ObjectStorage.getObjectFromR2(this.env, r2Key);
+
+              return Larksuite.Messaging.ImageMessagingService.sendLarkImageFromUrl({
                 larkClient,
-                imageUrl: attachmentUrl,
+                imageBuffer,
                 chatId: CHAT_GROUPS.CUSTOMER_INFO.chat_id,
                 env: this.env,
                 rootMessageId: refOrderstNotificationOrderTracking[0].lark_message_id
-              })
-            )
-          ) : [];
+              });
+            })
+          )
+          : [];
 
         const replyResponse = content && await larkClient.im.message.reply({
           path: {
@@ -329,21 +333,19 @@ export default class SalesOrderService {
         return { success: false, message: "Đơn hàng này đã được gửi thông báo từ trước đó!" };
       }
 
-      for (const fileUrl of diffAttachments.added_file) {
-        await R2ObjectStorage.getObjectFromR2(this.env, SalesOrderService._extractR2KeyFromUrl(fileUrl));
-      }
-
       const isSendImagesSuccess = diffAttachments.added_file
         ? await Promise.all(
-          diffAttachments.added_file.map((attachmentUrl) =>
-            Larksuite.Messaging.ImageMessagingService.sendLarkImageFromUrl({
+          diffAttachments.added_file.map(async (fileUrl) => {
+            const r2Key = SalesOrderService._extractR2KeyFromUrl(fileUrl);
+            const imageBuffer = await R2ObjectStorage.getObjectFromR2(this.env, r2Key);
+            return Larksuite.Messaging.ImageMessagingService.sendLarkImageFromUrl({
               larkClient,
-              imageUrl: attachmentUrl,
+              imageBuffer,
               chatId: CHAT_GROUPS.CUSTOMER_INFO.chat_id,
               env: this.env,
               rootMessageId: notificationTracking.lark_message_id
-            })
-          )
+            });
+          })
         )
         : [];
 
