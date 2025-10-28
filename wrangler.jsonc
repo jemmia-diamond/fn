@@ -3,6 +3,7 @@
   "name": "fn",
   "main": "src/index.js",
   "compatibility_date": "2025-05-20",
+  "upload_source_maps": true,
   "compatibility_flags": [
     "nodejs_compat",
     "durable_object_alarms"
