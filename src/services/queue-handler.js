@@ -32,6 +32,9 @@ export default {
     case "erpnext-contacts":
       await ERP.Contacts.ContactService.dequeueContactQueue(batch, env);
       break;
+    case "erpnext-sales-order":
+      await ERP.Selling.SalesOrderService.dequeueSalesOrderNotificationQueue(batch, env);
+      break;
     default:
       break;
     }

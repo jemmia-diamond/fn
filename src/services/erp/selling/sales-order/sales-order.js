@@ -5,7 +5,7 @@ import Database from "src/services/database";
 import AddressService from "src/services/erp/contacts/address/address";
 import ContactService from "src/services/erp/contacts/contact/contact";
 import CustomerService from "src/services/erp/selling/customer/customer";
-import { composeOrderUpdateMessage, composeReplyReorderMessage, composeSalesOrderNotification, extractPromotions, validateOrderInfo } from "services/erp/selling/sales-order/utils/sales-order-notification";
+import { composeOrderUpdateMessage, composeSalesOrderNotification, extractPromotions, validateOrderInfo } from "services/erp/selling/sales-order/utils/sales-order-notification";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/constant";
@@ -25,7 +25,8 @@ export default class SalesOrderService {
     this.doctype = "Sales Order";
     this.linkedTableDoctype = {
       lineItems: "Sales Order Item",
-      paymentRecords: "Sales Order Payment Record"
+      paymentRecords: "Sales Order Payment Record",
+      refSalesOrder: "Ref Sales Order"
     };
     this.cancelledStatusMapper = {
       uncancelled: "Uncancelled",
@@ -110,7 +111,8 @@ export default class SalesOrderService {
       grand_total: haravanOrderData.total_price,
       paid_amount: paidAmount,
       balance: haravanOrderData.total_price - paidAmount,
-      real_order_date: dayjs(haravanOrderData.created_at).utc().format("YYYY-MM-DD")
+      real_order_date: dayjs(haravanOrderData.created_at).utc().format("YYYY-MM-DD"),
+      ref_sales_orders: await this.mapRefSalesOrder(haravanOrderData.id)
     };
     const order = await this.frappeClient.upsert(mappedOrderData, "haravan_order_id", ["items"]);
     return order;
@@ -129,6 +131,18 @@ export default class SalesOrderService {
     }
   }
 
+  static async dequeueSalesOrderNotificationQueue(batch, env) {
+    const salesOrderService = new SalesOrderService(env);
+    for (const message of batch.messages) {
+      try {
+        const orderData = message.body;
+        await salesOrderService.sendNotificationToLark(orderData, true);
+      } catch (error) {
+        console.error(error);
+      }
+    }
+  }
+
   mapPaymentRecordFields = (hrvTransactionData) => {
     return {
       doctype: this.linkedTableDoctype.paymentRecords,
@@ -138,6 +152,35 @@ export default class SalesOrderService {
       kind: hrvTransactionData["kind"],
       transaction_id: hrvTransactionData["id"]
     };
+  };
+
+  mapRefSalesOrder = async (refOrderId) => {
+    try {
+      const refOrders = await getRefOrderChain(this.db, Number(refOrderId), true);
+
+      if (!refOrders) {
+        return [];
+      };
+
+      const erpRefOrders = await this.db.erpnextSalesOrders.findMany({
+        where: {
+          haravan_order_id: {
+            in: refOrders?.map(order => String(order.id))
+          }
+        }
+      });
+
+      return refOrders.map((o) => {
+        const { name } = erpRefOrders.find(order => order.haravan_order_id === String(o.id));
+        return {
+          doctype: "Sales Order Reference",
+          sales_order: name
+        };
+      });
+    } catch (e) {
+      console.error(e);
+      return [];
+    }
   };
 
   mapLineItemsFields = (lineItemData) => {
@@ -156,28 +199,13 @@ export default class SalesOrderService {
     };
   };
 
-  async sendNotificationToLark(salesOrderData) {
+  async sendNotificationToLark(salesOrderData, isUpdateMessage = false) {
     const larkClient = await LarksuiteService.createClientV2(this.env);
 
     const haravanRefOrderId = salesOrderData.haravan_ref_order_id;
 
     // Handle case reorder
     if (haravanRefOrderId && Number(haravanRefOrderId) > 0) {
-      const notificationOrderTracking = await this.db.erpnextSalesOrderNotificationTracking.findFirst({
-        where: {
-          haravan_order_id: {
-            equals: String(salesOrderData.haravan_order_id)
-          }
-        }
-      });
-
-      if (notificationOrderTracking) {
-        return {
-          success: false,
-          message: "Đơn này đã thông báo"
-        };
-      }
-
       // find the very first order in history
       const refOrders = await getRefOrderChain(this.db, Number(salesOrderData.haravan_order_id));
 
@@ -200,8 +228,25 @@ export default class SalesOrderService {
       });
 
       if (refOrderstNotificationOrderTracking && refOrderstNotificationOrderTracking.length > 0) {
-        // Reply to the root message in the group chat
-        const composedReplyMessage = composeReplyReorderMessage(salesOrderData);
+        const currentOrderTracking = await this.db.erpnextSalesOrderNotificationTracking.findFirst({
+          where: {
+            order_name: salesOrderData.name
+          }
+        });
+
+        const isOrderTracked = !!currentOrderTracking;
+
+        let content = null;
+        if (isOrderTracked) {
+          content = await this.composeUpdateOrderContent(currentOrderTracking.order_data, salesOrderData);
+        } else {
+          content = await this.composeNewOrderContent(salesOrderData);
+        }
+
+        if (!content) {
+          return { success: true, message: "Không có gì thay đổi!" };
+        }
+
         const replyResponse = await larkClient.im.message.reply({
           path: {
             message_id: refOrderstNotificationOrderTracking[0].lark_message_id
@@ -211,13 +256,26 @@ export default class SalesOrderService {
             msg_type: "text",
             reply_in_thread: true,
             content: JSON.stringify({
-              text: composedReplyMessage
+              text: content
             })
           }
         });
 
-        // Save ref order to tracking
         if (replyResponse.msg === "success") {
+          if (isOrderTracked) {
+            await this.db.erpnextSalesOrderNotificationTracking.updateMany({
+              where: {
+                uuid: currentOrderTracking.uuid
+              },
+              data: {
+                order_data: {
+                  items: salesOrderData.items,
+                  attachments: salesOrderData.attachments
+                }
+              }
+            });
+            return { success: true, message: "Cập nhật đơn thành công!" };
+          }
           await this.db.erpnextSalesOrderNotificationTracking.create({
             data: {
               lark_message_id: replyResponse.data.message_id,
@@ -231,6 +289,10 @@ export default class SalesOrderService {
           });
           return { success: true, message: "Thông báo đơn đặt lại thành công!" };
         }
+
+        if (isOrderTracked) {
+          return { success: false, message: "Cập nhật đơn thất bại!" };
+        }
         return { success: false, message: "Thông báo đơn đặt lại thất bại!" };
       }
     }
@@ -241,13 +303,8 @@ export default class SalesOrderService {
       }
     });
 
-    let promotionData = null;
     if (notificationTracking) {
-      const promotionNames = extractPromotions(salesOrderData);
-      promotionData = await this.frappeClient.getList("Promotion", {
-        filters: [["name", "in", promotionNames]]
-      });
-      const composedReplyMessage = composeOrderUpdateMessage(notificationTracking.order_data || {}, salesOrderData, promotionData);
+      const composedReplyMessage = await this.composeUpdateOrderContent(notificationTracking.order_data || {}, salesOrderData);
 
       if (composedReplyMessage) {
         // Reply to the root message in the group chat
@@ -286,6 +343,10 @@ export default class SalesOrderService {
       return { success: false, message: "Đơn hàng này đã được gửi thông báo từ trước đó!" };
     }
 
+    if (isUpdateMessage) {
+      return { success: true, message: "Ok" };
+    }
+
     const customer = await this.frappeClient.getDoc("Customer", salesOrderData.customer);
 
     const { isValid, message } = validateOrderInfo(salesOrderData, customer);
@@ -293,37 +354,7 @@ export default class SalesOrderService {
       return { success: false, message: message };
     }
 
-    const leadSource = await this.frappeClient.getDoc("Lead Source", customer.first_source);
-
-    const policyNames = salesOrderData.policies.map(policy => policy.policy);
-    const policyData = await this.frappeClient.getList("Policy", {
-      filters: [["name", "in", policyNames]]
-    });
-
-    const productCategoryNames = salesOrderData.product_categories.map(productCategory => productCategory.product_category);
-    const productCategoryData = await this.frappeClient.getList("Product Category", {
-      filters: [["name", "in", productCategoryNames]]
-    });
-
-    const promotionNames = extractPromotions(salesOrderData);
-    if (!promotionData) {
-      promotionData = await this.frappeClient.getList("Promotion", {
-        filters: [["name", "in", promotionNames]]
-      });
-    }
-
-    const primarySalesPersonName = salesOrderData.primary_sales_person;
-    const primarySalesPerson = await this.frappeClient.getDoc("Sales Person", primarySalesPersonName);
-
-    const secondarySalesPersonNames = salesOrderData.sales_team
-      .filter(salesPerson => salesPerson.sales_person !== salesOrderData.primary_sales_person)
-      .map(salesPerson => salesPerson.sales_person);
-
-    const secondarySalesPeople = await this.frappeClient.getList("Sales Person", {
-      filters: [["name", "in", secondarySalesPersonNames]]
-    });
-
-    const content = composeSalesOrderNotification(salesOrderData, promotionData, leadSource, policyData, productCategoryData, customer, primarySalesPerson, secondarySalesPeople);
+    const content = await this.composeNewOrderContent(salesOrderData, customer);
 
     const _response = await larkClient.im.message.create({
       params: {
@@ -489,5 +520,49 @@ export default class SalesOrderService {
         console.error(error);
       }
     }
+  }
+
+  async composeUpdateOrderContent(oldSalesOrderData, salesOrderData) {
+    const promotionNames = extractPromotions(salesOrderData);
+    const promotionData = await this.frappeClient.getList("Promotion", {
+      filters: [["name", "in", promotionNames]]
+    });
+    return composeOrderUpdateMessage(oldSalesOrderData, salesOrderData, promotionData);
+  }
+
+  async composeNewOrderContent(salesOrderData, orderCustomer) {
+    const customer = orderCustomer ?? (await this.frappeClient.getDoc("Customer", salesOrderData.customer));
+
+    const leadSource = await this.frappeClient.getDoc("Lead Source", customer.first_source);
+
+    const policyNames = salesOrderData.policies.map(policy => policy.policy);
+    const policyData = await this.frappeClient.getList("Policy", {
+      filters: [["name", "in", policyNames]]
+    });
+
+    const productCategoryNames = salesOrderData.product_categories.map(productCategory => productCategory.product_category);
+    const productCategoryData = await this.frappeClient.getList("Product Category", {
+      filters: [["name", "in", productCategoryNames]]
+    });
+
+    const promotionNames = extractPromotions(salesOrderData);
+    const promotionData = await this.frappeClient.getList("Promotion", {
+      filters: [["name", "in", promotionNames]]
+    });
+
+    const primarySalesPersonName = salesOrderData.primary_sales_person;
+    const primarySalesPerson = await this.frappeClient.getDoc("Sales Person", primarySalesPersonName);
+
+    const secondarySalesPersonNames = salesOrderData.sales_team
+      .filter(salesPerson => salesPerson.sales_person !== salesOrderData.primary_sales_person)
+      .map(salesPerson => salesPerson.sales_person);
+
+    const secondarySalesPeople = await this.frappeClient.getList("Sales Person", {
+      filters: [["name", "in", secondarySalesPersonNames]]
+    });
+
+    const content = composeSalesOrderNotification(salesOrderData, promotionData, leadSource, policyData, productCategoryData, customer, primarySalesPerson, secondarySalesPeople);
+
+    return content;
   }
 }
