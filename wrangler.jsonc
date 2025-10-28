@@ -179,8 +179,7 @@
   "r2_buckets": [
       {
         "binding": "R2_STORAGE",
-        "bucket_name": "jemmia-erp",
-        "remote" : true
+        "bucket_name": "jemmia-erp"
       }
   ],
   "triggers": {
