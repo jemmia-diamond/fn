@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/cloudflare";
 import FrappeClient from "src/frappe/frappe-client";
 import { convertIsoToDatetime } from "src/frappe/utils/datetime";
 import LarksuiteService from "services/larksuite/lark";
@@ -126,7 +127,7 @@ export default class SalesOrderService {
       try {
         await salesOrderService.processHaravanOrder(salesOrderData);
       } catch (error) {
-        console.error(error);
+        Sentry.captureException(error);
       }
     }
   }
