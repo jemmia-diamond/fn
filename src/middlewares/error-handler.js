@@ -11,7 +11,7 @@ export default async (c, next) => {
     }
 
     // Log the error with context
-    Sentry.captureException(err);
+    Sentry.captureException(error);
 
     // Return generic 500 error to client
     throw new HTTPException(500, "Internal server error");
