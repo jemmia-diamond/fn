@@ -62,7 +62,7 @@ app.get("/debug-sentry", () => {
 export default Sentry.withSentry(
   (env) => {
     // Use SENTRY_RELEASE from environment variable to match with sourcemaps upload
-    const release = env.SENTRY_RELEASE || env?.CF_VERSION_METADATA?.id;
+    const release = env.SENTRY_RELEASE;
     return {
       dsn: env.SENTRY_DSN,
       release: release,
