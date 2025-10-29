@@ -1,7 +1,7 @@
 import dayjs from "dayjs";
 import Database from "services/database";
-import QrPaymentFetchingService from "services/ecommerce/qr_payment/fetch-service";
-import ManualPaymentFetchingService from "services/ecommerce/manual_payment/fetch-service";
+import QrPaymentFetchingService from "services/payment/qr_payment/fetch-service";
+import ManualPaymentFetchingService from "services/payment/manual-pay/fetch-service";
 import CashVoucherMappingService from "services/misa/mapping/cash-voucher-mapping-service";
 import MisaClient from "services/clients/misa-client";
 import VoucherMappingService from "services/misa/mapping/voucher-mapping-service";
@@ -103,7 +103,7 @@ export default class MisaVoucherCreator {
     try {
       let payments = [];
       if (paymentTypeName === PAYMENT_TYPES.OTHER_MANUAL_PAYMENT) {
-        payments =  await fetcher.fetchNonCashByDateRange(dateRange.startDate, dateRange.endDate);
+        payments = await fetcher.fetchNonCashByDateRange(dateRange.startDate, dateRange.endDate);
       } else {
         payments = await fetcher.byDateRangeAndNotSynced(dateRange.startDate, dateRange.endDate);
       }
@@ -129,13 +129,14 @@ export default class MisaVoucherCreator {
 
       const response = await misaClient.saveVoucher(payload);
 
-      if(response.Success === true){
+      if (response.Success === true) {
         const updateOperations = mappedVouchers.map(item => {
           const modelName = VOUCHER_MODEL[paymentTypeName];
-          const whereClause  = paymentTypeName === PAYMENT_TYPES.QR_PAYMENT ? { id: item.originalId } : { uuid: item.originalId };
+          const whereClause = paymentTypeName === PAYMENT_TYPES.QR_PAYMENT ? { id: item.originalId } : { uuid: item.originalId };
+          const currentTime = dayjs().utc().subtract(7, "hour").toDate();
           return this.db[modelName].update({
             where: whereClause,
-            data: { misa_sync_guid: item.generatedGuid }
+            data: { misa_sync_guid: item.generatedGuid, misa_synced_at: currentTime }
           });
         });
         await this.db.$transaction(updateOperations);
