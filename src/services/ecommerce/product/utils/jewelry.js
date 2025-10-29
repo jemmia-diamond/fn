@@ -6,7 +6,7 @@ export function buildQuery(jsonParams) {
   const dataSql = `
     SELECT  
       CAST(p.haravan_product_id AS INT) AS id,
-      p.ecom_title as title,
+      p.title,
       d.design_code,
       p.handle,
       d.diamond_holder,
@@ -50,7 +50,7 @@ export function buildQuery(jsonParams) {
       AND (p.haravan_product_type != 'Nhẫn Cưới')
       ${filterString}
     GROUP BY 
-      p.haravan_product_id, p.title, d.design_code, p.handle, p.ecom_title,
+      p.haravan_product_id, p.title, d.design_code, p.handle, 
       d.diamond_holder, d.ring_band_type, p.haravan_product_type,
       p.max_price, p.min_price, p.max_price_18, p.max_price_14, 
       img.images, p.has_360 ${collectionJoinEcomProductsClause ? ", p2.image_updated_at" : ""}
