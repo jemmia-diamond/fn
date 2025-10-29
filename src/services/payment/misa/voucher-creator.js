@@ -21,8 +21,8 @@ export default class MisaVoucherCreator {
    */
   async runMorningBatch() {
     const now = dayjs().utc();
-    const startDate = now.subtract(1, "day").hour(18).minute(0).second(0).subtract(7, "hour");
-    const endDate = now.hour(8).minute(30).second(0).subtract(7, "hour");
+    const startDate = now.subtract(1, "day").hour(11).minute(0).second(0);
+    const endDate = now.hour(1).minute(30).second(0);
     await this._createVouchersForDateRange(startDate.toDate(), endDate.toDate());
   }
 
@@ -32,8 +32,8 @@ export default class MisaVoucherCreator {
    */
   async runAfternoonBatch() {
     const now = dayjs().utc();
-    const startDate = now.hour(8).minute(30).second(0).subtract(7, "hour");
-    const endDate = now.hour(13).minute(30).second(0).subtract(7, "hour");
+    const startDate = now.hour(1).minute(30).second(0);
+    const endDate = now.hour(6).minute(30).second(0);
     await this._createVouchersForDateRange(startDate.toDate(), endDate.toDate());
   }
 
@@ -43,8 +43,8 @@ export default class MisaVoucherCreator {
    */
   async runEndOfDayBatch() {
     const now = dayjs().utc();
-    const startDate = now.hour(13).minute(30).second(0).subtract(7, "hour");
-    const endDate = now.hour(18).minute(0).second(0).subtract(7, "hour");
+    const startDate = now.hour(6).minute(30).second(0);
+    const endDate = now.hour(11).minute(0).second(0);
     await this._createVouchersForDateRange(startDate.toDate(), endDate.toDate());
   }
 
@@ -133,7 +133,7 @@ export default class MisaVoucherCreator {
         const updateOperations = mappedVouchers.map(item => {
           const modelName = VOUCHER_MODEL[paymentTypeName];
           const whereClause = paymentTypeName === PAYMENT_TYPES.QR_PAYMENT ? { id: item.originalId } : { uuid: item.originalId };
-          const currentTime = dayjs().utc().subtract(7, "hour").toDate();
+          const currentTime = dayjs().utc().toDate();
           return this.db[modelName].update({
             where: whereClause,
             data: { misa_sync_guid: item.generatedGuid, misa_synced_at: currentTime }
