@@ -1,4 +1,3 @@
-import * as Sentry from "@sentry/cloudflare";
 // FrappeClient.js
 const DEFAULT_HEADERS = { Accept: "application/json" };
 
@@ -200,14 +199,7 @@ export default class FrappeClient {
   async postProcess({ url } = req, res) {
     if (!res.ok) {
       const errorText = await this._safeReadResponseText(res);
-      Sentry.withScope(scope => {
-        scope.setTag("http.status", res.status);
-        scope.setTag("runtime", "node");
-        scope.setContext("response", { status: res.status, bodyPreview: errorText });
-        scope.setFingerprint([url, String(res.status)]);
-        Sentry.captureMessage(`HTTP error: ${res.status} ${res.statusText}`);
-      });
-      throw new Error(`Frappe API Error ${res.status}: ${res.statusText}`);
+      throw new Error(`Frappe API Error \n URL: ${url} \n Status: ${res.status} \n Text: ${res.statusText} \n Error Text: ${errorText}`);
     }
 
     const text = await res.text();
