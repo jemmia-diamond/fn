@@ -14,7 +14,8 @@
     "prepare": "husky",
     "format": "eslint --fix",
     "cf-typegen": "wrangler types --env-interface CloudflareBindings",
-    "db:pull": "prisma db pull"
+    "db:pull": "prisma db pull",
+    "fn:setup": "bun ./packages/cli/src/index.ts setup"
   },
   "dependencies": {
     "@commitlint/cli": "^20.1.0",
