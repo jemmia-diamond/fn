@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/cloudflare";
 import FrappeClient from "src/frappe/frappe-client";
 import { convertIsoToDatetime } from "src/frappe/utils/datetime";
 import LarksuiteService from "services/larksuite/lark";
@@ -126,7 +127,7 @@ export default class SalesOrderService {
       try {
         await salesOrderService.processHaravanOrder(salesOrderData);
       } catch (error) {
-        console.error(error);
+        Sentry.captureException(error);
       }
     }
   }
@@ -171,12 +172,17 @@ export default class SalesOrderService {
       });
 
       return refOrders.map((o) => {
-        const { name } = erpRefOrders.find(order => order.haravan_order_id === String(o.id));
+        const refOrder = erpRefOrders.find(order => order.haravan_order_id === String(o.id));
+
+        if (!refOrder) {
+          return null;
+        }
+
         return {
           doctype: "Sales Order Reference",
-          sales_order: name
+          sales_order: refOrder.name
         };
-      });
+      }).filter(order => order !== null);
     } catch (e) {
       console.error(e);
       return [];

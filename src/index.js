@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/cloudflare";
 import { Hono } from "hono";
 import { bearerAuth } from "hono/bearer-auth";
 
@@ -10,8 +11,21 @@ import Routes from "src/routes";
 import queueHandler from "services/queue-handler";
 import scheduleHandler from "services/schedule-handler";
 import { DebounceDurableObject } from "src/durable-objects";
+import { HTTPException } from "hono/http-exception";
 
-const app = new Hono();
+const app = new Hono()
+  // Add an onError hook to report unhandled exceptions to Sentry.
+  .onError((err, c) => {
+    // Report _all_ unhandled errors.
+    Sentry.captureException(err);
+    if (err instanceof HTTPException) {
+      return err.getResponse();
+    }
+    // Or just report errors which are not instances of HTTPException
+    // Sentry.captureException(err);
+    return c.json({ error: "Internal server error" }, 500);
+  });
+
 const api = app.basePath("/api");
 const publicApi = app.basePath("/public-api");
 const webhook = app.basePath("/webhook");
@@ -40,12 +54,24 @@ Routes.APIRoutes.register(api);
 Routes.PublicAPIRoutes.register(publicApi);
 Routes.WebhookRoutes.register(webhook);
 
-// Cron trigger and Queue Integrations
-export default {
-  fetch: app.fetch,
-  queue: queueHandler.queue,
-  scheduled: scheduleHandler.scheduled
-};
+// Cron trigger and Queue Integrations, wrapped with Sentry
+export default Sentry.withSentry(
+  (env) => {
+    // Use SENTRY_RELEASE from environment variable to match with sourcemaps upload
+    const release = env.SENTRY_RELEASE;
+    return {
+      dsn: env.SENTRY_DSN,
+      release: release,
+      sendDefaultPii: true,
+      tracesSampleRate: 0.1
+    };
+  },
+  {
+    fetch: app.fetch,
+    queue: queueHandler.queue,
+    scheduled: scheduleHandler.scheduled
+  }
+);
 
 // Export Durable Object classes
 export { DebounceDurableObject };
