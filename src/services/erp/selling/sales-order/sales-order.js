@@ -14,7 +14,7 @@ import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/cons
 import { fetchSalesOrdersFromERP, saveSalesOrdersToDatabase } from "src/services/erp/selling/sales-order/utils/sales-order-helpers";
 import { getRefOrderChain } from "services/ecommerce/order-tracking/queries/get-initial-order";
 import Larksuite from "services/larksuite";
-import { R2StorageService } from "services/r2-object/r2-object-storage";
+import { R2StorageService } from "services/r2-object/r2-storage-service";
 
 dayjs.extend(utc);
 
