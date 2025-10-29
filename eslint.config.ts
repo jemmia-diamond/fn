@@ -35,6 +35,7 @@ export default [
     rules: {
       '@typescript-eslint/ban-ts-comment': 'off',
       '@typescript-eslint/no-unused-vars': 'off',
+      'unicorn/no-array-reverse': 'off',
       'unicorn/filename-case': ['error', { case: 'kebabCase' }],
       'unicorn/prevent-abbreviations': [
         'error',

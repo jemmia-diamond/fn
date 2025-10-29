@@ -1,11 +1,11 @@
 model misaUser {
-    uuid                String @id @default(uuid()) @db.Uuid
-    employee_code       String? @unique @db.VarChar(255)
-    haravan_id          BigInt @db.BigInt
-    email               String? @db.VarChar(255)
-    database_created_at DateTime? @default(now())
-    database_updated_at DateTime? @updatedAt
+  uuid                String    @id @default(uuid()) @db.Uuid
+  employee_code       String?   @unique @db.VarChar(255)
+  haravan_id          BigInt    @unique
+  email               String?   @db.VarChar(255)
+  database_created_at DateTime? @default(now())
+  database_updated_at DateTime? @updatedAt
 
-    @@map("users")
-    @@schema("misa")
+  @@map("users")
+  @@schema("misa")
 }
