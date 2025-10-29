@@ -624,7 +624,7 @@ export default class SalesOrderService {
       }
       return null;
     } catch (e) {
-      console.error(`Failed to parse URL "${url}" for R2 key extraction:`, e);
+      Sentry.captureException(e);
       return null;
     }
   }

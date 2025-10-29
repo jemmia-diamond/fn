@@ -1,4 +1,5 @@
 import LarksuiteService from "services/larksuite/lark";
+import * as Sentry from "@sentry/cloudflare";
 
 export class ImageMessagingService {
 
@@ -8,7 +9,7 @@ export class ImageMessagingService {
   static async uploadLarkImage({ larkClient, imageBuffer, env }) {
     const tenantAccessToken = await LarksuiteService.getTenantAccessTokenFromClient({ larkClient, env });
     if (!tenantAccessToken) {
-      console.error("Could not obtain tenant access token for upload.");
+      Sentry.captureException(new Error("Could not obtain tenant access token for upload."));
       return null;
     }
 
@@ -29,25 +30,18 @@ export class ImageMessagingService {
       const data = await response.json();
 
       if (!response.ok) {
-        console.error("Upload request failed:", response.status, response.statusText);
-        console.error("Lark API Response Data:", data);
+        Sentry.captureException(new Error(`Upload request failed: ${response.status} ${response.statusText}`));
         return null;
       }
 
       if (data.code === 0) {
         return data.data.image_key;
       } else {
-        console.error(`Lark API error: ${data.msg}`);
-        if (data.error) {
-          console.error("Lark Error Details:", data.error);
-        }
+        Sentry.captureException(new Error(`Lark API error: ${data.msg}`));
         return null;
       }
     } catch (err) {
-      console.error("Upload request failed:", err.message);
-      if (err.response) {
-        console.error("Lark API Response Data:", err.response.data);
-      }
+      Sentry.captureException(err);
       return null;
     }
   }
@@ -58,7 +52,7 @@ export class ImageMessagingService {
   static async sendLarkImageMessage({ larkClient, chatId, imageKey, rootMessageId, env, isReply }) {
     const tenantAccessToken = await LarksuiteService.getTenantAccessTokenFromClient({ larkClient, env });
     if (!tenantAccessToken) {
-      console.error("Could not obtain tenant access token for sending message.");
+      Sentry.captureException(new Error("Could not obtain tenant access token for sending message."));
       return;
     }
 
@@ -93,12 +87,11 @@ export class ImageMessagingService {
       const data = await response.json();
 
       if (!response.ok) {
-        console.error("Sending/replying request failed:", response.status, response.statusText);
-        console.error("Lark API Response Data:", data);
+        Sentry.captureException(new Error(`Sending/replying request failed: ${response.status} ${response.statusText}`), { extra: { responseData: data } });
         return;
       }
     } catch (err) {
-      console.error("Sending/replying request failed:", err.message);
+      Sentry.captureException(err);
     }
   }
 
@@ -116,7 +109,7 @@ export class ImageMessagingService {
       });
       return true;
     }  catch (e) {
-      console.error(`sendLarkImageFromUrl ${e}`);
+      Sentry.captureException(e);
       return false;
     }
   }
