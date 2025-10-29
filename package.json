@@ -4,11 +4,13 @@
   "scripts": {
     "dev": "wrangler dev",
     "build": "prisma migrate deploy && prisma generate",
-    "deploy": "wrangler deploy --minify",
+    "deploy": "wrangler deploy --minify --outdir dist --upload-source-maps --var SENTRY_RELEASE:$(sentry-cli releases propose-version)",
     "lint": "eslint",
     "lint:staged": "lint-staged",
     "prepare": "husky",
-    "format": "eslint --fix"
+    "format": "eslint --fix",
+    "sentry:sourcemaps": "_SENTRY_RELEASE=$(sentry-cli releases propose-version) && sentry-cli releases new $_SENTRY_RELEASE --org=jemmia --project=jemmia-fn && sentry-cli sourcemaps upload --org=jemmia --project=jemmia-fn --release=$_SENTRY_RELEASE --strip-prefix 'dist/..' dist",
+    "postdeploy": "pnpm sentry:sourcemaps"
   },
   "dependencies": {
     "@directus/sdk": "^20.0.2",
@@ -18,6 +20,7 @@
     "@neondatabase/serverless": "^1.0.1",
     "@prisma/adapter-neon": "^6.15.0",
     "@prisma/client": "^6.15.0",
+    "@sentry/cloudflare": "^10.19.0",
     "axios": "^1.10.0",
     "axios-retry": "^4.5.0",
     "crypto-js": "^4.2.0",
@@ -29,6 +32,7 @@
     "@commitlint/cli": "^19.8.1",
     "@commitlint/config-conventional": "^19.8.1",
     "@eslint/compat": "^1.3.2",
+    "@sentry/cli": "^2.57.0",
     "@stylistic/eslint-plugin": "^5.2.3",
     "commitizen": "^4.3.1",
     "cz-conventional-changelog": "^3.3.0",
@@ -39,7 +43,7 @@
     "husky": "^9.1.7",
     "lint-staged": "^16.1.5",
     "prisma": "^6.15.0",
-    "wrangler": "^4.38.0"
+    "wrangler": "^4.42.2"
   },
   "packageManager": "pnpm@10.18.3",
   "engines": {
