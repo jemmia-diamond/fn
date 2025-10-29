@@ -18,6 +18,11 @@ model qrPaymentTransaction {
   qr_url                    String?
   lark_record_id            String?   @db.VarChar(255)
   all_lark_record_id        String?   @db.VarChar(255)
+  misa_synced               Boolean   @default(false)
+  misa_synced_at            DateTime? @db.Timestamp(6)
+  misa_sync_guid            String?   @db.VarChar(255)
+  misa_sync_error_msg       String?   @db.Text
+
 
   @@index([id], map: "ix_ecom_qr_generator_id")
   @@map("qr_generator")
