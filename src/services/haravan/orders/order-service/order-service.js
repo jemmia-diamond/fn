@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/cloudflare";
 import HaravanAPIClient from "services/haravan/api-client/api-client";
 import LarksuiteService from "services/larksuite/lark";
 import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/constant";
@@ -51,7 +52,7 @@ export default class OrderService {
         }
       }
       catch (error) {
-        console.error(error);
+        Sentry.captureException(error);
       }
     }
   }

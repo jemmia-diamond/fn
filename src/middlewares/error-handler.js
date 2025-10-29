@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/cloudflare";
 import { HTTPException } from "hono/http-exception";
 
 export default async (c, next) => {
@@ -10,7 +11,7 @@ export default async (c, next) => {
     }
 
     // Log the error with context
-    console.error("Error:", error);
+    Sentry.captureException(error);
 
     // Return generic 500 error to client
     throw new HTTPException(500, "Internal server error");
