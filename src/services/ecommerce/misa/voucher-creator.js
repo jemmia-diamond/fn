@@ -5,6 +5,7 @@ import ManualPaymentFetchingService from "services/ecommerce/manual_payment/fetc
 import CashVoucherMappingService from "services/misa/mapping/cash-voucher-mapping-service";
 import MisaClient from "services/clients/misa-client";
 import VoucherMappingService from "services/misa/mapping/voucher-mapping-service";
+import { PAYMENT_TYPES, VOUCHER_MODEL, VOUCHER_REF_TYPES, VOUCHER_TYPES } from "services/misa/constant";
 
 export default class MisaVoucherCreator {
   constructor(env) {
@@ -64,9 +65,9 @@ export default class MisaVoucherCreator {
       return map;
     }, {});
 
-    const [qrResults, manualResults] = await Promise.all([
+    const [qrResults, manualResults, codResults] = await Promise.all([
       this._processPaymentType({
-        paymentTypeName: "QR Payment",
+        paymentTypeName: PAYMENT_TYPES.QR_PAYMENT,
         fetcher: this.qrPaymentFetcher,
         mapper: VoucherMappingService.transformQrToVoucher,
         dateRange: { startDate, endDate },
@@ -74,7 +75,15 @@ export default class MisaVoucherCreator {
         bankMap
       }),
       this._processPaymentType({
-        paymentTypeName: "Manual Payment",
+        paymentTypeName: PAYMENT_TYPES.MANUAL_PAYMENT,
+        fetcher: this.manualPaymentFetcher,
+        mapper: CashVoucherMappingService.transforManualToVoucher,
+        dateRange: { startDate, endDate },
+        misaClient,
+        bankMap
+      }),
+      this._processPaymentType({
+        paymentTypeName: PAYMENT_TYPES.OTHER_MANUAL_PAYMENT,
         fetcher: this.manualPaymentFetcher,
         mapper: CashVoucherMappingService.transforManualToVoucher,
         dateRange: { startDate, endDate },
@@ -83,7 +92,7 @@ export default class MisaVoucherCreator {
       })
     ]);
 
-    return { qrResults, manualResults };
+    return { qrResults, manualResults, codResults };
   }
 
   /**
@@ -92,15 +101,20 @@ export default class MisaVoucherCreator {
    */
   async _processPaymentType({ paymentTypeName, fetcher, mapper, dateRange, misaClient, bankMap }) {
     try {
-      const payments = await fetcher.byDateRangeAndNotSynced(dateRange.startDate, dateRange.endDate);
+      let payments = [];
+      if (paymentTypeName === PAYMENT_TYPES.OTHER_MANUAL_PAYMENT) {
+        payments =  await fetcher.fetchNonCashByDateRange(dateRange.startDate, dateRange.endDate);
+      } else {
+        payments = await fetcher.byDateRangeAndNotSynced(dateRange.startDate, dateRange.endDate);
+      }
 
       if (!payments || payments.length === 0) {
         return { status: "skipped", count: 0 };
       }
 
       const mappedVouchers = payments.map(p => {
-        const voucher_type = paymentTypeName === "QR Payment" ? 1 : 5;
-        const ref_type = paymentTypeName === "QR Payment" ? 1500 : 1010;
+        const voucher_type = VOUCHER_TYPES[paymentTypeName];
+        const ref_type = VOUCHER_REF_TYPES[paymentTypeName];
 
         return mapper(p, bankMap, voucher_type, ref_type);
       });
@@ -117,8 +131,8 @@ export default class MisaVoucherCreator {
 
       if(response.Success === true){
         const updateOperations = mappedVouchers.map(item => {
-          const modelName = paymentTypeName === "QR Payment" ? "qrPaymentTransaction" : "manualPaymentTransaction";
-          const whereClause  = paymentTypeName === "QR Payment" ? { id: item.originalId } : { uuid: item.originalId } ;
+          const modelName = VOUCHER_MODEL[paymentTypeName];
+          const whereClause  = paymentTypeName === PAYMENT_TYPES.QR_PAYMENT ? { id: item.originalId } : { uuid: item.originalId };
           return this.db[modelName].update({
             where: whereClause,
             data: { misa_sync_guid: item.generatedGuid }
