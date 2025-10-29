@@ -92,3 +92,33 @@ export const MANUAL_PAYMENT_CREDIT_MAP = {
     unit_name: "Cửa hàng Cần Thơ", unit_code: "0302_003"
   }
 };
+
+export const PAYMENT_TYPES = {
+  QR_PAYMENT: "QR_PAYMENT",
+  MANUAL_PAYMENT: "MANUAL_PAYMENT",
+  OTHER_MANUAL_PAYMENT: "OTHER_MANUAL_PAYMENT" // Manual Payment that have payment_type is not "Cash"
+};
+
+export const VOUCHER_TYPES = {
+  QR_PAYMENT: 1,
+  MANUAL_PAYMENT: 5,
+  OTHER_MANUAL_PAYMENT: 1
+};
+
+export const VOUCHER_MODEL = {
+  QR_PAYMENT: "qrPaymentTransaction",
+  MANUAL_PAYMENT: "manualPaymentTransaction",
+  OTHER_MANUAL_PAYMENT: "manualPaymentTransaction"
+};
+
+export const VOUCHER_REF_TYPES = {
+  QR_PAYMENT: 1500,
+  MANUAL_PAYMENT: 1010,
+  OTHER_MANUAL_PAYMENT: 1500
+};
+
+export const REASON_TYPES = {
+  QR_PAYMENT: 29,
+  MANUAL_PAYMENT: 14,
+  OTHER_MANUAL_PAYMENT: 29
+};
