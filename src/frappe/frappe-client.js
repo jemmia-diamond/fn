@@ -50,7 +50,7 @@ export default class FrappeClient {
       method: "GET",
       headers: this.headers
     });
-    return this.postProcess(res);
+    return this.postProcess({ url }, res);
   }
 
   async getDoc(doctype, name) {
@@ -59,16 +59,17 @@ export default class FrappeClient {
       method: "GET",
       headers: this.headers
     });
-    return this.postProcess(res);
+    return this.postProcess({ url }, res);
   }
 
   async insert(doc) {
-    const res = await fetch(`${this.url}/api/resource/${encodeURIComponent(doc.doctype)}`, {
+    const url = `${this.url}/api/resource/${encodeURIComponent(doc.doctype)}`;
+    const res = await fetch(url, {
       method: "POST",
       headers: { ...this.headers, "Content-Type": "application/json" },
       body: JSON.stringify({ data: JSON.stringify(doc) })
     });
-    return this.postProcess(res);
+    return this.postProcess({ url }, res);
   }
 
   async insertMany(docs) {
@@ -85,7 +86,7 @@ export default class FrappeClient {
       headers: { ...this.headers, "Content-Type": "application/json" },
       body: JSON.stringify({ data: JSON.stringify(doc) })
     });
-    return this.postProcess(res);
+    return this.postProcess({ url }, res);
   }
 
   async upsert(doc, key, ignoredFields = []) {
@@ -128,18 +129,19 @@ export default class FrappeClient {
   // --- Utility methods ---
 
   async postRequest(path = "", data = {}) {
-    const res = await fetch(`${this.url}${path}`, {
+    const url = `${this.url}${path}`;
+    const res = await fetch(url, {
       method: "POST",
       headers: { ...this.headers, "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams(data)
     });
-    return this.postProcess(res);
+    return this.postProcess({ url }, res);
   }
 
   async getRequest(path = "", params = {}) {
     const url = `${this.url}${path}?${new URLSearchParams(params)}`;
     const res = await fetch(url, { headers: this.headers });
-    return this.postProcess(res);
+    return this.postProcess({ url }, res);
   }
 
   chunk(arr, size) {
@@ -185,9 +187,19 @@ export default class FrappeClient {
     return null;
   }
 
-  async postProcess(res) {
+  async _safeReadResponseText(response) {
+    try {
+      if (response.bodyUsed) return null;
+      return await response.text();
+    } catch {
+      return null;
+    }
+  }
+
+  async postProcess({ url } = req, res) {
     if (!res.ok) {
-      throw new Error(`Frappe API Error ${res.status}: ${res.statusText}`);
+      const errorText = await this._safeReadResponseText(res);
+      throw new Error(`Frappe API Error \n URL: ${url} \n Status: ${res.status} \n Text: ${res.statusText} \n Error Text: ${errorText}`);
     }
 
     const text = await res.text();
