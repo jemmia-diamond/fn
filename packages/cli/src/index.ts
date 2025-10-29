@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env pnpm
 
 import { Command } from 'commander';
 import chalk from 'chalk';

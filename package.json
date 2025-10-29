@@ -15,7 +15,7 @@
     "format": "eslint --fix",
     "cf-typegen": "wrangler types --env-interface CloudflareBindings",
     "db:pull": "prisma db pull",
-    "fn:setup": "pnpm ./packages/cli/src/index.ts setup"
+    "fn:setup": "./packages/cli/src/index.ts setup"
   },
   "dependencies": {
     "@commitlint/cli": "^20.1.0",
