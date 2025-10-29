@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/cloudflare";
 import Database from "services/database";
 import RecordService from "services/larksuite/docs/base/record/record";
 import { TABLES } from "services/larksuite/docs/constant";
@@ -15,7 +16,7 @@ export default class ProductQuoteOrderService {
         const orderData = message.body;
         await ProductQuoteOrderService.syncOrderToLark(_env, orderData);
       } catch (error) {
-        console.error(error);
+        Sentry.captureException(error);
       }
     }
 
@@ -94,11 +95,11 @@ export default class ProductQuoteOrderService {
             });
           }
         } catch (error) {
-          console.error(`syncOrderToLark: Error processing line item ${lineItem.variant_id}:`, error);
+          Sentry.captureException(error);
         }
       }
     } catch (e) {
-      console.error(`syncOrderToLark: ${e}`);
+      Sentry.captureException(e);
     }
   }
 

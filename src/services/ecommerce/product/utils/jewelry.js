@@ -53,7 +53,7 @@ export function buildQuery(jsonParams) {
       p.haravan_product_id, p.title, d.design_code, p.handle, p.ecom_title,
       d.diamond_holder, d.ring_band_type, p.haravan_product_type,
       p.max_price, p.min_price, p.max_price_18, p.max_price_14, 
-      img.images, p.has_360
+      img.images, p.has_360 ${collectionJoinEcomProductsClause ? ", p2.image_updated_at" : ""}
     ${havingString}
     ${sortString}
     ${paginationString}
@@ -94,6 +94,7 @@ export function aggregateQuery(jsonParams) {
   let collectionJoinEcomProductsClause = "";
   let havingString = "";
   let linkedCollectionJoinEcomProductsClause = "";
+  let needsP2Join = false;
 
   if (jsonParams.is_in_stock) {
     havingString += "HAVING SUM(v.qty_available) > 0\n";
@@ -105,7 +106,7 @@ export function aggregateQuery(jsonParams) {
 
   if (jsonParams.pages && jsonParams.pages.length > 0) {
     filterString += `AND p2.pages IN ('${jsonParams.pages.join("','")}')\n`;
-    collectionJoinEcomProductsClause = "LEFT JOIN ecom.products p2 ON p.haravan_product_id = p2.haravan_product_id";
+    needsP2Join = true;
   }
 
   if (jsonParams.product_types && jsonParams.product_types.length > 0) {
@@ -196,14 +197,11 @@ export function aggregateQuery(jsonParams) {
     `;
   }
 
-  if (jsonParams.sort) {
-    if (jsonParams.sort.by === "price") {
-      sortString += `ORDER BY ${sortedColumn} ${jsonParams.sort.order === "asc" ? "ASC" : "DESC"}\n`;
-    } else {
-      sortString += "ORDER BY p.image_updated_at DESC\n";
-    }
+  if (jsonParams.sort?.by === "price") {
+    sortString += `ORDER BY ${sortedColumn} ${jsonParams.sort.order === "asc" ? "ASC" : "DESC"}\n`;
   } else {
-    sortString += "ORDER BY p.image_updated_at DESC\n";
+    sortString += "ORDER BY p2.image_updated_at DESC\n";
+    needsP2Join = true;
   }
 
   if (jsonParams.product_ids.length) {
@@ -217,6 +215,10 @@ export function aggregateQuery(jsonParams) {
     if (jsonParams.pagination.from !== 1) {
       paginationString += `OFFSET ${jsonParams.pagination.from - 1}\n`;
     }
+  }
+
+  if (needsP2Join) {
+    collectionJoinEcomProductsClause = "LEFT JOIN ecom.products p2 ON p.haravan_product_id = p2.haravan_product_id";
   }
 
   return {

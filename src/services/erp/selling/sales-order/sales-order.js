@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/cloudflare";
 import FrappeClient from "src/frappe/frappe-client";
 import { convertIsoToDatetime } from "src/frappe/utils/datetime";
 import LarksuiteService from "services/larksuite/lark";
@@ -25,7 +26,8 @@ export default class SalesOrderService {
     this.doctype = "Sales Order";
     this.linkedTableDoctype = {
       lineItems: "Sales Order Item",
-      paymentRecords: "Sales Order Payment Record"
+      paymentRecords: "Sales Order Payment Record",
+      refSalesOrder: "Ref Sales Order"
     };
     this.cancelledStatusMapper = {
       uncancelled: "Uncancelled",
@@ -110,7 +112,8 @@ export default class SalesOrderService {
       grand_total: haravanOrderData.total_price,
       paid_amount: paidAmount,
       balance: haravanOrderData.total_price - paidAmount,
-      real_order_date: dayjs(haravanOrderData.created_at).utc().format("YYYY-MM-DD")
+      real_order_date: dayjs(haravanOrderData.created_at).utc().format("YYYY-MM-DD"),
+      ref_sales_orders: await this.mapRefSalesOrder(haravanOrderData.id)
     };
     const order = await this.frappeClient.upsert(mappedOrderData, "haravan_order_id", ["items"]);
     return order;
@@ -124,7 +127,7 @@ export default class SalesOrderService {
       try {
         await salesOrderService.processHaravanOrder(salesOrderData);
       } catch (error) {
-        console.error(error);
+        Sentry.captureException(error);
       }
     }
   }
@@ -150,6 +153,40 @@ export default class SalesOrderService {
       kind: hrvTransactionData["kind"],
       transaction_id: hrvTransactionData["id"]
     };
+  };
+
+  mapRefSalesOrder = async (refOrderId) => {
+    try {
+      const refOrders = await getRefOrderChain(this.db, Number(refOrderId), true);
+
+      if (!refOrders) {
+        return [];
+      };
+
+      const erpRefOrders = await this.db.erpnextSalesOrders.findMany({
+        where: {
+          haravan_order_id: {
+            in: refOrders?.map(order => String(order.id))
+          }
+        }
+      });
+
+      return refOrders.map((o) => {
+        const refOrder = erpRefOrders.find(order => order.haravan_order_id === String(o.id));
+
+        if (!refOrder) {
+          return null;
+        }
+
+        return {
+          doctype: "Sales Order Reference",
+          sales_order: refOrder.name
+        };
+      }).filter(order => order !== null);
+    } catch (e) {
+      console.error(e);
+      return [];
+    }
   };
 
   mapLineItemsFields = (lineItemData) => {
