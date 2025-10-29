@@ -20,8 +20,8 @@ export default class MisaVoucherCreator {
    */
   async runMorningBatch() {
     const now = dayjs().utc();
-    const startDate = now.subtract(1, "day").hour(18).minute(0).second(0);
-    const endDate = now.hour(8).minute(30).second(0);
+    const startDate = now.subtract(1, "day").hour(18).minute(0).second(0).subtract(7, "hour");
+    const endDate = now.hour(8).minute(30).second(0).subtract(7, "hour");
     await this._createVouchersForDateRange(startDate.toDate(), endDate.toDate());
   }
 
@@ -31,8 +31,8 @@ export default class MisaVoucherCreator {
    */
   async runAfternoonBatch() {
     const now = dayjs().utc();
-    const startDate = now.hour(8).minute(30).second(0);
-    const endDate = now.hour(13).minute(30).second(0);
+    const startDate = now.hour(8).minute(30).second(0).subtract(7, "hour");
+    const endDate = now.hour(13).minute(30).second(0).subtract(7, "hour");
     await this._createVouchersForDateRange(startDate.toDate(), endDate.toDate());
   }
 
@@ -42,8 +42,8 @@ export default class MisaVoucherCreator {
    */
   async runEndOfDayBatch() {
     const now = dayjs().utc();
-    const startDate = now.hour(13).minute(30).second(0);
-    const endDate = now.hour(18).minute(0).second(0);
+    const startDate = now.hour(13).minute(30).second(0).subtract(7, "hour");
+    const endDate = now.hour(18).minute(0).second(0).subtract(7, "hour");
     await this._createVouchersForDateRange(startDate.toDate(), endDate.toDate());
   }
 
