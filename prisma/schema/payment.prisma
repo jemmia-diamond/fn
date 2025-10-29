@@ -14,13 +14,11 @@ model manualPaymentTransaction {
   haravan_order_id    BigInt?   @db.BigInt
   haravan_order_name  String?   @db.VarChar(255)
   transfer_status     String?   @db.VarChar(255)
-
   lark_record_id      String?   @unique @db.VarChar(255)
-
   misa_synced         Boolean   @default(false)
   misa_sync_guid      String?   @db.VarChar(255)
   misa_sync_error_msg String?   @db.Text
-
+  misa_synced_at      DateTime? @db.Timestamp(6)
   @@index([uuid])
   @@map("manual_payments")
   @@schema("payment")
