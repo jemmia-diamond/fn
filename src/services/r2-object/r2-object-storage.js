@@ -1,4 +1,4 @@
-export class R2ObjectStorage {
+export class R2StorageService {
 
   static getObjectFromR2 = async (env, key) => {
     if (!env || !env.JEMMIA_ERP_R2_STORAGE) {

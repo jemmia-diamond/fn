@@ -14,7 +14,7 @@ import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/cons
 import { fetchSalesOrdersFromERP, saveSalesOrdersToDatabase } from "src/services/erp/selling/sales-order/utils/sales-order-helpers";
 import { getRefOrderChain } from "services/ecommerce/order-tracking/queries/get-initial-order";
 import Larksuite from "services/larksuite";
-import { R2ObjectStorage } from "services/R2-object/r2_object";
+import { R2StorageService } from "services/r2-object/r2-object-storage";
 
 dayjs.extend(utc);
 
@@ -263,7 +263,7 @@ export default class SalesOrderService {
           ? await Promise.all(
             diffAttachments.added_file.map(async (fileUrl) => {
               const r2Key = SalesOrderService._extractR2KeyFromUrl(fileUrl);
-              const imageBuffer = await R2ObjectStorage.getObjectFromR2(this.env, r2Key);
+              const imageBuffer = await R2StorageService.getObjectFromR2(this.env, r2Key);
 
               return Larksuite.Messaging.ImageMessagingService.sendLarkImageFromUrl({
                 larkClient,
@@ -343,7 +343,7 @@ export default class SalesOrderService {
         ? await Promise.all(
           diffAttachments.added_file.map(async (fileUrl) => {
             const r2Key = SalesOrderService._extractR2KeyFromUrl(fileUrl);
-            const imageBuffer = await R2ObjectStorage.getObjectFromR2(this.env, r2Key);
+            const imageBuffer = await R2StorageService.getObjectFromR2(this.env, r2Key);
             return Larksuite.Messaging.ImageMessagingService.sendLarkImageFromUrl({
               larkClient,
               imageBuffer,
