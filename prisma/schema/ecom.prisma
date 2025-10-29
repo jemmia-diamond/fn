@@ -22,8 +22,6 @@ model qrPaymentTransaction {
   misa_synced_at            DateTime? @db.Timestamp(6)
   misa_sync_guid            String?   @db.VarChar(255)
   misa_sync_error_msg       String?   @db.Text
-
-
   @@index([id], map: "ix_ecom_qr_generator_id")
   @@map("qr_generator")
   @@schema("ecom")
