@@ -11,277 +11,127 @@ export function buildQuery(jsonParams) {
 
   const finenessOrder = handleFinenessPriority === "14K" ? "ASC" : "DESC";
 
-  if (jsonParams.matched_diamonds) {
-    // Logic for dynamic 1-to-1 or 1-to-2 (for earrings) diamond pairing
-    let variantFilterString = "";
-    if (jsonParams.material_colors?.length)
-      variantFilterString += `AND v.material_color IN ('${jsonParams.material_colors.join("','")}')\n`;
-    if (jsonParams.fineness?.length)
-      variantFilterString += `AND v.fineness IN ('${jsonParams.fineness.join("','")}')\n`;
+  let diamondJoinsForCount = "";
+  let diamondFiltersForCount = "";
+  let lateralJoinClause = "";
+  let variantJsonBuildObject = "";
 
-    const dataSql = `
-      WITH FilteredProducts AS (
-        SELECT p.haravan_product_id
-        FROM ecom.materialized_products p 
-          INNER JOIN workplace.designs d ON d.id = p.design_id
-          ${collectionJoinEcomProductsClause}
-          ${linkedCollectionJoinEcomProductsClause}
-          INNER JOIN ecom.materialized_variants v ON v.haravan_product_id = p.haravan_product_id
-        WHERE 1 = 1 
-          AND (p.haravan_product_type != 'Nhẫn Cưới')
-        ${filterString}
-        GROUP BY p.haravan_product_id
-        ${havingString}
-      ),
-      VariantsWithProductType AS (
+  if (jsonParams.matched_diamonds) {
+
+    diamondJoinsForCount = `
+      INNER JOIN ecom.jewelry_diamond_pairs jdp 
+        ON CAST(jdp.haravan_product_id AS BIGINT) = v.haravan_product_id 
+       AND CAST(jdp.haravan_variant_id AS BIGINT) = v.haravan_variant_id
+      INNER JOIN workplace.diamonds dia 
+        ON dia.product_id = CAST(jdp.haravan_diamond_product_id AS BIGINT) 
+       AND dia.variant_id = CAST(jdp.haravan_diamond_variant_id AS BIGINT)
+      INNER JOIN haravan.warehouse_inventories inven 
+        ON inven.product_id = dia.product_id
+      INNER JOIN haravan.warehouses house 
+        ON house.id = inven.loc_id
+    `;
+
+    diamondFiltersForCount = `
+      AND jdp.is_active = TRUE
+      AND house.name IN (
+        '[HCM] Cửa Hàng HCM',
+        '[HN] Cửa Hàng HN',
+        '[CT] Cửa Hàng Cần Thơ'
+      )
+      AND dia.qty_available IS NOT NULL AND dia.qty_available > 0
+      AND dia.edge_size_1 > 4.4 AND dia.edge_size_2 > 4.4
+      AND dia.edge_size_1 < 4.6 AND dia.edge_size_2 < 4.6
+    `;
+
+    variantJsonBuildObject = `
+      JSON_BUILD_OBJECT(
+        'id', CAST(v.haravan_variant_id AS INT),
+        'fineness', v.fineness,
+        'material_color', v.material_color,
+        'ring_size', v.ring_size,
+        'price', CAST(v.price AS DECIMAL),
+        'price_compare_at', CAST(v.price_compare_at AS DECIMAL),
+        'qty_available', v.qty_available,
+        'qty_onhand', v.qty_onhand,
+        'diamonds', v.diamonds
+      )
+    `;
+
+    lateralJoinClause = `
+      INNER JOIN LATERAL (
         SELECT 
           v.*,
-          p.haravan_product_type
-        FROM ecom.materialized_variants v
-        JOIN ecom.materialized_products p ON v.haravan_product_id = p.haravan_product_id
-        WHERE v.haravan_product_id IN (SELECT haravan_product_id FROM FilteredProducts)
-          ${variantFilterString}
-      ),
-      NumberedVariantsBase AS (
-        SELECT
-          v.*,
-          CASE WHEN v.haravan_product_type = 'Bông Tai' THEN 2 ELSE 1 END AS diamond_consumption,
-          SUM(CASE WHEN v.haravan_product_type = 'Bông Tai' THEN 2 ELSE 1 END)
-            OVER (ORDER BY v.haravan_product_id, v.fineness ${finenessOrder}, v.price DESC, v.haravan_variant_id)
-            AS cumulative_consumption
-        FROM VariantsWithProductType v
-      ),
-      ExpandedVariants AS (
-        SELECT
-          v.*,
-          generate_series(
-            v.cumulative_consumption - v.diamond_consumption + 1,
-            v.cumulative_consumption
-          ) AS rn
-        FROM NumberedVariantsBase v
-      ),
-
-      -- Diamond dedup: use ROW_NUMBER() PARTITION BY product_id then pick dedup_rank = 1,
-      -- then assign a stable overall rn for pairing.
-      DedupedDiamonds AS (
-        SELECT d_inner.*
-        FROM (
-          SELECT
-            d.product_id,
-            d.variant_id,
-            d.report_no,
-            d.shape,
-            d.carat,
-            d.color,
-            d.clarity,
-            d.cut,
-            d.edge_size_1,
-            d.edge_size_2,
-            hv.price,
-            COALESCE(NULLIF(hv.compare_at_price, 0), hv.price) AS compare_at_price,
-            ROW_NUMBER() OVER (PARTITION BY d.product_id ORDER BY d.id) AS dedup_rank
-          FROM workplace.diamonds d
-          INNER JOIN haravan.warehouse_inventories i ON i.product_id = d.product_id
-          INNER JOIN haravan.warehouses w ON w.id = i.loc_id
-          INNER JOIN haravan.variants hv ON hv.id = d.variant_id
-          WHERE d.qty_available IS NOT NULL AND d.qty_available > 0
-            AND w.name IN ('[HCM] Cửa Hàng HCM', '[HN] Cửa Hàng HN', '[CT] Cửa Hàng Cần Thơ')
-            AND d.edge_size_1 BETWEEN 4.4 AND 4.6
-            AND d.edge_size_2 BETWEEN 4.4 AND 4.6
-        ) d_inner
-        WHERE d_inner.dedup_rank = 1
-      ),
-      NumberedDiamonds AS (
-        SELECT
-          dd.product_id,
-          dd.variant_id,
-          dd.report_no,
-          dd.shape,
-          dd.carat,
-          dd.color,
-          dd.clarity,
-          dd.cut,
-          dd.edge_size_1,
-          dd.edge_size_2,
-          dd.price,
-          dd.compare_at_price,
-          ROW_NUMBER() OVER (ORDER BY dd.edge_size_1, dd.variant_id, dd.product_id) AS rn
-        FROM DedupedDiamonds dd
-      ),
-
-      PairedVariantsWithDiamondObject AS (
-        SELECT
-          ev.*,
-          JSON_BUILD_OBJECT(
-            'product_id', nd.product_id,
-            'variant_id', nd.variant_id,
-            'report_no', nd.report_no,
-            'shape', nd.shape,
-            'carat', nd.carat,
-            'color', nd.color,
-            'clarity', nd.clarity,
-            'cut', nd.cut,
-            'price', nd.price,
-            'compare_at_price', nd.compare_at_price
-          ) AS diamond,
-          nd.rn AS diamond_rn
-        FROM ExpandedVariants ev
-        INNER JOIN NumberedDiamonds nd ON ev.rn = nd.rn
-      ),
-      AggregatedPairedVariants AS (
-        SELECT
-          pv.haravan_product_id,
-          pv.haravan_variant_id,
-          pv.fineness,
-          pv.material_color,
-          pv.ring_size,
-          pv.price,
-          pv.price_compare_at,
-          pv.qty_available,
-          pv.qty_onhand,
-          JSON_AGG(pv.diamond ORDER BY pv.diamond_rn) AS diamonds
-        FROM PairedVariantsWithDiamondObject pv
-        GROUP BY
-          pv.haravan_product_id, pv.haravan_variant_id, pv.fineness, pv.material_color,
-          pv.ring_size, pv.price, pv.price_compare_at, pv.qty_available, pv.qty_onhand
-      )
-      SELECT
-        CAST(p.haravan_product_id AS INT) AS id,
-        p.ecom_title AS title,
-        d.design_code,
-        p.handle,
-        d.diamond_holder,
-        d.ring_band_type,
-        p.haravan_product_type AS product_type,
-        p.has_360,
-        img.images,
-        v_agg.variants
-      FROM ecom.materialized_products p
-      INNER JOIN workplace.designs d ON p.design_id = d.id
-      ${collectionJoinEcomProductsClause}
-      ${linkedCollectionJoinEcomProductsClause}
-      INNER JOIN (
-        SELECT
-          i.product_id,
-          array_agg(i.src ORDER BY i.src) AS images
-        FROM haravan.images i
-        GROUP BY i.product_id
-      ) img ON img.product_id = p.haravan_product_id
-      INNER JOIN (
-        SELECT
-          apv.haravan_product_id,
           JSON_AGG(
             JSON_BUILD_OBJECT(
-              'id', CAST(apv.haravan_variant_id AS INT),
-              'fineness', apv.fineness,
-              'material_color', apv.material_color,
-              'ring_size', apv.ring_size,
-              'price', CAST(apv.price AS Decimal),
-              'price_compare_at', CAST(apv.price_compare_at AS Decimal),
-              'qty_available', apv.qty_available,
-              'qty_onhand', apv.qty_onhand,
-              'diamonds', apv.diamonds
-            ) ORDER BY apv.fineness ${finenessOrder}, apv.price DESC
-          ) AS variants
-        FROM AggregatedPairedVariants apv
-        GROUP BY apv.haravan_product_id
-      ) v_agg ON v_agg.haravan_product_id = p.haravan_product_id
-      WHERE p.haravan_product_id IN (SELECT haravan_product_id FROM FilteredProducts)
-      ${sortString}
-      ${paginationString}
-    `;
-
-    const countSql = `
-      WITH FilteredProducts AS (
-        SELECT p.haravan_product_id
-        FROM ecom.materialized_products p 
-          INNER JOIN workplace.designs d ON d.id = p.design_id
-          ${collectionJoinEcomProductsClause}
-          ${linkedCollectionJoinEcomProductsClause}
-          INNER JOIN ecom.materialized_variants v ON v.haravan_product_id = p.haravan_product_id
-        WHERE 1 = 1 AND (p.haravan_product_type != 'Nhẫn Cưới') ${filterString}
-        GROUP BY p.haravan_product_id
-        ${havingString}
-      ),
-      VariantsWithProductType AS (
-        SELECT v.*, p.haravan_product_type
+              'product_id', dia.product_id,
+              'variant_id', dia.variant_id,
+              'report_no', dia.report_no,
+              'shape', dia.shape,
+              'carat', dia.carat,
+              'color', dia.color,
+              'clarity', dia.clarity,
+              'cut', dia.cut,
+              'edge_size_1', dia.edge_size_1,
+              'edge_size_2', dia.edge_size_2,
+              'compare_at_price', CAST(dia.price AS DECIMAL),
+              'price', CASE
+                WHEN dia.promotions ILIKE '%8%%' THEN ROUND(dia.price * 0.92, 2)
+                ELSE dia.price
+              END
+            )
+          ) AS diamonds
         FROM ecom.materialized_variants v
-        JOIN ecom.materialized_products p ON v.haravan_product_id = p.haravan_product_id
-        WHERE v.haravan_product_id IN (SELECT haravan_product_id FROM FilteredProducts)
-        ${variantFilterString}
-      ),
-      NumberedVariantsBase AS (
-        SELECT
-          v.*,
-          SUM(CASE WHEN v.haravan_product_type = 'Bông Tai' THEN 2 ELSE 1 END)
-            OVER (ORDER BY v.haravan_product_id, v.fineness ${finenessOrder}, v.price DESC, v.haravan_variant_id)
-            AS cumulative_consumption,
-          CASE WHEN v.haravan_product_type = 'Bông Tai' THEN 2 ELSE 1 END AS diamond_consumption
-        FROM VariantsWithProductType v
-      ),
-      ExpandedVariants AS (
-        SELECT
-          v.haravan_product_id,
-          generate_series(
-            v.cumulative_consumption - v.diamond_consumption + 1,
-            v.cumulative_consumption
-          ) AS rn
-        FROM NumberedVariantsBase v
-      ),
-      DedupedDiamonds AS (
-        SELECT d_inner.*
-        FROM (
-          SELECT
-            d.*,
-            ROW_NUMBER() OVER (PARTITION BY d.product_id ORDER BY d.id) AS dedup_rank
-          FROM workplace.diamonds d
-          INNER JOIN haravan.warehouse_inventories i ON i.product_id = d.product_id
-          INNER JOIN haravan.warehouses w ON w.id = i.loc_id
-          WHERE d.qty_available > 0
-            AND w.name IN ('[HCM] Cửa Hàng HCM', '[HN] Cửa Hàng HN', '[CT] Cửa Hàng Cần Thơ')
-            AND d.edge_size_1 BETWEEN 4.4 AND 4.6
-            AND d.edge_size_2 BETWEEN 4.4 AND 4.6
-        ) d_inner
-        WHERE d_inner.dedup_rank = 1
-      ),
-      NumberedDiamonds AS (
-        SELECT ROW_NUMBER() OVER (ORDER BY dd.edge_size_1, dd.variant_id, dd.product_id) AS rn
-        FROM DedupedDiamonds dd
+        INNER JOIN ecom.jewelry_diamond_pairs jdp 
+          ON CAST(jdp.haravan_product_id AS BIGINT) = v.haravan_product_id 
+         AND CAST(jdp.haravan_variant_id AS BIGINT) = v.haravan_variant_id
+        INNER JOIN workplace.diamonds dia 
+          ON dia.product_id = CAST(jdp.haravan_diamond_product_id AS BIGINT) 
+         AND dia.variant_id = CAST(jdp.haravan_diamond_variant_id AS BIGINT)
+        INNER JOIN haravan.warehouse_inventories inven 
+          ON inven.product_id = dia.product_id
+        INNER JOIN haravan.warehouses house 
+          ON house.id = inven.loc_id
+        WHERE v.haravan_product_id = p.haravan_product_id
+          AND jdp.is_active = TRUE
+          AND house.name IN (
+            '[HCM] Cửa Hàng HCM',
+            '[HN] Cửa Hàng HN',
+            '[CT] Cửa Hàng Cần Thơ'
+          )
+          AND dia.qty_available IS NOT NULL 
+          AND dia.qty_available > 0
+          AND dia.edge_size_1 > 4.4 AND dia.edge_size_2 > 4.4
+          AND dia.edge_size_1 < 4.6 AND dia.edge_size_2 < 4.6
+        GROUP BY v.haravan_product_id, v.haravan_variant_id, v.sku, v.price, 
+                 v.price_compare_at, v.material_color, v.fineness, v.ring_size, 
+                 v.qty_available, v.qty_onhand, v.applique_material, 
+                 v.estimated_gold_weight, v.ring_band_style, v.ring_head_style
+        ORDER BY v.fineness ${finenessOrder}, v.price DESC
+      ) v ON TRUE
+    `;
+  } else {
+    variantJsonBuildObject = `
+      JSON_BUILD_OBJECT(
+        'id', CAST(v.haravan_variant_id AS INT),
+        'fineness', v.fineness,
+        'material_color', v.material_color,
+        'ring_size', v.ring_size,
+        'price', CAST(v.price AS DECIMAL),
+        'price_compare_at', CAST(v.price_compare_at AS DECIMAL),
+        'qty_available', v.qty_available,
+        'qty_onhand', v.qty_onhand
       )
-      SELECT
-        COUNT(DISTINCT ev.haravan_product_id) AS total,
-        (SELECT ARRAY_AGG(DISTINCT mv.material_color) FROM ecom.materialized_variants mv) AS material_colors,
-        (SELECT ARRAY_AGG(DISTINCT mv.fineness) FROM ecom.materialized_variants mv) AS fineness
-      FROM ExpandedVariants ev
-      INNER JOIN NumberedDiamonds nd ON ev.rn = nd.rn
     `;
 
-    return { dataSql, countSql };
+    lateralJoinClause = `
+      INNER JOIN LATERAL (
+        SELECT *
+        FROM ecom.materialized_variants v
+        WHERE v.haravan_product_id = p.haravan_product_id
+        ORDER BY v.fineness ${finenessOrder}, v.price DESC
+      ) v ON TRUE
+    `;
   }
-
-  // Default logic for when matched_diamonds is false
-  const variantJsonBuildObject = `
-    JSON_BUILD_OBJECT(
-      'id', CAST(v.haravan_variant_id AS INT),
-      'fineness', v.fineness,
-      'material_color', v.material_color,
-      'ring_size', v.ring_size,
-      'price', CAST(v.price AS Decimal),
-      'price_compare_at', CAST(v.price_compare_at AS Decimal),
-      'qty_available', v.qty_available,
-      'qty_onhand', v.qty_onhand
-    )
-  `;
-
-  // Default logic for when matched_diammonds is false
-  const lateralJoinClause = `
-    INNER JOIN LATERAL (
-      SELECT *
-      FROM ecom.materialized_variants v
-      WHERE v.haravan_product_id = p.haravan_product_id
-      ORDER BY v.fineness ${finenessOrder}, v.price DESC
-    ) v ON TRUE
-  `;
 
   const dataSql = `
     SELECT  
@@ -327,28 +177,133 @@ export function buildQuery(jsonParams) {
 
   const countSql = `
     SELECT
-    COUNT(*) AS total,
-     (SELECT ARRAY_AGG(DISTINCT mv.material_color ) FROM ecom.materialized_variants mv) AS material_colors,
-     (SELECT ARRAY_AGG(DISTINCT mv.fineness ) FROM ecom.materialized_variants mv) AS fineness
+      COUNT(*) AS total,
+      (SELECT ARRAY_AGG(DISTINCT mv.material_color)
+       FROM ecom.materialized_variants mv) AS material_colors,
+      (SELECT ARRAY_AGG(DISTINCT mv.fineness)
+       FROM ecom.materialized_variants mv) AS fineness
     FROM (
-        SELECT p.haravan_product_id
-        FROM ecom.materialized_products p 
-            INNER JOIN workplace.designs d ON d.id = p.design_id
-            ${collectionJoinEcomProductsClause}
-            ${linkedCollectionJoinEcomProductsClause}
-            INNER JOIN ecom.materialized_variants v ON v.haravan_product_id = p.haravan_product_id
-        WHERE 1 = 1 
-          AND (p.haravan_product_type != 'Nhẫn Cưới')
+      SELECT p.haravan_product_id
+      FROM ecom.materialized_products p
+        INNER JOIN workplace.designs d ON d.id = p.design_id
+        ${collectionJoinEcomProductsClause}
+        ${linkedCollectionJoinEcomProductsClause}
+        INNER JOIN ecom.materialized_variants v
+          ON v.haravan_product_id = p.haravan_product_id
+        ${diamondJoinsForCount}
+      WHERE 1 = 1
+        AND p.haravan_product_type != 'Nhẫn Cưới'
         ${filterString}
-        GROUP BY p.haravan_product_id
-        ${havingString}
-      ) as sub
+        ${diamondFiltersForCount}
+      GROUP BY p.haravan_product_id
+      ${havingString}
+    ) AS sub;
   `;
 
   return {
     dataSql,
     countSql
   };
+}
+
+export function buildQuerySingle({ matchedDiamonds }) {
+  let variantJsonBuildObject = `
+     \n
+    JSON_BUILD_OBJECT(
+      'id', CAST(v.haravan_variant_id AS INT),
+      'fineness', v.fineness,
+      'material_color', v.material_color,
+      'ring_size', v.ring_size,
+      'price', CAST(v.price AS DECIMAL),
+      'price_compare_at', CAST(v.price_compare_at AS DECIMAL),
+      'applique_material', v.applique_material,
+      'estimated_gold_weight', v.estimated_gold_weight,
+      'qty_available', v.qty_available,
+      'qty_onhand', v.qty_onhand 
+    ) \n
+  `;
+
+  let lateralJoinClause = `
+    \n 
+    INNER JOIN LATERAL (
+      SELECT *
+      FROM ecom.materialized_variants v
+      WHERE v.haravan_product_id = p.haravan_product_id
+      ORDER BY v.fineness, v.price DESC
+    ) v ON TRUE 
+    \n
+  `;
+
+  if (matchedDiamonds) {
+    variantJsonBuildObject = `
+      \n
+      JSON_BUILD_OBJECT(
+        'id', CAST(v.haravan_variant_id AS INT),
+        'fineness', v.fineness,
+        'material_color', v.material_color,
+        'ring_size', v.ring_size,
+        'price', CAST(v.price AS DECIMAL),
+        'price_compare_at', CAST(v.price_compare_at AS DECIMAL),
+        'applique_material', v.applique_material,
+        'estimated_gold_weight', v.estimated_gold_weight,
+        'qty_available', v.qty_available,
+        'qty_onhand', v.qty_onhand,
+        'diamonds', v.diamonds
+      ) 
+      \n
+    `;
+
+    lateralJoinClause = `
+      \n 
+      INNER JOIN LATERAL (
+        SELECT 
+          v.*,
+          JSON_AGG(
+            JSON_BUILD_OBJECT(
+              'product_id', dia.product_id,
+              'variant_id', dia.variant_id,
+              'report_no', dia.report_no,
+              'shape', dia.shape,
+              'carat', dia.carat,
+              'color', dia.color,
+              'clarity', dia.clarity,
+              'cut', dia.cut,
+              'edge_size_1', dia.edge_size_1,
+              'edge_size_2', dia.edge_size_2,
+              'compare_at_price', CAST(dia.price AS DECIMAL),
+              'price', CASE
+                WHEN dia.promotions ILIKE '%8%%' THEN ROUND(dia.price * 0.92, 2)
+                ELSE dia.price
+              END
+            )
+          ) AS diamonds
+        FROM ecom.materialized_variants v
+        INNER JOIN ecom.jewelry_diamond_pairs jdp 
+          ON CAST(jdp.haravan_product_id AS BIGINT) = v.haravan_product_id 
+         AND CAST(jdp.haravan_variant_id AS BIGINT) = v.haravan_variant_id
+        INNER JOIN workplace.diamonds dia 
+          ON dia.product_id = CAST(jdp.haravan_diamond_product_id AS BIGINT) 
+         AND dia.variant_id = CAST(jdp.haravan_diamond_variant_id AS BIGINT)
+        INNER JOIN haravan.warehouse_inventories inven 
+          ON inven.product_id = dia.product_id
+        INNER JOIN haravan.warehouses house 
+          ON house.id = inven.loc_id
+        WHERE v.haravan_product_id = p.haravan_product_id
+          AND jdp.is_active = TRUE
+          AND house.name IN ('[HCM] Cửa Hàng HCM', '[HN] Cửa Hàng HN', '[CT] Cửa Hàng Cần Thơ')
+          AND dia.qty_available IS NOT NULL AND dia.qty_available > 0
+          AND dia.edge_size_1 > 4.4 AND dia.edge_size_2 > 4.4
+          AND dia.edge_size_1 < 4.6 AND dia.edge_size_2 < 4.6
+        GROUP BY v.haravan_product_id, v.haravan_variant_id, v.sku, v.price, v.price_compare_at, 
+                 v.material_color, v.fineness, v.ring_size, v.qty_available, v.qty_onhand, 
+                 v.applique_material, v.estimated_gold_weight, v.ring_band_style, v.ring_head_style
+        ORDER BY v.fineness, v.price DESC
+      ) v ON TRUE 
+      \n
+    `;
+  }
+
+  return { variantJsonBuildObject, lateralJoinClause };
 }
 
 export function aggregateQuery(jsonParams) {

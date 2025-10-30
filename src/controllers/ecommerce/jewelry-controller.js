@@ -46,11 +46,14 @@ export default class JewelryController {
 
   static async show(ctx) {
     const { id } = ctx.req.param();
+    const { matched_diamonds } = ctx.req.query();
     if (isNaN(Number(id))) {
       return ctx.json({ error: "Invalid id. Must be a number." }, 400);
     }
     const productService = new Ecommerce.ProductService(ctx.env);
-    const result = await productService.getJewelryById(id);
+    const result = await productService.getJewelryById(id, {
+      matchedDiamonds: matched_diamonds === "true"
+    });
     if (!result) {
       return ctx.json({ error: "Jewelry not found" }, 404);
     }
