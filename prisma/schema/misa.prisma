@@ -288,13 +288,14 @@ model purchase_vouchers {
   @@schema("misa")
 }
 
-model misa_users {
+model misa_user {
   uuid                String    @id @db.Uuid
   employee_code       String?   @unique @db.VarChar(255)
   haravan_id          BigInt    @unique
   email               String?   @db.VarChar(255)
   database_created_at DateTime? @default(now())
   database_updated_at DateTime?
+  haravan_orders      Order[]
 
   @@map("users")
   @@schema("misa")
