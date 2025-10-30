@@ -160,3 +160,26 @@ model Order {
   @@map("orders")
   @@schema("haravan")
 }
+
+
+model User {
+  uuid                  String    @id @db.VarChar
+  id                    BigInt?   @unique(map: "ix_haravan_users_id")
+  email                 String?   @db.VarChar
+  first_name            String?   @db.VarChar
+  last_name             String?   @db.VarChar
+  phone                 String?   @db.VarChar
+  account_owner         Boolean?
+  bio                   String?
+  im                    String?
+  receive_announcements Int?
+  url                   String?
+  user_type             String?   @db.VarChar
+  permissions           Json?
+  database_created_at   DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at   DateTime? @default(now()) @db.Timestamp(6)
+
+  @@index([uuid], map: "ix_haravan_users_uuid")
+  @@map("users")
+  @@schema("haravan")
+}
