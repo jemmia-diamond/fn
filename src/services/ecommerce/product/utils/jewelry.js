@@ -217,7 +217,9 @@ export function buildQuerySingle({ matchedDiamonds }) {
       'price', CAST(v.price AS DECIMAL),
       'price_compare_at', CAST(v.price_compare_at AS DECIMAL),
       'applique_material', v.applique_material,
-      'estimated_gold_weight', v.estimated_gold_weight
+      'estimated_gold_weight', v.estimated_gold_weight,
+      'qty_available', v.qty_available,
+      'qty_onhand', v.qty_onhand 
     ) \n
   `;
 
@@ -243,6 +245,7 @@ export function buildQuerySingle({ matchedDiamonds }) {
         'price', CAST(v.price AS DECIMAL),
         'price_compare_at', CAST(v.price_compare_at AS DECIMAL),
         'applique_material', v.applique_material,
+        'estimated_gold_weight', v.estimated_gold_weight,
         'qty_available', v.qty_available,
         'qty_onhand', v.qty_onhand,
         'diamonds', v.diamonds
