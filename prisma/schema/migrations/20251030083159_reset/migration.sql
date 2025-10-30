@@ -11,7 +11,7 @@ CREATE SCHEMA IF NOT EXISTS "ecom";
 ALTER TABLE "payment"."manual_payments" ADD COLUMN     "misa_synced_at" TIMESTAMP(6);
 
 -- CreateTable
-CREATE TABLE "ecom"."leads" (
+CREATE TABLE IF NOT EXISTS "ecom"."leads" (
     "id" SERIAL NOT NULL,
     "raw_data" JSONB,
     "database_created_at" TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP,
@@ -21,7 +21,7 @@ CREATE TABLE "ecom"."leads" (
 );
 
 -- CreateTable
-CREATE TABLE "ecom"."products" (
+CREATE TABLE IF NOT EXISTS "ecom"."products" (
     "haravan_product_id" BIGINT,
     "haravan_product_type" TEXT,
     "design_id" BIGINT,
@@ -42,7 +42,7 @@ CREATE TABLE "ecom"."products" (
 );
 
 -- CreateTable
-CREATE TABLE "ecom"."qr_generator" (
+CREATE TABLE IF NOT EXISTS "ecom"."qr_generator" (
     "id" VARCHAR NOT NULL,
     "bank_code" VARCHAR,
     "bank_account_number" VARCHAR,
@@ -71,7 +71,7 @@ CREATE TABLE "ecom"."qr_generator" (
 );
 
 -- CreateTable
-CREATE TABLE "ecom"."variants" (
+CREATE TABLE IF NOT EXISTS "ecom"."variants" (
     "hararvan_product_id" BIGINT,
     "haravan_variant_id" BIGINT,
     "sku" VARCHAR,
@@ -84,7 +84,7 @@ CREATE TABLE "ecom"."variants" (
 );
 
 -- CreateTable
-CREATE TABLE "ecom"."wedding_rings" (
+CREATE TABLE IF NOT EXISTS "ecom"."wedding_rings" (
     "id" INTEGER,
     "title" TEXT,
     "max_price" DECIMAL,
@@ -93,7 +93,7 @@ CREATE TABLE "ecom"."wedding_rings" (
 );
 
 -- CreateTable
-CREATE TABLE "erpnext"."lead_sources" (
+CREATE TABLE IF NOT EXISTS "erpnext"."lead_sources" (
     "uuid" UUID NOT NULL DEFAULT gen_random_uuid(),
     "name" VARCHAR(255) NOT NULL,
     "pancake_page_id" VARCHAR,
@@ -104,7 +104,7 @@ CREATE TABLE "erpnext"."lead_sources" (
 );
 
 -- CreateTable
-CREATE TABLE "larksuite"."buyback_exchange_approval_instances" (
+CREATE TABLE IF NOT EXISTS "larksuite"."buyback_exchange_approval_instances" (
     "id" SERIAL NOT NULL,
     "instance_code" VARCHAR,
     "serial_number" VARCHAR,
@@ -127,7 +127,7 @@ CREATE TABLE "larksuite"."buyback_exchange_approval_instances" (
 );
 
 -- CreateTable
-CREATE TABLE "larksuite"."crm_lark_message" (
+CREATE TABLE IF NOT EXISTS "larksuite"."crm_lark_message" (
     "id" UUID NOT NULL,
     "parent_id" UUID,
     "crm_id" VARCHAR,
@@ -142,7 +142,7 @@ CREATE TABLE "larksuite"."crm_lark_message" (
 );
 
 -- CreateTable
-CREATE TABLE "larksuite"."cskh" (
+CREATE TABLE IF NOT EXISTS "larksuite"."cskh" (
     "instance_code" TEXT,
     "instance_type" TEXT,
     "order_code" TEXT,
@@ -157,7 +157,7 @@ CREATE TABLE "larksuite"."cskh" (
 );
 
 -- CreateTable
-CREATE TABLE "larksuite"."customer_appointments" (
+CREATE TABLE IF NOT EXISTS "larksuite"."customer_appointments" (
     "uuid" VARCHAR NOT NULL,
     "id" VARCHAR,
     "lead_sale_name" VARCHAR,
@@ -186,7 +186,7 @@ CREATE TABLE "larksuite"."customer_appointments" (
 );
 
 -- CreateTable
-CREATE TABLE "larksuite"."departments" (
+CREATE TABLE IF NOT EXISTS "larksuite"."departments" (
     "department_id" TEXT NOT NULL,
     "open_department_id" TEXT,
     "name" TEXT,
@@ -196,7 +196,7 @@ CREATE TABLE "larksuite"."departments" (
 );
 
 -- CreateTable
-CREATE TABLE "larksuite"."groups" (
+CREATE TABLE IF NOT EXISTS "larksuite"."groups" (
     "group_id" TEXT NOT NULL,
     "group_name" TEXT,
 
@@ -204,7 +204,7 @@ CREATE TABLE "larksuite"."groups" (
 );
 
 -- CreateTable
-CREATE TABLE "larksuite"."instances" (
+CREATE TABLE IF NOT EXISTS "larksuite"."instances" (
     "uuid" TEXT NOT NULL,
     "serial_number" TEXT,
     "instance_code" TEXT,
@@ -222,7 +222,7 @@ CREATE TABLE "larksuite"."instances" (
 );
 
 -- CreateTable
-CREATE TABLE "larksuite"."lark_line_items_payment" (
+CREATE TABLE IF NOT EXISTS "larksuite"."lark_line_items_payment" (
     "lark_record_id" VARCHAR(255) NOT NULL,
     "order_id" VARCHAR(50) NOT NULL,
     "variant_id" VARCHAR NOT NULL,
@@ -231,7 +231,7 @@ CREATE TABLE "larksuite"."lark_line_items_payment" (
 );
 
 -- CreateTable
-CREATE TABLE "larksuite"."lark_order_qr_generator" (
+CREATE TABLE IF NOT EXISTS "larksuite"."lark_order_qr_generator" (
     "haravan_order_id" BIGINT NOT NULL,
     "lark_record_id" VARCHAR(255) NOT NULL,
 
@@ -239,7 +239,7 @@ CREATE TABLE "larksuite"."lark_order_qr_generator" (
 );
 
 -- CreateTable
-CREATE TABLE "larksuite"."lark_variants" (
+CREATE TABLE IF NOT EXISTS "larksuite"."lark_variants" (
     "variant_id" BIGINT NOT NULL,
     "lark_record_id" VARCHAR(255),
 
@@ -247,7 +247,7 @@ CREATE TABLE "larksuite"."lark_variants" (
 );
 
 -- CreateTable
-CREATE TABLE "larksuite"."lark_warehouse_inventories" (
+CREATE TABLE IF NOT EXISTS "larksuite"."lark_warehouse_inventories" (
     "id" SERIAL NOT NULL,
     "lark_record_id" VARCHAR,
     "qty_onhand" BIGINT,
@@ -261,7 +261,7 @@ CREATE TABLE "larksuite"."lark_warehouse_inventories" (
 );
 
 -- CreateTable
-CREATE TABLE "larksuite"."promotion_approval" (
+CREATE TABLE IF NOT EXISTS "larksuite"."promotion_approval" (
     "id" SERIAL NOT NULL,
     "order_code" VARCHAR,
     "reason" VARCHAR,
@@ -280,7 +280,7 @@ CREATE TABLE "larksuite"."promotion_approval" (
 );
 
 -- CreateTable
-CREATE TABLE "larksuite"."shifts" (
+CREATE TABLE IF NOT EXISTS "larksuite"."shifts" (
     "shift_id" TEXT NOT NULL,
     "shift_name" TEXT,
 
@@ -288,7 +288,7 @@ CREATE TABLE "larksuite"."shifts" (
 );
 
 -- CreateTable
-CREATE TABLE "larksuite"."user_daily_shifts" (
+CREATE TABLE IF NOT EXISTS "larksuite"."user_daily_shifts" (
     "day_no" INTEGER NOT NULL,
     "group_id" TEXT NOT NULL,
     "month" INTEGER NOT NULL,
@@ -300,7 +300,7 @@ CREATE TABLE "larksuite"."user_daily_shifts" (
 );
 
 -- CreateTable
-CREATE TABLE "larksuite"."users" (
+CREATE TABLE IF NOT EXISTS "larksuite"."users" (
     "user_id" TEXT NOT NULL,
     "open_id" TEXT,
     "union_id" TEXT,
@@ -331,7 +331,7 @@ CREATE TABLE "larksuite"."users" (
 );
 
 -- CreateTable
-CREATE TABLE "misa"."inventory_items" (
+CREATE TABLE IF NOT EXISTS "misa"."inventory_items" (
     "uuid" VARCHAR NOT NULL,
     "sku" VARCHAR,
     "database_created_at" TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP,
@@ -341,7 +341,7 @@ CREATE TABLE "misa"."inventory_items" (
 );
 
 -- CreateTable
-CREATE TABLE "misa"."items" (
+CREATE TABLE IF NOT EXISTS "misa"."items" (
     "uuid" VARCHAR(36) NOT NULL,
     "id" VARCHAR(50),
     "dictionary_type" INTEGER,
@@ -423,7 +423,7 @@ CREATE TABLE "misa"."items" (
 );
 
 -- CreateTable
-CREATE TABLE "misa"."purchase_voucher_details" (
+CREATE TABLE IF NOT EXISTS "misa"."purchase_voucher_details" (
     "uuid" VARCHAR(36) NOT NULL,
     "ref_detail_id" VARCHAR(36) NOT NULL,
     "refid" VARCHAR(36),
@@ -532,7 +532,7 @@ CREATE TABLE "misa"."purchase_voucher_details" (
 );
 
 -- CreateTable
-CREATE TABLE "misa"."purchase_vouchers" (
+CREATE TABLE IF NOT EXISTS "misa"."purchase_vouchers" (
     "uuid" VARCHAR(36) NOT NULL,
     "refid" VARCHAR(50),
     "branch_id" VARCHAR(36),
@@ -600,7 +600,7 @@ CREATE TABLE "misa"."purchase_vouchers" (
 );
 
 -- CreateTable
-CREATE TABLE "misa"."warehouse_inventories" (
+CREATE TABLE IF NOT EXISTS "misa"."warehouse_inventories" (
     "uuid" VARCHAR(36) NOT NULL,
     "inventory_item_id" VARCHAR(36) NOT NULL,
     "inventory_item_code" VARCHAR(50),
@@ -621,7 +621,7 @@ CREATE TABLE "misa"."warehouse_inventories" (
 );
 
 -- CreateTable
-CREATE TABLE "payment"."sepay_transaction" (
+CREATE TABLE IF NOT EXISTS "payment"."sepay_transaction" (
     "id" VARCHAR(50) NOT NULL,
     "bank_brand_name" VARCHAR,
     "account_number" VARCHAR,
@@ -642,70 +642,70 @@ CREATE TABLE "payment"."sepay_transaction" (
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "leads_custom_uuid_key" ON "ecom"."leads"("custom_uuid");
+CREATE UNIQUE INDEX IF NOT EXISTS "leads_custom_uuid_key" ON "ecom"."leads"("custom_uuid");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "products_unique_haravan_id" ON "ecom"."products"("haravan_product_id");
+CREATE UNIQUE INDEX IF NOT EXISTS "products_unique_haravan_id" ON "ecom"."products"("haravan_product_id");
 
 -- CreateIndex
-CREATE INDEX "ix_ecom_qr_generator_id" ON "ecom"."qr_generator"("id");
+CREATE INDEX IF NOT EXISTS "ix_ecom_qr_generator_id" ON "ecom"."qr_generator"("id");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "unique_haravan_variant_id" ON "ecom"."variants"("haravan_variant_id");
+CREATE UNIQUE INDEX IF NOT EXISTS "unique_haravan_variant_id" ON "ecom"."variants"("haravan_variant_id");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "wedding_rings_id_key" ON "ecom"."wedding_rings"("id");
+CREATE UNIQUE INDEX IF NOT EXISTS "wedding_rings_id_key" ON "ecom"."wedding_rings"("id");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "lead_sources_name_key" ON "erpnext"."lead_sources"("name");
+CREATE UNIQUE INDEX IF NOT EXISTS "lead_sources_name_key" ON "erpnext"."lead_sources"("name");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "buyback_exchange_approval_instances_instance_code_key" ON "larksuite"."buyback_exchange_approval_instances"("instance_code");
+CREATE UNIQUE INDEX IF NOT EXISTS "buyback_exchange_approval_instances_instance_code_key" ON "larksuite"."buyback_exchange_approval_instances"("instance_code");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "ix_larksuite_customer_appointments_id" ON "larksuite"."customer_appointments"("id");
+CREATE UNIQUE INDEX IF NOT EXISTS "ix_larksuite_customer_appointments_id" ON "larksuite"."customer_appointments"("id");
 
 -- CreateIndex
-CREATE INDEX "ix_larksuite_customer_appointments_uuid" ON "larksuite"."customer_appointments"("uuid");
+CREATE INDEX IF NOT EXISTS "ix_larksuite_customer_appointments_uuid" ON "larksuite"."customer_appointments"("uuid");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "departments_open_department_id_key" ON "larksuite"."departments"("open_department_id");
+CREATE UNIQUE INDEX IF NOT EXISTS "departments_open_department_id_key" ON "larksuite"."departments"("open_department_id");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "instances_serial_number_key" ON "larksuite"."instances"("serial_number");
+CREATE UNIQUE INDEX IF NOT EXISTS "instances_serial_number_key" ON "larksuite"."instances"("serial_number");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "instances_instance_code_key" ON "larksuite"."instances"("instance_code");
+CREATE UNIQUE INDEX IF NOT EXISTS "instances_instance_code_key" ON "larksuite"."instances"("instance_code");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "ix_larksuite_warehouse_inventories_lark_id" ON "larksuite"."lark_warehouse_inventories"("id");
+CREATE UNIQUE INDEX IF NOT EXISTS "ix_larksuite_warehouse_inventories_lark_id" ON "larksuite"."lark_warehouse_inventories"("id");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "instance_code_unique" ON "larksuite"."promotion_approval"("instance_code");
+CREATE UNIQUE INDEX IF NOT EXISTS "instance_code_unique" ON "larksuite"."promotion_approval"("instance_code");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "users_open_id_key" ON "larksuite"."users"("open_id");
+CREATE UNIQUE INDEX IF NOT EXISTS "users_open_id_key" ON "larksuite"."users"("open_id");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "users_union_id_key" ON "larksuite"."users"("union_id");
+CREATE UNIQUE INDEX IF NOT EXISTS "users_union_id_key" ON "larksuite"."users"("union_id");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "ix_misa_inventory_items_sku" ON "misa"."inventory_items"("sku");
+CREATE UNIQUE INDEX IF NOT EXISTS "ix_misa_inventory_items_sku" ON "misa"."inventory_items"("sku");
 
 -- CreateIndex
-CREATE INDEX "ix_misa_inventory_items_uuid" ON "misa"."inventory_items"("uuid");
+CREATE INDEX IF NOT EXISTS "ix_misa_inventory_items_uuid" ON "misa"."inventory_items"("uuid");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "ix_misa_items_id" ON "misa"."items"("id");
+CREATE UNIQUE INDEX IF NOT EXISTS "ix_misa_items_id" ON "misa"."items"("id");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "purchase_voucher_details_ref_detail_id_key" ON "misa"."purchase_voucher_details"("ref_detail_id");
+CREATE UNIQUE INDEX IF NOT EXISTS "purchase_voucher_details_ref_detail_id_key" ON "misa"."purchase_voucher_details"("ref_detail_id");
 
 -- CreateIndex
-CREATE INDEX "ix_misa_purchase_voucher_details_refid" ON "misa"."purchase_voucher_details"("refid");
+CREATE INDEX IF NOT EXISTS "ix_misa_purchase_voucher_details_refid" ON "misa"."purchase_voucher_details"("refid");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "ix_misa_purchase_vouchers_refid" ON "misa"."purchase_vouchers"("refid");
+CREATE UNIQUE INDEX IF NOT EXISTS "ix_misa_purchase_vouchers_refid" ON "misa"."purchase_vouchers"("refid");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "users_haravan_id_key" ON "misa"."users"("haravan_id");
+CREATE UNIQUE INDEX IF NOT EXISTS "users_haravan_id_key" ON "misa"."users"("haravan_id");
