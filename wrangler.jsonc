@@ -177,6 +177,12 @@
       }
     ]
   },
+  "r2_buckets": [
+      {
+        "binding": "JEMMIA_ERP_R2_STORAGE",
+        "bucket_name": "jemmia-erp"
+      }
+  ],
   "triggers": {
     "crons": [
       "0 * * * *",
