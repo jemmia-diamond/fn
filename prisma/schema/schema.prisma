@@ -7,5 +7,5 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  schemas  = ["ecom", "erpnext", "inventory_cms", "larksuite", "misa", "payment"]
+  schemas  = ["ecom", "erpnext", "haravan", "inventory_cms", "larksuite", "misa", "payment"]
 }
