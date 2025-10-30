@@ -154,6 +154,8 @@ model Order {
   discount_applications                  Json?
   database_created_at                    DateTime? @default(now()) @db.Timestamp(6)
   database_updated_at                    DateTime? @default(now()) @db.Timestamp(6)
+  qr_payments qrPaymentTransaction[]
+  manual_payments manualPaymentTransaction[]
 
   @@map("orders")
   @@schema("haravan")
