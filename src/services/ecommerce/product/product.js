@@ -4,6 +4,7 @@ import { buildQuery } from "services/ecommerce/product/utils/jewelry";
 import { buildQueryV2 } from "services/ecommerce/product/utils/jewelry-v2";
 import { buildWeddingRingsQuery } from "services/ecommerce/product/utils/wedding-ring";
 import { JEWELRY_IMAGE } from "src/controllers/ecommerce/constant";
+import * as Sentry from "@sentry/cloudflare";
 
 export default class ProductService {
   constructor(env) {
@@ -11,17 +12,22 @@ export default class ProductService {
   }
 
   async getJewelryData(jsonParams) {
-    const { dataSql, countSql } = buildQuery(jsonParams);
+    try {
+      const { dataSql, countSql } = buildQuery(jsonParams);
 
-    const data = await this.db.$queryRaw`${Prisma.raw(dataSql)}`;
-    const count = await this.db.$queryRaw`${Prisma.raw(countSql)}`;
+      const data = await this.db.$queryRaw`${Prisma.raw(dataSql)}`;
+      const count = await this.db.$queryRaw`${Prisma.raw(countSql)}`;
 
-    return {
-      data,
-      count: count.length ? Number(count[0].total) : 0,
-      material_colors: count.length ? count[0].material_colors : [],
-      fineness: count.length ? count[0].fineness : []
-    };
+      return {
+        data,
+        count: count.length ? Number(count[0].total) : 0,
+        material_colors: count.length ? count[0].material_colors : [],
+        fineness: count.length ? count[0].fineness : []
+      };
+    } catch (e) {
+      Sentry.captureException(e);
+      throw e;
+    }
   }
 
   async getJewelry(jsonParams) {

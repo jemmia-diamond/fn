@@ -35,7 +35,8 @@ export default class JewelryController {
           .map((v) => Number(v.trim()))
           .filter((n) => Number.isInteger(n) && n > 0)
         : [],
-      linked_collections: params.linked_collections ? params.linked_collections.split(",") : []
+      linked_collections: params.linked_collections ? params.linked_collections.split(",") : [],
+      matched_diamonds: params.matched_diamonds === "true"
     };
 
     const productService = new Ecommerce.ProductService(ctx.env);
