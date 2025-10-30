@@ -43,7 +43,7 @@ model qrPaymentTransaction {
   transfer_status           String?   @db.VarChar
   haravan_order_number      String?   @db.VarChar
   haravan_order_status      String?   @db.VarChar
-  haravan_order_id          Int?
+  haravan_order_id          BigInt?
   haravan_order_total_price BigInt?
   created_at                DateTime? @default(now()) @db.Timestamp(6)
   updated_at                DateTime? @default(now()) @db.Timestamp(6)
@@ -55,8 +55,7 @@ model qrPaymentTransaction {
   misa_synced               Boolean   @default(false)
   misa_synced_at            DateTime? @db.Timestamp(6)
   misa_sync_guid            String?   @db.VarChar(255)
-  misa_sync_error_msg       String?
-
+  misa_sync_error_msg       String?   @db.Text
   @@index([id], map: "ix_ecom_qr_generator_id")
   @@map("qr_generator")
   @@schema("ecom")

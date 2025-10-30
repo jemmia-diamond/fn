@@ -118,6 +118,7 @@ model contacts {
   @@schema("erpnext")
 }
 
+
 model customers {
   uuid                           String    @id @db.Uuid
   name                           String    @unique @db.VarChar(255)

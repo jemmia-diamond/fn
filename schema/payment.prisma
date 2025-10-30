@@ -43,3 +43,4 @@ model sepay_transaction {
 
   @@schema("payment")
 }
+
