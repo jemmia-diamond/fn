@@ -1,4 +1,4 @@
-model orders {
+model Order {
   uuid                                   String    @id @db.VarChar(36)
   id                                     Int?      @unique(map: "ix_haravan_orders_id")
   billing_address_id                     BigInt?
@@ -155,5 +155,6 @@ model orders {
   database_created_at                    DateTime? @default(now()) @db.Timestamp(6)
   database_updated_at                    DateTime? @default(now()) @db.Timestamp(6)
 
+  @@map("orders")
   @@schema("haravan")
 }

@@ -1,4 +1,4 @@
-model manual_payments {
+model manualPaymentTransaction {
   uuid                String    @id @db.Uuid
   payment_type        String?   @db.VarChar(255)
   branch              String?   @db.VarChar(255)
@@ -21,6 +21,7 @@ model manual_payments {
   misa_synced_at      DateTime? @db.Timestamp(6)
 
   @@index([uuid])
+  @@map("manual_payments")
   @@schema("payment")
 }
 
