@@ -67,11 +67,23 @@ export function buildQuery(jsonParams) {
         SELECT d_inner.*
         FROM (
           SELECT
-            d.*,
+            d.product_id,
+            d.variant_id,
+            d.report_no,
+            d.shape,
+            d.carat,
+            d.color,
+            d.clarity,
+            d.cut,
+            d.edge_size_1,
+            d.edge_size_2,
+            hv.price,
+            COALESCE(NULLIF(hv.compare_at_price, 0), hv.price) AS compare_at_price,
             ROW_NUMBER() OVER (PARTITION BY d.product_id ORDER BY d.id) AS dedup_rank
           FROM workplace.diamonds d
           INNER JOIN haravan.warehouse_inventories i ON i.product_id = d.product_id
           INNER JOIN haravan.warehouses w ON w.id = i.loc_id
+          INNER JOIN haravan.variants hv ON hv.id = d.variant_id
           WHERE d.qty_available IS NOT NULL AND d.qty_available > 0
             AND w.name IN ('[HCM] Cửa Hàng HCM', '[HN] Cửa Hàng HN', '[CT] Cửa Hàng Cần Thơ')
             AND d.edge_size_1 BETWEEN 4.4 AND 4.6
@@ -91,6 +103,8 @@ export function buildQuery(jsonParams) {
           dd.cut,
           dd.edge_size_1,
           dd.edge_size_2,
+          dd.price,
+          dd.compare_at_price,
           ROW_NUMBER() OVER (ORDER BY dd.edge_size_1, dd.variant_id, dd.product_id) AS rn
         FROM DedupedDiamonds dd
       ),
@@ -106,7 +120,9 @@ export function buildQuery(jsonParams) {
             'carat', nd.carat,
             'color', nd.color,
             'clarity', nd.clarity,
-            'cut', nd.cut
+            'cut', nd.cut,
+            'price', nd.price,
+            'compare_at_price', nd.compare_at_price
           ) AS diamond,
           nd.rn AS diamond_rn
         FROM ExpandedVariants ev
