@@ -230,3 +230,4 @@ model larksuite_users {
   @@map("users")
   @@schema("larksuite")
 }
+

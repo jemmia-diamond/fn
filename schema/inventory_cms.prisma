@@ -1,3 +1,5 @@
+
+
 model inventory_check_lines {
   uuid                 String    @id @db.Uuid
   id                   Int       @unique
