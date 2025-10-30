@@ -14,6 +14,6 @@ model jewelryDiamondPairing {
   @@index([haravan_product_id, haravan_variant_id, is_active])
   @@index([haravan_diamond_product_id, haravan_diamond_variant_id])
   @@map("jewelry_diamond_pairs")
-  @@schema("workplace")
+  @@schema("ecom")
 }
 
