@@ -6,6 +6,7 @@ A serverless function project built with Cloudflare Workers.
 
 - [Node.js](https://nodejs.org/) (LTS version recommended)
 - [pnpm](https://pnpm.io/) package manager
+- [neondb](https://neondb.com/) database
 
 ## Installation
 
@@ -23,6 +24,11 @@ Alternatively, visit the [official pnpm documentation](https://pnpm.io/installat
 
 ```bash
 pnpm install
+```
+
+### First Setup
+```bash
+pnpm run fn:setup
 ```
 
 ## Development
