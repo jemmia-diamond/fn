@@ -259,7 +259,7 @@ export default class SalesOrderService {
           return { success: true, message: "Không có gì thay đổi!" };
         }
 
-        const isSendImagesSuccess = diffAttachments.added_file
+        const isSendImagesSuccess = diffAttachments && diffAttachments.added_file
           ? await Promise.all(
             diffAttachments.added_file.map(async (fileUrl) => {
               const r2Key = SalesOrderService._extractR2KeyFromUrl(fileUrl);
@@ -339,7 +339,7 @@ export default class SalesOrderService {
         return { success: false, message: "Đơn hàng này đã được gửi thông báo từ trước đó!" };
       }
 
-      const isSendImagesSuccess = diffAttachments.added_file
+      const isSendImagesSuccess = diffAttachments && diffAttachments.added_file
         ? await Promise.all(
           diffAttachments.added_file.map(async (fileUrl) => {
             const r2Key = SalesOrderService._extractR2KeyFromUrl(fileUrl);
