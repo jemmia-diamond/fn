@@ -15,6 +15,9 @@ export default {
       await ERP.Selling.SalesOrderService.fillSalesOrderRealDate(env);
       await ERP.Selling.SalesOrderService.fillSerialNumbersToTemporaryOrderItems(env);
       break;
+    case "*/5 * * * *": // At every 5th minute
+      await new Ecommerce.JewelryDiamondPairService(env).processOutOfStockDiamonds();
+      break;
     case "*/10 * * * *": // At every 10th minute
       await ERP.Selling.SerialService.syncSerialsToERP(env);
       await ERP.CRM.LeadService.cronSyncLeadsToDatabase(env);
