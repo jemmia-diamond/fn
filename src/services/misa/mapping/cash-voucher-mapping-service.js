@@ -38,8 +38,6 @@ export default class CashVoucherMappingService {
       refdate: v?.receive_date || v?.created_date,
       posted_date: v?.receive_date || v?.created_date,
       currency_id: "VND",
-      bank_account: v.bank_account,
-      bank_name: bankName,
       exchange_rate: 1,
       total_amount_oc: Number(v.transfer_amount),
       total_amount: Number(v.transfer_amount),
@@ -67,6 +65,11 @@ export default class CashVoucherMappingService {
         }
       ]
     };
+
+    if (voucher_type == VOUCHER_TYPES.OTHER_MANUAL_PAYMENT) {
+      misaVoucher.bank_account_number =  v.bank_account;
+      misaVoucher.bank_name = bankName;
+    }
 
     return { misaVoucher, originalId: v.uuid, generatedGuid };
   }
