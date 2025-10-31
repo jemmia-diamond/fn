@@ -10,7 +10,7 @@ export function buildQueryV2(jsonParams) {
     handleFinenessPriority,
     collectionJoinEcomProductsClause,
     linkedCollectionJoinEcomProductsClause,
-    havingString,
+    havingString
   } = aggregateQuery(jsonParams);
 
   const finenessOrder = handleFinenessPriority === "14K" ? "ASC" : "DESC";
@@ -41,7 +41,7 @@ export function buildQueryV2(jsonParams) {
                 array_agg(
                   CASE 
                     WHEN item.value->>'url' LIKE '${JEWELRY_IMAGE.WORKPLACE_URL_PREFIX}%' THEN
-                      REPLACE(item.value->>'url', '${JEWELRY_IMAGE.WORKPLACE_FULL_URL}', '${ECOMMERCE_CONFIG.CDN_URL}')
+                      REPLACE(item.value->>'url', '${JEWELRY_IMAGE.WORKPLACE_FULL_URL}', '${JEWELRY_IMAGE.CDN_URL}')
                     ELSE item.value->>'url'
                   END
                 ) FILTER (WHERE jsonb_typeof(item.value) = 'object' AND item.value->>'url' IS NOT NULL),

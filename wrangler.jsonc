@@ -3,7 +3,11 @@
   "name": "fn",
   "main": "src/index.ts",
   "compatibility_date": "2025-05-20",
-  "compatibility_flags": ["nodejs_compat", "durable_object_alarms"],
+  "upload_source_maps": true,
+  "compatibility_flags": [
+    "nodejs_compat",
+    "durable_object_alarms"
+  ],
   "limits": {
     "cpu_ms": 300000, // 300 seconds = 5 minutes
   },
@@ -173,6 +177,12 @@
       }
     ]
   },
+  "r2_buckets": [
+      {
+        "binding": "JEMMIA_ERP_R2_STORAGE",
+        "bucket_name": "jemmia-erp"
+      }
+  ],
   "triggers": {
     "crons": [
       "0 * * * *",
@@ -193,7 +203,12 @@
   "migrations": [
     {
       "tag": "v1",
-      "new_classes": ["DebounceDurableObject"],
-    },
+      "new_classes": [
+        "DebounceDurableObject"
+      ]
+    }
   ],
+  "version_metadata": {
+    "binding": "CF_VERSION_METADATA",
+  },
 }

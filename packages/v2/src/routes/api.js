@@ -59,35 +59,15 @@ export default class APIRoutes {
       Ecommerce.WeddingRingController.index
     );
 
-    ecommerceNamespaceApi.get(
-      "/products/diamonds",
-      Ecommerce.DiamondController.index
-    );
-    ecommerceNamespaceApi.get(
-      "/products/jewelries",
-      Ecommerce.JewelryController.index
-    );
-    ecommerceNamespaceApi.get(
-      "/products/wedding_rings",
-      Ecommerce.WeddingRingController.index
-    );
-    ecommerceNamespaceApi.delete(
-      "/ind-day-stats",
-      Ecommerce.IndDayStatController.destroy
-    );
+    ecommerceNamespaceApi.get("/products/diamonds", Ecommerce.DiamondController.index);
+    ecommerceNamespaceApi.get("/products/jewelries", Ecommerce.JewelryController.index);
+    ecommerceNamespaceApi.get("/products/wedding_rings", Ecommerce.WeddingRingController.index);
+    ecommerceNamespaceApi.delete("/ind-day-stats", Ecommerce.IndDayStatController.destroy);
+    ecommerceNamespaceApi.post("/products/jewelries/diamond-replacements", Ecommerce.JewelryDiamondPairController.create);
 
     ecommerceNamespaceApi.get("/cards/:id", Ecommerce.CardController.show);
     ecommerceNamespaceApi.post("/cards", Ecommerce.CardController.create);
     ecommerceNamespaceApi.patch("/cards/:id", Ecommerce.CardController.update);
-
-    ecommerceNamespaceApi.get(
-      "/v2/products/jewelries",
-      Ecommerce.JewelryControllerV2.index
-    );
-    ecommerceNamespaceApi.get(
-      "/v2/products/jewelries/:id",
-      Ecommerce.JewelryControllerV2.show
-    );
 
     const nhattinNamespaceApi = api.basePath("/delivery");
     nhattinNamespaceApi.get("/nhattin", Delivery.DeliveryTrackingController.show);

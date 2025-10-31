@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/cloudflare";
 import Database from "services/database";
 import RecordService from "services/larksuite/docs/base/record/record";
 import { TABLES } from "services/larksuite/docs/constant";
@@ -15,7 +16,7 @@ export default class ProductQuoteOrderService {
         const orderData = message.body;
         await ProductQuoteOrderService.syncOrderToLark(_env, orderData);
       } catch (error) {
-        console.error(error);
+        Sentry.captureException(error);
       }
     }
   }
@@ -56,7 +57,7 @@ export default class ProductQuoteOrderService {
 
           const dbTempVariant = await this._findTemporaryProductByVariantId(
             db,
-            variantId,
+            variantId
           );
 
           if (dbTempVariant?.lark_base_record_id) {
@@ -69,7 +70,7 @@ export default class ProductQuoteOrderService {
                 appToken: APP_TOKEN,
                 tableId: TABLE_ID,
                 recordId: recordId,
-                userIdType: "open_id",
+                userIdType: "open_id"
               });
               if (oldRecord?.fields) {
                 const existingOrders = oldRecord.fields[LARK_ORDER_KEY];
@@ -86,9 +87,9 @@ export default class ProductQuoteOrderService {
             const fieldsToUpdate = {
               [LARK_LINK_ORDER_KEY]: {
                 link: `https://jemmiavn.myharavan.com/admin/orders/${orderId}`,
-                text: String(orderNumber),
+                text: String(orderNumber)
               },
-              [LARK_ORDER_KEY]: multiOrders,
+              [LARK_ORDER_KEY]: multiOrders
             };
 
             await RecordService.updateLarksuiteRecord({
@@ -97,18 +98,15 @@ export default class ProductQuoteOrderService {
               tableId: TABLE_ID,
               recordId: recordId,
               fields: fieldsToUpdate,
-              userIdType: "open_id",
+              userIdType: "open_id"
             });
           }
         } catch (error) {
-          console.error(
-            `syncOrderToLark: Error processing line item ${lineItem.variant_id}:`,
-            error,
-          );
+          Sentry.captureException(error);
         }
       }
     } catch (e) {
-      console.error(`syncOrderToLark: ${e}`);
+      Sentry.captureException(e);
     }
   }
 

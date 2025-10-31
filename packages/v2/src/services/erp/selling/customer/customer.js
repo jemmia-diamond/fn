@@ -2,7 +2,7 @@ import FrappeClient from "frappe/frappe-client";
 import Database from "services/database";
 import {
   fetchCustomersFromERP,
-  saveCustomersToDatabase,
+  saveCustomersToDatabase
 } from "src/services/erp/selling/customer/utils/customer-helppers";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
@@ -20,19 +20,19 @@ export default class CustomerService {
     this.frappeClient = new FrappeClient({
       url: env.JEMMIA_ERP_BASE_URL,
       apiKey: env.JEMMIA_ERP_API_KEY,
-      apiSecret: env.JEMMIA_ERP_API_SECRET,
+      apiSecret: env.JEMMIA_ERP_API_SECRET
     });
     this.defaultCustomerName = "Khách Vãng Lai";
     this.db = Database.instance(env);
     this.genderMap = {
       0: "Female",
-      1: "Male",
+      1: "Male"
     };
   }
 
   async processHaravanCustomer(customerData, contact, address) {
     const nameParts = [customerData.last_name, customerData.first_name].filter(
-      Boolean,
+      Boolean
     );
     const customerName = nameParts.join(" ") || this.defaultCustomerName;
     const mappedCustomerData = {
@@ -42,17 +42,20 @@ export default class CustomerService {
       customer_type: "Individual",
       language: "vietnamese",
       customer_primary_contact: contact.name,
-      customer_primary_address: address.name,
-      birth_date: customerData.birthday
-        ? dayjs(customerData.birthday).format("YYYY-MM-DD")
-        : null,
-      gender: customerData.gender ? this.genderMap[customerData.gender] : null,
+      customer_primary_address: address.name
     };
 
-    const customer = await this.frappeClient.upsert(
-      mappedCustomerData,
-      "haravan_id",
-    );
+    const birthDate = customerData.birthday ? dayjs(customerData.birthday).format("YYYY-MM-DD") : null;
+    if (birthDate) {
+      mappedCustomerData.birth_date = birthDate;
+    }
+
+    const customerGender = customerData.gender !== null && customerData.gender !== undefined && this.genderMap[customerData.gender];
+    if (customerGender) {
+      mappedCustomerData.gender = customerGender;
+    }
+
+    const customer = await this.frappeClient.upsert(mappedCustomerData, "haravan_id");
     return customer;
   }
 
@@ -85,7 +88,7 @@ export default class CustomerService {
         this.doctype,
         fromDate,
         toDate,
-        CustomerService.ERPNEXT_PAGE_SIZE,
+        CustomerService.ERPNEXT_PAGE_SIZE
       );
       if (Array.isArray(customers) && customers.length > 0) {
         await saveCustomersToDatabase(this.db, customers);
@@ -110,7 +113,7 @@ export default class CustomerService {
     const syncService = new CustomerService(env);
     return await syncService.syncCustomersToDatabase({
       minutesBack: 10,
-      isSyncType: CustomerService.SYNC_TYPE_AUTO,
+      isSyncType: CustomerService.SYNC_TYPE_AUTO
     });
   }
 }

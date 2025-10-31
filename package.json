@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "wrangler dev",
     "build": "prisma migrate deploy && prisma generate",
-    "deploy": "wrangler deploy --minify",
+    "deploy": "wrangler deploy --minify --outdir dist --upload-source-maps --var SENTRY_RELEASE:$(sentry-cli releases propose-version)",
     "lint": "eslint",
     "lint:staged": "lint-staged",
     "prepare": "husky",

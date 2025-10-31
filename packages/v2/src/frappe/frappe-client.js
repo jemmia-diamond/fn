@@ -22,7 +22,7 @@ export default class FrappeClient {
     const res = await this.postRequest("", {
       cmd: "login",
       usr: username,
-      pwd: password,
+      pwd: password
     });
     if (res !== "Logged In") throw new Error("Authentication failed");
   }
@@ -38,49 +38,47 @@ export default class FrappeClient {
       filters = null,
       limit_start = 0,
       limit_page_length = 0,
-      order_by = null,
-    } = {},
+      order_by = null
+    } = {}
   ) {
     const params = {
       fields: JSON.stringify(fields),
       ...(filters && { filters: JSON.stringify(filters) }),
       ...(limit_page_length && { limit_start, limit_page_length }),
-      ...(order_by && { order_by }),
+      ...(order_by && { order_by })
     };
 
     const url = `${this.url}/api/resource/${encodeURIComponent(doctype)}`;
     const res = await fetch(`${url}?${new URLSearchParams(params)}`, {
       method: "GET",
-      headers: this.headers,
+      headers: this.headers
     });
-    return this.postProcess(res);
+    return this.postProcess({ url }, res);
   }
 
   async getDoc(doctype, name) {
     const url = `${this.url}/api/resource/${encodeURIComponent(doctype)}/${encodeURIComponent(name)}`;
     const res = await fetch(url, {
       method: "GET",
-      headers: this.headers,
+      headers: this.headers
     });
-    return this.postProcess(res);
+    return this.postProcess({ url }, res);
   }
 
   async insert(doc) {
-    const res = await fetch(
-      `${this.url}/api/resource/${encodeURIComponent(doc.doctype)}`,
-      {
-        method: "POST",
-        headers: { ...this.headers, "Content-Type": "application/json" },
-        body: JSON.stringify({ data: JSON.stringify(doc) }),
-      },
-    );
-    return this.postProcess(res);
+    const url = `${this.url}/api/resource/${encodeURIComponent(doc.doctype)}`;
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { ...this.headers, "Content-Type": "application/json" },
+      body: JSON.stringify({ data: JSON.stringify(doc) })
+    });
+    return this.postProcess({ url }, res);
   }
 
   async insertMany(docs) {
     return this.postRequest("", {
       cmd: "frappe.client.insert_many",
-      docs: JSON.stringify(docs),
+      docs: JSON.stringify(docs)
     });
   }
 
@@ -89,14 +87,14 @@ export default class FrappeClient {
     const res = await fetch(url, {
       method: "PUT",
       headers: { ...this.headers, "Content-Type": "application/json" },
-      body: JSON.stringify({ data: JSON.stringify(doc) }),
+      body: JSON.stringify({ data: JSON.stringify(doc) })
     });
-    return this.postProcess(res);
+    return this.postProcess({ url }, res);
   }
 
   async upsert(doc, key, ignoredFields = []) {
     const documents = await this.getList(doc.doctype, {
-      filters: [[key, "=", doc[key]]],
+      filters: [[key, "=", doc[key]]]
     });
     if (documents.length > 1) {
       throw new Error(`Multiple ${doc.doctype} found for ${key} ${doc[key]}`);
@@ -119,7 +117,7 @@ export default class FrappeClient {
     const docsWithDocNames = docs.map((doc) => ({ ...doc, docname: doc.name }));
     return this.postRequest("", {
       cmd: "frappe.client.bulk_update",
-      docs: JSON.stringify(docsWithDocNames),
+      docs: JSON.stringify(docsWithDocNames)
     });
   }
 
@@ -130,7 +128,7 @@ export default class FrappeClient {
     }
     docWithLinks.links.push({
       link_doctype: referencedDoctype,
-      link_name: referencedDoc.name,
+      link_name: referencedDoc.name
     });
     docWithLinks.doctype = doctype;
     return this.update(docWithLinks);
@@ -139,21 +137,22 @@ export default class FrappeClient {
   // --- Utility methods ---
 
   async postRequest(path = "", data = {}) {
-    const res = await fetch(`${this.url}${path}`, {
+    const url = `${this.url}${path}`;
+    const res = await fetch(url, {
       method: "POST",
       headers: {
         ...this.headers,
-        "Content-Type": "application/x-www-form-urlencoded",
+        "Content-Type": "application/x-www-form-urlencoded"
       },
-      body: new URLSearchParams(data),
+      body: new URLSearchParams(data)
     });
-    return this.postProcess(res);
+    return this.postProcess({ url }, res);
   }
 
   async getRequest(path = "", params = {}) {
     const url = `${this.url}${path}?${new URLSearchParams(params)}`;
     const res = await fetch(url, { headers: this.headers });
-    return this.postProcess(res);
+    return this.postProcess({ url }, res);
   }
 
   chunk(arr, size) {
@@ -202,9 +201,19 @@ export default class FrappeClient {
     return null;
   }
 
-  async postProcess(res) {
+  async _safeReadResponseText(response) {
+    try {
+      if (response.bodyUsed) return null;
+      return await response.text();
+    } catch {
+      return null;
+    }
+  }
+
+  async postProcess({ url } = req, res) {
     if (!res.ok) {
-      throw new Error(`Frappe API Error ${res.status}: ${res.statusText}`);
+      const errorText = await this._safeReadResponseText(res);
+      throw new Error(`Frappe API Error \n URL: ${url} \n Status: ${res.status} \n Text: ${res.statusText} \n Error Text: ${errorText}`);
     }
 
     const text = await res.text();
@@ -225,8 +234,8 @@ export default class FrappeClient {
           docstatus: 0,
           type: "SQL",
           doctype: "System Console",
-          console: sql,
-        }),
+          console: sql
+        })
       });
 
       if (res && res.output) {

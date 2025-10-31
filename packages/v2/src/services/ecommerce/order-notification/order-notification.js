@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/cloudflare";
 import LarksuiteService from "services/larksuite/lark";
 import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/constant";
 import { HARAVAN_TOPIC } from "services/ecommerce/enum";
@@ -21,15 +22,15 @@ export default class OrderNotificationService {
     const message = this.buildOrderMessage(orderData);
     await this.larkClient.im.message.create({
       params: {
-        receive_id_type: "chat_id",
+        receive_id_type: "chat_id"
       },
       data: {
         receive_id: CHAT_GROUPS.ECOM_ORDER_NOTIFICATION.chat_id,
         msg_type: "text",
         content: JSON.stringify({
-          text: message,
-        }),
-      },
+          text: message
+        })
+      }
     });
   }
 
@@ -76,7 +77,7 @@ export default class OrderNotificationService {
           await orderNotificationService.sendOrderNotification(orderData);
         }
       } catch (error) {
-        console.error(error);
+        Sentry.captureException(error);
       }
     }
   }

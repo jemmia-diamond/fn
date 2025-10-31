@@ -7,6 +7,7 @@ import IndDayStatController from "controllers/ecommerce/ind-day-stat-controller"
 import OrderTrackingController from "controllers/ecommerce/order-tracking-controller";
 import CardController from "controllers/ecommerce/card-controller";
 import ProductAvailabilityController from "controllers/ecommerce/product-availability-controller";
+import JewelryDiamondPairController from "controllers/ecommerce/jewelry-diamond-pair-controller";
 
 export default {
   JewelryController: JewelryController,
@@ -18,4 +19,5 @@ export default {
   OrderTrackingController: OrderTrackingController,
   CardController: CardController,
   ProductAvailabilityController: ProductAvailabilityController,
+  JewelryDiamondPairController: JewelryDiamondPairController
 };

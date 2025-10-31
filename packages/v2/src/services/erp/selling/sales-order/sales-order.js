@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/cloudflare";
 import FrappeClient from "src/frappe/frappe-client";
 import { convertIsoToDatetime } from "src/frappe/utils/datetime";
 import LarksuiteService from "services/larksuite/lark";
@@ -15,6 +16,8 @@ import {
   saveSalesOrdersToDatabase
 } from "src/services/erp/selling/sales-order/utils/sales-order-helpers";
 import { getRefOrderChain } from "services/ecommerce/order-tracking/queries/get-initial-order";
+import Larksuite from "services/larksuite";
+import { ERPR2StorageService } from "services/r2-object/erp/erp-r2-storage-service";
 
 dayjs.extend(utc);
 
@@ -28,7 +31,8 @@ export default class SalesOrderService {
     this.doctype = "Sales Order";
     this.linkedTableDoctype = {
       lineItems: "Sales Order Item",
-      paymentRecords: "Sales Order Payment Record"
+      paymentRecords: "Sales Order Payment Record",
+      refSalesOrder: "Ref Sales Order"
     };
     this.cancelledStatusMapper = {
       uncancelled: "Uncancelled",
@@ -147,9 +151,8 @@ export default class SalesOrderService {
       grand_total: haravanOrderData.total_price,
       paid_amount: paidAmount,
       balance: haravanOrderData.total_price - paidAmount,
-      real_order_date: dayjs(haravanOrderData.created_at)
-        .utc()
-        .format("YYYY-MM-DD")
+      real_order_date: dayjs(haravanOrderData.created_at).utc().format("YYYY-MM-DD"),
+      ref_sales_orders: await this.mapRefSalesOrder(haravanOrderData.id)
     };
     const order = await this.frappeClient.upsert(
       mappedOrderData,
@@ -167,7 +170,7 @@ export default class SalesOrderService {
       try {
         await salesOrderService.processHaravanOrder(salesOrderData);
       } catch (error) {
-        console.error(error);
+        Sentry.captureException(error);
       }
     }
   }
@@ -193,6 +196,40 @@ export default class SalesOrderService {
       kind: hrvTransactionData["kind"],
       transaction_id: hrvTransactionData["id"]
     };
+  };
+
+  mapRefSalesOrder = async (refOrderId) => {
+    try {
+      const refOrders = await getRefOrderChain(this.db, Number(refOrderId), true);
+
+      if (!refOrders) {
+        return [];
+      };
+
+      const erpRefOrders = await this.db.erpnextSalesOrders.findMany({
+        where: {
+          haravan_order_id: {
+            in: refOrders?.map(order => String(order.id))
+          }
+        }
+      });
+
+      return refOrders.map((o) => {
+        const refOrder = erpRefOrders.find(order => order.haravan_order_id === String(o.id));
+
+        if (!refOrder) {
+          return null;
+        }
+
+        return {
+          doctype: "Sales Order Reference",
+          sales_order: refOrder.name
+        };
+      }).filter(order => order !== null);
+    } catch (e) {
+      console.error(e);
+      return [];
+    }
   };
 
   mapLineItemsFields = (lineItemData) => {
@@ -255,17 +292,38 @@ export default class SalesOrderService {
         const isOrderTracked = !!currentOrderTracking;
 
         let content = null;
+        let diffAttachments = null;
         if (isOrderTracked) {
-          content = await this.composeUpdateOrderContent(currentOrderTracking.order_data, salesOrderData);
+          ({ content, diffAttachments } = await this.composeUpdateOrderContent(
+            currentOrderTracking.order_data,
+            salesOrderData
+          ));
         } else {
           content = await this.composeNewOrderContent(salesOrderData);
         }
 
-        if (!content) {
+        if (!content && !diffAttachments) {
           return { success: true, message: "Không có gì thay đổi!" };
         }
 
-        const replyResponse = await larkClient.im.message.reply({
+        const isSendImagesSuccess = diffAttachments && diffAttachments.added_file
+          ? await Promise.all(
+            diffAttachments.added_file.map(async (fileUrl) => {
+              const r2Key = SalesOrderService._extractR2KeyFromUrl(fileUrl);
+              const imageBuffer = await new ERPR2StorageService(this.env).getObjectByKey(r2Key);
+
+              return Larksuite.Messaging.ImageMessagingService.sendLarkImageFromUrl({
+                larkClient,
+                imageBuffer,
+                chatId: CHAT_GROUPS.CUSTOMER_INFO.chat_id,
+                env: this.env,
+                rootMessageId: refOrderstNotificationOrderTracking[0].lark_message_id
+              });
+            })
+          )
+          : [];
+
+        const replyResponse = content && await larkClient.im.message.reply({
           path: {
             message_id: refOrderstNotificationOrderTracking[0].lark_message_id
           },
@@ -279,7 +337,7 @@ export default class SalesOrderService {
           }
         });
 
-        if (replyResponse.msg === "success") {
+        if ((content && replyResponse.msg === "success") || (isSendImagesSuccess.every(Boolean))) {
           if (isOrderTracked) {
             await this.db.erpnextSalesOrderNotificationTracking.updateMany({
               where: {
@@ -326,39 +384,56 @@ export default class SalesOrderService {
       });
 
     if (notificationTracking) {
-      const composedReplyMessage = await this.composeUpdateOrderContent(notificationTracking.order_data || {}, salesOrderData);
+      const { content, diffAttachments } = await this.composeUpdateOrderContent(notificationTracking.order_data || {}, salesOrderData);
 
-      if (composedReplyMessage) {
-        // Reply to the root message in the group chat
-        const replyResponse = await larkClient.im.message.reply({
-          path: {
-            message_id: notificationTracking.lark_message_id
+      if (!content && !diffAttachments) {
+        return { success: false, message: "Đơn hàng này đã được gửi thông báo từ trước đó!" };
+      }
+
+      const isSendImagesSuccess = diffAttachments && diffAttachments.added_file
+        ? await Promise.all(
+          diffAttachments.added_file.map(async (fileUrl) => {
+            const r2Key = SalesOrderService._extractR2KeyFromUrl(fileUrl);
+            const imageBuffer = await new ERPR2StorageService(this.env).getObjectByKey(r2Key);
+            return Larksuite.Messaging.ImageMessagingService.sendLarkImageFromUrl({
+              larkClient,
+              imageBuffer,
+              chatId: CHAT_GROUPS.CUSTOMER_INFO.chat_id,
+              env: this.env,
+              rootMessageId: notificationTracking.lark_message_id
+            });
+          })
+        )
+        : [];
+
+      // Reply to the root message in the group chat
+      const replyResponse = content && await larkClient.im.message.reply({
+        path: {
+          message_id: notificationTracking.lark_message_id
+        },
+        data: {
+          receive_id: CHAT_GROUPS.CUSTOMER_INFO.chat_id,
+          msg_type: "text",
+          reply_in_thread: true,
+          content: JSON.stringify({
+            text: content
+          })
+        }
+      });
+
+      if ((content && replyResponse.msg === "success") || (isSendImagesSuccess.every(Boolean))) {
+        // Update
+        await this.db.erpnextSalesOrderNotificationTracking.updateMany({
+          where: {
+            uuid: notificationTracking.uuid
           },
           data: {
-            receive_id: CHAT_GROUPS.CUSTOMER_INFO.chat_id,
-            msg_type: "text",
-            reply_in_thread: true,
-            content: JSON.stringify({
-              text: composedReplyMessage
-            })
+            order_data: {
+              items: salesOrderData.items,
+              attachments: salesOrderData.attachments
+            }
           }
         });
-
-        if (replyResponse.msg === "success") {
-          // Update
-          await this.db.erpnextSalesOrderNotificationTracking.updateMany({
-            where: {
-              uuid: notificationTracking.uuid
-            },
-            data: {
-              order_data: {
-                items: salesOrderData.items,
-                attachments: salesOrderData.attachments
-              }
-            }
-          });
-        }
-
         return { success: true, message: "Gửi cập nhật đơn thành công!" };
       }
 
@@ -614,5 +689,22 @@ export default class SalesOrderService {
     const content = composeSalesOrderNotification(salesOrderData, promotionData, leadSource, policyData, productCategoryData, customer, primarySalesPerson, secondarySalesPeople);
 
     return content;
+  }
+
+  static _extractR2KeyFromUrl(url) {
+    try {
+      const urlObj = new URL(url);
+      const r2KeyParam = urlObj.searchParams.get("key");
+      if (r2KeyParam) {
+        return r2KeyParam;
+      }
+      if (urlObj.pathname.length > 1) {
+        return urlObj.pathname.substring(1);
+      }
+      return null;
+    } catch (e) {
+      Sentry.captureException(e);
+      return null;
+    }
   }
 }

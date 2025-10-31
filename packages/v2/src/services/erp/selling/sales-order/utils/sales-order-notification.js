@@ -279,40 +279,21 @@ function extractVariantNameForJewelry(text) {
   return match ? match[1] : "";
 }
 
-export const composeOrderUpdateMessage = (
-  prevOrder,
-  salesOrder,
-  promotionData
-) => {
-  const attachmentMessage = composeAttachmentMessage(
-    prevOrder.attachments || [],
-    salesOrder.attachments || []
-  );
-  const lineItemMessage = composeLineItemsChangeMessage(
-    prevOrder.items || [],
-    salesOrder.items || [],
-    promotionData
-  );
+export const composeOrderUpdateMessage = (prevOrder, salesOrder, promotionData) => {
+  const diffAttachments = diffInAttachments(prevOrder.attachments || [], salesOrder.attachments || []);
+  const lineItemMessage = composeLineItemsChangeMessage(prevOrder.items || [], salesOrder.items || [], promotionData);
 
   let content = "";
   if (lineItemMessage) {
     content += `${lineItemMessage}\n`;
   }
 
-  if (attachmentMessage) {
-    content += `${attachmentMessage}\n`;
-  }
-
-  return content;
+  return { content, diffAttachments };
 };
 
-const composeAttachmentMessage = (prevAttachments, attachments) => {
-  const prevAttachmentUrls = (prevAttachments || []).map(
-    (attachment) => attachment.file_url
-  );
-  const newAttachmentUrls = (attachments || []).map(
-    (attachment) => attachment.file_url
-  );
+const diffInAttachments = (prevAttachments, attachments) => {
+  const prevAttachmentUrls = (prevAttachments || []).map((attachment) => attachment.file_url);
+  const newAttachmentUrls = (attachments || []).map((attachment) => attachment.file_url);
 
   const addedAttachments = newAttachmentUrls.filter(
     (url) => !prevAttachmentUrls.includes(url)
@@ -321,20 +302,17 @@ const composeAttachmentMessage = (prevAttachments, attachments) => {
     (url) => !newAttachmentUrls.includes(url)
   );
 
-  let message = "";
+  const modifiedAttachments = {};
 
   if (addedAttachments.length > 0) {
-    message += `* Hình ảnh đính kèm mới:\n${addedAttachments.join("\n")}`;
+    modifiedAttachments.added_file = addedAttachments;
   }
 
   if (removedAttachments.length > 0) {
-    if (message) {
-      message += "\n";
-    }
-    message += `* Hình ảnh đính kèm đã bị xoá:\n${removedAttachments.join("\n")}`;
+    modifiedAttachments.removed_file = removedAttachments;
   }
 
-  return message;
+  return modifiedAttachments;
 };
 
 const composeLineItemsChangeMessage = (oldItems, newItems, promotionData) => {
