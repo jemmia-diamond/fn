@@ -1,23 +1,13 @@
 model misaUser {
-  uuid         String    @id @default(uuid()) @db.Uuid
-  name         String?   @unique
-  email        String?
-  birth_date   DateTime?
-  creation     DateTime? @db.Timestamp(6)
-  enabled      Int?      @db.SmallInt
-  full_name    String?
-  gender       String?
-  language     String?
-  location     String?
-  modified     DateTime? @db.Timestamp(6)
-  modified_by  String?
-  pancake_id   String?
-  role_profile String?
-  time_zone    String?
-  user_image   String?
+  uuid                String    @id @db.Uuid
+  employee_code       String?   @unique @db.VarChar(255)
+  haravan_id          BigInt    @unique
+  email               String?   @db.VarChar(255)
+  database_created_at DateTime? @default(now())
+  database_updated_at DateTime?
 
   @@map("users")
-  @@schema("erpnext")
+  @@schema("misa")
 }
 
 model inventory_items {
@@ -285,18 +275,6 @@ model purchase_vouchers {
   database_created_at                 DateTime? @default(now()) @db.Timestamp(6)
   database_updated_at                 DateTime? @default(now()) @db.Timestamp(6)
 
-  @@schema("misa")
-}
-
-model misa_users {
-  uuid                String    @id @db.Uuid
-  employee_code       String?   @unique @db.VarChar(255)
-  haravan_id          BigInt    @unique
-  email               String?   @db.VarChar(255)
-  database_created_at DateTime? @default(now())
-  database_updated_at DateTime?
-
-  @@map("users")
   @@schema("misa")
 }
 
