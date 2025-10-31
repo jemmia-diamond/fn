@@ -7,6 +7,7 @@ import CardService from "services/ecommerce/card/card";
 import WarehouseService from "services/ecommerce/warehouse/warehouse";
 import QrPaymentFetchingService from "services/ecommerce/qr_payment/fetch-service";
 import ManualPaymentFetchingService from "services/ecommerce/manual_payment/fetch-service";
+import JewelryDiamondPairService from "services/ecommerce/jewelry-diamond-pair-service";
 
 export default {
   ProductService: ProductService,
@@ -17,5 +18,6 @@ export default {
   CardService: CardService,
   WarehouseService: WarehouseService,
   QrPaymentFetchingService,
-  ManualPaymentFetchingService
+  ManualPaymentFetchingService,
+  JewelryDiamondPairService: JewelryDiamondPairService
 };

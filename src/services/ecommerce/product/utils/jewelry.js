@@ -25,22 +25,10 @@ export function buildQuery(jsonParams) {
       INNER JOIN workplace.diamonds dia 
         ON dia.product_id = CAST(jdp.haravan_diamond_product_id AS BIGINT) 
        AND dia.variant_id = CAST(jdp.haravan_diamond_variant_id AS BIGINT)
-      INNER JOIN haravan.warehouse_inventories inven 
-        ON inven.product_id = dia.product_id
-      INNER JOIN haravan.warehouses house 
-        ON house.id = inven.loc_id
     `;
 
     diamondFiltersForCount = `
       AND jdp.is_active = TRUE
-      AND house.name IN (
-        '[HCM] Cửa Hàng HCM',
-        '[HN] Cửa Hàng HN',
-        '[CT] Cửa Hàng Cần Thơ'
-      )
-      AND dia.qty_available IS NOT NULL AND dia.qty_available > 0
-      AND dia.edge_size_1 > 4.4 AND dia.edge_size_2 > 4.4
-      AND dia.edge_size_1 < 4.6 AND dia.edge_size_2 < 4.6
     `;
 
     variantJsonBuildObject = `
@@ -87,21 +75,8 @@ export function buildQuery(jsonParams) {
         INNER JOIN workplace.diamonds dia 
           ON dia.product_id = CAST(jdp.haravan_diamond_product_id AS BIGINT) 
          AND dia.variant_id = CAST(jdp.haravan_diamond_variant_id AS BIGINT)
-        INNER JOIN haravan.warehouse_inventories inven 
-          ON inven.product_id = dia.product_id
-        INNER JOIN haravan.warehouses house 
-          ON house.id = inven.loc_id
         WHERE v.haravan_product_id = p.haravan_product_id
           AND jdp.is_active = TRUE
-          AND house.name IN (
-            '[HCM] Cửa Hàng HCM',
-            '[HN] Cửa Hàng HN',
-            '[CT] Cửa Hàng Cần Thơ'
-          )
-          AND dia.qty_available IS NOT NULL 
-          AND dia.qty_available > 0
-          AND dia.edge_size_1 > 4.4 AND dia.edge_size_2 > 4.4
-          AND dia.edge_size_1 < 4.6 AND dia.edge_size_2 < 4.6
         GROUP BY v.haravan_product_id, v.haravan_variant_id, v.sku, v.price, 
                  v.price_compare_at, v.material_color, v.fineness, v.ring_size, 
                  v.qty_available, v.qty_onhand, v.applique_material, 
@@ -284,16 +259,8 @@ export function buildQuerySingle({ matchedDiamonds }) {
         INNER JOIN workplace.diamonds dia 
           ON dia.product_id = CAST(jdp.haravan_diamond_product_id AS BIGINT) 
          AND dia.variant_id = CAST(jdp.haravan_diamond_variant_id AS BIGINT)
-        INNER JOIN haravan.warehouse_inventories inven 
-          ON inven.product_id = dia.product_id
-        INNER JOIN haravan.warehouses house 
-          ON house.id = inven.loc_id
         WHERE v.haravan_product_id = p.haravan_product_id
           AND jdp.is_active = TRUE
-          AND house.name IN ('[HCM] Cửa Hàng HCM', '[HN] Cửa Hàng HN', '[CT] Cửa Hàng Cần Thơ')
-          AND dia.qty_available IS NOT NULL AND dia.qty_available > 0
-          AND dia.edge_size_1 > 4.4 AND dia.edge_size_2 > 4.4
-          AND dia.edge_size_1 < 4.6 AND dia.edge_size_2 < 4.6
         GROUP BY v.haravan_product_id, v.haravan_variant_id, v.sku, v.price, v.price_compare_at, 
                  v.material_color, v.fineness, v.ring_size, v.qty_available, v.qty_onhand, 
                  v.applique_material, v.estimated_gold_weight, v.ring_band_style, v.ring_head_style
