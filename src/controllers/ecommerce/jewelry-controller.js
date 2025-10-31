@@ -35,7 +35,8 @@ export default class JewelryController {
           .map((v) => Number(v.trim()))
           .filter((n) => Number.isInteger(n) && n > 0)
         : [],
-      linked_collections: params.linked_collections ? params.linked_collections.split(",") : []
+      linked_collections: params.linked_collections ? params.linked_collections.split(",") : [],
+      matched_diamonds: params.matched_diamonds === "true"
     };
 
     const productService = new Ecommerce.ProductService(ctx.env);
@@ -45,11 +46,14 @@ export default class JewelryController {
 
   static async show(ctx) {
     const { id } = ctx.req.param();
+    const { matched_diamonds } = ctx.req.query();
     if (isNaN(Number(id))) {
       return ctx.json({ error: "Invalid id. Must be a number." }, 400);
     }
     const productService = new Ecommerce.ProductService(ctx.env);
-    const result = await productService.getJewelryById(id);
+    const result = await productService.getJewelryById(id, {
+      matchedDiamonds: matched_diamonds === "true"
+    });
     if (!result) {
       return ctx.json({ error: "Jewelry not found" }, 404);
     }

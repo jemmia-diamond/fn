@@ -6,8 +6,8 @@ const verifyAIHubWebhook = async (ctx, next) => {
     throw new HTTPException(401, "Invalid access token");
   }
 
-  let secret = ctx.env.AI_HUB_ACCESS_TOKEN;
-  if (secret !== deliveryToken) {
+  const bearerToken = await ctx.env.BEARER_TOKEN_SECRET.get();
+  if ((deliveryToken !== bearerToken) && (deliveryToken !== ctx.env.BEARER_TOKEN)) {
     throw new HTTPException(401, "Invalid access token");
   }
 

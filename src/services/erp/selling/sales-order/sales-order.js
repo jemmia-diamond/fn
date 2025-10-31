@@ -13,6 +13,8 @@ import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/cons
 
 import { fetchSalesOrdersFromERP, saveSalesOrdersToDatabase } from "src/services/erp/selling/sales-order/utils/sales-order-helpers";
 import { getRefOrderChain } from "services/ecommerce/order-tracking/queries/get-initial-order";
+import Larksuite from "services/larksuite";
+import { ERPR2StorageService } from "services/r2-object/erp/erp-r2-storage-service";
 
 dayjs.extend(utc);
 
@@ -243,17 +245,38 @@ export default class SalesOrderService {
         const isOrderTracked = !!currentOrderTracking;
 
         let content = null;
+        let diffAttachments = null;
         if (isOrderTracked) {
-          content = await this.composeUpdateOrderContent(currentOrderTracking.order_data, salesOrderData);
+          ({ content, diffAttachments } = await this.composeUpdateOrderContent(
+            currentOrderTracking.order_data,
+            salesOrderData
+          ));
         } else {
           content = await this.composeNewOrderContent(salesOrderData);
         }
 
-        if (!content) {
+        if (!content && !diffAttachments) {
           return { success: true, message: "Không có gì thay đổi!" };
         }
 
-        const replyResponse = await larkClient.im.message.reply({
+        const isSendImagesSuccess = diffAttachments && diffAttachments.added_file
+          ? await Promise.all(
+            diffAttachments.added_file.map(async (fileUrl) => {
+              const r2Key = SalesOrderService._extractR2KeyFromUrl(fileUrl);
+              const imageBuffer = await new ERPR2StorageService(this.env).getObjectByKey(r2Key);
+
+              return Larksuite.Messaging.ImageMessagingService.sendLarkImageFromUrl({
+                larkClient,
+                imageBuffer,
+                chatId: CHAT_GROUPS.CUSTOMER_INFO.chat_id,
+                env: this.env,
+                rootMessageId: refOrderstNotificationOrderTracking[0].lark_message_id
+              });
+            })
+          )
+          : [];
+
+        const replyResponse = content && await larkClient.im.message.reply({
           path: {
             message_id: refOrderstNotificationOrderTracking[0].lark_message_id
           },
@@ -267,7 +290,7 @@ export default class SalesOrderService {
           }
         });
 
-        if (replyResponse.msg === "success") {
+        if ((content && replyResponse.msg === "success") || (isSendImagesSuccess.every(Boolean))) {
           if (isOrderTracked) {
             await this.db.erpnextSalesOrderNotificationTracking.updateMany({
               where: {
@@ -310,39 +333,56 @@ export default class SalesOrderService {
     });
 
     if (notificationTracking) {
-      const composedReplyMessage = await this.composeUpdateOrderContent(notificationTracking.order_data || {}, salesOrderData);
+      const { content, diffAttachments } = await this.composeUpdateOrderContent(notificationTracking.order_data || {}, salesOrderData);
 
-      if (composedReplyMessage) {
-        // Reply to the root message in the group chat
-        const replyResponse = await larkClient.im.message.reply({
-          path: {
-            message_id: notificationTracking.lark_message_id
+      if (!content && !diffAttachments) {
+        return { success: false, message: "Đơn hàng này đã được gửi thông báo từ trước đó!" };
+      }
+
+      const isSendImagesSuccess = diffAttachments && diffAttachments.added_file
+        ? await Promise.all(
+          diffAttachments.added_file.map(async (fileUrl) => {
+            const r2Key = SalesOrderService._extractR2KeyFromUrl(fileUrl);
+            const imageBuffer = await new ERPR2StorageService(this.env).getObjectByKey(r2Key);
+            return Larksuite.Messaging.ImageMessagingService.sendLarkImageFromUrl({
+              larkClient,
+              imageBuffer,
+              chatId: CHAT_GROUPS.CUSTOMER_INFO.chat_id,
+              env: this.env,
+              rootMessageId: notificationTracking.lark_message_id
+            });
+          })
+        )
+        : [];
+
+      // Reply to the root message in the group chat
+      const replyResponse = content && await larkClient.im.message.reply({
+        path: {
+          message_id: notificationTracking.lark_message_id
+        },
+        data: {
+          receive_id: CHAT_GROUPS.CUSTOMER_INFO.chat_id,
+          msg_type: "text",
+          reply_in_thread: true,
+          content: JSON.stringify({
+            text: content
+          })
+        }
+      });
+
+      if ((content && replyResponse.msg === "success") || (isSendImagesSuccess.every(Boolean))) {
+        // Update
+        await this.db.erpnextSalesOrderNotificationTracking.updateMany({
+          where: {
+            uuid: notificationTracking.uuid
           },
           data: {
-            receive_id: CHAT_GROUPS.CUSTOMER_INFO.chat_id,
-            msg_type: "text",
-            reply_in_thread: true,
-            content: JSON.stringify({
-              text: composedReplyMessage
-            })
+            order_data: {
+              items: salesOrderData.items,
+              attachments: salesOrderData.attachments
+            }
           }
         });
-
-        if (replyResponse.msg === "success") {
-        // Update
-          await this.db.erpnextSalesOrderNotificationTracking.updateMany({
-            where: {
-              uuid: notificationTracking.uuid
-            },
-            data: {
-              order_data: {
-                items: salesOrderData.items,
-                attachments: salesOrderData.attachments
-              }
-            }
-          });
-        }
-
         return { success: true, message: "Gửi cập nhật đơn thành công!" };
       }
 
@@ -570,5 +610,22 @@ export default class SalesOrderService {
     const content = composeSalesOrderNotification(salesOrderData, promotionData, leadSource, policyData, productCategoryData, customer, primarySalesPerson, secondarySalesPeople);
 
     return content;
+  }
+
+  static _extractR2KeyFromUrl(url) {
+    try {
+      const urlObj = new URL(url);
+      const r2KeyParam = urlObj.searchParams.get("key");
+      if (r2KeyParam) {
+        return r2KeyParam;
+      }
+      if (urlObj.pathname.length > 1) {
+        return urlObj.pathname.substring(1);
+      }
+      return null;
+    } catch (e) {
+      Sentry.captureException(e);
+      return null;
+    }
   }
 }
