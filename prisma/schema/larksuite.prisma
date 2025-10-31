@@ -1,12 +1,12 @@
 model larksuiteRecord {
-    uuid        String   @id @default(uuid()) @db.Uuid
-    record_id   String  @unique
-    table_id    String?
-    app_token   String?
-    fields      Json
-    database_created_at DateTime @default(now())
-    database_updated_at DateTime @updatedAt
+  uuid                String   @id @default(uuid()) @db.Uuid
+  record_id           String   @unique
+  table_id            String?
+  app_token           String?
+  fields              Json
+  database_created_at DateTime @default(now())
+  database_updated_at DateTime @updatedAt
 
-    @@map("records")
-    @@schema("larksuite")
+  @@map("records")
+  @@schema("larksuite")
 }

@@ -19,6 +19,7 @@
       "packages/*": ["packages/*"],
       "core/*": ["src/core/*"],
       "example/*": ["src/example/*"]
-    }
+    },
+    "allowJs": true
   }
 }

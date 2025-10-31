@@ -1,14 +1,15 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
 import Larksuite from "../../packages/v2/src/services/larksuite/index.js";
 import ERP from "../../packages/v2/src/services/erp/index.js";
 import Ecommerce from "../../packages/v2/src/services/ecommerce/index.js";
 import InventoryCMS from "../../packages/v2/src/services/inventory-cms/index.js";
 import DatabaseOperations from "../../packages/v2/src/services/db-operations/index.js";
+import { AppBindings } from "./bindings/app.binding.js";
+import { Context } from "hono";
+import { PancakeService } from "src/integration/pancake/services/pancake.service.js";
+import { PancakeBindings } from "src/integration/pancake/bindings/pancake.binding.js";
 
 export default {
-  scheduled: async (controller, env, _ctx) => {
+  scheduled: async (controller: { cron: string }, env: AppBindings & PancakeBindings, _ctx: Context) => {
     switch (controller.cron) {
       case "0 * * * *": // At minute 0 every hour
         await ERP.CRM.LeadService.syncWebsiteLeads(env);
@@ -18,6 +19,9 @@ export default {
         await ERP.Selling.SalesOrderService.fillSerialNumbersToTemporaryOrderItems(
           env,
         );
+        break;
+      case "*/5 * * * *": // At every 5th minute
+        await PancakeService.scheduleHandler(env);
         break;
       case "*/10 * * * *": // At every 10th minute
         await ERP.Selling.SerialService.syncSerialsToERP(env);

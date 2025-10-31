@@ -1,11 +1,16 @@
 generator client {
-  provider        = "prisma-client-js"
-  output          = "../../node_modules/@prisma-cli"
-  previewFeatures = ["driverAdapters", "multiSchema","queryCompiler"]
+  provider = "prisma-client-js"
+  output   = "./generated/client"
+}
+
+generator zod {
+  provider = "prisma-zod-generator"
+  output   = "./generated/zod"
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  schemas  = ["erpnext", "larksuite", "inventory_cms", "misa", "payment"]
+  schemas  = ["advertising_cost", "bizflycrm", "conversation_rate", "crm_dashboard", "dashboard_reporting", "data_2024", "ecom", "ecommerce", "erpnext", "gia", "haravan", "inventory", "inventory_cms", "inventory_report", "jemmia", "larksuite", "market_data", "misa", "pancake", "payment", "policy", "promotion", "rapnet", "reporting", "salesaya", "supplychain", "workplace"]
 }
+

@@ -7,6 +7,7 @@
   ],
   "scripts": {
     "dev": "wrangler dev",
+    "dev:schedule": "wrangler dev --test-scheduled",
     "build": "prisma migrate deploy && prisma generate",
     "deploy": "wrangler deploy --minify",
     "lint": "eslint",
@@ -25,10 +26,14 @@
     "@prisma/extension-accelerate": "^2.0.2",
     "@sentry/node": "^10.21.0",
     "@sentry/profiling-node": "^10.21.0",
+    "@types/axios": "^0.14.4",
+    "@types/uuid": "^11.0.0",
     "@typescript-eslint/eslint-plugin": "^8.46.2",
     "@typescript-eslint/parser": "^8.46.2",
+    "axios": "^1.12.2",
     "eslint-config-prettier": "^10.1.8",
     "hono": "^4.10.2",
+    "uuid": "^13.0.0",
     "zod": "^4.1.12"
   },
   "devDependencies": {
@@ -40,6 +45,7 @@
     "lint-staged": "^16.2.5",
     "prettier": "^3.6.2",
     "prisma": "^6.18.0",
+    "prisma-zod-generator": "^1.30.2",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.46.2",
     "wrangler": "^4.4.0"
