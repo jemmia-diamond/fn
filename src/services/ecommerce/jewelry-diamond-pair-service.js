@@ -26,19 +26,18 @@ export default class JewelryDiamondPairService {
           ON dia.product_id = jdp.haravan_diamond_product_id
          AND dia.variant_id = jdp.haravan_diamond_variant_id
         WHERE jdp.is_active = TRUE
-          AND (
-            dia.qty_available IS NULL OR dia.qty_available <= 0
-            OR NOT EXISTS (
-              SELECT 1
-              FROM haravan.warehouse_inventories inven
-              INNER JOIN haravan.warehouses house ON house.id = inven.loc_id
-              WHERE inven.product_id = dia.product_id
+          AND NOT EXISTS (
+            SELECT 1
+            FROM haravan.warehouse_inventories inven
+            INNER JOIN haravan.warehouses house 
+              ON house.id = inven.loc_id
+            WHERE inven.product_id = dia.product_id
+              AND inven.qty_available > 0
               AND house.name IN (
                 '[HCM] Cửa Hàng HCM',
                 '[HN] Cửa Hàng HN',
                 '[CT] Cửa Hàng Cần Thơ'
               )
-            )
           );
       `;
       return outOfStockPairs;
@@ -51,24 +50,22 @@ export default class JewelryDiamondPairService {
   async isDiamondOutOfStock(diamondProductId, diamondVariantId) {
     try {
       const result = await this.db.$queryRaw`
-        SELECT
-          dia.product_id
+        SELECT 1
         FROM workplace.diamonds dia
         WHERE dia.product_id = ${diamondProductId}
           AND dia.variant_id = ${diamondVariantId}
-          AND (
-            dia.qty_available IS NULL OR dia.qty_available <= 0
-            OR NOT EXISTS (
-              SELECT 1
-              FROM haravan.warehouse_inventories inven
-              INNER JOIN haravan.warehouses house ON house.id = inven.loc_id
-              WHERE inven.product_id = dia.product_id
+          AND NOT EXISTS (
+            SELECT 1
+            FROM haravan.warehouse_inventories inven
+            INNER JOIN haravan.warehouses house 
+              ON house.id = inven.loc_id
+            WHERE inven.product_id = dia.product_id
+              AND inven.qty_available > 0
               AND house.name IN (
                 '[HCM] Cửa Hàng HCM',
                 '[HN] Cửa Hàng HN',
                 '[CT] Cửa Hàng Cần Thơ'
               )
-            )
           )
         LIMIT 1;
       `;
@@ -91,13 +88,14 @@ export default class JewelryDiamondPairService {
           dia.product_id AS new_diamond_product_id,
           dia.variant_id AS new_diamond_variant_id
         FROM workplace.diamonds dia
-        WHERE dia.qty_available IS NOT NULL AND dia.qty_available > 0
-          AND dia.edge_size_2 >= 4.5 AND dia.edge_size_2 < 4.6
+        WHERE dia.edge_size_2 >= 4.5 AND dia.edge_size_2 < 4.6
           AND EXISTS (
             SELECT 1
             FROM haravan.warehouse_inventories inven
-            INNER JOIN haravan.warehouses house ON house.id = inven.loc_id
+            INNER JOIN haravan.warehouses house 
+              ON house.id = inven.loc_id
             WHERE inven.product_id = dia.product_id
+              AND inven.qty_available > 0
               AND house.name IN (
                 '[HCM] Cửa Hàng HCM',
                 '[HN] Cửa Hàng HN',
