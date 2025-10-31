@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS "haravan"."users" (
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "ix_haravan_users_id" ON "haravan"."users"("id");
+CREATE UNIQUE INDEX IF NOT EXISTS "ix_haravan_users_id" ON "haravan"."users"("id");
 
 -- CreateIndex
-CREATE INDEX "ix_haravan_users_uuid" ON "haravan"."users"("uuid");
+CREATE INDEX IF NOT EXISTS "ix_haravan_users_uuid" ON "haravan"."users"("uuid");
