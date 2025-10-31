@@ -1,3 +1,25 @@
+model erpnextUser {
+  uuid  String  @id @default(uuid()) @db.Uuid
+  name  String? @unique
+  email String?
+  creation DateTime? @db.Timestamp(6)
+  modified DateTime? @db.Timestamp(6)
+  modified_by String?
+  enabled Int? @db.SmallInt
+  full_name String?
+  language String?
+  time_zone String?
+  user_image String?
+  role_profile String?
+  gender String?
+  birth_date DateTime?
+  location String?
+  pancake_id String?
+
+  @@map("users")
+  @@schema("erpnext")
+}
+
 model erpnextEmployee {
   uuid          String    @id @default(uuid()) @db.Uuid
   name          String?   @unique
