@@ -8,7 +8,8 @@
 CREATE SCHEMA IF NOT EXISTS "ecom";
 
 -- AlterTable
-ALTER TABLE "payment"."manual_payments" ADD COLUMN     "misa_synced_at" TIMESTAMP(6);
+ALTER TABLE "payment"."manual_payments"
+ADD COLUMN IF NOT EXISTS "misa_synced_at" TIMESTAMP(6);
 
 -- CreateTable
 CREATE TABLE IF NOT EXISTS "ecom"."leads" (
