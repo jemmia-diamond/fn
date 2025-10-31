@@ -8,6 +8,15 @@ export default class MisaWebhookHandler {
   }
 
   async handleWebhook(body) {
+
+    if (body.app_id !== this.env.MISA_APP_ID || body.org_company_code !== this.env.MISA_ORG_CODE) {
+      console.warn("MISA Webhook: app_id or org_company_code mismatch. Ignoring payload.", {
+        receivedAppId: body.app_id,
+        receivedOrgCode: body.org_company_code
+      });
+      return;
+    }
+
     const dataPayload = JSON.parse(body.data);
     if (!Array.isArray(dataPayload) || dataPayload.length === 0) {
       console.error("Invalid or empty MISA webhook dataPayload.");
