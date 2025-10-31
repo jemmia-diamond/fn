@@ -35,7 +35,7 @@ model erpnextSalesPerson {
   @@schema("erpnext")
 }
 
-model contacts {
+model erpnextContact {
   uuid                        String    @id @db.Uuid
   name                        String    @unique @db.VarChar(255)
   owner                       String?   @db.VarChar(255)
@@ -115,10 +115,11 @@ model contacts {
   database_updated_at         DateTime? @db.Timestamp(6)
 
   @@index([name])
+  @@map("contacts")
   @@schema("erpnext")
 }
 
-model customers {
+model erpnextCustomer {
   uuid                           String    @id @db.Uuid
   name                           String    @unique @db.VarChar(255)
   owner                          String?   @db.VarChar(255)
@@ -215,10 +216,11 @@ model customers {
   @@index([customer_name])
   @@index([haravan_id])
   @@index([name])
+  @@map("customers")
   @@schema("erpnext")
 }
 
-model lead_budgets {
+model erpnextLeadBudget {
   uuid                String    @id @db.Uuid
   name                String    @unique @db.VarChar(255)
   owner               String?   @db.VarChar(255)
@@ -231,10 +233,11 @@ model lead_budgets {
   database_updated_at DateTime? @db.Timestamp(6)
 
   @@index([name])
+  @@map("lead_budgets")
   @@schema("erpnext")
 }
 
-model lead_demands {
+model erpnextLeadDemand {
   uuid                String    @id @db.Uuid
   name                String    @unique @db.VarChar(255)
   owner               String?   @db.VarChar(255)
@@ -245,6 +248,7 @@ model lead_demands {
   database_updated_at DateTime? @db.Timestamp(6)
 
   @@index([name])
+  @@map("lead_demands")
   @@schema("erpnext")
 }
 
@@ -258,7 +262,7 @@ model lead_sources {
   @@schema("erpnext")
 }
 
-model erpnext_leads {
+model erpnextLead {
   uuid                   String    @id @db.Uuid
   name                   String    @unique @db.VarChar(255)
   owner                  String?   @db.VarChar(255)
@@ -345,7 +349,7 @@ model erpnext_leads {
   @@schema("erpnext")
 }
 
-model product_categories {
+model erpnextProductCategory {
   uuid        String    @id @db.Uuid
   name        String    @unique @db.VarChar(255)
   owner       String?   @db.VarChar(255)
@@ -357,10 +361,11 @@ model product_categories {
   title       String?   @db.VarChar(255)
 
   @@index([name])
+  @@map("product_categories")
   @@schema("erpnext")
 }
 
-model promotions {
+model erpnextPromotion {
   uuid             String    @id @db.Uuid
   name             String    @unique @db.VarChar(255)
   owner            String?   @db.VarChar(255)
@@ -383,10 +388,11 @@ model promotions {
   bizfly_id        String?   @db.VarChar(255)
 
   @@index([name])
+  @@map("promotions")
   @@schema("erpnext")
 }
 
-model provinces {
+model erpnextProvince {
   uuid                String    @id @db.Uuid
   name                String    @unique @db.VarChar(255)
   owner               String?   @db.VarChar(255)
@@ -398,10 +404,11 @@ model provinces {
   database_updated_at DateTime? @db.Timestamp(6)
 
   @@index([name])
+  @@map("provinces")
   @@schema("erpnext")
 }
 
-model purchase_purposes {
+model erpnextPurchasePurpose {
   uuid        String    @id @db.Uuid
   name        String    @unique @db.VarChar(255)
   owner       String?   @db.VarChar(255)
@@ -413,10 +420,11 @@ model purchase_purposes {
   title       String?   @db.VarChar(255)
 
   @@index([name])
+  @@map("purchase_purposes")
   @@schema("erpnext")
 }
 
-model regions {
+model erpnextRegion {
   uuid                String    @id @db.Uuid
   name                String    @unique @db.VarChar(255)
   owner               String?   @db.VarChar(255)
@@ -427,10 +435,11 @@ model regions {
   database_updated_at DateTime? @db.Timestamp(6)
 
   @@index([name])
+  @@map("regions")
   @@schema("erpnext")
 }
 
-model sales_order_notification_tracking {
+model erpnextSalesOrderNotificationTracking {
   uuid                String   @id @db.Uuid
   order_name          String
   haravan_order_id    String
@@ -441,10 +450,11 @@ model sales_order_notification_tracking {
 
   @@index([haravan_order_id])
   @@index([order_name])
+  @@map("sales_order_notification_tracking")
   @@schema("erpnext")
 }
 
-model sales_orders {
+model erpnextSalesOrders {
   uuid                           String    @id @db.Uuid
   name                           String?   @unique
   owner                          String?
@@ -597,10 +607,11 @@ model sales_orders {
   @@index([haravan_order_id])
   @@index([order_number])
   @@index([status])
+  @@map("sales_orders")
   @@schema("erpnext")
 }
 
-model addresses {
+model erpnextAddress {
   uuid                    String    @id @db.Uuid
   name                    String    @unique @db.VarChar(255)
   owner                   String?   @db.VarChar(255)
@@ -635,5 +646,6 @@ model addresses {
   database_created_at     DateTime? @default(now()) @db.Timestamp(6)
   database_updated_at     DateTime? @db.Timestamp(6)
 
+  @@map("addresses")
   @@schema("erpnext")
 }
