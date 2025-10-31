@@ -92,8 +92,7 @@ export default class JewelryDiamondPairService {
           dia.variant_id AS new_diamond_variant_id
         FROM workplace.diamonds dia
         WHERE dia.qty_available IS NOT NULL AND dia.qty_available > 0
-          AND dia.edge_size_1 > 4.4 AND dia.edge_size_2 > 4.4
-          AND dia.edge_size_1 < 4.6 AND dia.edge_size_2 < 4.6
+          AND dia.edge_size_2 >= 4.5 AND dia.edge_size_2 < 4.6
           AND EXISTS (
             SELECT 1
             FROM haravan.warehouse_inventories inven
