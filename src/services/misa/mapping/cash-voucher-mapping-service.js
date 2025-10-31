@@ -1,11 +1,16 @@
-import { MANUAL_PAYMENT_CREDIT_MAP, MANUAL_PAYMENT_DEBIT_MAP, REASON_TYPES, VOUCHER_REF_TYPES, VOUCHER_TYPES } from "services/misa/constant";
+import { CREDIT_ACCOUNT_MAP, DEBIT_ACCOUNT_MAP, MANUAL_PAYMENT_CREDIT_MAP, MANUAL_PAYMENT_DEBIT_MAP, REASON_TYPES, VOUCHER_REF_TYPES, VOUCHER_TYPES } from "services/misa/constant";
 
 export default class CashVoucherMappingService {
   static transforManualToVoucher(v, bankMap, voucher_type = VOUCHER_TYPES.MANUAL_PAYMENT, ref_type = VOUCHER_REF_TYPES.MANUAL_PAYMENT) {
     // Company credit and debit account
     // manual payment using "branch" field (branch is actually vietnamese province)
-    const debitAccount = MANUAL_PAYMENT_DEBIT_MAP[v.branch] || null;
-    const creditInfo = MANUAL_PAYMENT_CREDIT_MAP[v.branch] || null;
+    const isManual = voucher_type === VOUCHER_TYPES.MANUAL_PAYMENT;
+    const debitAccount = isManual
+      ? MANUAL_PAYMENT_DEBIT_MAP[v.branch] || null
+      : DEBIT_ACCOUNT_MAP[v.bank_name] || null;
+    const creditInfo = isManual
+      ? MANUAL_PAYMENT_CREDIT_MAP[v.branch] || null
+      : CREDIT_ACCOUNT_MAP[v.haravan_order?.source] || {};
 
     // Employee code ( from Amis ) and name
     const employee_code = v.haravan_order?.misa_user?.employee_code || `${v.haravan_order?.user?.first_name}.${v.haravan_order?.user?.last_name}@jemmia.vn`;
