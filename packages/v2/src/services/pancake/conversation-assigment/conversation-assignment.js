@@ -14,7 +14,7 @@ export default class ConversationAssignmentService {
     this.frappeClient = new FrappeClient({
       url: env.JEMMIA_ERP_BASE_URL,
       apiKey: env.JEMMIA_ERP_API_KEY,
-      apiSecret: env.JEMMIA_ERP_API_SECRET,
+      apiSecret: env.JEMMIA_ERP_API_SECRET
     });
   }
 
@@ -38,7 +38,7 @@ export default class ConversationAssignmentService {
       await this.frappeClient.getDoc("User", allocatedUser)
     ).pancake_id;
     const contacts = await this.frappeClient.getList("Contact", {
-      filters: [["Dynamic Link", "link_name", "=", leadName]],
+      filters: [["Dynamic Link", "link_name", "=", leadName]]
     });
 
     if (!contacts.length) {
@@ -51,12 +51,12 @@ export default class ConversationAssignmentService {
     const assigneesHistory =
       await this.getLastConversationAssigneesHistory(conversationId);
     const assignedUserIds = [
-      ...new Set([...assigneesHistory, allocatedUserPancakeId]),
+      ...new Set([...assigneesHistory, allocatedUserPancakeId])
     ];
     const res = await this.pancakeClient.assignConversation(
       pageId,
       conversationId,
-      assignedUserIds,
+      assignedUserIds
     );
     return res;
   }

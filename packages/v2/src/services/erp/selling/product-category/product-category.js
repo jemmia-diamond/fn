@@ -13,7 +13,7 @@ export default class ProductCategoryService {
     this.frappeClient = new FrappeClient({
       url: env.JEMMIA_ERP_BASE_URL,
       apiKey: env.JEMMIA_ERP_API_KEY,
-      apiSecret: env.JEMMIA_ERP_API_SECRET,
+      apiSecret: env.JEMMIA_ERP_API_SECRET
     });
     this.db = Database.instance(env);
   }
@@ -34,8 +34,8 @@ export default class ProductCategoryService {
         {
           limit_start: (page - 1) * pageSize,
           limit_page_length: pageSize,
-          filters: [["modified", ">=", timeThreshold]],
-        },
+          filters: [["modified", ">=", timeThreshold]]
+        }
       );
       productCategories = productCategories.concat(result);
       if (result.length < pageSize) break;
@@ -55,14 +55,14 @@ export default class ProductCategoryService {
         modified_by: productCategory.modified_by,
         docstatus: productCategory.docstatus,
         idx: productCategory.idx,
-        title: productCategory.title,
+        title: productCategory.title
       };
       await productCategoryService.db.erpnextProductCategory.upsert({
         where: {
-          name: productCategoryData.name,
+          name: productCategoryData.name
         },
         update: productCategoryData,
-        create: productCategoryData,
+        create: productCategoryData
       });
     }
   }

@@ -13,7 +13,7 @@ export default class UserService {
     this.frappeClient = new FrappeClient({
       url: this.env.JEMMIA_ERP_BASE_URL,
       apiKey: this.env.JEMMIA_ERP_API_KEY,
-      apiSecret: this.env.JEMMIA_ERP_API_SECRET,
+      apiSecret: this.env.JEMMIA_ERP_API_SECRET
     });
     this.db = Database.instance(env);
   }
@@ -27,19 +27,19 @@ export default class UserService {
   static async syncLarkIds(env) {
     const userService = new UserService(env);
     const users = await userService.frappeClient.getList(userService.doctype, {
-      filters: [["pancake_id", "=", null]],
+      filters: [["pancake_id", "=", null]]
     });
 
     const pancakeUsers = await userService.getPancakeUsers();
     for (const user of users) {
       const pancakeUser = pancakeUsers.find(
-        (pancakeUser) => pancakeUser.enterprise_email === user.email,
+        (pancakeUser) => pancakeUser.enterprise_email === user.email
       );
       if (pancakeUser) {
         await userService.frappeClient.update({
           doctype: userService.doctype,
           name: user.name,
-          pancake_id: pancakeUser.id,
+          pancake_id: pancakeUser.id
         });
       }
     }
@@ -61,8 +61,8 @@ export default class UserService {
         {
           limit_start: (page - 1) * pageSize,
           limit_page_length: pageSize,
-          filters: [["modified", ">=", timeThreshold]],
-        },
+          filters: [["modified", ">=", timeThreshold]]
+        }
       );
       users = users.concat(result);
       if (result.length < pageSize) break;
@@ -85,14 +85,14 @@ export default class UserService {
         gender: user.gender,
         birth_date: new Date(user.birth_date),
         location: user.location,
-        pancake_id: user.pancake_id,
+        pancake_id: user.pancake_id
       };
       await userService.db.erpnextUser.upsert({
         where: {
-          name: userData.name,
+          name: userData.name
         },
         update: userData,
-        create: userData,
+        create: userData
       });
     }
   }

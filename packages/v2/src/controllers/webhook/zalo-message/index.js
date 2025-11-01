@@ -5,7 +5,7 @@ export default class ZaloMessageWebhook {
     const zaloMessageWebhookNamespace = webhook.basePath("/zalo_message");
     zaloMessageWebhookNamespace.post(
       "/order_status",
-      OrderStatusController.create,
+      OrderStatusController.create
     );
   }
 }

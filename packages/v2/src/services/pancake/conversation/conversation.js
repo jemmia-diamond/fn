@@ -91,14 +91,14 @@ export default class ConversationService {
             ", Conversation ID: " +
             conversationId +
             ", Inserted At: " +
-            insertedAt,
+            insertedAt
         );
       }
       // Store the time of the last customer message
       const result = await this.updateConversation(
         conversationId,
         pageId,
-        insertedAt,
+        insertedAt
       );
       return result;
     } catch (err) {
@@ -125,7 +125,7 @@ export default class ConversationService {
       }
 
       const existingDocName = await this.findExistingLead({
-        conversationId: conversationId,
+        conversationId: conversationId
       });
       if (existingDocName === undefined) return;
 
@@ -135,11 +135,11 @@ export default class ConversationService {
         await this.leadService.updateLead({
           leadName: existingDocName.frappe_name_id,
           phone: body?.data?.message?.phone_info?.[0].phone_number ?? "",
-          firstName: body?.data?.conversation?.from?.name ?? "",
+          firstName: body?.data?.conversation?.from?.name ?? ""
         });
       } else {
         const pancakePage = await this.findPageInfo({
-          pageId: pageId,
+          pageId: pageId
         });
         if (pancakePage === undefined || pancakePage === null) return;
 
@@ -156,7 +156,7 @@ export default class ConversationService {
           type: body?.data?.conversation?.type ?? "",
           lastestMessageAt: "",
           pancakeUserId: body?.data?.conversation?.assignee_ids?.[0] ?? "",
-          pancakeAvatarUrl: "",
+          pancakeAvatarUrl: ""
         });
 
         if (newLead !== undefined && newLead !== null && newLead.length > 0) {
@@ -186,7 +186,7 @@ export default class ConversationService {
     const conversationId = message?.conversation_id;
 
     const existingDocName = await this.findExistingLead({
-      conversationId: conversationId,
+      conversationId: conversationId
     });
 
     if (!existingDocName) return;
@@ -195,7 +195,7 @@ export default class ConversationService {
     return await aihub.makeRequest("/lead-info", {
       pageId: body.page_id,
       conversationId: conversationId,
-      webhookUrl: `${env.HOST}/webhook/ai-hub/erp/leads`,
+      webhookUrl: `${env.HOST}/webhook/ai-hub/erp/leads`
     });
   }
 

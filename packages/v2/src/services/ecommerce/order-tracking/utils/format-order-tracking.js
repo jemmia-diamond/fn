@@ -1,7 +1,7 @@
 export function formatOrderTrackingResult(
   order,
   nhattinTrackInfo,
-  isAuthorizedAccess = false,
+  isAuthorizedAccess = false
 ) {
   return {
     order_id: order.order_id.toString(),
@@ -53,7 +53,7 @@ export function formatOrderTrackingResult(
     insurance_fee: nhattinTrackInfo.insurance_fee,
     cod_amt: nhattinTrackInfo.cod_amt,
     cod_fee: nhattinTrackInfo.cod_fee,
-    shipping_type: mapShippingType(nhattinTrackInfo.service),
+    shipping_type: mapShippingType(nhattinTrackInfo.service)
   };
 }
 
@@ -119,7 +119,7 @@ function normalizeDiamondItem(item) {
     title: NATURAL_DIAMOND_TITLE,
     variant_title: item.name.replace(
       new RegExp(`^${NATURAL_DIAMOND_TITLE}\\s*`),
-      "",
-    ),
+      ""
+    )
   };
 }

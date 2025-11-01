@@ -8,12 +8,12 @@ export default class DashboardTVService {
   async getTVData(startDate, endDate) {
     const [targetRevenueData, ordersByDayData] = await Promise.all([
       this.getTargetRevenueData(startDate, endDate),
-      this.getOrdersByDayData(startDate, endDate),
+      this.getOrdersByDayData(startDate, endDate)
     ]);
 
     return {
       targetRevenue: targetRevenueData,
-      ordersByDay: ordersByDayData,
+      ordersByDay: ordersByDayData
     };
   }
 

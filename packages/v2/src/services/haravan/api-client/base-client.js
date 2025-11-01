@@ -8,7 +8,7 @@ export default class BaseClient {
   async composeHeaders() {
     return {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${await this.accessToken.get()}`,
+      Authorization: `Bearer ${await this.accessToken.get()}`
     };
   }
 
@@ -24,13 +24,13 @@ export default class BaseClient {
     if (!response.ok) {
       return {
         success: false,
-        message: `Haravan API error: ${response.status} ${response.statusText}`,
+        message: `Haravan API error: ${response.status} ${response.statusText}`
       };
     }
     return {
       success: true,
       message: "Success",
-      data: await response.json(),
+      data: await response.json()
     };
   }
 }

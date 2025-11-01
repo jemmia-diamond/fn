@@ -6,10 +6,10 @@ export const validationData = {
     "Vàng Vàng",
     "Vàng Trắng - Vàng Hồng",
     "Vàng Trắng - Vàng Vàng",
-    "Vàng Hồng - Vàng Vàng",
+    "Vàng Hồng - Vàng Vàng"
   ],
   sort_by: ["price", "stock"],
-  sort_order: ["asc", "desc"],
+  sort_order: ["asc", "desc"]
 };
 
 export const validateParams = (jsonParams) => {

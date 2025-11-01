@@ -13,7 +13,7 @@ export default class PromotionService {
     this.frappeClient = new FrappeClient({
       url: env.JEMMIA_ERP_BASE_URL,
       apiKey: env.JEMMIA_ERP_API_KEY,
-      apiSecret: env.JEMMIA_ERP_API_SECRET,
+      apiSecret: env.JEMMIA_ERP_API_SECRET
     });
     this.db = Database.instance(env);
   }
@@ -34,8 +34,8 @@ export default class PromotionService {
         {
           limit_start: (page - 1) * pageSize,
           limit_page_length: pageSize,
-          filters: [["modified", ">=", timeThreshold]],
-        },
+          filters: [["modified", ">=", timeThreshold]]
+        }
       );
       promotions = promotions.concat(result);
       if (result.length < pageSize) break;
@@ -64,14 +64,14 @@ export default class PromotionService {
           : null,
         end_date: promotion.end_date ? new Date(promotion.end_date) : null,
         description: promotion.description,
-        bizfly_id: promotion.bizfly_id,
+        bizfly_id: promotion.bizfly_id
       };
       await promotionService.db.erpnextPromotion.upsert({
         where: {
-          name: promotionData.name,
+          name: promotionData.name
         },
         update: promotionData,
-        create: promotionData,
+        create: promotionData
       });
     }
   }

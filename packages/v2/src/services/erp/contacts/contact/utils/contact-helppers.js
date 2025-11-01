@@ -13,7 +13,7 @@ export async function fetchContactsFromERP(
   doctype,
   fromDate,
   toDate,
-  pageSize,
+  pageSize
 ) {
   try {
     const filters = {};
@@ -30,7 +30,7 @@ export async function fetchContactsFromERP(
         filters: filters,
         limit_start: start,
         limit_page_length: pageSize,
-        order_by: "creation desc",
+        order_by: "creation desc"
       });
 
       if (contactsBatch?.length) {
@@ -38,17 +38,17 @@ export async function fetchContactsFromERP(
         const contactPhoneNos = await fetchContactChildRecordsFromERP(
           frappeClient,
           contactNames,
-          "tabContact Phone",
+          "tabContact Phone"
         );
         const contactEmails = await fetchContactChildRecordsFromERP(
           frappeClient,
           contactNames,
-          "tabContact Email",
+          "tabContact Email"
         );
         const contactLinks = await fetchContactChildRecordsFromERP(
           frappeClient,
           contactNames,
-          "tabDynamic Link",
+          "tabDynamic Link"
         );
 
         // group contact phone nos by contact name
@@ -95,7 +95,7 @@ export async function fetchContactsFromERP(
     return allContacts;
   } catch (error) {
     console.error("Error fetching contacts from ERPNext", {
-      error: error.message,
+      error: error.message
     });
     throw error;
   }
@@ -105,7 +105,7 @@ export async function fetchContactsFromERP(
 export async function fetchContactChildRecordsFromERP(
   frappeClient,
   contactNames,
-  tableName,
+  tableName
 ) {
   if (!Array.isArray(contactNames) || contactNames.length === 0) {
     return [];
@@ -132,10 +132,10 @@ export async function saveContactsToDatabase(db, contacts) {
         "uuid",
         ...Object.keys(chunk[0]).filter(
           (field) =>
-            field !== "database_created_at" && field !== "database_updated_at",
+            field !== "database_created_at" && field !== "database_updated_at"
         ),
         "database_created_at",
-        "database_updated_at",
+        "database_updated_at"
       ];
       const fieldsSql = fields.map((field) => `"${field}"`).join(", ");
 
@@ -147,10 +147,10 @@ export async function saveContactsToDatabase(db, contacts) {
             uuid: randomUUID(),
             ...contact,
             database_created_at: currentTimestamp,
-            database_updated_at: currentTimestamp,
+            database_updated_at: currentTimestamp
           };
           const fieldValues = fields.map((field) =>
-            escapeSqlValue(contactWithTimestamps[field]),
+            escapeSqlValue(contactWithTimestamps[field])
           );
           return `(${fieldValues.join(", ")})`;
         })
@@ -162,7 +162,7 @@ export async function saveContactsToDatabase(db, contacts) {
           (field) =>
             field !== "name" &&
             field !== "uuid" &&
-            field !== "database_created_at",
+            field !== "database_created_at"
         )
         .map((field) => {
           if (field === "database_updated_at") {
@@ -188,11 +188,11 @@ export async function saveContactsToDatabase(db, contacts) {
 export async function deleteContactFromDatabase(db, contactName) {
   try {
     const contact = await db.erpnextContact.findUnique({
-      where: { name: contactName },
+      where: { name: contactName }
     });
     if (contact) {
       await db.erpnextContact.delete({
-        where: { name: contactName },
+        where: { name: contactName }
       });
     }
   } catch (error) {

@@ -7,5 +7,5 @@ export default {
   AppRoutes,
   APIRoutes,
   PublicAPIRoutes,
-  WebhookRoutes,
+  WebhookRoutes
 };

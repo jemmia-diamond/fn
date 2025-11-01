@@ -7,7 +7,7 @@ export default class FrappePancakeConversationAssignmentController {
       new Pancake.ConversationAssignmentService(ctx.env);
     const result =
       await conversationAssignmentService.syncConversationAssigneesWithERPToDo(
-        data,
+        data
       );
     return ctx.json({ success: !!result, data: result });
   }

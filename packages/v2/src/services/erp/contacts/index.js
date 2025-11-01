@@ -3,5 +3,5 @@ import ContactService from "services/erp/contacts/contact/contact";
 
 export default {
   AddressService: AddressService,
-  ContactService: ContactService,
+  ContactService: ContactService
 };

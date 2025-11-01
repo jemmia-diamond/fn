@@ -12,7 +12,7 @@ export default class SerialService {
     this.frappeClient = new FrappeClient({
       url: env.JEMMIA_ERP_BASE_URL,
       apiKey: env.JEMMIA_ERP_API_KEY,
-      apiSecret: env.JEMMIA_ERP_API_SECRET,
+      apiSecret: env.JEMMIA_ERP_API_SECRET
     });
     this.db = Database.instance(env);
   }
@@ -52,15 +52,15 @@ export default class SerialService {
             doctype: serialService.doctype,
             serial_number: serial.serial_number,
             sku: serial.sku,
-            design_code: serial.design_code,
+            design_code: serial.design_code
           },
-          "serial_number",
+          "serial_number"
         )
         .catch((e) => {
           console.error(
-            (`Error upserting serial ${serial.serial_number}: `, e),
+            (`Error upserting serial ${serial.serial_number}: `, e)
           );
-        }),
+        })
     );
 
     await Promise.all(promises);

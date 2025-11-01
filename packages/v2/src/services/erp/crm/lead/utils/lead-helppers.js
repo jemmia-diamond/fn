@@ -13,7 +13,7 @@ export async function fetchLeadsFromERP(
   doctype,
   fromDate,
   toDate,
-  pageSize,
+  pageSize
 ) {
   try {
     const filters = {};
@@ -30,14 +30,14 @@ export async function fetchLeadsFromERP(
         filters: filters,
         limit_start: start,
         limit_page_length: pageSize,
-        order_by: "creation desc",
+        order_by: "creation desc"
       });
 
       if (leadsBatch?.length) {
         const leadNames = leadsBatch.map((lead) => lead.name);
         const leadProductItems = await fetchLeadProductItemsFromERP(
           frappeClient,
-          leadNames,
+          leadNames
         );
 
         // group leadProductItems by lead name
@@ -64,7 +64,7 @@ export async function fetchLeadsFromERP(
     return allLeads;
   } catch (error) {
     console.error("Error fetching leads from ERPNext", {
-      error: error.message,
+      error: error.message
     });
     throw error;
   }
@@ -95,10 +95,10 @@ export async function saveLeadsToDatabase(db, leads) {
         "uuid",
         ...Object.keys(chunk[0]).filter(
           (field) =>
-            field !== "database_created_at" && field !== "database_updated_at",
+            field !== "database_created_at" && field !== "database_updated_at"
         ),
         "database_created_at",
-        "database_updated_at",
+        "database_updated_at"
       ];
       const fieldsSql = fields.map((field) => `"${field}"`).join(", ");
 
@@ -110,10 +110,10 @@ export async function saveLeadsToDatabase(db, leads) {
             uuid: randomUUID(),
             ...lead,
             database_created_at: currentTimestamp,
-            database_updated_at: currentTimestamp,
+            database_updated_at: currentTimestamp
           };
           const fieldValues = fields.map((field) =>
-            escapeSqlValue(leadWithTimestamps[field]),
+            escapeSqlValue(leadWithTimestamps[field])
           );
           return `(${fieldValues.join(", ")})`;
         })
@@ -125,7 +125,7 @@ export async function saveLeadsToDatabase(db, leads) {
           (field) =>
             field !== "name" &&
             field !== "uuid" &&
-            field !== "database_created_at",
+            field !== "database_created_at"
         )
         .map((field) => {
           if (field === "database_updated_at") {
@@ -158,6 +158,6 @@ export function areAllFieldsEmpty(obj) {
       value === null ||
       value === undefined ||
       (typeof value === "string" && value.trim() === "") ||
-      (Array.isArray(value) && value.length === 0),
+      (Array.isArray(value) && value.length === 0)
   );
 }

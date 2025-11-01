@@ -15,7 +15,7 @@ export async function fetchSalesOrdersFromERP(
   doctype,
   fromDate,
   toDate,
-  pageSize,
+  pageSize
 ) {
   try {
     const filters = { modified: [">=", fromDate] };
@@ -29,7 +29,7 @@ export async function fetchSalesOrdersFromERP(
         filters: filters,
         limit_start: start,
         limit_page_length: pageSize,
-        order_by: "creation desc",
+        order_by: "creation desc"
       });
 
       if (!Array.isArray(batch) || batch.length === 0) break;
@@ -39,37 +39,37 @@ export async function fetchSalesOrdersFromERP(
       const salesOrderItems = await fetchChildRecordsFromERP(
         frappeClient,
         orderNames,
-        "tabSales Order Item",
+        "tabSales Order Item"
       );
       const salesTeams = await fetchChildRecordsFromERP(
         frappeClient,
         orderNames,
-        "tabSales Team",
+        "tabSales Team"
       );
       const salesOrderPolicies = await fetchChildRecordsFromERP(
         frappeClient,
         orderNames,
-        "tabSales Order Policy",
+        "tabSales Order Policy"
       );
       const salesOrderPromotions = await fetchChildRecordsFromERP(
         frappeClient,
         orderNames,
-        "tabSales Order Promotion",
+        "tabSales Order Promotion"
       );
       const salesOrderPurposes = await fetchChildRecordsFromERP(
         frappeClient,
         orderNames,
-        "tabSales Order Purpose",
+        "tabSales Order Purpose"
       );
       const salesOrderProductCategories = await fetchChildRecordsFromERP(
         frappeClient,
         orderNames,
-        "tabSales Order Product Category",
+        "tabSales Order Product Category"
       );
       const debtHistory = await fetchChildRecordsFromERP(
         frappeClient,
         orderNames,
-        "tabOrder and Debt Tracking",
+        "tabOrder and Debt Tracking"
       );
 
       // group records by sales order name
@@ -84,7 +84,7 @@ export async function fetchSalesOrdersFromERP(
       const salesOrderPromotionsMap = groupByParent(salesOrderPromotions);
       const salesOrderPurposesMap = groupByParent(salesOrderPurposes);
       const salesOrderProductCategoriesMap = groupByParent(
-        salesOrderProductCategories,
+        salesOrderProductCategories
       );
       const debtHistoryMap = groupByParent(debtHistory);
 
@@ -126,10 +126,10 @@ export async function saveSalesOrdersToDatabase(db, salesOrders) {
         "uuid",
         ...Object.keys(chunk[0]).filter(
           (field) =>
-            field !== "database_created_at" && field !== "database_updated_at",
+            field !== "database_created_at" && field !== "database_updated_at"
         ),
         "database_created_at",
-        "database_updated_at",
+        "database_updated_at"
       ];
       const fieldsSql = fields.map((field) => `"${field}"`).join(", ");
 
@@ -141,10 +141,10 @@ export async function saveSalesOrdersToDatabase(db, salesOrders) {
             uuid: randomUUID(),
             ...salesOrder,
             database_created_at: currentTimestamp,
-            database_updated_at: currentTimestamp,
+            database_updated_at: currentTimestamp
           };
           const fieldValues = fields.map((field) =>
-            escapeSqlValue(salesOrderWithTimestamps[field]),
+            escapeSqlValue(salesOrderWithTimestamps[field])
           );
           return `(${fieldValues.join(", ")})`;
         })
@@ -156,7 +156,7 @@ export async function saveSalesOrdersToDatabase(db, salesOrders) {
           (field) =>
             field !== "name" &&
             field !== "uuid" &&
-            field !== "database_created_at",
+            field !== "database_created_at"
         )
         .map((field) => {
           if (field === "database_updated_at") {

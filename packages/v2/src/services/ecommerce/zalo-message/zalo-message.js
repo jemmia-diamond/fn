@@ -61,7 +61,7 @@ export default class SendZaloMessage {
           result.phone,
           templateId,
           result.templateData,
-          env,
+          env
         );
       }
     }
@@ -101,7 +101,7 @@ export default class SendZaloMessage {
         // Retrieve oldest order ID in case the order has been re-ordered
         let firstOrder = {
           id: order.id,
-          order_number: order.order_number,
+          order_number: order.order_number
         };
         if (order.ref_order_id) {
           firstOrder = await getInitialOrder(db, order.id);
@@ -113,7 +113,7 @@ export default class SendZaloMessage {
 
         const isOrderInDelivery = await this.checkOrderInDelivery(
           String(firstOrder.id),
-          db,
+          db
         );
         if (isOrderInDelivery) {
           console.warn("Order is already in delivery:", firstOrder.id);
@@ -126,19 +126,19 @@ export default class SendZaloMessage {
         const accessToken = await this.createTokenForOrderTracking(
           {
             order_id: firstOrder.id,
-            order_number: firstOrder.order_number,
+            order_number: firstOrder.order_number
           },
           bearerToken,
-          env,
+          env
         );
         const extraParams = {
-          trackingRedirectPath: `order-tracking?order_id=${firstOrder.id}&token=${accessToken}`,
+          trackingRedirectPath: `order-tracking?order_id=${firstOrder.id}&token=${accessToken}`
         };
 
         const result = GetTemplateZalo.getTemplateZalo(
           templateId,
           order,
-          extraParams,
+          extraParams
         );
         console.warn("Zalo Delivery Template", result);
 
@@ -147,14 +147,14 @@ export default class SendZaloMessage {
             result.phone,
             templateId,
             result.templateData,
-            env,
+            env
           );
           await this.makeOrderInDelivery(String(firstOrder.id), db);
         }
       } catch (error) {
         console.error(
           "Failed to process order for Zalo delivery message:",
-          error,
+          error
         );
       }
     }
@@ -255,13 +255,13 @@ export default class SendZaloMessage {
             result.phone,
             templateId,
             result.templateData,
-            env,
+            env
           );
         }
       } catch (error) {
         console.error(
           "Failed to process order for Zalo remind pay message:",
-          error,
+          error
         );
       }
     }

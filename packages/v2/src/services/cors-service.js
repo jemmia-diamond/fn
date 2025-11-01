@@ -7,7 +7,7 @@ class CorsService {
         return CorsService.validateOrigin(origin, c);
       },
       allowHeaders: ["Content-Type", "Authorization"],
-      allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+      allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
     });
   }
 
@@ -21,7 +21,7 @@ class CorsService {
 
     // Handle wildcard domains, eg: *.jemmia.vn
     const wildcardOrigins = corsOrigins.filter((o) =>
-      o.startsWith("https://*."),
+      o.startsWith("https://*.")
     );
 
     for (const wildcardOrigin of wildcardOrigins) {

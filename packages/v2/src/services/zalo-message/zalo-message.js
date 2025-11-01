@@ -27,9 +27,9 @@ export default class ZNSMessageService {
         zalo_oa_id: this.zaloOAId,
         content: {
           template_id: templateId,
-          template_data: templateData,
+          template_data: templateData
         },
-        callback_url: "",
+        callback_url: ""
       };
 
       const payload = JSON.stringify(payloadObject);
@@ -40,13 +40,13 @@ export default class ZNSMessageService {
         "x-client-hash": xClientHash,
         "x-client-id": this.clientId,
         "x-request-id": requestId,
-        "Content-Type": "application/json",
+        "Content-Type": "application/json"
       };
       const endpoint = `${this.baseURL}/zns-partner/v1/messages`;
       const response = await fetch(endpoint, {
         method: "POST",
         headers,
-        body: JSON.stringify(payloadObject),
+        body: JSON.stringify(payloadObject)
       });
 
       const text = await response.text();
@@ -55,7 +55,7 @@ export default class ZNSMessageService {
       if (!response.ok) {
         console.error("Zalo API request failed:", {
           status: response.status,
-          body: data,
+          body: data
         });
         throw new Error(`Zalo API error: ${text}`);
       }

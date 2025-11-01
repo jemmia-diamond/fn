@@ -6,12 +6,12 @@ export default function getRoutesConfig() {
     plugins: {
       restful: {
         rules: {
-          routes: RestfulRoutesValidator,
-        },
-      },
+          routes: RestfulRoutesValidator
+        }
+      }
     },
     rules: {
-      "restful/routes": "error",
-    },
+      "restful/routes": "error"
+    }
   };
 }

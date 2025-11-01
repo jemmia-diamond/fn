@@ -14,10 +14,10 @@ export default class ScheduleService {
 
     const currentDate = dayjs().utc();
     const timeThresholdStart = Number(
-      currentDate.subtract(1, "day").format("YYYYMMDD"),
+      currentDate.subtract(1, "day").format("YYYYMMDD")
     );
     const timeThresholdEnd = Number(
-      currentDate.add(1, "day").format("YYYYMMDD"),
+      currentDate.add(1, "day").format("YYYYMMDD")
     );
 
     const userIds = await ScheduleService.getUsersIds(db);
@@ -28,7 +28,7 @@ export default class ScheduleService {
         tenantAccessToken,
         userId,
         timeThresholdStart,
-        timeThresholdEnd,
+        timeThresholdEnd
       );
       schedulesSets.push(userSchedule);
     }
@@ -55,20 +55,20 @@ export default class ScheduleService {
     tenantAccessToken,
     userId,
     from,
-    to,
+    to
   ) {
     const reponse = await larkClient.attendance.userDailyShift.query(
       {
         params: {
-          employee_type: "employee_id",
+          employee_type: "employee_id"
         },
         data: {
           user_ids: [userId],
           check_date_from: from,
-          check_date_to: to,
-        },
+          check_date_to: to
+        }
       },
-      lark.withTenantToken(tenantAccessToken),
+      lark.withTenantToken(tenantAccessToken)
     );
     return reponse.data.user_daily_shifts;
   }

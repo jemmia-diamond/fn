@@ -10,13 +10,13 @@ class Database {
     try {
       const adapter = new PrismaNeon({
         connectionString: env.DATABASE_URL,
-        poolQueryViaFetch: true,
+        poolQueryViaFetch: true
       });
 
       return new PrismaClient({
         adapter,
         log: ["error"],
-        errorFormat: "minimal",
+        errorFormat: "minimal"
       });
     } catch (error) {
       console.error("Failed to initialize database client:", error);
@@ -35,7 +35,7 @@ class Database {
           return rawValue.text
             ? sql.query(rawValue.text)
             : sql(strings, ...values);
-        },
+        }
       };
     }
 

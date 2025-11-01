@@ -5,5 +5,5 @@ import SalesOrderNotificationController from "controllers/erp/sales-order-notifi
 export default {
   SalesOrderController,
   LeadController,
-  SalesOrderNotificationController,
+  SalesOrderNotificationController
 };

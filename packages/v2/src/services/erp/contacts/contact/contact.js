@@ -5,7 +5,7 @@ import Database from "services/database";
 import {
   fetchContactsFromERP,
   saveContactsToDatabase,
-  deleteContactFromDatabase,
+  deleteContactFromDatabase
 } from "services/erp/contacts/contact/utils/contact-helppers";
 
 dayjs.extend(utc);
@@ -20,7 +20,7 @@ export default class ContactService {
     this.frappeClient = new FrappeClient({
       url: env.JEMMIA_ERP_BASE_URL,
       apiKey: env.JEMMIA_ERP_API_KEY,
-      apiSecret: env.JEMMIA_ERP_API_SECRET,
+      apiSecret: env.JEMMIA_ERP_API_SECRET
     });
     this.db = Database.instance(env);
     this.defaultContactName = "DEFAULT CONTACT";
@@ -30,8 +30,8 @@ export default class ContactService {
     const contacts = await this.frappeClient.getList(this.doctype, {
       filters: [
         ["Contact Phone", "phone", "=", phone],
-        ["Contact Phone", "is_primary_phone", "=", true],
-      ],
+        ["Contact Phone", "is_primary_phone", "=", true]
+      ]
     });
     if (contacts.length) {
       return await this.frappeClient.getDoc(this.doctype, contacts[0].name);
@@ -56,27 +56,27 @@ export default class ContactService {
     const mappedContactData = {
       doctype: this.doctype,
       first_name: nameParts.join(" "),
-      haravan_customer_id: String(customerData.id),
+      haravan_customer_id: String(customerData.id)
     };
 
     if (customerData["phone"]) {
       mappedContactData.phone_nos = [
         {
           phone: customerData["phone"],
-          is_primary_phone: 1,
-        },
+          is_primary_phone: 1
+        }
       ];
     }
     const contact = await this.frappeClient.upsert(
       mappedContactData,
-      "haravan_customer_id",
+      "haravan_customer_id"
     );
     if (customer) {
       return await this.frappeClient.reference(
         contact,
         "Contact",
         customer,
-        "Customer",
+        "Customer"
       );
     }
     return contact;
@@ -93,10 +93,10 @@ export default class ContactService {
       phone_nos: [
         {
           phone: data.raw_data.phone,
-          is_primary_phone: 1,
-        },
+          is_primary_phone: 1
+        }
       ],
-      source: lead.source,
+      source: lead.source
     };
 
     const defaultContact = await this.frappeClient.getList(this.doctype, {
@@ -104,26 +104,26 @@ export default class ContactService {
         ["Dynamic Link", "link_name", "=", lead.name],
         ["Contact Phone", "phone", "=", data.raw_data.phone],
         ["source", "=", lead.source],
-        ["custom_uuid", "=", null],
-      ],
+        ["custom_uuid", "=", null]
+      ]
     });
 
     if (defaultContact.length > 0) {
       for (const contact of defaultContact) {
         await this.frappeClient.update({
           ...contact,
-          ...contactData,
+          ...contactData
         });
       }
     } else {
       const contact = await this.frappeClient.upsert(
         contactData,
-        "custom_uuid",
+        "custom_uuid"
       );
       // reference contact with lead
       const contactWithLinks = await this.frappeClient.getDoc(
         this.doctype,
-        contact.name,
+        contact.name
       );
       await this.frappeClient.update(this.reference(contactWithLinks, lead));
     }
@@ -139,9 +139,9 @@ export default class ContactService {
       phone_nos: [
         {
           phone: phone,
-          is_primary_phone: 1,
-        },
-      ],
+          is_primary_phone: 1
+        }
+      ]
     };
     const contact = await this.frappeClient.upsert(contactData, "stringee_id");
     // reference contact with lead
@@ -177,7 +177,7 @@ export default class ContactService {
         this.doctype,
         fromDate,
         toDate,
-        ContactService.ERPNEXT_PAGE_SIZE,
+        ContactService.ERPNEXT_PAGE_SIZE
       );
       if (Array.isArray(contacts) && contacts.length > 0) {
         await saveContactsToDatabase(this.db, contacts);
@@ -202,7 +202,7 @@ export default class ContactService {
     const syncService = new ContactService(env);
     return await syncService.syncContactsToDatabase({
       minutesBack: 10,
-      isSyncType: ContactService.SYNC_TYPE_AUTO,
+      isSyncType: ContactService.SYNC_TYPE_AUTO
     });
   }
 

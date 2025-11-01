@@ -25,10 +25,10 @@ export default class RecordService {
       const payload = {
         path: {
           app_token: table.app_token,
-          table_id: table.table_id,
+          table_id: table.table_id
         },
         params: {
-          user_id_type: "user_id",
+          user_id_type: "user_id"
         },
         data: {
           filter: {
@@ -37,23 +37,23 @@ export default class RecordService {
               {
                 field_name: "Last Modified Date",
                 operator: "isGreater",
-                value: ["ExactDate", timeThreshold],
-              },
-            ],
-          },
-        },
+                value: ["ExactDate", timeThreshold]
+              }
+            ]
+          }
+        }
       };
       const responses = await LarksuiteService.requestWithPagination(
         larkClient.bitable.appTableRecord.search,
         payload,
-        pageSize,
+        pageSize
       );
       const records = responses.flatMap((res) => res?.data?.items ?? []);
       const recordsWithTableMetaData = records.map((record) => {
         return {
           ...record,
           table_id: table.table_id,
-          app_token: table.app_token,
+          app_token: table.app_token
         };
       });
       allRecords.push(...recordsWithTableMetaData);
@@ -62,17 +62,17 @@ export default class RecordService {
     for (const record of allRecords) {
       await db.larksuiteRecord.upsert({
         where: {
-          record_id: record.record_id,
+          record_id: record.record_id
         },
         update: {
-          fields: record.fields,
+          fields: record.fields
         },
         create: {
           record_id: record.record_id,
           table_id: record.table_id,
           app_token: record.app_token,
-          fields: record.fields,
-        },
+          fields: record.fields
+        }
       });
     }
   }
@@ -92,7 +92,7 @@ export default class RecordService {
     appToken,
     tableId,
     recordId,
-    userIdType = "open_id",
+    userIdType = "open_id"
   }) {
     const larkClient = await LarksuiteService.createClientV2(env);
 
@@ -101,11 +101,11 @@ export default class RecordService {
         path: {
           app_token: appToken,
           table_id: tableId,
-          record_id: recordId,
+          record_id: recordId
         },
         params: {
-          user_id_type: userIdType,
-        },
+          user_id_type: userIdType
+        }
       });
 
       return response.data.record;
@@ -132,7 +132,7 @@ export default class RecordService {
     tableId,
     recordId,
     fields,
-    userIdType = "open_id",
+    userIdType = "open_id"
   }) {
     const larkClient = await LarksuiteService.createClientV2(env);
 
@@ -141,14 +141,14 @@ export default class RecordService {
         path: {
           app_token: appToken,
           table_id: tableId,
-          record_id: recordId,
+          record_id: recordId
         },
         params: {
-          user_id_type: userIdType,
+          user_id_type: userIdType
         },
         data: {
-          fields: fields,
-        },
+          fields: fields
+        }
       });
 
       return response.data.record;

@@ -13,7 +13,7 @@ export default class EmployeeService {
     this.frappeClient = new FrappeClient({
       url: env.JEMMIA_ERP_BASE_URL,
       apiKey: env.JEMMIA_ERP_API_KEY,
-      apiSecret: env.JEMMIA_ERP_API_SECRET,
+      apiSecret: env.JEMMIA_ERP_API_SECRET
     });
     this.db = Database.instance(env);
   }
@@ -34,8 +34,8 @@ export default class EmployeeService {
         {
           limit_start: (page - 1) * pageSize,
           limit_page_length: pageSize,
-          filters: [["modified", ">=", timeThreshold]],
-        },
+          filters: [["modified", ">=", timeThreshold]]
+        }
       );
       employees = employees.concat(result);
       if (result.length < pageSize) break;
@@ -52,14 +52,14 @@ export default class EmployeeService {
         employee_name: employee.employee_name,
         department: employee.department,
         status: employee.status,
-        gender: employee.gender,
+        gender: employee.gender
       };
       await employeeService.db.erpnextEmployee.upsert({
         where: {
-          name: employeeData.name,
+          name: employeeData.name
         },
         update: employeeData,
-        create: employeeData,
+        create: employeeData
       });
     }
   }

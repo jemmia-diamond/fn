@@ -29,7 +29,7 @@ export default class InventoryCheckSheetService {
       code: payload.code,
       created_at: timestamp,
       updated_at: timestamp,
-      lines: JSON.stringify(payload.lines),
+      lines: JSON.stringify(payload.lines)
     };
     await this.db.$queryRaw`
       INSERT INTO inventory.inventory_check_sheets (id, staff, count_in_book, count_for_real, extra, warehouse, warehouse_id, code, created_at, updated_at, lines)
@@ -49,11 +49,11 @@ export default class InventoryCheckSheetService {
     const queryObject = {
       filter: {
         date_created: {
-          _gte: timeThreshold,
-        },
+          _gte: timeThreshold
+        }
       },
       limit: InventoryCheckSheetService.PAGE_SIZE,
-      deep: { lines: { _limit: -1 } },
+      deep: { lines: { _limit: -1 } }
     };
 
     // fetch all inventory check sheets created in the last 6 hours with pagination
@@ -65,8 +65,8 @@ export default class InventoryCheckSheetService {
         items = await client.request(
           readItems(COLLECTIONS.INVENTORY_CHECK_SHEET, {
             page,
-            ...queryObject,
-          }),
+            ...queryObject
+          })
         );
         inventoryCheckSheets.push(...items);
         page++;
@@ -78,10 +78,10 @@ export default class InventoryCheckSheetService {
     for (const sheet of inventoryCheckSheets) {
       await db.inventoryCMSInventoryCheckSheet.upsert({
         where: {
-          id: sheet.id,
+          id: sheet.id
         },
         update: {
-          status: sheet.status,
+          status: sheet.status
         },
         create: {
           id: sheet.id,
@@ -99,8 +99,8 @@ export default class InventoryCheckSheetService {
           count_in_book: sheet.count_in_book,
           count_for_real: sheet.count_for_real,
           extra: sheet.extra,
-          lines: sheet.lines,
-        },
+          lines: sheet.lines
+        }
       });
     }
   }

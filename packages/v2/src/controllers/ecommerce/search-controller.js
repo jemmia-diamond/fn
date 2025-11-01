@@ -13,7 +13,7 @@ export default class SearchController {
     const productService = new Ecommerce.ProductService(ctx.env);
     const result = await productService.searchJewelry(searchKey, limit, page);
     const responseBody = {
-      data: result,
+      data: result
     };
     return ctx.json(responseBody);
   }

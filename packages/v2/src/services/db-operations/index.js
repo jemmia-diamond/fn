@@ -3,5 +3,5 @@ import DatabaseFunctionService from "services/db-operations/database-function/da
 
 export default {
   MaterializedViewService: MaterializedViewService,
-  DatabaseFunctionService: DatabaseFunctionService,
+  DatabaseFunctionService: DatabaseFunctionService
 };

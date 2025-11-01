@@ -11,13 +11,13 @@ export default class HaravanClient {
     const headers = {
       "Content-Type": "application/json",
       Authorization: `Bearer ${accessToken}`,
-      ...options.headers,
+      ...options.headers
     };
 
     const requestOptions = {
       ...options,
       method: options.method,
-      headers,
+      headers
     };
 
     if (options.body && typeof options.body === "object") {
@@ -29,7 +29,7 @@ export default class HaravanClient {
 
       if (!response.ok) {
         throw new Error(
-          `Haravan API error: ${response.status} ${response.statusText}`,
+          `Haravan API error: ${response.status} ${response.statusText}`
         );
       }
 

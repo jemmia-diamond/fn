@@ -11,7 +11,7 @@ export default class AIHubWebhook {
     aiHubWebhookNamespace.use("*", verifyAIHubWebhook);
     aiHubWebhookNamespace.post(
       "erp/leads",
-      AIHubERPUpdateLeadController.create,
+      AIHubERPUpdateLeadController.create
     );
   }
 }

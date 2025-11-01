@@ -14,7 +14,7 @@ export default class SalesPersonService {
     this.frappeClient = new FrappeClient({
       url: env.JEMMIA_ERP_BASE_URL,
       apiKey: env.JEMMIA_ERP_API_KEY,
-      apiSecret: env.JEMMIA_ERP_API_SECRET,
+      apiSecret: env.JEMMIA_ERP_API_SECRET
     });
     this.db = Database.instance(env);
   }
@@ -35,20 +35,20 @@ export default class SalesPersonService {
         {
           limit_start: (page - 1) * pageSize,
           limit_page_length: pageSize,
-          filters: [["modified", ">=", timeThreshold]],
-        },
+          filters: [["modified", ">=", timeThreshold]]
+        }
       );
       salesPersons = salesPersons.concat(result);
       if (result.length < pageSize) break;
       page++;
     }
     const salesPersonNames = salesPersons.map(
-      (salesPerson) => salesPerson.name,
+      (salesPerson) => salesPerson.name
     );
     const salesPersonChildRecords = await fetchChildRecordsFromERP(
       salesPersonService.frappeClient,
       salesPersonNames,
-      "tabTarget Detail",
+      "tabTarget Detail"
     );
 
     // group target details by sales person
@@ -80,14 +80,14 @@ export default class SalesPersonService {
         bizfly_id: salesPerson.bizfly_id,
         department: salesPerson.department,
         old_parent: salesPerson.old_parent,
-        targets: salesPerson.targets,
+        targets: salesPerson.targets
       };
       await salesPersonService.db.erpnextSalesPerson.upsert({
         where: {
-          name: salesPersonData.name,
+          name: salesPersonData.name
         },
         update: salesPersonData,
-        create: salesPersonData,
+        create: salesPersonData
       });
     }
   }

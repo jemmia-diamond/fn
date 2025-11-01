@@ -16,7 +16,7 @@ export const escapeSqlValue = (value) => {
 export async function fetchChildRecordsFromERP(
   frappeClient,
   parentNames,
-  tableName,
+  tableName
 ) {
   if (!Array.isArray(parentNames) || parentNames.length === 0) {
     return [];

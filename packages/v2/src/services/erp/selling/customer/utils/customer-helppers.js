@@ -14,7 +14,7 @@ export async function fetchCustomersFromERP(
   doctype,
   fromDate,
   toDate,
-  pageSize,
+  pageSize
 ) {
   try {
     const filters = {};
@@ -31,7 +31,7 @@ export async function fetchCustomersFromERP(
         filters: filters,
         limit_start: start,
         limit_page_length: pageSize,
-        order_by: "creation desc",
+        order_by: "creation desc"
       });
 
       if (customersBatch?.length) {
@@ -40,7 +40,7 @@ export async function fetchCustomersFromERP(
           (await fetchChildRecordsFromERP(
             frappeClient,
             customerNames,
-            "tabCoupon",
+            "tabCoupon"
           )) || [];
 
         // group customer coupons by customer name
@@ -67,7 +67,7 @@ export async function fetchCustomersFromERP(
     return allCustomers;
   } catch (error) {
     console.error("Error fetching customers from ERPNext", {
-      error: error.message,
+      error: error.message
     });
     throw error;
   }
@@ -89,10 +89,10 @@ export async function saveCustomersToDatabase(db, customers) {
         "uuid",
         ...Object.keys(chunk[0]).filter(
           (field) =>
-            field !== "database_created_at" && field !== "database_updated_at",
+            field !== "database_created_at" && field !== "database_updated_at"
         ),
         "database_created_at",
-        "database_updated_at",
+        "database_updated_at"
       ];
       const fieldsSql = fields.map((field) => `"${field}"`).join(", ");
 
@@ -104,10 +104,10 @@ export async function saveCustomersToDatabase(db, customers) {
             uuid: randomUUID(),
             ...customer,
             database_created_at: currentTimestamp,
-            database_updated_at: currentTimestamp,
+            database_updated_at: currentTimestamp
           };
           const fieldValues = fields.map((field) =>
-            escapeSqlValue(customerWithTimestamps[field]),
+            escapeSqlValue(customerWithTimestamps[field])
           );
           return `(${fieldValues.join(", ")})`;
         })
@@ -119,7 +119,7 @@ export async function saveCustomersToDatabase(db, customers) {
           (field) =>
             field !== "name" &&
             field !== "uuid" &&
-            field !== "database_created_at",
+            field !== "database_created_at"
         )
         .map((field) => {
           if (field === "database_updated_at") {

@@ -8,7 +8,7 @@ export default class PancakeWebhook {
     pancakeWebhookNamespace.use("*", verifyPancakeWebhook);
     pancakeWebhookNamespace.post(
       "erp/messages",
-      PancakeERPMessageController.create,
+      PancakeERPMessageController.create
     );
   }
 }

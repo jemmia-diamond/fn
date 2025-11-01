@@ -5,7 +5,7 @@ export default class InventoryCmsWebhook {
     const inventoryCmsWebhookNamespace = webhook.basePath("/inventory_cms");
     inventoryCmsWebhookNamespace.post(
       "/inventory_check_sheets",
-      InventoryCheckSheetController.create,
+      InventoryCheckSheetController.create
     );
   }
 }

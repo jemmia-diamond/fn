@@ -20,7 +20,7 @@ export class DebounceService {
       console.error("Failed to debounce data:", {
         error: error.message,
         key,
-        data,
+        data
       });
       throw error;
     }

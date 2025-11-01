@@ -13,5 +13,5 @@ export default {
   SalesPersonService: SalesPersonService,
   PurchasePurposeService: PurchasePurposeService,
   ProductCategoryService: ProductCategoryService,
-  PromotionService: PromotionService,
+  PromotionService: PromotionService
 };

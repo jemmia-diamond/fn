@@ -15,7 +15,7 @@ export default class WarehouseService {
       variant_id: Number(r.variant_id),
       available_quantity: Number(r.qty_available),
       store_id: Number(r.loc_id),
-      store_name: r.name,
+      store_name: r.name
     }));
   }
 }

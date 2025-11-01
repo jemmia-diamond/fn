@@ -10,15 +10,15 @@ export default class WeddingRingController {
       pagination: {
         from: Math.max(
           API_CONFIG.MIN_FROM,
-          params.from ? Number(params.from) : API_CONFIG.DEFAULT_FROM,
+          params.from ? Number(params.from) : API_CONFIG.DEFAULT_FROM
         ),
         limit: Math.min(
           API_CONFIG.MAX_LIMIT,
           Math.max(
             1,
-            params.limit ? Number(params.limit) : API_CONFIG.DEFAULT_LIMIT,
-          ),
-        ),
+            params.limit ? Number(params.limit) : API_CONFIG.DEFAULT_LIMIT
+          )
+        )
       },
       fineness: params.fineness ? params.fineness.split(",") : [],
       material_colors: params.material_colors
@@ -27,24 +27,24 @@ export default class WeddingRingController {
       is_in_stock: params.is_in_stock ? params.is_in_stock === "true" : null,
       sort: {
         by: params.sort_by || "price",
-        order: params.sort_order || "asc",
+        order: params.sort_order || "asc"
       },
       price: {
         min: params.min_price ? Number(params.min_price) : null,
-        max: params.max_price ? Number(params.max_price) : null,
+        max: params.max_price ? Number(params.max_price) : null
       },
       product_ids: params.product_ids
         ? params.product_ids
-            .split(",")
-            .map((v) => Number(v.trim()))
-            .filter((n) => Number.isInteger(n) && n > 0)
+          .split(",")
+          .map((v) => Number(v.trim()))
+          .filter((n) => Number.isInteger(n) && n > 0)
         : [],
       ring_band_styles: params.ring_band_styles
         ? params.ring_band_styles.split(",")
         : [],
       excluded_ring_band_styles: params.excluded_ring_band_styles
         ? params.excluded_ring_band_styles.split(",")
-        : [],
+        : []
     };
 
     const { isValidated, message } = validateParams(jsonParams);

@@ -13,17 +13,17 @@ export default class CallLogService {
     jemmiaErpApiKey,
     jemmiaErpApiSecret,
     stringeeApiKeySid,
-    stringeeApiKeySecret,
+    stringeeApiKeySecret
   }) {
     this.doctype = "Call Log";
     this.frappeClient = new FrappeClient({
       url: jemmiaErpBaseUrl,
       apiKey: jemmiaErpApiKey,
-      apiSecret: jemmiaErpApiSecret,
+      apiSecret: jemmiaErpApiSecret
     });
     this.stringeeClient = new StringeeClient(
       stringeeApiKeySid,
-      stringeeApiKeySecret,
+      stringeeApiKeySecret
     );
     this.stringeeRecordingPrefix = `${this.stringeeClient.baseUrl}/call/recording`;
   }
@@ -45,12 +45,12 @@ export default class CallLogService {
       jemmiaErpApiKey: jemmia_erp_api_key,
       jemmiaErpApiSecret: jemmia_erp_api_secret,
       stringeeApiKeySid: stringee_api_key_sid,
-      stringeeApiKeySecret: stringee_api_key_secret,
+      stringeeApiKeySecret: stringee_api_key_secret
     });
     const callLogs = await callLogService.stringeeClient.getCallLogs({
       page: 1,
       limit: 100,
-      from_created_time: currentTimestamp,
+      from_created_time: currentTimestamp
     });
     for (const callLog of callLogs) {
       const mappedCallLog = callLogService.mapStringeeCallLogFields(callLog);
@@ -74,7 +74,7 @@ export default class CallLogService {
       end_time: timestampToDatetime(callLog.stop_time),
       duration: callLog.answer_duration,
       type: type,
-      recording_url: recording_url,
+      recording_url: recording_url
     };
   };
 }

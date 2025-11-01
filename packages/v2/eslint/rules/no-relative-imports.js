@@ -6,10 +6,10 @@ class NoRelativeImportsValidator {
     return {
       type: "problem",
       docs: {
-        description: "Disallow relative imports in favor of absolute imports",
+        description: "Disallow relative imports in favor of absolute imports"
       },
       fixable: "code",
-      schema: [],
+      schema: []
     };
   }
 
@@ -22,7 +22,7 @@ class NoRelativeImportsValidator {
           const currentFilePath = context.getFilename();
           const absolutePath = NoRelativeImportsValidator.#convertToAbsolute(
             importPath,
-            currentFilePath,
+            currentFilePath
           );
 
           if (absolutePath) {
@@ -32,11 +32,11 @@ class NoRelativeImportsValidator {
                 "Relative imports are not allowed. Use absolute imports instead.",
               fix(fixer) {
                 return fixer.replaceText(node.source, `"${absolutePath}"`);
-              },
+              }
             });
           }
         }
-      },
+      }
     };
   }
 
@@ -84,5 +84,5 @@ class NoRelativeImportsValidator {
 
 export default {
   meta: NoRelativeImportsValidator.meta,
-  create: NoRelativeImportsValidator.create,
+  create: NoRelativeImportsValidator.create
 };

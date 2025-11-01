@@ -5,7 +5,7 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import {
   SHIFTS,
-  ASSIGNMENT_RULES,
+  ASSIGNMENT_RULES
 } from "services/erp/automation/assigment-rule/enum";
 
 dayjs.extend(utc);
@@ -17,7 +17,7 @@ export default class AssignmentRuleService {
     this.frappeClient = new FrappeClient({
       url: env.JEMMIA_ERP_BASE_URL,
       apiKey: env.JEMMIA_ERP_API_KEY,
-      apiSecret: env.JEMMIA_ERP_API_SECRET,
+      apiSecret: env.JEMMIA_ERP_API_SECRET
     });
     this.db = Database.instance(env);
     this.defaultUser = "tech@jemmia.vn";
@@ -28,20 +28,20 @@ export default class AssignmentRuleService {
       this.frappeClient.getList("Sales Person", {
         filters: [
           ["sales_region", "=", region],
-          ["assigned_lead", "=", true],
-        ],
-      }),
+          ["assigned_lead", "=", true]
+        ]
+      })
     );
     const salesPeopleResults = await Promise.all(salesPeoplePromises);
     const salesPeople = salesPeopleResults.flat();
 
     const employeeNames = salesPeople.map(
-      (salesPerson) => salesPerson.employee,
+      (salesPerson) => salesPerson.employee
     );
     const employees = [];
     for (const employeeName of employeeNames) {
       const employee = await this.frappeClient.getList("Employee", {
-        filters: [["name", "=", employeeName]],
+        filters: [["name", "=", employeeName]]
       });
       employees.push(...employee);
     }
@@ -72,22 +72,22 @@ export default class AssignmentRuleService {
     shifts,
     dayNo,
     month,
-    offUsers,
+    offUsers
   ) {
     const users = await this.getAssignedUsers(
-      defaultAssignmentRule.regionNames,
+      defaultAssignmentRule.regionNames
     );
     const allAttendingUsers = await this.getAttendingUsers(
       dayNo,
       month,
-      shifts,
+      shifts
     );
     const attendingUsers = allAttendingUsers.filter(
       (attendedUser) =>
-        !offUsers.some((offUser) => offUser.user_id === attendedUser.user_id),
+        !offUsers.some((offUser) => offUser.user_id === attendedUser.user_id)
     );
     const assignedUsers = users.filter((userId) =>
-      attendingUsers.some((attendedUser) => attendedUser.email === userId),
+      attendingUsers.some((attendedUser) => attendedUser.email === userId)
     );
 
     if (!assignedUsers.length) {
@@ -97,7 +97,7 @@ export default class AssignmentRuleService {
     const updatedAssignmentRule = await this.frappeClient.update({
       doctype: this.doctype,
       name: defaultAssignmentRule.name,
-      users: assignedUsers.map((user) => ({ user })),
+      users: assignedUsers.map((user) => ({ user }))
     });
     return updatedAssignmentRule;
   }
@@ -123,21 +123,21 @@ export default class AssignmentRuleService {
       shifts,
       dayNo,
       month,
-      offUsersList,
+      offUsersList
     );
     await this.updateAssignmentRule(
       ASSIGNMENT_RULES.Lead_Facebook_Tiktok_ZaloKOC_Website_ZaloOA_HCM,
       shifts,
       dayNo,
       month,
-      offUsersList,
+      offUsersList
     );
     await this.updateAssignmentRule(
       ASSIGNMENT_RULES.Lead_Facebook_CT,
       shifts,
       dayNo,
       month,
-      offUsersList,
+      offUsersList
     );
   }
 
@@ -166,7 +166,7 @@ export default class AssignmentRuleService {
     await assignmentRuleService.frappeClient.update({
       doctype: assignmentRuleService.doctype,
       name: assignmentRuleName,
-      disabled: 1,
+      disabled: 1
     });
   }
 
@@ -176,7 +176,7 @@ export default class AssignmentRuleService {
     await assignmentRuleService.frappeClient.update({
       doctype: assignmentRuleService.doctype,
       name: assignmentRuleName,
-      disabled: 0,
+      disabled: 0
     });
   }
 
@@ -187,10 +187,10 @@ export default class AssignmentRuleService {
       filters: [
         ["allocated_to", "like", `%${assignmentRuleService.defaultUser}%`],
         ["status", "=", "Open"],
-        ["reference_type", "=", "Lead"],
+        ["reference_type", "=", "Lead"]
       ],
       fields: ["name", "reference_name"],
-      limit_page_length: 100,
+      limit_page_length: 100
     });
     if (!toDos.length) {
       return;
@@ -200,7 +200,7 @@ export default class AssignmentRuleService {
       return {
         doctype: "ToDo",
         name: toDo.name,
-        status: "Cancelled",
+        status: "Cancelled"
       };
     });
     await assignmentRuleService.frappeClient.bulkUpdate(toDoDucuments);
@@ -209,7 +209,7 @@ export default class AssignmentRuleService {
     await assignmentRuleService.frappeClient.postRequest("", {
       cmd: "frappe.automation.doctype.assignment_rule.assignment_rule.bulk_apply",
       doctype: "Lead",
-      docnames: JSON.stringify(leadNames),
+      docnames: JSON.stringify(leadNames)
     });
   }
 }

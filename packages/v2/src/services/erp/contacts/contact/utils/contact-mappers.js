@@ -15,7 +15,7 @@ export const mapContactsToDatabase = (contacts) => {
     gender: safeValue(contact.gender, "string"),
     sync_with_google_contacts: safeValue(
       contact.sync_with_google_contacts,
-      "number",
+      "number"
     ),
     middle_name: safeValue(contact.middle_name, "string"),
     full_name: safeValue(contact.full_name, "string"),
@@ -40,7 +40,7 @@ export const mapContactsToDatabase = (contacts) => {
     last_message_time: safeValue(contact.last_message_time, "date"),
     phone_number_provided_time: safeValue(
       contact.phone_number_provided_time,
-      "date",
+      "date"
     ),
     department: safeValue(contact.department, "string"),
     unsubscribed: safeValue(contact.unsubscribed, "number"),
@@ -50,7 +50,7 @@ export const mapContactsToDatabase = (contacts) => {
     is_replied: safeValue(contact.is_replied, "number"),
     pancake_conversation_id: safeValue(
       contact.pancake_conversation_id,
-      "string",
+      "string"
     ),
     pancake_inserted_at: safeValue(contact.pancake_inserted_at, "date"),
     pancake_updated_at: safeValue(contact.pancake_updated_at, "date"),
@@ -80,7 +80,7 @@ export const mapContactsToDatabase = (contacts) => {
     google_contacts_id: safeValue(contact.google_contacts_id, "string"),
     pulled_from_google_contacts: safeValue(
       contact.pulled_from_google_contacts,
-      "number",
+      "number"
     ),
     is_primary_contact: safeValue(contact.is_primary_contact, "number"),
     is_billing_contact: safeValue(contact.is_billing_contact, "number"),
@@ -88,6 +88,6 @@ export const mapContactsToDatabase = (contacts) => {
     links: contact.links || null,
     phone_numbers: contact.phone_numbers || null,
     phone_nos: contact.phone_nos || null,
-    emails: contact.emails || null,
+    emails: contact.emails || null
   }));
 };

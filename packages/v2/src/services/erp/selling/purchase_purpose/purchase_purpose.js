@@ -13,7 +13,7 @@ export default class PurchasePurposeService {
     this.frappeClient = new FrappeClient({
       url: env.JEMMIA_ERP_BASE_URL,
       apiKey: env.JEMMIA_ERP_API_KEY,
-      apiSecret: env.JEMMIA_ERP_API_SECRET,
+      apiSecret: env.JEMMIA_ERP_API_SECRET
     });
     this.db = Database.instance(env);
   }
@@ -34,8 +34,8 @@ export default class PurchasePurposeService {
         {
           limit_start: (page - 1) * pageSize,
           limit_page_length: pageSize,
-          filters: [["modified", ">=", timeThreshold]],
-        },
+          filters: [["modified", ">=", timeThreshold]]
+        }
       );
       purchasePurposes = purchasePurposes.concat(result);
       if (result.length < pageSize) break;
@@ -55,14 +55,14 @@ export default class PurchasePurposeService {
         modified_by: purchasePurpose.modified_by,
         docstatus: purchasePurpose.docstatus,
         idx: purchasePurpose.idx,
-        title: purchasePurpose.title,
+        title: purchasePurpose.title
       };
       await purchasePurposeService.db.erpnextPurchasePurpose.upsert({
         where: {
-          name: purchasePurposeData.name,
+          name: purchasePurposeData.name
         },
         update: purchasePurposeData,
-        create: purchasePurposeData,
+        create: purchasePurposeData
       });
     }
   }

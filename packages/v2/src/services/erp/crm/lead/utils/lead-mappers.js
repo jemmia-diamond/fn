@@ -87,6 +87,6 @@ export const mapLeadsToDatabase = (leads) => {
     preferred_product_type: lead.preferred_product_type || null,
     doctype: lead.doctype || null,
     notes: lead.notes || null,
-    user_tags: lead.user_tags || null,
+    user_tags: lead.user_tags || null
   }));
 };

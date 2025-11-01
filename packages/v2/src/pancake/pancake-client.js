@@ -7,11 +7,11 @@ export default class PancakeClient {
 
   async getPageAccessToken(pageId) {
     const params = new URLSearchParams({
-      access_token: this.accessToken,
+      access_token: this.accessToken
     });
     const path = `/v1/pages/${pageId}/generate_page_access_token?${params}`;
     const res = await fetch(`${this.baseUrl}${path}`, {
-      method: "POST",
+      method: "POST"
     });
     const data = await res.json();
     return data.page_access_token;
@@ -20,12 +20,12 @@ export default class PancakeClient {
   async postRequest(pageId, path, data) {
     const pageAccessToken = await this.getPageAccessToken(pageId);
     const params = new URLSearchParams({
-      page_access_token: pageAccessToken,
+      page_access_token: pageAccessToken
     });
     const res = await fetch(`${this.baseUrl}${path}?${params}`, {
       method: "POST",
       headers: this.headers,
-      body: JSON.stringify(data),
+      body: JSON.stringify(data)
     });
     return res.json();
   }
@@ -34,10 +34,10 @@ export default class PancakeClient {
     const pageAccessToken = await this.getPageAccessToken(pageId);
     const _params = new URLSearchParams({
       page_access_token: pageAccessToken,
-      ...params,
+      ...params
     });
     const res = await fetch(`${this.baseUrl}${path}?${_params}`, {
-      method: "GET",
+      method: "GET"
     });
     return res.json();
   }
@@ -45,7 +45,7 @@ export default class PancakeClient {
   async assignConversation(pageId, conversationId, assigneeIds) {
     const path = `/public_api/v1/pages/${pageId}/conversations/${conversationId}/assign`;
     const data = {
-      assignee_ids: assigneeIds,
+      assignee_ids: assigneeIds
     };
     return await this.postRequest(pageId, path, data);
   }

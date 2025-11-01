@@ -16,7 +16,7 @@ export default class IndDayStatService {
         cancelled_status,
         cancelled_at,
         updated_at,
-        partially_paid,
+        partially_paid
       } = batch.messages[0].body;
 
       if (partially_paid !== "partially_paid") return;
@@ -27,11 +27,11 @@ export default class IndDayStatService {
           indDayStatService.indDayProductIds.includes(item.product_id)
             ? sum + item.quantity
             : sum,
-        0,
+        0
       );
 
       const productQuantity = await env.FN_KV.get(
-        indDayStatService.countProductQuantityKey,
+        indDayStatService.countProductQuantityKey
       );
 
       let newQuantityCount = parseInt(productQuantity) || 0;
@@ -54,7 +54,7 @@ export default class IndDayStatService {
       }
       await env.FN_KV.put(
         indDayStatService.countProductQuantityKey,
-        newQuantityCount,
+        newQuantityCount
       );
     } catch (error) {
       console.error("Error tracking budget:", error);
@@ -64,7 +64,7 @@ export default class IndDayStatService {
   async getStats() {
     try {
       const productQuantity = await this.env.FN_KV.get(
-        this.countProductQuantityKey,
+        this.countProductQuantityKey
       );
       if (productQuantity === null) {
         throw new Error("Data is missing keys");
@@ -72,7 +72,7 @@ export default class IndDayStatService {
 
       return {
         count_product_quantity:
-          Number(productQuantity) + (Number(this.env.STATS_NUMBER_BUFFER) || 0),
+          Number(productQuantity) + (Number(this.env.STATS_NUMBER_BUFFER) || 0)
       };
     } catch (error) {
       console.error("Error checking budget:", error);

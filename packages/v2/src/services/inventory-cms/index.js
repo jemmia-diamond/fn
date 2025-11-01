@@ -3,5 +3,5 @@ import InventoryCheckLineService from "services/inventory-cms/inventory-check-li
 
 export default {
   InventoryCheckSheetService: InventoryCheckSheetService,
-  InventoryCheckLineService: InventoryCheckLineService,
+  InventoryCheckLineService: InventoryCheckLineService
 };

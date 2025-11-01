@@ -5,7 +5,7 @@ export function isTestOrder(orderData) {
   const testFields = [
     customerData.first_name,
     customerData.last_name,
-    billingAddress.name,
+    billingAddress.name
   ];
 
   return testFields.some((field) => field.toLowerCase().includes("test"));

@@ -26,8 +26,8 @@ export default class NhattinClient {
         username: this.email,
         password: this.password,
         partner_id: this.partnerId,
-        Accept: "application/json",
-      },
+        Accept: "application/json"
+      }
     };
 
     try {
@@ -36,7 +36,7 @@ export default class NhattinClient {
       if (!response.ok) {
         const errorBody = await response.text();
         throw new Error(
-          `API Error: ${response.status} ${response.statusText} - ${errorBody}`,
+          `API Error: ${response.status} ${response.statusText} - ${errorBody}`
         );
       }
 

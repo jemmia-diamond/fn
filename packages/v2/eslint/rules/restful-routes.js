@@ -3,8 +3,8 @@ class RestfulRoutesValidator {
     return {
       type: "suggestion",
       docs: {
-        description: "Enforce RESTful route conventions",
-      },
+        description: "Enforce RESTful route conventions"
+      }
     };
   }
 
@@ -18,9 +18,9 @@ class RestfulRoutesValidator {
           context,
           node,
           httpMethod,
-          allowedMethods,
+          allowedMethods
         );
-      },
+      }
     };
   }
 
@@ -29,7 +29,7 @@ class RestfulRoutesValidator {
       get: ["index", "show"],
       post: ["create"],
       patch: ["update"],
-      delete: ["destroy"],
+      delete: ["destroy"]
     };
   }
 
@@ -46,7 +46,7 @@ class RestfulRoutesValidator {
         node: lastArg,
         message:
           `HTTP ${httpMethod.toUpperCase()} routes should use one of these ` +
-          `controller methods: ${allowedMethods.join(", ")}`,
+          `controller methods: ${allowedMethods.join(", ")}`
       });
     }
   }
@@ -54,5 +54,5 @@ class RestfulRoutesValidator {
 
 export default {
   meta: RestfulRoutesValidator.meta,
-  create: RestfulRoutesValidator.create,
+  create: RestfulRoutesValidator.create
 };

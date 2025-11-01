@@ -20,7 +20,7 @@ export default class InstanceService {
     const approvalCodes = [
       APPROVALS.LEAVE_APPROVAL,
       APPROVALS.PAYMENT_APPROVAL,
-      APPROVALS.PURCHASE_APPROVAL,
+      APPROVALS.PURCHASE_APPROVAL
     ];
 
     const transformedInstances = [];
@@ -31,24 +31,24 @@ export default class InstanceService {
           start_time: startTime,
           end_time: endTime,
           approval_code: approval.code,
-          page_size: pageSize,
-        },
+          page_size: pageSize
+        }
       };
 
       const responses = await LarksuiteService.requestWithPagination(
         larkClient.approval.v4.instance.list,
         payload,
-        pageSize,
+        pageSize
       );
       const codes = responses.flatMap(
-        (res) => res?.data?.instance_code_list ?? [],
+        (res) => res?.data?.instance_code_list ?? []
       );
 
       for (const code of codes) {
         const instanceResponse = await larkClient.approval.v4.instance.get({
           path: {
-            instance_id: code,
-          },
+            instance_id: code
+          }
         });
         const instance = instanceResponse.data;
         const transformedInstance = instanceService.transformInstance(instance);
@@ -119,7 +119,7 @@ export default class InstanceService {
       serial_number: instance.serial_number,
       user_id: instance.user_id,
       uuid: instance.uuid,
-      department_id: instance.department_id,
+      department_id: instance.department_id
     };
   };
 }

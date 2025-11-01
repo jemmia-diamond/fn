@@ -1,6 +1,5 @@
 import { HTTPException } from "hono/http-exception";
 import Ecommerce from "services/ecommerce";
-import ecommerce from ".";
 
 export default class CardController {
   static async create(ctx) {
@@ -13,7 +12,7 @@ export default class CardController {
       console.error("Error creating data:", error);
       throw new HTTPException(500, {
         message: "Failed to create data",
-        error: error.message,
+        error: error.message
       });
     }
   }
@@ -32,7 +31,7 @@ export default class CardController {
       console.error("Error fetching data:", error);
       throw new HTTPException(500, {
         message: "Failed to fetch data",
-        error: error.message,
+        error: error.message
       });
     }
   }
@@ -48,7 +47,7 @@ export default class CardController {
       console.error("Error updating data:", error);
       throw new HTTPException(500, {
         message: "Failed to update data",
-        error: error.message,
+        error: error.message
       });
     }
   }

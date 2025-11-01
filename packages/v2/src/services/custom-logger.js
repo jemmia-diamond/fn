@@ -18,7 +18,7 @@ class CustomLogger {
         requestBody,
         c.res?.status || 0,
         duration,
-        trackObject,
+        trackObject
       );
     });
   }
@@ -56,7 +56,7 @@ class CustomLogger {
       `method=${method}`,
       `path=${path}`,
       `status=${status}`,
-      `duration=${duration.toFixed(1)}ms`,
+      `duration=${duration.toFixed(1)}ms`
     ];
 
     if (requestBody) {
@@ -76,7 +76,7 @@ class CustomLogger {
             method,
             path,
             status,
-            duration,
+            duration
           });
         } else if (status >= 400) {
           trackObject.logger.warn("client error", {
@@ -84,21 +84,21 @@ class CustomLogger {
             method,
             path,
             status,
-            duration,
+            duration
           });
         } else if (status >= 200 && status < 300) {
           trackObject.logger.info("success", {
             method,
             path,
             status,
-            duration,
+            duration
           });
         } else {
           trackObject.logger.debug("request", {
             method,
             path,
             status,
-            duration,
+            duration
           });
         }
       }

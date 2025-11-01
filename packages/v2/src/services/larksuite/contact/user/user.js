@@ -16,14 +16,14 @@ export default class UserService {
         params: {
           user_id_type: "user_id",
           department_id_type: "department_id",
-          department_id: departmentId,
-        },
+          department_id: departmentId
+        }
       };
 
       const responses = await LarksuiteService.requestWithPagination(
         larkClient.contact.user.findByDepartment,
         payload,
-        pageSize,
+        pageSize
       );
 
       const users = responses.flatMap((res) => res?.data?.items || []);

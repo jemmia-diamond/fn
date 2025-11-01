@@ -8,7 +8,7 @@ export default class DiamondController {
     if (!gia_no) {
       return ctx.json(
         { message: "Invalid or missing `gia_no` parameter" },
-        400,
+        400
       );
     }
 

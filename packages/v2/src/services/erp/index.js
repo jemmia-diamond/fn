@@ -13,5 +13,5 @@ export default {
   Contacts: Contacts,
   Core: Core,
   Telephony: Telephony,
-  Setup: Setup,
+  Setup: Setup
 };

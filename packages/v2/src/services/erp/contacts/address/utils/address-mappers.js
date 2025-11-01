@@ -32,10 +32,10 @@ export const mapAddressesToDatabase = (addresses) => {
     haravan_id: safeValue(address.haravan_id, "string"),
     is_your_company_address: safeValue(
       address.is_your_company_address,
-      "number",
+      "number"
     ),
     links: address.links || null,
     database_created_at: safeValue(address.database_created_at, "date"),
-    database_updated_at: safeValue(address.database_updated_at, "date"),
+    database_updated_at: safeValue(address.database_updated_at, "date")
   }));
 };

@@ -13,7 +13,7 @@ export async function fetchAddressesFromERP(
   doctype,
   fromDate,
   toDate,
-  pageSize,
+  pageSize
 ) {
   try {
     const filters = {};
@@ -30,7 +30,7 @@ export async function fetchAddressesFromERP(
         filters: filters,
         limit_start: start,
         limit_page_length: pageSize,
-        order_by: "creation desc",
+        order_by: "creation desc"
       });
 
       if (addressesBatch?.length) {
@@ -38,7 +38,7 @@ export async function fetchAddressesFromERP(
         const addressLinks = await fetchAddressChildRecordsFromERP(
           frappeClient,
           addressNames,
-          "tabDynamic Link",
+          "tabDynamic Link"
         );
 
         // group address links by address name
@@ -65,7 +65,7 @@ export async function fetchAddressesFromERP(
     return allAddresses;
   } catch (error) {
     console.error("Error fetching addresses from ERPNext", {
-      error: error.message,
+      error: error.message
     });
     throw error;
   }
@@ -75,7 +75,7 @@ export async function fetchAddressesFromERP(
 export async function fetchAddressChildRecordsFromERP(
   frappeClient,
   addressNames,
-  tableName,
+  tableName
 ) {
   if (!Array.isArray(addressNames) || addressNames.length === 0) {
     return [];
@@ -102,10 +102,10 @@ export async function saveAddressesToDatabase(db, addresses) {
         "uuid",
         ...Object.keys(chunk[0]).filter(
           (field) =>
-            field !== "database_created_at" && field !== "database_updated_at",
+            field !== "database_created_at" && field !== "database_updated_at"
         ),
         "database_created_at",
-        "database_updated_at",
+        "database_updated_at"
       ];
       const fieldsSql = fields.map((field) => `"${field}"`).join(", ");
 
@@ -117,10 +117,10 @@ export async function saveAddressesToDatabase(db, addresses) {
             uuid: randomUUID(),
             ...address,
             database_created_at: currentTimestamp,
-            database_updated_at: currentTimestamp,
+            database_updated_at: currentTimestamp
           };
           const fieldValues = fields.map((field) =>
-            escapeSqlValue(addressWithTimestamps[field]),
+            escapeSqlValue(addressWithTimestamps[field])
           );
           return `(${fieldValues.join(", ")})`;
         })
@@ -132,7 +132,7 @@ export async function saveAddressesToDatabase(db, addresses) {
           (field) =>
             field !== "name" &&
             field !== "uuid" &&
-            field !== "database_created_at",
+            field !== "database_created_at"
         )
         .map((field) => {
           if (field === "database_updated_at") {

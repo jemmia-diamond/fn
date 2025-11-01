@@ -15,7 +15,7 @@ export const mapCustomersToDatabase = (customers) => {
     customer_group: safeValue(customer.customer_group, "string"),
     bizfly_customer_number: safeValue(
       customer.bizfly_customer_number,
-      "string",
+      "string"
     ),
     is_internal_customer: safeValue(customer.is_internal_customer, "number"),
     customer_type: safeValue(customer.customer_type, "string"),
@@ -33,7 +33,7 @@ export const mapCustomersToDatabase = (customers) => {
     ceo_name: safeValue(customer.ceo_name, "string"),
     personal_document_type: safeValue(
       customer.personal_document_type,
-      "string",
+      "string"
     ),
     birth_date: safeValue(customer.birth_date, "date"),
     gender: safeValue(customer.gender, "string"),
@@ -54,13 +54,13 @@ export const mapCustomersToDatabase = (customers) => {
     customer_details: safeValue(customer.customer_details, "string"),
     customer_primary_address: safeValue(
       customer.customer_primary_address,
-      "string",
+      "string"
     ),
     primary_address: safeValue(customer.primary_address, "string"),
     image: safeValue(customer.image, "string"),
     customer_primary_contact: safeValue(
       customer.customer_primary_contact,
-      "string",
+      "string"
     ),
     primary_contact: safeValue(customer.primary_contact, "string"),
     mobile_no: safeValue(customer.mobile_no, "string"),
@@ -78,7 +78,7 @@ export const mapCustomersToDatabase = (customers) => {
     rank: safeValue(customer.rank, "string"),
     purchase_amount_last_12_months: safeValue(
       customer.purchase_amount_last_12_months,
-      "number",
+      "number"
     ),
     rank_expired_date: safeValue(customer.rank_expired_date, "date"),
     priority_login_date: safeValue(customer.priority_login_date, "date"),
@@ -86,7 +86,7 @@ export const mapCustomersToDatabase = (customers) => {
     cashback: safeValue(customer.cashback, "number"),
     true_cumulative_revenue: safeValue(
       customer.true_cumulative_revenue,
-      "number",
+      "number"
     ),
     withdraw_cashback: safeValue(customer.withdraw_cashback, "number"),
     referrals_revenue: safeValue(customer.referrals_revenue, "number"),
@@ -95,7 +95,7 @@ export const mapCustomersToDatabase = (customers) => {
     default_sales_partner: safeValue(customer.default_sales_partner, "string"),
     default_commission_rate: safeValue(
       customer.default_commission_rate,
-      "number",
+      "number"
     ),
     so_required: safeValue(customer.so_required, "number"),
     dn_required: safeValue(customer.dn_required, "number"),
@@ -107,13 +107,13 @@ export const mapCustomersToDatabase = (customers) => {
     tax_category: safeValue(customer.tax_category, "string"),
     tax_withholding_category: safeValue(
       customer.tax_withholding_category,
-      "string",
+      "string"
     ),
     account: customer.account || null,
     portal_users: customer.portal_users || null,
     companies: customer.companies || null,
     sales_team: customer.sales_team || null,
     coupon_table: customer.coupon_table || null,
-    credit_limits: customer.credit_limits || null,
+    credit_limits: customer.credit_limits || null
   }));
 };

@@ -13,7 +13,7 @@ export default class RegionService {
     this.frappeClient = new FrappeClient({
       url: env.JEMMIA_ERP_BASE_URL,
       apiKey: env.JEMMIA_ERP_API_KEY,
-      apiSecret: env.JEMMIA_ERP_API_SECRET,
+      apiSecret: env.JEMMIA_ERP_API_SECRET
     });
     this.db = Database.instance(env);
   }
@@ -26,28 +26,28 @@ export default class RegionService {
     const regionService = new RegionService(env);
     const regions = await regionService.frappeClient.getList("Region", {
       limit_page_length: RegionService.ERPNEXT_PAGE_SIZE,
-      filters: [["modified", ">=", timeThreshold]],
+      filters: [["modified", ">=", timeThreshold]]
     });
     if (regions.length > 0) {
       for (const region of regions) {
         await regionService.db.erpnextRegion.upsert({
           where: {
-            name: region.name,
+            name: region.name
           },
           update: {
             name: region.name,
             owner: region.owner,
             creation: new Date(region.creation),
             modified: new Date(region.modified),
-            region_name: region.region_name,
+            region_name: region.region_name
           },
           create: {
             name: region.name,
             owner: region.owner,
             creation: new Date(region.creation),
             modified: new Date(region.modified),
-            region_name: region.region_name,
-          },
+            region_name: region.region_name
+          }
         });
       }
     }

@@ -1,7 +1,7 @@
 import {
   transformLeaveFormData,
   transformPaymentFormData,
-  transformPurchaseFormData,
+  transformPurchaseFormData
 } from "services/larksuite/approval/instance/utils/formTransformation";
 
 export const APPROVALS = {
@@ -14,8 +14,8 @@ export const APPROVALS = {
       unit: ["widgetLeaveGroupV2", "unit"],
       reason: ["widgetLeaveGroupV2", "reason"],
       interval: ["widgetLeaveGroupV2", "interval"],
-      name: ["widgetLeaveGroupV2", "name"],
-    },
+      name: ["widgetLeaveGroupV2", "name"]
+    }
   },
   PAYMENT_APPROVAL: {
     code: "1B72AFFE-46D8-44E2-B0C1-0B07E800E24F",
@@ -28,8 +28,8 @@ export const APPROVALS = {
       qualified_document: ["widget17230221450530001"],
       total_amount: ["widget17006372249800001"],
       payment_info: ["widget17006373118010001"],
-      expected_payment_date: ["widget17006373325040001"],
-    },
+      expected_payment_date: ["widget17006373325040001"]
+    }
   },
   PURCHASE_APPROVAL: {
     code: "5B91FC83-0365-435F-8A2D-F4A500CF1BE3",
@@ -38,7 +38,7 @@ export const APPROVALS = {
       reason: ["widget17519456028420001"],
       description: ["widget17464364605980001"],
       estimated_amount: ["widget17394169374020001"],
-      expected_receive_date: ["widget17394170111200001"],
-    },
-  },
+      expected_receive_date: ["widget17394170111200001"]
+    }
+  }
 };

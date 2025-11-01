@@ -20,11 +20,11 @@ export default class InventoryCheckLineService {
     const queryObject = {
       filter: {
         date_created: {
-          _gte: timeThreshold,
-        },
+          _gte: timeThreshold
+        }
       },
       limit: InventoryCheckLineService.PAGE_SIZE,
-      deep: { lines: { _limit: -1 } },
+      deep: { lines: { _limit: -1 } }
     };
 
     // paginate and upsert in batches of 100 per page
@@ -50,12 +50,12 @@ export default class InventoryCheckLineService {
       barcode: line.barcode,
       category: line.category,
       count_in_ordered: line.count_in_ordered,
-      rfid_tags: line.rfid_tags,
+      rfid_tags: line.rfid_tags
     });
     try {
       while (true) {
         const items = await client.request(
-          readItems(COLLECTIONS.INVENTORY_CHECK_LINE, { page, ...queryObject }),
+          readItems(COLLECTIONS.INVENTORY_CHECK_LINE, { page, ...queryObject })
         );
         const count = Array.isArray(items) ? items.length : 0;
         if (count === 0) break;
@@ -65,7 +65,7 @@ export default class InventoryCheckLineService {
             await db.inventoryCMSInventoryCheckLine.upsert({
               where: { id: line.id },
               update: toData(line),
-              create: { id: line.id, sort: line.sort, ...toData(line) },
+              create: { id: line.id, sort: line.sort, ...toData(line) }
             });
           }
           await new Promise((resolve) => setTimeout(resolve, 50));

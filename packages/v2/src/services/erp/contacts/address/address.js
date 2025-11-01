@@ -4,7 +4,7 @@ import utc from "dayjs/plugin/utc.js";
 import Database from "services/database";
 import {
   fetchAddressesFromERP,
-  saveAddressesToDatabase,
+  saveAddressesToDatabase
 } from "services/erp/contacts/address/utils/address-helppers";
 
 dayjs.extend(utc);
@@ -19,7 +19,7 @@ export default class AddressService {
     this.frappeClient = new FrappeClient({
       url: env.JEMMIA_ERP_BASE_URL,
       apiKey: env.JEMMIA_ERP_API_KEY,
-      apiSecret: env.JEMMIA_ERP_API_SECRET,
+      apiSecret: env.JEMMIA_ERP_API_SECRET
     });
     this.db = Database.instance(env);
   }
@@ -30,7 +30,7 @@ export default class AddressService {
       addressName = customer.customer_name;
     } else {
       const nameParts = [addressData.last_name, addressData.first_name].filter(
-        Boolean,
+        Boolean
       );
       addressName = nameParts.join(" ") || addressData.address1 || "No Entry";
     }
@@ -42,16 +42,16 @@ export default class AddressService {
       district: addressData.district,
       ward: addressData.ward,
       address_line1: addressData.address1 || "No Entry",
-      address_line2: addressData.address2,
+      address_line2: addressData.address2
     };
     if (customer) {
       mappedAddressData.links = [
-        { link_doctype: customer.doctype, link_name: customer.name },
+        { link_doctype: customer.doctype, link_name: customer.name }
       ];
     }
     const address = await this.frappeClient.upsert(
       mappedAddressData,
-      "haravan_id",
+      "haravan_id"
     );
     return address;
   }
@@ -85,7 +85,7 @@ export default class AddressService {
         this.doctype,
         fromDate,
         toDate,
-        AddressService.ERPNEXT_PAGE_SIZE,
+        AddressService.ERPNEXT_PAGE_SIZE
       );
       if (Array.isArray(addresses) && addresses.length > 0) {
         await saveAddressesToDatabase(this.db, addresses);
@@ -110,7 +110,7 @@ export default class AddressService {
     const syncService = new AddressService(env);
     return await syncService.syncAddressesToDatabase({
       minutesBack: 10,
-      isSyncType: AddressService.SYNC_TYPE_AUTO,
+      isSyncType: AddressService.SYNC_TYPE_AUTO
     });
   }
 }

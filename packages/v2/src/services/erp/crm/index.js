@@ -9,5 +9,5 @@ export default {
   LeadDemandService: LeadDemandService,
   LeadBudgetService: LeadBudgetService,
   RegionService: RegionService,
-  ProvinceService: ProvinceService,
+  ProvinceService: ProvinceService
 };

@@ -16,9 +16,9 @@ export default function getBaseConfig() {
       custom: {
         rules: {
           "no-relative-imports": noRelativeImports,
-          "no-vietnamese-text": noVietnameseText,
-        },
-      },
+          "no-vietnamese-text": noVietnameseText
+        }
+      }
     },
     rules: {
       quotes: ["error", "double"],
@@ -32,8 +32,8 @@ export default function getBaseConfig() {
           vars: "all",
           varsIgnorePattern: "^_",
           args: "after-used",
-          argsIgnorePattern: "^_",
-        },
+          argsIgnorePattern: "^_"
+        }
       ],
       "no-debugger": "error",
       "no-multiple-empty-lines": ["error", { max: 1 }],
@@ -46,8 +46,8 @@ export default function getBaseConfig() {
         "error",
         {
           selectors: ["TemplateLiteral"],
-          indent: 2,
-        },
+          indent: 2
+        }
       ],
       "no-trailing-spaces": "error",
       "key-spacing": "error",
@@ -58,14 +58,14 @@ export default function getBaseConfig() {
         {
           selector: "MemberExpression[property.name='$queryRawUnsafe']",
           message:
-            "Use of $queryRawUnsafe is not allowed. Use $queryRaw with proper parameterization instead.",
+            "Use of $queryRawUnsafe is not allowed. Use $queryRaw with proper parameterization instead."
         },
         {
           selector: "MemberExpression[property.name='$executeRawUnsafe']",
           message:
-            "Use of $executeRawUnsafe is not allowed. Use $executeRaw with proper parameterization instead.",
-        },
-      ],
-    },
+            "Use of $executeRawUnsafe is not allowed. Use $executeRaw with proper parameterization instead."
+        }
+      ]
+    }
   };
 }

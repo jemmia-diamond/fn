@@ -10,7 +10,7 @@ export class DebounceDurableObject extends DurableObject {
     this.actions = {
       [DebounceActions.SEND_TO_MESSAGE_SUMMARY_QUEUE]: async (data) => {
         await this.env["MESSAGE_SUMMARY_QUEUE"].send(data);
-      },
+      }
     };
   }
 
@@ -44,7 +44,7 @@ export class DebounceDurableObject extends DurableObject {
         } catch (error) {
           console.error(
             `Failed to execute debounced callback for key=${key}:`,
-            error,
+            error
           );
           await this.cleanup(key);
         }
