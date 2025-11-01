@@ -5,6 +5,7 @@ model misaUser {
   email               String?   @db.VarChar(255)
   database_created_at DateTime? @default(now())
   database_updated_at DateTime?
+  haravan_orders      Order[]
 
   @@map("users")
   @@schema("misa")
