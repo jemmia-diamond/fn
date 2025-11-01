@@ -23,7 +23,20 @@ export default [
   unicorn.configs.recommended,
   ...tseslint.configs.recommended,
   {
-    files: ['**/*.{js,mjs,cjs,ts,mts,cts}'],
+    files: ['**/*.cjs'],
+    languageOptions: {
+      sourceType: 'commonjs',
+      globals: {
+        module: 'readonly',
+        require: 'readonly',
+        exports: 'readonly',
+        __dirname: 'readonly',
+        __filename: 'readonly',
+      },
+    },
+  },
+  {
+    files: ['**/*.{ts,tsx,mts,cts}'],
     languageOptions: {
       parser: tsParser,
       parserOptions: {
