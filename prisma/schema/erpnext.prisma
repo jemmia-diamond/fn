@@ -285,7 +285,7 @@ model lead_sources {
 }
 
 model erpnextLead {
-  uuid                   String    @id @default(uuid())@db.Uuid
+  uuid                   String    @id @default(uuid()) @db.Uuid
   name                   String    @unique @db.VarChar(255)
   owner                  String?   @db.VarChar(255)
   creation               DateTime? @db.Timestamp(6)
