@@ -452,7 +452,7 @@ model erpnextRegion {
   owner               String?   @db.VarChar(255)
   creation            DateTime? @db.Timestamp(6)
   modified            DateTime? @db.Timestamp(6)
-  region_name         String    @db.VarChar(255)
+  region_name         String    @default("") @db.VarChar(255)
   database_created_at DateTime  @default(now()) @db.Timestamp(6)
   database_updated_at DateTime? @db.Timestamp(6)
 
@@ -467,7 +467,7 @@ model erpnextSalesOrderNotificationTracking {
   haravan_order_id    String
   lark_message_id     String
   database_created_at DateTime @default(now())
-  database_updated_at DateTime
+  database_updated_at DateTime @updatedAt
   order_data          Json?
 
   @@index([haravan_order_id])
