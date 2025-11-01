@@ -21,20 +21,17 @@ export default class OrderTrackingController {
 
     const orderTrackingService = new Ecommerce.OrderTrackingService(ctx.env);
     try {
-      const orderDetails = await orderTrackingService.trackOrder(
-        id,
-        reqBearerToken
-      );
+      const orderDetails = await orderTrackingService.trackOrder(id, reqBearerToken);
       if (!orderDetails) {
         return ctx.json({ error_code: "order_not_found" }, 404);
       }
       return ctx.json(orderDetails);
     } catch (error) {
       if (error instanceof HTTPException) {
-        return ctx.json({ error_code: error.message }, error.status);
+        return ctx.json({ error_code: error.message }, error.status );
       }
       console.error("Error tracking order:", error);
-      return ctx.json({ message: "Internal Server Error" }, 500);
+      return ctx.json({ message: "Internal Server Error" }, 500 );
     }
   }
 }

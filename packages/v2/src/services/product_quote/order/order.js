@@ -19,6 +19,7 @@ export default class ProductQuoteOrderService {
         Sentry.captureException(error);
       }
     }
+
   }
 
   /**
@@ -55,10 +56,7 @@ export default class ProductQuoteOrderService {
           const variantId = lineItem.variant_id;
           if (!variantId) continue;
 
-          const dbTempVariant = await this._findTemporaryProductByVariantId(
-            db,
-            variantId
-          );
+          const dbTempVariant = await this._findTemporaryProductByVariantId(db, variantId);
 
           if (dbTempVariant?.lark_base_record_id) {
             const recordId = dbTempVariant.lark_base_record_id;
@@ -74,9 +72,7 @@ export default class ProductQuoteOrderService {
               });
               if (oldRecord?.fields) {
                 const existingOrders = oldRecord.fields[LARK_ORDER_KEY];
-                multiOrders = Array.isArray(existingOrders)
-                  ? existingOrders
-                  : [];
+                multiOrders = Array.isArray(existingOrders) ? existingOrders : [];
               }
             }
 
@@ -85,10 +81,7 @@ export default class ProductQuoteOrderService {
             }
 
             const fieldsToUpdate = {
-              [LARK_LINK_ORDER_KEY]: {
-                link: `https://jemmiavn.myharavan.com/admin/orders/${orderId}`,
-                text: String(orderNumber)
-              },
+              [LARK_LINK_ORDER_KEY]: { link: `https://jemmiavn.myharavan.com/admin/orders/${orderId}`, text: String(orderNumber) },
               [LARK_ORDER_KEY]: multiOrders
             };
 

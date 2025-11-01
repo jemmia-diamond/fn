@@ -12,6 +12,6 @@ export default class OrderStatusController {
     } catch (e) {
       console.error(e);
       return ctx.json({ message: e.message, status: 500 });
-    }
-  }
-}
+    };
+  };
+};

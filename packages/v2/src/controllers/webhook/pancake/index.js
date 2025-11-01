@@ -6,9 +6,6 @@ export default class PancakeWebhook {
     const pancakeWebhookNamespace = webhook.basePath("/pancake");
 
     pancakeWebhookNamespace.use("*", verifyPancakeWebhook);
-    pancakeWebhookNamespace.post(
-      "erp/messages",
-      PancakeERPMessageController.create
-    );
+    pancakeWebhookNamespace.post("erp/messages", PancakeERPMessageController.create);
   }
 }

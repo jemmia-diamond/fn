@@ -11,10 +11,7 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/constant";
 
-import {
-  fetchSalesOrdersFromERP,
-  saveSalesOrdersToDatabase
-} from "src/services/erp/selling/sales-order/utils/sales-order-helpers";
+import { fetchSalesOrdersFromERP, saveSalesOrdersToDatabase } from "src/services/erp/selling/sales-order/utils/sales-order-helpers";
 import { getRefOrderChain } from "services/ecommerce/order-tracking/queries/get-initial-order";
 import Larksuite from "services/larksuite";
 import { ERPR2StorageService } from "services/r2-object/erp/erp-r2-storage-service";
@@ -55,13 +52,15 @@ export default class SalesOrderService {
       delivering: "Delivering",
       delivered: "Delivered"
     };
-    this.frappeClient = new FrappeClient({
-      url: env.JEMMIA_ERP_BASE_URL,
-      apiKey: env.JEMMIA_ERP_API_KEY,
-      apiSecret: env.JEMMIA_ERP_API_SECRET
-    });
+    this.frappeClient = new FrappeClient(
+      {
+        url: env.JEMMIA_ERP_BASE_URL,
+        apiKey: env.JEMMIA_ERP_API_KEY,
+        apiSecret: env.JEMMIA_ERP_API_SECRET
+      }
+    );
     this.db = Database.instance(env);
-  }
+  };
 
   async processHaravanOrder(haravanOrderData) {
     // Initialize services
@@ -70,47 +69,26 @@ export default class SalesOrderService {
     const customerService = new CustomerService(this.env);
 
     // Create billing address and customer's addresses
-    await addressService.processHaravanAddress(
-      haravanOrderData.billing_address
-    );
+    await addressService.processHaravanAddress(haravanOrderData.billing_address);
     let customerAddresses = [];
     for (const address of haravanOrderData.customer.addresses) {
-      customerAddresses.push(
-        await addressService.processHaravanAddress(address)
-      );
+      customerAddresses.push(await addressService.processHaravanAddress(address));
     }
     const customerDefaultAdress = customerAddresses[0];
 
     // Create contact and customer with default address
-    const contact = await contactService.processHaravanContact(
-      haravanOrderData.customer
-    );
-    const customer = await customerService.processHaravanCustomer(
-      haravanOrderData.customer,
-      contact,
-      customerDefaultAdress
-    );
+    const contact = await contactService.processHaravanContact(haravanOrderData.customer);
+    const customer = await customerService.processHaravanCustomer(haravanOrderData.customer, contact, customerDefaultAdress);
 
     // Update the customer back to his contact and address
-    await contactService.processHaravanContact(
-      haravanOrderData.customer,
-      customer
-    );
-    await addressService.processHaravanAddress(
-      haravanOrderData.billing_address,
-      customer
-    );
+    await contactService.processHaravanContact(haravanOrderData.customer, customer);
+    await addressService.processHaravanAddress(haravanOrderData.billing_address, customer);
     for (const address of haravanOrderData.customer.addresses) {
       await addressService.processHaravanAddress(address, customer);
     }
 
-    const paymentTransactions = haravanOrderData.transactions.filter(
-      (transaction) => transaction.kind.toLowerCase() === "capture"
-    );
-    const paidAmount = paymentTransactions.reduce(
-      (total, transaction) => total + transaction.amount,
-      0
-    );
+    const paymentTransactions = haravanOrderData.transactions.filter(transaction => transaction.kind.toLowerCase() === "capture");
+    const paidAmount = paymentTransactions.reduce((total, transaction) => total + transaction.amount, 0);
 
     const mappedOrderData = {
       doctype: this.doctype,
@@ -122,29 +100,14 @@ export default class SalesOrderService {
       discount_amount: haravanOrderData.total_discounts,
       items: haravanOrderData.line_items.map(this.mapLineItemsFields),
       skip_delivery_note: 1,
-      financial_status:
-        this.financialStatusMapper[haravanOrderData.financial_status],
-      fulfillment_status:
-        this.fulfillmentStatusMapper[haravanOrderData.fulfillment_status],
-      cancelled_status:
-        this.cancelledStatusMapper[haravanOrderData.cancelled_status],
-      carrier_status: haravanOrderData.fulfillments.length
-        ? this.carrierStatusMapper[
-          haravanOrderData.fulfillments[0].carrier_status_code
-        ]
-        : this.carrierStatusMapper.notdelivered,
-      transaction_date: convertIsoToDatetime(
-        haravanOrderData.created_at,
-        "date"
-      ),
-      haravan_created_at: convertIsoToDatetime(
-        haravanOrderData.created_at,
-        "datetime"
-      ),
+      financial_status: this.financialStatusMapper[haravanOrderData.financial_status],
+      fulfillment_status: this.fulfillmentStatusMapper[haravanOrderData.fulfillment_status],
+      cancelled_status: this.cancelledStatusMapper[haravanOrderData.cancelled_status],
+      carrier_status: haravanOrderData.fulfillments.length ? this.carrierStatusMapper[haravanOrderData.fulfillments[0].carrier_status_code] : this.carrierStatusMapper.notdelivered,
+      transaction_date: convertIsoToDatetime(haravanOrderData.created_at, "date"),
+      haravan_created_at: convertIsoToDatetime(haravanOrderData.created_at, "datetime"),
       total: haravanOrderData.total_line_items_price,
-      payment_records: haravanOrderData.transactions
-        .filter((transaction) => transaction.kind.toLowerCase() === "capture")
-        .map(this.mapPaymentRecordFields),
+      payment_records: haravanOrderData.transactions.filter(transaction => transaction.kind.toLowerCase() === "capture").map(this.mapPaymentRecordFields),
       contact_person: contact.name,
       customer_address: customerDefaultAdress.name,
       total_amount: haravanOrderData.total_price,
@@ -154,11 +117,7 @@ export default class SalesOrderService {
       real_order_date: dayjs(haravanOrderData.created_at).utc().format("YYYY-MM-DD"),
       ref_sales_orders: await this.mapRefSalesOrder(haravanOrderData.id)
     };
-    const order = await this.frappeClient.upsert(
-      mappedOrderData,
-      "haravan_order_id",
-      ["items"]
-    );
+    const order = await this.frappeClient.upsert(mappedOrderData, "haravan_order_id", ["items"]);
     return order;
   }
 
@@ -242,9 +201,7 @@ export default class SalesOrderService {
       barcode: lineItemData.barcode,
       qty: lineItemData.quantity,
       price_list_rate: parseInt(lineItemData.price_original),
-      discount_amount: parseInt(
-        lineItemData.price_original - lineItemData.price
-      ),
+      discount_amount: parseInt(lineItemData.price_original - lineItemData.price),
       rate: parseInt(lineItemData.price),
       type: lineItemData.type
     };
@@ -258,10 +215,7 @@ export default class SalesOrderService {
     // Handle case reorder
     if (haravanRefOrderId && Number(haravanRefOrderId) > 0) {
       // find the very first order in history
-      const refOrders = await getRefOrderChain(
-        this.db,
-        Number(salesOrderData.haravan_order_id)
-      );
+      const refOrders = await getRefOrderChain(this.db, Number(salesOrderData.haravan_order_id));
 
       if (!refOrders || refOrders.length === 0) {
         return {
@@ -270,17 +224,16 @@ export default class SalesOrderService {
         };
       }
 
-      const refOrderstNotificationOrderTracking =
-        await this.db.erpnextSalesOrderNotificationTracking.findMany({
-          where: {
-            haravan_order_id: {
-              in: refOrders?.map((order) => String(order.id))
-            }
-          },
-          orderBy: {
-            database_created_at: "asc"
+      const refOrderstNotificationOrderTracking = await this.db.erpnextSalesOrderNotificationTracking.findMany({
+        where: {
+          haravan_order_id: {
+            in: refOrders?.map(order => String(order.id))
           }
-        });
+        },
+        orderBy: {
+          database_created_at: "asc"
+        }
+      });
 
       if (refOrderstNotificationOrderTracking && refOrderstNotificationOrderTracking.length > 0) {
         const currentOrderTracking = await this.db.erpnextSalesOrderNotificationTracking.findFirst({
@@ -363,10 +316,7 @@ export default class SalesOrderService {
               }
             }
           });
-          return {
-            success: true,
-            message: "Thông báo đơn đặt lại thành công!"
-          };
+          return { success: true, message: "Thông báo đơn đặt lại thành công!" };
         }
 
         if (isOrderTracked) {
@@ -376,12 +326,11 @@ export default class SalesOrderService {
       }
     }
 
-    const notificationTracking =
-      await this.db.erpnextSalesOrderNotificationTracking.findFirst({
-        where: {
-          order_name: salesOrderData.name
-        }
-      });
+    const notificationTracking = await this.db.erpnextSalesOrderNotificationTracking.findFirst({
+      where: {
+        order_name: salesOrderData.name
+      }
+    });
 
     if (notificationTracking) {
       const { content, diffAttachments } = await this.composeUpdateOrderContent(notificationTracking.order_data || {}, salesOrderData);
@@ -437,10 +386,7 @@ export default class SalesOrderService {
         return { success: true, message: "Gửi cập nhật đơn thành công!" };
       }
 
-      return {
-        success: false,
-        message: "Đơn hàng này đã được gửi thông báo từ trước đó!"
-      };
+      return { success: false, message: "Đơn hàng này đã được gửi thông báo từ trước đó!" };
     }
 
     if (isUpdateMessage) {
@@ -488,10 +434,7 @@ export default class SalesOrderService {
 
   async syncSalesOrdersToDatabase(options = {}) {
     // minutesBack = 10 is default value for first sync when no create kv
-    const {
-      isSyncType = SalesOrderService.SYNC_TYPE_MANUAL,
-      minutesBack = 10
-    } = options;
+    const { isSyncType = SalesOrderService.SYNC_TYPE_MANUAL, minutesBack = 10 } = options;
     const kv = this.env.FN_KV;
     const KV_KEY = "sales_order_sync:last_date";
     const toDate = dayjs().utc().format("YYYY-MM-DD HH:mm:ss");
@@ -499,27 +442,13 @@ export default class SalesOrderService {
 
     if (isSyncType === SalesOrderService.SYNC_TYPE_AUTO) {
       const lastDate = await kv.get(KV_KEY);
-      fromDate =
-        lastDate ||
-        dayjs()
-          .utc()
-          .subtract(minutesBack, "minutes")
-          .format("YYYY-MM-DD HH:mm:ss"); // first time when deploy app, we need define fromDate, if not, we will get all data from ERP
+      fromDate = lastDate || dayjs().utc().subtract(minutesBack, "minutes").format("YYYY-MM-DD HH:mm:ss"); // first time when deploy app, we need define fromDate, if not, we will get all data from ERP
     } else {
-      fromDate = dayjs()
-        .utc()
-        .subtract(minutesBack, "minutes")
-        .format("YYYY-MM-DD HH:mm:ss");
+      fromDate = dayjs().utc().subtract(minutesBack, "minutes").format("YYYY-MM-DD HH:mm:ss");
     }
 
     try {
-      const salesOrders = await fetchSalesOrdersFromERP(
-        this.frappeClient,
-        this.doctype,
-        fromDate,
-        toDate,
-        SalesOrderService.ERPNEXT_PAGE_SIZE
-      );
+      const salesOrders = await fetchSalesOrdersFromERP(this.frappeClient, this.doctype, fromDate, toDate, SalesOrderService.ERPNEXT_PAGE_SIZE);
       if (Array.isArray(salesOrders) && salesOrders.length > 0) {
         await saveSalesOrdersToDatabase(this.db, salesOrders);
       }
@@ -529,14 +458,11 @@ export default class SalesOrderService {
     } catch (error) {
       console.error("Error syncing sales orders to database:", error.message);
       // Handle when cronjon failed in 1 hour => we need to update the last date to the current date
-      if (
-        isSyncType === SalesOrderService.SYNC_TYPE_AUTO &&
-        dayjs(toDate).diff(dayjs(await kv.get(KV_KEY)), "hour") >= 1
-      ) {
+      if (isSyncType === SalesOrderService.SYNC_TYPE_AUTO && dayjs(toDate).diff(dayjs(await kv.get(KV_KEY)), "hour") >= 1) {
         await kv.put(KV_KEY, toDate);
       }
     }
-  }
+  };
 
   static async cronSyncSalesOrdersToDatabase(env) {
     const syncService = new SalesOrderService(env);
@@ -550,15 +476,12 @@ export default class SalesOrderService {
     const salesOrderService = new SalesOrderService(env);
     const salesOrders = [];
     try {
-      const orders = await salesOrderService.frappeClient.getList(
-        "Sales Order",
-        {
-          filters: [
-            ["real_order_date", "is", "not set"],
-            ["cancelled_status", "=", "uncancelled"]
-          ]
-        }
-      );
+      const orders = await salesOrderService.frappeClient.getList("Sales Order", {
+        filters: [
+          ["real_order_date", "is", "not set"],
+          ["cancelled_status", "=", "uncancelled"]
+        ]
+      });
       salesOrders.push(...orders);
     } catch (error) {
       console.error(error);
@@ -589,20 +512,18 @@ export default class SalesOrderService {
         ORDER BY o.created_at ASC
       `;
 
-      if (!orderChain.length) {
-        continue;
-      }
+      if (!orderChain.length) { continue; }
 
       const firstOfChain = orderChain[0];
-      const realOrderDate = dayjs(firstOfChain.created_at)
-        .utc()
-        .format("YYYY-MM-DD");
+      const realOrderDate = dayjs(firstOfChain.created_at).utc().format("YYYY-MM-DD");
       try {
-        await salesOrderService.frappeClient.update({
-          doctype: "Sales Order",
-          name: salesOrder.name,
-          real_order_date: realOrderDate
-        });
+        await salesOrderService.frappeClient.update(
+          {
+            doctype: "Sales Order",
+            name: salesOrder.name,
+            real_order_date: realOrderDate
+          }
+        );
       } catch (error) {
         console.error(error);
       }

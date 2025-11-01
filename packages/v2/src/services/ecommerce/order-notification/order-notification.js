@@ -35,7 +35,7 @@ export default class OrderNotificationService {
   }
 
   buildOrderMessage(orderData) {
-    const products = orderData.line_items.map((item) => item.title);
+    const products = orderData.line_items.map(item => item.title);
 
     return stringSquish(`
       [🔥NEW ORDER FROM WEB🔥]
@@ -50,9 +50,7 @@ export default class OrderNotificationService {
   }
 
   shouldSkipOrder(orderData) {
-    if (
-      !OrderNotificationService.WHITELIST_SOURCES.includes(orderData.source)
-    ) {
+    if (!OrderNotificationService.WHITELIST_SOURCES.includes(orderData.source)) {
       return true;
     }
 

@@ -6,7 +6,10 @@ export default class ZNSMessageService {
   }
 
   _generateHash(data, secret) {
-    return crypto.createHmac("sha256", secret).update(data).digest("hex");
+    return crypto
+      .createHmac("sha256", secret)
+      .update(data)
+      .digest("hex");
   }
 
   _generateRequestId() {
@@ -19,8 +22,7 @@ export default class ZNSMessageService {
       this.clientId = this.env.ZNS_CLIENT_ID;
       this.zaloOAId = this.env.ZNS_OA_ID;
       this.baseURL = this.env.ZNS_API_BASE_URL;
-      this.clientSecret =
-        this.env.ZNS_SECRET_KEY || (await this.env.ZNS_SECRET_KEY_SECRET.get());
+      this.clientSecret = this.env.ZNS_SECRET_KEY || await this.env.ZNS_SECRET_KEY_SECRET.get();
 
       const payloadObject = {
         phone: phone,

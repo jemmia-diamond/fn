@@ -8,4 +8,4 @@ export default class AuthorsController {
 
     return ctx.json({ id: id }, 200);
   }
-}
+};

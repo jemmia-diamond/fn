@@ -42,10 +42,7 @@ export class DebounceDurableObject extends DurableObject {
           await action(data);
           await this.cleanup(key);
         } catch (error) {
-          console.error(
-            `Failed to execute debounced callback for key=${key}:`,
-            error
-          );
+          console.error(`Failed to execute debounced callback for key=${key}:`, error);
           await this.cleanup(key);
         }
       }

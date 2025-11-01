@@ -10,16 +10,9 @@ export default class IndDayStatService {
 
   static async trackBudget(batch, env) {
     try {
-      const {
-        line_items,
-        haravan_topic,
-        cancelled_status,
-        cancelled_at,
-        updated_at,
-        partially_paid
-      } = batch.messages[0].body;
+      const { line_items, haravan_topic, cancelled_status, cancelled_at, updated_at, partially_paid } = batch.messages[0].body;
 
-      if (partially_paid !== "partially_paid") return;
+      if ( partially_paid !== "partially_paid" ) return;
 
       const indDayStatService = new IndDayStatService();
       const totalQuantity = Object.values(line_items).reduce(
@@ -30,18 +23,13 @@ export default class IndDayStatService {
         0
       );
 
-      const productQuantity = await env.FN_KV.get(
-        indDayStatService.countProductQuantityKey
-      );
+      const productQuantity = await env.FN_KV.get(indDayStatService.countProductQuantityKey);
 
       let newQuantityCount = parseInt(productQuantity) || 0;
 
       if (haravan_topic === HARAVAN_TOPIC.CREATED) {
         newQuantityCount += totalQuantity;
-      } else if (
-        haravan_topic === HARAVAN_TOPIC.UPDATED &&
-        cancelled_status === "cancelled"
-      ) {
+      } else if (haravan_topic === HARAVAN_TOPIC.UPDATED && cancelled_status === "cancelled" ) {
         const cancelledAt = new Date(cancelled_at);
         const updatedAt = new Date(updated_at);
         if (updatedAt.getTime() - cancelledAt.getTime() < 2000) {
@@ -52,10 +40,8 @@ export default class IndDayStatService {
       if (newQuantityCount > indDayStatService.productQuantityBudget) {
         console.warn("Product quantity budget exceeded");
       }
-      await env.FN_KV.put(
-        indDayStatService.countProductQuantityKey,
-        newQuantityCount
-      );
+      await env.FN_KV.put(indDayStatService.countProductQuantityKey, newQuantityCount);
+
     } catch (error) {
       console.error("Error tracking budget:", error);
     }
@@ -63,16 +49,13 @@ export default class IndDayStatService {
 
   async getStats() {
     try {
-      const productQuantity = await this.env.FN_KV.get(
-        this.countProductQuantityKey
-      );
+      const productQuantity = await this.env.FN_KV.get(this.countProductQuantityKey);
       if (productQuantity === null) {
         throw new Error("Data is missing keys");
       }
 
       return {
-        count_product_quantity:
-          Number(productQuantity) + (Number(this.env.STATS_NUMBER_BUFFER) || 0)
+        count_product_quantity: Number(productQuantity) + (Number(this.env.STATS_NUMBER_BUFFER) || 0)
       };
     } catch (error) {
       console.error("Error checking budget:", error);

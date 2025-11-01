@@ -21,7 +21,10 @@ export default class ConversationService {
     return result;
   }
 
-  async upsertFrappeLeadConversation(conversationId, frappeNameId) {
+  async upsertFrappeLeadConversation(
+    conversationId,
+    frappeNameId
+  ) {
     const result = await this.db.$queryRaw`
       INSERT INTO pancake.frappe_lead_conversation (conversation_id, frappe_name_id, updated_at, created_at)
       VALUES (${conversationId}, ${frappeNameId}, NOW(), NOW())
@@ -32,7 +35,9 @@ export default class ConversationService {
     return result;
   }
 
-  async findExistingLead({ conversationId }) {
+  async findExistingLead({
+    conversationId
+  }) {
     try {
       const result = await this.db.$queryRaw`
         SELECT * FROM pancake.frappe_lead_conversation AS flc
@@ -49,7 +54,9 @@ export default class ConversationService {
     }
   }
 
-  async findPageInfo({ pageId }) {
+  async findPageInfo({
+    pageId
+  }) {
     try {
       const result = await this.db.$queryRaw`
         SELECT * FROM pancake.page AS p
@@ -85,23 +92,12 @@ export default class ConversationService {
       const insertedAt = message.inserted_at;
 
       if (!insertedAt) {
-        throw new Error(
-          "Page ID: " +
-            pageId +
-            ", Conversation ID: " +
-            conversationId +
-            ", Inserted At: " +
-            insertedAt
-        );
+        throw new Error("Page ID: " + pageId + ", Conversation ID: " + conversationId + ", Inserted At: " + insertedAt);
       }
       // Store the time of the last customer message
-      const result = await this.updateConversation(
-        conversationId,
-        pageId,
-        insertedAt
-      );
+      const result = await this.updateConversation(conversationId, pageId, insertedAt);
       return result;
-    } catch (err) {
+    } catch (err){
       console.error(`processLastCustomerMessage failed: ${err}`);
       return;
     }
@@ -193,9 +189,9 @@ export default class ConversationService {
 
     const aihub = new AIHUBClient(env);
     return await aihub.makeRequest("/lead-info", {
-      pageId: body.page_id,
-      conversationId: conversationId,
-      webhookUrl: `${env.HOST}/webhook/ai-hub/erp/leads`
+      "pageId": body.page_id,
+      "conversationId": conversationId,
+      "webhookUrl": `${env.HOST}/webhook/ai-hub/erp/leads`
     });
   }
 
@@ -206,9 +202,9 @@ export default class ConversationService {
     for (const message of messages) {
       const body = message.body;
 
-      await conversationService
-        .summarizeLead(env, body)
-        .catch((err) => console.error(`summarizeLead failed: ${err}`));
+      await conversationService.summarizeLead(env, body).catch(err =>
+        console.error(`summarizeLead failed: ${err}`)
+      );
     }
   }
 

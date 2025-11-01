@@ -19,22 +19,21 @@ export default class UserService {
   }
 
   async getPancakeUsers() {
-    const users = this.db
-      .$queryRaw`SELECT u.id,u.enterprise_email FROM pancake.users u `;
+    const users = this.db.$queryRaw`SELECT u.id,u.enterprise_email FROM pancake.users u `;
     return users;
   }
 
   static async syncLarkIds(env) {
     const userService = new UserService(env);
     const users = await userService.frappeClient.getList(userService.doctype, {
-      filters: [["pancake_id", "=", null]]
+      filters: [
+        ["pancake_id", "=", null]
+      ]
     });
 
     const pancakeUsers = await userService.getPancakeUsers();
     for (const user of users) {
-      const pancakeUser = pancakeUsers.find(
-        (pancakeUser) => pancakeUser.enterprise_email === user.email
-      );
+      const pancakeUser = pancakeUsers.find(pancakeUser => pancakeUser.enterprise_email === user.email);
       if (pancakeUser) {
         await userService.frappeClient.update({
           doctype: userService.doctype,
@@ -46,24 +45,20 @@ export default class UserService {
   }
 
   static async syncUsersToDatabase(env) {
-    const timeThreshold = dayjs()
-      .subtract(1, "day")
-      .utc()
-      .format("YYYY-MM-DD HH:mm:ss");
+    const timeThreshold = dayjs().subtract(1, "day").utc().format("YYYY-MM-DD HH:mm:ss");
     const userService = new UserService(env);
 
     let users = [];
     let page = 1;
     const pageSize = UserService.ERPNEXT_PAGE_SIZE;
     while (true) {
-      const result = await userService.frappeClient.getList(
-        userService.doctype,
-        {
-          limit_start: (page - 1) * pageSize,
-          limit_page_length: pageSize,
-          filters: [["modified", ">=", timeThreshold]]
-        }
-      );
+      const result = await userService.frappeClient.getList(userService.doctype, {
+        limit_start: (page - 1) * pageSize,
+        limit_page_length: pageSize,
+        filters: [
+          ["modified", ">=", timeThreshold]
+        ]
+      });
       users = users.concat(result);
       if (result.length < pageSize) break;
       page++;
@@ -97,3 +92,4 @@ export default class UserService {
     }
   }
 }
+

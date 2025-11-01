@@ -10,14 +10,12 @@ export default class RecordService {
   static async syncRecordsToDatabase(env) {
     const db = Database.instance(env);
     const larkClient = LarksuiteService.createClient(env);
-    const timeThreshold = dayjs()
-      .utc()
-      .subtract(1, "day")
-      .subtract(5, "minutes")
-      .valueOf();
+    const timeThreshold = dayjs().utc().subtract(1, "day").subtract(5, "minutes").valueOf();
     const pageSize = 100;
 
-    const tables = [TABLES.DEBT_TRACKING];
+    const tables = [
+      TABLES.DEBT_TRACKING
+    ];
 
     const allRecords = [];
 
@@ -33,23 +31,17 @@ export default class RecordService {
         data: {
           filter: {
             conjunction: "and",
-            conditions: [
-              {
-                field_name: "Last Modified Date",
-                operator: "isGreater",
-                value: ["ExactDate", timeThreshold]
-              }
-            ]
+            conditions: [{
+              field_name: "Last Modified Date",
+              operator: "isGreater",
+              value: ["ExactDate", timeThreshold]
+            }]
           }
         }
       };
-      const responses = await LarksuiteService.requestWithPagination(
-        larkClient.bitable.appTableRecord.search,
-        payload,
-        pageSize
-      );
-      const records = responses.flatMap((res) => res?.data?.items ?? []);
-      const recordsWithTableMetaData = records.map((record) => {
+      const responses = await LarksuiteService.requestWithPagination(larkClient.bitable.appTableRecord.search, payload, pageSize);
+      const records = responses.flatMap(res => (res?.data?.items ?? []));
+      const recordsWithTableMetaData = records.map(record => {
         return {
           ...record,
           table_id: table.table_id,
@@ -88,11 +80,7 @@ export default class RecordService {
    * @returns {Promise<object|null>} - The record object if found, otherwise null.
    */
   static async getLarksuiteRecord({
-    env,
-    appToken,
-    tableId,
-    recordId,
-    userIdType = "open_id"
+    env, appToken, tableId, recordId, userIdType = "open_id"
   }) {
     const larkClient = await LarksuiteService.createClientV2(env);
 
@@ -127,12 +115,7 @@ export default class RecordService {
    * @returns {Promise<object|null>} - The updated record object if successful, otherwise null.
    */
   static async updateLarksuiteRecord({
-    env,
-    appToken,
-    tableId,
-    recordId,
-    fields,
-    userIdType = "open_id"
+    env, appToken, tableId, recordId, fields, userIdType = "open_id"
   }) {
     const larkClient = await LarksuiteService.createClientV2(env);
 
@@ -158,3 +141,4 @@ export default class RecordService {
     }
   }
 }
+

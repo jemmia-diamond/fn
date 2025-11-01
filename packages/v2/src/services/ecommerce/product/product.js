@@ -31,8 +31,7 @@ export default class ProductService {
   }
 
   async getJewelry(jsonParams) {
-    const { data, count, material_colors, fineness } =
-      await this.getJewelryData(jsonParams);
+    const { data, count, material_colors, fineness } = await this.getJewelryData(jsonParams);
     return {
       data,
       metadata: {
@@ -125,8 +124,7 @@ export default class ProductService {
   }
 
   async getWeddingRings(jsonParams) {
-    const { data, count, material_colors, fineness } =
-      await this.getWeddingRingsData(jsonParams);
+    const { data, count, material_colors, fineness } = await this.getWeddingRingsData(jsonParams);
     return {
       data,
       metadata: {
@@ -211,8 +209,7 @@ export default class ProductService {
   }
 
   async getJewelryV2(jsonParams) {
-    const { data, count, material_colors, fineness } =
-      await this.getJewelryDataV2(jsonParams);
+    const { data, count, material_colors, fineness } = await this.getJewelryDataV2(jsonParams);
     return {
       data,
       metadata: {

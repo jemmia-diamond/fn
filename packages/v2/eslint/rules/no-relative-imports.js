@@ -28,8 +28,7 @@ class NoRelativeImportsValidator {
           if (absolutePath) {
             context.report({
               node: node.source,
-              message:
-                "Relative imports are not allowed. Use absolute imports instead.",
+              message: "Relative imports are not allowed. Use absolute imports instead.",
               fix(fixer) {
                 return fixer.replaceText(node.source, `"${absolutePath}"`);
               }
@@ -48,8 +47,7 @@ class NoRelativeImportsValidator {
     const currentDir = path.dirname(currentFilePath);
     const resolvedPath = path.resolve(currentDir, relativePath);
 
-    const projectRoot =
-      NoRelativeImportsValidator.#findProjectRoot(currentFilePath);
+    const projectRoot = NoRelativeImportsValidator.#findProjectRoot(currentFilePath);
     if (!projectRoot) return null;
 
     const srcRoot = path.join(projectRoot, "src");

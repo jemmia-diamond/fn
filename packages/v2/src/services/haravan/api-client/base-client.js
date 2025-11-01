@@ -8,7 +8,7 @@ export default class BaseClient {
   async composeHeaders() {
     return {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${await this.accessToken.get()}`
+      "Authorization": `Bearer ${await this.accessToken.get()}`
     };
   }
 

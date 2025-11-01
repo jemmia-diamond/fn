@@ -2,11 +2,7 @@ import FrappeClient from "frappe/frappe-client";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import Database from "services/database";
-import {
-  fetchContactsFromERP,
-  saveContactsToDatabase,
-  deleteContactFromDatabase
-} from "services/erp/contacts/contact/utils/contact-helppers";
+import { fetchContactsFromERP, saveContactsToDatabase, deleteContactFromDatabase } from "services/erp/contacts/contact/utils/contact-helppers";
 
 dayjs.extend(utc);
 
@@ -17,14 +13,16 @@ export default class ContactService {
   constructor(env) {
     this.env = env;
     this.doctype = "Contact";
-    this.frappeClient = new FrappeClient({
-      url: env.JEMMIA_ERP_BASE_URL,
-      apiKey: env.JEMMIA_ERP_API_KEY,
-      apiSecret: env.JEMMIA_ERP_API_SECRET
-    });
+    this.frappeClient = new FrappeClient(
+      {
+        url: env.JEMMIA_ERP_BASE_URL,
+        apiKey: env.JEMMIA_ERP_API_KEY,
+        apiSecret: env.JEMMIA_ERP_API_SECRET
+      }
+    );
     this.db = Database.instance(env);
     this.defaultContactName = "DEFAULT CONTACT";
-  }
+  };
 
   async findContactByPrimaryPhone(phone) {
     const contacts = await this.frappeClient.getList(this.doctype, {
@@ -44,15 +42,13 @@ export default class ContactService {
       if (!contact.links) {
         contact.links = [];
       }
-      contact.links.push({ link_doctype: doc.doctype, link_name: doc.name });
-    }
+      contact.links.push({ "link_doctype": doc.doctype, "link_name": doc.name });
+    };
     return contact;
   };
 
   async processHaravanContact(customerData, customer) {
-    const nameParts = customerData["phone"]
-      ? [customerData.last_name, customerData.first_name].filter(Boolean)
-      : [this.defaultContactName];
+    const nameParts = customerData["phone"] ? [customerData.last_name, customerData.first_name].filter(Boolean) : [this.defaultContactName];
     const mappedContactData = {
       doctype: this.doctype,
       first_name: nameParts.join(" "),
@@ -62,23 +58,15 @@ export default class ContactService {
     if (customerData["phone"]) {
       mappedContactData.phone_nos = [
         {
-          phone: customerData["phone"],
-          is_primary_phone: 1
+          "phone": customerData["phone"],
+          "is_primary_phone": 1
         }
       ];
     }
-    const contact = await this.frappeClient.upsert(
-      mappedContactData,
-      "haravan_customer_id"
-    );
+    const contact = await this.frappeClient.upsert(mappedContactData, "haravan_customer_id");
     if (customer) {
-      return await this.frappeClient.reference(
-        contact,
-        "Contact",
-        customer,
-        "Customer"
-      );
-    }
+      return await this.frappeClient.reference(contact, "Contact", customer, "Customer");
+    };
     return contact;
   }
 
@@ -87,13 +75,11 @@ export default class ContactService {
       doctype: this.doctype,
       custom_uuid: data.custom_uuid,
       first_name: data.raw_data.name,
-      inserted_at: dayjs(data.database_created_at)
-        .utc()
-        .format("YYYY-MM-DD HH:mm:ss"),
+      inserted_at: dayjs(data.database_created_at).utc().format("YYYY-MM-DD HH:mm:ss"),
       phone_nos: [
         {
-          phone: data.raw_data.phone,
-          is_primary_phone: 1
+          "phone": data.raw_data.phone,
+          "is_primary_phone": 1
         }
       ],
       source: lead.source
@@ -116,15 +102,9 @@ export default class ContactService {
         });
       }
     } else {
-      const contact = await this.frappeClient.upsert(
-        contactData,
-        "custom_uuid"
-      );
+      const contact = await this.frappeClient.upsert(contactData, "custom_uuid");
       // reference contact with lead
-      const contactWithLinks = await this.frappeClient.getDoc(
-        this.doctype,
-        contact.name
-      );
+      const contactWithLinks = await this.frappeClient.getDoc(this.doctype, contact.name);
       await this.frappeClient.update(this.reference(contactWithLinks, lead));
     }
   }
@@ -138,8 +118,8 @@ export default class ContactService {
       inserted_at: data.start_time,
       phone_nos: [
         {
-          phone: phone,
-          is_primary_phone: 1
+          "phone": phone,
+          "is_primary_phone": 1
         }
       ]
     };
@@ -149,8 +129,8 @@ export default class ContactService {
   }
 
   async syncContactsToDatabase(options = {}) {
-    const { isSyncType = ContactService.SYNC_TYPE_AUTO, minutesBack = 10 } =
-      options;
+
+    const { isSyncType = ContactService.SYNC_TYPE_AUTO, minutesBack = 10 } = options;
     const kv = this.env.FN_KV;
     const KV_KEY = "contact_sync:last_date";
     const toDate = dayjs().utc().format("YYYY-MM-DD HH:mm:ss");
@@ -158,27 +138,13 @@ export default class ContactService {
 
     if (isSyncType === ContactService.SYNC_TYPE_AUTO) {
       const lastDate = await kv.get(KV_KEY);
-      fromDate =
-        lastDate ||
-        dayjs()
-          .utc()
-          .subtract(minutesBack, "minutes")
-          .format("YYYY-MM-DD HH:mm:ss");
+      fromDate = lastDate || dayjs().utc().subtract(minutesBack, "minutes").format("YYYY-MM-DD HH:mm:ss");
     } else {
-      fromDate = dayjs()
-        .utc()
-        .subtract(minutesBack, "minutes")
-        .format("YYYY-MM-DD HH:mm:ss");
+      fromDate = dayjs().utc().subtract(minutesBack, "minutes").format("YYYY-MM-DD HH:mm:ss");
     }
 
     try {
-      const contacts = await fetchContactsFromERP(
-        this.frappeClient,
-        this.doctype,
-        fromDate,
-        toDate,
-        ContactService.ERPNEXT_PAGE_SIZE
-      );
+      const contacts = await fetchContactsFromERP(this.frappeClient, this.doctype, fromDate, toDate, ContactService.ERPNEXT_PAGE_SIZE);
       if (Array.isArray(contacts) && contacts.length > 0) {
         await saveContactsToDatabase(this.db, contacts);
       }
@@ -189,10 +155,7 @@ export default class ContactService {
     } catch (error) {
       console.error("Error syncing leads to database:", error.message);
       // Handle when cronjon failed in 1 hour => we need to update the last date to the current date
-      if (
-        isSyncType === ContactService.SYNC_TYPE_AUTO &&
-        dayjs(toDate).diff(dayjs(await kv.get(KV_KEY)), "hour") >= 1
-      ) {
+      if (isSyncType === ContactService.SYNC_TYPE_AUTO && dayjs(toDate).diff(dayjs(await kv.get(KV_KEY)), "hour") >= 1) {
         await kv.put(KV_KEY, toDate);
       }
     }

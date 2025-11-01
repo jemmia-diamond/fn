@@ -13,13 +13,7 @@ class CustomLogger {
       await next();
 
       const duration = performance.now() - startTime;
-      await this.logRequest(
-        requestInfo,
-        requestBody,
-        c.res?.status || 0,
-        duration,
-        trackObject
-      );
+      await this.logRequest(requestInfo, requestBody, c.res?.status || 0, duration, trackObject);
     });
   }
 
@@ -44,7 +38,7 @@ class CustomLogger {
       }
     } catch (e) {
       console.log("Error parsing request body:", e);
-    }
+    };
 
     return "";
   }
@@ -71,35 +65,13 @@ class CustomLogger {
       if (trackObject && trackObject.logger) {
         // Log different severity levels based on status code
         if (status >= 500) {
-          trackObject.logger.error("server error", {
-            "log.file.name": "error.log",
-            method,
-            path,
-            status,
-            duration
-          });
+          trackObject.logger.error("server error", { "log.file.name": "error.log", method, path, status, duration });
         } else if (status >= 400) {
-          trackObject.logger.warn("client error", {
-            "log.file.name": "warn.log",
-            method,
-            path,
-            status,
-            duration
-          });
+          trackObject.logger.warn("client error", { "log.file.name": "warn.log", method, path, status, duration });
         } else if (status >= 200 && status < 300) {
-          trackObject.logger.info("success", {
-            method,
-            path,
-            status,
-            duration
-          });
+          trackObject.logger.info("success", { method, path, status, duration });
         } else {
-          trackObject.logger.debug("request", {
-            method,
-            path,
-            status,
-            duration
-          });
+          trackObject.logger.debug("request", { method, path, status, duration });
         }
       }
     } catch (e) {
@@ -110,6 +82,5 @@ class CustomLogger {
 }
 
 const loggerInstance = new CustomLogger();
-export const loggrageLogger = (trackObject = null) =>
-  loggerInstance.createMiddleware(trackObject);
+export const loggrageLogger = (trackObject = null) => loggerInstance.createMiddleware(trackObject);
 export default loggrageLogger;

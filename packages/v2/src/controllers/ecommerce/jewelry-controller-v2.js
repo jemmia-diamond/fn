@@ -6,12 +6,8 @@ export default class JewelryControllerV2 {
 
     const jsonParams = {
       categories: params.categories ? params.categories.split(",") : [],
-      product_types: params.product_types
-        ? params.product_types.split(",")
-        : [],
-      material_colors: params.material_colors
-        ? params.material_colors.split(",")
-        : [],
+      product_types: params.product_types ? params.product_types.split(",") : [],
+      material_colors: params.material_colors ? params.material_colors.split(",") : [],
       genders: params.gender ? params.gender.split(",") : [],
       fineness: params.fineness ? params.fineness.split(",") : [],
       pages: params.pages ? params.pages.split(",") : [],
@@ -29,27 +25,17 @@ export default class JewelryControllerV2 {
         order: params.sort_order || "asc"
       },
       design_tags: params.design_tags ? params.design_tags.split(",") : [],
-      ring_head_styles: params.ring_head_styles
-        ? params.ring_head_styles.split(",")
-        : [],
-      ring_band_styles: params.ring_band_styles
-        ? params.ring_band_styles.split(",")
-        : [],
-      excluded_ring_head_styles: params.excluded_ring_head_styles
-        ? params.excluded_ring_head_styles.split(",")
-        : [],
-      excluded_ring_band_styles: params.excluded_ring_band_styles
-        ? params.excluded_ring_band_styles.split(",")
-        : [],
+      ring_head_styles: params.ring_head_styles ? params.ring_head_styles.split(",") : [],
+      ring_band_styles: params.ring_band_styles ? params.ring_band_styles.split(",") : [],
+      excluded_ring_head_styles: params.excluded_ring_head_styles ? params.excluded_ring_head_styles.split(",") : [],
+      excluded_ring_band_styles: params.excluded_ring_band_styles ? params.excluded_ring_band_styles.split(",") : [],
       product_ids: params.product_ids
         ? params.product_ids
           .split(",")
           .map((v) => Number(v.trim()))
           .filter((n) => Number.isInteger(n) && n > 0)
         : [],
-      linked_collections: params.linked_collections
-        ? params.linked_collections.split(",")
-        : []
+      linked_collections: params.linked_collections ? params.linked_collections.split(",") : []
     };
 
     const productService = new Ecommerce.ProductService(ctx.env);

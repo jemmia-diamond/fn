@@ -17,11 +17,7 @@ export class DebounceService {
 
       await durableObject.debounce({ key, data, delay, actionType });
     } catch (error) {
-      console.error("Failed to debounce data:", {
-        error: error.message,
-        key,
-        data
-      });
+      console.error("Failed to debounce data:", { error: error.message, key, data });
       throw error;
     }
   }

@@ -36,11 +36,9 @@ pnpm run dev
 ORM and migration with Prisma:
 
 - Sync your local/dev database with
-
 ```bash
 pnpx prisma migrate deploy
 ```
-
 ```bash
 # 1 migration found in prisma/migrations
 
@@ -51,7 +49,7 @@ pnpx prisma migrate deploy
 # migrations/
 #   └─ 20250807023446_00001/
 #     └─ migration.sql
-
+      
 # All migrations have been successfully applied.
 ```
 
@@ -66,10 +64,9 @@ pnpx prisma migrate dev --name <MIGRATION_NAME>
 
 > [!IMPORTANT]
 >
-> Prisma manage migration via a table named public.\_prisma_migrations, so please don't touch it in the production environment database.
+> Prisma manage migration via a table named public._prisma_migrations, so please don't touch it in the production environment database.
 
 Build Prisma with:
-
 ```bash
 pnpx prisma generate
 ```
@@ -96,7 +93,6 @@ curl "http://localhost:8787/__scheduled?cron=*+*+*+*+*"
 ### Code Organization
 
 When building features:
-
 - Keep controllers focused on request handling and response formatting
 - Extract reusable business logic and utilities to files under the `services` folder
 - Follow a consistent naming pattern for related files
@@ -127,8 +123,8 @@ export class YourController {
 
   static async update(ctx) {
     // Update a specific resource
-    const id = ctx.req.param("id");
-    const body = await ctx.req.json();
+    const id = ctx.req.param("id")
+    const body = await ctx.req.json()
     return ctx.json({});
   }
 
@@ -145,14 +141,14 @@ export class YourController {
 1. Add your routes in `src/routes/index.js` following RESTful conventions:
 
 ```javascript
-import { YourController } from "../controllers/your-namespace/your-controller";
+import { YourController } from "../controllers/your-namespace/your-controller"
 
 // RESTful routes
-app.get("/resources", YourController.index); // List all
-app.get("/resources/:id", YourController.show); // Show one
-app.post("/resources", YourController.create); // Create
-app.put("/resources/:id", YourController.update); // Update
-app.delete("/resources/:id", YourController.destroy); // Delete
+app.get("/resources", YourController.index)          // List all
+app.get("/resources/:id", YourController.show)       // Show one
+app.post("/resources", YourController.create)        // Create
+app.put("/resources/:id", YourController.update)     // Update
+app.delete("/resources/:id", YourController.destroy) // Delete
 ```
 
 ## Contributing
@@ -160,21 +156,17 @@ app.delete("/resources/:id", YourController.destroy); // Delete
 1. Create a new branch for your feature
 2. Make your changes following the project structure
 3. Code quality check
-
 - Before each commit, ESLint will run automatically
-- If linting fails, please run this command or manually fix the lint errors:
+- If linting fails, please run this command or manually fix the lint errors:  
   ```bash
   pnpm run format
   ```
-
 4. Commit your changes:
-
 - Instead of writing commit messages manually, run:
   ```bash
   git commit
   ```
 - This will open an interactive prompt where you select the commit type (feat, fix, docs, …), scope, and description.
-
 5. Push your changes and open a Pull Request
 
 ## Deployment
@@ -187,3 +179,4 @@ Push to Github to trigger the deployment process.
 - [Wrangler](https://developers.cloudflare.com/workers/wrangler/) - CLI for Cloudflare Workers
 - [Hono](https://hono.dev/) - Lightweight web framework
 - [Sentry](https://sentry.io/) - Error tracking
+

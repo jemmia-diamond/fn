@@ -3,8 +3,7 @@ class NoVietnameseTextValidator {
     return {
       type: "problem",
       docs: {
-        description:
-          "Disallow Vietnamese text in comments, only English is allowed"
+        description: "Disallow Vietnamese text in comments, only English is allowed"
       },
       fixable: null,
       schema: []
@@ -12,15 +11,13 @@ class NoVietnameseTextValidator {
   }
 
   static create(context) {
-    const vietnamesePattern =
-      /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđĐÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸ]/;
+    const vietnamesePattern = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđĐÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸ]/;
 
     function checkText(node, text) {
       if (text && vietnamesePattern.test(text)) {
         context.report({
           node,
-          message:
-            "Vietnamese text in comments is not allowed. Only English comments are permitted."
+          message: "Vietnamese text in comments is not allowed. Only English comments are permitted."
         });
       }
     }
@@ -30,7 +27,7 @@ class NoVietnameseTextValidator {
         const sourceCode = context.getSourceCode();
         const comments = sourceCode.getAllComments();
 
-        comments.forEach((comment) => {
+        comments.forEach(comment => {
           checkText(comment, comment.value);
         });
       }

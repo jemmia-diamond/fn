@@ -8,11 +8,11 @@ export function isTestOrder(orderData) {
     billingAddress.name
   ];
 
-  return testFields.some((field) => field.toLowerCase().includes("test"));
+  return testFields.some(field => field.toLowerCase().includes("test"));
 }
 
 export function isReorder(orderData) {
   const refOrderId = orderData.ref_order_id;
 
-  return refOrderId !== 0;
+  return (refOrderId !== 0);
 }

@@ -62,10 +62,8 @@ export default class LarksuiteService {
         _payload.params.page_token = pageToken;
       } while (pageToken);
     } catch (err) {
-      throw new Error(
-        `Lark pagination request failed: ${err?.message || String(err)}`
-      );
+      throw new Error(`Lark pagination request failed: ${err?.message || String(err)}`);
     }
     return responses;
   }
-}
+};

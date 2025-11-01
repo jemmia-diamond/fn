@@ -12,13 +12,9 @@ class RestfulRoutesValidator {
     return {
       "CallExpression[callee.property.name=/^(get|post|put|delete)$/]"(node) {
         const httpMethod = node.callee.property.name;
-        const allowedMethods =
-          RestfulRoutesValidator.#methodsMap[httpMethod] || [];
+        const allowedMethods = RestfulRoutesValidator.#methodsMap[httpMethod] || [];
         RestfulRoutesValidator.#validateRouteMethod(
-          context,
-          node,
-          httpMethod,
-          allowedMethods
+          context, node, httpMethod, allowedMethods
         );
       }
     };
@@ -26,10 +22,10 @@ class RestfulRoutesValidator {
 
   static get #methodsMap() {
     return {
-      get: ["index", "show"],
-      post: ["create"],
-      patch: ["update"],
-      delete: ["destroy"]
+      "get": ["index", "show"],
+      "post": ["create"],
+      "patch": ["update"],
+      "delete": ["destroy"]
     };
   }
 
@@ -44,9 +40,8 @@ class RestfulRoutesValidator {
     if (!allowedMethods.includes(methodName)) {
       context.report({
         node: lastArg,
-        message:
-          `HTTP ${httpMethod.toUpperCase()} routes should use one of these ` +
-          `controller methods: ${allowedMethods.join(", ")}`
+        message: `HTTP ${httpMethod.toUpperCase()} routes should use one of these ` +
+                 `controller methods: ${allowedMethods.join(", ")}`
       });
     }
   }

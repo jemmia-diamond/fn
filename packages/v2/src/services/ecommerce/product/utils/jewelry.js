@@ -332,21 +332,14 @@ export function aggregateQuery(jsonParams) {
     filterString += `AND d.tag IN ('${jsonParams.design_tags.join("','")}')\n`;
   }
 
-  if (
-    jsonParams.linked_collections &&
-    jsonParams.linked_collections.length > 0
-  ) {
-    linkedCollectionJoinEcomProductsClause +=
-      "INNER JOIN workplace._nc_m2m_haravan_collect_products linked_cp ON linked_cp.products_id = p.workplace_id \n";
-    linkedCollectionJoinEcomProductsClause +=
-      "INNER JOIN workplace.haravan_collections hc ON hc.id = linked_cp.haravan_collections_id \n";
+  if (jsonParams.linked_collections && jsonParams.linked_collections.length > 0) {
+    linkedCollectionJoinEcomProductsClause += "INNER JOIN workplace._nc_m2m_haravan_collect_products linked_cp ON linked_cp.products_id = p.workplace_id \n";
+    linkedCollectionJoinEcomProductsClause += "INNER JOIN workplace.haravan_collections hc ON hc.id = linked_cp.haravan_collections_id \n";
     filterString += `AND hc.title IN ('${jsonParams.linked_collections.join("','")}')\n`;
   }
 
   if (jsonParams.ring_head_styles && jsonParams.ring_head_styles.length > 0) {
-    const normalizedHeadStyles = jsonParams.ring_head_styles.map((style) =>
-      style.trim().toLowerCase()
-    );
+    const normalizedHeadStyles = jsonParams.ring_head_styles.map(style => style.trim().toLowerCase());
     filterString += "AND (\n";
     filterString += `  (d.ring_head_style IS NOT NULL AND d.ring_head_style != '' AND POSITION(' - ' IN d.ring_head_style) > 0 AND LOWER(SPLIT_PART(d.ring_head_style, ' - ', 2)) IN ('${normalizedHeadStyles.join("','")}'))\n`;
     filterString += `  OR (d.ring_head_style IS NOT NULL AND d.ring_head_style != '' AND POSITION(' - ' IN d.ring_head_style) = 0 AND LOWER(d.ring_head_style) IN ('${normalizedHeadStyles.join("','")}'))\n`;
@@ -354,23 +347,15 @@ export function aggregateQuery(jsonParams) {
   }
 
   if (jsonParams.ring_band_styles && jsonParams.ring_band_styles.length > 0) {
-    const normalizedBandStyles = jsonParams.ring_band_styles.map((style) =>
-      style.trim().toLowerCase()
-    );
+    const normalizedBandStyles = jsonParams.ring_band_styles.map(style => style.trim().toLowerCase());
     filterString += "AND (\n";
     filterString += `  (d.ring_band_style IS NOT NULL AND d.ring_band_style != '' AND POSITION(' - ' IN d.ring_band_style) > 0 AND LOWER(SPLIT_PART(d.ring_band_style, ' - ', 2)) IN ('${normalizedBandStyles.join("','")}'))\n`;
     filterString += `  OR (d.ring_band_style IS NOT NULL AND d.ring_band_style != '' AND POSITION(' - ' IN d.ring_band_style) = 0 AND LOWER(d.ring_band_style) IN ('${normalizedBandStyles.join("','")}'))\n`;
     filterString += ")\n";
   }
 
-  if (
-    jsonParams.excluded_ring_head_styles &&
-    jsonParams.excluded_ring_head_styles.length > 0
-  ) {
-    const normalizedExcludedHeadStyles =
-      jsonParams.excluded_ring_head_styles.map((style) =>
-        style.trim().toLowerCase()
-      );
+  if (jsonParams.excluded_ring_head_styles && jsonParams.excluded_ring_head_styles.length > 0) {
+    const normalizedExcludedHeadStyles = jsonParams.excluded_ring_head_styles.map(style => style.trim().toLowerCase());
     filterString += `
       AND (
         d.ring_head_style IS NULL OR
@@ -386,14 +371,8 @@ export function aggregateQuery(jsonParams) {
     `;
   }
 
-  if (
-    jsonParams.excluded_ring_band_styles &&
-    jsonParams.excluded_ring_band_styles.length > 0
-  ) {
-    const normalizedExcludedBandStyles =
-      jsonParams.excluded_ring_band_styles.map((style) =>
-        style.trim().toLowerCase()
-      );
+  if (jsonParams.excluded_ring_band_styles && jsonParams.excluded_ring_band_styles.length > 0) {
+    const normalizedExcludedBandStyles = jsonParams.excluded_ring_band_styles.map(style => style.trim().toLowerCase());
     filterString += `
       AND (
         d.ring_band_style IS NULL OR

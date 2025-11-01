@@ -27,4 +27,4 @@ export function convertIsoToDatetime(isoString, type) {
   // Return datetime with microseconds
   const milliseconds = String(date.millisecond()).padStart(3, "0") + "000"; // Simulate microseconds
   return `${date.utc().format("YYYY-MM-DD HH:mm:ss")}.${milliseconds}`;
-}
+};

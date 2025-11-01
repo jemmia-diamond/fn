@@ -12,11 +12,7 @@ export default class InventoryCheckLineService {
   static async syncInventoryCheckLineToDatabase(env) {
     const client = await InventoryCMSClient.createClient(env);
     const db = Database.instance(env);
-    const timeThreshold = dayjs()
-      .utc()
-      .subtract(5, "hours")
-      .subtract(5, "minutes")
-      .format("YYYY-MM-DD HH:mm:ss");
+    const timeThreshold = dayjs().utc().subtract(5, "hours").subtract(5, "minutes").format("YYYY-MM-DD HH:mm:ss");
     const queryObject = {
       filter: {
         date_created: {
@@ -54,9 +50,7 @@ export default class InventoryCheckLineService {
     });
     try {
       while (true) {
-        const items = await client.request(
-          readItems(COLLECTIONS.INVENTORY_CHECK_LINE, { page, ...queryObject })
-        );
+        const items = await client.request(readItems(COLLECTIONS.INVENTORY_CHECK_LINE, { page, ...queryObject }));
         const count = Array.isArray(items) ? items.length : 0;
         if (count === 0) break;
         for (let i = 0; i < items.length; i += BATCH_SIZE) {
@@ -68,7 +62,7 @@ export default class InventoryCheckLineService {
               create: { id: line.id, sort: line.sort, ...toData(line) }
             });
           }
-          await new Promise((resolve) => setTimeout(resolve, 50));
+          await new Promise(resolve => setTimeout(resolve, 50));
         }
         page++;
       }

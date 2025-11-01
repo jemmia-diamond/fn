@@ -23,7 +23,7 @@ export default class AIHUBClient {
 
     return {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${this.#bearerToken}`
+      "Authorization": `Bearer ${this.#bearerToken}`
     };
   }
 
@@ -37,10 +37,8 @@ export default class AIHUBClient {
       retries: 2,
       retryDelay: axiosRetry.exponentialDelay,
       retryCondition: (error) => {
-        return (
-          axiosRetry.isNetworkOrIdempotentRequestError(error) ||
-          error.response?.status >= 500
-        );
+        return axiosRetry.isNetworkOrIdempotentRequestError(error) ||
+          error.response?.status >= 500;
       }
     });
 
@@ -56,10 +54,7 @@ export default class AIHUBClient {
       return response.data;
     } catch (error) {
       // Log the headers from the failed request
-      console.error(
-        "AIHub API request failed with headers:",
-        this.#bearerToken
-      );
+      console.error("AIHub API request failed with headers:", this.#bearerToken);
       throw new Error(`AIHub API request failed: ${error.message}`);
     }
   }

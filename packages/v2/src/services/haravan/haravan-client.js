@@ -10,7 +10,7 @@ export default class HaravanClient {
     const accessToken = this.accessToken;
     const headers = {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${accessToken}`,
+      "Authorization": `Bearer ${accessToken}`,
       ...options.headers
     };
 
@@ -28,9 +28,7 @@ export default class HaravanClient {
       const response = await fetch(url, requestOptions);
 
       if (!response.ok) {
-        throw new Error(
-          `Haravan API error: ${response.status} ${response.statusText}`
-        );
+        throw new Error(`Haravan API error: ${response.status} ${response.statusText}`);
       }
 
       const data = await response.json();

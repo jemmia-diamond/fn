@@ -41,11 +41,7 @@ export default class InventoryCheckSheetService {
     const client = await InventoryCMSClient.createClient(env);
     const db = Database.instance(env);
 
-    const timeThreshold = dayjs()
-      .utc()
-      .subtract(3, "hours")
-      .subtract(5, "minutes")
-      .format("YYYY-MM-DD HH:mm:ss");
+    const timeThreshold = dayjs().utc().subtract(3, "hours").subtract(5, "minutes").format("YYYY-MM-DD HH:mm:ss");
     const queryObject = {
       filter: {
         date_created: {
@@ -62,12 +58,10 @@ export default class InventoryCheckSheetService {
     try {
       let items;
       do {
-        items = await client.request(
-          readItems(COLLECTIONS.INVENTORY_CHECK_SHEET, {
-            page,
-            ...queryObject
-          })
-        );
+        items = await client.request(readItems(COLLECTIONS.INVENTORY_CHECK_SHEET, {
+          page,
+          ...queryObject
+        }));
         inventoryCheckSheets.push(...items);
         page++;
       } while (items && items.length > 0);

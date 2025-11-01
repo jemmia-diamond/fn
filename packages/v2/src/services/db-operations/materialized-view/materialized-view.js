@@ -31,7 +31,9 @@ export default class MaterializedViewService {
   // Refresh each 30 minutes
   static async refresh30Minutes(env) {
     const db = Database.instance(env);
-    const views = ["crm_dashboard.crm_leads_view"];
+    const views = [
+      "crm_dashboard.crm_leads_view"
+    ];
     for (const view of views) {
       try {
         await db.$queryRaw`${Prisma.raw(`REFRESH MATERIALIZED VIEW ${view};`)}`;

@@ -14,20 +14,12 @@ export default class OrderService {
 
   async invalidOrderNotification(order) {
     const jewelrySKULength = 21;
-    const jewelryVariants = order.line_items.filter(
-      (item) => item.sku.toString().length === jewelrySKULength
-    );
+    const jewelryVariants = order.line_items.filter(item => item.sku.toString().length === jewelrySKULength);
     const negativeOrderedVariants = [];
     for (const jewelryVariant of jewelryVariants) {
-      const productData = (
-        await this.hrvClient.products.product.getProduct(
-          jewelryVariant.product_id
-        )
-      ).data.product;
+      const productData = (await this.hrvClient.products.product.getProduct(jewelryVariant.product_id)).data.product;
       const variants = productData.variants;
-      const targetVariant = variants.find(
-        (variant) => variant.id === jewelryVariant.variant_id
-      );
+      const targetVariant = variants.find(variant => variant.id === jewelryVariant.variant_id);
       if (targetVariant.inventory_advance.qty_available < 0) {
         negativeOrderedVariants.push(jewelryVariant);
       }

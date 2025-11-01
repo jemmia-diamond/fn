@@ -10,13 +10,7 @@ dayjs.extend(utc);
 
 const CHUNK_SIZE = 100;
 
-export async function fetchSalesOrdersFromERP(
-  frappeClient,
-  doctype,
-  fromDate,
-  toDate,
-  pageSize
-) {
+export async function fetchSalesOrdersFromERP(frappeClient, doctype, fromDate, toDate, pageSize) {
   try {
     const filters = { modified: [">=", fromDate] };
     if (toDate) filters.modified = ["between", [fromDate, toDate]];
@@ -35,68 +29,36 @@ export async function fetchSalesOrdersFromERP(
       if (!Array.isArray(batch) || batch.length === 0) break;
 
       // fetch data from child tables of sales order
-      const orderNames = batch.map((item) => item.name);
-      const salesOrderItems = await fetchChildRecordsFromERP(
-        frappeClient,
-        orderNames,
-        "tabSales Order Item"
-      );
-      const salesTeams = await fetchChildRecordsFromERP(
-        frappeClient,
-        orderNames,
-        "tabSales Team"
-      );
-      const salesOrderPolicies = await fetchChildRecordsFromERP(
-        frappeClient,
-        orderNames,
-        "tabSales Order Policy"
-      );
-      const salesOrderPromotions = await fetchChildRecordsFromERP(
-        frappeClient,
-        orderNames,
-        "tabSales Order Promotion"
-      );
-      const salesOrderPurposes = await fetchChildRecordsFromERP(
-        frappeClient,
-        orderNames,
-        "tabSales Order Purpose"
-      );
-      const salesOrderProductCategories = await fetchChildRecordsFromERP(
-        frappeClient,
-        orderNames,
-        "tabSales Order Product Category"
-      );
-      const debtHistory = await fetchChildRecordsFromERP(
-        frappeClient,
-        orderNames,
-        "tabOrder and Debt Tracking"
-      );
+      const orderNames = batch.map(item => item.name);
+      const salesOrderItems = await fetchChildRecordsFromERP(frappeClient, orderNames, "tabSales Order Item");
+      const salesTeams = await fetchChildRecordsFromERP(frappeClient, orderNames, "tabSales Team");
+      const salesOrderPolicies = await fetchChildRecordsFromERP(frappeClient, orderNames, "tabSales Order Policy");
+      const salesOrderPromotions = await fetchChildRecordsFromERP(frappeClient, orderNames, "tabSales Order Promotion");
+      const salesOrderPurposes = await fetchChildRecordsFromERP(frappeClient, orderNames, "tabSales Order Purpose");
+      const salesOrderProductCategories = await fetchChildRecordsFromERP(frappeClient, orderNames, "tabSales Order Product Category");
+      const debtHistory = await fetchChildRecordsFromERP(frappeClient, orderNames, "tabOrder and Debt Tracking");
 
       // group records by sales order name
-      const groupByParent = (arr) =>
-        arr.reduce((acc, item) => {
-          (acc[item.parent] = acc[item.parent] || []).push(item);
-          return acc;
-        }, {});
+      const groupByParent = arr => arr.reduce((acc, item) => {
+        (acc[item.parent] = acc[item.parent] || []).push(item);
+        return acc;
+      }, {});
       const salesOrderItemsMap = groupByParent(salesOrderItems);
       const salesTeamMap = groupByParent(salesTeams);
       const salesOrderPoliciesMap = groupByParent(salesOrderPolicies);
       const salesOrderPromotionsMap = groupByParent(salesOrderPromotions);
       const salesOrderPurposesMap = groupByParent(salesOrderPurposes);
-      const salesOrderProductCategoriesMap = groupByParent(
-        salesOrderProductCategories
-      );
+      const salesOrderProductCategoriesMap = groupByParent(salesOrderProductCategories);
       const debtHistoryMap = groupByParent(debtHistory);
 
       // add sales order items and sales team to each sales order
-      batch.forEach((item) => {
+      batch.forEach(item => {
         item.items = salesOrderItemsMap[item.name] || [];
         item.sales_team = salesTeamMap[item.name] || [];
         item.policies = salesOrderPoliciesMap[item.name] || [];
         item.promotions = salesOrderPromotionsMap[item.name] || [];
         item.sales_order_purposes = salesOrderPurposesMap[item.name] || [];
-        item.product_categories =
-          salesOrderProductCategoriesMap[item.name] || [];
+        item.product_categories = salesOrderProductCategoriesMap[item.name] || [];
         item.debt_histories = debtHistoryMap[item.name] || [];
       });
 
@@ -122,43 +84,28 @@ export async function saveSalesOrdersToDatabase(db, salesOrders) {
       const chunk = mappedData.slice(i, i + CHUNK_SIZE);
 
       // Get fields including both database timestamp columns for INSERT
-      const fields = [
-        "uuid",
-        ...Object.keys(chunk[0]).filter(
-          (field) =>
-            field !== "database_created_at" && field !== "database_updated_at"
-        ),
-        "database_created_at",
-        "database_updated_at"
-      ];
-      const fieldsSql = fields.map((field) => `"${field}"`).join(", ");
+      const fields = ["uuid", ...Object.keys(chunk[0]).filter(field =>
+        field !== "database_created_at" && field !== "database_updated_at"
+      ), "database_created_at", "database_updated_at"];
+      const fieldsSql = fields.map(field => `"${field}"`).join(", ");
 
       // Create VALUES clause with generated UUIDs and timestamps
       const currentTimestamp = new Date();
-      const values = chunk
-        .map((salesOrder) => {
-          const salesOrderWithTimestamps = {
-            uuid: randomUUID(),
-            ...salesOrder,
-            database_created_at: currentTimestamp,
-            database_updated_at: currentTimestamp
-          };
-          const fieldValues = fields.map((field) =>
-            escapeSqlValue(salesOrderWithTimestamps[field])
-          );
-          return `(${fieldValues.join(", ")})`;
-        })
-        .join(",\n  ");
+      const values = chunk.map(salesOrder => {
+        const salesOrderWithTimestamps = {
+          uuid: randomUUID(),
+          ...salesOrder,
+          database_created_at: currentTimestamp,
+          database_updated_at: currentTimestamp
+        };
+        const fieldValues = fields.map(field => escapeSqlValue(salesOrderWithTimestamps[field]));
+        return `(${fieldValues.join(", ")})`;
+      }).join(",\n  ");
 
       // Create UPDATE SET clause for ON CONFLICT (exclude "name", "uuid", and "database_created_at")
       const updateSetSql = fields
-        .filter(
-          (field) =>
-            field !== "name" &&
-            field !== "uuid" &&
-            field !== "database_created_at"
-        )
-        .map((field) => {
+        .filter(field => field !== "name" && field !== "uuid" && field !== "database_created_at")
+        .map(field => {
           if (field === "database_updated_at") {
             return `"${field}" = CURRENT_TIMESTAMP`;
           }
@@ -174,6 +121,7 @@ export async function saveSalesOrdersToDatabase(db, salesOrders) {
       `;
       await db.$queryRaw`${Prisma.raw(query)}`;
     }
+
   } catch (error) {
     console.error("Error saving sales orders to database:", error.message);
   }

@@ -27,19 +27,19 @@ export class R2StorageService {
   async _getObject(key) {
     if (!key) {
       Sentry.captureMessage("Error: No key provided to getObject.");
-      return undefined;
+      return null;
     }
 
     try {
       const object = await this.bucket.get(key);
       if (!object) {
         Sentry.captureMessage(`Object with key "${key}" not found in R2 (${this.bindingName}).`);
-        return undefined;
+        return null;
       }
       return await object.arrayBuffer();
     } catch (err) {
       Sentry.captureException(err);
-      return undefined;
+      return null;
     }
   }
 }

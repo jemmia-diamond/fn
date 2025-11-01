@@ -20,18 +20,13 @@ class CorsService {
     }
 
     // Handle wildcard domains, eg: *.jemmia.vn
-    const wildcardOrigins = corsOrigins.filter((o) =>
-      o.startsWith("https://*.")
-    );
+    const wildcardOrigins = corsOrigins.filter((o) => o.startsWith("https://*."));
 
     for (const wildcardOrigin of wildcardOrigins) {
       const baseDomain = wildcardOrigin.replace("https://*.", "");
 
       // Allow both wildcard subdomains and the base domain itself
-      if (
-        origin.endsWith(`.${baseDomain}`) ||
-        origin === `https://${baseDomain}`
-      ) {
+      if (origin.endsWith(`.${baseDomain}`) || origin === `https://${baseDomain}`) {
         return origin;
       }
     }

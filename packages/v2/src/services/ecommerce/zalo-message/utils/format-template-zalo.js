@@ -33,9 +33,7 @@ export class GetTemplateZalo {
       // For ViettinBank, Transfer Note must have prefix "SEVQR "
       const bankTransferNote = `SEVQR ${data.order_number}`;
       const messageNote = "Thanh toán cọc 30% đơn hàng";
-      const transferAmount = Math.round(
-        (parseInt(data.total_price) / 100) * 30
-      );
+      const transferAmount = Math.round(parseInt(data.total_price) / 100 * 30);
       return {
         phone: this.convertPhoneNumber(data.billing_address?.phone),
         templateData: {

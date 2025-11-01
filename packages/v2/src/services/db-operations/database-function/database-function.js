@@ -15,4 +15,5 @@ export default class DatabaseFunctionService {
       console.error("Failed to run database function:", error);
     }
   }
+
 }

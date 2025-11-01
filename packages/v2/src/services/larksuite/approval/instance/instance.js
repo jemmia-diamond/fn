@@ -12,8 +12,7 @@ export default class InstanceService {
     const db = Database.instance(env);
     const larkClient = LarksuiteService.createClient(env);
     const timeThreshold = dayjs().utc();
-    const startTime =
-      timeThreshold.subtract(1, "day").subtract(1, "hour").unix() * 1000;
+    const startTime = timeThreshold.subtract(1, "day").subtract(1, "hour").unix() * 1000;
     const endTime = timeThreshold.add(12, "hour").unix() * 1000;
     const pageSize = 100;
 
@@ -40,9 +39,7 @@ export default class InstanceService {
         payload,
         pageSize
       );
-      const codes = responses.flatMap(
-        (res) => res?.data?.instance_code_list ?? []
-      );
+      const codes = responses.flatMap(res => (res?.data?.instance_code_list ?? []));
 
       for (const code of codes) {
         const instanceResponse = await larkClient.approval.v4.instance.get({
@@ -110,12 +107,8 @@ export default class InstanceService {
       approval_name: instance.approval_name,
       status: instance.status,
       form: instance.form,
-      start_time: dayjs(Number(instance.start_time))
-        .utc()
-        .format("YYYY-MM-DD HH:mm:ss"),
-      end_time: dayjs(Number(instance.end_time))
-        .utc()
-        .format("YYYY-MM-DD HH:mm:ss"),
+      start_time: dayjs(Number(instance.start_time)).utc().format("YYYY-MM-DD HH:mm:ss"),
+      end_time: dayjs(Number(instance.end_time)).utc().format("YYYY-MM-DD HH:mm:ss"),
       serial_number: instance.serial_number,
       user_id: instance.user_id,
       uuid: instance.uuid,

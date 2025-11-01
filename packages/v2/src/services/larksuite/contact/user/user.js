@@ -26,7 +26,7 @@ export default class UserService {
         pageSize
       );
 
-      const users = responses.flatMap((res) => res?.data?.items || []);
+      const users = responses.flatMap(res => (res?.data?.items || []));
       usersArrays.push(...users);
     }
 
@@ -42,8 +42,7 @@ export default class UserService {
 
   static async getDepartmentIds(env) {
     const db = Database.instance(env);
-    const departements =
-      await db.$queryRaw`SELECT department_id FROM larksuite.departments`;
-    return departements.map((departement) => departement.department_id);
+    const departements = await db.$queryRaw`SELECT department_id FROM larksuite.departments`;
+    return departements.map(departement => departement.department_id);
   }
 }

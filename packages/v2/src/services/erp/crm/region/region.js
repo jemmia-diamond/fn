@@ -10,23 +10,24 @@ export default class RegionService {
   constructor(env) {
     this.env = env;
     this.doctype = "Region";
-    this.frappeClient = new FrappeClient({
-      url: env.JEMMIA_ERP_BASE_URL,
-      apiKey: env.JEMMIA_ERP_API_KEY,
-      apiSecret: env.JEMMIA_ERP_API_SECRET
-    });
+    this.frappeClient = new FrappeClient(
+      {
+        url: env.JEMMIA_ERP_BASE_URL,
+        apiKey: env.JEMMIA_ERP_API_KEY,
+        apiSecret: env.JEMMIA_ERP_API_SECRET
+      }
+    );
     this.db = Database.instance(env);
   }
 
   static async syncRegionsToDatabase(env) {
-    const timeThreshold = dayjs()
-      .subtract(1, "day")
-      .utc()
-      .format("YYYY-MM-DD HH:mm:ss");
+    const timeThreshold = dayjs().subtract(1, "day").utc().format("YYYY-MM-DD HH:mm:ss");
     const regionService = new RegionService(env);
     const regions = await regionService.frappeClient.getList("Region", {
       limit_page_length: RegionService.ERPNEXT_PAGE_SIZE,
-      filters: [["modified", ">=", timeThreshold]]
+      filters: [
+        ["modified", ">=", timeThreshold]
+      ]
     });
     if (regions.length > 0) {
       for (const region of regions) {

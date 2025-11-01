@@ -11,49 +11,41 @@ export default class SalesPersonService {
   constructor(env) {
     this.env = env;
     this.doctype = "Sales Person";
-    this.frappeClient = new FrappeClient({
-      url: env.JEMMIA_ERP_BASE_URL,
-      apiKey: env.JEMMIA_ERP_API_KEY,
-      apiSecret: env.JEMMIA_ERP_API_SECRET
-    });
+    this.frappeClient = new FrappeClient(
+      {
+        url: env.JEMMIA_ERP_BASE_URL,
+        apiKey: env.JEMMIA_ERP_API_KEY,
+        apiSecret: env.JEMMIA_ERP_API_SECRET
+      }
+    );
     this.db = Database.instance(env);
   }
 
   static async syncSalesPersonToDatabase(env) {
-    const timeThreshold = dayjs()
-      .subtract(1, "day")
-      .utc()
-      .format("YYYY-MM-DD HH:mm:ss");
+    const timeThreshold = dayjs().subtract(1, "day").utc().format("YYYY-MM-DD HH:mm:ss");
     const salesPersonService = new SalesPersonService(env);
 
     let salesPersons = [];
     let page = 1;
     const pageSize = SalesPersonService.ERPNEXT_PAGE_SIZE;
     while (true) {
-      const result = await salesPersonService.frappeClient.getList(
-        salesPersonService.doctype,
-        {
-          limit_start: (page - 1) * pageSize,
-          limit_page_length: pageSize,
-          filters: [["modified", ">=", timeThreshold]]
-        }
-      );
+      const result = await salesPersonService.frappeClient.getList(salesPersonService.doctype, {
+        limit_start: (page - 1) * pageSize,
+        limit_page_length: pageSize,
+        filters: [
+          ["modified", ">=", timeThreshold]
+        ]
+      });
       salesPersons = salesPersons.concat(result);
       if (result.length < pageSize) break;
       page++;
     }
-    const salesPersonNames = salesPersons.map(
-      (salesPerson) => salesPerson.name
-    );
-    const salesPersonChildRecords = await fetchChildRecordsFromERP(
-      salesPersonService.frappeClient,
-      salesPersonNames,
-      "tabTarget Detail"
-    );
+    const salesPersonNames = salesPersons.map(salesPerson => salesPerson.name);
+    const salesPersonChildRecords = await fetchChildRecordsFromERP(salesPersonService.frappeClient, salesPersonNames, "tabTarget Detail");
 
     // group target details by sales person
     const salesPersonTargetsMap = {};
-    salesPersonChildRecords.forEach((item) => {
+    salesPersonChildRecords.forEach(item => {
       if (!salesPersonTargetsMap[item.parent]) {
         salesPersonTargetsMap[item.parent] = [];
       }
@@ -61,7 +53,7 @@ export default class SalesPersonService {
     });
 
     // add target details to each sales person
-    salesPersons.forEach((salesPerson) => {
+    salesPersons.forEach(salesPerson => {
       salesPerson.targets = salesPersonTargetsMap[salesPerson.name] || [];
     });
 

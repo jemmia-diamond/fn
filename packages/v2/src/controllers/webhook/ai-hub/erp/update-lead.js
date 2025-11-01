@@ -10,11 +10,9 @@ export default class AIHubERPUpdateLeadController {
     }
 
     const leadService = new LeadService(ctx.env);
-    const res = await leadService.updateLeadInfoFromSummary(
-      body.data,
-      conversationId
-    );
+    const res = await leadService.updateLeadInfoFromSummary(body.data, conversationId);
 
     return ctx.json(res);
   }
 }
+

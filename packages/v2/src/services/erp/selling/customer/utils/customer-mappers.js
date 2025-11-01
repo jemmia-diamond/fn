@@ -13,10 +13,7 @@ export const mapCustomersToDatabase = (customers) => {
     salutation: safeValue(customer.salutation, "string"),
     customer_name: safeValue(customer.customer_name, "string"),
     customer_group: safeValue(customer.customer_group, "string"),
-    bizfly_customer_number: safeValue(
-      customer.bizfly_customer_number,
-      "string"
-    ),
+    bizfly_customer_number: safeValue(customer.bizfly_customer_number, "string"),
     is_internal_customer: safeValue(customer.is_internal_customer, "number"),
     customer_type: safeValue(customer.customer_type, "string"),
     customer_rank: safeValue(customer.customer_rank, "string"),
@@ -31,10 +28,7 @@ export const mapCustomersToDatabase = (customers) => {
     market_segment: safeValue(customer.market_segment, "string"),
     tax_number: safeValue(customer.tax_number, "string"),
     ceo_name: safeValue(customer.ceo_name, "string"),
-    personal_document_type: safeValue(
-      customer.personal_document_type,
-      "string"
-    ),
+    personal_document_type: safeValue(customer.personal_document_type, "string"),
     birth_date: safeValue(customer.birth_date, "date"),
     gender: safeValue(customer.gender, "string"),
     personal_id: safeValue(customer.personal_id, "string"),
@@ -52,16 +46,10 @@ export const mapCustomersToDatabase = (customers) => {
     website: safeValue(customer.website, "string"),
     language: safeValue(customer.language, "string"),
     customer_details: safeValue(customer.customer_details, "string"),
-    customer_primary_address: safeValue(
-      customer.customer_primary_address,
-      "string"
-    ),
+    customer_primary_address: safeValue(customer.customer_primary_address, "string"),
     primary_address: safeValue(customer.primary_address, "string"),
     image: safeValue(customer.image, "string"),
-    customer_primary_contact: safeValue(
-      customer.customer_primary_contact,
-      "string"
-    ),
+    customer_primary_contact: safeValue(customer.customer_primary_contact, "string"),
     primary_contact: safeValue(customer.primary_contact, "string"),
     mobile_no: safeValue(customer.mobile_no, "string"),
     email_id: safeValue(customer.email_id, "string"),
@@ -76,27 +64,18 @@ export const mapCustomersToDatabase = (customers) => {
     loyalty_program: safeValue(customer.loyalty_program, "string"),
     loyalty_program_tier: safeValue(customer.loyalty_program_tier, "string"),
     rank: safeValue(customer.rank, "string"),
-    purchase_amount_last_12_months: safeValue(
-      customer.purchase_amount_last_12_months,
-      "number"
-    ),
+    purchase_amount_last_12_months: safeValue(customer.purchase_amount_last_12_months, "number"),
     rank_expired_date: safeValue(customer.rank_expired_date, "date"),
     priority_login_date: safeValue(customer.priority_login_date, "date"),
     cumulative_revenue: safeValue(customer.cumulative_revenue, "number"),
     cashback: safeValue(customer.cashback, "number"),
-    true_cumulative_revenue: safeValue(
-      customer.true_cumulative_revenue,
-      "number"
-    ),
+    true_cumulative_revenue: safeValue(customer.true_cumulative_revenue, "number"),
     withdraw_cashback: safeValue(customer.withdraw_cashback, "number"),
     referrals_revenue: safeValue(customer.referrals_revenue, "number"),
     pending_cashback: safeValue(customer.pending_cashback, "number"),
     priority_bank_account: safeValue(customer.priority_bank_account, "string"),
     default_sales_partner: safeValue(customer.default_sales_partner, "string"),
-    default_commission_rate: safeValue(
-      customer.default_commission_rate,
-      "number"
-    ),
+    default_commission_rate: safeValue(customer.default_commission_rate, "number"),
     so_required: safeValue(customer.so_required, "number"),
     dn_required: safeValue(customer.dn_required, "number"),
     is_frozen: safeValue(customer.is_frozen, "number"),
@@ -105,10 +84,7 @@ export const mapCustomersToDatabase = (customers) => {
     bizfly_id: safeValue(customer.bizfly_id, "string"),
     tax_id: safeValue(customer.tax_id, "string"),
     tax_category: safeValue(customer.tax_category, "string"),
-    tax_withholding_category: safeValue(
-      customer.tax_withholding_category,
-      "string"
-    ),
+    tax_withholding_category: safeValue(customer.tax_withholding_category, "string"),
     account: customer.account || null,
     portal_users: customer.portal_users || null,
     companies: customer.companies || null,
