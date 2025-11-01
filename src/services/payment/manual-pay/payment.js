@@ -157,7 +157,17 @@ export default class ManualPaymentService {
       }
 
       if (paymentBeforeUpdate.transfer_status === "Xác nhận") {
-        return null;
+        const updateData = { ...data };
+
+        delete updateData.transfer_status;
+        delete updateData.transfer_amount;
+        delete updateData.haravan_order_id;
+        delete updateData.haravan_order_number;
+
+        return db.manualPaymentTransaction.update({
+          where: { uuid: uuid },
+          data: updateData
+        });
       }
 
       const dataForFirstUpdate = {
