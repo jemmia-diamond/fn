@@ -8,8 +8,6 @@ import errorHandler from "middlewares/error-handler";
 import CorsService from "services/cors-service";
 
 import Routes from "src/routes";
-import queueHandler from "services/queue-handler";
-import scheduleHandler from "services/schedule-handler";
 import { DebounceDurableObject } from "src/durable-objects";
 import { HTTPException } from "hono/http-exception";
 
@@ -68,9 +66,7 @@ export default Sentry.withSentry(
     };
   },
   {
-    fetch: app.fetch,
-    queue: queueHandler.queue,
-    scheduled: scheduleHandler.scheduled
+    fetch: app.fetch
   }
 );
 
