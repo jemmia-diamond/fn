@@ -467,7 +467,7 @@ model erpnextSalesOrderNotificationTracking {
   haravan_order_id    String
   lark_message_id     String
   database_created_at DateTime @default(now())
-  database_updated_at DateTime
+  database_updated_at DateTime @updatedAt
   order_data          Json?
 
   @@index([haravan_order_id])
