@@ -223,14 +223,14 @@ export function buildQuerySingle({ matchedDiamonds }) {
         'estimated_gold_weight', v.estimated_gold_weight,
         'qty_available', v.qty_available,
         'qty_onhand', v.qty_onhand,
-        'diamonds', v.diamonds
+        'diamonds', COALESCE(v.diamonds, '[]'::json)
       ) 
       \n
     `;
 
     lateralJoinClause = `
-      \n 
-      INNER JOIN LATERAL (
+      \n
+      LEFT JOIN LATERAL (
         SELECT 
           v.*,
           JSON_AGG(
@@ -251,21 +251,24 @@ export function buildQuerySingle({ matchedDiamonds }) {
                 ELSE dia.price
               END
             )
-          ) AS diamonds
+          ) FILTER (WHERE dia.product_id IS NOT NULL) AS diamonds
         FROM ecom.materialized_variants v
-        INNER JOIN ecom.jewelry_diamond_pairs jdp 
+        LEFT JOIN ecom.jewelry_diamond_pairs jdp 
           ON CAST(jdp.haravan_product_id AS BIGINT) = v.haravan_product_id 
          AND CAST(jdp.haravan_variant_id AS BIGINT) = v.haravan_variant_id
-        INNER JOIN workplace.diamonds dia 
+         AND jdp.is_active = TRUE
+        LEFT JOIN workplace.diamonds dia 
           ON dia.product_id = CAST(jdp.haravan_diamond_product_id AS BIGINT) 
          AND dia.variant_id = CAST(jdp.haravan_diamond_variant_id AS BIGINT)
         WHERE v.haravan_product_id = p.haravan_product_id
-          AND jdp.is_active = TRUE
-        GROUP BY v.haravan_product_id, v.haravan_variant_id, v.sku, v.price, v.price_compare_at, 
-                 v.material_color, v.fineness, v.ring_size, v.qty_available, v.qty_onhand, 
-                 v.applique_material, v.estimated_gold_weight, v.ring_band_style, v.ring_head_style
+        GROUP BY 
+          v.haravan_product_id, v.haravan_variant_id, v.sku, 
+          v.price, v.price_compare_at, v.material_color, v.fineness, 
+          v.ring_size, v.qty_available, v.qty_onhand, 
+          v.applique_material, v.estimated_gold_weight, 
+          v.ring_band_style, v.ring_head_style
         ORDER BY v.fineness, v.price DESC
-      ) v ON TRUE 
+      ) v ON TRUE
       \n
     `;
   }
