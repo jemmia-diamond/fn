@@ -1,5 +1,5 @@
 model manualPaymentTransaction {
-  uuid                String    @id @default(uuid()) @db.Uuid
+  uuid                String    @id @db.Uuid
   payment_type        String?   @db.VarChar(255)
   branch              String?   @db.VarChar(255)
   shipping_code       String?   @db.VarChar(255)
@@ -10,16 +10,37 @@ model manualPaymentTransaction {
   bank_account        String?   @db.VarChar(255)
   bank_name           String?   @db.VarChar(255)
   transfer_amount     Decimal?  @db.Decimal(18, 6)
-  transfer_note       String?   @db.Text
-  haravan_order_id    BigInt?   @db.BigInt
+  transfer_note       String?
+  haravan_order_id    Int?
   haravan_order_name  String?   @db.VarChar(255)
   transfer_status     String?   @db.VarChar(255)
   lark_record_id      String?   @unique @db.VarChar(255)
   misa_synced         Boolean   @default(false)
   misa_sync_guid      String?   @db.VarChar(255)
-  misa_sync_error_msg String?   @db.Text
+  misa_sync_error_msg String?
   misa_synced_at      DateTime? @db.Timestamp(6)
+
   @@index([uuid])
   @@map("manual_payments")
+  @@schema("payment")
+}
+
+model sepay_transaction {
+  id                  String    @id @db.VarChar(50)
+  bank_brand_name     String?   @db.VarChar
+  account_number      String?   @db.VarChar
+  transaction_date    String?   @db.VarChar
+  amount_out          String?   @db.VarChar
+  amount_in           String?   @db.VarChar
+  accumulated         String?   @db.VarChar
+  transaction_content String?
+  reference_number    String?   @db.VarChar
+  code                String?   @db.VarChar
+  sub_account         String?   @db.VarChar
+  bank_account_id     String?   @db.VarChar
+  created_at          DateTime? @default(now()) @db.Timestamp(6)
+  updated_at          DateTime? @default(now()) @db.Timestamp(6)
+  lark_record_id      String?   @db.VarChar(255)
+
   @@schema("payment")
 }

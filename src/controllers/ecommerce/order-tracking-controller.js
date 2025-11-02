@@ -6,11 +6,11 @@ export default class OrderTrackingController {
   static async show(ctx) {
     const { id } = ctx.req.param();
     if (!id) {
-      throw new HTTPException(400, { message: "Order ID is required" });
+      return ctx.json({ message: "Invalid order ID" }, 400 );
     }
 
     if (!isInteger(id)) {
-      throw new HTTPException(404, { message: "Invalid order ID" });
+      return ctx.json({ message: "Invalid order ID" }, 422 );
     }
 
     const authorization = ctx.req.header("Authorization");
