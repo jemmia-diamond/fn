@@ -17,7 +17,7 @@ export default class MisaClient {
     const url = `${this.baseUrl}/api/oauth/actopen/connect`;
     const payload = {
       app_id: this.env.MISA_APP_ID,
-      access_code: this.env.MISA_ACCESS_CODE,
+      access_code: await this.env.MISA_ACCESS_CODE_SECRET.get(),
       org_company_code: this.env.MISA_ORG_CODE
     };
 
