@@ -1,4 +1,4 @@
-import { CREDIT_ACCOUNT_MAP, DEBIT_ACCOUNT_MAP, REASON_TYPES, VOUCHER_REF_TYPES, VOUCHER_TYPES } from "services/misa/constant";
+import { CREDIT_ACCOUNT_MAP, DEBIT_ACCOUNT_MAP, EXCHANGE_RATE, REASON_TYPES, SORT_ORDER, VOUCHER_REF_TYPES, VOUCHER_TYPES } from "services/misa/constant";
 
 export default class VoucherMappingService {
   /**
@@ -46,7 +46,7 @@ export default class VoucherMappingService {
       currency_id: "VND",
       bank_account_number: v.bank_account_number,
       bank_name: bankName,
-      exchange_rate: 1,
+      exchange_rate: EXCHANGE_RATE,
       total_amount_oc: Number(v.transfer_amount),
       total_amount: Number(v.transfer_amount),
       account_object_name: customerName,
@@ -59,7 +59,7 @@ export default class VoucherMappingService {
       modified_by: "Tự động hóa",
       detail: [
         {
-          sort_order: 0,
+          sort_order: SORT_ORDER,
           amount_oc: Number(v.transfer_amount),
           amount: Number(v.transfer_amount),
           description: `Thu tiền đơn hàng ${v.haravan_order_number}`,

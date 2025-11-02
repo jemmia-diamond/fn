@@ -122,3 +122,6 @@ export const REASON_TYPES = {
   MANUAL_PAYMENT: 14,
   OTHER_MANUAL_PAYMENT: 29
 };
+
+export const EXCHANGE_RATE = 1;
+export const SORT_ORDER = 0;

@@ -1,4 +1,4 @@
-import { CREDIT_ACCOUNT_MAP, DEBIT_ACCOUNT_MAP, MANUAL_PAYMENT_CREDIT_MAP, MANUAL_PAYMENT_DEBIT_MAP, REASON_TYPES, VOUCHER_REF_TYPES, VOUCHER_TYPES } from "services/misa/constant";
+import { CREDIT_ACCOUNT_MAP, DEBIT_ACCOUNT_MAP, EXCHANGE_RATE, MANUAL_PAYMENT_CREDIT_MAP, MANUAL_PAYMENT_DEBIT_MAP, REASON_TYPES, SORT_ORDER, VOUCHER_REF_TYPES, VOUCHER_TYPES } from "services/misa/constant";
 
 export default class CashVoucherMappingService {
   static transforManualToVoucher(v, bankMap, voucher_type = VOUCHER_TYPES.MANUAL_PAYMENT, ref_type = VOUCHER_REF_TYPES.MANUAL_PAYMENT) {
@@ -45,7 +45,7 @@ export default class CashVoucherMappingService {
       refdate: v?.receive_date || v?.created_date,
       posted_date: v?.receive_date || v?.created_date,
       currency_id: "VND",
-      exchange_rate: 1,
+      exchange_rate: EXCHANGE_RATE,
       total_amount_oc: Number(v.transfer_amount),
       total_amount: Number(v.transfer_amount),
       account_object_name: customerName,
@@ -58,7 +58,7 @@ export default class CashVoucherMappingService {
       modified_by: "Tự động hóa",
       detail: [
         {
-          sort_order: 0,
+          sort_order: SORT_ORDER,
           amount_oc: Number(v.transfer_amount),
           amount: Number(v.transfer_amount),
           description: `Thu tiền đơn hàng ${v.haravan_order_name}`,
