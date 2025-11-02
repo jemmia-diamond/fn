@@ -48,15 +48,15 @@ export default class QrPaymentFetchingService {
               customer_default_address_district: true,
               customer_default_address_province: true,
               customer_default_address_country: true,
-              misa_user: {
-                select: {
-                  employee_code: true
-                }
-              },
               user: {
                 select: {
                   first_name: true,
-                  last_name: true
+                  last_name: true,
+                  misa_user: {
+                    select: {
+                      employee_code: true
+                    }
+                  }
                 }
               }
             }
@@ -64,7 +64,7 @@ export default class QrPaymentFetchingService {
         }
       });
     } catch (error) {
-      throw new Error("Could not fetch QR generators from the database.", error);
+      throw new Error(`Could not fetch QR generators from the database: ${error}`);
     }
   }
 }
