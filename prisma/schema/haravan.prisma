@@ -1,5 +1,5 @@
 model Order {
-  uuid                                   String    @id @db.VarChar(36)
+  uuid                                   String    @id @default(uuid()) @db.VarChar(36)
   id                                     Int?      @unique(map: "ix_haravan_orders_id")
   billing_address_id                     BigInt?
   billing_address_address1               String?   @db.VarChar
@@ -162,7 +162,7 @@ model Order {
 }
 
 model User {
-  uuid                  String    @id @db.VarChar
+  uuid                  String    @id @default(uuid()) @db.VarChar
   id                    BigInt?   @unique(map: "ix_haravan_users_id")
   email                 String?   @db.VarChar
   first_name            String?   @db.VarChar
