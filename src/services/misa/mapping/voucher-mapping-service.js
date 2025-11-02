@@ -1,4 +1,4 @@
-import { CREDIT_ACCOUNT_MAP, DEBIT_ACCOUNT_MAP } from "services/misa/constant";
+import { CREDIT_ACCOUNT_MAP, DEBIT_ACCOUNT_MAP, REASON_TYPES, VOUCHER_REF_TYPES, VOUCHER_TYPES } from "services/misa/constant";
 
 export default class VoucherMappingService {
   /**
@@ -9,13 +9,13 @@ export default class VoucherMappingService {
    * @param {Number} ref_type reference type - check here https://actdocs.misa.vn/g2/graph/ACTOpenAPIHelp/index.html#3-9
    * @returns
    */
-  static transformQrToVoucher(v, bankMap, voucher_type, ref_type) {
+  static transformQrToVoucher(v, bankMap, voucher_type = VOUCHER_TYPES.QR_PAYMENT, ref_type = VOUCHER_REF_TYPES.QR_PAYMENT) {
     // Company credit and debit account
     const creditInfo = CREDIT_ACCOUNT_MAP[v.haravan_order?.source] || {};
     const debitAccount = DEBIT_ACCOUNT_MAP[v.bank_code] || null;
 
     // Employee code ( from Amis ) and name
-    const employee_code = v.haravan_order?.misa_user?.employee_code || `${v.haravan_order?.user?.first_name}.${v.haravan_order?.user?.last_name}@jemmia.vn`;
+    const employee_code = v.haravan_order?.user?.misa_user?.employee_code || `${v.haravan_order?.user?.first_name}.${v.haravan_order?.user?.last_name}@jemmia.vn`;
     const employee_name = `${v.haravan_order?.user?.last_name} ${v.haravan_order?.user?.first_name}`;
 
     // Customer's code, name and address
@@ -31,13 +31,14 @@ export default class VoucherMappingService {
     // Bank name mapping
     const bankInfo = bankMap[v.bank_account_number];
     const bankName = bankInfo ? (bankInfo.bank_branch_name ? `${bankInfo.bank_name} - ${bankInfo.bank_branch_name}` : bankInfo.bank_name) : "Bank name not found";
+    const generatedGuid = crypto.randomUUID();
 
-    return {
+    const misaVoucher = {
       voucher_type,
-      org_refid: crypto.randomUUID(),
+      org_refid: generatedGuid,
       org_reftype: ref_type,
       branch_id: null,
-      reason_type_id: 29,
+      reason_type_id: REASON_TYPES.QR_PAYMENT,
       reftype: ref_type,
       auto_refno: true,
       refdate: v?.updated_at || v?.created_at,
@@ -72,5 +73,7 @@ export default class VoucherMappingService {
         }
       ]
     };
+
+    return { misaVoucher, originalId: v.id, generatedGuid };
   }
 }
