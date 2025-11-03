@@ -85,33 +85,47 @@ export default class JewelryDiamondPairService {
     try {
       const replacementDiamond = await this.db.$queryRaw`
         SELECT
-          dia.product_id AS new_diamond_product_id,
-          dia.variant_id AS new_diamond_variant_id
-        FROM workplace.diamonds dia
-        WHERE dia.edge_size_2 >= 4.5 AND dia.edge_size_2 < 4.6
-          AND EXISTS (
-            SELECT 1
-            FROM haravan.warehouse_inventories inven
-            INNER JOIN haravan.warehouses house 
-              ON house.id = inven.loc_id
-            WHERE inven.product_id = dia.product_id
-              AND inven.qty_available > 0
-              AND house.name IN (
-                '[HCM] Cửa Hàng HCM',
-                '[HN] Cửa Hàng HN',
-                '[CT] Cửa Hàng Cần Thơ'
-              )
+          hv.product_id AS new_diamond_product_id,
+          hv.id AS new_diamond_variant_id
+        FROM haravan.variants AS hv
+        JOIN workplace.diamonds AS wdi
+          ON hv.id = wdi.variant_id
+        JOIN haravan.warehouse_inventories AS hwi
+          ON hv.id = hwi.variant_id
+        JOIN haravan.warehouses AS hw
+          ON hwi.loc_id = hw.id
+        WHERE
+          hv.qty_available > 0
+          AND hwi.qty_available > 0
+          AND hw.name IN (
+            '[HCM] Cửa Hàng HCM',
+            '[HN] Cửa Hàng HN',
+            '[CT] Cửa Hàng Cần Thơ'
           )
+          AND hv.title LIKE 'GIA%'
+          AND wdi.edge_size_2 >= 4.5
+          AND wdi.edge_size_2 < 4.6
           AND NOT EXISTS (
-            SELECT 1
-            FROM ecom.jewelry_diamond_pairs existing_jdp
-            WHERE existing_jdp.haravan_product_id = ${currentPair.haravan_product_id}
-              AND existing_jdp.haravan_variant_id = ${currentPair.haravan_variant_id}
-              AND existing_jdp.haravan_diamond_product_id = dia.product_id
-              AND existing_jdp.haravan_diamond_variant_id = dia.variant_id
-              AND existing_jdp.is_active = TRUE
+              SELECT 1
+              FROM ecom.jewelry_diamond_pairs existing_jdp
+              WHERE existing_jdp.haravan_product_id = ${currentPair.haravan_product_id}
+                AND existing_jdp.haravan_variant_id = ${currentPair.haravan_variant_id}
+                AND existing_jdp.haravan_diamond_product_id = hv.product_id
+                AND existing_jdp.haravan_diamond_variant_id = hv.id
+                AND existing_jdp.is_active = TRUE
           )
-        ORDER BY dia.price ASC 
+        ORDER BY
+          CASE
+            WHEN EXISTS (
+              SELECT 1
+              FROM ecom.jewelry_diamond_pairs existing
+              WHERE existing.haravan_diamond_product_id = hv.product_id
+                AND existing.haravan_diamond_variant_id = hv.id
+                AND existing.is_active = TRUE
+            )
+            THEN 1 ELSE 0
+          END,
+          random()
         LIMIT 1;
       `;
       return replacementDiamond?.[0] || null;
