@@ -1,4 +1,3 @@
-import Ecommerce from "services/ecommerce";
 import DiamondService from "services/ecommerce/diamond/diamond";
 
 export default class DiamondController {
@@ -41,19 +40,6 @@ export default class DiamondController {
       return ctx.json({ message: "Diamond not found" }, 404);
     }
 
-    return ctx.json({ data: result }, 200);
-  }
-
-  static async getDiamondProfileImage(ctx) {
-    const params = await ctx.req.query();
-    const gia_no = params?.gia_no;
-
-    if (!gia_no) {
-      return ctx.json({ message: "Invalid or missing `gia_no` parameter" }, 400);
-    }
-
-    const productService = new Ecommerce.ProductService(ctx.env);
-    const result = await productService.getDiamondProfileImage(gia_no);
     return ctx.json({ data: result }, 200);
   }
 }
