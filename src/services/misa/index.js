@@ -6,7 +6,6 @@ import MisaCallbackVoucherHandler from "services/misa/callback-voucher-handler";
 export default {
   VoucherMappingService,
   CashVoucherMappingService,
-  VoucherMappingService,
   MisaWebhookHandler,
   MisaCallbackVoucherHandler
 };
