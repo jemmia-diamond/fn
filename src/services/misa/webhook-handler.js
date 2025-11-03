@@ -1,84 +1,47 @@
-import Database from "services/database";
-import { VOUCHER_TYPES } from "services/misa/constant";
+import MisaCallbackVoucherHandler from "services/misa/callback-voucher-handler";
+import { CALLBACK_TYPE } from "services/misa/constant";
 
 export default class MisaWebhookHandler {
   constructor(env) {
     this.env = env;
-    this.db = Database.instance(env);
+    this.voucherHandler = new MisaCallbackVoucherHandler(env);
   }
 
-  async handleWebhook(body) {
+  async dequeueCallbackPayloadQueue(batch) {
+    const handler = new MisaWebhookHandler;
+    const messages = batch.messages;
 
-    if (body.app_id !== this.env.MISA_APP_ID || body.org_company_code !== this.env.MISA_ORG_CODE) {
-      console.warn("MISA Webhook: app_id or org_company_code mismatch. Ignoring payload.", {
-        receivedAppId: body.app_id,
-        receivedOrgCode: body.org_company_code
-      });
-      return;
-    }
+    for (const message of messages) {
+      const body = message.body;
 
-    const dataPayload = JSON.parse(body.data);
-    if (!Array.isArray(dataPayload) || dataPayload.length === 0) {
-      console.error("Invalid or empty MISA webhook dataPayload.");
-      return;
-    }
-
-    const modelName = await this._determineModelName(dataPayload[0]);
-
-    if (!modelName) {
-      throw new Error("Could not determine model for webhook batch. First item:", dataPayload[0]);
-    }
-
-    for (const result of dataPayload) {
-      const { org_refid, success, error_message } = result;
-
-      if (!org_refid) {
-        console.warn("Webhook result item missing org_refid. Skipping.", result);
-        continue;
-      }
-
-      try {
-        const dataToUpdate = {
-          misa_synced: success,
-          misa_sync_error_msg: success ? null : error_message
-        };
-
-        await this.db[modelName].updateMany({
-          where: { misa_sync_guid: org_refid },
-          data: dataToUpdate
-        });
-
-      } catch (error) {
-        throw new Error(`Failed to update database for ${modelName} with GUID ${org_refid}. Error:`, error);
-      }
+      await handler.handleWebhook(body).catch(err =>
+        console.error(`Callback handler failed: ${err}`)
+      );
     }
   }
 
   /**
-   * Determines which database model to use based on the first result in a webhook payload data.
-   *
-   * @private
-   * @param {object} firstResult - The first object from the MISA webhook data array.
-   * @returns {string|null} The name of the Prisma model or null if indeterminate.
+   * Main webhook router. Validates incoming MISA webhooks and delegates to specialized handlers.
+   * @param {object} body - The full webhook payload from MISA.
    */
-  async _determineModelName(firstResult) {
-    const { voucher_type, org_refid } = firstResult;
-
-    if (voucher_type === VOUCHER_TYPES.MANUAL_PAYMENT) {
-      return "manualPaymentTransaction";
+  async handleWebhook(body) {
+    if (body.app_id !== this.env.MISA_APP_ID || body.org_company_code !== this.env.MISA_ORG_CODE) {
+      console.warn("MISA Webhook: app_id or org_company_code mismatch. Ignoring.");
+      return;
     }
 
-    if (voucher_type === VOUCHER_TYPES.QR_PAYMENT) {
-      if (!org_refid) return null;
+    try {
+      const dataPayload = JSON.parse(body.data);
 
-      const qrRecord = await this.db.qrPaymentTransaction.findFirst({
-        where: { misa_sync_guid: org_refid },
-        select: { id: true }
-      });
+      if (body.data_type === CALLBACK_TYPE.SAVE_FUNCTION && dataPayload[0]?.voucher_type) {
+        await this.voucherHandler.process(dataPayload);
+      } else {
+        // Future: Add routing for other data_type
+      }
 
-      return qrRecord ? "qrPaymentTransaction" : "manualPaymentTransaction";
+    } catch (error) {
+      console.error("MISA Webhook: Failed to parse 'data' field or process payload.", error);
+      throw error;
     }
-
-    return null;
   }
 }
