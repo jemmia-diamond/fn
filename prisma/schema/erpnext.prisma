@@ -58,7 +58,7 @@ model erpnextSalesPerson {
 }
 
 model erpnextContact {
-  uuid                        String    @id @db.Uuid
+  uuid                        String    @id @default(uuid()) @db.Uuid
   name                        String    @unique @db.VarChar(255)
   owner                       String?   @db.VarChar(255)
   creation                    DateTime? @db.Timestamp(6)
@@ -142,7 +142,7 @@ model erpnextContact {
 }
 
 model erpnextCustomer {
-  uuid                           String    @id @db.Uuid
+  uuid                           String    @id @default(uuid()) @db.Uuid
   name                           String    @unique @db.VarChar(255)
   owner                          String?   @db.VarChar(255)
   creation                       DateTime? @db.Timestamp(6)
@@ -243,7 +243,7 @@ model erpnextCustomer {
 }
 
 model erpnextLeadBudget {
-  uuid                String    @id @db.Uuid
+  uuid                String    @id @default(uuid()) @db.Uuid
   name                String    @unique @db.VarChar(255)
   owner               String?   @db.VarChar(255)
   creation            DateTime? @db.Timestamp(6)
@@ -260,7 +260,7 @@ model erpnextLeadBudget {
 }
 
 model erpnextLeadDemand {
-  uuid                String    @id @db.Uuid
+  uuid                String    @id @default(uuid()) @db.Uuid
   name                String    @unique @db.VarChar(255)
   owner               String?   @db.VarChar(255)
   creation            DateTime? @db.Timestamp(6)
@@ -285,7 +285,7 @@ model lead_sources {
 }
 
 model erpnextLead {
-  uuid                   String    @id @db.Uuid
+  uuid                   String    @id @default(uuid()) @db.Uuid
   name                   String    @unique @db.VarChar(255)
   owner                  String?   @db.VarChar(255)
   creation               DateTime? @db.Timestamp(6)
@@ -372,7 +372,7 @@ model erpnextLead {
 }
 
 model erpnextProductCategory {
-  uuid        String    @id @db.Uuid
+  uuid        String    @id @default(uuid()) @db.Uuid
   name        String    @unique @db.VarChar(255)
   owner       String?   @db.VarChar(255)
   creation    DateTime? @db.Timestamp(6)
@@ -388,7 +388,7 @@ model erpnextProductCategory {
 }
 
 model erpnextPromotion {
-  uuid             String    @id @db.Uuid
+  uuid             String    @id @default(uuid()) @db.Uuid
   name             String    @unique @db.VarChar(255)
   owner            String?   @db.VarChar(255)
   creation         DateTime? @db.Timestamp(6)
@@ -415,7 +415,7 @@ model erpnextPromotion {
 }
 
 model erpnextProvince {
-  uuid                String    @id @db.Uuid
+  uuid                String    @id @default(uuid()) @db.Uuid
   name                String    @unique @db.VarChar(255)
   owner               String?   @db.VarChar(255)
   creation            DateTime? @db.Timestamp(6)
@@ -431,7 +431,7 @@ model erpnextProvince {
 }
 
 model erpnextPurchasePurpose {
-  uuid        String    @id @db.Uuid
+  uuid        String    @id @default(uuid()) @db.Uuid
   name        String    @unique @db.VarChar(255)
   owner       String?   @db.VarChar(255)
   creation    DateTime? @db.Timestamp(6)
@@ -447,12 +447,12 @@ model erpnextPurchasePurpose {
 }
 
 model erpnextRegion {
-  uuid                String    @id @db.Uuid
+  uuid                String    @id @default(uuid()) @db.Uuid
   name                String    @unique @db.VarChar(255)
   owner               String?   @db.VarChar(255)
   creation            DateTime? @db.Timestamp(6)
   modified            DateTime? @db.Timestamp(6)
-  region_name         String    @db.VarChar(255)
+  region_name         String    @default("") @db.VarChar(255)
   database_created_at DateTime  @default(now()) @db.Timestamp(6)
   database_updated_at DateTime? @db.Timestamp(6)
 
@@ -462,12 +462,12 @@ model erpnextRegion {
 }
 
 model erpnextSalesOrderNotificationTracking {
-  uuid                String   @id @db.Uuid
+  uuid                String   @id @default(uuid()) @db.Uuid
   order_name          String
   haravan_order_id    String
   lark_message_id     String
   database_created_at DateTime @default(now())
-  database_updated_at DateTime
+  database_updated_at DateTime @updatedAt
   order_data          Json?
 
   @@index([haravan_order_id])
@@ -477,7 +477,7 @@ model erpnextSalesOrderNotificationTracking {
 }
 
 model erpnextSalesOrders {
-  uuid                           String    @id @db.Uuid
+  uuid                           String    @id @default(uuid()) @db.Uuid
   name                           String?   @unique
   owner                          String?
   creation                       DateTime?
@@ -634,7 +634,7 @@ model erpnextSalesOrders {
 }
 
 model erpnextAddress {
-  uuid                    String    @id @db.Uuid
+  uuid                    String    @id @default(uuid()) @db.Uuid
   name                    String    @unique @db.VarChar(255)
   owner                   String?   @db.VarChar(255)
   creation                DateTime? @db.Timestamp(6)

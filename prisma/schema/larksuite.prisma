@@ -3,7 +3,7 @@ model larksuiteRecord {
   record_id           String   @unique
   table_id            String?
   app_token           String?
-  fields              Json
+  fields              Json     @default("{}")
   database_created_at DateTime @default(now())
   database_updated_at DateTime @updatedAt
 
