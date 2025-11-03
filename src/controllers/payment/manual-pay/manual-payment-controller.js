@@ -45,7 +45,7 @@ export default class ManualPaymentsController {
 
     const haravanOrderIdStr = body.haravan_order_id;
     if (haravanOrderIdStr != null && haravanOrderIdStr !== "") {
-      paymentData.haravan_order_id = Int(haravanOrderIdStr);
+      paymentData.haravan_order_id = parseInt(haravanOrderIdStr, 10);
     } else {
       delete paymentData.haravan_order_id;
     }

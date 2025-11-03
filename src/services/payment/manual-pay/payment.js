@@ -80,7 +80,7 @@ export default class ManualPaymentService {
                 bank_name: getText(fields["Ngân Hàng"]?.value),
                 transfer_amount: fields["Số Tiền Giao Dịch"],
                 transfer_note: Array.isArray(fields["Nội Dung CK"]) ? fields["Nội Dung CK"].map(i => i.text || "").join("") : fields["Nội Dung CK"],
-                haravan_order_id: rawOrderId != null ? Int(rawOrderId) : null,
+                haravan_order_id: rawOrderId != null ? parseInt(rawOrderId, 10) : null,
                 haravan_order_name: getText(fields["ORDER"]),
                 transfer_status: getText(fields["Trạng Thái Thủ Công"])
               };
