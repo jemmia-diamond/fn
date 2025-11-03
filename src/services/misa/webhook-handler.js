@@ -8,13 +8,12 @@ export default class MisaWebhookHandler {
   }
 
   async dequeueCallbackPayloadQueue(batch) {
-    const handler = new MisaWebhookHandler;
     const messages = batch.messages;
 
     for (const message of messages) {
       const body = message.body;
 
-      await handler.handleWebhook(body).catch(err =>
+      await this.handleWebhook(body).catch(err =>
         console.error(`Callback handler failed: ${err}`)
       );
     }
