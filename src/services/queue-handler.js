@@ -5,6 +5,7 @@ import Pancake from "src/services/pancake";
 import ProductQuote from "src/services/product_quote";
 import Ecommerce from "src/services/ecommerce";
 import Haravan from "src/services/haravan";
+import Misa from "src/services/misa";
 
 export default {
   queue: async (batch, env) => {
@@ -34,6 +35,9 @@ export default {
       break;
     case "erpnext-sales-order":
       await ERP.Selling.SalesOrderService.dequeueSalesOrderNotificationQueue(batch, env);
+      break;
+    case "misa":
+      await new Misa.MisaWebhookHandler(env).dequeueCallbackPayloadQueue(batch);
       break;
     default:
       break;

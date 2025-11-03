@@ -1,5 +1,5 @@
 model manualPaymentTransaction {
-  uuid                String    @id @db.Uuid
+  uuid                String    @id @default(uuid()) @db.Uuid
   payment_type        String?   @db.VarChar(255)
   branch              String?   @db.VarChar(255)
   shipping_code       String?   @db.VarChar(255)

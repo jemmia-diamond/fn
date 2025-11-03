@@ -1,10 +1,16 @@
+import * as Sentry from "@sentry/cloudflare";
+
+const ONE_MINUTE_DELAY = 60;
+
 export default class CallbackResultsController {
   static async create(ctx) {
     try {
+      const payload = await ctx.req.json();
+      await ctx.env["MISA_QUEUE"].send(payload, { delaySeconds: ONE_MINUTE_DELAY });
       return ctx.json({ message: "Message receive", status: 200 });
     } catch (e) {
-      console.error(e);
-      return ctx.json({ message: e.message, status: 500 });
+      Sentry.captureException(e);
+      return ctx.json({ message: "Internal server error", status: 500 });
     };
   };
 };

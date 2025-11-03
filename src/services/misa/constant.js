@@ -125,3 +125,6 @@ export const REASON_TYPES = {
 
 export const EXCHANGE_RATE = 1;
 export const SORT_ORDER = 0;
+export const CALLBACK_TYPE = {
+  SAVE_FUNCTION: 1
+};
