@@ -11,7 +11,7 @@ export default class CashVoucherMappingService {
       : DEBIT_ACCOUNT_MAP[v.bank_name] || null;
 
     const creditInfo = isManual
-      ? MANUAL_PAYMENT_CREDIT_MAP[v.branch] || null
+      ? MANUAL_PAYMENT_CREDIT_MAP[v.branch] || {}
       : CREDIT_ACCOUNT_MAP[v.haravan_order?.source] || {};
 
     // Employee code ( from Amis ) and name
