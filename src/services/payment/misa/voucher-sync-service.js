@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/cloudflare";
 import dayjs from "dayjs";
 import Database from "services/database";
 import QrPaymentFetchingService from "services/payment/qr_payment/fetch-service";
@@ -140,8 +141,7 @@ export default class MisaVoucherSyncService {
       }
       return { status: "error", message: response.ErrorMessage };
     } catch (error) {
-      console.error(`Error processing ${paymentTypeName}:`, error);
-      throw error;
+      Sentry.captureException(error);
     }
   }
 }

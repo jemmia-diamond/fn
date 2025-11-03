@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/cloudflare";
 import axios from "axios";
 
 export default class MisaClient {
@@ -29,8 +30,7 @@ export default class MisaClient {
       this.accessToken = JSON.parse(response.data.Data).access_token;
       return this.accessToken;
     } catch (error) {
-      console.error("MISA API Authentication Error:", error);
-      throw error;
+      Sentry.captureException(error);
     }
   }
 
@@ -51,8 +51,7 @@ export default class MisaClient {
       });
       return response.data;
     } catch (error) {
-      console.error("MISA API Save Voucher Error:", error.response?.data || error.message, error);
-      throw error;
+      Sentry.captureException(error);
     }
   }
 
@@ -78,8 +77,7 @@ export default class MisaClient {
       });
       return JSON.parse(response.data.Data);
     } catch (error) {
-      console.error("MISA API Get Dictionary Error:", error.response?.data || error.message, error);
-      throw error;
+      Sentry.captureException(error);
     }
   }
 }
