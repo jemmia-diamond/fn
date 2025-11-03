@@ -40,6 +40,10 @@ function buildSortString(jsonParams) {
     const order = jsonParams.sort.order?.toUpperCase() === "ASC" ? "ASC" : "DESC";
     const validColumns = ["price", "color", "clarity", "shape"];
     if (validColumns.includes(column)) {
+      if (column === "price") {
+        const discountedPriceExpression = "(CASE WHEN promotions ILIKE '%8%%' THEN ROUND(price * 0.92, 2) ELSE price END)";
+        return `ORDER BY ${discountedPriceExpression} ${order}\n`;
+      }
       return `ORDER BY ${column} ${order}\n`;
     }
   }
