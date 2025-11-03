@@ -66,7 +66,7 @@ export default Sentry.withSentry(
       tracesSampleRate: 0,
       profilesSampleRate: 0,
       tracesSampler: (_) => {
-        return 1.0;
+        return 0.1;
       }
     };
   },
