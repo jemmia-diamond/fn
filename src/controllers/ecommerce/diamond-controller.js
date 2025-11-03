@@ -4,6 +4,10 @@ export default class DiamondController {
 
   static async show(ctx) {
     const params = await ctx.req.query();
+
+    const limit = params.limit ? parseInt(params.limit, 10) : 20;
+    const from = params.from ? parseInt(params.from, 10) : 1;
+
     const jsonParams = {
       shapes: params.shapes ? params.shapes.split(",") : undefined,
       colors: params.colors ? params.colors.split(",") : undefined,
@@ -17,8 +21,8 @@ export default class DiamondController {
         order: params["sort.order"]
       },
       pagination: {
-        limit: params.limit ? parseInt(params.limit, 10) : 20,
-        from: params.from ? parseInt(params.from, 10) : 1
+        limit: isNaN(limit) || limit <= 0 ? 20 : Math.min(limit, 100),
+        from: isNaN(from) || from <= 0 ? 1 : from
       }
     };
 
