@@ -1,36 +1,37 @@
+function escapeSingleQuotes(value) {
+  if (typeof value !== "string") return value;
+  return value.replace(/'/g, "''");
+}
+
 function buildFilterString(jsonParams) {
-  const filters = [];
-  const params = [];
+  let filterString = "";
 
   if (jsonParams.shapes && jsonParams.shapes.length > 0) {
-    filters.push(`shape IN (${jsonParams.shapes.map(() => "?").join(",")})`);
-    params.push(...jsonParams.shapes);
+    const shapes = jsonParams.shapes.map(s => escapeSingleQuotes(s)).join("','");
+    filterString += `AND shape IN ('${shapes}')\n`;
   }
 
   if (jsonParams.colors && jsonParams.colors.length > 0) {
-    filters.push(`color IN (${jsonParams.colors.map(() => "?").join(",")})`);
-    params.push(...jsonParams.colors);
+    const colors = jsonParams.colors.map(c => escapeSingleQuotes(c)).join("','");
+    filterString += `AND color IN ('${colors}')\n`;
   }
 
   if (jsonParams.clarities && jsonParams.clarities.length > 0) {
-    filters.push(`clarity IN (${jsonParams.clarities.map(() => "?").join(",")})`);
-    params.push(...jsonParams.clarities);
+    const clarities = jsonParams.clarities.map(c => escapeSingleQuotes(c)).join("','");
+    filterString += `AND clarity IN ('${clarities}')\n`;
   }
 
   const discountedPriceExpression = "(CASE WHEN promotions ILIKE '%8%%' THEN ROUND(price * 0.92, 2) ELSE price END)";
 
   if (jsonParams.price?.min) {
-    filters.push(`${discountedPriceExpression} >= ?`);
-    params.push(parseFloat(jsonParams.price.min));
+    filterString += `AND ${discountedPriceExpression} >= ${parseFloat(jsonParams.price.min)}\n`;
   }
 
   if (jsonParams.price?.max) {
-    filters.push(`${discountedPriceExpression} <= ?`);
-    params.push(parseFloat(jsonParams.price.max));
+    filterString += `AND ${discountedPriceExpression} <= ${parseFloat(jsonParams.price.max)}\n`;
   }
 
-  const filterString = filters.length > 0 ? `AND ${filters.join(" AND ")}` : "";
-  return { filterString, params };
+  return filterString;
 }
 
 function buildSortString(jsonParams) {
