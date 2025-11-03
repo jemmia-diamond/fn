@@ -28,7 +28,7 @@ export default class DiamondService {
     }
   }
 
-  async getDiamondByProductId(productId) {
+  async getDiamondByVariantId(variantId) {
     try {
       const result = await this.db.$queryRaw`
         SELECT 
@@ -41,8 +41,7 @@ export default class DiamondService {
             ELSE price
           END AS DOUBLE PRECISION) AS price
         FROM workplace.diamonds
-        WHERE product_id = ${productId}
-        ORDER BY variant_id DESC
+        WHERE variant_id = ${variantId}
         LIMIT 1;
       `;
       return result?.[0] || null;

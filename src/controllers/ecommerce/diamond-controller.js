@@ -32,13 +32,13 @@ export default class DiamondController {
   }
 
   static async index(ctx) {
-    const productId = parseInt(ctx.req.param("id"), 10);
-    if (!productId || isNaN(productId)) {
+    const variantId = parseInt(ctx.req.param("id"), 10);
+    if (!variantId || isNaN(variantId)) {
       return ctx.json({ message: "Invalid or missing diamond 'id' parameter" }, 400);
     }
 
     const diamondService = new DiamondService(ctx.env);
-    const result = await diamondService.getDiamondByProductId(productId);
+    const result = await diamondService.getDiamondByVariantId(variantId);
 
     if (!result) {
       return ctx.json({ message: "Diamond not found" }, 404);
