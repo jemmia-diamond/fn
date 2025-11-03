@@ -261,17 +261,33 @@ export default class SalesOrderService {
 
         const isSendImagesSuccess = diffAttachments && diffAttachments.added_file
           ? await Promise.all(
-            diffAttachments.added_file.map(async (fileUrl) => {
-              const r2Key = SalesOrderService._extractR2KeyFromUrl(fileUrl);
-              const imageBuffer = await new ERPR2StorageService(this.env).getObjectByKey(r2Key);
-
-              return Larksuite.Messaging.ImageMessagingService.sendLarkImageFromUrl({
-                larkClient,
-                imageBuffer,
-                chatId: CHAT_GROUPS.CUSTOMER_INFO.chat_id,
-                env: this.env,
-                rootMessageId: refOrderstNotificationOrderTracking[0].lark_message_id
-              });
+            diffAttachments.added_file.map(async (file) => {
+              if (file.is_private) {
+                const replyResponse = await larkClient.im.message.reply({
+                  path: {
+                    message_id: refOrderstNotificationOrderTracking[0].lark_message_id
+                  },
+                  data: {
+                    receive_id: CHAT_GROUPS.CUSTOMER_INFO.chat_id,
+                    msg_type: "text",
+                    reply_in_thread: true,
+                    content: JSON.stringify({
+                      text: `Hình ảnh đính kèm (có tính bảo mật): ${file.file_url}`
+                    })
+                  }
+                });
+                return replyResponse.msg === "success";
+              } else {
+                const r2Key = SalesOrderService._extractR2KeyFromUrl(file.file_url);
+                const imageBuffer = await new ERPR2StorageService(this.env).getObjectByKey(r2Key);
+                return Larksuite.Messaging.ImageMessagingService.sendLarkImageFromUrl({
+                  larkClient,
+                  imageBuffer,
+                  chatId: CHAT_GROUPS.CUSTOMER_INFO.chat_id,
+                  env: this.env,
+                  rootMessageId: refOrderstNotificationOrderTracking[0].lark_message_id
+                });
+              }
             })
           )
           : [];
@@ -341,16 +357,33 @@ export default class SalesOrderService {
 
       const isSendImagesSuccess = diffAttachments && diffAttachments.added_file
         ? await Promise.all(
-          diffAttachments.added_file.map(async (fileUrl) => {
-            const r2Key = SalesOrderService._extractR2KeyFromUrl(fileUrl);
-            const imageBuffer = await new ERPR2StorageService(this.env).getObjectByKey(r2Key);
-            return Larksuite.Messaging.ImageMessagingService.sendLarkImageFromUrl({
-              larkClient,
-              imageBuffer,
-              chatId: CHAT_GROUPS.CUSTOMER_INFO.chat_id,
-              env: this.env,
-              rootMessageId: notificationTracking.lark_message_id
-            });
+          diffAttachments.added_file.map(async (file) => {
+            if (file.is_private) {
+              const replyResponse = await larkClient.im.message.reply({
+                path: {
+                  message_id: notificationTracking.lark_message_id
+                },
+                data: {
+                  receive_id: CHAT_GROUPS.CUSTOMER_INFO.chat_id,
+                  msg_type: "text",
+                  reply_in_thread: true,
+                  content: JSON.stringify({
+                    text: `Hình ảnh đính kèm (có tính bảo mật): ${file.file_url}`
+                  })
+                }
+              });
+              return replyResponse.msg === "success";
+            } else {
+              const r2Key = SalesOrderService._extractR2KeyFromUrl(file.file_url);
+              const imageBuffer = await new ERPR2StorageService(this.env).getObjectByKey(r2Key);
+              return Larksuite.Messaging.ImageMessagingService.sendLarkImageFromUrl({
+                larkClient,
+                imageBuffer,
+                chatId: CHAT_GROUPS.CUSTOMER_INFO.chat_id,
+                env: this.env,
+                rootMessageId: notificationTracking.lark_message_id
+              });
+            }
           })
         )
         : [];
@@ -416,6 +449,39 @@ export default class SalesOrderService {
     });
 
     const messageId = _response.data.message_id;
+
+    if (salesOrderData.attachments && salesOrderData.attachments.length > 0) {
+      await Promise.all(
+        salesOrderData.attachments.map(async (file) => {
+          if (file.is_private) {
+            const replyResponse = await larkClient.im.message.reply({
+              path: {
+                message_id: messageId
+              },
+              data: {
+                receive_id: CHAT_GROUPS.CUSTOMER_INFO.chat_id,
+                msg_type: "text",
+                reply_in_thread: true,
+                content: JSON.stringify({
+                  text: `Hình ảnh đính kèm (có tính bảo mật): ${file.file_url}`
+                })
+              }
+            });
+            return replyResponse.msg === "success";
+          } else {
+            const r2Key = SalesOrderService._extractR2KeyFromUrl(file.file_url);
+            const imageBuffer = await new ERPR2StorageService(this.env).getObjectByKey(r2Key);
+            return Larksuite.Messaging.ImageMessagingService.sendLarkImageFromUrl({
+              larkClient,
+              imageBuffer,
+              chatId: CHAT_GROUPS.CUSTOMER_INFO.chat_id,
+              env: this.env,
+              rootMessageId: messageId
+            });
+          }
+        })
+      );
+    }
 
     await this.db.erpnextSalesOrderNotificationTracking.create({
       data: {
