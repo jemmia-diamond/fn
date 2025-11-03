@@ -6,7 +6,7 @@ export default class CallbackResultsController {
       return ctx.json({ message: "Message receive", status: 200 });
     } catch (e) {
       console.error(e);
-      return ctx.json({ message: e.message, status: 500 });
+      return ctx.json({ message: "Internal server error", status: 500 });
     };
   };
 };
