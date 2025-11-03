@@ -155,6 +155,10 @@
       {
         "queue": "erpnext-sales-order",
         "binding": "ERPNEXT_SALES_ORDER_QUEUE"
+      },
+      {
+        "queue": "misa",
+        "binding": "MISA_QUEUE"
       }
     ],
     "consumers": [
@@ -181,6 +185,9 @@
       },
       {
         "queue": "erpnext-sales-order"
+      },
+      {
+        "queue": "misa"
       }
     ]
   },
