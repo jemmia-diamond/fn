@@ -63,7 +63,9 @@ export default Sentry.withSentry(
       dsn: env.SENTRY_DSN,
       release: release,
       sendDefaultPii: true,
-      tracesSampleRate: 0.1
+      tracesSampleRate: 0,
+      profilesSampleRate: 0,
+      traceSampler: 0.1
     };
   },
   {
