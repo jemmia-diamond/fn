@@ -42,17 +42,13 @@ export default class MisaClient {
   async saveVoucher(voucherPayload) {
     const url = `${this.baseUrl}/apir/sync/actopen/save`;
 
-    try {
-      const response = await axios.post(url, voucherPayload, {
-        headers: {
-          "X-MISA-AccessToken": this.accessToken,
-          "Content-Type": "application/json"
-        }
-      });
-      return response.data;
-    } catch (error) {
-      Sentry.captureException(error);
-    }
+    const response = await axios.post(url, voucherPayload, {
+      headers: {
+        "X-MISA-AccessToken": this.accessToken,
+        "Content-Type": "application/json"
+      }
+    });
+    return response.data;
   }
 
   /**
@@ -68,16 +64,12 @@ export default class MisaClient {
       app_id: this.env.MISA_APP_ID
     };
 
-    try {
-      const response = await axios.post(url, payload, {
-        headers: {
-          "X-MISA-AccessToken": this.accessToken,
-          "Content-Type": "application/json"
-        }
-      });
-      return JSON.parse(response.data.Data);
-    } catch (error) {
-      Sentry.captureException(error);
-    }
+    const response = await axios.post(url, payload, {
+      headers: {
+        "X-MISA-AccessToken": this.accessToken,
+        "Content-Type": "application/json"
+      }
+    });
+    return JSON.parse(response.data.Data);
   }
 }
