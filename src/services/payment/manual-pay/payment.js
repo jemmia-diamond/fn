@@ -80,7 +80,7 @@ export default class ManualPaymentService {
                 bank_name: getText(fields["Ngân Hàng"]?.value),
                 transfer_amount: fields["Số Tiền Giao Dịch"],
                 transfer_note: Array.isArray(fields["Nội Dung CK"]) ? fields["Nội Dung CK"].map(i => i.text || "").join("") : fields["Nội Dung CK"],
-                haravan_order_id: rawOrderId != null ? BigInt(rawOrderId) : null,
+                haravan_order_id: rawOrderId != null ? Int(rawOrderId) : null,
                 haravan_order_name: getText(fields["ORDER"]),
                 transfer_status: getText(fields["Trạng Thái Thủ Công"])
               };
@@ -243,8 +243,8 @@ export default class ManualPaymentService {
     }
 
     const orderResult = await db.$queryRaw`
-      SELECT id, cancelled_status, financial_status, closed_status, total_price 
-      FROM haravan.orders 
+      SELECT id, cancelled_status, financial_status, closed_status, total_price
+      FROM haravan.orders
       WHERE id = ${haravanOrderId}
     `;
     const order = orderResult[0];
