@@ -71,3 +71,13 @@ export const CREDIT_ACCOUNT_MAP = {
     unit_name: "Cửa hàng HN", unit_code: "0302_002"
   }
 };
+
+export const VOUCHER_TYPES = {
+  QR_PAYMENT: 1,
+  MANUAL_PAYMENT: 5,
+  OTHER_MANUAL_PAYMENT: 1
+};
+
+export const CALLBACK_TYPE = {
+  SAVE_FUNCTION: 1
+};
