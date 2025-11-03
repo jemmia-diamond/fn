@@ -65,7 +65,7 @@ export default Sentry.withSentry(
       sendDefaultPii: true,
       tracesSampleRate: 0,
       profilesSampleRate: 0,
-      traceSampler: 0.1
+      tracesSampler: 0.1
     };
   },
   {
