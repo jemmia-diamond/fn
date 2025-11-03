@@ -77,3 +77,7 @@ export const VOUCHER_TYPES = {
   MANUAL_PAYMENT: 5,
   OTHER_MANUAL_PAYMENT: 1
 };
+
+export const CALLBACK_TYPE = {
+  SAVE_FUNCTION: 1
+};
