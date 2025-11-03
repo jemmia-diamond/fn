@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/cloudflare";
 import MisaCallbackVoucherHandler from "services/misa/callback-voucher-handler";
 import { CALLBACK_TYPE } from "services/misa/constant";
 
@@ -14,7 +15,7 @@ export default class MisaWebhookHandler {
       const body = message.body;
 
       await this.handleWebhook(body).catch(err =>
-        console.error(`Callback handler failed: ${err}`)
+        Sentry.captureException(err)
       );
     }
   }
@@ -25,22 +26,13 @@ export default class MisaWebhookHandler {
    */
   async handleWebhook(body) {
     if (body.app_id !== this.env.MISA_APP_ID || body.org_company_code !== this.env.MISA_ORG_CODE) {
-      console.warn("MISA Webhook: app_id or org_company_code mismatch. Ignoring.");
+      Sentry.captureMessage(`MISA Webhook: app_id = ${body.app_id} or org_company_code = ${body.org_company_code} mismatch. Ignoring.`);
       return;
     }
 
-    try {
-      const dataPayload = JSON.parse(body.data);
-
-      if (body.data_type === CALLBACK_TYPE.SAVE_FUNCTION && dataPayload[0]?.voucher_type) {
-        await this.voucherHandler.process(dataPayload);
-      } else {
-        // Future: Add routing for other data_type
-      }
-
-    } catch (error) {
-      console.error("MISA Webhook: Failed to parse 'data' field or process payload.", error);
-      throw error;
+    const dataPayload = JSON.parse(body.data);
+    if (body.data_type === CALLBACK_TYPE.SAVE_FUNCTION && dataPayload[0]?.voucher_type) {
+      await this.voucherHandler.process(dataPayload);
     }
   }
 }

@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/cloudflare";
 import Database from "services/database";
 import { VOUCHER_TYPES } from "services/misa/constant";
 
@@ -11,18 +12,15 @@ export default class MisaCallbackVoucherHandler {
    * @param {Array} results - The parsed array of voucher result objects from the MISA webhook.
    */
   async process(results) {
+    const modelName = await this._determineModelName(results[0]);
+
+    if (!modelName) {
+      Sentry.captureMessage("MISA Callback: Could not determine model for batch. Skipping.", results[0]);
+      return;
+    }
+
     for (const result of results) {
       const { org_refid, success, error_message } = result;
-      if (!org_refid) {
-        console.warn("MISA Callback: Result item missing org_refid. Skipping.", result);
-        continue;
-      }
-
-      const modelName = await this._determineModelName(results[0]);
-      if (!modelName) {
-        console.warn("MISA Callback: Could not determine model for batch. Skipping.", results[0]);
-        continue;
-      }
 
       try {
         const dataToUpdate = {
@@ -36,7 +34,7 @@ export default class MisaCallbackVoucherHandler {
         });
 
       } catch (error) {
-        console.error(`MISA Callback: DB update failed for ${modelName} with GUID ${org_refid}.`, error);
+        Sentry.captureException(error);
       }
     }
   }
