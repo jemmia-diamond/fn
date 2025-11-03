@@ -18,18 +18,8 @@ export function buildQuery(jsonParams) {
 
   if (jsonParams.matched_diamonds) {
 
-    diamondJoinsForCount = `
-      INNER JOIN ecom.jewelry_diamond_pairs jdp 
-        ON CAST(jdp.haravan_product_id AS BIGINT) = v.haravan_product_id 
-       AND CAST(jdp.haravan_variant_id AS BIGINT) = v.haravan_variant_id
-      INNER JOIN workplace.diamonds dia 
-        ON dia.product_id = CAST(jdp.haravan_diamond_product_id AS BIGINT) 
-       AND dia.variant_id = CAST(jdp.haravan_diamond_variant_id AS BIGINT)
-    `;
-
-    diamondFiltersForCount = `
-      AND jdp.is_active = TRUE
-    `;
+    diamondJoinsForCount = "";
+    diamondFiltersForCount = "";
 
     variantJsonBuildObject = `
       JSON_BUILD_OBJECT(
@@ -41,7 +31,7 @@ export function buildQuery(jsonParams) {
         'price_compare_at', CAST(v.price_compare_at AS DECIMAL),
         'qty_available', v.qty_available,
         'qty_onhand', v.qty_onhand,
-        'diamonds', v.diamonds
+        'diamonds', COALESCE(v.diamonds, '[]'::json)
       )
     `;
 
@@ -67,16 +57,16 @@ export function buildQuery(jsonParams) {
                 ELSE dia.price
               END
             )
-          ) AS diamonds
+          ) FILTER (WHERE dia.product_id IS NOT NULL) AS diamonds
         FROM ecom.materialized_variants v
-        INNER JOIN ecom.jewelry_diamond_pairs jdp 
+        LEFT JOIN ecom.jewelry_diamond_pairs jdp 
           ON CAST(jdp.haravan_product_id AS BIGINT) = v.haravan_product_id 
          AND CAST(jdp.haravan_variant_id AS BIGINT) = v.haravan_variant_id
-        INNER JOIN workplace.diamonds dia 
+         AND jdp.is_active = TRUE
+        LEFT JOIN workplace.diamonds dia 
           ON dia.product_id = CAST(jdp.haravan_diamond_product_id AS BIGINT) 
          AND dia.variant_id = CAST(jdp.haravan_diamond_variant_id AS BIGINT)
         WHERE v.haravan_product_id = p.haravan_product_id
-          AND jdp.is_active = TRUE
         GROUP BY v.haravan_product_id, v.haravan_variant_id, v.sku, v.price, 
                  v.price_compare_at, v.material_color, v.fineness, v.ring_size, 
                  v.qty_available, v.qty_onhand, v.applique_material, 
