@@ -8,4 +8,5 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
   schemas  = ["ecom", "erpnext", "haravan", "inventory_cms", "larksuite", "misa", "payment"]
+  relationMode = "prisma"
 }
