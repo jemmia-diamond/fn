@@ -642,6 +642,27 @@ CREATE TABLE IF NOT EXISTS "payment"."sepay_transaction" (
     CONSTRAINT "sepay_transaction_pkey" PRIMARY KEY ("id")
 );
 
+
+CREATE TABLE IF NOT EXISTS "haravan"."users" (
+    "uuid" VARCHAR NOT NULL,
+    "id" BIGINT,
+    "email" VARCHAR,
+    "first_name" VARCHAR,
+    "last_name" VARCHAR,
+    "phone" VARCHAR,
+    "account_owner" BOOLEAN,
+    "bio" TEXT,
+    "im" TEXT,
+    "receive_announcements" INTEGER,
+    "url" TEXT,
+    "user_type" VARCHAR,
+    "permissions" JSONB,
+    "database_created_at" TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP,
+    "database_updated_at" TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "users_pkey" PRIMARY KEY ("uuid")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX IF NOT EXISTS "leads_custom_uuid_key" ON "ecom"."leads"("custom_uuid");
 
@@ -710,3 +731,9 @@ CREATE UNIQUE INDEX IF NOT EXISTS "ix_misa_purchase_vouchers_refid" ON "misa"."p
 
 -- CreateIndex
 CREATE UNIQUE INDEX IF NOT EXISTS "users_haravan_id_key" ON "misa"."users"("haravan_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX IF NOT EXISTS "ix_haravan_users_id" ON "haravan"."users"("id");
+
+-- CreateIndex
+CREATE INDEX IF NOT EXISTS "ix_haravan_users_uuid" ON "haravan"."users"("uuid");
