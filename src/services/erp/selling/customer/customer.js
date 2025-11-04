@@ -29,7 +29,7 @@ export default class CustomerService {
     };
   };
 
-  async processHaravanCustomer(customerData, contact, address) {
+  async processHaravanCustomer(customerData, contact, address, options = {}) {
     const nameParts = [customerData.last_name, customerData.first_name].filter(Boolean);
     const customerName = nameParts.join(" ") || this.defaultCustomerName;
     const mappedCustomerData = {
@@ -42,6 +42,16 @@ export default class CustomerService {
       customer_primary_address: address.name
     };
 
+    // Set first_source = Website Default First Source only when creating a new customer
+    if (options.websiteDefaultFirstSource) {
+      const existing = await this.frappeClient.getList(this.doctype, {
+        filters: [["haravan_id", "=", String(customerData.id)]]
+      });
+      if (!Array.isArray(existing) || existing.length === 0) {
+        mappedCustomerData.first_source = options.websiteDefaultFirstSource;
+      }
+    }
+
     const birthDate = customerData.birthday ? dayjs(customerData.birthday).format("YYYY-MM-DD") : null;
     if (birthDate) {
       mappedCustomerData.birth_date = birthDate;
@@ -51,7 +61,6 @@ export default class CustomerService {
     if (customerGender) {
       mappedCustomerData.gender = customerGender;
     }
-
     const customer = await this.frappeClient.upsert(mappedCustomerData, "haravan_id");
     return customer;
   }

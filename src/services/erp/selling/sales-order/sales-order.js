@@ -22,6 +22,7 @@ export default class SalesOrderService {
   static ERPNEXT_PAGE_SIZE = 100;
   static SYNC_TYPE_AUTO = 1; // auto sync when deploy app
   static SYNC_TYPE_MANUAL = 0; // manual sync when call function
+  static WEBSITE_DEFAULT_FIRST_SOURCE = "CRM-LEAD-SOURCE-0000023";
 
   constructor(env) {
     this.env = env;
@@ -78,7 +79,14 @@ export default class SalesOrderService {
 
     // Create contact and customer with default address
     const contact = await contactService.processHaravanContact(haravanOrderData.customer);
-    const customer = await customerService.processHaravanCustomer(haravanOrderData.customer, contact, customerDefaultAdress);
+
+    const websiteDefaultFirstSource = haravanOrderData.source === "web" ? SalesOrderService.WEBSITE_DEFAULT_FIRST_SOURCE : null;
+    const customer = await customerService.processHaravanCustomer(
+      haravanOrderData.customer,
+      contact,
+      customerDefaultAdress,
+      { websiteDefaultFirstSource }
+    );
 
     // Update the customer back to his contact and address
     await contactService.processHaravanContact(haravanOrderData.customer, customer);
