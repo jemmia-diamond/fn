@@ -72,12 +72,59 @@ export const CREDIT_ACCOUNT_MAP = {
   }
 };
 
+export const MANUAL_PAYMENT_DEBIT_MAP = {
+  "Hồ Chí Minh": 1111000,
+  "Hà Nội": 1111100,
+  "Cần Thơ": 1111300
+};
+
+export const MANUAL_PAYMENT_CREDIT_MAP = {
+  "Hồ Chí Minh": {
+    credit_account: "1310001", unit_id: "9af12d4c-11bc-447a-be41-11396d8dffca",
+    unit_name: "Cửa hàng HCM", unit_code: "0302_001"
+  },
+  "Hà Nội": {
+    credit_account: "1310101", unit_id: "72a31f58-9432-4df0-861b-9d6b9f228546",
+    unit_name: "Cửa hàng HN", unit_code: "0302_002"
+  },
+  "Cần Thơ": {
+    credit_account: "1310002", unit_id: "06bb3daa-fd49-469a-b9fa-ad9e6dd8bc24",
+    unit_name: "Cửa hàng Cần Thơ", unit_code: "0302_003"
+  }
+};
+
+export const PAYMENT_TYPES = {
+  QR_PAYMENT: "QR_PAYMENT",
+  MANUAL_PAYMENT: "MANUAL_PAYMENT",
+  OTHER_MANUAL_PAYMENT: "OTHER_MANUAL_PAYMENT" // Manual Payment that have payment_type is not "Cash"
+};
+
 export const VOUCHER_TYPES = {
   QR_PAYMENT: 1,
   MANUAL_PAYMENT: 5,
   OTHER_MANUAL_PAYMENT: 1
 };
 
+export const VOUCHER_MODEL = {
+  QR_PAYMENT: "qrPaymentTransaction",
+  MANUAL_PAYMENT: "manualPaymentTransaction",
+  OTHER_MANUAL_PAYMENT: "manualPaymentTransaction"
+};
+
+export const VOUCHER_REF_TYPES = {
+  QR_PAYMENT: 1500,
+  MANUAL_PAYMENT: 1010,
+  OTHER_MANUAL_PAYMENT: 1500
+};
+
+export const REASON_TYPES = {
+  QR_PAYMENT: 29,
+  MANUAL_PAYMENT: 14,
+  OTHER_MANUAL_PAYMENT: 29
+};
+
+export const EXCHANGE_RATE = 1;
+export const SORT_ORDER = 0;
 export const CALLBACK_TYPE = {
   SAVE_FUNCTION: 1
 };

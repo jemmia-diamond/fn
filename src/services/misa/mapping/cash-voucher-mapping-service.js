@@ -1,18 +1,18 @@
-import { CREDIT_ACCOUNT_MAP, DEBIT_ACCOUNT_MAP, EXCHANGE_RATE, REASON_TYPES, SORT_ORDER, VOUCHER_REF_TYPES, VOUCHER_TYPES } from "services/misa/constant";
+import { CREDIT_ACCOUNT_MAP, DEBIT_ACCOUNT_MAP, EXCHANGE_RATE, MANUAL_PAYMENT_CREDIT_MAP, MANUAL_PAYMENT_DEBIT_MAP, REASON_TYPES, SORT_ORDER, VOUCHER_REF_TYPES, VOUCHER_TYPES } from "services/misa/constant";
 
-export default class VoucherMappingService {
-  /**
-   * Return valid voucher payload for MISA
-   * @param {QrPaymentFetchingService} v
-   * @param any bankMap bank dictionary
-   * @param {Number} voucher_type voucher type - check here https://actdocs.misa.vn/g2/graph/ACTOpenAPIHelp/index.html#3-1
-   * @param {Number} ref_type reference type - check here https://actdocs.misa.vn/g2/graph/ACTOpenAPIHelp/index.html#3-9
-   * @returns
-   */
-  static transformQrToVoucher(v, bankMap, voucher_type = VOUCHER_TYPES.QR_PAYMENT, ref_type = VOUCHER_REF_TYPES.QR_PAYMENT) {
+export default class CashVoucherMappingService {
+  static transforManualToVoucher(v, bankMap, voucher_type = VOUCHER_TYPES.MANUAL_PAYMENT, ref_type = VOUCHER_REF_TYPES.MANUAL_PAYMENT) {
     // Company credit and debit account
-    const creditInfo = CREDIT_ACCOUNT_MAP[v.haravan_order?.source] || {};
-    const debitAccount = DEBIT_ACCOUNT_MAP[v.bank_code] || null;
+    // manual payment using "branch" field (branch is actually vietnamese province)
+    const isManual = voucher_type === VOUCHER_TYPES.MANUAL_PAYMENT;
+
+    const debitAccount = isManual
+      ? MANUAL_PAYMENT_DEBIT_MAP[v.branch] || null
+      : DEBIT_ACCOUNT_MAP[v.bank_name] || null;
+
+    const creditInfo = isManual
+      ? MANUAL_PAYMENT_CREDIT_MAP[v.branch] || {}
+      : CREDIT_ACCOUNT_MAP[v.haravan_order?.source] || {};
 
     // Employee code ( from Amis ) and name
     const employee_code = v.haravan_order?.user?.misa_user?.employee_code || `${v.haravan_order?.user?.first_name}.${v.haravan_order?.user?.last_name}@jemmia.vn`;
@@ -20,7 +20,7 @@ export default class VoucherMappingService {
 
     // Customer's code, name and address
     const customerCode = v.haravan_order?.customer_id?.toString() || null;
-    const customerName = v.customer_name;
+    const customerName = `${v.haravan_order?.customer_last_name} ${v.haravan_order?.customer_first_name}`;
     const street1 = v.haravan_order?.customer_default_address_address1;
     const street2 = v.haravan_order?.customer_default_address_address2;
     const ward = v.haravan_order?.customer_default_address_ward;
@@ -29,30 +29,29 @@ export default class VoucherMappingService {
     const customerAddress = [street1, street2, ward, district, province].filter(Boolean).join(", ");
 
     // Bank name mapping
-    const bankInfo = bankMap[v.bank_account_number];
-    const bankName = bankInfo ? (bankInfo.bank_branch_name ? `${bankInfo.bank_name} - ${bankInfo.bank_branch_name}` : bankInfo.bank_name) : "Bank name not found";
+    const bankInfo = bankMap[v.bank_account] || null;
+    const bankName = bankInfo ? (bankInfo.bank_branch_name ? `${bankInfo.bank_name} - ${bankInfo.bank_branch_name}` : bankInfo.bank_name) : "Không tìm thấy ngân hàng";
     const generatedGuid = crypto.randomUUID();
+    const reason_type_id = voucher_type == VOUCHER_TYPES.MANUAL_PAYMENT ? REASON_TYPES.MANUAL_PAYMENT : REASON_TYPES.OTHER_MANUAL_PAYMENT;
 
     const misaVoucher = {
       voucher_type,
       org_refid: generatedGuid,
       org_reftype: ref_type,
       branch_id: null,
-      reason_type_id: REASON_TYPES.QR_PAYMENT,
+      reason_type_id,
       reftype: ref_type,
       auto_refno: true,
-      refdate: v?.updated_at || v?.created_at,
-      posted_date: v?.updated_at || v?.created_at,
+      refdate: v?.receive_date || v?.created_date,
+      posted_date: v?.receive_date || v?.created_date,
       currency_id: "VND",
-      bank_account_number: v.bank_account_number,
-      bank_name: bankName,
       exchange_rate: EXCHANGE_RATE,
       total_amount_oc: Number(v.transfer_amount),
       total_amount: Number(v.transfer_amount),
       account_object_name: customerName,
       account_object_address: customerAddress,
       account_object_code: customerCode,
-      journal_memo: `Thu tiền đơn hàng ${v.haravan_order_number}`,
+      journal_memo: `Thu tiền đơn hàng ${v.haravan_order_name}`,
       employee_code,
       employee_name,
       created_by: "Tự động hóa",
@@ -62,7 +61,7 @@ export default class VoucherMappingService {
           sort_order: SORT_ORDER,
           amount_oc: Number(v.transfer_amount),
           amount: Number(v.transfer_amount),
-          description: `Thu tiền đơn hàng ${v.haravan_order_number}`,
+          description: `Thu tiền đơn hàng ${v.haravan_order_name}`,
           debit_account: debitAccount,
           credit_account: creditInfo.credit_account || null,
           organization_unit_name: creditInfo.unit_name || null,
@@ -74,6 +73,11 @@ export default class VoucherMappingService {
       ]
     };
 
-    return { misaVoucher, originalId: v.id, generatedGuid };
+    if (voucher_type == VOUCHER_TYPES.OTHER_MANUAL_PAYMENT) {
+      misaVoucher.bank_account_number =  v.bank_account;
+      misaVoucher.bank_name = bankName;
+    }
+
+    return { misaVoucher, originalId: v.uuid, generatedGuid };
   }
 }
