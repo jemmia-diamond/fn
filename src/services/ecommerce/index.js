@@ -5,6 +5,7 @@ import SendZaloMessage from "services/ecommerce/zalo-message/zalo-message";
 import OrderNotificationService from "services/ecommerce/order-notification/order-notification";
 import CardService from "services/ecommerce/card/card";
 import WarehouseService from "services/ecommerce/warehouse/warehouse";
+import QrPaymentFetchingService from "services/ecommerce/qr_payment/fetch-service";
 import JewelryDiamondPairService from "services/ecommerce/jewelry-diamond-pair-service";
 import DiamondService from "services/ecommerce/diamond/diamond";
 
@@ -16,6 +17,7 @@ export default {
   OrderNotificationService: OrderNotificationService,
   CardService: CardService,
   WarehouseService: WarehouseService,
+  QrPaymentFetchingService,
   JewelryDiamondPairService: JewelryDiamondPairService,
   DiamondService: DiamondService
 };
