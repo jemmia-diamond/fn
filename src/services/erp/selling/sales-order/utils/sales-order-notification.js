@@ -233,8 +233,9 @@ const diffInAttachments = (prevAttachments, attachments) => {
   const addedAttachments = (attachments || []).filter(
     (attachment) => !prevAttachmentUrls.includes(attachment.file_url)
   );
-  const removedAttachments = prevAttachmentUrls.filter((url) => !newAttachmentUrls.includes(url));
-
+  const removedAttachments = (prevAttachments || []).filter(
+    (attachment) => !newAttachmentUrls.includes(attachment.file_url)
+  );
   const modifiedAttachments = {};
 
   if (addedAttachments.length > 0) {
