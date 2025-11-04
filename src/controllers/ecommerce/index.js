@@ -8,6 +8,7 @@ import OrderTrackingController from "controllers/ecommerce/order-tracking-contro
 import CardController from "controllers/ecommerce/card-controller";
 import ProductAvailabilityController from "controllers/ecommerce/product-availability-controller";
 import JewelryDiamondPairController from "controllers/ecommerce/jewelry-diamond-pair-controller";
+import DiamondProfileImageController from "controllers/ecommerce/diamond-profile-image-controller";
 
 export default {
   JewelryController: JewelryController,
@@ -19,5 +20,6 @@ export default {
   OrderTrackingController: OrderTrackingController,
   CardController: CardController,
   ProductAvailabilityController: ProductAvailabilityController,
-  JewelryDiamondPairController: JewelryDiamondPairController
+  JewelryDiamondPairController: JewelryDiamondPairController,
+  DiamondProfileImageController: DiamondProfileImageController
 };
