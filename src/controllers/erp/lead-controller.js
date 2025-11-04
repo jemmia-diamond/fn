@@ -1,5 +1,6 @@
 import ERP from "services/erp";
 import { HTTPException } from "hono/http-exception";
+import { NON_SENTRY_LOGGING } from "frappe/constant";
 
 export default class LeadController {
   static async index(ctx) {
@@ -30,6 +31,9 @@ export default class LeadController {
     }
     const response = await leadService.updateLeadFromSalesaya(id, data);
     if (!response.success) {
+      if (NON_SENTRY_LOGGING.includes(response.exc_type)) {
+        return ctx.json({ success: false, data: response.exception });
+      }
       throw new HTTPException(400, response.message);
     }
     return ctx.json({ success: true, data: response.data });
