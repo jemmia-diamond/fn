@@ -1,16 +1,49 @@
-import Ecommerce from "services/ecommerce";
+import DiamondService from "services/ecommerce/diamond/diamond";
 
 export default class DiamondController {
-  static async index(ctx) {
-    const params = await ctx.req.query();
-    const gia_no = params?.gia_no;
 
-    if (!gia_no) {
-      return ctx.json({ message: "Invalid or missing `gia_no` parameter" }, 400);
+  static async show(ctx) {
+    const params = await ctx.req.query();
+
+    const limit = params.limit ? parseInt(params.limit, 10) : 20;
+    const from = params.from ? parseInt(params.from, 10) : 1;
+
+    const jsonParams = {
+      shapes: params.shapes ? params.shapes.split(",") : undefined,
+      colors: params.colors ? params.colors.split(",") : undefined,
+      clarities: params.clarities ? params.clarities.split(",") : undefined,
+      price: {
+        min: params["price.min"] ? parseFloat(params["price.min"]) : undefined,
+        max: params["price.max"] ? parseFloat(params["price.max"]) : undefined
+      },
+      sort: {
+        by: params["sort.by"],
+        order: params["sort.order"]
+      },
+      pagination: {
+        limit: isNaN(limit) || limit <= 0 ? 20 : Math.min(limit, 100),
+        from: isNaN(from) || from <= 0 ? 1 : from
+      }
+    };
+
+    const diamondService = new DiamondService(ctx.env);
+    const result = await diamondService.getDiamonds(jsonParams);
+    return ctx.json(result, 200);
+  }
+
+  static async index(ctx) {
+    const variantId = parseInt(ctx.req.param("id"), 10);
+    if (!variantId || isNaN(variantId)) {
+      return ctx.json({ message: "Invalid or missing diamond 'id' parameter" }, 400);
     }
 
-    const productService = new Ecommerce.ProductService(ctx.env);
-    const result = await productService.getDiamondProfileImage(gia_no);
+    const diamondService = new DiamondService(ctx.env);
+    const result = await diamondService.getDiamondByVariantId(variantId);
+
+    if (!result) {
+      return ctx.json({ message: "Diamond not found" }, 404);
+    }
+
     return ctx.json({ data: result }, 200);
   }
 }

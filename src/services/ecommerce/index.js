@@ -6,6 +6,7 @@ import OrderNotificationService from "services/ecommerce/order-notification/orde
 import CardService from "services/ecommerce/card/card";
 import WarehouseService from "services/ecommerce/warehouse/warehouse";
 import JewelryDiamondPairService from "services/ecommerce/jewelry-diamond-pair-service";
+import DiamondService from "services/ecommerce/diamond/diamond";
 
 export default {
   ProductService: ProductService,
@@ -15,5 +16,6 @@ export default {
   OrderNotificationService: OrderNotificationService,
   CardService: CardService,
   WarehouseService: WarehouseService,
-  JewelryDiamondPairService: JewelryDiamondPairService
+  JewelryDiamondPairService: JewelryDiamondPairService,
+  DiamondService: DiamondService
 };
