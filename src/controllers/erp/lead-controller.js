@@ -32,7 +32,7 @@ export default class LeadController {
     const response = await leadService.updateLeadFromSalesaya(id, data);
     if (!response.success) {
       if (NON_SENTRY_LOGGING.includes(response.exc_type)) {
-        return ctx.json({ success: false, data: response.exception });
+        return ctx.json({ success: false, data: response.exception }, 400);
       }
       throw new HTTPException(400, response.message);
     }
