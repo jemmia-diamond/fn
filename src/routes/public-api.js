@@ -13,5 +13,8 @@ export default class PublicAPIRoutes {
 
     ecommerceNamespaceApi.get("/ind-day-stats", Ecommerce.IndDayStatController.show);
     ecommerceNamespaceApi.get("/order-trackings/:id", Ecommerce.OrderTrackingController.show);
+
+    ecommerceNamespaceApi.get("/products/diamonds", Ecommerce.DiamondController.show);
+    ecommerceNamespaceApi.get("/products/diamonds/:id", Ecommerce.DiamondController.index);
   };
 };
