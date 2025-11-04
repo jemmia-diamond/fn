@@ -27,6 +27,9 @@ export default class LeadService {
 
   async updateLeadInfoFromSummary(data, conversationId) {
 
+    // eslint-disable-next-line no-console
+    console.log("[AI-SUMMARY DATA]: ", JSON.stringify(data));
+
     if (!data) return;
 
     const allowedFields = [
