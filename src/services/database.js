@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma-cli";
 import { PrismaNeon } from "@prisma/adapter-neon";
-import { Pool } from "@neondatabase/serverless";
+import { neon } from "@neondatabase/serverless";
 
 // Example usage:
 // const db = Database.createClient(c.env);
@@ -8,9 +8,10 @@ import { Pool } from "@neondatabase/serverless";
 class Database {
   static createClient(env) {
     try {
-      // Create Neon connection pool
-      const pool = new Pool({ connectionString: env.DATABASE_URL });
-      const adapter = new PrismaNeon(pool);
+      const adapter = new PrismaNeon({
+        connectionString: env.DATABASE_URL,
+        poolQueryViaFetch: true
+      });
 
       return new PrismaClient({
         adapter,
