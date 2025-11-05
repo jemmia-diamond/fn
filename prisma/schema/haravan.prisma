@@ -1,5 +1,5 @@
 model Order {
-  uuid                                   String    @id @db.VarChar(36)
+  uuid                                   String    @id @default(uuid()) @db.VarChar(36)
   id                                     Int?      @unique(map: "ix_haravan_orders_id")
   billing_address_id                     BigInt?
   billing_address_address1               String?   @db.VarChar
@@ -154,7 +154,34 @@ model Order {
   discount_applications                  Json?
   database_created_at                    DateTime? @default(now()) @db.Timestamp(6)
   database_updated_at                    DateTime? @default(now()) @db.Timestamp(6)
+  qr_payments qrPaymentTransaction[]
+  manual_payments manualPaymentTransaction[]
+  user User? @relation(fields: [user_id], references: [id], map: "orders_haravan_user_fkey")
 
   @@map("orders")
+  @@schema("haravan")
+}
+
+model User {
+  uuid                  String    @id @default(uuid()) @db.VarChar
+  id                    BigInt?   @unique(map: "ix_haravan_users_id")
+  email                 String?   @db.VarChar
+  first_name            String?   @db.VarChar
+  last_name             String?   @db.VarChar
+  phone                 String?   @db.VarChar
+  account_owner         Boolean?
+  bio                   String?
+  im                    String?
+  receive_announcements Int?
+  url                   String?
+  user_type             String?   @db.VarChar
+  permissions           Json?
+  database_created_at   DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at   DateTime? @default(now()) @db.Timestamp(6)
+  misa_user misaUser?
+  orders Order[]
+
+  @@index([uuid], map: "ix_haravan_users_uuid")
+  @@map("users")
   @@schema("haravan")
 }
