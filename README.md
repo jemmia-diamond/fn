@@ -33,62 +33,43 @@ Start the development server with:
 pnpm run dev
 ```
 
-### Prisma ORM
+ORM and migration with Prisma:
 
-This project uses a **multi-file Prisma schema** organized by PostgreSQL schemas for better maintainability. The schema is split into 21 files in `prisma/schema/`.
+- Sync your local/dev database with
+```bash
+pnpx prisma migrate deploy
+```
+```bash
+# 1 migration found in prisma/migrations
 
-#### Common Commands
+# Applying migration `20250807023446_00001`
+
+# The following migration(s) have been applied:
+
+# migrations/
+#   └─ 20250807023446_00001/
+#     └─ migration.sql
+      
+# All migrations have been successfully applied.
+```
+
+- After modifying existing or add new model
 
 ```bash
-# Generate Prisma Client
-pnpm prisma:generate
-
-# Create and apply migrations
-pnpm prisma:migrate
-
-# Open Prisma Studio (database browser)
-pnpm prisma:studio
-
-# Push schema changes (prototyping)
-pnpm prisma:push
-
-# Pull schema from database
-pnpm prisma:pull
-```
-
-#### Migration Workflow
-
-1. **Sync your local/dev database:**
-   ```bash
-   pnpm prisma migrate deploy --schema=prisma/schema
-   ```
-
-2. **After modifying models:**
-   ```bash
-   pnpm prisma:migrate --name <MIGRATION_NAME>
-   # Example: pnpm prisma:migrate --name add_user_table
-   ```
-
-3. **Generate Prisma Client:**
-   ```bash
-   pnpm prisma:generate
-   ```
-
-#### Schema Organization
-
-```
-prisma/
-├── schema/
-│   ├── base.prisma         # Generator & datasource config
-│   ├── workplace.prisma    # Main schema (32 models)
-│   ├── ecommerce.prisma    # E-commerce models
-│   ├── inventory.prisma    # Inventory models
-│   └── ... (21 files total)
-└── migrations/             # Auto-generated migrations
+pnpx prisma migrate dev --name <MIGRATION_NAME>
+# pnpx prisma migrate dev --name init
+# pnpx prisma migrate dev --name 00001
+# Prisma will generate DDL script for futher migration on different environments
 ```
 
 > [!IMPORTANT]
-> Prisma manages migrations via the `_prisma_migrations` table. Do not modify this table in production.
+>
+> Prisma manage migration via a table named public._prisma_migrations, so please don't touch it in the production environment database.
+
+Build Prisma with:
+```bash
+pnpx prisma generate
+```
 
 This will start a local development server using Wrangler. Or in the case you want to test Cron triggers using Wrangler.
 
