@@ -5,7 +5,6 @@ model misaUser {
   email               String?   @db.VarChar(255)
   database_created_at DateTime? @default(now())
   database_updated_at DateTime?
-  user User? @relation(fields: [haravan_id], references: [id], map: "misa_user_user_fkey")
 
   @@map("users")
   @@schema("misa")
