@@ -1,0 +1,188 @@
+model conversation {
+  uuid                String    @id @db.VarChar
+  id                  String?   @unique(map: "ix_pancake_conversation_id") @db.VarChar
+  customer_id         String?   @db.VarChar
+  type                String?   @db.VarChar
+  inserted_at         DateTime? @db.Timestamp(6)
+  page_id             String?   @db.VarChar
+  has_phone           Boolean?
+  post_id             String?   @db.VarChar
+  database_created_at DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at DateTime? @default(now()) @db.Timestamp(6)
+  assignee_histories  Json?
+  added_users         Json?
+  added_user_id       String?   @db.VarChar
+  added_user_name     String?   @db.VarChar
+  added_user_email    String?   @db.VarChar
+  added_user_fb_id    String?   @db.VarChar
+  updated_at          DateTime? @db.Timestamp(6)
+  last_sent_at        DateTime? @db.Timestamp(6)
+  avatar_url          String?   @db.VarChar
+  ad_ids              Json?
+
+  @@unique([id, page_id], map: "conversation_id_page_idx")
+  @@index([page_id], map: "idx_conversation_page_id")
+  @@index([id], map: "idx_id")
+  @@index([uuid], map: "ix_pancake_conversation_uuid")
+  @@schema("pancake")
+}
+
+model conversation_page_customer {
+  uuid                String?   @unique @db.VarChar
+  customer_id         String    @db.VarChar
+  conversation_id     String    @db.VarChar
+  database_created_at DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at DateTime? @default(now()) @db.Timestamp(6)
+
+  @@id([customer_id, conversation_id])
+  @@schema("pancake")
+}
+
+model conversation_tag {
+  uuid                String?   @unique @db.VarChar
+  conversation_id     String    @db.VarChar
+  page_id             String?   @db.VarChar
+  customer_id         String?   @db.VarChar
+  inserted_at         DateTime  @db.Timestamp(6)
+  post_id             String?   @db.VarChar
+  has_phone           Boolean?
+  tag_page_id         Int
+  tag_label           String?   @db.VarChar
+  tag_description     String?   @db.VarChar
+  action              String    @db.VarChar
+  database_created_at DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at DateTime? @default(now()) @db.Timestamp(6)
+
+  @@id([conversation_id, inserted_at, tag_page_id, action])
+  @@schema("pancake")
+}
+
+model frappe_lead_conversation {
+  conversation_id String    @id @db.VarChar
+  frappe_name_id  String?   @db.VarChar
+  updated_at      DateTime? @db.Timestamp(6)
+  created_at      DateTime? @db.Timestamp(6)
+
+  @@schema("pancake")
+}
+
+model frappe_lead_conversation_stag {
+  conversation_id String    @id @db.VarChar
+  frappe_name_id  String?   @db.VarChar
+  updated_at      DateTime? @db.Timestamp(6)
+  created_at      DateTime? @db.Timestamp(6)
+
+  @@schema("pancake")
+}
+
+model messages {
+  id                  String    @id @db.VarChar
+  message             String?   @db.VarChar
+  type                String?   @db.VarChar
+  seen                Boolean?
+  show_info           Boolean?
+  from_id             String?   @db.VarChar
+  from_name           String?   @db.VarChar
+  attachments         Json?     @db.Json
+  inserted_at         DateTime? @db.Timestamp(6)
+  page_id             String?   @db.VarChar
+  conversation_id     String?   @db.VarChar
+  has_phone           Boolean?
+  is_removed          Boolean?
+  can_hide            Boolean?
+  comment_count       Int?
+  like_count          Int?
+  parent_id           String?   @db.VarChar
+  is_hidden           Boolean?
+  rich_message        String?   @db.VarChar
+  edit_history        String?   @db.VarChar
+  message_tags        Json?     @db.Json
+  is_parent_hidden    Boolean?
+  can_comment         Boolean?
+  can_like            Boolean?
+  can_remove          Boolean?
+  can_reply_privately Boolean?
+  is_livestream_order Boolean?
+  is_parent           Boolean?
+  phone_info          Json?     @db.Json
+  original_message    String?   @db.VarChar
+
+  @@schema("pancake")
+}
+
+model page {
+  uuid                String    @id @db.VarChar
+  id                  String?   @unique(map: "ix_pancake_page_id") @db.VarChar
+  inserted_at         DateTime? @db.Timestamp(6)
+  connected           Boolean?
+  is_activated        Boolean?
+  name                String?   @db.VarChar
+  platform            String?   @db.VarChar
+  timezone            String?   @db.VarChar
+  settings            Json?
+  platform_extra_info Json?
+  database_created_at DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at DateTime? @default(now()) @db.Timestamp(6)
+  page_access_token   String?   @db.VarChar(255)
+
+  @@index([id], map: "idx_page_id")
+  @@index([uuid], map: "ix_pancake_page_uuid")
+  @@schema("pancake")
+}
+
+model page_customer {
+  uuid                String    @id @db.VarChar
+  id                  String?   @unique(map: "ix_pancake_page_customer_id") @db.VarChar
+  birthday            String?   @db.VarChar
+  can_inbox           Boolean?
+  customer_id         String?   @db.VarChar
+  gender              String?   @db.VarChar
+  inserted_at         DateTime? @db.Timestamp(6)
+  lives_in            String?   @db.VarChar
+  name                String?   @db.VarChar
+  page_id             String?   @db.VarChar
+  database_created_at DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at DateTime? @default(now()) @db.Timestamp(6)
+  phone_numbers       Json?
+  notes               Json?
+  phone               String?   @db.VarChar(255)
+  updated_at          DateTime? @db.Timestamp(6)
+
+  @@index([uuid], map: "ix_pancake_page_customer_uuid")
+  @@schema("pancake")
+}
+
+model pancake_user {
+  id                  String    @id @db.VarChar
+  name                String?   @db.VarChar
+  status              String?   @db.VarChar
+  fb_id               String?   @db.VarChar
+  page_permissions    Json?
+  status_round_robin  String?   @db.VarChar
+  status_in_page      String?   @db.VarChar
+  is_online           Boolean?
+  database_updated_at DateTime? @db.Timestamp(6)
+  database_created_at DateTime? @db.Timestamp(6)
+
+  @@schema("pancake")
+}
+
+model tag_page {
+  page_id             String    @db.VarChar
+  id                  Int
+  tag_label           String?   @db.VarChar
+  description         String?   @db.VarChar
+  database_created_at DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at DateTime? @default(now()) @db.Timestamp(6)
+
+  @@id([page_id, id])
+  @@schema("pancake")
+}
+
+model pancake_users {
+  id               String  @id
+  enterprise_email String? @unique
+
+  @@map("users")
+  @@schema("pancake")
+}

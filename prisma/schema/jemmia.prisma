@@ -1,0 +1,8 @@
+model metadata {
+  product_id       Int     @id
+  variant_id       Int?
+  path_to_3dm      String?
+  collection_drive String?
+
+  @@schema("jemmia")
+}
