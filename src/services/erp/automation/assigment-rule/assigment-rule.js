@@ -8,6 +8,7 @@ import { SHIFTS, ASSIGNMENT_RULES } from "services/erp/automation/assigment-rule
 dayjs.extend(utc);
 
 export default class AssignmentRuleService {
+  static ERPNEXT_PAGE_SIZE = 100;
   constructor(env) {
     this.env = env;
     this.doctype = "Assignment Rule";
@@ -23,13 +24,24 @@ export default class AssignmentRuleService {
   }
 
   async getAssignedUsers(regions) {
-    const salesPeoplePromises = regions.map(region =>
-      this.frappeClient.getList("Sales Person", {
-        filters: [["sales_region", "=", region], ["assigned_lead", "=", true]]
-      })
-    );
-    const salesPeopleResults = await Promise.all(salesPeoplePromises);
-    const salesPeople = salesPeopleResults.flat();
+    const salesPeople = [];
+    for (const region of regions) {
+      let limitStart = 0;
+      let hasMore = true;
+      while (hasMore) {
+        const pageResults = await this.frappeClient.getList("Sales Person", {
+          filters: [["sales_region", "=", region], ["assigned_lead", "=", true]],
+          limit_start: limitStart,
+          limit_page_length: AssignmentRuleService.ERPNEXT_PAGE_SIZE
+        });
+        salesPeople.push(...pageResults);
+        if (pageResults.length < AssignmentRuleService.ERPNEXT_PAGE_SIZE) {
+          hasMore = false;
+        } else {
+          limitStart += AssignmentRuleService.ERPNEXT_PAGE_SIZE;
+        }
+      }
+    }
 
     const employeeNames = salesPeople.map((salesPerson) => salesPerson.employee);
     const employees = [];
