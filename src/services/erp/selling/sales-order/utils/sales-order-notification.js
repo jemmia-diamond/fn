@@ -230,9 +230,12 @@ const diffInAttachments = (prevAttachments, attachments) => {
   const prevAttachmentUrls = (prevAttachments || []).map((attachment) => attachment.file_url);
   const newAttachmentUrls = (attachments || []).map((attachment) => attachment.file_url);
 
-  const addedAttachments = newAttachmentUrls.filter((url) => !prevAttachmentUrls.includes(url));
-  const removedAttachments = prevAttachmentUrls.filter((url) => !newAttachmentUrls.includes(url));
-
+  const addedAttachments = (attachments || []).filter(
+    (attachment) => !prevAttachmentUrls.includes(attachment.file_url)
+  );
+  const removedAttachments = (prevAttachments || []).filter(
+    (attachment) => !newAttachmentUrls.includes(attachment.file_url)
+  );
   const modifiedAttachments = {};
 
   if (addedAttachments.length > 0) {

@@ -26,11 +26,11 @@ export default class LeadController {
     const data = await ctx.req.json();
     const { id } = ctx.req.param();
     if(!id) {
-      throw new HTTPException(400, "Lead id is required");
+      return ctx.json({ success: false, data: "Lead id is required" }, 400);
     }
     const response = await leadService.updateLeadFromSalesaya(id, data);
     if (!response.success) {
-      throw new HTTPException(400, response.message);
+      return ctx.json({ success: false, data: response.exception }, 400);
     }
     return ctx.json({ success: true, data: response.data });
   }
