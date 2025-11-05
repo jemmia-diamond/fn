@@ -1,43 +1,64 @@
-model addresses {
-  uuid                    String    @id @db.Uuid
-  name                    String    @unique @db.VarChar(255)
-  owner                   String?   @db.VarChar(255)
-  creation                DateTime? @db.Timestamp(6)
-  modified                DateTime? @db.Timestamp(6)
-  modified_by             String?   @db.VarChar(255)
-  docstatus               Int?
-  idx                     Int?
-  address_type            String?   @db.VarChar(255)
-  address_name            String?   @db.VarChar(255)
-  phone                   String?   @db.VarChar(255)
-  email_id                String?   @db.VarChar(255)
-  address_line2           String?
-  address_title           String?   @db.VarChar(255)
-  city                    String?   @db.VarChar(255)
-  county                  String?   @db.VarChar(255)
-  state                   String?   @db.VarChar(255)
-  pincode                 String?   @db.VarChar(255)
-  country                 String?   @db.VarChar(255)
-  province                String?   @db.VarChar(255)
-  district                String?   @db.VarChar(255)
-  ward                    String?   @db.VarChar(255)
-  address_line1           String?
-  fax                     String?   @db.VarChar(255)
-  tax_category            String?   @db.VarChar(255)
-  is_primary_address      Int?
-  is_shipping_address     Int?
-  disabled                Int?
-  haravan_id              String?   @db.VarChar(255)
-  is_your_company_address Int?
-  links                   Json?
-  database_created_at     DateTime? @default(now()) @db.Timestamp(6)
-  database_updated_at     DateTime? @db.Timestamp(6)
+model erpnextUser {
+  uuid  String  @id @default(uuid()) @db.Uuid
+  name  String? @unique
+  email String?
+  creation DateTime? @db.Timestamp(6)
+  modified DateTime? @db.Timestamp(6)
+  modified_by String?
+  enabled Int? @db.SmallInt
+  full_name String?
+  language String?
+  time_zone String?
+  user_image String?
+  role_profile String?
+  gender String?
+  birth_date DateTime?
+  location String?
+  pancake_id String?
 
+  @@map("users")
   @@schema("erpnext")
 }
 
-model contacts {
-  uuid                        String    @id @db.Uuid
+model erpnextEmployee {
+  uuid          String    @id @default(uuid()) @db.Uuid
+  name          String?   @unique
+  user_id       String?
+  creation      DateTime? @db.Timestamp(6)
+  department    String?
+  employee_name String?
+  gender        String?
+  modified      DateTime? @db.Timestamp(6)
+  modified_by   String?
+  status        String?
+
+  @@map("employees")
+  @@schema("erpnext")
+}
+
+model erpnextSalesPerson {
+  uuid                String    @id @default(uuid()) @db.Uuid
+  name                String?   @unique
+  employee            String?
+  bizfly_id           String?
+  creation            DateTime? @db.Timestamp(6)
+  department          String?
+  enabled             Int?      @db.SmallInt
+  is_group            Int?      @db.SmallInt
+  modified            DateTime? @db.Timestamp(6)
+  modified_by         String?
+  old_parent          String?
+  parent_sales_person String?
+  sales_person_name   String?
+  sales_region        String?
+  targets             Json?
+
+  @@map("sales_persons")
+  @@schema("erpnext")
+}
+
+model erpnextContact {
+  uuid                        String    @id @default(uuid()) @db.Uuid
   name                        String    @unique @db.VarChar(255)
   owner                       String?   @db.VarChar(255)
   creation                    DateTime? @db.Timestamp(6)
@@ -116,11 +137,12 @@ model contacts {
   database_updated_at         DateTime? @db.Timestamp(6)
 
   @@index([name])
+  @@map("contacts")
   @@schema("erpnext")
 }
 
-model erpnext_customers {
-  uuid                           String    @id @db.Uuid
+model erpnextCustomer {
+  uuid                           String    @id @default(uuid()) @db.Uuid
   name                           String    @unique @db.VarChar(255)
   owner                          String?   @db.VarChar(255)
   creation                       DateTime? @db.Timestamp(6)
@@ -220,23 +242,8 @@ model erpnext_customers {
   @@schema("erpnext")
 }
 
-model employees {
-  uuid          String    @id @db.Uuid
-  name          String?   @unique
-  user_id       String?
-  creation      DateTime? @db.Timestamp(6)
-  department    String?
-  employee_name String?
-  gender        String?
-  modified      DateTime? @db.Timestamp(6)
-  modified_by   String?
-  status        String?
-
-  @@schema("erpnext")
-}
-
-model lead_budgets {
-  uuid                String    @id @db.Uuid
+model erpnextLeadBudget {
+  uuid                String    @id @default(uuid()) @db.Uuid
   name                String    @unique @db.VarChar(255)
   owner               String?   @db.VarChar(255)
   creation            DateTime? @db.Timestamp(6)
@@ -248,11 +255,12 @@ model lead_budgets {
   database_updated_at DateTime? @db.Timestamp(6)
 
   @@index([name])
+  @@map("lead_budgets")
   @@schema("erpnext")
 }
 
-model lead_demands {
-  uuid                String    @id @db.Uuid
+model erpnextLeadDemand {
+  uuid                String    @id @default(uuid()) @db.Uuid
   name                String    @unique @db.VarChar(255)
   owner               String?   @db.VarChar(255)
   creation            DateTime? @db.Timestamp(6)
@@ -262,6 +270,7 @@ model lead_demands {
   database_updated_at DateTime? @db.Timestamp(6)
 
   @@index([name])
+  @@map("lead_demands")
   @@schema("erpnext")
 }
 
@@ -275,8 +284,8 @@ model lead_sources {
   @@schema("erpnext")
 }
 
-model erpnext_leads {
-  uuid                   String    @id @db.Uuid
+model erpnextLead {
+  uuid                   String    @id @default(uuid()) @db.Uuid
   name                   String    @unique @db.VarChar(255)
   owner                  String?   @db.VarChar(255)
   creation               DateTime? @db.Timestamp(6)
@@ -362,8 +371,8 @@ model erpnext_leads {
   @@schema("erpnext")
 }
 
-model product_categories {
-  uuid        String    @id @db.Uuid
+model erpnextProductCategory {
+  uuid        String    @id @default(uuid()) @db.Uuid
   name        String    @unique @db.VarChar(255)
   owner       String?   @db.VarChar(255)
   creation    DateTime? @db.Timestamp(6)
@@ -374,11 +383,12 @@ model product_categories {
   title       String?   @db.VarChar(255)
 
   @@index([name])
+  @@map("product_categories")
   @@schema("erpnext")
 }
 
-model erpnext_promotions {
-  uuid             String    @id @db.Uuid
+model erpnextPromotion {
+  uuid             String    @id @default(uuid()) @db.Uuid
   name             String    @unique @db.VarChar(255)
   owner            String?   @db.VarChar(255)
   creation         DateTime? @db.Timestamp(6)
@@ -404,8 +414,8 @@ model erpnext_promotions {
   @@schema("erpnext")
 }
 
-model provinces {
-  uuid                String    @id @db.Uuid
+model erpnextProvince {
+  uuid                String    @id @default(uuid()) @db.Uuid
   name                String    @unique @db.VarChar(255)
   owner               String?   @db.VarChar(255)
   creation            DateTime? @db.Timestamp(6)
@@ -416,11 +426,12 @@ model provinces {
   database_updated_at DateTime? @db.Timestamp(6)
 
   @@index([name])
+  @@map("provinces")
   @@schema("erpnext")
 }
 
-model purchase_purposes {
-  uuid        String    @id @db.Uuid
+model erpnextPurchasePurpose {
+  uuid        String    @id @default(uuid()) @db.Uuid
   name        String    @unique @db.VarChar(255)
   owner       String?   @db.VarChar(255)
   creation    DateTime? @db.Timestamp(6)
@@ -431,39 +442,42 @@ model purchase_purposes {
   title       String?   @db.VarChar(255)
 
   @@index([name])
+  @@map("purchase_purposes")
   @@schema("erpnext")
 }
 
-model regions {
-  uuid                String    @id @db.Uuid
+model erpnextRegion {
+  uuid                String    @id @default(uuid()) @db.Uuid
   name                String    @unique @db.VarChar(255)
   owner               String?   @db.VarChar(255)
   creation            DateTime? @db.Timestamp(6)
   modified            DateTime? @db.Timestamp(6)
-  region_name         String    @db.VarChar(255)
+  region_name         String    @default("") @db.VarChar(255)
   database_created_at DateTime  @default(now()) @db.Timestamp(6)
   database_updated_at DateTime? @db.Timestamp(6)
 
   @@index([name])
+  @@map("regions")
   @@schema("erpnext")
 }
 
-model sales_order_notification_tracking {
-  uuid                String   @id @db.Uuid
+model erpnextSalesOrderNotificationTracking {
+  uuid                String   @id @default(uuid()) @db.Uuid
   order_name          String
   haravan_order_id    String
   lark_message_id     String
   database_created_at DateTime @default(now())
-  database_updated_at DateTime
+  database_updated_at DateTime @updatedAt
   order_data          Json?
 
   @@index([haravan_order_id])
   @@index([order_name])
+  @@map("sales_order_notification_tracking")
   @@schema("erpnext")
 }
 
-model sales_orders {
-  uuid                           String    @id @db.Uuid
+model erpnextSalesOrders {
+  uuid                           String    @id @default(uuid()) @db.Uuid
   name                           String?   @unique
   owner                          String?
   creation                       DateTime?
@@ -615,47 +629,45 @@ model sales_orders {
   @@index([haravan_order_id])
   @@index([order_number])
   @@index([status])
+  @@map("sales_orders")
   @@schema("erpnext")
 }
 
-model sales_persons {
-  uuid                String    @id @db.Uuid
-  name                String?   @unique
-  employee            String?
-  bizfly_id           String?
-  creation            DateTime? @db.Timestamp(6)
-  department          String?
-  enabled             Int?      @db.SmallInt
-  is_group            Int?      @db.SmallInt
-  modified            DateTime? @db.Timestamp(6)
-  modified_by         String?
-  old_parent          String?
-  parent_sales_person String?
-  sales_person_name   String?
-  sales_region        String?
-  targets             Json?
+model erpnextAddress {
+  uuid                    String    @id @default(uuid()) @db.Uuid
+  name                    String    @unique @db.VarChar(255)
+  owner                   String?   @db.VarChar(255)
+  creation                DateTime? @db.Timestamp(6)
+  modified                DateTime? @db.Timestamp(6)
+  modified_by             String?   @db.VarChar(255)
+  docstatus               Int?
+  idx                     Int?
+  address_type            String?   @db.VarChar(255)
+  address_name            String?   @db.VarChar(255)
+  phone                   String?   @db.VarChar(255)
+  email_id                String?   @db.VarChar(255)
+  address_line2           String?
+  address_title           String?   @db.VarChar(255)
+  city                    String?   @db.VarChar(255)
+  county                  String?   @db.VarChar(255)
+  state                   String?   @db.VarChar(255)
+  pincode                 String?   @db.VarChar(255)
+  country                 String?   @db.VarChar(255)
+  province                String?   @db.VarChar(255)
+  district                String?   @db.VarChar(255)
+  ward                    String?   @db.VarChar(255)
+  address_line1           String?
+  fax                     String?   @db.VarChar(255)
+  tax_category            String?   @db.VarChar(255)
+  is_primary_address      Int?
+  is_shipping_address     Int?
+  disabled                Int?
+  haravan_id              String?   @db.VarChar(255)
+  is_your_company_address Int?
+  links                   Json?
+  database_created_at     DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at     DateTime? @db.Timestamp(6)
 
-  @@schema("erpnext")
-}
-
-model erpnext_users {
-  uuid         String    @id @db.Uuid
-  name         String?   @unique
-  email        String?
-  birth_date   DateTime?
-  creation     DateTime? @db.Timestamp(6)
-  enabled      Int?      @db.SmallInt
-  full_name    String?
-  gender       String?
-  language     String?
-  location     String?
-  modified     DateTime? @db.Timestamp(6)
-  modified_by  String?
-  pancake_id   String?
-  role_profile String?
-  time_zone    String?
-  user_image   String?
-
-  @@map("users")
+  @@map("addresses")
   @@schema("erpnext")
 }

@@ -1,3 +1,16 @@
+model larksuiteRecord {
+  uuid                String   @id @default(uuid()) @db.Uuid
+  record_id           String   @unique
+  table_id            String?
+  app_token           String?
+  fields              Json     @default("{}")
+  database_created_at DateTime @default(now())
+  database_updated_at DateTime @updatedAt
+
+  @@map("records")
+  @@schema("larksuite")
+}
+
 model buyback_exchange_approval_instances {
   id               Int       @id @default(autoincrement())
   instance_code    String?   @unique @db.VarChar
@@ -81,13 +94,12 @@ model customer_appointments {
   @@schema("larksuite")
 }
 
-model larksuite_departments {
+model departments {
   department_id        String  @id
   open_department_id   String? @unique
   name                 String?
   parent_department_id String?
 
-  @@map("departments")
   @@schema("larksuite")
 }
 
@@ -165,18 +177,6 @@ model promotion_approval {
   submitted_date         DateTime? @db.Timestamp(6)
   instance_code          String?   @unique(map: "instance_code_unique") @db.VarChar
   serial_number          String?   @db.VarChar
-
-  @@schema("larksuite")
-}
-
-model records {
-  uuid                String   @id @db.Uuid
-  record_id           String   @unique
-  table_id            String?
-  app_token           String?
-  fields              Json
-  database_created_at DateTime @default(now())
-  database_updated_at DateTime
 
   @@schema("larksuite")
 }

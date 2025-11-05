@@ -1,4 +1,4 @@
-model jewelry_diamond_pairs {
+model jewelryDiamondPairing {
   id                         String   @unique @default(dbgenerated("(gen_random_uuid())::text"))
   haravan_product_id         Int
   haravan_variant_id         Int
@@ -9,9 +9,10 @@ model jewelry_diamond_pairs {
   updated_at                 DateTime @default(now())
 
   @@unique([haravan_product_id, haravan_variant_id, haravan_diamond_product_id, haravan_diamond_variant_id], map: "jewelry_diamond_pairing_unique_pairing")
-  @@index([haravan_diamond_product_id, haravan_diamond_variant_id])
-  @@index([haravan_product_id, haravan_variant_id, is_active])
   @@index([id])
+  @@index([haravan_product_id, haravan_variant_id, is_active])
+  @@index([haravan_diamond_product_id, haravan_diamond_variant_id])
+  @@map("jewelry_diamond_pairs")
   @@schema("ecom")
 }
 
@@ -26,7 +27,7 @@ model ecom_leads {
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model ecom_products {
+model products {
   haravan_product_id        BigInt?   @unique(map: "products_unique_haravan_id")
   haravan_product_type      String?
   design_id                 BigInt?
@@ -45,43 +46,42 @@ model ecom_products {
   max_price_18              Int?
   max_price_14              Int?
 
-  @@map("products")
   @@ignore
   @@schema("ecom")
 }
 
-model qr_generator {
-  id                        String          @id @db.VarChar
-  bank_code                 String?         @db.VarChar
-  bank_account_number       String?         @db.VarChar
-  customer_name             String?         @db.VarChar
-  customer_phone_number     String?         @db.VarChar
+model qrPaymentTransaction {
+  id                        String    @id @db.VarChar
+  bank_code                 String?   @db.VarChar
+  bank_account_number       String?   @db.VarChar
+  customer_name             String?   @db.VarChar
+  customer_phone_number     String?   @db.VarChar
   transfer_amount           BigInt?
-  transfer_note             String?         @db.VarChar
-  transfer_status           String?         @db.VarChar
-  haravan_order_number      String?         @db.VarChar
-  haravan_order_status      String?         @db.VarChar
+  transfer_note             String?   @db.VarChar
+  transfer_status           String?   @db.VarChar
+  haravan_order_number      String?   @db.VarChar
+  haravan_order_status      String?   @db.VarChar
   haravan_order_id          Int?
   haravan_order_total_price BigInt?
-  created_at                DateTime?       @default(now()) @db.Timestamp(6)
-  updated_at                DateTime?       @default(now()) @db.Timestamp(6)
-  deleted_at                DateTime?       @db.Timestamp(6)
+  created_at                DateTime? @default(now()) @db.Timestamp(6)
+  updated_at                DateTime? @default(now()) @db.Timestamp(6)
+  deleted_at                DateTime? @db.Timestamp(6)
   is_deleted                Boolean?
   qr_url                    String?
-  lark_record_id            String?         @db.VarChar(255)
-  all_lark_record_id        String?         @db.VarChar(255)
-  misa_synced               Boolean         @default(false)
-  misa_synced_at            DateTime?       @db.Timestamp(6)
-  misa_sync_guid            String?         @db.VarChar(255)
+  lark_record_id            String?   @db.VarChar(255)
+  all_lark_record_id        String?   @db.VarChar(255)
+  misa_synced               Boolean   @default(false)
+  misa_synced_at            DateTime? @db.Timestamp(6)
+  misa_sync_guid            String?   @db.VarChar(255)
   misa_sync_error_msg       String?
-  orders                    haravan_orders? @relation(fields: [haravan_order_id], references: [id])
 
   @@index([id], map: "ix_ecom_qr_generator_id")
+  @@map("qr_generator")
   @@schema("ecom")
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model ecom_variants {
+model variants {
   hararvan_product_id BigInt?
   haravan_variant_id  BigInt?  @unique(map: "unique_haravan_variant_id")
   sku                 String?  @db.VarChar
@@ -92,20 +92,18 @@ model ecom_variants {
   ring_size           Decimal? @db.Decimal
   haravan_product_id  Int?
 
-  @@map("variants")
   @@ignore
   @@schema("ecom")
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model ecom_wedding_rings {
+model wedding_rings {
   id               Int?      @unique
   title            String?
   max_price        Decimal?  @db.Decimal
   min_price        Decimal?  @db.Decimal
   image_updated_at DateTime? @db.Timestamp(6)
 
-  @@map("wedding_rings")
   @@ignore
   @@schema("ecom")
 }
