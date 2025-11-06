@@ -360,6 +360,9 @@ model Order {
   discount_applications                  Json?
   database_created_at                    DateTime? @default(now()) @db.Timestamp(6)
   database_updated_at                    DateTime? @default(now()) @db.Timestamp(6)
+  user                                   User?     @relation(fields: [user_id], references: [id], map: "orders_haravan_user_fkey")
+  qr_payments                            qrPaymentTransaction[]
+  manual_payments                        manualPaymentTransaction[]
 
   @@map("orders")
   @@schema("haravan")
@@ -485,8 +488,8 @@ model transactions {
   @@schema("haravan")
 }
 
-model haravan_users {
-  uuid                  String    @id @db.VarChar
+model User {
+  uuid                  String    @id @default(uuid()) @db.VarChar
   id                    BigInt?   @unique(map: "ix_haravan_users_id")
   email                 String?   @db.VarChar
   first_name            String?   @db.VarChar
@@ -501,6 +504,8 @@ model haravan_users {
   permissions           Json?
   database_created_at   DateTime? @default(now()) @db.Timestamp(6)
   database_updated_at   DateTime? @default(now()) @db.Timestamp(6)
+  misa_user             misaUser?
+  haravan_order         Order[]
 
   @@index([uuid], map: "ix_haravan_users_uuid")
   @@map("users")
