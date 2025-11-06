@@ -31,7 +31,6 @@ export default class MisaClient {
       return this.accessToken;
     } catch (error) {
       Sentry.captureException(error);
-      throw error;
     }
   }
 
