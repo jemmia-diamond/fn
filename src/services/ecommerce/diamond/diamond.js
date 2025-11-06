@@ -59,8 +59,7 @@ export default class DiamondService {
                 )
               )
           ) AS images,
-          g.propimg,
-          g.pdf_url
+          g.simple_encrypted_report_no
         FROM workplace.diamonds AS d 
         JOIN haravan.products AS p ON p.id = d.product_id 
         LEFT JOIN gia.report_no_data AS g ON g.report_no::BIGINT = d.report_no::BIGINT
