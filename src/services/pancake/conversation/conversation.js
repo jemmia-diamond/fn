@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/cloudflare";
 import PancakeClient from "pancake/pancake-client";
 import Database from "services/database";
 import LeadService from "services/erp/crm/lead/lead";
@@ -49,7 +50,7 @@ export default class ConversationService {
       }
       return null;
     } catch (error) {
-      console.error(error);
+      Sentry.captureException(error);
       return undefined;
     }
   }
@@ -68,7 +69,7 @@ export default class ConversationService {
       }
       return null;
     } catch (error) {
-      console.error(error);
+      Sentry.captureException(error);
       return undefined;
     }
   }
@@ -98,7 +99,7 @@ export default class ConversationService {
       const result = await this.updateConversation(conversationId, pageId, insertedAt);
       return result;
     } catch (err){
-      console.error(`processLastCustomerMessage failed: ${err}`);
+      Sentry.captureException(err);
       return;
     }
   }
@@ -164,7 +165,7 @@ export default class ConversationService {
         await this.upsertFrappeLeadConversation(conversationId, frappeNameId);
       }
     } catch (error) {
-      console.error(`syncCustomerToLeadCrm failed: ${error}`);
+      Sentry.captureException(error);
       return;
     }
   }
@@ -203,7 +204,7 @@ export default class ConversationService {
       const body = message.body;
 
       await conversationService.summarizeLead(env, body).catch(err =>
-        console.error(`summarizeLead failed: ${err}`)
+        Sentry.captureException(err)
       );
     }
   }

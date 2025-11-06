@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/cloudflare";
 import FrappeClient from "frappe/frappe-client";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
@@ -153,7 +154,7 @@ export default class ContactService {
         await kv.put(KV_KEY, toDate);
       }
     } catch (error) {
-      console.error("Error syncing leads to database:", error.message);
+      Sentry.captureException(error);
       // Handle when cronjon failed in 1 hour => we need to update the last date to the current date
       if (isSyncType === ContactService.SYNC_TYPE_AUTO && dayjs(toDate).diff(dayjs(await kv.get(KV_KEY)), "hour") >= 1) {
         await kv.put(KV_KEY, toDate);
@@ -182,7 +183,7 @@ export default class ContactService {
           await contactService.processContactFromWebhook(body, docEvent);
         }
       } catch (error) {
-        console.error(error);
+        Sentry.captureException(error);
       }
     }
   }

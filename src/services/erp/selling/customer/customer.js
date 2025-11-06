@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/cloudflare";
 import FrappeClient from "frappe/frappe-client";
 import Database from "services/database";
 import { fetchCustomersFromERP, saveCustomersToDatabase } from "src/services/erp/selling/customer/utils/customer-helppers";
@@ -89,7 +90,7 @@ export default class CustomerService {
         await kv.put(KV_KEY, toDate);
       }
     } catch (error) {
-      console.error("Error syncing customers to database:", error.message);
+      Sentry.captureException(error);
       // Handle when cronjon failed in 2 hour => we need to update the last date to the current date
       if (isSyncType === CustomerService.SYNC_TYPE_AUTO && dayjs(toDate).diff(dayjs(await kv.get(KV_KEY)), "hour") >= 2) {
         await kv.put(KV_KEY, toDate);

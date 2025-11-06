@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/cloudflare";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import { Prisma } from "@prisma-cli";
@@ -54,7 +55,7 @@ export async function fetchLeadsFromERP(frappeClient, doctype, fromDate, toDate,
     }
     return allLeads;
   } catch (error) {
-    console.error("Error fetching leads from ERPNext", { error: error.message });
+    Sentry.captureException(error);
     throw error;
   }
 }
@@ -119,7 +120,7 @@ export async function saveLeadsToDatabase(db, leads) {
     }
 
   } catch (error) {
-    console.error("Error saving leads to database:", error.message);
+    Sentry.captureException(error);
   }
 }
 

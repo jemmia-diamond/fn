@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/cloudflare";
 import { HARAVAN_TOPIC } from "services/ecommerce/enum";
 
 export default class IndDayStatService {
@@ -43,7 +44,7 @@ export default class IndDayStatService {
       await env.FN_KV.put(indDayStatService.countProductQuantityKey, newQuantityCount);
 
     } catch (error) {
-      console.error("Error tracking budget:", error);
+      Sentry.captureException(error);
     }
   }
 
@@ -58,7 +59,7 @@ export default class IndDayStatService {
         count_product_quantity: Number(productQuantity) + (Number(this.env.STATS_NUMBER_BUFFER) || 0)
       };
     } catch (error) {
-      console.error("Error checking budget:", error);
+      Sentry.captureException(error);
       throw error;
     }
   }
@@ -67,7 +68,7 @@ export default class IndDayStatService {
     try {
       await this.env.FN_KV.delete(this.countProductQuantityKey);
     } catch (error) {
-      console.error("Error resetting budget:", error);
+      Sentry.captureException(error);
       throw error;
     }
   }

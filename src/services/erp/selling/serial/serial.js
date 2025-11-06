@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/cloudflare";
 import FrappeClient from "src/frappe/frappe-client";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
@@ -21,7 +22,7 @@ export default class SerialService {
 
   async getSerialsToUpdate(timeThreshold) {
     const result = await this.db.$queryRaw`
-      SELECT 
+      SELECT
       vs.serial_number,
       v2.sku ,
       d.design_code
@@ -50,7 +51,7 @@ export default class SerialService {
         sku: serial.sku,
         design_code: serial.design_code
       }, "serial_number").catch(e => {
-        console.error((`Error upserting serial ${serial.serial_number}: `, e));
+        Sentry.captureException(e);
       })
     );
 

@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/cloudflare";
 import { HARAVAN_DISPATCH_TYPE_ZALO_MSG, HARAVAN_TOPIC } from "services/ecommerce/enum";
 
 export default class HaravanERPOrderController {
@@ -17,7 +18,7 @@ export default class HaravanERPOrderController {
       await ctx.env["ORDER_QUEUE"].send(data);
       return ctx.json({ message: "Message sent to queue", status: 200 });
     } catch (e) {
-      console.error(e);
+      Sentry.captureException(e);
       return ctx.json({ message: e.message, status: 500 });
     };
   };

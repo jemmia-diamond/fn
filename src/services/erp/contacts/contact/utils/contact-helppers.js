@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/cloudflare";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import { Prisma } from "@prisma-cli";
@@ -76,7 +77,7 @@ export async function fetchContactsFromERP(frappeClient, doctype, fromDate, toDa
     }
     return allContacts;
   } catch (error) {
-    console.error("Error fetching contacts from ERPNext", { error: error.message });
+    Sentry.captureException(error);
     throw error;
   }
 }
@@ -143,7 +144,7 @@ export async function saveContactsToDatabase(db, contacts) {
     }
 
   } catch (error) {
-    console.error("Error saving leads to database:", error.message);
+    Sentry.captureException(error);
   }
 }
 
@@ -158,6 +159,6 @@ export async function deleteContactFromDatabase(db, contactName) {
       });
     }
   } catch (error) {
-    console.error("Error deleting contact from database:", error.message);
+    Sentry.captureException(error);
   }
 }

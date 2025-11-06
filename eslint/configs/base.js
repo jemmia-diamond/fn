@@ -38,7 +38,7 @@ export default function getBaseConfig() {
       "no-debugger": "error",
       "no-multiple-empty-lines": ["error", { max: 1 }],
       "eol-last": ["error", "always"],
-      "no-console": ["error", { "allow": ["warn", "error"] }],
+      "no-console": ["error", { "allow": ["warn"] }],
       "indent": ["error", 2],
       "@stylistic/array-bracket-spacing": ["error", "never"],
       "@stylistic/object-curly-spacing": ["error", "always"],

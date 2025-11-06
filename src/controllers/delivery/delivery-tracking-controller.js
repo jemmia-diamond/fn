@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/cloudflare";
 import Ecommerce from "services/ecommerce";
 import { HTTPException } from "hono/http-exception";
 
@@ -25,7 +26,7 @@ export default class DeliveryTrackingController {
       if (error instanceof HTTPException) {
         throw error;
       }
-      console.error("Error tracking order:", error);
+      Sentry.captureException(error);
       throw new HTTPException(500, { message: "Failed to get bill detail" });
     }
   }

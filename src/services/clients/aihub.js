@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/cloudflare";
 import axios from "axios";
 import axiosRetry from "axios-retry";
 
@@ -54,7 +55,7 @@ export default class AIHUBClient {
       return response.data;
     } catch (error) {
       // Log the headers from the failed request
-      console.error("AIHub API request failed with headers:", this.#bearerToken);
+      Sentry.captureException(error);
       throw new Error(`AIHub API request failed: ${error.message}`);
     }
   }

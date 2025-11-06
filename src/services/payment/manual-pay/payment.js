@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/cloudflare";
 import LarksuiteService from "services/larksuite/lark";
 import Database from "services/database";
 import { TABLES } from "services/larksuite/docs/constant";
@@ -24,7 +25,7 @@ export default class ManualPaymentService {
     const manualPaymentTable = TABLES.MANUAL_PAYMENT;
 
     if (!manualPaymentTable) {
-      console.error("MANUAL_PAYMENT table configuration not found in constants.");
+      Sentry.captureException(new Error("MANUAL_PAYMENT table configuration not found in constants."));
       return;
     }
 
@@ -95,18 +96,18 @@ export default class ManualPaymentService {
             try {
               await db.$transaction(upsertPromises);
             } catch (error) {
-              console.error("Error during bulk upsert of manual payments for current page:", error);
+              Sentry.captureException(error);
             }
           }
           hasMore = response.data.has_more;
           pageToken = response.data.page_token;
         } else {
-          console.error(`Error fetching page from Lark Bitable: ${response.msg} (code: ${response.code})`);
+          Sentry.captureException(new Error(`Error fetching page from Lark Bitable: ${response.msg} (code: ${response.code})`));
           hasMore = false;
         }
       }
     } catch (error) {
-      console.error("Error fetching records from manual payment table:", error);
+      Sentry.captureException(error);
       return;
     }
   }
@@ -132,7 +133,7 @@ export default class ManualPaymentService {
       });
       return newPayment;
     } catch (error) {
-      console.error("Error creating manual payment transaction:", error);
+      Sentry.captureException(error);
       return null;
     }
   }
@@ -210,7 +211,7 @@ export default class ManualPaymentService {
 
       return updatedPayment;
     } catch (error) {
-      console.error(`Error during update or Haravan transaction creation for UUID ${uuid}:`, error.message);
+      Sentry.captureException(error);
       throw error;
     }
   }

@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/cloudflare";
 import Ecommerce from "services/ecommerce";
 import { HTTPException } from "hono/http-exception";
 import { isInteger } from "services/utils/num-helper";
@@ -30,7 +31,7 @@ export default class OrderTrackingController {
       if (error instanceof HTTPException) {
         return ctx.json({ error_code: error.message }, error.status );
       }
-      console.error("Error tracking order:", error);
+      Sentry.captureException(error);
       return ctx.json({ message: "Internal Server Error" }, 500 );
     }
   }

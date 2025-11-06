@@ -1,4 +1,5 @@
 // Debounce Service
+import * as Sentry from "@sentry/cloudflare";
 
 export class DebounceService {
   /**
@@ -17,7 +18,7 @@ export class DebounceService {
 
       await durableObject.debounce({ key, data, delay, actionType });
     } catch (error) {
-      console.error("Failed to debounce data:", { error: error.message, key, data });
+      Sentry.captureException(error);
       throw error;
     }
   }

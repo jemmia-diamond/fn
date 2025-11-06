@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/cloudflare";
 import InventoryCMSClient from "services/inventory-cms/inventory-cms-client/inventory-cms-client";
 import { COLLECTIONS } from "services/inventory-cms/collections/constant";
 import { readItems } from "@directus/sdk";
@@ -66,7 +67,7 @@ export default class InventoryCheckSheetService {
         page++;
       } while (items && items.length > 0);
     } catch (error) {
-      console.error(error);
+      Sentry.captureException(error);
     }
 
     for (const sheet of inventoryCheckSheets) {

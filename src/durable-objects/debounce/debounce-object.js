@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/cloudflare";
 import { DurableObject } from "cloudflare:workers";
 import { DebounceActions } from "src/durable-objects/debounce/debounce-action";
 
@@ -42,12 +43,12 @@ export class DebounceDurableObject extends DurableObject {
           await action(data);
           await this.cleanup(key);
         } catch (error) {
-          console.error(`Failed to execute debounced callback for key=${key}:`, error);
+          Sentry.captureException(error);
           await this.cleanup(key);
         }
       }
     } catch (error) {
-      console.error("Failed to process alarm:", error);
+      Sentry.captureException(error);
     }
   }
 

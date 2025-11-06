@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/cloudflare";
 import FrappeClient from "frappe/frappe-client";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
@@ -73,7 +74,7 @@ export default class AddressService {
         await kv.put(KV_KEY, toDate);
       }
     } catch (error) {
-      console.error("Error syncing addresses to database:", error.message);
+      Sentry.captureException(error);
       // Handle when cronjon failed in 2 hour => we need to update the last date to the current date
       if (isSyncType === AddressService.SYNC_TYPE_AUTO && dayjs(toDate).diff(dayjs(await kv.get(KV_KEY)), "hour") >= 2) {
         await kv.put(KV_KEY, toDate);

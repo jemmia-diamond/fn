@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/cloudflare";
 import crypto from "crypto";
 
 export default class ZNSMessageService {
@@ -55,16 +56,13 @@ export default class ZNSMessageService {
       const data = text ? JSON.parse(text) : null;
 
       if (!response.ok) {
-        console.error("Zalo API request failed:", {
-          status: response.status,
-          body: data
-        });
+        Sentry.captureException(new Error(`Zalo API request failed: ${response.status} - ${JSON.stringify(data)}`));
         throw new Error(`Zalo API error: ${text}`);
       }
 
       return data;
     } catch (error) {
-      console.error("Error sending Zalo message:", error);
+      Sentry.captureException(error);
       throw error;
     }
   }

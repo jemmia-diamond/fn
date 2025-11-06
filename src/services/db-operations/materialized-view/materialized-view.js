@@ -1,5 +1,6 @@
 import Database from "services/database";
 import { Prisma } from "@prisma-cli";
+import * as Sentry from "@sentry/cloudflare";
 
 export default class MaterializedViewService {
   constructor(env) {
@@ -23,7 +24,7 @@ export default class MaterializedViewService {
       try {
         await db.$queryRaw`${Prisma.raw(`REFRESH MATERIALIZED VIEW ${view};`)}`;
       } catch (error) {
-        console.error(`Failed to refresh materialized view ${view}:`, error);
+        Sentry.captureException(error);
       }
     }
   }
@@ -38,7 +39,7 @@ export default class MaterializedViewService {
       try {
         await db.$queryRaw`${Prisma.raw(`REFRESH MATERIALIZED VIEW ${view};`)}`;
       } catch (error) {
-        console.error(`Failed to refresh materialized view ${view}:`, error);
+        Sentry.captureException(error);
       }
     }
   }

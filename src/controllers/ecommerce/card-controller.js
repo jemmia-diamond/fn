@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/cloudflare";
 import { HTTPException } from "hono/http-exception";
 import Ecommerce from "services/ecommerce";
 
@@ -9,7 +10,7 @@ export default class CardController {
       const result = await cardService.create(data);
       return ctx.json(result, 201);
     } catch (error) {
-      console.error("Error creating data:", error);
+      Sentry.captureException(error);
       throw new HTTPException(500, { message: "Failed to create data", error: error.message });
     }
   }
@@ -25,7 +26,7 @@ export default class CardController {
       return ctx.json(result, 200);
     } catch (error) {
       if (error instanceof HTTPException) throw error;
-      console.error("Error fetching data:", error);
+      Sentry.captureException(error);
       throw new HTTPException(500, { message: "Failed to fetch data", error: error.message });
     }
   }
@@ -38,7 +39,7 @@ export default class CardController {
       const result = await cardService.update(id, data);
       return ctx.json(result, 200);
     } catch (error) {
-      console.error("Error updating data:", error);
+      Sentry.captureException(error);
       throw new HTTPException(500, { message: "Failed to update data", error: error.message });
     }
   }

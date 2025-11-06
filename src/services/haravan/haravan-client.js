@@ -1,3 +1,5 @@
+import * as Sentry from "@sentry/cloudflare";
+
 export default class HaravanClient {
   constructor(accessToken, baseUrl) {
     this.baseUrl = baseUrl;
@@ -34,7 +36,7 @@ export default class HaravanClient {
       const data = await response.json();
       return data;
     } catch (error) {
-      console.error("Haravan API request failed:", error);
+      Sentry.captureException(error);
       throw error;
     }
   }

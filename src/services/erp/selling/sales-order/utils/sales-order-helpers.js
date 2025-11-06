@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/cloudflare";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import { Prisma } from "@prisma-cli";
@@ -123,6 +124,6 @@ export async function saveSalesOrdersToDatabase(db, salesOrders) {
     }
 
   } catch (error) {
-    console.error("Error saving sales orders to database:", error.message);
+    Sentry.captureException(error);
   }
 }

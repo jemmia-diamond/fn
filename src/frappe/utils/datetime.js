@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/cloudflare";
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat.js";
 import utc from "dayjs/plugin/utc.js";
@@ -18,7 +19,7 @@ export function convertIsoToDatetime(isoString, type) {
   const cleaned = isoString.replace(/\s+/g, "");
   const date = dayjs(cleaned);
   if (!date.isValid()) {
-    console.error("Invalid date:", isoString);
+    Sentry.captureException(new Error(`Invalid date: ${isoString}`));
     return null;
   }
   if (type === "date") {

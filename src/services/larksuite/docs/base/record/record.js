@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/cloudflare";
 import LarksuiteService from "services/larksuite/lark";
 import Database from "services/database";
 import { TABLES } from "services/larksuite/docs/constant";
@@ -98,7 +99,7 @@ export default class RecordService {
 
       return response.data.record;
     } catch (error) {
-      console.error("Error retrieving Larksuite record:", error);
+      Sentry.captureException(error);
       return null;
     }
   }
@@ -136,7 +137,7 @@ export default class RecordService {
 
       return response.data.record;
     } catch (error) {
-      console.error("Error updating Larksuite record:", error);
+      Sentry.captureException(error);
       return null;
     }
   }

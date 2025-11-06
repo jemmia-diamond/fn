@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/cloudflare";
 import PaymentServices from "services/payment";
 import { BadRequestException } from "src/exception/exceptions";
 import dayjs from "dayjs";
@@ -74,7 +75,7 @@ export default class ManualPaymentsController {
         return c.json({ error: "Failed to create payment" }, 500);
       }
     } catch (error) {
-      console.error("Error in PaymentController.create:", error);
+      Sentry.captureException(error);
       return c.json({ error: "An unexpected error occurred" }, 500);
     }
   }
@@ -101,7 +102,7 @@ export default class ManualPaymentsController {
         return c.json({ error: "Payment not found or update failed" }, 404);
       }
     } catch (error) {
-      console.error("Error in PaymentController.update:", error);
+      Sentry.captureException(error);
 
       if (error instanceof BadRequestException) {
         return c.json({ error: error.message }, error.statusCode);

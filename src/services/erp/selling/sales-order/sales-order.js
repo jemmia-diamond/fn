@@ -149,7 +149,7 @@ export default class SalesOrderService {
         const orderData = message.body;
         await salesOrderService.sendNotificationToLark(orderData, true);
       } catch (error) {
-        console.error(error);
+        Sentry.captureException(error);
       }
     }
   }
@@ -194,7 +194,7 @@ export default class SalesOrderService {
         };
       }).filter(order => order !== null);
     } catch (e) {
-      console.error(e);
+      Sentry.captureException(e);
       return [];
     }
   };
@@ -454,7 +454,7 @@ export default class SalesOrderService {
         await kv.put(KV_KEY, toDate);
       }
     } catch (error) {
-      console.error("Error syncing sales orders to database:", error.message);
+      Sentry.captureException(error);
       // Handle when cronjon failed in 1 hour => we need to update the last date to the current date
       if (isSyncType === SalesOrderService.SYNC_TYPE_AUTO && dayjs(toDate).diff(dayjs(await kv.get(KV_KEY)), "hour") >= 1) {
         await kv.put(KV_KEY, toDate);
@@ -482,7 +482,7 @@ export default class SalesOrderService {
       });
       salesOrders.push(...orders);
     } catch (error) {
-      console.error(error);
+      Sentry.captureException(error);
       return;
     }
 
@@ -491,19 +491,19 @@ export default class SalesOrderService {
 
       const orderChain = await salesOrderService.db.$queryRaw`
         WITH RECURSIVE order_chain AS (
-         SELECT id, ref_order_id 
-         FROM haravan.orders 
+         SELECT id, ref_order_id
+         FROM haravan.orders
          WHERE id = ${haravanId}
-         UNION ALL 
+         UNION ALL
          SELECT o.id, o.ref_order_id
          FROM haravan.orders o
          	INNER JOIN order_chain oc ON o.id = oc.ref_order_id
         )
-        SELECT 
+        SELECT
         o.id ,
         o.order_number ,
-        o.created_at 
-        FROM haravan.orders o 
+        o.created_at
+        FROM haravan.orders o
         WHERE o.id IN (
         	SELECT id FROM order_chain
         )
@@ -523,7 +523,7 @@ export default class SalesOrderService {
           }
         );
       } catch (error) {
-        console.error(error);
+        Sentry.captureException(error);
       }
     }
   }
@@ -532,21 +532,21 @@ export default class SalesOrderService {
     const salesOrderService = new SalesOrderService(env);
 
     const data = await salesOrderService.db.$queryRaw`
-      SELECT 
+      SELECT
       so.name,
       jsonb_agg(
       	COALESCE(jsonb_set(li, '{serial_numbers}', to_jsonb(vs.serial_number::text), true), li.value)
       ) AS items
-      FROM erpnext.sales_orders so 
-      	CROSS JOIN LATERAL jsonb_array_elements(so.items ) AS li 
-      	LEFT JOIN workplace.temporary_products tp ON li->>'haravan_variant_id' = tp.haravan_variant_id::TEXT 
+      FROM erpnext.sales_orders so
+      	CROSS JOIN LATERAL jsonb_array_elements(so.items ) AS li
+      	LEFT JOIN workplace.temporary_products tp ON li->>'haravan_variant_id' = tp.haravan_variant_id::TEXT
       	LEFT JOIN workplace.variant_serials vs ON tp.variant_serial_id = vs.id
       WHERE 1 = 1
       AND so.haravan_order_id IN (
-      	SELECT 
-      		so.haravan_order_id 
-      	FROM erpnext.sales_orders so 
-      	CROSS JOIN LATERAL jsonb_array_elements(so.items) AS li 
+      	SELECT
+      		so.haravan_order_id
+      	FROM erpnext.sales_orders so
+      	CROSS JOIN LATERAL jsonb_array_elements(so.items) AS li
       	WHERE li->>'serial_numbers' IS NULL AND li->>'sku' LIKE 'SPT%' AND so.cancelled_status = 'Uncancelled'
       )
       GROUP BY so."name"
@@ -561,7 +561,7 @@ export default class SalesOrderService {
           items: order.items
         });
       } catch (error) {
-        console.error(error);
+        Sentry.captureException(error);
       }
     }
   }

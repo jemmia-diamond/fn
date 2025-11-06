@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/cloudflare";
 import Database from "services/database";
 import { Prisma } from "@prisma-cli";
 
@@ -12,7 +13,7 @@ export default class DatabaseFunctionService {
     try {
       await db.$executeRaw`${Prisma.raw("DO $$ BEGIN PERFORM workplace.update_last_rfid_scan_time(); END $$;")}`;
     } catch (error) {
-      console.error("Failed to run database function:", error);
+      Sentry.captureException(error);
     }
   }
 

@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/cloudflare";
 import { PrismaClient } from "@prisma-cli";
 import { PrismaNeon } from "@prisma/adapter-neon";
 import { neon } from "@neondatabase/serverless";
@@ -19,7 +20,7 @@ class Database {
         errorFormat: "minimal"
       });
     } catch (error) {
-      console.error("Failed to initialize database client:", error);
+      Sentry.captureException(error);
       throw error;
     }
   }

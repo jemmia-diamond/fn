@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/cloudflare";
 import FrappeClient from "frappe/frappe-client";
 import Database from "services/database";
 import dayjs from "dayjs";
@@ -229,7 +230,7 @@ export default class LeadService {
       const lead = await this.frappeClient.upsert(leadData, "phone", ignoredFields);
       await contactService.processWebsiteContact(data, lead);
     } catch (e) {
-      console.error(e);
+      Sentry.captureException(e);
       return;
     }
   }
@@ -297,7 +298,7 @@ export default class LeadService {
         await kv.put(KV_KEY, toDate);
       }
     } catch (error) {
-      console.error("Error syncing leads to database:", error.message);
+      Sentry.captureException(error);
       // Handle when cronjon failed in 1 hour => we need to update the last date to the current date
       if (isSyncType === LeadService.SYNC_TYPE_AUTO && dayjs(toDate).diff(dayjs(await kv.get(KV_KEY)), "hour") >= 1) {
         await kv.put(KV_KEY, toDate);

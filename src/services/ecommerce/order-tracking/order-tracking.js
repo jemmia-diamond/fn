@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/cloudflare";
 import Database from "services/database";
 import { getOrderOverallInfo } from "services/ecommerce/order-tracking/queries/get-order-overall-info";
 import { getLatestOrderId } from "services/ecommerce/order-tracking/queries/get-latest-orderid";
@@ -50,12 +51,12 @@ export default class OrderTrackingService {
       try {
         nhattinTrackInfo = await this.getOrderDeliveryStatus(latestOrderId, bearerToken);
       } catch (e) {
-        console.error(e);
+        Sentry.captureException(e);
       }
 
       return formatOrderTrackingResult(orderInfo, nhattinTrackInfo, isAuthorized);
     } catch (error) {
-      console.error("Error tracking order:", error);
+      Sentry.captureException(error);
       throw error;
     }
   }
@@ -90,7 +91,7 @@ export default class OrderTrackingService {
       const data = JSON.parse(await response.text());
       return data;
     } catch (err) {
-      console.error(err);
+      Sentry.captureException(err);
       return null;
     }
   }
@@ -124,7 +125,7 @@ export default class OrderTrackingService {
 
       return bill;
     } catch (error) {
-      console.error(error);
+      Sentry.captureException(error);
       return null;
     }
   }
@@ -256,7 +257,7 @@ export default class OrderTrackingService {
         overall_status: combinedSteps.find(step => step.status === OrderTimelineStatus.ONGOING).key
       };
     } catch (err) {
-      console.error(`Error fetching order timeline for order ${orderId}:`, err.message);
+      Sentry.captureException(err);
       throw new Error(`Failed to fetch order timeline: ${err.message}`);
     }
   }

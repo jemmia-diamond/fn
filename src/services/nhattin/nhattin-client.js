@@ -1,3 +1,5 @@
+import * as Sentry from "@sentry/cloudflare";
+
 export default class NhattinClient {
   /**
        * @param {string} email The username for the API.
@@ -44,7 +46,7 @@ export default class NhattinClient {
       return data;
 
     } catch (error) {
-      console.error("Failed to fetch tracking data:", error);
+      Sentry.captureException(error);
       throw error;
     }
   }

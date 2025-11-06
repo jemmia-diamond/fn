@@ -1,4 +1,6 @@
 // FrappeClient.js
+import * as Sentry from "@sentry/cloudflare";
+
 const DEFAULT_HEADERS = { Accept: "application/json" };
 
 export default class FrappeClient {
@@ -168,7 +170,7 @@ export default class FrappeClient {
     try {
       arr = JSON.parse(jsonPart);
     } catch (e) {
-      console.error("Invalid JSON:", e);
+      Sentry.captureException(e);
       return null;
     }
     const traceback = arr[0];
@@ -230,7 +232,7 @@ export default class FrappeClient {
 
       return [];
     } catch (error) {
-      console.error("SQL execution error:", error);
+      Sentry.captureException(error);
       return [];
     }
   }

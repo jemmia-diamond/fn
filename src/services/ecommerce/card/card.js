@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/cloudflare";
 import Database from "services/database";
 
 export default class CardService {
@@ -14,7 +15,7 @@ export default class CardService {
       `;
       return result[0];
     } catch (error) {
-      console.error("Error creating lead:", error);
+      Sentry.captureException(error);
       throw new Error("Failed to create lead");
     }
   }
@@ -31,7 +32,7 @@ export default class CardService {
       }
       return result[0];
     } catch (error) {
-      console.error("Error reading card:", error);
+      Sentry.captureException(error);
       throw new Error("Failed to read card");
     }
   }
@@ -50,7 +51,7 @@ export default class CardService {
       }
       return result[0];
     } catch (error) {
-      console.error("Error updating lead:", error);
+      Sentry.captureException(error);
       if (error.message.includes("Lead not found")) {
         throw error;
       }
