@@ -41,50 +41,50 @@ This project uses a **multi-file Prisma schema** organized by PostgreSQL schemas
 
 ```bash
 # Generate Prisma Client
-pnpm prisma:generate
+pnpm prisma generate
 
 # Create and apply migrations
-pnpm prisma:migrate
+pnpm prisma migrate dev
 
 # Open Prisma Studio (database browser)
-pnpm prisma:studio
+pnpm prisma studio
 
 # Push schema changes (prototyping)
-pnpm prisma:push
+pnpm prisma db push
 
 # Pull schema from database
-pnpm prisma:pull
+pnpm prisma db pull
 ```
 
 #### Migration Workflow
 
 1. **Sync your local/dev database:**
    ```bash
-   pnpm prisma migrate deploy --schema=prisma/schema
+   pnpm prisma migrate deploy
    ```
 
 2. **After modifying models:**
    ```bash
-   pnpm prisma:migrate --name <MIGRATION_NAME>
-   # Example: pnpm prisma:migrate --name add_user_table
+   pnpm prisma migrate dev --name <MIGRATION_NAME>
+   # Example: pnpm prisma migrate dev --name add_user_table
    ```
 
 3. **Generate Prisma Client:**
    ```bash
-   pnpm prisma:generate
+   pnpm prisma generate
    ```
 
 #### Schema Organization
 
 ```
 prisma/
-├── schema/
-│   ├── base.prisma         # Generator & datasource config
+├── models/
 │   ├── workplace.prisma    # Main schema (32 models)
 │   ├── ecommerce.prisma    # E-commerce models
 │   ├── inventory.prisma    # Inventory models
 │   └── ... (21 files total)
-└── migrations/             # Auto-generated migrations
+├── schema.prisma         # Generator & datasource config
+└── migrations/           # Auto-generated migrations
 ```
 
 > [!IMPORTANT]
@@ -176,7 +176,7 @@ app.delete("/resources/:id", YourController.destroy) // Delete
 2. Make your changes following the project structure
 3. Code quality check
 - Before each commit, ESLint will run automatically
-- If linting fails, please run this command or manually fix the lint errors:  
+- If linting fails, please run this command or manually fix the lint errors:
   ```bash
   pnpm run format
   ```
