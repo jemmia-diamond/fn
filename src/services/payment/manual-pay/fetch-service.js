@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/cloudflare";
 import Database from "services/database";
 
 export default class ManualPaymentFetchingService {
@@ -84,7 +85,7 @@ export default class ManualPaymentFetchingService {
         }
       });
     } catch (error) {
-      throw new Error(`Could not fetch Manual payments from the database: ${error}`);
+      Sentry.captureException(error);
     }
   }
 }
