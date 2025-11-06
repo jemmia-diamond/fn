@@ -1,0 +1,15 @@
+model platforms {
+  uuid                String    @id @db.VarChar
+  id                  String?   @unique(map: "ix_advertising_cost_platforms_id") @db.VarChar
+  channel             String?   @db.VarChar
+  name                String?   @db.VarChar
+  page_id             String?   @db.VarChar
+  platform            String?   @db.VarChar
+  area                String?   @db.VarChar
+  updated_at          BigInt?
+  database_created_at DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at DateTime? @default(now()) @db.Timestamp(6)
+
+  @@index([uuid], map: "ix_advertising_cost_platforms_uuid")
+  @@schema("advertising_cost")
+}
