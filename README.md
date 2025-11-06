@@ -35,64 +35,60 @@ pnpm run dev
 
 ### Prisma ORM
 
-This project uses Prisma ORM with PostgreSQL, organized across multiple schemas for better maintainability. The main schema file is `prisma/schema.prisma`, with reference schema files organized by domain in `prisma/schema/`.
+This project uses a **multi-file Prisma schema** organized by PostgreSQL schemas for better maintainability. The schema is split into 21 files in `prisma/schema/`.
 
 #### Common Commands
 
 ```bash
 # Generate Prisma Client
-pnpm prisma:generate
+pnpm prisma generate
 
 # Create and apply migrations
-pnpm prisma:migrate
+pnpm prisma migrate dev
 
 # Open Prisma Studio (database browser)
-pnpm prisma:studio
+pnpm prisma studio
 
 # Push schema changes (prototyping)
-pnpm prisma:push
+pnpm prisma db push
 
 # Pull schema from database
-pnpm prisma:pull
+pnpm prisma db pull
 ```
 
 #### Migration Workflow
 
-1. **Deploy migrations to your database:**
+1. **Sync your local/dev database:**
    ```bash
    pnpm prisma migrate deploy
    ```
 
-2. **After modifying models in `prisma/schema.prisma`:**
+2. **After modifying models:**
    ```bash
-   pnpm prisma:migrate --name <MIGRATION_NAME>
-   # Example: pnpm prisma:migrate --name add_user_table
+   pnpm prisma migrate dev --name <MIGRATION_NAME>
+   # Example: pnpm prisma migrate dev --name add_user_table
    ```
 
 3. **Generate Prisma Client:**
    ```bash
-   pnpm prisma:generate
+   pnpm prisma generate
    ```
 
 #### Schema Organization
 
 ```
 prisma/
-├── schema.prisma           # Main schema file (entry point)
-├── schema/                 # Reference schema files by domain
-│   ├── workplace.prisma    # Workplace models
+├── models/
+│   ├── workplace.prisma    # Main schema (32 models)
 │   ├── ecommerce.prisma    # E-commerce models
 │   ├── inventory.prisma    # Inventory models
-│   ├── pancake.prisma      # Pancake CRM models
-│   ├── payment.prisma      # Payment models
-│   └── ... (22 files total)
-└── migrations/             # Auto-generated migrations
+│   └── ... (21 files total)
+├── schema.prisma         # Generator & datasource config
+└── migrations/           # Auto-generated migrations
 ```
 
 > [!IMPORTANT]
-> - All schema changes should be made in `prisma/schema.prisma`
-> - The files in `prisma/schema/` are for reference and organization only
-> - Prisma manages migrations via the `_prisma_migrations` table. Do not modify this table in production.
+> Prisma manages migrations via the `_prisma_migrations` table. Do not modify this table in production.
 
 This will start a local development server using Wrangler. Or in the case you want to test Cron triggers using Wrangler.
 
