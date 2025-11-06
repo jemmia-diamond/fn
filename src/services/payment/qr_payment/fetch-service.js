@@ -55,7 +55,8 @@ export default class QrPaymentFetchingService {
                   last_name: true,
                   misa_user: {
                     select: {
-                      employee_code: true
+                      employee_code: true,
+                      email: true
                     }
                   }
                 }

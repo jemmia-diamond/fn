@@ -16,7 +16,7 @@ export default class CashVoucherMappingService {
       : CREDIT_ACCOUNT_MAP[v.haravan_order?.source] || {};
 
     // Employee code ( from Amis ) and name
-    const employee_code = v.haravan_order?.user?.misa_user?.employee_code || `${v.haravan_order?.user?.first_name}.${v.haravan_order?.user?.last_name}@jemmia.vn`;
+    const employee_code = v.haravan_order?.user?.misa_user?.employee_code || v.haravan_order?.user?.misa_user?.email;
     const employee_name = `${v.haravan_order?.user?.last_name} ${v.haravan_order?.user?.first_name}`;
 
     // Customer's code, name and address
