@@ -634,7 +634,9 @@ export default class SalesOrderService {
           return replyResponse.msg === "success";
         } else {
           const r2Key = SalesOrderService._extractR2KeyFromUrl(file.file_url);
+          if (!r2Key) return false;
           const imageBuffer = await new ERPR2StorageService(this.env).getObjectByKey(r2Key);
+          if (!imageBuffer) return false;
           return Larksuite.Messaging.ImageMessagingService.sendLarkImageFromUrl({
             larkClient,
             imageBuffer,
@@ -652,10 +654,10 @@ export default class SalesOrderService {
       const urlObj = new URL(url);
       const r2KeyParam = urlObj.searchParams.get("key");
       if (r2KeyParam) {
-        return r2KeyParam;
+        return decodeURIComponent(r2KeyParam);
       }
       if (urlObj.pathname.length > 1) {
-        return urlObj.pathname.substring(1);
+        return decodeURIComponent(urlObj.pathname.substring(1));
       }
       return null;
     } catch (e) {
