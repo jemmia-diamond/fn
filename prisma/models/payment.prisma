@@ -19,7 +19,7 @@ model manualPaymentTransaction {
   misa_sync_guid      String?   @db.VarChar(255)
   misa_sync_error_msg String?
   misa_synced_at      DateTime? @db.Timestamp(6)
-  orders              Order? @relation(fields: [haravan_order_id], references: [id])
+  haravan_order       Order? @relation(fields: [haravan_order_id], references: [id])
 
   @@index([uuid])
   @@map("manual_payments")
