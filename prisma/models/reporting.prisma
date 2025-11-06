@@ -1,0 +1,7 @@
+model reporting_time_dim {
+  col Int       @id @default(autoincrement())
+  day DateTime? @db.Timestamp(6)
+
+  @@map("time_dim")
+  @@schema("reporting")
+}

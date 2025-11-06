@@ -105,6 +105,7 @@ export function buildQuery(jsonParams) {
       d.design_code,
       p.handle,
       d.diamond_holder,
+      d.main_stone,
       d.ring_band_type,
       p.haravan_product_type AS product_type,
       p.has_360,
@@ -132,7 +133,7 @@ export function buildQuery(jsonParams) {
       ${filterString}
     GROUP BY 
       p.haravan_product_id, p.title, d.design_code, p.handle, 
-      d.diamond_holder, d.ring_band_type, p.haravan_product_type,
+      d.diamond_holder, d.main_stone, d.ring_band_type, p.haravan_product_type,
       p.max_price, p.min_price, p.max_price_18, p.max_price_14, 
       img.images, p.has_360 ${collectionJoinEcomProductsClause ? ", p2.image_updated_at" : ""}
     ${havingString}
@@ -389,6 +390,20 @@ export function aggregateQuery(jsonParams) {
     filterString += `
       AND p.haravan_product_id IN (${jsonParams.product_ids.join(",")})
     `;
+  }
+
+  if (jsonParams.main_holder_size?.lower || jsonParams.main_holder_size?.upper) {
+    filterString += "AND d.diamond_holder = 'Có ổ chủ'\n";
+
+    filterString += "AND d.main_stone ~ '^[a-zA-Z]+ [0-9]+l[0-9]+$'\n";
+
+    if (jsonParams.main_holder_size?.lower) {
+      filterString += `AND CAST(REPLACE(SPLIT_PART(d.main_stone, ' ', 2), 'l', '.') AS DECIMAL) >= ${jsonParams.main_holder_size.lower}\n`;
+    }
+
+    if (jsonParams.main_holder_size?.upper) {
+      filterString += `AND CAST(REPLACE(SPLIT_PART(d.main_stone, ' ', 2), 'l', '.') AS DECIMAL) < ${jsonParams.main_holder_size.upper}\n`;
+    }
   }
 
   if (jsonParams.pagination) {

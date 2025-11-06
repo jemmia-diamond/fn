@@ -12,6 +12,10 @@ export default class DiamondController {
       shapes: params.shapes ? params.shapes.split(",") : undefined,
       colors: params.colors ? params.colors.split(",") : undefined,
       clarities: params.clarities ? params.clarities.split(",") : undefined,
+      edge_size: {
+        lower: params["edge_size.lower"] ? parseFloat(params["edge_size.lower"]) : undefined,
+        upper: params["edge_size.upper"] ? parseFloat(params["edge_size.upper"]) : undefined
+      },
       price: {
         min: params["price.min"] ? parseFloat(params["price.min"]) : undefined,
         max: params["price.max"] ? parseFloat(params["price.max"]) : undefined

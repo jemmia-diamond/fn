@@ -6,3 +6,6 @@ src/index.js @fongfan999
 # ESLint configuration files
 eslint.config.mjs @fongfan999
 eslint/ @fongfan999
+
+# Database
+prisma/ @fongfan999

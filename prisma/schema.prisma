@@ -1,0 +1,11 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/@prisma-cli"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["advertising_cost", "bizflycrm", "conversation_rate", "crm_dashboard", "dashboard_reporting", "ecom", "ecommerce", "erpnext", "gia", "haravan", "inventory", "inventory_cms", "inventory_report", "jemmia", "larksuite", "market_data", "marketing", "misa", "pancake", "payment", "policy", "promotion", "public", "rapnet", "reporting", "workplace"]
+}

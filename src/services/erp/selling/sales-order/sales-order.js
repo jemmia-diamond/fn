@@ -22,6 +22,7 @@ export default class SalesOrderService {
   static ERPNEXT_PAGE_SIZE = 100;
   static SYNC_TYPE_AUTO = 1; // auto sync when deploy app
   static SYNC_TYPE_MANUAL = 0; // manual sync when call function
+  static WEBSITE_DEFAULT_FIRST_SOURCE = "CRM-LEAD-SOURCE-0000023";
 
   constructor(env) {
     this.env = env;
@@ -78,7 +79,14 @@ export default class SalesOrderService {
 
     // Create contact and customer with default address
     const contact = await contactService.processHaravanContact(haravanOrderData.customer);
-    const customer = await customerService.processHaravanCustomer(haravanOrderData.customer, contact, customerDefaultAdress);
+
+    const websiteDefaultFirstSource = haravanOrderData.source === "web" ? SalesOrderService.WEBSITE_DEFAULT_FIRST_SOURCE : null;
+    const customer = await customerService.processHaravanCustomer(
+      haravanOrderData.customer,
+      contact,
+      customerDefaultAdress,
+      { websiteDefaultFirstSource }
+    );
 
     // Update the customer back to his contact and address
     await contactService.processHaravanContact(haravanOrderData.customer, customer);
@@ -259,22 +267,12 @@ export default class SalesOrderService {
           return { success: true, message: "Không có gì thay đổi!" };
         }
 
-        const isSendImagesSuccess = diffAttachments && diffAttachments.added_file
-          ? await Promise.all(
-            diffAttachments.added_file.map(async (fileUrl) => {
-              const r2Key = SalesOrderService._extractR2KeyFromUrl(fileUrl);
-              const imageBuffer = await new ERPR2StorageService(this.env).getObjectByKey(r2Key);
-
-              return Larksuite.Messaging.ImageMessagingService.sendLarkImageFromUrl({
-                larkClient,
-                imageBuffer,
-                chatId: CHAT_GROUPS.CUSTOMER_INFO.chat_id,
-                env: this.env,
-                rootMessageId: refOrderstNotificationOrderTracking[0].lark_message_id
-              });
-            })
-          )
-          : [];
+        const isSendImagesSuccess = await this._sendAttachmentsToLark(
+          larkClient,
+          diffAttachments?.added_file,
+          refOrderstNotificationOrderTracking[0].lark_message_id,
+          CHAT_GROUPS.CUSTOMER_INFO.chat_id
+        );
 
         const replyResponse = content && await larkClient.im.message.reply({
           path: {
@@ -339,21 +337,12 @@ export default class SalesOrderService {
         return { success: false, message: "Đơn hàng này đã được gửi thông báo từ trước đó!" };
       }
 
-      const isSendImagesSuccess = diffAttachments && diffAttachments.added_file
-        ? await Promise.all(
-          diffAttachments.added_file.map(async (fileUrl) => {
-            const r2Key = SalesOrderService._extractR2KeyFromUrl(fileUrl);
-            const imageBuffer = await new ERPR2StorageService(this.env).getObjectByKey(r2Key);
-            return Larksuite.Messaging.ImageMessagingService.sendLarkImageFromUrl({
-              larkClient,
-              imageBuffer,
-              chatId: CHAT_GROUPS.CUSTOMER_INFO.chat_id,
-              env: this.env,
-              rootMessageId: notificationTracking.lark_message_id
-            });
-          })
-        )
-        : [];
+      const isSendImagesSuccess = await this._sendAttachmentsToLark(
+        larkClient,
+        diffAttachments?.added_file,
+        notificationTracking.lark_message_id,
+        CHAT_GROUPS.CUSTOMER_INFO.chat_id
+      );
 
       // Reply to the root message in the group chat
       const replyResponse = content && await larkClient.im.message.reply({
@@ -416,6 +405,15 @@ export default class SalesOrderService {
     });
 
     const messageId = _response.data.message_id;
+
+    if (salesOrderData.attachments && salesOrderData.attachments.length > 0) {
+      await this._sendAttachmentsToLark(
+        larkClient,
+        salesOrderData.attachments,
+        messageId,
+        CHAT_GROUPS.CUSTOMER_INFO.chat_id
+      );
+    }
 
     await this.db.erpnextSalesOrderNotificationTracking.create({
       data: {
@@ -610,6 +608,43 @@ export default class SalesOrderService {
     const content = composeSalesOrderNotification(salesOrderData, promotionData, leadSource, policyData, productCategoryData, customer, primarySalesPerson, secondarySalesPeople);
 
     return content;
+  }
+
+  async _sendAttachmentsToLark(larkClient, attachments, messageId, chatId) {
+    if (!attachments || attachments.length === 0) {
+      return [];
+    }
+
+    return await Promise.all(
+      attachments.map(async (file) => {
+        if (file.is_private) {
+          const replyResponse = await larkClient.im.message.reply({
+            path: {
+              message_id: messageId
+            },
+            data: {
+              receive_id: chatId,
+              msg_type: "text",
+              reply_in_thread: true,
+              content: JSON.stringify({
+                text: `Hình ảnh đính kèm (có tính bảo mật): ${file.file_url}`
+              })
+            }
+          });
+          return replyResponse.msg === "success";
+        } else {
+          const r2Key = SalesOrderService._extractR2KeyFromUrl(file.file_url);
+          const imageBuffer = await new ERPR2StorageService(this.env).getObjectByKey(r2Key);
+          return Larksuite.Messaging.ImageMessagingService.sendLarkImageFromUrl({
+            larkClient,
+            imageBuffer,
+            chatId: chatId,
+            env: this.env,
+            rootMessageId: messageId
+          });
+        }
+      })
+    );
   }
 
   static _extractR2KeyFromUrl(url) {

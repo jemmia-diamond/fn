@@ -50,9 +50,6 @@
   "engines": {
     "node": ">=24.10.0"
   },
-  "prisma": {
-    "schema": "./prisma/schema/"
-  },
   "lint-staged": {
     "*.{js,ts,jsx,tsx}": "eslint --fix"
   },
@@ -60,5 +57,8 @@
     "commitizen": {
       "path": "cz-conventional-changelog"
     }
+  },
+  "prisma": {
+    "schema": "./prisma"
   }
 }
