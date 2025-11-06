@@ -3,19 +3,14 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
-    "build": "prisma migrate deploy --schema=prisma/schema && prisma generate --schema=prisma/schema",
+    "build": "prisma migrate deploy && prisma generate",
     "deploy": "wrangler deploy --minify --outdir dist --upload-source-maps --var SENTRY_RELEASE:$(sentry-cli releases propose-version)",
     "lint": "eslint",
     "lint:staged": "lint-staged",
     "prepare": "husky",
     "format": "eslint --fix",
     "sentry:sourcemaps": "_SENTRY_RELEASE=$(sentry-cli releases propose-version) && sentry-cli releases new $_SENTRY_RELEASE --org=jemmia --project=jemmia-fn && sentry-cli sourcemaps upload --org=jemmia --project=jemmia-fn --release=$_SENTRY_RELEASE --strip-prefix 'dist/..' dist",
-    "postdeploy": "pnpm sentry:sourcemaps",
-    "prisma:generate": "prisma generate --schema=prisma/schema",
-    "prisma:migrate": "prisma migrate dev --schema=prisma/schema",
-    "prisma:studio": "prisma studio --schema=prisma/schema",
-    "prisma:push": "prisma db push --schema=prisma/schema",
-    "prisma:pull": "prisma db pull --schema=prisma/schema"
+    "postdeploy": "pnpm sentry:sourcemaps"
   },
   "dependencies": {
     "@directus/sdk": "^20.0.2",
@@ -62,5 +57,8 @@
     "commitizen": {
       "path": "cz-conventional-changelog"
     }
+  },
+  "prisma": {
+    "schema": "./prisma"
   }
 }
