@@ -1,10 +1,6 @@
-// Main schema file - entry point for Prisma CLI commands
-// This file contains the generator and datasource configuration
-// Models are defined in separate files in the schema/ directory
-
 generator client {
-  provider = "prisma-client-js"
-  output   = "../node_modules/@prisma-cli"
+  provider        = "prisma-client-js"
+  output          = "../node_modules/@prisma-cli"
   previewFeatures = ["driverAdapters"]
 }
 
@@ -12,4 +8,3829 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
   schemas  = ["advertising_cost", "bizflycrm", "conversation_rate", "crm_dashboard", "dashboard_reporting", "ecom", "ecommerce", "erpnext", "gia", "haravan", "inventory", "inventory_cms", "inventory_report", "jemmia", "larksuite", "market_data", "marketing", "misa", "pancake", "payment", "policy", "promotion", "public", "rapnet", "reporting", "workplace"]
+}
+
+model platforms {
+  uuid                String    @id @db.VarChar
+  id                  String?   @unique(map: "ix_advertising_cost_platforms_id") @db.VarChar
+  channel             String?   @db.VarChar
+  name                String?   @db.VarChar
+  page_id             String?   @db.VarChar
+  platform            String?   @db.VarChar
+  area                String?   @db.VarChar
+  updated_at          BigInt?
+  database_created_at DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at DateTime? @default(now()) @db.Timestamp(6)
+
+  @@index([uuid], map: "ix_advertising_cost_platforms_uuid")
+  @@schema("advertising_cost")
+}
+
+model allocations {
+  uuid                      String    @id @db.VarChar(36)
+  id                        String?   @unique(map: "ix_bizflycrm_allocations_id") @db.VarChar(50)
+  total_amount              Decimal?  @db.Decimal(36, 8)
+  allocation_amount         Decimal?  @db.Decimal(36, 8)
+  allocation_amount_percent Decimal?  @db.Decimal(36, 8)
+  allocation_date           DateTime? @db.Timestamp(6)
+  sale                      Json?
+  order                     Json?
+  customer                  Json?
+  contract                  Json?
+  created_by                Json?
+  status                    String?   @db.VarChar
+  created_at                DateTime? @db.Timestamp(6)
+  updated_at                DateTime? @db.Timestamp(6)
+  created_at_system         DateTime? @db.Timestamp(6)
+  auto_id                   BigInt?   @map("_auto_id")
+  sale_team                 Json?
+  related_department        Json?     @map("_related_department")
+  piece                     Float?
+  total_pieces              Float?
+  ngay_phan_bo              DateTime? @db.Timestamp(6)
+  source                    Json?
+  payload                   Json?
+  order_id                  String?   @db.VarChar(50)
+  customer_id               String?   @db.VarChar(50)
+  sale_id                   String?   @db.VarChar(50)
+  sale_name                 String?   @db.VarChar(255)
+  sale_team_id              String?   @db.VarChar(50)
+  sale_team_value           String?   @db.VarChar(255)
+  database_created_at       DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at       DateTime? @default(now()) @db.Timestamp(6)
+
+  @@schema("bizflycrm")
+}
+
+model calls {
+  uuid                 String    @id @db.VarChar(36)
+  id                   String?   @unique(map: "ix_bizflycrm_calls_id") @db.VarChar(50)
+  action               String?   @db.VarChar
+  answer_time          DateTime? @db.Timestamp(6)
+  bizfly_project_token String?   @db.VarChar
+  call_id              String?   @db.VarChar
+  call_status          Json?
+  call_status_type     Json?
+  callee               Json?
+  caller               Json?
+  collection_key       String?   @db.VarChar
+  created_at           DateTime? @db.Timestamp(6)
+  created_at_system    DateTime? @db.Timestamp(6)
+  customer_id          String?   @db.VarChar
+  customer_phones      Json?
+  end_time             DateTime? @db.Timestamp(6)
+  note                 String?   @db.VarChar
+  phone_call_id        String?   @db.VarChar
+  project_id           String?   @db.VarChar
+  related_id           Json?
+  run                  Int?
+  sale                 Json?
+  sale_phones          Json?
+  sale_team            Json?
+  status               String?   @db.VarChar
+  updated_at           DateTime? @db.Timestamp(6)
+  payload              Json?
+  callee_value         String?   @db.VarChar
+  caller_value         String?   @db.VarChar
+  database_created_at  DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at  DateTime? @default(now()) @db.Timestamp(6)
+
+  @@schema("bizflycrm")
+}
+
+model bizflycrm_customers {
+  uuid                              String    @id @db.VarChar(36)
+  id                                String?   @unique(map: "ix_bizflycrm_customers_id") @db.VarChar(50)
+  first_order                       DateTime? @map("_first_order") @db.Timestamp(6)
+  last_order                        DateTime? @map("_last_order") @db.Timestamp(6)
+  number_order                      Int?      @map("_number_order")
+  order_value                       Decimal?  @map("_order_value") @db.Decimal(36, 8)
+  order_value_in_year               Decimal?  @map("_order_value_in_year") @db.Decimal(36, 8)
+  paid_value                        Decimal?  @map("_paid_value") @db.Decimal(36, 8)
+  total_order_data_item             Int?      @map("_total_order_data_item")
+  address1                          String?   @db.VarChar
+  bank_account_number               String?   @db.VarChar(50)
+  bank_address                      Json?
+  bank_branch                       String?   @db.VarChar
+  bank_name                         String?   @db.VarChar
+  city_name                         String?   @db.VarChar
+  company_address                   String?   @db.VarChar
+  company_name                      String?   @db.VarChar
+  country_name                      String?   @db.VarChar
+  created_at                        DateTime? @db.Timestamp(6)
+  created_at_system                 DateTime? @db.Timestamp(6)
+  cumulative_tov_buyback            Decimal?  @db.Decimal(36, 8)
+  cumulative_tov_in_last_12mos      Decimal?  @db.Decimal(36, 8)
+  cumulative_tov_lifetime           Decimal?  @db.Decimal(36, 8)
+  cumulative_tov_recorded           Decimal?  @db.Decimal(36, 8)
+  customer_rank                     Json?
+  customer_type                     Json?
+  customer_types                    Json?
+  customer_vat_email                Json?
+  date_of_issuance                  DateTime? @db.Timestamp(6)
+  district_name                     String?   @db.VarChar
+  emails                            Json?
+  first_channel                     Json?
+  haravan_id                        String?   @db.VarChar
+  haravan_retailer                  String?   @db.VarChar
+  instagram_sender_id               String?   @db.VarChar
+  link_blank                        String?   @db.VarChar
+  lists                             Json?
+  loai_qua_tang                     Json?
+  ma_khach_hang                     String?   @db.VarChar
+  ma_kich_hoat                      String?   @db.VarChar
+  name                              Json?
+  ngay_tao_tai_khoan                DateTime? @db.Timestamp(6)
+  past_order_value                  Decimal?  @db.Decimal(36, 8)
+  personal_id                       String?   @db.VarChar
+  phones                            Json?
+  place_of_issuance                 Json?
+  rd_address                        String?   @db.VarChar
+  rd_bizfly_bot_id                  String?   @db.VarChar
+  rd_first_assign_for               DateTime? @db.Timestamp(6)
+  rd_first_phone_time               DateTime? @db.Timestamp(6)
+  rd_gender                         String?   @db.VarChar
+  rd_last_phone_update_time         DateTime? @db.Timestamp(6)
+  sale                              Json?
+  source                            Json?
+  status                            String?   @db.VarChar
+  tags                              Json?
+  tax_code                          String?   @db.VarChar
+  tong_gia_tri_thu_mua_2            Decimal?  @db.Decimal(36, 8)
+  updated_at                        DateTime? @db.Timestamp(6)
+  user_spam                         Boolean?
+  utm_first_utm_source              Json?
+  ward_name                         String?   @db.VarChar
+  website                           String?   @db.VarChar
+  xung_ho                           Json?
+  zalo_sender_id                    String?   @db.VarChar
+  date_sinh_nhat                    DateTime? @map("_date_sinh_nhat") @db.Timestamp(6)
+  customer_passport                 String?   @db.VarChar
+  gioi_tinh                         Json?
+  link_facebook                     String?   @db.VarChar
+  passport_date_of_issuance         DateTime? @db.Timestamp(6)
+  passport_place_of_issuance        Json?
+  sinh_nhat                         DateTime? @db.Timestamp(6)
+  customer_journey                  Json?
+  account                           Json?
+  customer_referral                 Json?
+  dia_chi                           String?   @db.VarChar
+  files                             Json?
+  note                              String?   @db.VarChar
+  owner                             Json?
+  rd_addresses                      String?   @db.VarChar
+  rd_tags                           Json?
+  sale_team                         Json?
+  utm_campaign                      Json?
+  utm_content                       Json?
+  utm_medium                        Json?
+  utm_referer                       Json?
+  utm_source                        Json?
+  utm_term                          Json?
+  app_first_login_date              DateTime? @db.Timestamp(6)
+  last_activity_time                DateTime? @map("_last_activity_time") @db.Timestamp(6)
+  last_note_time                    DateTime? @map("_last_note_time") @db.Timestamp(6)
+  utm_all                           Json?     @map("_utm_all")
+  facebook_id_fp                    String?   @db.VarChar
+  facebook_sender_id                String?   @db.VarChar
+  is_merge_item                     Boolean?
+  linking_fanpage                   Json?
+  rd_conversation_id                String?   @db.VarChar
+  rd_first_fb_message_time          DateTime? @db.Timestamp(6)
+  rd_first_name                     String?   @db.VarChar
+  rd_first_support_assign_for       String?   @db.VarChar
+  rd_full_name                      String?   @db.VarChar
+  rd_last_fb_message_messenger_time DateTime? @db.Timestamp(6)
+  rd_owner_time                     DateTime? @db.Timestamp(6)
+  rd_user_id                        String?   @db.VarChar
+  rd_username                       String?   @db.VarChar
+  first_time_assign_main_sale       DateTime? @map("_first_time_assign_main_sale") @db.Timestamp(6)
+  last_call_in_time                 DateTime? @map("_last_call_in_time") @db.Timestamp(6)
+  last_call_out_time                DateTime? @map("_last_call_out_time") @db.Timestamp(6)
+  last_time_assign_main_sale        DateTime? @map("_last_time_assign_main_sale") @db.Timestamp(6)
+  related_department                Json?     @map("_related_department")
+  chien_dich                        String?   @db.VarChar
+  created_by                        Json?
+  customer_care_employee            Json?
+  customer_related                  Json?
+  product                           Json?
+  rd_last_assign_for                DateTime? @db.Timestamp(6)
+  rd_last_message_time_old_user     DateTime? @db.Timestamp(6)
+  rd_last_name                      String?   @db.VarChar
+  ref_types                         Json?
+  utm_converted_last_utm_campaign   Json?
+  utm_converted_last_utm_content    Json?
+  utm_converted_last_utm_medium     Json?
+  utm_converted_last_utm_referer    Json?
+  utm_converted_last_utm_source     Json?
+  utm_converted_last_utm_term       Json?
+  utm_converted_utm_campaign        Json?
+  utm_converted_utm_medium          Json?
+  utm_converted_utm_referer         Json?
+  utm_converted_utm_source          Json?
+  utm_converted_utm_term            Json?
+  utm_first_utm_campaign            Json?
+  utm_first_utm_content             Json?
+  utm_first_utm_medium              Json?
+  utm_first_utm_referer             Json?
+  utm_first_utm_term                Json?
+  utm_last_utm_campaign             Json?
+  utm_last_utm_content              Json?
+  utm_last_utm_medium               Json?
+  utm_last_utm_referer              Json?
+  utm_last_utm_source               Json?
+  utm_last_utm_term                 Json?
+  cumulative_tov_referral           Decimal?  @db.Decimal(36, 8)
+  demotion_date                     DateTime? @db.Timestamp(6)
+  customer_status                   Json?
+  sale_history                      Json?
+  age_group                         Json?
+  facebook_id                       Json?
+  rd_fb_user_id                     String?   @db.VarChar
+  recent_sale                       Json?     @map("_recent_sale")
+  total_call_in                     Int?      @map("_total_call_in")
+  cumulative_tov_in_last_12_months  Decimal?  @db.Decimal(36, 8)
+  cumulative_tov_unrecorded         Decimal?  @db.Decimal(36, 8)
+  customer_birthday_update_pwa      DateTime? @db.Timestamp(6)
+  customer_email_update_pwa         String?   @db.VarChar
+  customer_vat_types                Json?
+  rd_last_zalo_messages_time        DateTime? @db.Timestamp(6)
+  rd_page_active                    String?   @db.VarChar
+  tmp_unique                        String?   @db.VarChar
+  rd_ref_facebook                   Json?
+  chi_tiet_don_hang_gioi_thieu      Json?
+  ads                               Json?
+  is_converted                      Int?      @map("_is_converted")
+  customer_rank_label               String?   @db.VarChar
+  customer_type_label               String?   @db.VarChar
+  customer_types_label              String?   @db.VarChar
+  first_channel_label               String?   @db.VarChar
+  gioi_tinh_label                   String?   @db.VarChar
+  name_value                        String?   @db.VarChar
+  phone_value                       String?   @db.VarChar
+  owner_name                        String?   @db.VarChar
+  owner_id                          String?   @db.VarChar
+  sale_name                         String?   @db.VarChar
+  sale_id                           String?   @db.VarChar
+  age_group_label                   String?   @db.VarChar
+  place_of_issuance_label           String?   @db.VarChar
+  customer_care_employee_name       String?   @db.VarChar
+  passport_place_of_issuance_label  String?   @db.VarChar
+  database_created_at               DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at               DateTime? @default(now()) @db.Timestamp(6)
+  customer_opportunities            Json?
+
+  @@map("customers")
+  @@schema("bizflycrm")
+}
+
+model bizflycrm_departments {
+  uuid                        String    @id @db.VarChar(36)
+  id                          String?   @unique(map: "ix_bizflycrm_departments_id") @db.VarChar(50)
+  status                      String?   @db.VarChar
+  auto_id                     Int?      @map("_auto_id")
+  created_at                  DateTime? @db.Timestamp(6)
+  updated_at                  DateTime? @db.Timestamp(6)
+  created_at_system           DateTime? @db.Timestamp(6)
+  key                         String?   @db.VarChar
+  numerical_order             String?   @db.VarChar
+  first_time_assign_main_sale String?   @map("_first_time_assign_main_sale") @db.VarChar
+  first_time_assign_sale      String?   @map("_first_time_assign_sale") @db.VarChar
+  last_time_assign_main_sale  String?   @map("_last_time_assign_main_sale") @db.VarChar
+  last_time_assign_sale       String?   @map("_last_time_assign_sale") @db.VarChar
+  created_by                  Json?
+  level_department            Json?
+  name                        Json?
+  sale                        Json?
+  list_sale                   Json?
+  related_department_value    String?   @db.VarChar
+  name_value                  String?   @db.VarChar
+  database_created_at         DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at         DateTime? @default(now()) @db.Timestamp(6)
+
+  @@map("departments")
+  @@schema("bizflycrm")
+}
+
+model kpis {
+  uuid                        String    @id @db.VarChar(36)
+  id                          String?   @unique(map: "ix_bizflycrm_kpis_id") @db.VarChar(50)
+  status                      String?   @db.VarChar
+  auto_id                     Int?      @map("_auto_id")
+  created_at                  DateTime? @db.Timestamp(6)
+  created_at_system           DateTime? @db.Timestamp(6)
+  start_time                  DateTime? @db.Timestamp(6)
+  end_time                    DateTime? @db.Timestamp(6)
+  updated_at                  DateTime? @db.Timestamp(6)
+  first_time_assign_main_sale DateTime? @map("_first_time_assign_main_sale") @db.Timestamp(6)
+  first_time_assign_sale      DateTime? @map("_first_time_assign_sale") @db.Timestamp(6)
+  last_time_assign_main_sale  DateTime? @map("_last_time_assign_main_sale") @db.Timestamp(6)
+  last_time_assign_sale       DateTime? @map("_last_time_assign_sale") @db.Timestamp(6)
+  sale_team                   Json?
+  created_by                  Json?
+  description                 Json?
+  name                        Json?
+  sale                        Json?
+  sale_used                   Json?
+  related_department          Json?     @map("_related_department")
+  norm_data_item              Json?
+  sale_data_item              Json?
+  database_created_at         DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at         DateTime? @default(now()) @db.Timestamp(6)
+
+  @@schema("bizflycrm")
+}
+
+model bizflycrm_line_items {
+  uuid                 String    @id @db.VarChar(36)
+  id                   String?   @unique(map: "ix_bizflycrm_line_items_id") @db.VarChar(50)
+  order_id             String?   @db.VarChar(50)
+  price_sale           Decimal?  @db.Decimal(36, 8)
+  variant_id           String?   @db.VarChar
+  bien_the_san_pham    String?   @db.VarChar
+  barcode              String?   @db.VarChar
+  sku                  String?   @db.VarChar
+  quantity             BigInt?
+  item_name            String?   @db.VarChar
+  item_id              String?   @db.VarChar
+  applied_discount     Json?
+  invoice_discount     Json?
+  amount               Decimal?  @db.Decimal(36, 8)
+  order_detail_diamond String?   @db.VarChar
+  ten_sphd             String?   @db.VarChar
+  thong_tin_size_tam   Json?
+  purity               Json?
+  unit                 Json?
+  setting_weight       String?   @db.VarChar
+  discount_percent     Float?
+  discount_value       Decimal?  @db.Decimal(36, 8)
+  setting_color        Json?
+  promotion            Json?
+  product_status       Json?
+  buyback_price        Decimal?  @db.Decimal(36, 8)
+  item_code            String?   @db.VarChar
+  note                 String?   @db.VarChar
+  product_name         String?   @db.VarChar
+  vat                  Float?
+  other_price          Decimal?  @db.Decimal(36, 8)
+  chitiet_goidichvu    Json?
+  goi_dichvu           Json?
+  discount             Float?
+  product_status_value String?   @db.VarChar
+  promotion_value      String?   @db.VarChar
+  database_created_at  DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at  DateTime? @default(now()) @db.Timestamp(6)
+  price                Decimal?  @db.Decimal(36, 8)
+  serial_number        Json?
+  serial_number_value  String?   @db.VarChar
+  serial_number_id     String?   @db.VarChar
+
+  @@map("line_items")
+  @@schema("bizflycrm")
+}
+
+model bizflycrm_orders {
+  uuid                         String    @id @db.VarChar(36)
+  id                           String?   @unique(map: "ix_bizflycrm_orders_id") @db.VarChar(50)
+  allocation_value             Decimal?  @map("_allocation_value") @db.Decimal(36, 8)
+  auto_id                      BigInt?   @map("_auto_id")
+  first_time_assign_main_sale  DateTime? @map("_first_time_assign_main_sale") @db.Timestamp(6)
+  first_time_assign_sale       DateTime? @map("_first_time_assign_sale") @db.Timestamp(6)
+  last_note_time               DateTime? @map("_last_note_time") @db.Timestamp(6)
+  last_time_assign_main_sale   DateTime? @map("_last_time_assign_main_sale") @db.Timestamp(6)
+  last_time_assign_sale        DateTime? @map("_last_time_assign_sale") @db.Timestamp(6)
+  total_data_item              Int?      @map("_total_data_item")
+  address1                     String?   @db.VarChar
+  allocated                    Int?
+  bao_hanh                     Json?
+  bonus_thanh_tien             Decimal?  @db.Decimal(36, 8)
+  buyback_amount               Decimal?  @db.Decimal(36, 8)
+  buyback_items                Json?
+  buyback_type                 Json?
+  cancel_reason                String?   @db.VarChar
+  cancelled_at                 DateTime? @db.Timestamp(6)
+  cancelled_status             Json?
+  channel                      String?   @db.VarChar
+  chiet_khau_san_pham          Decimal?  @db.Decimal(36, 8)
+  chinh_sach_bao_hanh          Json?
+  city_name                    String?   @db.VarChar
+  confirm_order                String?   @db.VarChar
+  consult_date                 DateTime? @db.Timestamp(6)
+  country_name                 String?   @db.VarChar
+  ward_name                    String?   @db.VarChar
+  created_at                   DateTime? @db.Timestamp(6)
+  created_at_system            DateTime? @db.Timestamp(6)
+  customer                     Json?
+  customer_type                Json?
+  da_thanh_toan                Decimal?  @db.Decimal(36, 8)
+  delivered_date               DateTime? @db.Timestamp(6)
+  delivery_location            Json?
+  delivery_locations           Json?
+  deposit_origination          Json?
+  district_name                String?   @db.VarChar
+  expected_delivery_date       DateTime? @db.Timestamp(6)
+  expected_payment_date        DateTime? @db.Timestamp(6)
+  financial_complete_date      DateTime? @db.Timestamp(6)
+  financial_status             Json?
+  fulfillment_status           Json?
+  haravan_confirmed_by         String?   @db.VarChar(50)
+  haravan_created_by           String?   @db.VarChar(50)
+  haravan_id                   String?   @db.VarChar(50)
+  haravan_retailer             String?   @db.VarChar
+  is_bought_back               String?   @db.VarChar
+  link_blank                   String?   @db.VarChar
+  location_name                String?   @db.VarChar
+  ngay_tao_tai_khoan           DateTime? @db.Timestamp(6)
+  note                         String?
+  order_amount                 Decimal?  @db.Decimal(36, 8)
+  order_channel                Json?
+  order_code                   String?   @db.VarChar
+  order_created_on             DateTime? @db.Timestamp(6)
+  order_data_item              Json?
+  order_discount               Decimal?  @db.Decimal(36, 8)
+  order_left_amount            Decimal?  @db.Decimal(36, 8)
+  order_paid_amount            Decimal?  @db.Decimal(36, 8)
+  order_pretax                 Decimal?  @db.Decimal(36, 8)
+  order_promotion              Json?
+  order_status                 Json?
+  order_tax                    Decimal?  @db.Decimal(36, 8)
+  order_type                   Json?
+  original_order               Json?
+  paid_amount_percentage       Float?
+  payload                      Json?
+  payment_method_order         Json?
+  payment_status               Json?
+  phi_van_chuyen               Decimal?  @db.Decimal(36, 8)
+  phieu_thu_mua                Json?
+  phone                        Json?
+  phuong_thuc_thanh_toan       Json?
+  product_category             Json?
+  purpose                      Json?
+  real_created_at              DateTime? @db.Timestamp(6)
+  receipt_status               Json?
+  ref_order_date               DateTime? @db.Timestamp(6)
+  ref_order_id                 String?   @db.VarChar(50)
+  ref_order_number             String?   @db.VarChar
+  ref_reward                   Json?
+  rule_trigger                 Json?
+  sale                         Json?
+  sale_team                    Json?
+  shipping_address_company     String?   @db.VarChar
+  shipping_address_name        String?   @db.VarChar
+  source                       Json?
+  status                       String?   @db.VarChar
+  tags                         Json?
+  thoi_gian_giao_hang          DateTime? @db.Timestamp(6)
+  tong_da_thanh_toan           Decimal?  @db.Decimal(36, 8)
+  tong_gia_tri_don_hang        Decimal?  @db.Decimal(36, 8)
+  tong_tien_hang               Decimal?  @db.Decimal(36, 8)
+  total_discounts              Decimal?  @db.Decimal(36, 8)
+  total_original_price         Decimal?  @db.Decimal(36, 8)
+  updated_at                   DateTime? @db.Timestamp(6)
+  nguoi_gioi_thieu             Json?
+  bao_hanh_value               String?   @db.VarChar
+  cancelled_status_value       String?   @db.VarChar
+  customer_id                  String?   @db.VarChar(50)
+  customer_type_value          String?   @db.VarChar
+  delivery_location_value      String?   @db.VarChar
+  deposit_origination_value    String?   @db.VarChar
+  financial_status_value       String?   @db.VarChar
+  fulfillment_status_value     String?   @db.VarChar
+  order_channel_value          String?   @db.VarChar
+  order_status_value           String?   @db.VarChar
+  order_type_label             String?   @db.VarChar
+  order_type_value             String?   @db.VarChar
+  order_type_id                String?   @db.VarChar(50)
+  original_order_value         String?   @db.VarChar
+  payment_method_order_value   String?   @db.VarChar
+  payment_status_value         String?   @db.VarChar
+  phone_value                  String?   @db.VarChar
+  phone_hide                   String?   @db.VarChar
+  phuong_thuc_thanh_toan_value String?   @db.VarChar
+  purpose_label                String?   @db.VarChar
+  receipt_status_value         String?   @db.VarChar
+  ref_reward_value             String?   @db.VarChar
+  main_sale_id                 String?   @db.VarChar(50)
+  main_sale_name               String?   @db.VarChar
+  nguoi_gioi_thieu_id          String?   @db.VarChar(50)
+  database_created_at          DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at          DateTime? @default(now()) @db.Timestamp(6)
+  product_category_label       String?   @db.VarChar(255)
+
+  @@map("orders")
+  @@schema("bizflycrm")
+}
+
+model orders_receipts {
+  uuid                      String    @id @db.VarChar(36)
+  id                        String?   @unique(map: "ix_bizflycrm_orders_receipts_id") @db.VarChar(50)
+  purchasing_order_erp_id   String?   @db.VarChar(50)
+  customer                  Json?
+  name                      Json?
+  purchasing_types          Json?
+  purchasing_reason         Json?
+  purchasing_total          Decimal?  @db.Decimal(36, 8)
+  purchasing_total_transfer Decimal?  @db.Decimal(36, 8)
+  purchasing_status         Json?
+  created_at                DateTime? @db.Timestamp(6)
+  updated_at                DateTime? @db.Timestamp(6)
+  thoi_gian_khach_ban_giao  DateTime? @db.Timestamp(6)
+  chi_tiet_san_pham         Json?
+  created_at_system         DateTime? @db.Timestamp(6)
+  status                    String?   @db.VarChar
+  created_by                Json?
+  source                    Json?
+  auto_id                   BigInt?   @map("_auto_id")
+  order                     Json?
+  purchasing_order_id       Json?
+  reference_order           String?   @db.VarChar
+  sale                      Json?
+  total_exchange_value      Decimal?  @db.Decimal(36, 8)
+  payload                   Json?
+  customer_value            String?   @db.VarChar
+  customer_id               String?   @db.VarChar
+  name_value                String?   @db.VarChar
+  purchasing_types_label    String?   @db.VarChar
+  purchasing_reason_value   String?   @db.VarChar
+  purchasing_status_label   String?   @db.VarChar
+  order_name                String?   @db.VarChar
+  order_id                  String?   @db.VarChar
+  purchasing_order_id_value String?   @db.VarChar
+  purchasing_order_id_id    String?   @db.VarChar
+  sale_id                   String?   @db.VarChar
+  sale_name                 String?   @db.VarChar
+  database_created_at       DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at       DateTime? @default(now()) @db.Timestamp(6)
+
+  @@schema("bizflycrm")
+}
+
+model payments {
+  uuid                   String    @id @db.VarChar(36)
+  id                     String?   @unique(map: "ix_bizflycrm_payments_id") @db.VarChar(50)
+  payment_amount         Decimal?  @db.Decimal(36, 8)
+  payment_date           DateTime? @db.Timestamp(6)
+  payment_method         Json?
+  order                  Json?
+  customer               Json?
+  sale                   Json?
+  sale_team              Json?
+  status                 String?   @db.VarChar
+  auto_id                BigInt?   @map("_auto_id")
+  created_at             DateTime? @db.Timestamp(6)
+  created_at_system      DateTime? @db.Timestamp(6)
+  created_by             Json?
+  files                  Json?
+  la_khoan_dat_coc_      Json?
+  updated_at             DateTime? @db.Timestamp(6)
+  related_department     Json?     @map("_related_department")
+  payload                Json?
+  order_id               String?   @db.VarChar(50)
+  customer_id            String?   @db.VarChar(50)
+  sale_id                String?   @db.VarChar(50)
+  sale_name              String?   @db.VarChar(255)
+  sale_team_id           String?   @db.VarChar(50)
+  sale_team_value        String?   @db.VarChar(255)
+  files_link             String?   @db.VarChar(255)
+  la_khoan_dat_coc_label String?   @db.VarChar(255)
+  database_created_at    DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at    DateTime? @default(now()) @db.Timestamp(6)
+
+  @@schema("bizflycrm")
+}
+
+model bizflycrm_promotions {
+  uuid                        String    @id @db.VarChar(36)
+  id                          String?   @unique(map: "ix_bizflycrm_promotions_id") @db.VarChar(50)
+  status                      String?   @db.VarChar(50)
+  created_at                  DateTime? @db.Timestamp(6)
+  updated_at                  DateTime? @db.Timestamp(6)
+  created_at_system           DateTime? @db.Timestamp(6)
+  created_by                  Json?
+  discount_percentage         Float?
+  promotion_description       Json?
+  sale                        Json?
+  sale_team                   Json?
+  type_of_promotion           Json?
+  customer                    Json?
+  files                       Json?
+  lists                       Json?
+  name                        Json?
+  priority_order              Json?
+  discount_group              Json?
+  discount_month              Json?
+  discount_duration           Json?
+  promotion_scope             Json?
+  discount_amount             BigInt?
+  department                  Json?
+  start_date                  DateTime? @db.Timestamp(6)
+  end_date                    DateTime? @db.Timestamp(6)
+  promotion_description_value String?
+  sale_name                   String?   @db.VarChar
+  type_of_promotion_value     String?   @db.VarChar
+  name_value                  String?   @db.VarChar
+  priority_order_label        String?   @db.VarChar
+  discount_group_label        String?   @db.VarChar
+  discount_month_label        String?   @db.VarChar
+  discount_duration_label     String?   @db.VarChar
+  department_label            String?   @db.VarChar
+  promotion_scope_label       String?   @db.VarChar
+  database_created_at         DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at         DateTime? @default(now()) @db.Timestamp(6)
+
+  @@map("promotions")
+  @@schema("bizflycrm")
+}
+
+model serial_numbers {
+  uuid                        String    @id @db.VarChar(36)
+  id                          String?   @unique(map: "ix_bizflycrm_serial_numbers_id") @db.VarChar(50)
+  customer                    Json?
+  status                      String?   @db.VarChar
+  auto_id                     BigInt?   @map("_auto_id")
+  availability                Json?
+  created_at                  DateTime? @db.Timestamp(6)
+  created_at_system           DateTime? @db.Timestamp(6)
+  created_by                  Json?
+  serial_number               String?   @db.VarChar(50)
+  updated_at                  DateTime? @db.Timestamp(6)
+  sale                        Json?
+  sale_team                   Json?
+  first_time_assign_main_sale DateTime? @map("_first_time_assign_main_sale") @db.Timestamp(6)
+  first_time_assign_sale      DateTime? @map("_first_time_assign_sale") @db.Timestamp(6)
+  last_time_assign_main_sale  DateTime? @map("_last_time_assign_main_sale") @db.Timestamp(6)
+  last_time_assign_sale       DateTime? @map("_last_time_assign_sale") @db.Timestamp(6)
+  sku                         String?   @db.VarChar(50)
+  sub_sku                     String?   @db.VarChar(50)
+  availability_value          String?   @db.VarChar(50)
+  database_created_at         DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at         DateTime? @default(now()) @db.Timestamp(6)
+
+  @@schema("bizflycrm")
+}
+
+model bizflycrm_users {
+  uuid                    String    @id @db.VarChar(36)
+  id                      String?   @unique(map: "ix_bizflycrm_users_id") @db.VarChar(50)
+  project_id              String?   @db.VarChar
+  member_id               String?   @db.VarChar
+  name                    String?   @db.VarChar
+  status                  String?   @db.VarChar
+  created_at              DateTime? @db.Timestamp(6)
+  updated_at              DateTime? @db.Timestamp(6)
+  email                   String?   @db.VarChar
+  line                    Int?
+  phone                   String?   @db.VarChar
+  member                  Json?
+  my_id                   String?   @db.VarChar
+  is_root                 Int?
+  blocked_by              String?   @db.VarChar
+  stringee                String?   @db.VarChar
+  vcc_call_center_hotline String?   @db.VarChar
+  vcc_call_center_number  String?   @db.VarChar
+  group_role              Json?
+  group_role_new          Json?
+  selected_line           Json?
+  database_created_at     DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at     DateTime? @default(now()) @db.Timestamp(6)
+
+  @@map("users")
+  @@schema("bizflycrm")
+}
+
+model dashboard_reporting_time_dim {
+  col Int       @id @default(autoincrement())
+  day DateTime? @db.Timestamp(6)
+
+  @@map("time_dim")
+  @@schema("dashboard_reporting")
+}
+
+model jewelry_diamond_pairs {
+  id                         String   @unique @default(dbgenerated("(gen_random_uuid())::text"))
+  haravan_product_id         Int
+  haravan_variant_id         Int
+  haravan_diamond_product_id Int
+  haravan_diamond_variant_id Int
+  is_active                  Boolean  @default(true)
+  created_at                 DateTime @default(now())
+  updated_at                 DateTime @default(now())
+
+  @@unique([haravan_product_id, haravan_variant_id, haravan_diamond_product_id, haravan_diamond_variant_id], map: "jewelry_diamond_pairing_unique_pairing")
+  @@index([haravan_diamond_product_id, haravan_diamond_variant_id])
+  @@index([haravan_product_id, haravan_variant_id, is_active])
+  @@index([id])
+  @@schema("ecom")
+}
+
+model ecom_leads {
+  id                  Int       @id @default(autoincrement())
+  raw_data            Json?
+  database_created_at DateTime? @default(now()) @db.Timestamp(6)
+  custom_uuid         String?   @unique @default(dbgenerated("(gen_random_uuid())::text"))
+
+  @@map("leads")
+  @@schema("ecom")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model ecom_products {
+  haravan_product_id        BigInt?   @unique(map: "products_unique_haravan_id")
+  haravan_product_type      String?
+  design_id                 BigInt?
+  handle                    String?   @db.VarChar
+  workplace_id              Int?
+  category                  String?
+  title                     String?
+  min_price                 Decimal?  @db.Decimal
+  max_price                 Decimal?  @db.Decimal
+  qty_onhand                BigInt?
+  image_updated_at          DateTime? @db.Timestamp(6)
+  wedding_ring_id           Int?
+  primary_collection        String?
+  primary_collection_handle String?
+  pages                     String?
+  max_price_18              Int?
+  max_price_14              Int?
+
+  @@map("products")
+  @@ignore
+  @@schema("ecom")
+}
+
+model qr_generator {
+  id                        String          @id @db.VarChar
+  bank_code                 String?         @db.VarChar
+  bank_account_number       String?         @db.VarChar
+  customer_name             String?         @db.VarChar
+  customer_phone_number     String?         @db.VarChar
+  transfer_amount           BigInt?
+  transfer_note             String?         @db.VarChar
+  transfer_status           String?         @db.VarChar
+  haravan_order_number      String?         @db.VarChar
+  haravan_order_status      String?         @db.VarChar
+  haravan_order_id          Int?
+  haravan_order_total_price BigInt?
+  created_at                DateTime?       @default(now()) @db.Timestamp(6)
+  updated_at                DateTime?       @default(now()) @db.Timestamp(6)
+  deleted_at                DateTime?       @db.Timestamp(6)
+  is_deleted                Boolean?
+  qr_url                    String?
+  lark_record_id            String?         @db.VarChar(255)
+  all_lark_record_id        String?         @db.VarChar(255)
+  misa_synced               Boolean         @default(false)
+  misa_synced_at            DateTime?       @db.Timestamp(6)
+  misa_sync_guid            String?         @db.VarChar(255)
+  misa_sync_error_msg       String?
+  orders                    haravan_orders? @relation(fields: [haravan_order_id], references: [id])
+
+  @@index([id], map: "ix_ecom_qr_generator_id")
+  @@schema("ecom")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model ecom_variants {
+  hararvan_product_id BigInt?
+  haravan_variant_id  BigInt?  @unique(map: "unique_haravan_variant_id")
+  sku                 String?  @db.VarChar
+  price               Decimal? @db.Decimal
+  price_compare_at    Decimal? @db.Decimal(36, 8)
+  material_color      String?
+  fineness            String?
+  ring_size           Decimal? @db.Decimal
+  haravan_product_id  Int?
+
+  @@map("variants")
+  @@ignore
+  @@schema("ecom")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model ecom_wedding_rings {
+  id               Int?      @unique
+  title            String?
+  max_price        Decimal?  @db.Decimal
+  min_price        Decimal?  @db.Decimal
+  image_updated_at DateTime? @db.Timestamp(6)
+
+  @@map("wedding_rings")
+  @@ignore
+  @@schema("ecom")
+}
+
+model order_tracking {
+  uuid                 String @id @db.Uuid
+  haravan_order_id     String
+  haravan_order_status String
+
+  @@unique([haravan_order_id, haravan_order_status], map: "order_tracking_haravan_order_id_key")
+  @@schema("ecommerce")
+}
+
+model addresses {
+  uuid                    String    @id @db.Uuid
+  name                    String    @unique @db.VarChar(255)
+  owner                   String?   @db.VarChar(255)
+  creation                DateTime? @db.Timestamp(6)
+  modified                DateTime? @db.Timestamp(6)
+  modified_by             String?   @db.VarChar(255)
+  docstatus               Int?
+  idx                     Int?
+  address_type            String?   @db.VarChar(255)
+  address_name            String?   @db.VarChar(255)
+  phone                   String?   @db.VarChar(255)
+  email_id                String?   @db.VarChar(255)
+  address_line2           String?
+  address_title           String?   @db.VarChar(255)
+  city                    String?   @db.VarChar(255)
+  county                  String?   @db.VarChar(255)
+  state                   String?   @db.VarChar(255)
+  pincode                 String?   @db.VarChar(255)
+  country                 String?   @db.VarChar(255)
+  province                String?   @db.VarChar(255)
+  district                String?   @db.VarChar(255)
+  ward                    String?   @db.VarChar(255)
+  address_line1           String?
+  fax                     String?   @db.VarChar(255)
+  tax_category            String?   @db.VarChar(255)
+  is_primary_address      Int?
+  is_shipping_address     Int?
+  disabled                Int?
+  haravan_id              String?   @db.VarChar(255)
+  is_your_company_address Int?
+  links                   Json?
+  database_created_at     DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at     DateTime? @db.Timestamp(6)
+
+  @@schema("erpnext")
+}
+
+model contacts {
+  uuid                        String    @id @db.Uuid
+  name                        String    @unique @db.VarChar(255)
+  owner                       String?   @db.VarChar(255)
+  creation                    DateTime? @db.Timestamp(6)
+  modified                    DateTime? @db.Timestamp(6)
+  modified_by                 String?   @db.VarChar(255)
+  docstatus                   Int?
+  idx                         Int?
+  salutation                  String?   @db.VarChar(50)
+  first_name                  String?   @db.VarChar(255)
+  address                     String?   @db.VarChar(255)
+  gender                      String?   @db.VarChar(20)
+  sync_with_google_contacts   Int?
+  middle_name                 String?   @db.VarChar(255)
+  full_name                   String?   @db.VarChar(255)
+  last_name                   String?   @db.VarChar(255)
+  user                        String?   @db.VarChar(255)
+  inserted_at                 DateTime? @db.Timestamp(6)
+  updated_at                  DateTime? @db.Timestamp(6)
+  haravan_customer_id         String?   @db.VarChar(255)
+  lead_owner                  String?   @db.VarChar(255)
+  source_group                String?   @db.VarChar(255)
+  source                      String?   @db.VarChar(255)
+  status                      String?   @db.VarChar(50)
+  designation                 String?   @db.VarChar(255)
+  phone                       String?   @db.VarChar(20)
+  email_id                    String?   @db.VarChar(255)
+  mobile_no                   String?   @db.VarChar(20)
+  company_name                String?   @db.VarChar(255)
+  image                       String?   @db.VarChar(255)
+  source_name                 String?   @db.VarChar(255)
+  type                        String?   @db.VarChar(50)
+  first_message_time          DateTime? @db.Timestamp(6)
+  last_message_time           DateTime? @db.Timestamp(6)
+  phone_number_provided_time  DateTime? @db.Timestamp(6)
+  department                  String?   @db.VarChar(255)
+  unsubscribed                Int?
+  last_outgoing_call_time     DateTime? @db.Timestamp(6)
+  last_incoming_call_time     DateTime? @db.Timestamp(6)
+  last_summarize_time         DateTime? @db.Timestamp(6)
+  is_replied                  Int?
+  pancake_conversation_id     String?   @db.VarChar(255)
+  pancake_inserted_at         DateTime? @db.Timestamp(6)
+  pancake_updated_at          DateTime? @db.Timestamp(6)
+  pancake_customer_id         String?   @db.VarChar(255)
+  thread_id                   String?   @db.VarChar(255)
+  psid                        String?   @db.VarChar(255)
+  can_inbox                   Int?
+  pancake_page_id             String?   @db.VarChar(255)
+  custom_uuid                 String?   @db.VarChar(255)
+  page_url                    String?   @db.VarChar(255)
+  user_agent                  String?   @db.VarChar(255)
+  remote_ip                   String?   @db.VarChar(255)
+  form_id                     String?   @db.VarChar(255)
+  form_name                   String?   @db.VarChar(255)
+  form_inserted_at            DateTime? @db.Timestamp(6)
+  form_updated_at             DateTime? @db.Timestamp(6)
+  stringee_id                 String?   @db.VarChar(255)
+  stringee_to_number          String?   @db.VarChar(50)
+  stringee_from_number        String?   @db.VarChar(50)
+  stringee_start_time         DateTime? @db.Timestamp(6)
+  stringee_end_time           DateTime? @db.Timestamp(6)
+  stringee_from_internal      Int?
+  stringee_to_internal        Int?
+  stringee_recorded           Int?
+  video_call                  Int?
+  google_contacts             String?   @db.VarChar(255)
+  google_contacts_id          String?   @db.VarChar(255)
+  pulled_from_google_contacts Int?
+  is_primary_contact          Int?
+  is_billing_contact          Int?
+  links                       Json?
+  phone_numbers               Json?
+  phone_nos                   Json?
+  emails                      Json?
+  database_created_at         DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at         DateTime? @db.Timestamp(6)
+
+  @@index([name])
+  @@schema("erpnext")
+}
+
+model erpnext_customers {
+  uuid                           String    @id @db.Uuid
+  name                           String    @unique @db.VarChar(255)
+  owner                          String?   @db.VarChar(255)
+  creation                       DateTime? @db.Timestamp(6)
+  modified                       DateTime? @db.Timestamp(6)
+  modified_by                    String?   @db.VarChar(255)
+  docstatus                      Int?
+  idx                            Int?
+  naming_series                  String?   @db.VarChar(255)
+  salutation                     String?   @db.VarChar(255)
+  customer_name                  String?   @db.VarChar(255)
+  customer_group                 String?   @db.VarChar(255)
+  bizfly_customer_number         String?   @db.VarChar(255)
+  is_internal_customer           Int?
+  customer_type                  String?   @db.VarChar(255)
+  customer_rank                  String?   @db.VarChar(255)
+  account_manager                String?   @db.VarChar(255)
+  lead_name                      String?   @db.VarChar(255)
+  opportunity_name               String?   @db.VarChar(255)
+  territory                      String?   @db.VarChar(255)
+  prospect_name                  String?   @db.VarChar(255)
+  company_name                   String?   @db.VarChar(255)
+  no_of_employees                Int?
+  industry                       String?   @db.VarChar(255)
+  market_segment                 String?   @db.VarChar(255)
+  tax_number                     String?   @db.VarChar(255)
+  ceo_name                       String?   @db.VarChar(255)
+  personal_document_type         String?   @db.VarChar(255)
+  birth_date                     DateTime? @db.Timestamp(6)
+  gender                         String?   @db.VarChar(255)
+  personal_id                    String?   @db.VarChar(255)
+  place_of_issuance              String?   @db.VarChar(255)
+  person_name                    String?   @db.VarChar(255)
+  date_of_issuance               DateTime? @db.Timestamp(6)
+  first_source                   String?   @db.VarChar(255)
+  customer_website               String?   @db.VarChar(255)
+  customer_journey               String?   @db.VarChar(255)
+  default_currency               String?   @db.VarChar(255)
+  default_bank_account           String?   @db.VarChar(255)
+  default_price_list             String?   @db.VarChar(255)
+  represents_company             Int?
+  customer_pos_id                String?   @db.VarChar(255)
+  website                        String?   @db.VarChar(255)
+  language                       String?   @db.VarChar(255)
+  customer_details               String?   @db.VarChar(255)
+  customer_primary_address       String?   @db.VarChar(255)
+  primary_address                String?   @db.VarChar(1024)
+  image                          String?   @db.VarChar(255)
+  customer_primary_contact       String?   @db.VarChar(255)
+  primary_contact                String?   @db.VarChar(255)
+  mobile_no                      String?   @db.VarChar(255)
+  email_id                       String?   @db.VarChar(255)
+  phone                          String?   @db.VarChar(255)
+  invoice_type                   String?   @db.VarChar(255)
+  vat_email                      String?   @db.VarChar(255)
+  vat_name                       String?   @db.VarChar(255)
+  vat_address                    String?   @db.VarChar(255)
+  personal_tax_id                String?   @db.VarChar(255)
+  bank_account                   String?   @db.VarChar(255)
+  payment_terms                  String?   @db.VarChar(255)
+  loyalty_program                String?   @db.VarChar(255)
+  loyalty_program_tier           String?   @db.VarChar(255)
+  rank                           String?   @db.VarChar(255)
+  purchase_amount_last_12_months Decimal?  @db.Decimal(18, 6)
+  rank_expired_date              DateTime? @db.Timestamp(6)
+  priority_login_date            DateTime? @db.Timestamp(6)
+  cumulative_revenue             Decimal?  @db.Decimal(18, 6)
+  cashback                       Decimal?  @db.Decimal(18, 6)
+  true_cumulative_revenue        Decimal?  @db.Decimal(18, 6)
+  withdraw_cashback              Decimal?  @db.Decimal(18, 6)
+  referrals_revenue              Decimal?  @db.Decimal(18, 6)
+  pending_cashback               Decimal?  @db.Decimal(18, 6)
+  priority_bank_account          String?   @db.VarChar(255)
+  default_sales_partner          String?   @db.VarChar(255)
+  default_commission_rate        Decimal?  @db.Decimal(18, 6)
+  so_required                    Int?
+  dn_required                    Int?
+  is_frozen                      Int?
+  disabled                       Int?      @db.SmallInt
+  haravan_id                     String?   @db.VarChar(255)
+  bizfly_id                      String?   @db.VarChar(255)
+  tax_id                         String?   @db.VarChar(255)
+  tax_category                   String?   @db.VarChar(255)
+  tax_withholding_category       String?   @db.VarChar(255)
+  account                        Json?
+  portal_users                   Json?
+  companies                      Json?
+  sales_team                     Json?
+  coupon_table                   Json?
+  credit_limits                  Json?
+  database_created_at            DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at            DateTime? @db.Timestamp(6)
+
+  @@index([customer_name])
+  @@index([haravan_id])
+  @@index([name])
+  @@map("customers")
+  @@schema("erpnext")
+}
+
+model employees {
+  uuid          String    @id @db.Uuid
+  name          String?   @unique
+  user_id       String?
+  creation      DateTime? @db.Timestamp(6)
+  department    String?
+  employee_name String?
+  gender        String?
+  modified      DateTime? @db.Timestamp(6)
+  modified_by   String?
+  status        String?
+
+  @@schema("erpnext")
+}
+
+model lead_budgets {
+  uuid                String    @id @db.Uuid
+  name                String    @unique @db.VarChar(255)
+  owner               String?   @db.VarChar(255)
+  creation            DateTime? @db.Timestamp(6)
+  modified            DateTime? @db.Timestamp(6)
+  budget_label        String?   @db.VarChar(255)
+  budget_from         Decimal?  @db.Decimal(18, 6)
+  budget_to           Decimal?  @db.Decimal(18, 6)
+  database_created_at DateTime  @default(now()) @db.Timestamp(6)
+  database_updated_at DateTime? @db.Timestamp(6)
+
+  @@index([name])
+  @@schema("erpnext")
+}
+
+model lead_demands {
+  uuid                String    @id @db.Uuid
+  name                String    @unique @db.VarChar(255)
+  owner               String?   @db.VarChar(255)
+  creation            DateTime? @db.Timestamp(6)
+  modified            DateTime? @db.Timestamp(6)
+  demand_label        String?   @db.VarChar(255)
+  database_created_at DateTime  @default(now()) @db.Timestamp(6)
+  database_updated_at DateTime? @db.Timestamp(6)
+
+  @@index([name])
+  @@schema("erpnext")
+}
+
+model lead_sources {
+  uuid             String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name             String  @unique @db.VarChar(255)
+  pancake_page_id  String? @db.VarChar
+  pancake_platform String? @db.VarChar
+  source_name      String? @db.VarChar
+
+  @@schema("erpnext")
+}
+
+model erpnext_leads {
+  uuid                   String    @id @db.Uuid
+  name                   String    @unique @db.VarChar(255)
+  owner                  String?   @db.VarChar(255)
+  creation               DateTime? @db.Timestamp(6)
+  modified               DateTime? @db.Timestamp(6)
+  modified_by            String?   @db.VarChar(255)
+  docstatus              Int?
+  idx                    Int?
+  naming_series          String?   @db.VarChar(255)
+  type                   String?   @db.VarChar(255)
+  salutation             String?   @db.VarChar(255)
+  first_name             String?   @db.VarChar(255)
+  middle_name            String?   @db.VarChar(255)
+  territory              String?   @db.VarChar(255)
+  lead_stage             String?   @db.VarChar(100)
+  phone                  String?   @db.VarChar(20)
+  email_id               String?   @db.VarChar(255)
+  job_title              String?   @db.VarChar(255)
+  last_name              String?   @db.VarChar(255)
+  gender                 String?   @db.VarChar(10)
+  qualified_lead_date    DateTime? @db.Timestamp(6)
+  first_reach_at         DateTime? @db.Timestamp(6)
+  lead_owner             String?   @db.VarChar(255)
+  source                 String?   @db.VarChar(255)
+  status                 String?   @db.VarChar(50)
+  customer               String?   @db.VarChar(255)
+  request_type           String?   @db.VarChar(100)
+  lead_name              String?   @db.VarChar(255)
+  lead_received_date     DateTime? @db.Timestamp(6)
+  lead_source_name       String?   @db.VarChar(255)
+  lead_source_platform   String?   @db.VarChar(255)
+  qualification_status   String?   @db.VarChar(255)
+  qualified_by           String?   @db.VarChar(255)
+  qualified_on           DateTime? @db.Timestamp(6)
+  purpose_lead           String?   @db.VarChar(255)
+  expected_delivery_date DateTime? @db.Date
+  budget_lead            String?   @db.VarChar(255)
+  province               String?   @db.VarChar(255)
+  region                 String?   @db.VarChar(255)
+  company_name           String?   @db.VarChar(255)
+  no_of_employees        String?   @db.VarChar(20)
+  annual_revenue         Decimal?  @db.Decimal
+  industry               String?   @db.VarChar(255)
+  market_segment         String?   @db.VarChar(255)
+  fax                    String?   @db.VarChar(255)
+  tax_number             String?   @db.VarChar(255)
+  ceo_name               String?   @db.VarChar(255)
+  birth_date             DateTime? @db.Date
+  address                String?
+  personal_tax_id        String?   @db.VarChar(255)
+  first_channel          String?   @db.VarChar(255)
+  personal_id            String?   @db.VarChar(255)
+  place_of_issuance      String?   @db.VarChar(255)
+  date_of_issuance       DateTime? @db.Date
+  website                String?   @db.VarChar(255)
+  bank_name              String?   @db.VarChar(255)
+  bank_branch            String?   @db.VarChar(255)
+  account_number         String?   @db.VarChar(255)
+  bank_province          String?   @db.VarChar(255)
+  bank_district          String?   @db.VarChar(255)
+  bank_ward              String?   @db.VarChar(255)
+  campaign_name          String?   @db.VarChar(255)
+  company                String?   @db.VarChar(255)
+  website_from_data      String?   @db.VarChar(255)
+  language               String?   @db.VarChar(10)
+  image                  String?
+  title                  String?   @db.VarChar(255)
+  disabled               Int?
+  unsubscribed           Int?
+  blog_subscriber        Int?
+  mobile_no              String?   @db.VarChar(20)
+  whatsapp_no            String?   @db.VarChar(20)
+  phone_ext              String?   @db.VarChar(20)
+  check_duplicate        String?   @db.VarChar(255)
+  doctype                String?   @db.VarChar(50)
+  notes                  Json?
+  user_tags              Json?
+  preferred_product_type Json?
+  database_created_at    DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at    DateTime? @db.Timestamp(6)
+
+  @@index([name])
+  @@map("leads")
+  @@schema("erpnext")
+}
+
+model product_categories {
+  uuid        String    @id @db.Uuid
+  name        String    @unique @db.VarChar(255)
+  owner       String?   @db.VarChar(255)
+  creation    DateTime? @db.Timestamp(6)
+  modified    DateTime? @db.Timestamp(6)
+  modified_by String?   @db.VarChar(255)
+  docstatus   Int?
+  idx         Int?
+  title       String?   @db.VarChar(255)
+
+  @@index([name])
+  @@schema("erpnext")
+}
+
+model erpnext_promotions {
+  uuid             String    @id @db.Uuid
+  name             String    @unique @db.VarChar(255)
+  owner            String?   @db.VarChar(255)
+  creation         DateTime? @db.Timestamp(6)
+  modified         DateTime? @db.Timestamp(6)
+  modified_by      String?   @db.VarChar(255)
+  docstatus        Int?
+  idx              Int?
+  title            String?   @db.VarChar(255)
+  scope            String?   @db.VarChar(255)
+  is_active        Int?
+  is_expired       Int?
+  priority         String?   @db.VarChar(255)
+  discount_type    String?   @db.VarChar(255)
+  discount_amount  Decimal?  @db.Decimal(18, 6)
+  discount_percent Decimal?  @db.Decimal(18, 6)
+  start_date       DateTime? @db.Date
+  end_date         DateTime? @db.Date
+  description      String?
+  bizfly_id        String?   @db.VarChar(255)
+
+  @@index([name])
+  @@map("promotions")
+  @@schema("erpnext")
+}
+
+model provinces {
+  uuid                String    @id @db.Uuid
+  name                String    @unique @db.VarChar(255)
+  owner               String?   @db.VarChar(255)
+  creation            DateTime? @db.Timestamp(6)
+  modified            DateTime? @db.Timestamp(6)
+  province_name       String?   @db.VarChar(255)
+  region              String    @db.VarChar(255)
+  database_created_at DateTime  @default(now()) @db.Timestamp(6)
+  database_updated_at DateTime? @db.Timestamp(6)
+
+  @@index([name])
+  @@schema("erpnext")
+}
+
+model purchase_purposes {
+  uuid        String    @id @db.Uuid
+  name        String    @unique @db.VarChar(255)
+  owner       String?   @db.VarChar(255)
+  creation    DateTime? @db.Timestamp(6)
+  modified    DateTime? @db.Timestamp(6)
+  modified_by String?   @db.VarChar(255)
+  docstatus   Int?
+  idx         Int?
+  title       String?   @db.VarChar(255)
+
+  @@index([name])
+  @@schema("erpnext")
+}
+
+model regions {
+  uuid                String    @id @db.Uuid
+  name                String    @unique @db.VarChar(255)
+  owner               String?   @db.VarChar(255)
+  creation            DateTime? @db.Timestamp(6)
+  modified            DateTime? @db.Timestamp(6)
+  region_name         String    @db.VarChar(255)
+  database_created_at DateTime  @default(now()) @db.Timestamp(6)
+  database_updated_at DateTime? @db.Timestamp(6)
+
+  @@index([name])
+  @@schema("erpnext")
+}
+
+model sales_order_notification_tracking {
+  uuid                String   @id @db.Uuid
+  order_name          String
+  haravan_order_id    String
+  lark_message_id     String
+  database_created_at DateTime @default(now())
+  database_updated_at DateTime
+  order_data          Json?
+
+  @@index([haravan_order_id])
+  @@index([order_name])
+  @@schema("erpnext")
+}
+
+model sales_orders {
+  uuid                           String    @id @db.Uuid
+  name                           String?   @unique
+  owner                          String?
+  creation                       DateTime?
+  modified                       DateTime?
+  modified_by                    String?
+  docstatus                      Int?
+  idx                            Int?
+  title                          String?
+  naming_series                  String?
+  tax_id                         String?
+  order_type                     String?
+  skip_delivery_note             Int?
+  delivery_date                  DateTime?
+  po_no                          String?
+  po_date                        DateTime?
+  company                        String?
+  amended_from                   String?
+  customer_name                  String?
+  order_number                   String?
+  transaction_date               DateTime?
+  real_order_date                DateTime?
+  cancelled_status               String?
+  financial_status               String?
+  fulfillment_status             String?
+  expected_delivery_date         DateTime?
+  cost_center                    String?
+  project                        String?
+  currency                       String?
+  conversion_rate                Float?
+  selling_price_list             String?
+  price_list_currency            String?
+  plc_conversion_rate            Float?
+  ignore_pricing_rule            Int?
+  scan_barcode                   String?
+  set_warehouse                  String?
+  reserve_stock                  Int?
+  apply_discount_on              String?
+  base_discount_amount           Decimal?  @db.Decimal(18, 6)
+  coupon_code                    String?
+  additional_discount_percentage Decimal?  @db.Decimal(18, 6)
+  total_qty                      Int?
+  total                          Decimal?  @db.Decimal(18, 6)
+  discount_amount                Decimal?  @db.Decimal(18, 6)
+  grand_total                    Decimal?  @db.Decimal(18, 6)
+  base_total                     Decimal?  @db.Decimal(18, 6)
+  base_net_total                 Decimal?  @db.Decimal(18, 6)
+  total_net_weight               Decimal?  @db.Decimal(18, 6)
+  net_total                      Decimal?  @db.Decimal(18, 6)
+  tax_category                   String?
+  taxes_and_charges              String?
+  shipping_rule                  String?
+  incoterm                       String?
+  named_place                    String?
+  base_total_taxes_and_charges   Decimal?  @db.Decimal(18, 6)
+  total_taxes_and_charges        Decimal?  @db.Decimal(18, 6)
+  base_grand_total               Decimal?  @db.Decimal(18, 6)
+  base_rounding_adjustment       Decimal?  @db.Decimal(18, 6)
+  base_rounded_total             Decimal?  @db.Decimal(18, 6)
+  base_in_words                  String?
+  rounding_adjustment            Decimal?  @db.Decimal(18, 6)
+  rounded_total                  Decimal?  @db.Decimal(18, 6)
+  in_words                       String?
+  advance_paid                   Decimal?  @db.Decimal(18, 6)
+  disable_rounded_total          Int?
+  other_charges_calculation      String?
+  contact_person                 String?
+  contact_display                String?
+  contact_phone                  String?
+  contact_mobile                 String?
+  contact_email                  String?
+  customer_address               String?
+  address_display                String?
+  customer_group                 String?
+  territory                      String?
+  shipping_address_name          String?
+  shipping_address               String?
+  customer                       String?
+  gender                         String?
+  customer_type                  String?
+  customer_personal_id           String?
+  birth_date                     DateTime?
+  date_of_issuance               DateTime?
+  dispatch_address               String?
+  place_of_issuance              String?
+  dispatch_address_name          String?
+  company_address                String?
+  company_address_display        String?
+  company_contact_person         String?
+  status                         String?
+  delivery_status                String?
+  per_delivered                  Decimal?  @db.Decimal(18, 6)
+  per_billed                     Decimal?  @db.Decimal(18, 6)
+  per_picked                     Decimal?  @db.Decimal(18, 6)
+  billing_status                 String?
+  sales_partner                  String?
+  amount_eligible_for_commission Decimal?  @db.Decimal(18, 6)
+  commission_rate                Decimal?  @db.Decimal(18, 6)
+  total_commission               Decimal?  @db.Decimal(18, 6)
+  loyalty_points                 Int?
+  loyalty_amount                 Decimal?  @db.Decimal(18, 6)
+  from_date                      DateTime?
+  to_date                        DateTime?
+  auto_repeat                    String?
+  letter_head                    String?
+  group_same_items               Int?
+  select_print_heading           String?
+  language                       String?
+  is_internal_customer           Int?
+  represents_company             String?
+  source                         String?
+  inter_company_order_reference  String?
+  campaign                       String?
+  party_account_currency         String?
+  total_amount                   Decimal?  @db.Decimal(18, 6)
+  expected_payment_date          DateTime?
+  paid_amount                    Decimal?  @db.Decimal(18, 6)
+  balance                        Decimal?  @db.Decimal(18, 6)
+  payment_terms_template         String?
+  tc_name                        String?
+  terms                          String?
+  haravan_order_id               String?
+  haravan_ref_order_id           String?
+  haravan_created_at             DateTime?
+  source_name                    String?
+  sales_team                     Json?
+  ref_sales_orders               Json?
+  promotions                     Json?
+  product_categories             Json?
+  packed_items                   Json?
+  taxes                          Json?
+  pricing_rules                  Json?
+  payment_records                Json?
+  payment_schedule               Json?
+  policies                       Json?
+  items                          Json?
+  database_created_at            DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at            DateTime? @db.Timestamp(6)
+  consultation_date              DateTime? @db.Date
+  primary_sales_person           String?
+  sales_order_purposes           Json?
+  debt_histories                 Json?
+
+  @@index([cancelled_status])
+  @@index([customer])
+  @@index([customer, transaction_date])
+  @@index([delivery_status])
+  @@index([financial_status])
+  @@index([fulfillment_status])
+  @@index([haravan_order_id])
+  @@index([order_number])
+  @@index([status])
+  @@schema("erpnext")
+}
+
+model sales_persons {
+  uuid                String    @id @db.Uuid
+  name                String?   @unique
+  employee            String?
+  bizfly_id           String?
+  creation            DateTime? @db.Timestamp(6)
+  department          String?
+  enabled             Int?      @db.SmallInt
+  is_group            Int?      @db.SmallInt
+  modified            DateTime? @db.Timestamp(6)
+  modified_by         String?
+  old_parent          String?
+  parent_sales_person String?
+  sales_person_name   String?
+  sales_region        String?
+  targets             Json?
+
+  @@schema("erpnext")
+}
+
+model erpnext_users {
+  uuid         String    @id @db.Uuid
+  name         String?   @unique
+  email        String?
+  birth_date   DateTime?
+  creation     DateTime? @db.Timestamp(6)
+  enabled      Int?      @db.SmallInt
+  full_name    String?
+  gender       String?
+  language     String?
+  location     String?
+  modified     DateTime? @db.Timestamp(6)
+  modified_by  String?
+  pancake_id   String?
+  role_profile String?
+  time_zone    String?
+  user_image   String?
+
+  @@map("users")
+  @@schema("erpnext")
+}
+
+model report_no_data {
+  id                         BigInt    @id @default(autoincrement())
+  report_no                  String    @db.VarChar(20)
+  report_type                String?   @db.VarChar(255)
+  report_dt                  String?   @db.VarChar(255)
+  shape                      String?   @db.VarChar(255)
+  measurements               String?   @db.VarChar(255)
+  weight                     String?   @db.VarChar(255)
+  color_grade                String?   @db.VarChar(255)
+  clarity_grade              String?   @db.VarChar(255)
+  cut_grade                  String?   @db.VarChar(255)
+  depth                      String?   @db.VarChar(255)
+  table_size                 String?   @db.VarChar(255)
+  crown_angle                String?   @db.VarChar(255)
+  crown_height               String?   @db.VarChar(255)
+  pavilion_angle             String?   @db.VarChar(255)
+  pavilion_depth             String?   @db.VarChar(255)
+  star_length                String?   @db.VarChar(255)
+  lower_half                 String?   @db.VarChar(255)
+  girdle                     String?   @db.VarChar(255)
+  culet                      String?   @db.VarChar(255)
+  polish                     String?   @db.VarChar(255)
+  symmetry                   String?   @db.VarChar(255)
+  fluorescence               String?   @db.VarChar(255)
+  clarity_characteristics    String?   @db.VarChar(255)
+  inscription                String?   @db.VarChar(255)
+  encrypted_report_no        String?   @db.VarChar(255)
+  simple_encrypted_report_no String?   @db.VarChar(255)
+  is_pdf_available           String?   @db.VarChar(255)
+  pdf_url                    String?   @db.VarChar(255)
+  propimg                    String?   @db.VarChar(255)
+  digital_card               String?   @db.VarChar(255)
+  created_at                 DateTime? @default(now()) @db.Timestamp(6)
+  updated_at                 DateTime? @default(now()) @db.Timestamp(6)
+
+  @@schema("gia")
+}
+
+model collection_product {
+  uuid                String    @id @db.VarChar
+  id                  BigInt?   @unique(map: "ix_haravan_collection_product_id")
+  collection_id       BigInt?
+  created_at          DateTime? @db.Timestamp(6)
+  featured            Boolean?
+  position            Int?
+  product_id          BigInt?
+  sort_value          String?   @db.VarChar
+  updated_at          DateTime? @db.Timestamp(6)
+  database_created_at DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at DateTime? @default(now()) @db.Timestamp(6)
+
+  @@index([uuid], map: "ix_haravan_collection_product_uuid")
+  @@schema("haravan")
+}
+
+model custom_collections {
+  uuid                String    @id @db.VarChar
+  id                  Int?      @unique(map: "ix_haravan_custom_collections_id")
+  body_html           String?
+  handle              String?   @db.VarChar
+  image               Json?
+  published           Boolean?
+  published_at        DateTime? @db.Timestamp(6)
+  published_scope     String?   @db.VarChar
+  sort_order          String?   @db.VarChar
+  template_suffix     String?   @db.VarChar
+  title               String?   @db.VarChar
+  updated_at          DateTime? @db.Timestamp(6)
+  products_count      Int?
+  database_created_at DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at DateTime? @default(now()) @db.Timestamp(6)
+
+  @@index([uuid], map: "ix_haravan_custom_collections_uuid")
+  @@schema("haravan")
+}
+
+model haravan_customers {
+  uuid                  String    @id @db.VarChar
+  id                    Int?      @unique(map: "ix_haravan_customers_id")
+  accepts_marketing     Boolean?
+  default_address       Json?
+  addresses             Json?
+  address_address1      String?   @db.VarChar
+  address_address2      String?   @db.VarChar
+  address_city          String?   @db.VarChar
+  address_company       String?   @db.VarChar
+  address_country       String?   @db.VarChar
+  address_country_code  String?   @db.VarChar
+  address_id            BigInt?
+  address_first_name    String?   @db.VarChar
+  address_last_name     String?   @db.VarChar
+  address_phone         String?   @db.VarChar
+  address_province      String?   @db.VarChar
+  address_province_code String?   @db.VarChar
+  address_zip           String?   @db.VarChar
+  address_name          String?   @db.VarChar
+  address_default       Boolean?
+  address_district      String?   @db.VarChar
+  address_district_code String?   @db.VarChar
+  address_ward          String?   @db.VarChar
+  address_ward_code     String?   @db.VarChar
+  email                 String?   @db.VarChar
+  phone                 String?   @db.VarChar
+  first_name            String?   @db.VarChar
+  last_name             String?   @db.VarChar
+  created_at            DateTime? @db.Timestamp(6)
+  updated_at            DateTime? @db.Timestamp(6)
+  multipass_identifier  Boolean?
+  last_order_id         BigInt?
+  last_order_name       String?   @db.VarChar
+  published             Boolean?
+  note                  String?   @db.VarChar
+  orders_count          Int?
+  state                 String?   @db.VarChar
+  tags                  String?   @db.VarChar
+  total_spent           Decimal?  @db.Decimal(36, 8)
+  total_paid            Decimal?  @db.Decimal(36, 8)
+  verified_email        Boolean?
+  group_name            String?   @db.VarChar
+  birthday              DateTime? @db.Timestamp(6)
+  gender                Int?
+  database_created_at   DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at   DateTime? @default(now()) @db.Timestamp(6)
+
+  @@index([uuid], map: "ix_haravan_customers_uuid")
+  @@map("customers")
+  @@schema("haravan")
+}
+
+model fulfillments {
+  uuid                  String    @id @db.VarChar(36)
+  id                    BigInt?   @unique(map: "ix_haravan_fulfillments_id")
+  order_id              BigInt?
+  status                String?   @db.VarChar
+  created_at            DateTime? @db.Timestamp(6)
+  updated_at            DateTime? @db.Timestamp(6)
+  tracking_company      String?   @db.VarChar
+  tracking_company_code String?   @db.VarChar
+  tracking_numbers      Json?
+  tracking_number       String?   @db.VarChar
+  tracking_url          String?   @db.VarChar
+  tracking_urls         Json?
+  database_created_at   DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at   DateTime? @default(now()) @db.Timestamp(6)
+
+  @@schema("haravan")
+}
+
+model images {
+  uuid                String    @id @db.VarChar
+  id                  BigInt    @unique(map: "unique_id")
+  product_id          Int
+  src                 String?   @db.VarChar
+  position            Int?
+  filename            String?   @db.VarChar
+  variant_ids         Json?
+  created_at          DateTime? @db.Timestamp(6)
+  updated_at          DateTime? @db.Timestamp(6)
+  database_created_at DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at DateTime? @default(now()) @db.Timestamp(6)
+
+  @@schema("haravan")
+}
+
+model inventory_logs {
+  id                    BigInt    @id
+  storeid               BigInt?
+  typeid                BigInt?
+  locid                 BigInt?
+  refid                 BigInt?
+  reflineid             BigInt?
+  refnumber             String?   @db.VarChar
+  productid             BigInt?
+  variantid             BigInt?
+  qty_onhand            Decimal?  @db.Decimal
+  qty_commited          Decimal?  @db.Decimal
+  qty_incoming          Decimal?  @db.Decimal
+  last_qty_onhand       Decimal?  @db.Decimal
+  last_qty_onhand_loc   Decimal?  @db.Decimal
+  last_qty_onhand_lot   Decimal?  @db.Decimal
+  last_qty_commited     Decimal?  @db.Decimal
+  last_qty_commited_loc Decimal?  @db.Decimal
+  last_macostamount     Decimal?  @db.Decimal
+  costamount            Decimal?  @db.Decimal
+  trandate              DateTime? @db.Timestamp(6)
+  createddate           DateTime? @db.Timestamp(6)
+  createduser           BigInt?
+  createdusername       String?   @db.VarChar
+  locationname          String?   @db.VarChar
+  trannumber            String?   @db.VarChar
+  lotno                 String?   @db.VarChar
+  lotexpiredate         DateTime? @db.Timestamp(6)
+  sku                   String?   @db.VarChar
+  barcode               String?   @db.VarChar
+  producttypename       String?   @db.VarChar
+  productvendorname     String?   @db.VarChar
+  productname           String?   @db.VarChar
+  optionvalue           String?   @db.VarChar
+  reasonid              BigInt?
+  varianttitle          String?   @db.VarChar
+  typename              String?   @db.VarChar
+
+  @@schema("haravan")
+}
+
+model haravan_line_items {
+  uuid                 String    @id @db.VarChar(36)
+  id                   Int?      @unique(map: "ix_haravan_line_items_id")
+  order_id             Int?
+  fulfillable_quantity Int?
+  fulfillment_service  String?   @db.VarChar
+  fulfillment_status   String?   @db.VarChar
+  grams                Float?
+  price                Decimal?  @db.Decimal(36, 8)
+  price_original       Decimal?  @db.Decimal(36, 8)
+  price_promotion      Decimal?  @db.Decimal(36, 8)
+  product_id           BigInt?
+  quantity             Int?
+  requires_shipping    Boolean?
+  sku                  String?   @db.VarChar
+  title                String?   @db.VarChar
+  variant_id           BigInt?
+  variant_title        String?   @db.VarChar
+  vendor               String?   @db.VarChar
+  type                 String?   @db.VarChar
+  name                 String?   @db.VarChar
+  gift_card            Boolean?
+  taxable              Boolean?
+  tax_lines            Json?
+  product_exists       Boolean?
+  barcode              String?   @db.VarChar
+  properties           Json?
+  total_discount       Decimal?  @db.Decimal(36, 8)
+  applied_discounts    Json?
+  image                Json?
+  not_allow_promotion  Boolean?
+  ma_cost_amount       Float?
+  database_created_at  DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at  DateTime? @default(now()) @db.Timestamp(6)
+
+  @@map("line_items")
+  @@schema("haravan")
+}
+
+model haravan_orders {
+  uuid                                   String            @id @db.VarChar(36)
+  id                                     Int?              @unique(map: "ix_haravan_orders_id")
+  billing_address_id                     BigInt?
+  billing_address_address1               String?           @db.VarChar
+  billing_address_address2               String?           @db.VarChar
+  billing_address_city                   String?           @db.VarChar
+  billing_address_company                String?           @db.VarChar
+  billing_address_country                String?           @db.VarChar
+  billing_address_first_name             String?           @db.VarChar
+  billing_address_last_name              String?           @db.VarChar
+  billing_address_phone                  String?           @db.VarChar
+  billing_address_province               String?           @db.VarChar
+  billing_address_zip                    String?           @db.VarChar
+  billing_address_name                   String?           @db.VarChar
+  billing_address_province_code          String?           @db.VarChar
+  billing_address_country_code           String?           @db.VarChar
+  billing_address_default                Boolean?
+  billing_address_district               String?           @db.VarChar
+  billing_address_district_code          String?           @db.VarChar
+  billing_address_ward                   String?           @db.VarChar
+  billing_address_ward_code              String?           @db.VarChar
+  browser_ip                             String?           @db.VarChar
+  buyer_accepts_marketing                Boolean?
+  cancel_reason                          String?           @db.VarChar
+  cancelled_at                           DateTime?         @db.Timestamp(6)
+  cart_token                             String?           @db.VarChar
+  checkout_token                         String?           @db.VarChar
+  client_details_accept_language         String?           @db.VarChar
+  client_details_browser_height          BigInt?
+  client_details_browser_width           BigInt?
+  client_details_session_hash            String?           @db.VarChar
+  client_details_user_agent              String?           @db.VarChar
+  client_details_browser_ip              String?           @db.VarChar
+  closed_at                              DateTime?         @db.Timestamp(6)
+  created_at                             DateTime?         @db.Timestamp(6)
+  currency                               String?           @db.VarChar
+  customer_id                            BigInt?
+  customer_email                         String?           @db.VarChar
+  customer_phone                         String?           @db.VarChar
+  customer_first_name                    String?           @db.VarChar
+  customer_last_name                     String?           @db.VarChar
+  customer_multipass_identifier          String?           @db.VarChar
+  customer_last_order_id                 BigInt?
+  customer_last_order_name               String?           @db.VarChar
+  customer_note                          String?
+  customer_order_count                   Int?
+  customer_state                         String?           @db.VarChar
+  customer_tags                          String?           @db.VarChar
+  customer_total_spent                   Decimal?          @db.Decimal(36, 8)
+  customer_updated_at                    DateTime?         @db.Timestamp(6)
+  customer_verified_email                Boolean?
+  customer_send_email_invite             Boolean?
+  customer_send_email_welcome            Boolean?
+  customer_password                      String?           @db.VarChar
+  customer_password_confirmation         String?           @db.VarChar
+  customer_group_name                    String?           @db.VarChar
+  customer_birthday                      String?           @db.VarChar
+  customer_gender                        String?           @db.VarChar
+  customer_last_order_date               DateTime?         @db.Timestamp(6)
+  customer_default_address_id            BigInt?
+  customer_default_address_address1      String?           @db.VarChar
+  customer_default_address_address2      String?           @db.VarChar
+  customer_default_address_city          String?           @db.VarChar
+  customer_default_address_company       String?           @db.VarChar
+  customer_default_address_country       String?           @db.VarChar
+  customer_default_address_province      String?           @db.VarChar
+  customer_default_address_first_name    String?           @db.VarChar
+  customer_default_address_last_name     String?           @db.VarChar
+  customer_default_address_phone         String?           @db.VarChar
+  customer_default_address_province_code String?           @db.VarChar
+  customer_default_address_country_code  String?           @db.VarChar
+  customer_default_address_default       Boolean?
+  customer_default_address_district      String?           @db.VarChar
+  customer_default_address_district_code String?           @db.VarChar
+  customer_default_address_ward          String?           @db.VarChar
+  customer_default_address_ward_code     String?           @db.VarChar
+  discount_codes                         Json?
+  email                                  String?           @db.VarChar
+  financial_status                       String?           @db.VarChar
+  fulfillment_status                     String?           @db.VarChar
+  tags                                   String?           @db.VarChar
+  gateway                                String?           @db.VarChar
+  gateway_code                           String?           @db.VarChar
+  landing_site                           String?           @db.VarChar
+  landing_site_ref                       String?           @db.VarChar
+  source                                 String?           @db.VarChar
+  name                                   String?           @db.VarChar
+  note                                   String?
+  number                                 Int?
+  order_number                           String?           @db.VarChar
+  processing_method                      String?           @db.VarChar
+  shipping_address_address1              String?           @db.VarChar
+  shipping_address_address2              String?           @db.VarChar
+  shipping_address_city                  String?           @db.VarChar
+  shipping_address_company               String?           @db.VarChar
+  shipping_address_country               String?           @db.VarChar
+  shipping_address_first_name            String?           @db.VarChar
+  shipping_address_last_name             String?           @db.VarChar
+  shipping_address_latitude              Float?
+  shipping_address_longitude             Float?
+  shipping_address_phone                 String?           @db.VarChar
+  shipping_address_province              String?           @db.VarChar
+  shipping_address_zip                   String?           @db.VarChar
+  shipping_address_name                  String?           @db.VarChar
+  shipping_address_province_code         String?           @db.VarChar
+  shipping_address_country_code          String?           @db.VarChar
+  shipping_address_district_code         String?           @db.VarChar
+  shipping_address_district              String?           @db.VarChar
+  shipping_address_ward_code             String?           @db.VarChar
+  shipping_address_ward                  String?           @db.VarChar
+  shipping_lines                         Json?
+  source_name                            String?           @db.VarChar
+  subtotal_price                         Decimal?          @db.Decimal(36, 8)
+  tax_lines                              String?           @db.VarChar
+  taxes_included                         Boolean?
+  token                                  String?           @db.VarChar
+  total_discounts                        Decimal?          @db.Decimal(36, 8)
+  total_line_items_price                 Decimal?          @db.Decimal(36, 8)
+  total_price                            Decimal?          @db.Decimal(36, 8)
+  total_tax                              Decimal?          @db.Decimal(36, 8)
+  total_weight                           Float?
+  updated_at                             DateTime?         @db.Timestamp(6)
+  note_attributes                        Json?
+  confirmed_at                           DateTime?         @db.Timestamp(6)
+  closed_status                          String?           @db.VarChar
+  cancelled_status                       String?           @db.VarChar
+  confirmed_status                       String?           @db.VarChar
+  assigned_location_id                   BigInt?
+  assigned_location_name                 String?           @db.VarChar
+  assigned_location_at                   DateTime?         @db.Timestamp(6)
+  exported_confirm_at                    DateTime?         @db.Timestamp(6)
+  user_id                                BigInt?
+  device_id                              BigInt?
+  location_id                            BigInt?
+  location_name                          String?           @db.VarChar
+  ref_order_id                           BigInt?
+  ref_order_date                         DateTime?         @db.Timestamp(6)
+  ref_order_number                       String?           @db.VarChar
+  utm_source                             String?           @db.VarChar
+  utm_medium                             String?           @db.VarChar
+  utm_campaign                           String?           @db.VarChar
+  utm_term                               String?           @db.VarChar
+  utm_content                            String?           @db.VarChar
+  payment_url                            String?           @db.VarChar
+  contact_email                          String?           @db.VarChar
+  order_processing_status                String?           @db.VarChar
+  prev_order_id                          BigInt?
+  prev_order_number                      String?           @db.VarChar
+  prev_order_date                        DateTime?         @db.Timestamp(6)
+  redeem_model                           String?           @db.VarChar
+  confirm_user                           BigInt?
+  risk_level                             String?           @db.VarChar
+  discount_applications                  Json?
+  database_created_at                    DateTime?         @default(now()) @db.Timestamp(6)
+  database_updated_at                    DateTime?         @default(now()) @db.Timestamp(6)
+  qr_generator                           qr_generator[]
+  manual_payments                        manual_payments[]
+
+  @@map("orders")
+  @@schema("haravan")
+}
+
+model haravan_products {
+  uuid                String    @id @db.VarChar
+  id                  Int?      @unique(map: "ix_haravan_products_id")
+  created_at          DateTime? @db.Timestamp(6)
+  updated_at          DateTime? @db.Timestamp(6)
+  published_at        DateTime? @db.Timestamp(6)
+  published_scope     String?   @db.VarChar
+  handle              String?   @db.VarChar
+  product_type        String?   @db.VarChar
+  images              Json?
+  tags                String?   @db.VarChar
+  template_suffix     String?   @db.VarChar
+  title               String?   @db.VarChar
+  variants            Json?
+  only_hide_from_list Boolean?
+  not_allow_promotion Boolean?
+  options             Json?
+  database_created_at DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at DateTime? @default(now()) @db.Timestamp(6)
+
+  @@index([uuid], map: "ix_haravan_products_uuid")
+  @@map("products")
+  @@schema("haravan")
+}
+
+model purchase_receives {
+  uuid                  String    @id @db.VarChar
+  id                    BigInt?   @unique(map: "ix_haravan_purchase_receives_id")
+  receive_number        String?   @db.VarChar
+  supplier              Json?
+  supplier_id           BigInt?
+  supplier_name         String?   @db.VarChar
+  location              Json?
+  location_id           BigInt?
+  location_name         String?   @db.VarChar
+  created_at            DateTime? @db.Timestamp(6)
+  updated_at            DateTime? @db.Timestamp(6)
+  received_at           DateTime? @db.Timestamp(6)
+  notes                 String?
+  status                String?   @db.VarChar
+  total                 Decimal?  @db.Decimal(36, 8)
+  total_cost            Decimal?  @db.Decimal(36, 8)
+  tags                  String?   @db.VarChar
+  ref_purchase_order_id String?   @db.VarChar
+  ref_number            String?   @db.VarChar
+  line_items            Json?
+  database_created_at   DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at   DateTime? @default(now()) @db.Timestamp(6)
+
+  @@index([uuid], map: "ix_haravan_purchase_receives_uuid")
+  @@schema("haravan")
+}
+
+model purchase_receives_items {
+  uuid                    String    @id @db.VarChar
+  id                      BigInt?   @unique(map: "ix_haravan_purchase_receives_items_id")
+  purchase_receive_id     BigInt?
+  purchase_receive_number String?   @db.VarChar
+  product_id              BigInt?
+  product_name            String?   @db.VarChar
+  product_variant_id      BigInt?
+  variant_title           String?   @db.VarChar
+  sku                     String?   @db.VarChar
+  barcode                 String?   @db.VarChar
+  original_cost           Decimal?  @db.Decimal(36, 8)
+  discount_amount         Decimal?  @db.Decimal(36, 8)
+  cost                    Decimal?  @db.Decimal(36, 8)
+  product_quantity        Int?
+  total_cost              Decimal?  @db.Decimal(36, 8)
+  variant_unit            Json?
+  lots                    Json?
+  database_created_at     DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at     DateTime? @default(now()) @db.Timestamp(6)
+
+  @@index([product_id], map: "ix_haravan_purchase_receives_items_product_id")
+  @@index([purchase_receive_id], map: "ix_haravan_purchase_receives_items_purchase_receive_id")
+  @@index([uuid], map: "ix_haravan_purchase_receives_items_uuid")
+  @@schema("haravan")
+}
+
+model refunds {
+  uuid                String    @id @db.VarChar(36)
+  id                  BigInt?   @unique(map: "ix_haravan_refunds_id")
+  order_id            BigInt?
+  created_at          DateTime? @db.Timestamp(6)
+  note                String?   @db.VarChar
+  refund_line_items   Json?
+  restock             Boolean?
+  user_id             BigInt?
+  location_id         BigInt?
+  transactions        Json?
+  database_created_at DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at DateTime? @default(now()) @db.Timestamp(6)
+
+  @@schema("haravan")
+}
+
+model transactions {
+  uuid                String    @id @db.VarChar(36)
+  id                  BigInt?   @unique(map: "ix_haravan_transactions_id")
+  order_id            BigInt?
+  amount              Decimal?  @db.Decimal(36, 8)
+  authorization       String?   @db.VarChar(50)
+  created_at          DateTime? @db.Timestamp(6)
+  device_id           BigInt?
+  gateway             String?   @db.VarChar(100)
+  kind                String?   @db.VarChar(10)
+  receipt             String?   @db.VarChar(255)
+  status              String?   @db.VarChar(10)
+  test                Boolean?
+  user_id             BigInt?
+  location_id         BigInt?
+  currency            String?   @db.VarChar
+  is_cod_gateway      Boolean?
+  database_created_at DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at DateTime? @default(now()) @db.Timestamp(6)
+
+  @@schema("haravan")
+}
+
+model haravan_users {
+  uuid                  String    @id @db.VarChar
+  id                    BigInt?   @unique(map: "ix_haravan_users_id")
+  email                 String?   @db.VarChar
+  first_name            String?   @db.VarChar
+  last_name             String?   @db.VarChar
+  phone                 String?   @db.VarChar
+  account_owner         Boolean?
+  bio                   String?
+  im                    String?
+  receive_announcements Int?
+  url                   String?
+  user_type             String?   @db.VarChar
+  permissions           Json?
+  database_created_at   DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at   DateTime? @default(now()) @db.Timestamp(6)
+
+  @@index([uuid], map: "ix_haravan_users_uuid")
+  @@map("users")
+  @@schema("haravan")
+}
+
+model haravan_variants {
+  uuid                 String    @id @db.VarChar
+  id                   BigInt?   @unique(map: "ix_haravan_variants_id")
+  product_id           BigInt?
+  published_scope      String?   @db.VarChar
+  handle               String?   @db.VarChar
+  product_type         String?   @db.VarChar
+  template_suffix      String?   @db.VarChar
+  product_title        String?   @db.VarChar
+  product_vendor       String?   @db.VarChar
+  barcode              String?   @db.VarChar
+  compare_at_price     Decimal?  @db.Decimal(36, 8)
+  created_at           DateTime? @db.Timestamp(6)
+  fulfillment_service  String?   @db.VarChar
+  grams                Int?
+  inventory_management String?   @db.VarChar
+  inventory_policy     String?   @db.VarChar
+  inventory_quantity   Int?
+  position             Int?
+  price                Decimal?  @db.Decimal(36, 8)
+  requires_shipping    Boolean?
+  sku                  String?   @db.VarChar
+  taxable              Boolean?
+  title                String?   @db.VarChar
+  updated_at           DateTime? @db.Timestamp(6)
+  image_id             BigInt?
+  option1              String?   @db.VarChar
+  option2              String?   @db.VarChar
+  option3              String?   @db.VarChar
+  qty_onhand           Int?
+  qty_commited         Int?
+  qty_available        Int?
+  qty_incoming         Int?
+  database_created_at  DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at  DateTime? @default(now()) @db.Timestamp(6)
+
+  @@index([product_id], map: "ix_haravan_variants_product_id")
+  @@index([uuid], map: "ix_haravan_variants_uuid")
+  @@map("variants")
+  @@schema("haravan")
+}
+
+model haravan_warehouse_inventories {
+  uuid                String    @id @db.VarChar
+  id                  BigInt?   @unique(map: "ix_haravan_warehouse_inventories_id")
+  loc_id              BigInt?
+  product_id          BigInt?
+  variant_id          BigInt?
+  qty_onhand          BigInt?
+  qty_committed       BigInt?
+  qty_available       BigInt?
+  qty_incoming        BigInt?
+  updated_at          DateTime? @db.Timestamp(6)
+  database_created_at DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at DateTime? @default(now()) @db.Timestamp(6)
+
+  @@index([uuid], map: "ix_haravan_warehouse_inventories_uuid")
+  @@map("warehouse_inventories")
+  @@schema("haravan")
+}
+
+model warehouses {
+  id   Int     @id
+  name String?
+
+  @@schema("haravan")
+}
+
+model inventory_inventory_check_sheets {
+  id             String    @id @db.Uuid
+  staff          Decimal?  @db.Decimal
+  count_in_book  Decimal?  @db.Decimal
+  count_for_real Decimal?  @db.Decimal
+  extra          Decimal?  @db.Decimal
+  lines          Json?
+  created_at     DateTime? @default(now()) @db.Timestamp(6)
+  updated_at     DateTime? @default(now()) @db.Timestamp(6)
+  warehouse      String?   @db.VarChar(255)
+  warehouse_id   Decimal?  @db.Decimal
+  code           String?   @db.VarChar(255)
+
+  @@map("inventory_check_sheets")
+  @@schema("inventory")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model inventory_check_sheets_2024 {
+  id             String?   @db.Uuid
+  staff          Decimal?  @db.Decimal
+  count_in_book  Decimal?  @db.Decimal
+  count_for_real Decimal?  @db.Decimal
+  extra          Decimal?  @db.Decimal
+  lines          Json?
+  created_at     DateTime? @db.Timestamp(6)
+  updated_at     DateTime? @db.Timestamp(6)
+  warehouse      String?   @db.VarChar(255)
+  warehouse_id   Decimal?  @db.Decimal
+  code           String?   @db.VarChar(255)
+
+  @@ignore
+  @@schema("inventory")
+}
+
+model rfid_tags_warehouse {
+  id                   String    @id @db.Uuid
+  rfid_tag             String?   @db.VarChar
+  warehouse            String?   @db.VarChar
+  warehouse_id         Decimal?  @db.Decimal
+  product_id           Decimal?  @db.Decimal
+  varient_id           Decimal?  @db.Decimal
+  count_in_book        Decimal?  @db.Decimal
+  count_for_real       Decimal?  @db.Decimal
+  count_extra_for_real Decimal?  @db.Decimal
+  varient_name         String?   @db.VarChar
+  created_at           DateTime? @default(now()) @db.Timestamp(6)
+  updated_at           DateTime? @default(now()) @db.Timestamp(6)
+
+  @@schema("inventory")
+}
+
+model inventory_check_lines {
+  uuid                 String    @id @db.Uuid
+  id                   Int       @unique
+  status               String?
+  sort                 String?
+  user_created         String?
+  date_created         DateTime?
+  user_updated         String?
+  date_updated         DateTime?
+  product_name         String?
+  product_id           String?
+  variant_id           Int?
+  count_in_book        Int?
+  count_for_real       Int?
+  checked_status       String?
+  sheet_id             Int?
+  variant_name         String?
+  product_image        String?
+  sku                  String?
+  count_extra_for_real Int?
+  barcode              String?
+  category             String?
+  count_in_ordered     String?
+  rfid_tags            Json?
+
+  @@schema("inventory_cms")
+}
+
+model inventory_cms_inventory_check_sheets {
+  uuid           String    @id @db.Uuid
+  id             Int       @unique
+  status         String?
+  sort           String?
+  user_created   String?
+  date_created   DateTime?
+  user_updated   String?
+  date_updated   DateTime?
+  warehouse      String?
+  staff          Int?
+  result         String?
+  code           String?
+  warehouse_id   String?
+  count_in_book  Int?
+  count_for_real Int?
+  extra          Int?
+  lines          Json?
+
+  @@map("inventory_check_sheets")
+  @@schema("inventory_cms")
+}
+
+model metadata {
+  product_id       Int     @id
+  variant_id       Int?
+  path_to_3dm      String?
+  collection_drive String?
+
+  @@schema("jemmia")
+}
+
+model buyback_exchange_approval_instances {
+  id               Int       @id @default(autoincrement())
+  instance_code    String?   @unique @db.VarChar
+  serial_number    String?   @db.VarChar
+  instance_type    String?   @db.VarChar
+  order_code       String?   @db.VarChar
+  new_order_code   String?   @db.VarChar
+  status           String?   @db.VarChar
+  customer_name    String?   @db.VarChar
+  phone_number     String?   @db.VarChar
+  national_id      String?   @db.VarChar
+  products_info    Json?
+  reason           String?   @db.VarChar
+  refund_amount    Decimal?  @db.Decimal
+  is_synced_to_crm Boolean?
+  created_at       DateTime? @db.Timestamp(6)
+  updated_at       DateTime? @db.Timestamp(6)
+  submitted_date   DateTime? @db.Timestamp(6)
+
+  @@schema("larksuite")
+}
+
+model crm_lark_message {
+  id                  String    @id @db.Uuid
+  parent_id           String?   @db.Uuid
+  crm_id              String?   @db.VarChar
+  database_created_at DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at DateTime? @default(now()) @db.Timestamp(6)
+  lark_message_id     String?   @db.VarChar
+  order_data_item     Json?     @db.Json
+  order_id            BigInt?
+  order_name          String?   @db.VarChar
+
+  @@schema("larksuite")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model cskh {
+  instance_code  String?
+  instance_type  String?
+  order_code     String?
+  new_order_code String?
+  status         String?
+  customer_name  String?
+  phone_number   String?
+  products_info  String?
+  reason         String?
+  refund_amount  Float?
+  submitted_date DateTime? @db.Timestamp(6)
+
+  @@ignore
+  @@schema("larksuite")
+}
+
+model customer_appointments {
+  uuid                           String    @id @db.VarChar
+  id                             String?   @unique(map: "ix_larksuite_customer_appointments_id") @db.VarChar
+  lead_sale_name                 String?   @db.VarChar
+  lead_sale_email                String?   @db.VarChar
+  suport_sale_name_list          String?
+  suport_sale_email_list         String?
+  store_name                     String?   @db.VarChar
+  customer_name                  String?   @db.VarChar
+  customer_phone                 String?   @db.VarChar
+  customer_gender                String?   @db.VarChar
+  channel                        String?   @db.VarChar
+  order_status                   String?   @db.VarChar
+  expected_visit_date            DateTime? @db.Timestamp(6)
+  expected_visit_time_utc_plus_7 DateTime? @db.Timestamp(6)
+  store_welcome_content          String?
+  exchange_policy                String?
+  note                           String?
+  budget_range                   String?   @db.VarChar
+  budget                         Decimal?  @db.Decimal(36, 8)
+  created_at                     DateTime? @db.Timestamp(6)
+  updated_at                     DateTime? @db.Timestamp(6)
+  database_created_at            DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at            DateTime? @default(now()) @db.Timestamp(6)
+
+  @@index([uuid], map: "ix_larksuite_customer_appointments_uuid")
+  @@schema("larksuite")
+}
+
+model larksuite_departments {
+  department_id        String  @id
+  open_department_id   String? @unique
+  name                 String?
+  parent_department_id String?
+
+  @@map("departments")
+  @@schema("larksuite")
+}
+
+model groups {
+  group_id   String  @id
+  group_name String?
+
+  @@schema("larksuite")
+}
+
+model instances {
+  uuid          String    @id
+  serial_number String?   @unique
+  instance_code String?   @unique
+  approval_code String?
+  approval_name String?
+  status        String?
+  department_id String?
+  start_time    DateTime? @db.Timestamp(6)
+  end_time      DateTime? @db.Timestamp(6)
+  user_id       String?
+  form          Json?
+  form_data     Json?
+
+  @@schema("larksuite")
+}
+
+model lark_line_items_payment {
+  lark_record_id String @db.VarChar(255)
+  order_id       String @db.VarChar(50)
+  variant_id     String @db.VarChar
+
+  @@id([order_id, variant_id])
+  @@schema("larksuite")
+}
+
+model lark_order_qr_generator {
+  haravan_order_id BigInt @id
+  lark_record_id   String @db.VarChar(255)
+
+  @@schema("larksuite")
+}
+
+model lark_variants {
+  variant_id     BigInt  @id
+  lark_record_id String? @db.VarChar(255)
+
+  @@schema("larksuite")
+}
+
+model lark_warehouse_inventories {
+  id                  Int       @id(map: "warehouse_inventories_lark_pkey") @unique(map: "ix_larksuite_warehouse_inventories_lark_id") @default(autoincrement())
+  lark_record_id      String?   @db.VarChar
+  qty_onhand          BigInt?
+  qty_committed       BigInt?
+  qty_available       BigInt?
+  qty_incoming        BigInt?
+  database_created_at DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at DateTime? @default(now()) @db.Timestamp(6)
+
+  @@schema("larksuite")
+}
+
+model promotion_approval {
+  id                     Int       @id @default(autoincrement())
+  order_code             String?   @db.VarChar
+  reason                 String?   @db.VarChar
+  customer_name          String?   @db.VarChar
+  phone_number           String?   @db.VarChar
+  order_amount           Decimal?  @db.Decimal
+  order_request_discount Decimal?  @db.Decimal
+  is_synced_to_crm       Boolean?  @default(false)
+  created_at             DateTime? @db.Timestamp(6)
+  updated_at             DateTime? @db.Timestamp(6)
+  submitted_date         DateTime? @db.Timestamp(6)
+  instance_code          String?   @unique(map: "instance_code_unique") @db.VarChar
+  serial_number          String?   @db.VarChar
+
+  @@schema("larksuite")
+}
+
+model records {
+  uuid                String   @id @db.Uuid
+  record_id           String   @unique
+  table_id            String?
+  app_token           String?
+  fields              Json
+  database_created_at DateTime @default(now())
+  database_updated_at DateTime
+
+  @@schema("larksuite")
+}
+
+model shifts {
+  shift_id   String  @id
+  shift_name String?
+
+  @@schema("larksuite")
+}
+
+model user_daily_shifts {
+  day_no              Int
+  group_id            String
+  month               Int
+  shift_id            String
+  user_id             String
+  database_created_at DateTime? @default(now()) @db.Timestamp(6)
+
+  @@id([day_no, group_id, month, user_id])
+  @@schema("larksuite")
+}
+
+model larksuite_users {
+  user_id             String   @id
+  open_id             String?  @unique
+  union_id            String?  @unique
+  name                String?
+  en_name             String?
+  email               String?
+  enterprise_email    String?
+  gender              Int?
+  city                String?
+  country             String?
+  department_ids      String[]
+  description         String?
+  employee_no         String?
+  employee_type       Int?
+  is_tenant_manager   Boolean?
+  job_title           String?
+  join_time           BigInt?
+  leader_user_id      String?
+  work_station        String?
+  status_is_activated Boolean?
+  status_is_exited    Boolean?
+  status_is_frozen    Boolean?
+  status_is_resigned  Boolean?
+  status_is_unjoin    Boolean?
+  avatar              Json?
+
+  @@map("users")
+  @@schema("larksuite")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model exchange_rate {
+  time       DateTime  @db.Timestamp(6)
+  code       String?   @db.VarChar
+  bank       String?   @db.VarChar
+  buy        Decimal?  @db.Decimal
+  sell       Decimal?  @db.Decimal
+  transfer   Decimal?  @db.Decimal
+  created_at DateTime? @db.Timestamp(6)
+
+  @@index([time(sort: Desc)])
+  @@ignore
+  @@schema("market_data")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model gold_pricing {
+  time       DateTime  @db.Timestamp(6)
+  type       String?   @db.VarChar
+  buy        Decimal?  @db.Decimal
+  sell       Decimal?  @db.Decimal
+  created_at DateTime? @db.Timestamptz(6)
+
+  @@index([time(sort: Desc)])
+  @@ignore
+  @@schema("market_data")
+}
+
+model inventory_items {
+  uuid                String    @id @db.VarChar
+  sku                 String?   @unique(map: "ix_misa_inventory_items_sku") @db.VarChar
+  database_created_at DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at DateTime? @default(now()) @db.Timestamp(6)
+
+  @@index([uuid], map: "ix_misa_inventory_items_uuid")
+  @@schema("misa")
+}
+
+model items {
+  uuid                                   String    @id @db.VarChar(36)
+  id                                     String?   @unique(map: "ix_misa_items_id") @db.VarChar(50)
+  dictionary_type                        Int?
+  inventory_item_name                    String?   @db.VarChar
+  inventory_item_code                    String?   @db.VarChar
+  inventory_item_type                    Int?
+  minimum_stock                          Float?
+  inventory_item_category_code_list      String?   @db.VarChar
+  inventory_item_category_name_list      String?   @db.VarChar
+  inventory_item_category_id_list        String?   @db.VarChar
+  inventory_item_category_misa_code_list String?   @db.VarChar
+  branch_id                              String?   @db.VarChar
+  discount_type                          Int?
+  inventory_item_cost_method             Int?
+  unit_id                                String?   @db.VarChar
+  is_unit_price_after_tax                Boolean?
+  is_system                              Boolean?
+  inactive                               Boolean?
+  is_follow_serial_number                Boolean?
+  is_allow_duplicate_serial_number       Boolean?
+  purchase_discount_rate                 Float?
+  unit_price                             Decimal?  @db.Decimal(36, 8)
+  sale_price1                            Decimal?  @db.Decimal(36, 8)
+  sale_price2                            Decimal?  @db.Decimal(36, 8)
+  sale_price3                            Decimal?  @db.Decimal(36, 8)
+  fixed_sale_price                       Decimal?  @db.Decimal(36, 8)
+  import_tax_rate                        Float?
+  export_tax_rate                        Float?
+  fixed_unit_price                       Decimal?  @db.Decimal(36, 8)
+  description                            String?
+  inventory_account                      String?   @db.VarChar
+  cogs_account                           String?   @db.VarChar
+  sale_account                           String?   @db.VarChar
+  unit_list                              Json?
+  unit_name                              String?   @db.VarChar
+  reftype                                Int?
+  reftype_category                       Int?
+  quantityBarCode                        Int?
+  allocation_type                        Int?
+  allocation_time                        Int?
+  tax_reduction_type                     Int?
+  purchase_last_unit_price               Decimal?  @db.Decimal(36, 8)
+  is_specific_inventory_item             Boolean?
+  has_delete_fixed_unit_price            Boolean?
+  has_delete_unit_price                  Boolean?
+  has_delete_discount                    Boolean?
+  has_delete_unit_convert                Boolean?
+  has_delete_norm                        Boolean?
+  has_delete_serial_type                 Boolean?
+  is_edit_multiple                       Boolean?
+  is_not_sync_crm                        Boolean?
+  isUpdateRebundant                      Boolean?
+  is_special_inv                         Boolean?
+  isCustomPrimaryKey                     Boolean?
+  isFromProcessBalance                   Boolean?
+  is_drug                                Boolean?
+  status_sync_medicine_national          Int?
+  is_sync_corp                           Boolean?
+  convert_rate                           Float?
+  is_update_main_unit                    Boolean?
+  is_image_duplicate                     Boolean?
+  is_group                               Boolean?
+  discount_value                         Decimal?  @db.Decimal(36, 8)
+  is_set_discount                        Boolean?
+  index_unit_convert                     Int?
+  excel_row_index                        Int?
+  is_valid                               Boolean?
+  created_date                           DateTime? @db.Timestamp(6)
+  created_by                             String?   @db.VarChar
+  modified_date                          DateTime? @db.Timestamp(6)
+  modified_by                            String?   @db.VarChar
+  auto_refno                             Boolean?
+  force_update                           Boolean?
+  state                                  Int?
+  database_created_at                    DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at                    DateTime? @default(now()) @db.Timestamp(6)
+
+  @@schema("misa")
+}
+
+model purchase_voucher_details {
+  uuid                                             String    @db.VarChar(36)
+  ref_detail_id                                    String    @unique @db.VarChar(36)
+  refid                                            String?   @db.VarChar(36)
+  inventory_item_id                                String?   @db.VarChar(36)
+  inventory_item_name                              String?   @db.VarChar
+  stock_id                                         String?   @db.VarChar(36)
+  unit_id                                          String?   @db.VarChar(36)
+  pu_invoice_refid                                 String?   @db.VarChar(36)
+  main_unit_id                                     String?   @db.VarChar(36)
+  purchase_purpose_id                              String?   @db.VarChar(36)
+  organization_unit_id                             String?   @db.VarChar(36)
+  sort_order                                       Int?
+  inventory_resale_type_id                         Int?
+  inv_date                                         DateTime? @db.Timestamp(6)
+  date_enough_tax_payment                          DateTime? @db.Timestamp(6)
+  un_resonable_cost                                Boolean?
+  quantity                                         Float?
+  unit_price                                       Decimal?  @db.Decimal(36, 8)
+  amount_oc                                        Decimal?  @db.Decimal(36, 8)
+  amount                                           Decimal?  @db.Decimal(36, 8)
+  discount_rate                                    Float?
+  discount_amount_oc                               Decimal?  @db.Decimal(36, 8)
+  import_charge_before_custom_amount_oc            Decimal?  @db.Decimal(36, 8)
+  import_charge_before_custom_amount               Decimal?  @db.Decimal(36, 8)
+  import_charge_before_custom_amount_main_currency Decimal?  @db.Decimal(36, 8)
+  allocation_rate_import_origin_currency           Float?
+  import_charge_before_custom_amount_allocated     Decimal?  @db.Decimal(36, 8)
+  cash_out_exchange_rate_management                Float?
+  allocation_rate                                  Float?
+  allocation_rate_import                           Float?
+  unit_price_after_tax                             Decimal?  @db.Decimal(36, 8)
+  import_charge_exchange_rate                      Decimal?  @db.Decimal(36, 8)
+  cash_out_diff_vat_amount_finance                 Decimal?  @db.Decimal(36, 8)
+  cash_out_amount_management                       Decimal?  @db.Decimal(36, 8)
+  cash_out_diff_amount_management                  Decimal?  @db.Decimal(36, 8)
+  cash_out_vat_amount_management                   Decimal?  @db.Decimal(36, 8)
+  cash_out_diff_vat_amount_management              Decimal?  @db.Decimal(36, 8)
+  cash_out_exchange_rate_finance                   Float?
+  special_consume_tax_amount                       Decimal?  @db.Decimal(36, 8)
+  environmental_tax_amount                         Decimal?  @db.Decimal(36, 8)
+  environmental_tax_amount_oc                      Decimal?  @db.Decimal(36, 8)
+  cash_out_amount_finance                          Decimal?  @db.Decimal(36, 8)
+  cash_out_diff_amount_finance                     Decimal?  @db.Decimal(36, 8)
+  cash_out_vat_amount_finance                      Decimal?  @db.Decimal(36, 8)
+  import_tax_rate_price                            Decimal?  @db.Decimal(36, 8)
+  import_tax_rate                                  Float?
+  import_tax_amount_oc                             Decimal?  @db.Decimal(36, 8)
+  import_tax_amount                                Decimal?  @db.Decimal(36, 8)
+  anti_dumping_tax_rate                            Float?
+  anti_dumping_tax_amount                          Decimal?  @db.Decimal(36, 8)
+  anti_dumping_tax_amount_oc                       Decimal?  @db.Decimal(36, 8)
+  anti_dumping_tax_account                         String?   @db.VarChar
+  special_consume_tax_rate                         Float?
+  special_consume_tax_amount_oc                    Decimal?  @db.Decimal(36, 8)
+  vat_rate                                         Float?
+  vat_amount_oc                                    Decimal?  @db.Decimal(36, 8)
+  vat_amount                                       Decimal?  @db.Decimal(36, 8)
+  fob_amount_oc                                    Decimal?  @db.Decimal(36, 8)
+  fob_amount                                       Decimal?  @db.Decimal(36, 8)
+  import_charge_amount                             Decimal?  @db.Decimal(36, 8)
+  discount_amount                                  Decimal?  @db.Decimal(36, 8)
+  freight_amount                                   Decimal?  @db.Decimal(36, 8)
+  inward_amount                                    Decimal?  @db.Decimal(36, 8)
+  main_convert_rate                                Float?
+  main_quantity                                    Float?
+  main_unit_price                                  Decimal?  @db.Decimal(36, 8)
+  description                                      String?
+  debit_account                                    String?   @db.VarChar
+  credit_account                                   String?   @db.VarChar
+  exchange_rate_operator                           String?   @db.VarChar
+  vat_account                                      String?   @db.VarChar
+  inv_no                                           String?   @db.VarChar
+  import_tax_account                               String?   @db.VarChar
+  special_consume_tax_account                      String?   @db.VarChar
+  environmental_tax_account                        String?   @db.VarChar
+  vat_description                                  String?
+  stock_code                                       String?   @db.VarChar
+  inventory_item_code                              String?   @db.VarChar
+  main_unit_name                                   String?   @db.VarChar
+  organization_unit_code                           String?   @db.VarChar
+  organization_unit_name                           String?   @db.VarChar
+  unit_name                                        String?   @db.VarChar
+  edit_version                                     BigInt?
+  purchase_purpose_code                            String?   @db.VarChar
+  inventory_item_type                              Int?
+  purchase_purpose_name                            String?
+  pu_order_refno                                   String?   @db.VarChar
+  pu_order_code                                    String?   @db.VarChar
+  is_follow_serial_number                          Boolean?
+  is_allow_duplicate_serial_number                 Boolean?
+  is_description                                   Boolean?
+  panel_height_quantity                            Float?
+  panel_length_quantity                            Float?
+  panel_quantity                                   Float?
+  panel_radius_quantity                            Float?
+  panel_width_quantity                             Float?
+  inventory_item_cogs_account                      String?   @db.VarChar
+  inventory_account                                String?   @db.VarChar
+  unit_list                                        String?
+  import_tax_rate_price_origin                     Decimal?  @db.Decimal(36, 8)
+  quantity_product_produce                         Float?
+  database_created_at                              DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at                              DateTime? @default(now()) @db.Timestamp(6)
+
+  @@id([uuid, ref_detail_id])
+  @@index([refid], map: "ix_misa_purchase_voucher_details_refid")
+  @@schema("misa")
+}
+
+model purchase_vouchers {
+  uuid                                String    @id @db.VarChar(36)
+  refid                               String?   @unique(map: "ix_misa_purchase_vouchers_refid") @db.VarChar(50)
+  branch_id                           String?   @db.VarChar(36)
+  account_object_id                   String?   @db.VarChar(36)
+  reftype                             Int?
+  display_on_book                     Int?
+  refdate                             DateTime? @db.Timestamp(6)
+  posted_date                         DateTime? @db.Timestamp(6)
+  caba_refdate                        DateTime? @db.Timestamp(6)
+  caba_posted_date                    DateTime? @db.Timestamp(6)
+  created_date                        DateTime? @db.Timestamp(6)
+  modified_date                       DateTime? @db.Timestamp(6)
+  is_posted_finance                   Boolean?
+  is_posted_management                Boolean?
+  is_posted_cash_book_finance         Boolean?
+  is_posted_cash_book_management      Boolean?
+  is_posted_inventory_book_finance    Boolean?
+  is_posted_inventory_book_management Boolean?
+  total_amount_oc                     Decimal?  @db.Decimal(36, 8)
+  total_amount                        Decimal?  @db.Decimal(36, 8)
+  total_import_tax_amount_oc          Decimal?  @db.Decimal(36, 8)
+  total_import_tax_amount             Decimal?  @db.Decimal(36, 8)
+  total_vat_amount_oc                 Decimal?  @db.Decimal(36, 8)
+  total_special_consume_tax_amount    Decimal?  @db.Decimal(36, 8)
+  total_custom_before_amount          Decimal?  @db.Decimal(36, 8)
+  caba_amount_oc                      Decimal?  @db.Decimal(36, 8)
+  caba_amount                         Decimal?  @db.Decimal(36, 8)
+  total_vat_amount                    Decimal?  @db.Decimal(36, 8)
+  total_discount_amount_oc            Decimal?  @db.Decimal(36, 8)
+  total_discount_amount               Decimal?  @db.Decimal(36, 8)
+  total_freight_amount                Decimal?  @db.Decimal(36, 8)
+  total_inward_amount                 Decimal?  @db.Decimal(36, 8)
+  total_special_consume_tax_amount_oc Decimal?  @db.Decimal(36, 8)
+  total_payment_amount                Decimal?  @db.Decimal(36, 8)
+  total_payment_amount_oc             Decimal?  @db.Decimal(36, 8)
+  total_environmental_tax_amount      Decimal?  @db.Decimal(36, 8)
+  refno_finance                       String?   @db.VarChar
+  account_object_name                 String?   @db.VarChar
+  account_object_address              String?   @db.VarChar
+  created_by                          String?   @db.VarChar
+  modified_by                         String?   @db.VarChar
+  journal_memo                        String?
+  account_object_code                 String?   @db.VarChar
+  paid_status                         Int?
+  include_invoice                     Int?
+  branch_name                         String?   @db.VarChar
+  edit_version                        BigInt?
+  currency_id                         String?   @db.VarChar
+  exchange_rate                       Float?
+  account_object_tax_code             String?   @db.VarChar
+  is_freight_service                  Boolean?
+  employee_id                         String?   @db.VarChar(36)
+  in_outward_refno                    String?   @db.VarChar
+  status_sync_medicine_national       Int?
+  discount_type                       Int?
+  employee_name                       String?   @db.VarChar
+  employee_code                       String?   @db.VarChar
+  total_anti_dumping_tax_amount       Decimal?  @db.Decimal(36, 8)
+  total_anti_dumping_tax_amount_oc    Decimal?  @db.Decimal(36, 8)
+  wesign_document_text                String?
+  database_created_at                 DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at                 DateTime? @default(now()) @db.Timestamp(6)
+
+  @@schema("misa")
+}
+
+model misa_users {
+  uuid                String    @id @db.Uuid
+  employee_code       String?   @unique @db.VarChar(255)
+  haravan_id          BigInt    @unique
+  email               String?   @db.VarChar(255)
+  database_created_at DateTime? @default(now())
+  database_updated_at DateTime?
+
+  @@map("users")
+  @@schema("misa")
+}
+
+model misa_warehouse_inventories {
+  uuid                   String    @db.VarChar(36)
+  inventory_item_id      String    @db.VarChar(36)
+  inventory_item_code    String?   @db.VarChar(50)
+  inventory_item_name    String?   @db.VarChar(255)
+  stock_id               String    @db.VarChar(36)
+  stock_code             String?   @db.VarChar(50)
+  stock_name             String?   @db.VarChar(255)
+  organization_unit_id   String?   @db.VarChar(36)
+  organization_unit_code String?   @db.VarChar(50)
+  organization_unit_name String?   @db.VarChar(255)
+  quantity_balance       Float?
+  amount_balance         Decimal?  @db.Decimal(36, 2)
+  unit_price             Decimal?  @db.Decimal(36, 2)
+  database_created_at    DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at    DateTime? @default(now()) @db.Timestamp(6)
+
+  @@id([inventory_item_id, stock_id])
+  @@map("warehouse_inventories")
+  @@schema("misa")
+}
+
+model conversation {
+  uuid                String    @id @db.VarChar
+  id                  String?   @unique(map: "ix_pancake_conversation_id") @db.VarChar
+  customer_id         String?   @db.VarChar
+  type                String?   @db.VarChar
+  inserted_at         DateTime? @db.Timestamp(6)
+  page_id             String?   @db.VarChar
+  has_phone           Boolean?
+  post_id             String?   @db.VarChar
+  database_created_at DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at DateTime? @default(now()) @db.Timestamp(6)
+  assignee_histories  Json?
+  added_users         Json?
+  added_user_id       String?   @db.VarChar
+  added_user_name     String?   @db.VarChar
+  added_user_email    String?   @db.VarChar
+  added_user_fb_id    String?   @db.VarChar
+  updated_at          DateTime? @db.Timestamp(6)
+  last_sent_at        DateTime? @db.Timestamp(6)
+  avatar_url          String?   @db.VarChar
+  ad_ids              Json?
+
+  @@unique([id, page_id], map: "conversation_id_page_idx")
+  @@index([page_id], map: "idx_conversation_page_id")
+  @@index([id], map: "idx_id")
+  @@index([uuid], map: "ix_pancake_conversation_uuid")
+  @@schema("pancake")
+}
+
+model conversation_page_customer {
+  uuid                String?   @unique @db.VarChar
+  customer_id         String    @db.VarChar
+  conversation_id     String    @db.VarChar
+  database_created_at DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at DateTime? @default(now()) @db.Timestamp(6)
+
+  @@id([customer_id, conversation_id])
+  @@schema("pancake")
+}
+
+model conversation_tag {
+  uuid                String?   @unique @db.VarChar
+  conversation_id     String    @db.VarChar
+  page_id             String?   @db.VarChar
+  customer_id         String?   @db.VarChar
+  inserted_at         DateTime  @db.Timestamp(6)
+  post_id             String?   @db.VarChar
+  has_phone           Boolean?
+  tag_page_id         Int
+  tag_label           String?   @db.VarChar
+  tag_description     String?   @db.VarChar
+  action              String    @db.VarChar
+  database_created_at DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at DateTime? @default(now()) @db.Timestamp(6)
+
+  @@id([conversation_id, inserted_at, tag_page_id, action])
+  @@schema("pancake")
+}
+
+model frappe_lead_conversation {
+  conversation_id String    @id @db.VarChar
+  frappe_name_id  String?   @db.VarChar
+  updated_at      DateTime? @db.Timestamp(6)
+  created_at      DateTime? @db.Timestamp(6)
+
+  @@schema("pancake")
+}
+
+model frappe_lead_conversation_stag {
+  conversation_id String    @id @db.VarChar
+  frappe_name_id  String?   @db.VarChar
+  updated_at      DateTime? @db.Timestamp(6)
+  created_at      DateTime? @db.Timestamp(6)
+
+  @@schema("pancake")
+}
+
+model messages {
+  id                  String    @id @db.VarChar
+  message             String?   @db.VarChar
+  type                String?   @db.VarChar
+  seen                Boolean?
+  show_info           Boolean?
+  from_id             String?   @db.VarChar
+  from_name           String?   @db.VarChar
+  attachments         Json?     @db.Json
+  inserted_at         DateTime? @db.Timestamp(6)
+  page_id             String?   @db.VarChar
+  conversation_id     String?   @db.VarChar
+  has_phone           Boolean?
+  is_removed          Boolean?
+  can_hide            Boolean?
+  comment_count       Int?
+  like_count          Int?
+  parent_id           String?   @db.VarChar
+  is_hidden           Boolean?
+  rich_message        String?   @db.VarChar
+  edit_history        String?   @db.VarChar
+  message_tags        Json?     @db.Json
+  is_parent_hidden    Boolean?
+  can_comment         Boolean?
+  can_like            Boolean?
+  can_remove          Boolean?
+  can_reply_privately Boolean?
+  is_livestream_order Boolean?
+  is_parent           Boolean?
+  phone_info          Json?     @db.Json
+  original_message    String?   @db.VarChar
+
+  @@schema("pancake")
+}
+
+model page {
+  uuid                String    @id @db.VarChar
+  id                  String?   @unique(map: "ix_pancake_page_id") @db.VarChar
+  inserted_at         DateTime? @db.Timestamp(6)
+  connected           Boolean?
+  is_activated        Boolean?
+  name                String?   @db.VarChar
+  platform            String?   @db.VarChar
+  timezone            String?   @db.VarChar
+  settings            Json?
+  platform_extra_info Json?
+  database_created_at DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at DateTime? @default(now()) @db.Timestamp(6)
+  page_access_token   String?   @db.VarChar(255)
+
+  @@index([id], map: "idx_page_id")
+  @@index([uuid], map: "ix_pancake_page_uuid")
+  @@schema("pancake")
+}
+
+model page_customer {
+  uuid                String    @id @db.VarChar
+  id                  String?   @unique(map: "ix_pancake_page_customer_id") @db.VarChar
+  birthday            String?   @db.VarChar
+  can_inbox           Boolean?
+  customer_id         String?   @db.VarChar
+  gender              String?   @db.VarChar
+  inserted_at         DateTime? @db.Timestamp(6)
+  lives_in            String?   @db.VarChar
+  name                String?   @db.VarChar
+  page_id             String?   @db.VarChar
+  database_created_at DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at DateTime? @default(now()) @db.Timestamp(6)
+  phone_numbers       Json?
+  notes               Json?
+  phone               String?   @db.VarChar(255)
+  updated_at          DateTime? @db.Timestamp(6)
+
+  @@index([uuid], map: "ix_pancake_page_customer_uuid")
+  @@schema("pancake")
+}
+
+model pancake_user {
+  id                  String    @id @db.VarChar
+  name                String?   @db.VarChar
+  status              String?   @db.VarChar
+  fb_id               String?   @db.VarChar
+  page_permissions    Json?
+  status_round_robin  String?   @db.VarChar
+  status_in_page      String?   @db.VarChar
+  is_online           Boolean?
+  database_updated_at DateTime? @db.Timestamp(6)
+  database_created_at DateTime? @db.Timestamp(6)
+
+  @@schema("pancake")
+}
+
+model tag_page {
+  page_id             String    @db.VarChar
+  id                  Int
+  tag_label           String?   @db.VarChar
+  description         String?   @db.VarChar
+  database_created_at DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at DateTime? @default(now()) @db.Timestamp(6)
+
+  @@id([page_id, id])
+  @@schema("pancake")
+}
+
+model pancake_users {
+  id               String  @id
+  enterprise_email String? @unique
+
+  @@map("users")
+  @@schema("pancake")
+}
+
+model manual_payments {
+  uuid                String          @id @db.Uuid
+  payment_type        String?         @db.VarChar(255)
+  branch              String?         @db.VarChar(255)
+  shipping_code       String?         @db.VarChar(255)
+  send_date           DateTime?       @db.Timestamp(6)
+  receive_date        DateTime?       @db.Timestamp(6)
+  created_date        DateTime?       @db.Timestamp(6)
+  updated_date        DateTime?       @db.Timestamp(6)
+  bank_account        String?         @db.VarChar(255)
+  bank_name           String?         @db.VarChar(255)
+  transfer_amount     Decimal?        @db.Decimal(18, 6)
+  transfer_note       String?
+  haravan_order_id    Int?
+  haravan_order_name  String?         @db.VarChar(255)
+  transfer_status     String?         @db.VarChar(255)
+  lark_record_id      String?         @unique @db.VarChar(255)
+  misa_synced         Boolean         @default(false)
+  misa_sync_guid      String?         @db.VarChar(255)
+  misa_sync_error_msg String?
+  misa_synced_at      DateTime?       @db.Timestamp(6)
+  orders              haravan_orders? @relation(fields: [haravan_order_id], references: [id])
+
+  @@index([uuid])
+  @@schema("payment")
+}
+
+model sepay_transaction {
+  id                  String    @id @db.VarChar(50)
+  bank_brand_name     String?   @db.VarChar
+  account_number      String?   @db.VarChar
+  transaction_date    String?   @db.VarChar
+  amount_out          String?   @db.VarChar
+  amount_in           String?   @db.VarChar
+  accumulated         String?   @db.VarChar
+  transaction_content String?
+  reference_number    String?   @db.VarChar
+  code                String?   @db.VarChar
+  sub_account         String?   @db.VarChar
+  bank_account_id     String?   @db.VarChar
+  created_at          DateTime? @default(now()) @db.Timestamp(6)
+  updated_at          DateTime? @default(now()) @db.Timestamp(6)
+  lark_record_id      String?   @db.VarChar(255)
+
+  @@schema("payment")
+}
+
+model purchase_exchange_policy {
+  order_id    String  @db.VarChar(50)
+  item_id     String  @db.VarChar(50)
+  order_code  String? @db.VarChar(50)
+  sku         String? @db.VarChar(50)
+  item_name   String? @db.VarChar(255)
+  barcode     String? @db.VarChar(50)
+  policy_id   String? @db.VarChar(50)
+  policy_name String? @db.VarChar
+
+  @@id([order_id, item_id])
+  @@schema("policy")
+}
+
+model order_promotion_analysis {
+  uuid                   String    @id @db.Uuid
+  order_code             String?   @db.VarChar
+  variant_id             BigInt?
+  price                  BigInt?
+  promotion_name         String?   @db.VarChar
+  priority_order         String?   @db.VarChar
+  price_before_promotion BigInt?
+  price_after_promotion  BigInt?
+  calculated_sale_price  BigInt?
+  actual_sale_price      BigInt?
+  created_at             DateTime? @default(now()) @db.Timestamp(6)
+  updated_at             DateTime? @default(now()) @db.Timestamp(6)
+
+  @@schema("promotion")
+}
+
+model order_promotions {
+  uuid                String    @id @db.VarChar(36)
+  id                  String?   @unique(map: "ix_promotion_order_promotions_id") @db.VarChar(50)
+  haravan_id          String?   @db.VarChar(50)
+  order_code          String?   @db.VarChar(50)
+  real_created_at     DateTime? @db.Timestamp(6)
+  order_created_on    DateTime? @db.Timestamp(6)
+  sub_total_price     Decimal?  @db.Decimal(36, 8)
+  total_price         Decimal?  @db.Decimal(36, 8)
+  updated_at          DateTime? @db.Timestamp(6)
+  promotion_order     Json?
+  promotion_item      Json?
+  database_created_at DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at DateTime? @default(now()) @db.Timestamp(6)
+
+  @@schema("promotion")
+}
+
+model diamonds_dev {
+  diamond_id     String    @id @db.VarChar
+  gia_report_no  String?   @db.VarChar
+  price          Decimal?  @db.Decimal
+  country        String?   @db.VarChar
+  is_available   Boolean?
+  created_at     DateTime? @db.Timestamp(6)
+  updated_at     DateTime? @db.Timestamp(6)
+  gia_info       Json?
+  sent_event     Json?
+  shade          String?   @db.VarChar
+  key_to_symbols String?   @db.VarChar
+  inclusions     String?   @db.VarChar
+  diamond_data   Json?
+
+  @@schema("rapnet")
+}
+
+model diamonds_prod {
+  diamond_id     String    @id @db.VarChar
+  gia_report_no  String?   @db.VarChar
+  price          Decimal?  @db.Decimal
+  country        String?   @db.VarChar
+  is_available   Boolean?
+  created_at     DateTime? @db.Timestamp(6)
+  updated_at     DateTime? @db.Timestamp(6)
+  gia_info       Json?
+  sent_event     Json?
+  shade          String?   @db.VarChar
+  key_to_symbols String?   @db.VarChar
+  inclusions     String?   @db.VarChar
+  diamond_data   Json?
+
+  @@schema("rapnet")
+}
+
+model reporting_time_dim {
+  col Int       @id @default(autoincrement())
+  day DateTime? @db.Timestamp(6)
+
+  @@map("time_dim")
+  @@schema("reporting")
+}
+
+model nc_m2m_haravan_collect_products {
+  products_id            Int
+  haravan_collections_id Int
+  products               workplace_products  @relation(fields: [products_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_haravan_co_products_8v31fxenpy")
+  haravan_collections    haravan_collections @relation(fields: [haravan_collections_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_haravan_co_products_q3phsaq_nx")
+
+  @@id([products_id, haravan_collections_id])
+  @@index([haravan_collections_id], map: "fk_haravan_co_products_0_kxecf3y_")
+  @@index([products_id], map: "fk_haravan_co_products_tl93hnbjtq")
+  @@map("_nc_m2m_haravan_collect_products")
+  @@schema("workplace")
+}
+
+model collections {
+  id                  Int       @id @default(autoincrement())
+  collection_name     String?
+  created_at          DateTime? @db.Timestamp(6)
+  updated_at          DateTime? @db.Timestamp(6)
+  created_by          String?   @db.VarChar
+  updated_by          String?   @db.VarChar
+  database_updated_at DateTime? @default(now()) @db.Timestamp(6)
+  database_created_at DateTime? @default(now()) @db.Timestamp(6)
+  air                 String?
+  designs             designs[]
+
+  @@schema("workplace")
+}
+
+model design_details {
+  id                   Int                    @id @default(autoincrement())
+  gold_weight          Decimal                @default(0) @db.Decimal
+  labour_cost          Decimal                @default(0) @db.Decimal
+  shape_of_main_stone  String?
+  main_stone_length    Decimal?               @db.Decimal
+  main_stone_width     Decimal?               @db.Decimal
+  melee_total_price    Decimal?               @db.Decimal
+  design_melee_details design_melee_details[]
+
+  @@schema("workplace")
+}
+
+model design_images {
+  id                   Int       @id @default(autoincrement())
+  design_id            Int?
+  material_color       String?   @default("Vàng Trắng")
+  retouch              String?
+  database_created_at  DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at  DateTime? @default(now()) @db.Timestamp(6)
+  tick_sync_to_haravan Boolean?  @default(false)
+  note                 String?
+  designs              designs?  @relation(fields: [design_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+
+  @@unique([design_id, material_color], map: "unique_design_color")
+  @@schema("workplace")
+}
+
+model design_melee_details {
+  id               Int            @id @default(autoincrement())
+  design_detail_id Int
+  quantity         Int
+  design_details   design_details @relation(fields: [design_detail_id], references: [id], onUpdate: NoAction, map: "fk_design_detail")
+
+  @@schema("workplace")
+}
+
+model design_price_estimation {
+  id                 Int      @id @default(autoincrement())
+  code               String?
+  ref_price          Decimal? @db.Decimal
+  discount_ref_price Decimal? @db.Decimal
+  design_id          Int?
+  designs            designs? @relation(fields: [design_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+
+  @@schema("workplace")
+}
+
+model design_set {
+  id                  Int       @id @default(autoincrement())
+  design_id           Int?
+  set_id              Int?
+  database_created_at DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at DateTime? @default(now()) @db.Timestamp(6)
+  designs             designs?  @relation(fields: [design_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  sets                sets?     @relation(fields: [set_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+
+  @@schema("workplace")
+}
+
+model designs {
+  id                      Int                       @id(map: "design_products_pkey") @unique(map: "unique_id_constraint") @default(autoincrement())
+  code                    String?                   @unique(map: "unique_code_constraint")
+  erp_code                String?
+  backup_code             String?
+  design_type             String?
+  gender                  String?
+  design_year             String?                   @default("2025")
+  design_seq              BigInt?
+  usage_status            String?
+  link_4view              String?
+  folder_summary          String?
+  link_3d                 String?
+  link_render             String?
+  link_retouch            String?
+  ring_band_type          String?
+  ring_band_style         String?
+  ring_head_style         String?
+  jewelry_rd_style        String?
+  shape_of_main_stone     String?
+  product_line            String?
+  social_post             Boolean?                  @default(false)
+  website                 Boolean?                  @default(false)
+  RENDER                  Boolean?
+  RETOUCH                 Boolean?                  @default(false)
+  gold_weight             Decimal?                  @db.Decimal
+  main_stone              String?
+  stone_quantity          String?
+  stone_weight            String?
+  diamond_holder          String?
+  source                  String?
+  variant_number          BigInt?                   @default(1)
+  collections_id          Int?
+  image_4view             String?
+  image_render            String?
+  image_retouch           String?
+  created_by              String?                   @db.VarChar
+  updated_by              String?                   @db.VarChar
+  database_created_at     DateTime?                 @default(now()) @db.Timestamp(6)
+  database_updated_at     DateTime?                 @default(now()) @db.Timestamp(6)
+  collection_name         String?
+  auto_create_folder      Boolean?
+  design_code             String?
+  ecom_showed             Boolean?                  @default(false)
+  tag                     String?
+  stock_locations         String?
+  wedding_ring_id         Int?
+  reference_code          String?
+  design_status           String?                   @default("active")
+  erp_code_duplicated     Boolean?                  @default(false)
+  max_seq                 Int?
+  last_synced_render      String?
+  last_synced_4view       String?                   @default("")
+  pick_up                 DateTime?                 @db.Date
+  created_date            DateTime?                 @db.Date
+  design_images           design_images[]
+  design_price_estimation design_price_estimation[]
+  design_set              design_set[]
+  wedding_rings           workplace_wedding_rings?  @relation(fields: [wedding_ring_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  collections             collections?              @relation(fields: [collections_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_collection_designs_0ry69f9nc6")
+  ecom_old_products       ecom_old_products[]
+  jewelries               jewelries[]
+  products                workplace_products?
+  temporary_products      temporary_products[]
+
+  @@unique([design_type, gender, diamond_holder, source, design_year, design_seq, variant_number], map: "design_code_attributes_unique")
+  @@index([collections_id], map: "designs_collections_id_index")
+  @@schema("workplace")
+}
+
+model designs_temporary_products {
+  id             Int     @id
+  design_code    String?
+  design_type    String?
+  gender         String?
+  cover          String?
+  link_render    String?
+  code           String?
+  erp_code       String?
+  backup_code    String?
+  lark_record_id String?
+
+  @@schema("workplace")
+}
+
+model diamond_price_list {
+  id                  Int       @id @default(autoincrement())
+  database_created_at DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at DateTime? @default(now()) @db.Timestamp(6)
+  size                Decimal?  @db.Decimal
+  color               String?
+  clarity             String?
+  carat               String?
+  price               Decimal?  @db.Decimal
+
+  @@schema("workplace")
+}
+
+model diamonds {
+  id                          Int                  @id(map: "diamomds_pkey") @default(autoincrement())
+  barcode                     String?              @unique(map: "unique_diamond_barcode")
+  report_lab                  String?
+  report_no                   BigInt?
+  price                       Decimal?             @db.Decimal
+  cogs                        Decimal?             @db.Decimal
+  product_group               String?
+  shape                       String?
+  cut                         String?
+  color                       String?
+  clarity                     String?
+  fluorescence                String?
+  edge_size_1                 Float?               @db.Real
+  edge_size_2                 Float?               @db.Real
+  carat                       Decimal?             @db.Decimal
+  created_at                  DateTime?            @db.Timestamp(6)
+  updated_at                  DateTime?            @db.Timestamp(6)
+  created_by                  String?              @db.VarChar
+  updated_by                  String?              @db.VarChar
+  database_updated_at         DateTime?            @default(now()) @db.Timestamp(6)
+  database_created_at         DateTime?            @default(now()) @db.Timestamp(6)
+  auto_create_haravan_product Boolean?             @default(false)
+  product_id                  BigInt?
+  variant_id                  BigInt?              @unique(map: "unique_variant_id")
+  promotions                  String?              @default("CT nền giảm KCV 8%")
+  link_haravan                String?
+  note                        String?
+  vendor                      String?
+  published_scope             String?              @default("global")
+  qty_onhand                  Float?               @db.Real
+  qty_available               Float?               @db.Real
+  qty_commited                Float?               @db.Real
+  qty_incoming                Float?               @db.Real
+  printing_batch              String?
+  g1_collection_id            Int?
+  haravan_collections         haravan_collections? @relation(fields: [g1_collection_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+
+  @@index([variant_id], map: "idx_variant_id_workplace_diamonds")
+  @@schema("workplace")
+}
+
+model ecom_360 {
+  id         Int                 @id @default(autoincrement())
+  product_id Int?
+  path       String?             @default("https://90814f99c119cd5dc08362580f81a76f.r2.cloudflarestorage.com/jemmia-images/glb/")
+  file_name  String?
+  products   workplace_products? @relation(fields: [product_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+
+  @@schema("workplace")
+}
+
+model ecom_old_products {
+  id              Int      @id @default(autoincrement())
+  product_id      Int?
+  variant_id      Int?
+  published_scope String?  @db.VarChar(50)
+  product_type    String?  @db.VarChar(50)
+  template_suffix String?  @db.VarChar(50)
+  title           String?  @db.VarChar(64)
+  code            String?  @db.VarChar(50)
+  shape           String?  @db.VarChar(50)
+  color           String?  @db.VarChar(50)
+  material        String?  @db.VarChar(50)
+  band            String?  @db.VarChar(50)
+  design_id       Int?
+  designs         designs? @relation(fields: [design_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+
+  @@schema("workplace")
+}
+
+model haravan_collections {
+  id                              Int                               @id(map: "product_collections_pkey") @default(autoincrement())
+  collection_type                 String?                           @default("custom_collection")
+  title                           String
+  products_count                  Int                               @default(0)
+  created_at                      DateTime?                         @db.Timestamp(6)
+  updated_at                      DateTime?                         @db.Timestamp(6)
+  haravan_id                      BigInt?
+  auto_create                     Boolean?                          @default(false)
+  auto_add_product_type           String?
+  handle                          String?
+  nc_m2m_haravan_collect_products nc_m2m_haravan_collect_products[]
+  diamonds                        diamonds[]
+  products                        workplace_products[]
+
+  @@schema("workplace")
+}
+
+model hrv_locations_1 {
+  id   Int     @id @default(autoincrement())
+  name String? @db.VarChar
+
+  @@schema("workplace")
+}
+
+model jewelries {
+  id                          Int            @id @default(autoincrement())
+  barcode                     String?        @unique(map: "unique_barcode_jewelries")
+  category                    String?        @default("Trang sức")
+  supplier_code               String?
+  gold_weight                 Decimal?       @db.Decimal
+  diamond_weight              Decimal?       @db.Decimal
+  price                       Decimal?       @db.Decimal
+  cogs                        Decimal?       @db.Decimal
+  quantity                    Int?           @db.SmallInt
+  order_code                  String?
+  supplier                    String?
+  note                        String?
+  subcategory                 String?
+  gender                      String?
+  applique_material           String?
+  fineness                    String?
+  material_color              String?
+  size_type                   String?
+  ring_size                   Decimal?       @db.Decimal
+  storage_size_type           String?
+  storage_size_1              Decimal?       @db.Decimal
+  storage_size_2              Decimal?       @db.Decimal
+  design_id                   Int?
+  created_at                  DateTime?      @db.Timestamp(6)
+  updated_at                  DateTime?      @db.Timestamp(6)
+  created_by                  String?        @db.VarChar
+  updated_by                  String?        @db.VarChar
+  database_updated_at         DateTime?      @default(now()) @db.Timestamp(6)
+  database_created_at         DateTime?      @default(now()) @db.Timestamp(6)
+  product_group               String?
+  product_type                String?
+  type                        String?
+  design_code                 String?
+  view                        String?        @map("4view")
+  link_3d                     String?
+  link_4view                  String?
+  supply_product_type         String?
+  stock                       BigInt?
+  printing_batch              String?
+  haravan_product_type        String?
+  vendor                      String?
+  promotions                  String?
+  auto_create_haravan_product Boolean?       @default(false)
+  variant_id                  BigInt?        @unique(map: "jewelries_unique_variant_id")
+  product_id                  BigInt?
+  link_haravan                String?
+  qty_onhand                  Float?         @db.Real
+  qty_commited                Float?         @db.Real
+  qty_incoming                Float?         @db.Real
+  qty_available               Float?         @db.Real
+  published_scope             String?
+  ring_pair_id                Int?
+  infomation                  String?
+  code_in_title               String?
+  stored_sku                  String?
+  designs                     designs?       @relation(fields: [design_id], references: [id], onUpdate: NoAction, map: "fk_designs")
+  jewelries                   jewelries?     @relation("jewelriesTojewelries", fields: [ring_pair_id], references: [id], onUpdate: NoAction, map: "fk_ring_pairs")
+  other_jewelries             jewelries[]    @relation("jewelriesTojewelries")
+  size_details                size_details[]
+
+  @@schema("workplace")
+}
+
+model materials {
+  id           Int       @id @default(autoincrement())
+  name         String
+  created_at   DateTime? @db.Timestamp(6)
+  updated_at   DateTime? @db.Timestamp(6)
+  created_by   String?   @db.VarChar
+  updated_by   String?   @db.VarChar
+  market_price Decimal   @db.Decimal
+  percentage   Float?
+
+  @@schema("workplace")
+}
+
+model melee_diamonds {
+  id                  Int       @id @default(autoincrement())
+  haravan_product_id  Int?
+  haravan_variant_id  Int?
+  database_created_at DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at DateTime? @default(now()) @db.Timestamp(6)
+  length              Decimal?  @db.Decimal
+  width               Decimal?  @db.Decimal
+  sku                 String?
+  barcode             String?
+  shape               String?
+
+  @@schema("workplace")
+}
+
+model moissanite {
+  id                 Int                  @id @default(autoincrement())
+  product_group      String?
+  shape              String?
+  length             Decimal?             @db.Decimal
+  width              Decimal?             @db.Decimal
+  color              String?
+  clarity            String?              @default("Không phân loại")
+  fluorescence       String?              @default("Không phân loại")
+  cut                String?              @default("Không phân loại")
+  polish             String?              @default("Không phân loại")
+  symmetry           String?              @default("Không phân loại")
+  haravan_product_id BigInt?
+  haravan_variant_id BigInt?
+  auto_create        Boolean?             @default(false)
+  price              Decimal?             @default(0) @db.Decimal
+  barcode            String?              @unique
+  moissanite_serials moissanite_serials[]
+
+  @@unique([product_group, shape, length, width, color, clarity, fluorescence, cut, polish, symmetry], map: "unique_moissannite_sku_attributes")
+  @@schema("workplace")
+}
+
+model moissanite_serials {
+  id                  Int         @id @default(autoincrement())
+  final_encoded_rfid  String?     @unique(map: "unique_final_encoded_rfid")
+  moissanite_id       Int?
+  database_updated_at DateTime?   @default(now()) @db.Timestamp(6)
+  database_created_at DateTime?   @default(now()) @db.Timestamp(6)
+  moissanite          moissanite? @relation(fields: [moissanite_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+
+  @@schema("workplace")
+}
+
+model workplace_products {
+  id                              Int                               @id @default(autoincrement())
+  haravan_product_id              BigInt?                           @unique(map: "uniqe_product_id")
+  created_at                      DateTime?                         @db.Timestamp(6)
+  updated_at                      DateTime?                         @db.Timestamp(6)
+  created_by                      String?                           @db.VarChar
+  updated_by                      String?                           @db.VarChar
+  nc_order                        Decimal?                          @db.Decimal
+  vendor                          String?                           @default("Jemmia")
+  haravan_product_type            String?
+  design_id                       Int?                              @unique(map: "unique_design_id")
+  published_scope                 String?                           @default("pos")
+  database_updated_at             DateTime?                         @default(now()) @db.Timestamp(6)
+  database_created_at             DateTime?                         @default(now()) @db.Timestamp(6)
+  template_suffix                 String?
+  handle                          String?
+  auto_create_haravan             Boolean?                          @default(false)
+  note                            String?
+  web_url                         String?
+  ecom_title                      String?
+  g1_promotion                    String?                           @default("16%")
+  published                       String?
+  estimated_gold_weight           Decimal?                          @db.Decimal
+  has_360                         Boolean?                          @default(false)
+  diamond_shape                   String?
+  stone_min_width                 Decimal?                          @db.Decimal
+  stone_max_width                 Decimal?                          @db.Decimal
+  stone_min_length                Decimal?                          @db.Decimal
+  stone_max_length                Decimal?                          @db.Decimal
+  collections                     String?
+  haravan_collections_id          Int?
+  nc_m2m_haravan_collect_products nc_m2m_haravan_collect_products[]
+  ecom_360                        ecom_360[]
+  haravan_collections             haravan_collections?              @relation(fields: [haravan_collections_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_haravan_co_products_enlvmi264j")
+  designs                         designs?                          @relation(fields: [design_id], references: [id], onDelete: Restrict, onUpdate: NoAction, map: "fk_product_design")
+  variants                        workplace_variants[]
+
+  @@index([haravan_collections_id], map: "fk_haravan_co_products_v88qytf5oz")
+  @@index([nc_order], map: "products_order_idx")
+  @@map("products")
+  @@schema("workplace")
+}
+
+model workplace_promotions {
+  id                  Int       @id @default(autoincrement())
+  name                String?
+  created_at          DateTime? @db.Timestamp(6)
+  updated_at          DateTime? @db.Timestamp(6)
+  created_by          String?   @db.VarChar
+  updated_by          String?   @db.VarChar
+  database_updated_at DateTime? @default(now()) @db.Timestamp(6)
+  database_created_at DateTime? @default(now()) @db.Timestamp(6)
+  starts_at           DateTime? @db.Timestamp(6)
+  ends_at             DateTime? @db.Timestamp(6)
+  take_type           String?
+  set_time_active     DateTime? @db.Timestamp(6)
+  status              String?
+  value               BigInt?
+  products_selection  String?
+  promotion_id        BigInt?
+  link_to_admind      String?
+
+  @@map("promotions")
+  @@schema("workplace")
+}
+
+model sets {
+  id                  Int          @id @default(autoincrement())
+  set_name            String?
+  database_created_at DateTime?    @default(now()) @db.Timestamp(6)
+  database_updated_at DateTime?    @default(now()) @db.Timestamp(6)
+  design_codes        String?
+  haravan_product_id  Int?
+  haravan_variant_id  Int?
+  note                String?
+  main_image_link     String?
+  design_set          design_set[]
+
+  @@schema("workplace")
+}
+
+model size_details {
+  id                  Int        @id @default(autoincrement())
+  panel_size_type     String?
+  length              Decimal?   @db.Decimal
+  quantity            BigInt?
+  jewelry_id          Int?
+  created_at          DateTime?  @db.Timestamp(6)
+  updated_at          DateTime?  @db.Timestamp(6)
+  created_by          String?    @db.VarChar
+  updated_by          String?    @db.VarChar
+  database_updated_at DateTime?  @default(now()) @db.Timestamp(6)
+  database_created_at DateTime?  @default(now()) @db.Timestamp(6)
+  width               Decimal?   @db.Decimal
+  jewelries           jewelries? @relation(fields: [jewelry_id], references: [id], onUpdate: NoAction, map: "fk_jewelries")
+
+  @@schema("workplace")
+}
+
+model submitted_codes {
+  id                  Int       @id @default(autoincrement())
+  codes               String
+  created_by          String?   @db.VarChar
+  notes               String?
+  database_updated_at DateTime? @default(now()) @db.Timestamp(6)
+  database_created_at DateTime? @default(now()) @db.Timestamp(6)
+  tag                 String?
+
+  @@schema("workplace")
+}
+
+model temporary_products {
+  id                     Int              @id @default(autoincrement())
+  haravan_product_id     Int?
+  haravan_variant_id     Int?
+  customer_name          String?
+  variant_title          String?
+  customer_phone         String?          @db.VarChar
+  code                   String?
+  price                  Decimal?         @default(0) @db.Decimal
+  product_information    String?
+  design_id              Int?
+  category               String?
+  applique_material      String?
+  material_color         String?
+  size_type              String?
+  ring_size              Decimal?         @db.Decimal
+  fineness               String?
+  database_created_at    DateTime?        @default(now()) @db.Timestamp(6)
+  design_code            String?
+  summary                String?
+  lark_base_record_id    String?          @unique(map: "unique_lark_base_record_id")
+  use_case               String?
+  variant_serial_id      Int?             @unique
+  ticket_type            String?
+  product_group          String?
+  gia_report_no          String?
+  ref_design_code        String?
+  request_code           String?
+  is_create_product      String?
+  is_notify_lark_reorder Boolean?
+  variant_serials        variant_serials? @relation(fields: [variant_serial_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_variant_serial")
+  designs                designs?         @relation(fields: [design_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+
+  @@schema("workplace")
+}
+
+model temporary_products_web {
+  id                      BigInt   @id @default(autoincrement())
+  customer_name           String?  @db.VarChar
+  customer_phone          String?  @db.VarChar
+  original_hrv_product_id String?  @db.VarChar
+  original_hrv_variant_id String?  @db.VarChar
+  token                   String?  @db.VarChar
+  title                   String?  @db.VarChar
+  price                   BigInt?
+  line_price              BigInt?
+  price_original          BigInt?
+  line_price_orginal      BigInt?
+  quantity                Int?
+  sku                     String?  @db.VarChar
+  grams                   Float?
+  product_type            String?  @db.VarChar
+  vendor                  String?  @db.VarChar
+  properties              Json?
+  gift_card               Boolean?
+  url                     String?  @db.VarChar
+  image                   String?  @db.VarChar
+  handle                  String?  @db.VarChar
+  requires_shipping       Boolean?
+  not_allow_promotion     Boolean?
+  product_title           String?  @db.VarChar
+  barcode                 String?  @db.VarChar
+  product_description     String?  @db.VarChar
+  variant_title           String?  @db.VarChar
+  variant_options         Json?
+  promotionref            String?  @db.VarChar
+  promotionby             Json?
+  haravan_product_id      BigInt?
+  haravan_variant_id      BigInt?
+
+  @@schema("workplace")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model temtab {
+  design_code String? @unique
+  link_3d     String?
+  column3     String? @db.VarChar(50)
+  column4     String? @db.VarChar(50)
+  column5     String? @db.VarChar(50)
+  column6     String? @db.VarChar(50)
+  column7     String? @db.VarChar(50)
+  column8     String? @db.VarChar(50)
+  column9     String? @db.VarChar(50)
+  column10    String? @db.VarChar(50)
+  column11    String? @db.VarChar(50)
+  column12    String? @db.VarChar(50)
+  column13    String? @db.VarChar(50)
+  column14    String? @db.VarChar(50)
+  column15    String? @db.VarChar(50)
+  column16    String? @db.VarChar(50)
+  column17    String? @db.VarChar(50)
+  column18    String? @db.VarChar(50)
+  column19    String? @db.VarChar(50)
+  column20    String? @db.VarChar(50)
+
+  @@ignore
+  @@schema("workplace")
+}
+
+model variant_serials {
+  id                        Int                 @id @default(autoincrement())
+  variant_id                Int?
+  created_at                DateTime?           @db.Timestamp(6)
+  updated_at                DateTime?           @db.Timestamp(6)
+  created_by                String?             @db.VarChar
+  updated_by                String?             @db.VarChar
+  nc_order                  Decimal?            @db.Decimal
+  serial_number             String?             @unique(map: "unique_serial_number")
+  printing_batch            String?
+  encode_barcode            String?
+  final_encoded_barcode     String?             @unique(map: "unique_final_encode_barcode")
+  old_encode_barcode        String?
+  old_finnal_encode_barcode String?
+  gold_weight               Decimal?            @db.Decimal
+  diamond_weight            Decimal?            @db.Decimal
+  old_variant_id            BigInt?
+  old_product_id            BigInt?
+  quantity                  Decimal?            @db.Decimal
+  supplier                  String?
+  database_updated_at       DateTime?           @default(now()) @db.Timestamp(6)
+  database_created_at       DateTime?           @default(now()) @db.Timestamp(6)
+  cogs                      Decimal?            @db.Decimal
+  old_barcode               String?
+  order_on                  String?
+  stock_id                  BigInt?
+  order_id                  BigInt?
+  storage_size_type         String?
+  storage_size_1            Decimal?            @db.Decimal
+  storage_size_2            Decimal?            @db.Decimal
+  note                      String?
+  stock_at                  String?
+  order_reference           String?
+  last_rfid_scan_time       DateTime?           @db.Timestamptz(6)
+  fulfillment_status_value  String?
+  lark_record_id            String?
+  arrival_date              DateTime?           @db.Date
+  actual_gold_price         Decimal?            @db.Decimal
+  actual_melee_price        Decimal?            @db.Decimal
+  actual_labor_cost         Decimal?            @db.Decimal
+  temporary_products        temporary_products?
+  variants                  workplace_variants? @relation(fields: [variant_id], references: [id], onDelete: Restrict, onUpdate: NoAction, map: "fk_variants_variant_serials")
+
+  @@unique([serial_number, final_encoded_barcode], map: "unique_serial_number_final_encoded_barcode")
+  @@index([nc_order], map: "variant_serials_order_idx")
+  @@schema("workplace")
+}
+
+model variant_serials_lark {
+  id             Int       @id
+  lark_record_id String?
+  db_created_at  DateTime? @default(now()) @db.Timestamp(6)
+
+  @@schema("workplace")
+}
+
+model workplace_variants {
+  id                     Int                 @id @default(autoincrement())
+  haravan_variant_id     BigInt?             @unique(map: "uniqe_variant_id")
+  created_at             DateTime?           @db.Timestamp(6)
+  updated_at             DateTime?           @db.Timestamp(6)
+  created_by             String?             @db.VarChar
+  updated_by             String?             @db.VarChar
+  nc_order               Decimal?            @db.Decimal
+  product_id             Int?
+  barcode                String?             @unique(map: "unique_barcode")
+  inventory_quantity     BigInt?
+  old_inventory_quantity BigInt?
+  sku                    String?             @unique(map: "unique_sku")
+  qty_available          BigInt?
+  qty_onhand             BigInt?
+  qty_commited           BigInt?
+  qty_incoming           BigInt?
+  category               String?             @default("Trang sức")
+  applique_material      String?
+  fineness               String?
+  material_color         String?
+  size_type              String?
+  ring_size              Decimal?            @db.Decimal
+  database_updated_at    DateTime?           @default(now()) @db.Timestamp(6)
+  database_created_at    DateTime?           @default(now()) @db.Timestamp(6)
+  haravan_product_id     BigInt?
+  price                  Decimal?            @db.Decimal
+  auto_create_variant    Boolean?            @default(false)
+  note                   String?
+  estimated_gold_weight  Float?              @db.Real
+  variant_serials        variant_serials[]
+  products               workplace_products? @relation(fields: [product_id], references: [id], onDelete: Restrict, onUpdate: NoAction, map: "fk_variants_products")
+
+  @@unique([product_id, category, applique_material, fineness, material_color, size_type, ring_size], map: "unique_sku_attributes")
+  @@index([haravan_variant_id], map: "idx_harvan_variant_id_workplace_variants")
+  @@index([nc_order], map: "variants_order_idx")
+  @@map("variants")
+  @@schema("workplace")
+}
+
+model workplace_wedding_rings {
+  id          Int       @id @default(autoincrement())
+  description String?
+  ecom_title  String?
+  designs     designs[]
+
+  @@map("wedding_rings")
+  @@schema("workplace")
 }
