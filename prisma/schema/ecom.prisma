@@ -51,7 +51,7 @@ model products {
 }
 
 model qrPaymentTransaction {
-  id                        String    @id @db.VarChar
+  id                        String    @id @default(uuid()) @db.VarChar
   bank_code                 String?   @db.VarChar
   bank_account_number       String?   @db.VarChar
   customer_name             String?   @db.VarChar
