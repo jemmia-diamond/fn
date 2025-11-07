@@ -1,4 +1,3 @@
-import * as Sentry from "@sentry/cloudflare";
 import axios from "axios";
 
 export default class MisaClient {
@@ -17,21 +16,18 @@ export default class MisaClient {
   async getAccessToken() {
     const url = `${this.baseUrl}/api/oauth/actopen/connect`;
 
-    try {
-      const payload = {
-        app_id: this.env.MISA_APP_ID,
-        access_code: await this.env.MISA_ACCESS_CODE_SECRET.get(),
-        org_company_code: this.env.MISA_ORG_CODE
-      };
+    const payload = {
+      app_id: this.env.MISA_APP_ID,
+      access_code: await this.env.MISA_ACCESS_CODE_SECRET.get(),
+      org_company_code: this.env.MISA_ORG_CODE
+    };
 
-      const response = await axios.post(url, payload, {
-        headers: { "Content-Type": "application/json" }
-      });
-      this.accessToken = JSON.parse(response.data.Data).access_token;
-      return this.accessToken;
-    } catch (error) {
-      Sentry.captureException(error);
-    }
+    const response = await axios.post(url, payload, {
+      headers: { "Content-Type": "application/json" }
+    });
+
+    this.accessToken = JSON.parse(response.data.Data).access_token;
+    return this.accessToken;
   }
 
   /**

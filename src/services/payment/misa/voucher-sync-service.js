@@ -101,55 +101,52 @@ export default class MisaVoucherSyncService {
    * @private
    */
   async _processPaymentType({ paymentTypeName, fetcher, mapper, dateRange, misaClient, bankMap }) {
-    try {
-      let payments = paymentTypeName === PAYMENT_TYPES.OTHER_MANUAL_PAYMENT ?
-        await fetcher.fetchNonCashByDateRange(dateRange.startDate, dateRange.endDate) :
-        await fetcher.byDateRangeAndNotSynced(dateRange.startDate, dateRange.endDate);
+    let payments = paymentTypeName === PAYMENT_TYPES.OTHER_MANUAL_PAYMENT ?
+      await fetcher.fetchNonCashByDateRange(dateRange.startDate, dateRange.endDate) :
+      await fetcher.byDateRangeAndNotSynced(dateRange.startDate, dateRange.endDate);
 
-      if (!payments || payments.length === 0) {
-        return { status: "skipped", count: 0 };
-      }
-      const mappedVouchers = payments.map(p => {
-        const voucher_type = VOUCHER_TYPES[paymentTypeName];
-        const ref_type = VOUCHER_REF_TYPES[paymentTypeName];
+    if (!payments || payments.length === 0) {
+      return { status: "skipped", count: 0 };
+    }
+    const mappedVouchers = payments.map(p => {
+      const voucher_type = VOUCHER_TYPES[paymentTypeName];
+      const ref_type = VOUCHER_REF_TYPES[paymentTypeName];
 
-        return mapper(p, bankMap, voucher_type, ref_type);
+      return mapper(p, bankMap, voucher_type, ref_type);
+    });
+
+    const vouchersForMisa = mappedVouchers.map(v => v.misaVoucher);
+
+    const payload = {
+      app_id: this.env.MISA_APP_ID,
+      org_company_code: this.env.MISA_ORG_CODE,
+      voucher: vouchersForMisa
+    };
+
+    const response = await misaClient.saveVoucher(payload);
+
+    if (response.Success === true) {
+      const updateOperations = mappedVouchers.map(item => {
+        const modelName = VOUCHER_MODEL[paymentTypeName];
+        const whereClause = paymentTypeName === PAYMENT_TYPES.QR_PAYMENT ? { id: item.originalId } : { uuid: item.originalId };
+        const currentTime = dayjs().utc().toDate();
+        return this.db[modelName].update({
+          where: whereClause,
+          data: { misa_sync_guid: item.generatedGuid, misa_synced_at: currentTime }
+        });
       });
-
-      const vouchersForMisa = mappedVouchers.map(v => v.misaVoucher);
-
-      const payload = {
-        app_id: this.env.MISA_APP_ID,
-        org_company_code: this.env.MISA_ORG_CODE,
-        voucher: vouchersForMisa
+      await this.db.$transaction(updateOperations);
+      return;
+    } else {
+      const orderNumbers = payments.map(p => p?.haravan_order_number || p?.haravan_order_name);
+      const err_msg = {
+        order_numbers: orderNumbers,
+        found: `Found ${payments.length} ${paymentTypeName} payments for date range ${dateRange.startDate} to ${dateRange.endDate}`,
+        misa_response: response?.ErrorMessage
       };
 
-      const response = await misaClient.saveVoucher(payload);
-
-      if (response.Success === true) {
-        const updateOperations = mappedVouchers.map(item => {
-          const modelName = VOUCHER_MODEL[paymentTypeName];
-          const whereClause = paymentTypeName === PAYMENT_TYPES.QR_PAYMENT ? { id: item.originalId } : { uuid: item.originalId };
-          const currentTime = dayjs().utc().toDate();
-          return this.db[modelName].update({
-            where: whereClause,
-            data: { misa_sync_guid: item.generatedGuid, misa_synced_at: currentTime }
-          });
-        });
-        await this.db.$transaction(updateOperations);
-        return;
-      } else {
-        const orderNumbers = payments.map(p => p?.haravan_order_number || p?.haravan_order_name);
-        const err_msg = {
-          order_numbers: orderNumbers,
-          found: `Found ${payments.length} ${paymentTypeName} payments for date range ${dateRange.startDate} to ${dateRange.endDate}`,
-          misa_response: response?.ErrorMessage
-        };
-        Sentry.captureMessage(`MISA Voucher Auto sync failed for ${paymentTypeName} at ${dateRange.endDate}`,
-          { level: "error", extra: err_msg });
-      }
-    } catch (error) {
-      Sentry.captureException(error);
+      Sentry.captureMessage(`MISA Voucher Auto sync failed for ${paymentTypeName} at ${dateRange.endDate}`,
+        { level: "error", extra: err_msg });
     }
   }
 }
