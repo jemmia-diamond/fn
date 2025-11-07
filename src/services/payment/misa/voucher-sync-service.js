@@ -22,7 +22,7 @@ export default class MisaVoucherSyncService {
    */
   async runMorningBatch() {
     const now = dayjs().utc();
-    const startDate = now.subtract(2, "day").hour(11).minute(0).second(0);
+    const startDate = now.subtract(1, "day").hour(11).minute(0).second(0);
     const endDate = now.hour(1).minute(30).second(0);
     await this._createVouchersForDateRange(startDate.toDate(), endDate.toDate());
   }
