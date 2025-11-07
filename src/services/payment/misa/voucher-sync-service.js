@@ -22,7 +22,7 @@ export default class MisaVoucherSyncService {
    */
   async runMorningBatch() {
     const now = dayjs().utc();
-    const startDate = now.subtract(1, "day").hour(11).minute(0).second(0);
+    const startDate = now.subtract(2, "day").hour(11).minute(0).second(0);
     const endDate = now.hour(1).minute(30).second(0);
     await this._createVouchersForDateRange(startDate.toDate(), endDate.toDate());
   }
@@ -137,9 +137,17 @@ export default class MisaVoucherSyncService {
           });
         });
         await this.db.$transaction(updateOperations);
-        return { status: "success", count: payments.length, message: response.Data };
+        return;
+      } else {
+        const orderNumbers = payments.map(p => p?.haravan_order_number || p?.haravan_order_name);
+        const err_msg = {
+          order_numbers: orderNumbers,
+          found: `Found ${payments.length} ${paymentTypeName} payments for date range ${dateRange.startDate} to ${dateRange.endDate}`,
+          misa_response: response?.ErrorMessage
+        };
+        Sentry.captureMessage(`MISA Voucher Auto sync failed for ${paymentTypeName} at ${dateRange.endDate}`,
+          { level: "error", extra: err_msg });
       }
-      return { status: "error", message: response.ErrorMessage };
     } catch (error) {
       Sentry.captureException(error);
     }
