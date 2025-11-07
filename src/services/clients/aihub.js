@@ -1,4 +1,3 @@
-import * as Sentry from "@sentry/cloudflare";
 import axios from "axios";
 import axiosRetry from "axios-retry";
 
@@ -49,14 +48,8 @@ export default class AIHUBClient {
   async makeRequest(endpoint, data = null) {
     const client = await this.#getClient();
 
-    try {
-      const response = await client.post(endpoint, data);
+    const response = await client.post(endpoint, data);
 
-      return response.data;
-    } catch (error) {
-      // Log the headers from the failed request
-      Sentry.captureException(error);
-      throw new Error(`AIHub API request failed: ${error.message}`);
-    }
+    return response.data;
   }
 }
