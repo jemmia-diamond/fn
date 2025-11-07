@@ -1,17 +1,19 @@
 import * as Sentry from "@sentry/cloudflare";
+
 import { Hono } from "hono";
 import { bearerAuth } from "hono/bearer-auth";
+import { HTTPException } from "hono/http-exception";
+
+import Routes from "src/routes";
+import { DebounceDurableObject } from "src/durable-objects";
 
 import errorTracker from "middlewares/error-tracker";
 import errorHandler from "middlewares/error-handler";
 
 import CorsService from "services/cors-service";
-
-import Routes from "src/routes";
 import queueHandler from "services/queue-handler";
 import scheduleHandler from "services/schedule-handler";
-import { DebounceDurableObject } from "src/durable-objects";
-import { HTTPException } from "hono/http-exception";
+import loggrageLogger from "services/custom-logger";
 
 const app = new Hono()
   // Add an onError hook to report unhandled exceptions to Sentry.
@@ -30,6 +32,7 @@ const api = app.basePath("/api");
 const publicApi = app.basePath("/public-api");
 const webhook = app.basePath("/webhook");
 
+app.use(loggrageLogger());
 app.use("*", errorTracker);
 app.use("*", errorHandler);
 
