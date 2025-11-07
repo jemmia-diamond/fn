@@ -18,7 +18,7 @@ export default class MisaClient {
 
     const payload = {
       app_id: this.env.MISA_APP_ID,
-      access_code: await this.env.MISA_ACCESS_CODE_SECRET.get(),
+      access_code: this.env.MISA_ACCESS_CODE,
       org_company_code: this.env.MISA_ORG_CODE
     };
 
