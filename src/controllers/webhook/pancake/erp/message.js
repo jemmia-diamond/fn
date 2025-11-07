@@ -1,4 +1,3 @@
-import { HTTPException } from "hono/http-exception";
 import { DebounceActions, DebounceService } from "src/durable-objects";
 import { shouldReceiveWebhook } from "controllers/webhook/pancake/erp/utils";
 
@@ -28,7 +27,7 @@ export default class PancakeERPMessageController {
       }
       return ctx.json({ message: "Message Received" });
     } catch {
-      throw new HTTPException(500, "Failed to send message to queue");
+      return ctx.json({ message: "Failed to send message to queue", status: 500 });
     }
   }
 }
