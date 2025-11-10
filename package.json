@@ -21,7 +21,7 @@
     "@prisma/adapter-neon": "^6.15.0",
     "@prisma/client": "^6.15.0",
     "@sentry/cloudflare": "^10.19.0",
-    "axios": "^1.10.0",
+    "axios": "^1.13.2",
     "axios-retry": "^4.5.0",
     "crypto-js": "^4.2.0",
     "dayjs": "^1.11.13",

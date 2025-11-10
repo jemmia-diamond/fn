@@ -33,7 +33,7 @@ importers:
         specifier: ^10.19.0
         version: 10.19.0
       axios:
-        specifier: ^1.10.0
+        specifier: ^1.13.2
         version: 1.13.2
       axios-retry:
         specifier: ^4.5.0
