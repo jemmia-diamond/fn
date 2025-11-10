@@ -190,6 +190,7 @@ model diamonds {
   report_lab                  String?
   report_no                   BigInt?
   price                       Decimal?             @db.Decimal
+  final_discounted_price       Decimal?            @db.Decimal
   cogs                        Decimal?             @db.Decimal
   product_group               String?
   shape                       String?
