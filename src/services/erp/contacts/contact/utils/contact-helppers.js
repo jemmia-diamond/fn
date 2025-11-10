@@ -7,7 +7,7 @@ import { mapContactsToDatabase } from "src/services/erp/contacts/contact/utils/c
 import { escapeSqlValue } from "src/services/utils/sql-helpers";
 dayjs.extend(utc);
 
-const CHUNK_SIZE = 100;
+const CHUNK_SIZE = 50;
 
 export async function fetchContactsFromERP(frappeClient, doctype, fromDate, toDate, pageSize) {
   try {

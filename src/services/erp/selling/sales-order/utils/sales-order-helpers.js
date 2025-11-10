@@ -9,7 +9,7 @@ import { fetchChildRecordsFromERP } from "src/services/utils/sql-helpers";
 
 dayjs.extend(utc);
 
-const CHUNK_SIZE = 100;
+const CHUNK_SIZE = 30;
 
 export async function fetchSalesOrdersFromERP(frappeClient, doctype, fromDate, toDate, pageSize) {
   try {
