@@ -47,6 +47,7 @@ export default class DiamondService {
             WHEN d.promotions ILIKE '%8%%' THEN ROUND(d.price * 0.92, 2)
             ELSE d.price
           END AS DOUBLE PRECISION) AS price,
+          CAST(d.final_discounted_price AS DOUBLE PRECISION) as final_discounted_price,
           p.handle,
           ARRAY(
             SELECT i.src
