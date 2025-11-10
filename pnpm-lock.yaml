@@ -16,7 +16,7 @@ importers:
         version: 0.12.0(axios@1.13.2)
       '@hono/sentry':
         specifier: ^1.2.1
-        version: 1.2.1(hono@4.10.2)
+        version: 1.2.1(hono@4.10.4)
       '@larksuiteoapi/node-sdk':
         specifier: 1.47.1
         version: 1.47.1
@@ -48,8 +48,8 @@ importers:
         specifier: ^4.0.4
         version: 4.0.4
       hono:
-        specifier: ^4.10.2
-        version: 4.10.2
+        specifier: ^4.10.4
+        version: 4.10.4
       uuid:
         specifier: ^11.1.0
         version: 11.1.0
@@ -1473,8 +1473,8 @@ packages:
     resolution: {integrity: sha512-eSmmWE5bZTK2Nou4g0AI3zZ9rswp7GRKoKXS1BLUkvPviOqs4YTN1djQIqrXy9k5gEtdLPy86JjRwsNM9tnDcA==}
     engines: {node: '>=0.10.0'}
 
-  hono@4.10.2:
-    resolution: {integrity: sha512-p6fyzl+mQo6uhESLxbF5WlBOAJMDh36PljwlKtP5V1v09NxlqGru3ShK+4wKhSuhuYf8qxMmrivHOa/M7q0sMg==}
+  hono@4.10.4:
+    resolution: {integrity: sha512-YG/fo7zlU3KwrBL5vDpWKisLYiM+nVstBQqfr7gCPbSYURnNEP9BDxEMz8KfsDR9JX0lJWDRNc6nXX31v7ZEyg==}
     engines: {node: '>=16.9.0'}
 
   https-proxy-agent@5.0.1:
@@ -2622,9 +2622,9 @@ snapshots:
     dependencies:
       axios: 1.13.2
 
-  '@hono/sentry@1.2.1(hono@4.10.2)':
+  '@hono/sentry@1.2.1(hono@4.10.4)':
     dependencies:
-      hono: 4.10.2
+      hono: 4.10.4
       toucan-js: 4.1.1
 
   '@humanfs/core@0.19.1': {}
@@ -3669,7 +3669,7 @@ snapshots:
     dependencies:
       parse-passwd: 1.0.0
 
-  hono@4.10.2: {}
+  hono@4.10.4: {}
 
   https-proxy-agent@5.0.1:
     dependencies:
