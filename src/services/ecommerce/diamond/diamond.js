@@ -31,18 +31,19 @@ export default class DiamondService {
   async getDiamondByVariantId(variantId) {
     try {
       const result = await this.db.$queryRaw`
-        SELECT 
+        SELECT
           CAST(d.product_id AS INT) AS product_id,
           CAST(d.variant_id AS INT) AS variant_id,
-          d.report_no, 
-          d.shape, 
-          CAST(d.carat AS DOUBLE PRECISION) AS carat, 
-          d.color, 
-          d.clarity, 
+          d.report_no,
+          d.shape,
+          CAST(d.carat AS DOUBLE PRECISION) AS carat,
+          d.color,
+          d.clarity,
           d.cut,
-          d.edge_size_1, d.edge_size_2, 
+          d.fluorescence,
+          d.edge_size_1, d.edge_size_2,
           CAST(d.price AS DOUBLE PRECISION) as compare_at_price,
-          CAST(CASE 
+          CAST(CASE
             WHEN d.promotions ILIKE '%8%%' THEN ROUND(d.price * 0.92, 2)
             ELSE d.price
           END AS DOUBLE PRECISION) AS price,
@@ -52,7 +53,7 @@ export default class DiamondService {
             FROM haravan.images i
             WHERE i.product_id = d.product_id
               AND (
-                i.variant_ids IS NULL 
+                i.variant_ids IS NULL
                 OR i.variant_ids = '[]'
                 OR d.variant_id = ANY(
                   SELECT (jsonb_array_elements_text(i.variant_ids::jsonb))::INT
@@ -60,8 +61,8 @@ export default class DiamondService {
               )
           ) AS images,
           g.simple_encrypted_report_no
-        FROM workplace.diamonds AS d 
-        JOIN haravan.products AS p ON p.id = d.product_id 
+        FROM workplace.diamonds AS d
+        JOIN haravan.products AS p ON p.id = d.product_id
         LEFT JOIN gia.report_no_data AS g ON g.report_no::BIGINT = d.report_no::BIGINT
         WHERE variant_id = ${variantId}
         LIMIT 1;

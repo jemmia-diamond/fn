@@ -21,6 +21,11 @@ function buildFilterString(jsonParams) {
     filterString += `AND clarity IN ('${clarities}')\n`;
   }
 
+  if (jsonParams.fluorescence && jsonParams.fluorescence.length > 0) {
+    const fluorescence = jsonParams.fluorescence.map(f => escapeSingleQuotes(f)).join("','");
+    filterString += `AND fluorescence IN ('${fluorescence}')\n`;
+  }
+
   const discountedPriceExpression = "(CASE WHEN promotions ILIKE '%8%%' THEN ROUND(price * 0.92, 2) ELSE price END)";
 
   if (jsonParams.price?.min) {
@@ -46,7 +51,7 @@ function buildSortString(jsonParams) {
   if (jsonParams.sort?.by) {
     const column = jsonParams.sort.by;
     const order = jsonParams.sort.order?.toUpperCase() === "ASC" ? "ASC" : "DESC";
-    const validColumns = ["price", "color", "clarity", "shape"];
+    const validColumns = ["price", "color", "clarity", "shape", "fluorescence"];
     if (validColumns.includes(column)) {
       if (column === "price") {
         const discountedPriceExpression = "(CASE WHEN promotions ILIKE '%8%%' THEN ROUND(price * 0.92, 2) ELSE price END)";
@@ -101,7 +106,7 @@ export function buildGetDiamondsQuery(jsonParams) {
   `;
 
   const dataSql = `
-    SELECT 
+    SELECT
       CAST(d.product_id AS INT) AS product_id,
       CAST(d.variant_id AS INT) AS variant_id,
       d.report_no,
@@ -110,7 +115,8 @@ export function buildGetDiamondsQuery(jsonParams) {
       d.color,
       d.clarity,
       d.cut,
-      d.edge_size_1, d.edge_size_2, 
+      d.fluorescence,
+      d.edge_size_1, d.edge_size_2,
       CAST(d.price AS DOUBLE PRECISION) as compare_at_price,
       CAST(CASE
         WHEN d.promotions ILIKE '%8%%' THEN ROUND(d.price * 0.92, 2)
@@ -122,7 +128,7 @@ export function buildGetDiamondsQuery(jsonParams) {
         FROM haravan.images i
         WHERE i.product_id = d.product_id
           AND (
-            i.variant_ids IS NULL 
+            i.variant_ids IS NULL
             OR i.variant_ids = '[]'
             OR d.variant_id = ANY(
               SELECT (jsonb_array_elements_text(i.variant_ids::jsonb))::INT
