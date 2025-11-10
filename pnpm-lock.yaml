@@ -13,7 +13,7 @@ importers:
         version: 20.0.2
       '@haverstack/axios-fetch-adapter':
         specifier: ^0.12.0
-        version: 0.12.0(axios@1.10.0)
+        version: 0.12.0(axios@1.13.2)
       '@hono/sentry':
         specifier: ^1.2.1
         version: 1.2.1(hono@4.10.2)
@@ -34,10 +34,10 @@ importers:
         version: 10.19.0
       axios:
         specifier: ^1.10.0
-        version: 1.10.0
+        version: 1.13.2
       axios-retry:
         specifier: ^4.5.0
-        version: 4.5.0(axios@1.10.0)
+        version: 4.5.0(axios@1.13.2)
       crypto-js:
         specifier: ^4.2.0
         version: 4.2.0
@@ -866,8 +866,8 @@ packages:
   axios@0.27.2:
     resolution: {integrity: sha512-t+yRIyySRTp/wua5xEr+z1q60QmLq8ABsS5O9Me1AsE5dfKqgnCFzwiCZZ/cGNd1lq4/7akDWMxdhVlucjmnOQ==}
 
-  axios@1.10.0:
-    resolution: {integrity: sha512-/1xYAC4MP/HEG+3duIhFr4ZQXR4sQXOIe+o6sdqzeykGLx6Upp/1p8MHqhINOvGeP7xyNHe7tsiJByc4SSVUxw==}
+  axios@1.13.2:
+    resolution: {integrity: sha512-VPk9ebNqPcy5lRGuSlKx752IlDatOjT9paPlm8A7yOuW2Fbvp4X3JznJtT4f0GzGLLiWE9W8onz51SqLYwzGaA==}
 
   balanced-match@1.0.2:
     resolution: {integrity: sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw==}
@@ -2618,9 +2618,9 @@ snapshots:
       '@eslint/core': 0.15.2
       levn: 0.4.1
 
-  '@haverstack/axios-fetch-adapter@0.12.0(axios@1.10.0)':
+  '@haverstack/axios-fetch-adapter@0.12.0(axios@1.13.2)':
     dependencies:
-      axios: 1.10.0
+      axios: 1.13.2
 
   '@hono/sentry@1.2.1(hono@4.10.2)':
     dependencies:
@@ -2992,9 +2992,9 @@ snapshots:
 
   at-least-node@1.0.0: {}
 
-  axios-retry@4.5.0(axios@1.10.0):
+  axios-retry@4.5.0(axios@1.13.2):
     dependencies:
-      axios: 1.10.0
+      axios: 1.13.2
       is-retry-allowed: 2.2.0
 
   axios@0.27.2:
@@ -3004,7 +3004,7 @@ snapshots:
     transitivePeerDependencies:
       - debug
 
-  axios@1.10.0:
+  axios@1.13.2:
     dependencies:
       follow-redirects: 1.15.9
       form-data: 4.0.4
