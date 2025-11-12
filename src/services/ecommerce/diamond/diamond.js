@@ -6,6 +6,7 @@ import * as Sentry from "@sentry/cloudflare";
 export default class DiamondService {
   constructor(env) {
     this.db = Database.instance(env, "neon");
+    this.env = env;
   }
 
   async getDiamonds(jsonParams) {
@@ -68,7 +69,12 @@ export default class DiamondService {
         WHERE variant_id = ${variantId}
         LIMIT 1;
       `;
-      return result?.[0] || null;
+      return result?.[0] ? {
+        ...result?.[0],
+        gia_url: result?.[0].simple_encrypted_report_no
+          ? `${this.env.R2_JEMMIA_WEBSITE_PUBLIC_URL}/gia-reports/${result?.[0].simple_encrypted_report_no}.png`
+          : null
+      } : null;
     } catch (e) {
       Sentry.captureException(e);
       throw e;

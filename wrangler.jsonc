@@ -48,7 +48,8 @@
     "LARK_API_ENDPOINT": "https://open.larksuite.com",
     "INVENTORY_CMS_ENDPOINT": "https://inventory-cms.jemmia.vn",
     "MISA_APP_ID": "4bc7a4b1-ed15-433a-aaf6-2137d01729bd",
-    "MISA_ORG_CODE": "Jemmia_Diamond"
+    "MISA_ORG_CODE": "Jemmia_Diamond",
+    "R2_JEMMIA_WEBSITE_PUBLIC_URL": "https://pub-86e93cc273be445eb3d9cc556c7ee571.r2.dev"
   },
   "secrets_store_secrets": [
     {
