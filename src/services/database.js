@@ -1,8 +1,6 @@
 import { PrismaClient } from "@prisma-cli";
 import { PrismaNeon } from "@prisma/adapter-neon";
-import { neon, neonConfig } from "@neondatabase/serverless";
-
-neonConfig.fetchConnectionCache = true;
+import { neon } from "@neondatabase/serverless";
 
 // Example usage:
 // const db = Database.instance(c.env);
@@ -30,17 +28,13 @@ class Database {
       } catch (error) {
         lastError = error;
         const isRetryable = error.message?.includes("status 520") ||
-                           error.message?.includes("status 503") ||
-                           error.message?.includes("Connection terminated unexpectedly");
+                           error.message?.includes("status 503");
 
         if (!isRetryable || i === maxRetries - 1) {
           throw error;
         }
 
-        const base = 150;
-        const backoff = base * Math.pow(2, i);
-        const jitter = Math.floor(Math.random() * 100);
-        await new Promise(resolve => setTimeout(resolve, backoff + jitter));
+        await new Promise(resolve => setTimeout(resolve, 100 * Math.pow(2, i)));
       }
     }
     throw lastError;
