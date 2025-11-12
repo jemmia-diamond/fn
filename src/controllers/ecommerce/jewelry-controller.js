@@ -1,4 +1,5 @@
 import Ecommerce from "services/ecommerce";
+import { parseNumber } from "services/utils/num-helper";
 
 export default class JewelryController {
   static async index(ctx) {
@@ -13,12 +14,12 @@ export default class JewelryController {
       pages: params.pages ? params.pages.split(",") : [],
       is_in_stock: params.is_in_stock ? params.is_in_stock === "true" : null,
       pagination: {
-        from: params.from ? parseInt(params.from, 10) : 1,
-        limit: params.limit ? parseInt(params.limit, 10) : 24
+        from: parseNumber(params.from, 1),
+        limit: parseNumber(params.limit, 24)
       },
       price: {
-        min: params.min_price ? parseInt(params.min_price) : null,
-        max: params.max_price ? parseInt(params.max_price) : null
+        min: parseNumber(params.min_price, null),
+        max: parseNumber(params.max_price, null)
       },
       sort: {
         by: params.sort_by || "price",
