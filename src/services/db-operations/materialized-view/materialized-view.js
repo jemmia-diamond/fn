@@ -18,7 +18,9 @@ export default class MaterializedViewService {
       "reporting.order_sales_team_dim",
       "reporting.product_warehouse_stock_view",
       "reporting.order_promotion_view",
-      "reporting.item_promotion_view"
+      "reporting.item_promotion_view",
+      "reporting.serial_order_view",
+      "reporting.debt_history_view"
     ];
     for (const view of views) {
       try {
