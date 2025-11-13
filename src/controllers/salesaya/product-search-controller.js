@@ -11,6 +11,7 @@ export default class ProductSearchController {
    * Query params:
    * - q (or search_key): Search keyword (keyword or product code)
    * - limit: Number of results (default: 10, max: 50)
+   * - page: Page number (default: 1)
    *
    * Response: name, sku, variant_title, barcode, price, link_haravan, inventory, image_urls
    */
