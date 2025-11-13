@@ -355,3 +355,18 @@ const extractVariantTitle = (item) => {
 
   return extracted || title || "N/A";
 };
+
+/**
+ * Check if a sales order contains only primary order items
+ * @param {*} salesOrder
+ * @returns {boolean}
+ */
+export const isPrimaryOrder = (salesOrder) => {
+  const items = salesOrder.items || [];
+  return items.every(
+    (item) =>
+      item.sku?.startsWith(SKU_PREFIX.GIFT)
+    || item.sku?.startsWith(SKU_PREFIX.TEMPORARY_JEWELRY)
+    || item.sku?.length === SKU_LENGTH.JEWELRY
+  );
+};
