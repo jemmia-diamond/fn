@@ -23,11 +23,14 @@ export default class ProductSearchService {
    * @param {number} page - Page number (1-based)
    * @param {object} ctx - Hono context (to access cache API)
    * @returns {Promise<Array>} Product list with format:
-   *   - name: Product name
-   *   - price: Price
-   *   - inventory: Inventory by branch [{ branch: "HCM", quantity: 10 }, ...]
-   *   - real_image: Real image (URL)
-   *   - web_image: Web image (URL)
+      name: string,
+      sku: string,
+      variant_title: string,
+      barcode: string,
+      price: number,
+      link_haravan: string,
+      inventory: Array,
+      image_urls: Array
    */
   async searchForChatbot(searchKey, limit, page, ctx) {
     const normalizedLimit = Number.isFinite(limit) && limit > 0 ? Math.floor(limit) : 10;
@@ -137,14 +140,20 @@ export default class ProductSearchService {
   }
 
   async _queryDatabase(searchKey, limit, page) {
-    const lowerSearchKey = searchKey.toLowerCase();
-    const likePattern = `%${lowerSearchKey}%`;
-    const searchTerms = lowerSearchKey
+    const normalizedSearchKey = searchKey.toLowerCase().trim();
+    const searchTerms = normalizedSearchKey
       .split(/\s+/)
       .map(term => term.trim())
       .filter(Boolean);
+
+    if (!searchTerms.length) {
+      return [];
+    }
+
     const safePage = Number.isFinite(page) && page > 0 ? Math.floor(page) : 1;
-    const fetchLimit = Math.max(limit * safePage, limit);
+    const safeLimit = Number.isFinite(limit) && limit > 0 ? Math.floor(limit) : 20;
+    const offset = (safePage - 1) * safeLimit;
+    const likePatterns = searchTerms.map(term => `%${term}%`);
 
     const results = await this.db.$queryRaw`
       SELECT
@@ -158,13 +167,11 @@ export default class ProductSearchService {
         wd.design_code,
         wd.code AS design_partner_code,
         wd.erp_code AS design_erp_code,
-        -- Image URLs
         (
           SELECT COALESCE(JSON_AGG(hi.src), '[]'::json)
           FROM haravan.images hi
           WHERE hi.product_id = hv.product_id
         ) AS image_urls,
-        -- Inventory by branch
         (
           SELECT COALESCE(JSON_AGG(
             JSON_BUILD_OBJECT(
@@ -186,66 +193,35 @@ export default class ProductSearchService {
         LEFT JOIN workplace.variants wv ON hv.id = wv.haravan_variant_id
         LEFT JOIN workplace.products wp ON wv.product_id = wp.id
         LEFT JOIN workplace.designs wd ON wd.id = wp.design_id
-      WHERE 
-        -- Only variants with inventory
+      WHERE
         hv.qty_available > 0
-        -- Multi-column search
-        AND lower(concat(
+        AND lower(concat_ws(
           COALESCE(hv.product_title, ''),
-          ' ',
           COALESCE(hv.title, ''),
-          ' ',
           COALESCE(hv.barcode, ''),
-          ' ',
           COALESCE(hv.sku, ''),
-          ' ',
           COALESCE(wd.design_code, ''),
-          ' ',
           COALESCE(wd.code, ''),
-          ' ',
           COALESCE(wd.erp_code, '')
-        )) LIKE ${likePattern}
-      ORDER BY 
-        -- Priority: exact match code > name match
+        )) LIKE ALL(${likePatterns})
+      ORDER BY
         CASE 
-          WHEN lower(COALESCE(wd.design_code, '')) = ${lowerSearchKey} THEN 1
-          WHEN lower(COALESCE(wd.code, '')) = ${lowerSearchKey} THEN 2
-          WHEN lower(COALESCE(wd.erp_code, '')) = ${lowerSearchKey} THEN 3
-          WHEN lower(COALESCE(hv.barcode, '')) = ${lowerSearchKey} THEN 4
-          WHEN lower(COALESCE(hv.sku, '')) = ${lowerSearchKey} THEN 5
-          WHEN lower(COALESCE(hv.product_title, '')) LIKE ${likePattern} THEN 6
-          ELSE 7
+          WHEN lower(COALESCE(wd.design_code, '')) = ${normalizedSearchKey} THEN 1
+          WHEN lower(COALESCE(wd.code, '')) = ${normalizedSearchKey} THEN 2
+          WHEN lower(COALESCE(wd.erp_code, '')) = ${normalizedSearchKey} THEN 3
+          WHEN lower(COALESCE(hv.barcode, '')) = ${normalizedSearchKey} THEN 4
+          WHEN lower(COALESCE(hv.sku, '')) = ${normalizedSearchKey} THEN 5
+          ELSE 6
         END ASC,
         hv.product_title ASC
-      LIMIT ${fetchLimit}
+      LIMIT ${safeLimit}
+      OFFSET ${offset}
     `;
 
-    const filteredResults = searchTerms.length
-      ? results.filter(item => {
-        const combinedFields = [
-          item.name,
-          item.variant_title,
-          item.barcode,
-          item.sku,
-          item.design_code,
-          item.design_partner_code,
-          item.design_erp_code
-        ]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase();
-
-        return searchTerms.every(term => combinedFields.includes(term));
-      })
-      : results;
-
-    const startIndex = (safePage - 1) * limit;
-    const endIndex = startIndex + limit;
-    const pagedResults = filteredResults.slice(startIndex, endIndex);
-
-    return pagedResults.map(item => ({
+    return results.map(item => ({
       name: item.name,
       sku: item.sku,
+      design_code: item.design_code,
       variant_title: item.variant_title,
       barcode: item.barcode,
       price: item.price ? Number(item.price) : null,

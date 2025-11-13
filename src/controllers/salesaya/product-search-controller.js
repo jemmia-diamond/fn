@@ -12,7 +12,7 @@ export default class ProductSearchController {
    * - q (or search_key): Search keyword (keyword or product code)
    * - limit: Number of results (default: 10, max: 50)
    *
-   * Response: name, price, inventory (by branch), real image, web image
+   * Response: name, sku, variant_title, barcode, price, link_haravan, inventory, image_urls
    */
   static async index(ctx) {
     const params = await ctx.req.query();
