@@ -17,7 +17,13 @@ export default class ProductSearchController {
   static async index(ctx) {
     const params = await ctx.req.query();
     const searchKey = params.q || params.search_key;
-    const limit = Math.min(Number(params.limit) || 10, MAX_SEARCH_RESULT);
+    const limitParam = params.limit ? Number(params.limit) : 10;
+    const limit = Math.min(
+      Number.isFinite(limitParam) ? Math.floor(limitParam) : 10,
+      MAX_SEARCH_RESULT
+    );
+    const pageParam = params.page ? Number(params.page) : 1;
+    const page = Number.isFinite(pageParam) ? Math.floor(pageParam) : 1;
 
     if (!searchKey || searchKey.trim().length === 0) {
       throw new HTTPException(400, {
@@ -31,17 +37,26 @@ export default class ProductSearchController {
       });
     }
 
+    if (page < 1) {
+      throw new HTTPException(400, {
+        message: "page must be greater than 0"
+      });
+    }
+
     const productSearchService = new Salesaya.ProductSearchService(ctx.env);
     const result = await productSearchService.searchForChatbot(
       searchKey.trim(),
       limit,
+      page,
       ctx
     );
 
     return ctx.json({
       success: true,
       data: result,
-      count: result.length
+      count: result.length,
+      page,
+      limit
     });
   }
 }
