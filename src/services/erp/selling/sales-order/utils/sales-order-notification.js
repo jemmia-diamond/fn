@@ -357,7 +357,7 @@ const extractVariantTitle = (item) => {
 };
 
 /**
- * Check if a sales order contains only primary order items
+ * Check if a sales order is primary order that contains only gift or jewelry items
  * @param {*} salesOrder
  * @returns {boolean}
  */
