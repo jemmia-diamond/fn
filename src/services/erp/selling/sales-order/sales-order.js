@@ -220,7 +220,49 @@ export default class SalesOrderService {
 
     const haravanRefOrderId = salesOrderData.haravan_ref_order_id;
 
-    // Handle case reorder
+    const splitOrderGroupId = salesOrderData.split_order_group;
+    const splitOrderGroupNme = salesOrderData.split_order_group_name;
+
+    const childOrders = [];
+    if (splitOrderGroupId && Number(splitOrderGroupId) > 0 && splitOrderGroupNme) {
+      // Find all orders in split order group by name
+      const splitOrders = await this.frappeClient.getList("Sales Order", {
+        filters: [
+          ["split_order_group_name", "=", splitOrderGroupNme],
+          ["name", "!=", salesOrderData.name]
+        ]
+      });
+
+      if (splitOrders && splitOrders.length > 0) {
+        // For each order, find its attachments
+        for (const splitOrder of splitOrders) {
+          const childOrder = await this.frappeClient.getDoc("Sales Order", splitOrder.name);
+          childOrder.attachments = await this.frappeClient.getList("File", {
+            filters: [
+              ["attached_to_doctype", "=", "Sales Order"],
+              ["attached_to_name", "=", childOrder.name]
+            ],
+            fields: ["file_name", "file_url", "is_private"]
+          });
+          childOrders.push(childOrder);
+        }
+      }
+    }
+
+    // Compose all sales order into one
+    for (const childOrder of childOrders) {
+      salesOrderData.items.push(...childOrder.items);
+      salesOrderData.attachments.push(...childOrder.attachments);
+      salesOrderData.promotions.push(...childOrder.promotions);
+      salesOrderData.product_categories.push(...childOrder.product_categories);
+      salesOrderData.policies.push(...childOrder.policies);
+
+      salesOrderData.grand_total += childOrder.grand_total;
+      salesOrderData.discount_amount += childOrder.discount_amount;
+      salesOrderData.paid_amount += childOrder.paid_amount;
+      salesOrderData.deposit_amount += childOrder.deposit_amount;
+    }
+
     if (haravanRefOrderId && Number(haravanRefOrderId) > 0) {
       // find the very first order in history
       const refOrders = await getRefOrderChain(this.db, Number(salesOrderData.haravan_order_id));
