@@ -7,6 +7,7 @@ import Dashboard from "controllers/dashboard";
 import Ecommerce from "controllers/ecommerce";
 import Delivery from "controllers/delivery";
 import Payment from "controllers/payment";
+import Salesaya from "controllers/salesaya";
 
 export default class APIRoutes {
   static register(api) {
@@ -56,5 +57,8 @@ export default class APIRoutes {
     const paymentApi = api.basePath("/payments");
     paymentApi.post("/manual-payments", Payment.ManualPaymentsController.create);
     paymentApi.patch("/manual-payments/:id", Payment.ManualPaymentsController.update);
+
+    const salesayaNamespaceApi = api.basePath("/salesaya");
+    salesayaNamespaceApi.get("/products/search", Salesaya.ProductSearchController.index);
   };
 };
