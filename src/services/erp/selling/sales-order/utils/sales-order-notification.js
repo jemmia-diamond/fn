@@ -357,11 +357,25 @@ const extractVariantTitle = (item) => {
 };
 
 /**
+ * Find main order that contains only gift or jewelry items
+ * @param {*} orders
+ * @returns {{mainOrder: *, subOrders: *[]}}
+ */
+export const findMainOrder = (orders) => {
+  const mainOrder = orders.find(order => isPrimaryOrder(order));
+  const subOrders = orders.filter(order => order.name !== mainOrder.name);
+  return {
+    mainOrder,
+    subOrders
+  };
+};
+
+/**
  * Check if a sales order is primary order that contains only gift or jewelry items
  * @param {*} salesOrder
  * @returns {boolean}
  */
-export const isPrimaryOrder = (salesOrder) => {
+const isPrimaryOrder = (salesOrder) => {
   const items = salesOrder.items || [];
   return items.every(
     (item) =>

@@ -6,7 +6,7 @@ import Database from "src/services/database";
 import AddressService from "src/services/erp/contacts/address/address";
 import ContactService from "src/services/erp/contacts/contact/contact";
 import CustomerService from "src/services/erp/selling/customer/customer";
-import { composeOrderUpdateMessage, composeSalesOrderNotification, extractPromotions, isPrimaryOrder, validateOrderInfo } from "services/erp/selling/sales-order/utils/sales-order-notification";
+import { composeOrderUpdateMessage, composeSalesOrderNotification, extractPromotions, findMainOrder, validateOrderInfo } from "services/erp/selling/sales-order/utils/sales-order-notification";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/constant";
@@ -215,15 +215,6 @@ export default class SalesOrderService {
     };
   };
 
-  findMainOrder = (orders) => {
-    const mainOrder = orders.find(order => isPrimaryOrder(order));
-    const subOrders = orders.filter(order => order.name !== mainOrder.name);
-    return {
-      mainOrder,
-      subOrders
-    };
-  };
-
   async sendNotificationToLark(initialSalesOrderData, isUpdateMessage = false) {
     let salesOrderData = initialSalesOrderData;
 
@@ -267,7 +258,7 @@ export default class SalesOrderService {
       }
     }
 
-    const { mainOrder, subOrders } = this.findMainOrder([salesOrderData, ...childOrders]);
+    const { mainOrder, subOrders } = findMainOrder([salesOrderData, ...childOrders]);
 
     salesOrderData = mainOrder;
     childOrders = subOrders;
