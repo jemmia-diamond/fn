@@ -267,7 +267,10 @@ export default class SalesOrderService {
       }
     }
 
-    ({ salesOrderData, childOrders } = this.findMainOrder([salesOrderData, ...childOrders]));
+    const { mainOrder, subOrders } = this.findMainOrder([salesOrderData, ...childOrders]);
+
+    salesOrderData = mainOrder;
+    childOrders = subOrders;
 
     // Compose all sales order into one
     for (const childOrder of childOrders) {
