@@ -35,6 +35,7 @@ export default class QrPaymentFetchingService {
           transfer_note: true,
           created_at: true,
           updated_at: true,
+          haravan_order_id: true,
           haravan_order: {
             select: {
               id: true,
@@ -49,6 +50,7 @@ export default class QrPaymentFetchingService {
               customer_default_address_district: true,
               customer_default_address_province: true,
               customer_default_address_country: true,
+              ref_order_id: true,
               user: {
                 select: {
                   first_name: true,
@@ -63,7 +65,7 @@ export default class QrPaymentFetchingService {
               }
             }
           }
-        }
+        }, take: 10
       });
     } catch (error) {
       Sentry.captureException(error);

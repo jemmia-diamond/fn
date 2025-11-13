@@ -53,6 +53,7 @@ export default class ManualPaymentFetchingService {
           created_date: true,
           receive_date: true,
           updated_date: true,
+          haravan_order_id: true,
           haravan_order: {
             select: {
               id: true,
@@ -69,6 +70,7 @@ export default class ManualPaymentFetchingService {
               customer_default_address_district: true,
               customer_default_address_province: true,
               customer_default_address_country: true,
+              ref_order_id: true,
               user: {
                 select: {
                   first_name: true,
@@ -83,7 +85,7 @@ export default class ManualPaymentFetchingService {
               }
             }
           }
-        }
+        }, take: 10
       });
     } catch (error) {
       Sentry.captureException(error);
