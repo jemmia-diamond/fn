@@ -2,7 +2,7 @@ import * as crypto from "crypto";
 import { CREDIT_ACCOUNT_MAP, DEBIT_ACCOUNT_MAP, EXCHANGE_RATE, MANUAL_PAYMENT_CREDIT_MAP, MANUAL_PAYMENT_DEBIT_MAP, REASON_TYPES, SORT_ORDER, VOUCHER_REF_TYPES, VOUCHER_TYPES } from "services/misa/constant";
 
 export default class CashVoucherMappingService {
-  static transforManualToVoucher(v, bankMap, voucher_type = VOUCHER_TYPES.MANUAL_PAYMENT, ref_type = VOUCHER_REF_TYPES.MANUAL_PAYMENT) {
+  static transforManualToVoucher(v, bankMap, voucher_type = VOUCHER_TYPES.MANUAL_PAYMENT, ref_type = VOUCHER_REF_TYPES.MANUAL_PAYMENT, order_chain = null) {
     // Company credit and debit account
     // manual payment using "branch" field (branch is actually vietnamese province)
     const isManual = voucher_type === VOUCHER_TYPES.MANUAL_PAYMENT;
@@ -34,6 +34,7 @@ export default class CashVoucherMappingService {
     const bankName = bankInfo ? (bankInfo.bank_branch_name ? `${bankInfo.bank_name} - ${bankInfo.bank_branch_name}` : bankInfo.bank_name) : "Không tìm thấy ngân hàng";
     const generatedGuid = crypto.randomUUID();
     const reason_type_id = voucher_type == VOUCHER_TYPES.MANUAL_PAYMENT ? REASON_TYPES.MANUAL_PAYMENT : REASON_TYPES.OTHER_MANUAL_PAYMENT;
+    const orderNumbers = order_chain || v.haravan_order_name;
 
     const misaVoucher = {
       voucher_type,
@@ -52,7 +53,7 @@ export default class CashVoucherMappingService {
       account_object_name: customerName,
       account_object_address: customerAddress,
       account_object_code: customerCode,
-      journal_memo: `Thu tiền đơn hàng ${v.haravan_order_name}`,
+      journal_memo: `Thu tiền đơn hàng ${orderNumbers}`,
       employee_code,
       employee_name,
       created_by: "Tự động hóa",
@@ -62,7 +63,7 @@ export default class CashVoucherMappingService {
           sort_order: SORT_ORDER,
           amount_oc: Number(v.transfer_amount),
           amount: Number(v.transfer_amount),
-          description: `Thu tiền đơn hàng ${v.haravan_order_name}`,
+          description: `Thu tiền đơn hàng ${orderNumbers}`,
           debit_account: debitAccount,
           credit_account: creditInfo.credit_account || null,
           organization_unit_name: creditInfo.unit_name || null,

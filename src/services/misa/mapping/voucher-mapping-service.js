@@ -10,7 +10,7 @@ export default class VoucherMappingService {
    * @param {Number} ref_type reference type - check here https://actdocs.misa.vn/g2/graph/ACTOpenAPIHelp/index.html#3-9
    * @returns
    */
-  static transformQrToVoucher(v, bankMap, voucher_type = VOUCHER_TYPES.QR_PAYMENT, ref_type = VOUCHER_REF_TYPES.QR_PAYMENT) {
+  static transformQrToVoucher(v, bankMap, voucher_type = VOUCHER_TYPES.QR_PAYMENT, ref_type = VOUCHER_REF_TYPES.QR_PAYMENT, order_chain = null) {
     // Company credit and debit account
     const creditInfo = CREDIT_ACCOUNT_MAP[v.haravan_order?.source] || {};
     const debitAccount = DEBIT_ACCOUNT_MAP[v.bank_code] || null;
@@ -33,6 +33,7 @@ export default class VoucherMappingService {
     const bankInfo = bankMap[v.bank_account_number];
     const bankName = bankInfo ? (bankInfo.bank_branch_name ? `${bankInfo.bank_name} - ${bankInfo.bank_branch_name}` : bankInfo.bank_name) : "Bank name not found";
     const generatedGuid = crypto.randomUUID();
+    const orderNumbers = order_chain || v.haravan_order_number;
 
     const misaVoucher = {
       voucher_type,
@@ -53,7 +54,7 @@ export default class VoucherMappingService {
       account_object_name: customerName,
       account_object_address: customerAddress,
       account_object_code: customerCode,
-      journal_memo: `Thu tiền đơn hàng ${v.haravan_order_number}`,
+      journal_memo: `Thu tiền đơn hàng ${orderNumbers}`,
       employee_code,
       employee_name,
       created_by: "Tự động hóa",
@@ -63,7 +64,7 @@ export default class VoucherMappingService {
           sort_order: SORT_ORDER,
           amount_oc: Number(v.transfer_amount),
           amount: Number(v.transfer_amount),
-          description: `Thu tiền đơn hàng ${v.haravan_order_number}`,
+          description: `Thu tiền đơn hàng ${orderNumbers}`,
           debit_account: debitAccount,
           credit_account: creditInfo.credit_account || null,
           organization_unit_name: creditInfo.unit_name || null,
