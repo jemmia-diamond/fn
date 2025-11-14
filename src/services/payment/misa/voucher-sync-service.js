@@ -112,8 +112,7 @@ export default class MisaVoucherSyncService {
 
     const paymentsWithRefOrder = payments.filter(p => p.haravan_order?.ref_order_id);
     const orderIdsToFetch = paymentsWithRefOrder.map(p => p.haravan_order_id);
-    const allOrderChains = await getRefOrderChains(this.db, orderIdsToFetch, true);
-
+    const allOrderChains = await this._fetchOrderChains(this.db, orderIdsToFetch);
     const mappedVouchers = payments.map(p => {
       const voucher_type = VOUCHER_TYPES[paymentTypeName];
       const ref_type = VOUCHER_REF_TYPES[paymentTypeName];
@@ -173,5 +172,27 @@ export default class MisaVoucherSyncService {
       Sentry.captureMessage(`MISA Voucher Auto sync failed for ${paymentTypeName} at ${dateRange.endDate}`,
         { level: "error", extra: err_msg });
     }
+  }
+
+  async _fetchOrderChains(db, orderIds, includeSelf = true) {
+    const flatResults = await getRefOrderChains(db, orderIds, includeSelf);
+    const chains = flatResults.reduce((acc, order) => {
+      const { root_id, ...rest } = order;
+      if (!acc[root_id]) {
+        acc[root_id] = [];
+      }
+
+      if (includeSelf || root_id !== order.id) {
+        acc[root_id].push(rest);
+      }
+      return acc;
+    }, {});
+
+    for (const key in chains) {
+      if (chains[key].length === 0) {
+        delete chains[key];
+      }
+    }
+    return chains;
   }
 }

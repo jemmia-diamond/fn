@@ -55,7 +55,7 @@ export async function getRefOrderChain(db, orderId, includeSelf = false) {
   return await db.$queryRaw`${Prisma.raw(sql)}`;
 }
 
-export async function getRefOrderChains(db, orderIds, includeSelf = false) {
+export async function getRefOrderChains(db, orderIds) {
   if (!orderIds || orderIds.length === 0) {
     return {};
   }
@@ -78,23 +78,5 @@ export async function getRefOrderChains(db, orderIds, includeSelf = false) {
     ORDER BY root_id, created_at ASC
   `;
 
-  const flatResults = await db.$queryRaw`${Prisma.raw(sql)}`;
-  const chains = flatResults.reduce((acc, order) => {
-    const { root_id, ...rest } = order;
-    if (!acc[root_id]) {
-      acc[root_id] = [];
-    }
-
-    if (includeSelf || root_id !== order.id) {
-      acc[root_id].push(rest);
-    }
-    return acc;
-  }, {});
-
-  for (const key in chains) {
-    if (chains[key].length === 0) {
-      delete chains[key];
-    }
-  }
-  return chains;
+  return await db.$queryRaw`${Prisma.raw(sql)}`;
 }
