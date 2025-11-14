@@ -47,7 +47,7 @@ class Database {
       return {
         $queryRaw: (strings, ...values) => {
           const rawValue = values[0];
-          const query = rawValue.text ? sql.query(rawValue.text) : sql(strings, ...values);
+          const query = rawValue?.text ? sql.query(rawValue.text) : sql(strings, ...values);
 
           // Wrap with retry logic
           return Database.withRetry(() => query);
