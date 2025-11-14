@@ -355,3 +355,32 @@ const extractVariantTitle = (item) => {
 
   return extracted || title || "N/A";
 };
+
+/**
+ * Find main order that contains only gift or jewelry items
+ * @param {*} orders
+ * @returns {{mainOrder: *, subOrders: *[]}}
+ */
+export const findMainOrder = (orders) => {
+  const mainOrder = orders.find(order => isPrimaryOrder(order));
+  const subOrders = orders.filter(order => order.name !== mainOrder.name);
+  return {
+    mainOrder,
+    subOrders
+  };
+};
+
+/**
+ * Check if a sales order is primary order that contains only gift or jewelry items
+ * @param {*} salesOrder
+ * @returns {boolean}
+ */
+const isPrimaryOrder = (salesOrder) => {
+  const items = salesOrder.items || [];
+  return items.every(
+    (item) =>
+      item.sku?.startsWith(SKU_PREFIX.GIFT)
+    || item.sku?.startsWith(SKU_PREFIX.TEMPORARY_JEWELRY)
+    || item.sku?.length === SKU_LENGTH.JEWELRY
+  );
+};
