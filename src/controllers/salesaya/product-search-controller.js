@@ -1,19 +1,16 @@
 import Salesaya from "services/salesaya";
-import { HTTPException } from "hono/http-exception";
 
 const MAX_SEARCH_RESULT = 50;
 
 export default class ProductSearchController {
   /**
-   * GET /api/salesaya/products/search
-   * Search products (keyword/code) for Salesaya chatbot
+   * GET /api/salesaya/product-searches
+   * Search products for Salesaya chatbot
    *
    * Query params:
-   * - q (or search_key): Search keyword (keyword or product code)
+   * - q: Search keyword (keyword or product code)
    * - limit: Number of results (default: 10, max: 50)
    * - page: Page number (default: 1)
-   *
-   * Response: name, sku, variant_title, barcode, price, link_haravan, inventory, image_urls
    */
   static async index(ctx) {
     const params = await ctx.req.query();
@@ -27,29 +24,31 @@ export default class ProductSearchController {
     const page = Number.isFinite(pageParam) ? Math.floor(pageParam) : 1;
 
     if (!searchKey || searchKey.trim().length === 0) {
-      throw new HTTPException(400, {
-        message: "Query parameter 'q' or 'search_key' is required"
-      });
+      return ctx.json({
+        success: false,
+        error: "Query parameter 'q' or 'search_key' is required"
+      }, 400);
     }
 
     if (limit < 1) {
-      throw new HTTPException(400, {
-        message: "limit must be greater than 0"
-      });
+      return ctx.json({
+        success: false,
+        error: "limit must be greater than 0"
+      }, 400);
     }
 
     if (page < 1) {
-      throw new HTTPException(400, {
-        message: "page must be greater than 0"
-      });
+      return ctx.json({
+        success: false,
+        error: "page must be greater than 0"
+      }, 400);
     }
 
     const productSearchService = new Salesaya.ProductSearchService(ctx.env);
     const result = await productSearchService.searchForChatbot(
       searchKey.trim(),
       limit,
-      page,
-      ctx
+      page
     );
 
     return ctx.json({

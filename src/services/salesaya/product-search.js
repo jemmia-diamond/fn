@@ -1,27 +1,17 @@
 import Database from "services/database";
-import * as Sentry from "@sentry/cloudflare";
 
 export default class ProductSearchService {
-  static CACHE_TTL = 300; // 5 minutes
-
   constructor(env) {
     this.env = env;
     this.db = Database.instance(env, "neon");
-    this.kv = env.FN_KV;
   }
 
   /**
-   * Search products for Salesaya chatbot with cache strategy
-   *
-   * Cache strategy:
-   * 1. Cloudflare Cache API (edge cache) - fastest
-   * 2. KV storage fallback - if cache API miss
-   * 3. Database query - if both miss
+   * Search products for Salesaya chatbot
    *
    * @param {string} searchKey - Search keyword (keyword or code)
    * @param {number} limit - Number of results per page
    * @param {number} page - Page number (1-based)
-   * @param {object} ctx - Hono context (to access cache API)
    * @returns {Promise<Array>} Product list with format:
       name: string,
       sku: string,
@@ -32,111 +22,13 @@ export default class ProductSearchService {
       inventory: Array,
       image_urls: Array
    */
-  async searchForChatbot(searchKey, limit, page, ctx) {
+  async searchForChatbot(searchKey, limit, page) {
     const normalizedLimit = Number.isFinite(limit) && limit > 0 ? Math.floor(limit) : 10;
     const normalizedPage = Number.isFinite(page) && page > 0 ? Math.floor(page) : 1;
-    const cacheKey = this._generateCacheKey(searchKey, normalizedLimit, normalizedPage);
 
-    try {
-      // 1. Try Cloudflare Cache API first (fastest, < 10ms)
-      const cached = await this._getFromCacheAPI(ctx, cacheKey);
-      if (cached) {
-        return cached;
-      }
-
-      // 2. Try KV storage (fallback, ~50-100ms)
-      const kvCached = await this._getFromKV(cacheKey);
-      if (kvCached) {
-        // Re-populate Cache API for next request
-        await this._setCacheAPI(ctx, cacheKey, kvCached);
-        return kvCached;
-      }
-
-      // 3. Query database
-      const results = await this._queryDatabase(searchKey, normalizedLimit, normalizedPage);
-
-      // 4. Cache results
-      await Promise.all([
-        this._setCacheAPI(ctx, cacheKey, results),
-        this._setKV(cacheKey, results)
-      ]);
-
-      return results;
-    } catch (error) {
-      Sentry.captureException(error);
-      throw new Error(`Failed to search products: ${error.message}`);
-    }
-  }
-
-  _generateCacheKey(searchKey, limit, page) {
-    const normalized = searchKey.toLowerCase().trim();
-    return `salesaya:product:search:${normalized}:${limit}:${page}`;
-  }
-
-  async _getFromCacheAPI(ctx, cacheKey) {
-    try {
-      if (typeof caches === "undefined" || !caches.default) {
-        return null;
-      }
-      const cache = caches.default;
-      const cacheUrl = new Request(`https://cache.local/${cacheKey}`);
-      const cachedResponse = await cache.match(cacheUrl);
-
-      if (cachedResponse) {
-        return await cachedResponse.json();
-      }
-      return null;
-    } catch (error) {
-      Sentry.captureException(error);
-      return null;
-    }
-  }
-
-  async _setCacheAPI(ctx, cacheKey, data) {
-    try {
-      if (typeof caches === "undefined" || !caches.default) {
-        return;
-      }
-      const cache = caches.default;
-      const cacheUrl = new Request(`https://cache.local/${cacheKey}`);
-      const response = new Response(JSON.stringify(data), {
-        headers: {
-          "Cache-Control": `public, max-age=${ProductSearchService.CACHE_TTL}`,
-          "Content-Type": "application/json"
-        }
-      });
-
-      cache.put(cacheUrl, response.clone()).catch(() => {
-      });
-    } catch (error) {
-      Sentry.captureException(error);
-    }
-  }
-
-  async _getFromKV(cacheKey) {
-    try {
-      if (!this.kv) return null;
-
-      const cached = await this.kv.get(cacheKey, { type: "json" });
-      return cached;
-    } catch (error) {
-      Sentry.captureException(error);
-      return null;
-    }
-  }
-
-  async _setKV(cacheKey, data) {
-    try {
-      if (!this.kv) return;
-
-      await this.kv.put(
-        cacheKey,
-        JSON.stringify(data),
-        { expirationTtl: ProductSearchService.CACHE_TTL }
-      );
-    } catch (error) {
-      Sentry.captureException(error);
-    }
+    // Query database directly
+    const results = await this._queryDatabase(searchKey, normalizedLimit, normalizedPage);
+    return results;
   }
 
   async _queryDatabase(searchKey, limit, page) {

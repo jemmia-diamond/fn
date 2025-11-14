@@ -59,6 +59,6 @@ export default class APIRoutes {
     paymentApi.patch("/manual-payments/:id", Payment.ManualPaymentsController.update);
 
     const salesayaNamespaceApi = api.basePath("/salesaya");
-    salesayaNamespaceApi.get("/products/search", Salesaya.ProductSearchController.index);
+    salesayaNamespaceApi.get("/product-searches", Salesaya.ProductSearchController.index);
   };
 };
