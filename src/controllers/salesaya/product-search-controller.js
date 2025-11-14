@@ -11,6 +11,8 @@ export default class ProductSearchController {
    * - q: Search keyword (keyword or product code)
    * - limit: Number of results (default: 10, max: 50)
    * - page: Page number (default: 1)
+   * - priceFrom: Minimum price filter (optional)
+   * - priceTo: Maximum price filter (optional)
    */
   static async index(ctx) {
     const params = await ctx.req.query();
@@ -22,6 +24,12 @@ export default class ProductSearchController {
     );
     const pageParam = params.page ? Number(params.page) : 1;
     const page = Number.isFinite(pageParam) ? Math.floor(pageParam) : 1;
+
+    // Handle price filters
+    const priceFromParam = params.priceFrom || params.price_from;
+    const priceToParam = params.priceTo || params.price_to;
+    const priceFrom = priceFromParam ? Number(priceFromParam) : null;
+    const priceTo = priceToParam ? Number(priceToParam) : null;
 
     if (!searchKey || searchKey.trim().length === 0) {
       return ctx.json({
@@ -44,11 +52,34 @@ export default class ProductSearchController {
       }, 400);
     }
 
+    if (priceFrom !== null && (isNaN(priceFrom) || priceFrom < 0)) {
+      return ctx.json({
+        success: false,
+        error: "priceFrom must be a valid positive number"
+      }, 400);
+    }
+
+    if (priceTo !== null && (isNaN(priceTo) || priceTo < 0)) {
+      return ctx.json({
+        success: false,
+        error: "priceTo must be a valid positive number"
+      }, 400);
+    }
+
+    if (priceFrom !== null && priceTo !== null && priceFrom > priceTo) {
+      return ctx.json({
+        success: false,
+        error: "priceFrom must be less than or equal to priceTo"
+      }, 400);
+    }
+
     const productSearchService = new Salesaya.ProductSearchService(ctx.env);
     const result = await productSearchService.searchForChatbot(
       searchKey.trim(),
       limit,
-      page
+      page,
+      priceFrom,
+      priceTo
     );
 
     return ctx.json({
@@ -56,7 +87,9 @@ export default class ProductSearchController {
       data: result,
       count: result.length,
       page,
-      limit
+      limit,
+      priceFrom,
+      priceTo
     });
   }
 }
