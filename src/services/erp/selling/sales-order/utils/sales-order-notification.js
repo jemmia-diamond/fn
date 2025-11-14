@@ -362,7 +362,10 @@ const extractVariantTitle = (item) => {
  * @returns {{mainOrder: *, subOrders: *[]}}
  */
 export const findMainOrder = (orders) => {
-  const mainOrder = orders.find(order => isPrimaryOrder(order));
+  let mainOrder = orders.find(order => isPrimaryOrder(order));
+  if (!mainOrder) {
+    mainOrder = orders[0];
+  }
   const subOrders = orders.filter(order => order.name !== mainOrder.name);
   return {
     mainOrder,
