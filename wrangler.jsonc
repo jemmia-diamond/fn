@@ -155,6 +155,10 @@
       {
         "queue": "misa",
         "binding": "MISA_QUEUE"
+      },
+      {
+        "queue": "erpnext-payment-entry",
+        "binding": "ERPNEXT_PAYMENT_ENTRY_QUEUE"
       }
     ],
     "consumers": [
@@ -181,6 +185,9 @@
       },
       {
         "queue": "erpnext-sales-order"
+      },
+      {
+        "queue": "erpnext-payment-entry"
       },
       {
         "queue": "misa"
