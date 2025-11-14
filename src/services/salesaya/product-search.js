@@ -53,6 +53,7 @@ export default class ProductSearchService {
         hv.id AS variant_id,
         hv.product_title AS name,
         hv.title AS variant_title,
+        hv.handle,
         hv.sku,
         hv.barcode,
         hv.price,
@@ -118,6 +119,7 @@ export default class ProductSearchService {
       barcode: item.barcode,
       price: item.price ? Number(item.price) : null,
       link_haravan: `https://jemmiavn.myharavan.com/admin/products/${item.product_id}/variants/${item.variant_id}`,
+      link_website: `https://jemmia.vn/products/${item.handle}`,
       inventory: item.inventory || [],
       image_urls: item.image_urls || []
     }));
