@@ -1,6 +1,4 @@
 // Debounce Service
-import * as Sentry from "@sentry/cloudflare";
-
 export class DebounceService {
   /**
    * Debounce data and execute a predefined action
@@ -11,15 +9,20 @@ export class DebounceService {
    * @param {string} actionType - Type of action to execute
    * @param {number} delay - Debounce delay in milliseconds (optional)
    */
-  static async debounce({ env, key, data, actionType, delay }) {
+  static async debounce({ env, key, data, actionType, delay }, retries = 3) {
     try {
       const durableObjectId = env.DEBOUNCE.idFromName(key);
       const durableObject = env.DEBOUNCE.get(durableObjectId);
 
       await durableObject.debounce({ key, data, delay, actionType });
     } catch (error) {
-      Sentry.captureException(error);
-      throw error;
+      if (retries > 0) {
+        await new Promise(resolve => setTimeout(resolve, (4 - retries) * 1000));
+        return this.debounce({ env, key, data, actionType, delay }, retries - 1);
+      } else {
+        Sentry.captureException(error);
+        throw error;
+      }
     }
   }
 }
