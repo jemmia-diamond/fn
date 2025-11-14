@@ -223,15 +223,14 @@ export default class SalesOrderService {
     const haravanRefOrderId = salesOrderData.haravan_ref_order_id;
 
     const splitOrderGroupId = salesOrderData.split_order_group;
-    const splitOrderGroupName = salesOrderData.split_order_group_name;
     const isSplitOrder = salesOrderData.is_split_order;
 
     let childOrders = [];
-    if (splitOrderGroupId && Number(splitOrderGroupId) > 0 && splitOrderGroupName && isSplitOrder) {
+    if (splitOrderGroupId && Number(splitOrderGroupId) > 0 && isSplitOrder) {
       // Find all orders in split order group by name
       const splitOrders = await this.frappeClient.getList("Sales Order", {
         filters: [
-          ["split_order_group_name", "=", splitOrderGroupName],
+          ["split_order_group", "=", splitOrderGroupId],
           ["name", "!=", salesOrderData.name],
           ["cancelled_status", "=", "Uncancelled"]
         ]
