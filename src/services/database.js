@@ -69,6 +69,7 @@ class Database {
 
             const exec = () => pool.query(text, params);
             const result = await Database.withRetry(exec);
+            await pool.end();
             return result.rows;
           }
         }
