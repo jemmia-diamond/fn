@@ -249,7 +249,7 @@ export default class SalesOrderService {
           });
           attachments = attachments.map(file => ({
             file_name: file.file_name,
-            file_url: `${this.env.JEMMIA_ERP_BASE_URL.slice(0, -1)}${file.file_url}`,
+            file_url: `${this.env.JEMMIA_ERP_BASE_URL}${file.file_url}`,
             is_private: file.is_private
           }));
           childOrder.attachments = attachments;
