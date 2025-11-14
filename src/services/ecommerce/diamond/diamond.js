@@ -50,6 +50,7 @@ export default class DiamondService {
           END AS DOUBLE PRECISION) AS price,
           CAST(d.final_discounted_price AS DOUBLE PRECISION) as final_discounted_price,
           p.handle,
+          p.title,
           ARRAY(
             SELECT i.src
             FROM haravan.images i
