@@ -7,7 +7,7 @@ import CashVoucherMappingService from "services/misa/mapping/cash-voucher-mappin
 import MisaClient from "services/clients/misa-client";
 import VoucherMappingService from "services/misa/mapping/voucher-mapping-service";
 import { PAYMENT_TYPES, VOUCHER_MODEL, VOUCHER_REF_TYPES, VOUCHER_TYPES } from "services/misa/constant";
-import { getRefOrderChain } from "services/ecommerce/order-tracking/queries/get-initial-order";
+import { getRefOrderChains } from "services/ecommerce/order-tracking/queries/get-initial-order";
 
 export default class MisaVoucherSyncService {
   constructor(env) {
@@ -109,33 +109,36 @@ export default class MisaVoucherSyncService {
     if (!payments || payments.length === 0) {
       return { status: "skipped", count: 0 };
     }
-    const mappedVouchers = await Promise.all(payments.map(async p => {
+
+    const paymentsWithRefOrder = payments.filter(p => p.haravan_order?.ref_order_id);
+    const orderIdsToFetch = paymentsWithRefOrder.map(p => p.haravan_order_id);
+    const allOrderChains = await getRefOrderChains(this.db, orderIdsToFetch, true);
+
+    const mappedVouchers = payments.map(p => {
       const voucher_type = VOUCHER_TYPES[paymentTypeName];
       const ref_type = VOUCHER_REF_TYPES[paymentTypeName];
 
-      let journal_note = p.haravan_order_number || p.haravan_order_name;
-      if (p.haravan_order_id && p.haravan_order?.ref_order_id) {
-        const orderChain = await getRefOrderChain(this.db, p.haravan_order_id, true);
+      let journal_note = p.haravan_order?.order_number || p.haravan_order_name;
+      const orderChain = allOrderChains[p.haravan_order_id];
+      if (orderChain && orderChain.length > 0) {
+        const lastOrder = orderChain[orderChain.length - 1];
+        let final_note = lastOrder.order_number;
 
-        if (orderChain && orderChain.length > 0) {
-          const lastOrder = orderChain[orderChain.length - 1];
-          let final_note = lastOrder.order_number;
-          const previousOrders = orderChain.slice(0, -1);
-          const firstPaidCanceledOrder = previousOrders.find(order =>
-            (order.financial_status === "paid" || order.financial_status === "partially_paid") &&
-            order.order_processing_status === "cancel"
-          );
+        const previousOrders = orderChain.slice(0, -1);
+        const firstPaidCanceledOrder = previousOrders.find(order =>
+          (order.financial_status === "paid" || order.financial_status === "partially_paid") &&
+          order.order_processing_status === "cancel"
+        );
 
-          if (firstPaidCanceledOrder) {
-            final_note = `${lastOrder.order_number} (${firstPaidCanceledOrder.order_number})`;
-          }
-
-          journal_note = final_note;
+        if (firstPaidCanceledOrder) {
+          final_note = `${lastOrder.order_number} (${firstPaidCanceledOrder.order_number})`;
         }
+
+        journal_note = final_note;
       }
 
       return mapper(p, bankMap, voucher_type, ref_type, journal_note);
-    }));
+    });
 
     const vouchersForMisa = mappedVouchers.map(v => v.misaVoucher);
 
