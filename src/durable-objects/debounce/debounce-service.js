@@ -8,6 +8,7 @@ export class DebounceService {
    * @param {*} data - Data to be debounced
    * @param {string} actionType - Type of action to execute
    * @param {number} delay - Debounce delay in milliseconds (optional)
+   * @param {number} retries - Number of retries on failure (default: 3)
    */
   static async debounce({ env, key, data, actionType, delay }, retries = 3) {
     try {
