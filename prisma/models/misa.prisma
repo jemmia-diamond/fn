@@ -11,13 +11,14 @@ model misaUser {
   @@schema("misa")
 }
 
-model inventory_items {
+model misaInventoryItem {
   uuid                String    @id @db.VarChar
   sku                 String?   @unique(map: "ix_misa_inventory_items_sku") @db.VarChar
   database_created_at DateTime? @default(now()) @db.Timestamp(6)
   database_updated_at DateTime? @default(now()) @db.Timestamp(6)
 
   @@index([uuid], map: "ix_misa_inventory_items_uuid")
+  @@map("inventory_items")
   @@schema("misa")
 }
 

@@ -29,7 +29,8 @@ export class DebounceDurableObject extends DurableObject {
 
   async alarm() {
     try {
-      const storedTasks = await this.state.storage.list();
+      const storedTasks = await this.state.storage.list({ limit: 50 });
+      const keysToDelete = [];
 
       for (const [key, storedTask] of storedTasks) {
         try {
@@ -41,18 +42,23 @@ export class DebounceDurableObject extends DurableObject {
           }
 
           await action(data);
-          await this.cleanup(key);
+          keysToDelete.push(key);
         } catch (error) {
           Sentry.captureException(error);
-          await this.cleanup(key);
+          keysToDelete.push(key);
         }
       }
+
+      if (keysToDelete.length > 0) {
+        await this.state.storage.delete(keysToDelete);
+      }
+
+      if (storedTasks.size === 50) {
+        await this.state.storage.setAlarm(Date.now() + 100);
+      }
+
     } catch (error) {
       Sentry.captureException(error);
     }
-  }
-
-  async cleanup(key) {
-    await this.state.storage.delete(key);
   }
 }

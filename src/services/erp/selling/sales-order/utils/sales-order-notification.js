@@ -68,13 +68,6 @@ export const composeSalesOrderNotification = (salesOrder, promotionData, leadSou
     * Link đơn hàng: https://erp.jemmia.vn/app/sales-order/${salesOrder.name}
   `;
 
-  const attachments = salesOrder.attachments && Array.isArray(salesOrder.attachments) && salesOrder.attachments.length > 0 ?
-    salesOrder.attachments.map((attachment) => attachment.file_url).join("\n") : "- Không";
-
-  content += `
-    * Hình ảnh đính kèm:\n${attachments}
-  `;
-
   return stringSquishLarkMessage(content);
 };
 
@@ -354,4 +347,36 @@ const extractVariantTitle = (item) => {
     : extractVariantNameForJewelry(title);
 
   return extracted || title || "N/A";
+};
+
+/**
+ * Find main order that contains only gift or jewelry items
+ * @param {*} orders
+ * @returns {{mainOrder: *, subOrders: *[]}}
+ */
+export const findMainOrder = (orders) => {
+  let mainOrder = orders.find(order => isPrimaryOrder(order));
+  if (!mainOrder) {
+    mainOrder = orders[0];
+  }
+  const subOrders = orders.filter(order => order.name !== mainOrder.name);
+  return {
+    mainOrder,
+    subOrders
+  };
+};
+
+/**
+ * Check if a sales order is primary order that contains only gift or jewelry items
+ * @param {*} salesOrder
+ * @returns {boolean}
+ */
+const isPrimaryOrder = (salesOrder) => {
+  const items = salesOrder.items || [];
+  return items.every(
+    (item) =>
+      item.sku?.startsWith(SKU_PREFIX.GIFT)
+    || item.sku?.startsWith(SKU_PREFIX.TEMPORARY_JEWELRY)
+    || item.sku?.length === SKU_LENGTH.JEWELRY
+  );
 };

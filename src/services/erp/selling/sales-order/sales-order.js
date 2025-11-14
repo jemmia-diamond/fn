@@ -6,7 +6,7 @@ import Database from "src/services/database";
 import AddressService from "src/services/erp/contacts/address/address";
 import ContactService from "src/services/erp/contacts/contact/contact";
 import CustomerService from "src/services/erp/selling/customer/customer";
-import { composeOrderUpdateMessage, composeSalesOrderNotification, extractPromotions, validateOrderInfo } from "services/erp/selling/sales-order/utils/sales-order-notification";
+import { composeOrderUpdateMessage, composeSalesOrderNotification, extractPromotions, findMainOrder, validateOrderInfo } from "services/erp/selling/sales-order/utils/sales-order-notification";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/constant";
@@ -215,12 +215,68 @@ export default class SalesOrderService {
     };
   };
 
-  async sendNotificationToLark(salesOrderData, isUpdateMessage = false) {
+  async sendNotificationToLark(initialSalesOrderData, isUpdateMessage = false) {
+    let salesOrderData = initialSalesOrderData;
+
     const larkClient = await LarksuiteService.createClientV2(this.env);
 
     const haravanRefOrderId = salesOrderData.haravan_ref_order_id;
 
-    // Handle case reorder
+    const splitOrderGroupId = salesOrderData.split_order_group;
+    const isSplitOrder = salesOrderData.is_split_order;
+
+    let childOrders = [];
+    if (splitOrderGroupId && Number(splitOrderGroupId) > 0 && isSplitOrder) {
+      // Find all orders in split order group by name
+      const splitOrders = await this.frappeClient.getList("Sales Order", {
+        filters: [
+          ["split_order_group", "=", splitOrderGroupId],
+          ["name", "!=", salesOrderData.name],
+          ["cancelled_status", "=", "Uncancelled"]
+        ]
+      });
+
+      if (splitOrders && splitOrders.length > 0) {
+        // For each order, find its attachments
+        for (const splitOrder of splitOrders) {
+          const childOrder = await this.frappeClient.getDoc("Sales Order", splitOrder.name);
+          let attachments = await this.frappeClient.getList("File", {
+            filters: [
+              ["attached_to_doctype", "=", "Sales Order"],
+              ["attached_to_name", "=", childOrder.name]
+            ],
+            fields: ["file_name", "file_url", "is_private"]
+          });
+          attachments = attachments.map(file => ({
+            file_name: file.file_name,
+            file_url: `${this.env.JEMMIA_ERP_BASE_URL}${file.file_url}`,
+            is_private: file.is_private
+          }));
+          childOrder.attachments = attachments;
+          childOrders.push(childOrder);
+        }
+      }
+    }
+
+    const { mainOrder, subOrders } = findMainOrder([salesOrderData, ...childOrders]);
+
+    salesOrderData = mainOrder;
+    childOrders = subOrders;
+
+    // Compose all sales order into one
+    for (const childOrder of childOrders) {
+      salesOrderData.items.push(...childOrder.items);
+      salesOrderData.attachments.push(...childOrder.attachments);
+      salesOrderData.promotions.push(...childOrder.promotions);
+      salesOrderData.product_categories.push(...childOrder.product_categories);
+      salesOrderData.policies.push(...childOrder.policies);
+
+      salesOrderData.grand_total += childOrder.grand_total;
+      salesOrderData.discount_amount += childOrder.discount_amount;
+      salesOrderData.paid_amount += childOrder.paid_amount;
+      salesOrderData.deposit_amount += childOrder.deposit_amount;
+    }
+
     if (haravanRefOrderId && Number(haravanRefOrderId) > 0) {
       // find the very first order in history
       const refOrders = await getRefOrderChain(this.db, Number(salesOrderData.haravan_order_id));
