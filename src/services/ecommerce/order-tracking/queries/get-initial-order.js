@@ -57,7 +57,7 @@ export async function getRefOrderChain(db, orderId, includeSelf = false) {
 
 export async function getRefOrderChains(db, orderIds) {
   if (!orderIds || orderIds.length === 0) {
-    return {};
+    return [];
   }
 
   const sql = `
