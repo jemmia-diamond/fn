@@ -1,10 +1,13 @@
 import { PrismaClient } from "@prisma-cli";
 import { PrismaNeon } from "@prisma/adapter-neon";
-import { neon } from "@neondatabase/serverless";
+import { neonConfig, Pool } from "@neondatabase/serverless";
 
 // Example usage:
 // const db = Database.instance(c.env);
 // const users = await db.$queryRaw`SELECT * FROM larksuite.users`;
+neonConfig.webSocketConstructor = WebSocket;
+neonConfig.poolQueryViaFetch = true;
+
 class Database {
   static createClient(env) {
     const adapter = new PrismaNeon({
@@ -27,8 +30,10 @@ class Database {
         return await fn();
       } catch (error) {
         lastError = error;
-        const isRetryable = error.message?.includes("status 520") ||
-                           error.message?.includes("status 503");
+        const isRetryable =
+          error.message?.includes("status 520") ||
+          error.message?.includes("status 503") ||
+          error.message?.includes("Connection terminated unexpectedly");
 
         if (!isRetryable || i === maxRetries - 1) {
           throw error;
@@ -42,15 +47,31 @@ class Database {
 
   // Create new instance each time for CF Workers compatibility
   static instance(env, adapter = null) {
-    if (adapter == "neon") {
-      const sql = neon(env.DATABASE_URL);
-      return {
-        $queryRaw: (strings, ...values) => {
-          const rawValue = values[0];
-          const query = rawValue?.text ? sql.query(rawValue.text) : sql(strings, ...values);
+    if (adapter === "neon") {
+      const pool = new Pool({ connectionString: env.DATABASE_URL });
 
-          // Wrap with retry logic
-          return Database.withRetry(() => query);
+      return {
+        $queryRaw: async (strings, ...values) => {
+          const raw = values[0];
+
+          if (raw && typeof raw === "object") {
+            const text = raw.text || raw.sql;
+            const params = raw.values || [];
+            const result = await Database.withRetry(() => pool.query(text, params));
+            return result.rows;
+          } else {
+            let text = "";
+            for (let i = 0; i < strings.length; i++) {
+              text += strings[i];
+              if (i < values.length) text += `$${i + 1}`;
+            }
+            const params = values;
+
+            const exec = () => pool.query(text, params);
+            const result = await Database.withRetry(exec);
+            await pool.end();
+            return result.rows;
+          }
         }
       };
     }
