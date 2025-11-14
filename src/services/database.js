@@ -1,10 +1,13 @@
 import { PrismaClient } from "@prisma-cli";
 import { PrismaNeon } from "@prisma/adapter-neon";
-import { neon } from "@neondatabase/serverless";
+import { neonConfig, neon } from "@neondatabase/serverless";
 
 // Example usage:
 // const db = Database.instance(c.env);
 // const users = await db.$queryRaw`SELECT * FROM larksuite.users`;
+neonConfig.webSocketConstructor = WebSocket;
+neonConfig.poolQueryViaFetch = true;
+
 class Database {
   static createClient(env) {
     const adapter = new PrismaNeon({
@@ -27,8 +30,10 @@ class Database {
         return await fn();
       } catch (error) {
         lastError = error;
-        const isRetryable = error.message?.includes("status 520") ||
-                           error.message?.includes("status 503");
+        const isRetryable =
+          error.message?.includes("status 520") ||
+          error.message?.includes("status 503") ||
+          error.message?.includes("Connection terminated unexpectedly");
 
         if (!isRetryable || i === maxRetries - 1) {
           throw error;
