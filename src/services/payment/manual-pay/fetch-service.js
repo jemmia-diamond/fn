@@ -85,7 +85,7 @@ export default class ManualPaymentFetchingService {
               }
             }
           }
-        }, take: 10
+        }
       });
     } catch (error) {
       Sentry.captureException(error);

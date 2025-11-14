@@ -65,7 +65,7 @@ export default class QrPaymentFetchingService {
               }
             }
           }
-        }, take: 10
+        }
       });
     } catch (error) {
       Sentry.captureException(error);
