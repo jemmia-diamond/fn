@@ -102,11 +102,11 @@ export default class ManualPaymentsController {
         return c.json({ error: "Payment not found or update failed" }, 404);
       }
     } catch (error) {
-      Sentry.captureException(error);
-
       if (error instanceof BadRequestException) {
         return c.json({ error: error.message }, error.statusCode);
       }
+
+      Sentry.captureException(error);
 
       return c.json({ error: "An unexpected error occurred" }, 500);
     }
