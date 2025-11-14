@@ -144,8 +144,8 @@ export default class ProductSearchService {
       variant_title: item.variant_title,
       barcode: item.barcode,
       price: item.price ? Number(item.price) : null,
-      link_haravan: `https://jemmiavn.myharavan.com/admin/products/${item.product_id}/variants/${item.variant_id}`,
-      link_website: item.published_scope === "global" ? `https://jemmia.vn/products/${item.handle}` : null,
+      link_haravan: `${this.env.HARAVAN_ADMIN_BASE_URL}/admin/products/${item.product_id}/variants/${item.variant_id}`,
+      link_website: item.published_scope === "global" ? `${this.env.WEBSITE_BASE_URL}/products/${item.handle}` : null,
       inventory: item.inventory || [],
       image_urls: item.image_urls || []
     }));
