@@ -39,6 +39,9 @@ export default {
     case "misa":
       await new Misa.MisaWebhookHandler(env).dequeueCallbackPayloadQueue(batch);
       break;
+    case "erpnext-payment-entry":
+      await ERP.Accounting.PaymentEntryService.dequeuePaymentEntryQueue(batch, env);
+      break;
     default:
       break;
     }
