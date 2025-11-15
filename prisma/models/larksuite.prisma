@@ -11,7 +11,7 @@ model larksuiteRecord {
   @@schema("larksuite")
 }
 
-model buyback_exchange_approval_instances {
+model larksuiteBuybackExchange {
   id               Int       @id @default(autoincrement())
   instance_code    String?   @unique @db.VarChar
   serial_number    String?   @db.VarChar
@@ -30,6 +30,7 @@ model buyback_exchange_approval_instances {
   updated_at       DateTime? @db.Timestamp(6)
   submitted_date   DateTime? @db.Timestamp(6)
 
+  @@map("buyback_exchange_approval_instances")
   @@schema("larksuite")
 }
 
