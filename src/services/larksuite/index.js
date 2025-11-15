@@ -4,6 +4,7 @@ import LarksuiteService from "services/larksuite/lark";
 import Approval from "services/larksuite/approval";
 import Docs from "services/larksuite/docs";
 import Messaging from "services/larksuite/messaging";
+import BuybackExchangeService from "services/larksuite/buyback-exchange-service";
 
 export default {
   Contact: Contact,
@@ -11,5 +12,6 @@ export default {
   LarksuiteService: LarksuiteService,
   Approval: Approval,
   Docs: Docs,
-  Messaging: Messaging
+  Messaging: Messaging,
+  BuybackExchangeService
 };
