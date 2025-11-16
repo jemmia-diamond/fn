@@ -2,6 +2,7 @@ import FrappeClient from "src/frappe/frappe-client";
 import Database from "src/services/database";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
+import * as Sentry from "@sentry/cloudflare";
 
 dayjs.extend(utc);
 
@@ -41,6 +42,11 @@ export default class PaymentEntryService {
       "customer_name_order_later": ""
     */
 
+    const references = paymentEntry.references || [];
+    const salesOrderReference = references.find(
+      (ref) => ref.reference_doctype === "Sales Order"
+    );
+
     const qrGeneratorPayload = {
       bank_code: paymentEntry.bank_details.bank_code,
       bank_account_number: paymentEntry.bank_account_no,
@@ -50,10 +56,10 @@ export default class PaymentEntryService {
       customer_name: paymentEntry.customer_details.name,
       customer_phone_number: paymentEntry.customer_details.phone,
       transfer_amount: paymentEntry.paid_amount,
-      haravan_order_total_price: paymentEntry.haravan_order_total_price,
-      haravan_order_number: paymentEntry.haravan_order_number || "Đơn hàng cọc",
-      haravan_order_status: paymentEntry.haravan_order_status,
-      haravan_order_id: paymentEntry.haravan_order_id,
+      haravan_order_total_price: salesOrderReference ? salesOrderReference.total_amount : null,
+      haravan_order_number: salesOrderReference ? salesOrderReference.sales_order_details.haravan_order_number : (paymentEntry.haravan_order_number || "Đơn hàng cọc"),
+      haravan_order_status: salesOrderReference ? salesOrderReference.sales_order_details.haravan_financial_status : null,
+      haravan_order_id: salesOrderReference ? salesOrderReference.sales_order_details.haravan_order_id : null,
       lark_record_id: paymentEntry.lark_record_id || paymentEntry.name,
       customer_phone_order_later: paymentEntry.customer_details.phone,
       customer_name_order_later: paymentEntry.customer_details.name
@@ -69,6 +75,17 @@ export default class PaymentEntryService {
     if (result.errorCode) {
       throw new Error(`Failed to generate QR code: ${result.errorMsg}`);
     }
+
+    // Update Payment Entry with QR code URL
+    await this.frappeClient.upsert({
+      doctype: this.doctype,
+      name: paymentEntry.name,
+      qr_url: result.qr_url,
+      qr_id: result.id,
+      transfer_note: result.transfer_note,
+      transfer_status: result.transfer_status
+    });
+
     return result;
   }
 
