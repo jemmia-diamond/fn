@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma-cli/client";
 import Database from "services/database";
+import normalizePhoneNumber from "services/utils/normalize-phone-number";
 
 const EXCHANGE_TYPE = {
   BUYBACK: "Thu Mua",
@@ -43,7 +44,7 @@ export default class BuybackExchangeService {
     }
     const whereClauses = [];
 
-    const digitsOnly = this.normalizePhone(phone_number);
+    const digitsOnly = normalizePhoneNumber(phone_number);
     const matchLength = digitsOnly.length;
 
     whereClauses.push(
@@ -65,12 +66,5 @@ export default class BuybackExchangeService {
     }
 
     return whereClauses;
-  }
-
-  normalizePhone(phone) {
-    if (!phone) return "";
-
-    const digits = phone.replace(/\D/g, "");
-    return digits.replace(/^(1|01|44|61|81|82|84|86)/, "");
   }
 }
