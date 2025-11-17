@@ -71,10 +71,6 @@ export default class BuybackExchangeService {
     if (!phone) return "";
 
     const digits = phone.replace(/\D/g, "");
-
-    // Add more country codes as needed:
-    // +1 (USA/Canada), +84 (Vietnam), +86 (China)
-    // +44 (UK), +61 (Australia), +81 (Japan), +82 (South Korea)
     return digits.replace(/^(1|01|44|61|81|82|84|86)/, "");
   }
 }
