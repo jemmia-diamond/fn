@@ -81,9 +81,9 @@ export default class PaymentEntryService {
       doctype: this.doctype,
       name: paymentEntry.name,
       qr_url: result.qr_url,
-      qr_id: result.id,
-      transfer_note: result.transfer_note,
-      transfer_status: result.transfer_status
+      custom_transaction_id: result.id,
+      custom_transfer_note: result.transfer_note,
+      custom_transfer_status: result.transfer_status
     });
 
     return result;
