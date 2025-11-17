@@ -3,6 +3,7 @@ import Database from "src/services/database";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import * as Sentry from "@sentry/cloudflare";
+import CreateQRService from "src/services/payment/qr_payment/create-qr-service";
 
 dayjs.extend(utc);
 
@@ -18,6 +19,7 @@ export default class PaymentEntryService {
       }
     );
     this.db = Database.instance(env);
+    this.createQRService = new CreateQRService(env);
   };
 
   async processPaymentEntry(paymentEntry) {
@@ -64,17 +66,8 @@ export default class PaymentEntryService {
       customer_phone_order_later: paymentEntry.customer_details.phone,
       customer_name_order_later: paymentEntry.customer_details.name
     };
-    const response = await fetch("https://y3tuxuk2yg.execute-api.ap-southeast-1.amazonaws.com/Prod/qr", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(qrGeneratorPayload)
-    });
-    const result = await response.json();
-    if (result.errorCode) {
-      throw new Error(`Failed to generate QR code: ${result.errorMsg}`);
-    }
+
+    const result = await this.createQRService.handle_post_qr(qrGeneratorPayload);
 
     // Update Payment Entry with QR code URL
     await this.frappeClient.upsert({
