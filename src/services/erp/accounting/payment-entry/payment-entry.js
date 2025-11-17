@@ -77,7 +77,7 @@ export default class PaymentEntryService {
       custom_transaction_id: result.id,
       custom_transfer_note: result.transfer_note,
       custom_transfer_status: result.transfer_status
-    });
+    }, "name");
 
     return result;
   }
