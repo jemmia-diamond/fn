@@ -12,15 +12,17 @@ export default class ManualPaymentService {
   static PAGE_SIZE = 100;
   static INTERVAL_IN_MINUTES = 30;
 
+  constructor (env) {
+    this.env = env;
+    this.db = Database.instance(env);
+  }
+
   /**
    * Fetches records from the Lark Manual Payment table and upserts them into the
    * `manualPaymentTransaction` table in the database.
-   *
-   * @param {object} env - The environment configuration.
    */
-  static async syncManualPaymentsToDatabase(env) {
-    const db = Database.instance(env);
-    const larkClient = await LarksuiteService.createClientV2(env);
+  async syncManualPaymentsToDatabase() {
+    const larkClient = await LarksuiteService.createClientV2(this.env);
     const timeThreshold = dayjs().utc().subtract(ManualPaymentService.INTERVAL_IN_MINUTES, "minutes").subtract(5, "minutes").valueOf();
     const manualPaymentTable = TABLES.MANUAL_PAYMENT;
 
@@ -86,7 +88,7 @@ export default class ManualPaymentService {
                 transfer_status: getText(fields["Trạng Thái Thủ Công"])
               };
 
-              return db.manualPaymentTransaction.upsert({
+              return this.db.manualPaymentTransaction.upsert({
                 where: { lark_record_id: record.record_id },
                 create: { ...data, lark_record_id: record.record_id, misa_synced: false },
                 update: data
@@ -94,7 +96,7 @@ export default class ManualPaymentService {
             });
 
             try {
-              await db.$transaction(upsertPromises);
+              await this.db.$transaction(upsertPromises);
             } catch (error) {
               Sentry.captureException(error);
             }
@@ -114,14 +116,12 @@ export default class ManualPaymentService {
 
   /**
    * Creates a single manual payment transaction in the database.
-   * @param {object} env - The environment configuration.
    * @param {object} data - The data for the new payment transaction, matching the Prisma model.
    * @returns {Promise<object|null>} The created payment transaction or null on error.
    */
-  static async createManualPayment(env, data) {
-    const db = Database.instance(env);
+  async createManualPayment(data) {
     try {
-      const newPayment = await db.manualPaymentTransaction.upsert({
+      const newPayment = await this.db.manualPaymentTransaction.upsert({
         where: {
           lark_record_id: data.lark_record_id
         },
@@ -140,16 +140,14 @@ export default class ManualPaymentService {
 
   /**
    * Updates a single manual payment transaction in the database by its UUID.
-   * @param {object} env - The environment configuration.
    * @param {string} uuid - The UUID of the payment transaction to update.
    * @param {object} data - The data to update.
    * @returns {Promise<object|null>} The updated payment transaction or null on error.
    */
-  static async updateManualPayment(env, uuid, data) {
-    const db = Database.instance(env);
+  async updateManualPayment(uuid, data) {
     try {
 
-      const paymentBeforeUpdate = await db.manualPaymentTransaction.findUnique({
+      const paymentBeforeUpdate = await this.db.manualPaymentTransaction.findUnique({
         where: { uuid }
       });
 
@@ -165,7 +163,7 @@ export default class ManualPaymentService {
         delete updateData.haravan_order_id;
         delete updateData.haravan_order_number;
 
-        return db.manualPaymentTransaction.update({
+        return this.db.manualPaymentTransaction.update({
           where: { uuid: uuid },
           data: updateData
         });
@@ -178,7 +176,7 @@ export default class ManualPaymentService {
       delete dataForFirstUpdate.transfer_status;
 
       // Update other fields
-      const updatedPayment = await db.manualPaymentTransaction.update({
+      const updatedPayment = await this.db.manualPaymentTransaction.update({
         where: { uuid: uuid },
         data: dataForFirstUpdate
       });
@@ -192,14 +190,12 @@ export default class ManualPaymentService {
           throw new BadRequestException("Deposit order cannot be mapped!");
         }
 
-        await ManualPaymentService.createManualTransactionsToHaravanOrder(
-          env,
-          db,
+        await this.createManualTransactionsToHaravanOrder(
           updatedPayment.haravan_order_id,
           updatedPayment.transfer_amount,
           updatedPayment.payment_type
         );
-        const finalUpdatedPayment = await db.manualPaymentTransaction.update({
+        const finalUpdatedPayment = await this.db.manualPaymentTransaction.update({
           where: { uuid: uuid },
           data: {
             transfer_status: data.transfer_status
@@ -216,9 +212,7 @@ export default class ManualPaymentService {
     }
   }
 
-  static async createManualTransactionsToHaravanOrder(
-    env,
-    db,
+  async createManualTransactionsToHaravanOrder(
     haravanOrderId,
     transferAmount,
     paymentType
@@ -243,7 +237,7 @@ export default class ManualPaymentService {
       throw new BadRequestException(`Invalid payment method. Must be one of: ${validPaymentMethods.join(", ")}`);
     }
 
-    const orderResult = await db.$queryRaw`
+    const orderResult = await this.$queryRaw`
       SELECT id, cancelled_status, financial_status, closed_status, total_price
       FROM haravan.orders
       WHERE id = ${haravanOrderId}
@@ -261,8 +255,8 @@ export default class ManualPaymentService {
       throw new BadRequestException("Transaction amount exceeds order total price.");
     }
 
-    const HRV_API_KEY = await env.HARAVAN_TOKEN_SECRET.get();
-    const HARAVAN_API_BASE_URL = env.HARAVAN_API_BASE_URL;
+    const HRV_API_KEY = await this.env.HARAVAN_TOKEN_SECRET.get();
+    const HARAVAN_API_BASE_URL = this.env.HARAVAN_API_BASE_URL;
 
     if (!HARAVAN_API_BASE_URL || !HRV_API_KEY) {
       throw new BadRequestException("Haravan API credentials or base URL are not configured in the environment.");
