@@ -3,7 +3,7 @@ import Database from "services/database";
 
 const EXCHANGE_TYPE = {
   BUYBACK: "Thu Mua",
-  WITHDRAW: "Cầm cố",
+  PAWN: "Cầm cố",
   SWAP: "Thu Đổi",
   SIGN: "Ký Gửi"
 };
