@@ -140,6 +140,7 @@ export function buildGetDiamondsQuery(jsonParams) {
     FROM workplace.diamonds d
     JOIN haravan.products p ON p.id = d.product_id
     WHERE 1 = 1
+    AND jsonb_array_length(p.variants) = 1
     ${availabilityFilter}
     ${filterString}
     ${sortString}
@@ -151,6 +152,7 @@ export function buildGetDiamondsQuery(jsonParams) {
     FROM workplace.diamonds d
     JOIN haravan.products p ON p.id = d.product_id
     WHERE 1 = 1
+    AND jsonb_array_length(p.variants) = 1
     ${availabilityFilter}
     ${filterString}
   `;
