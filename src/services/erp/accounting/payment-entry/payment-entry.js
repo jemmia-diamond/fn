@@ -67,7 +67,7 @@ export default class PaymentEntryService {
       customer_name_order_later: paymentEntry.customer_details.name
     };
 
-    const result = await this.createQRService.handle_post_qr(qrGeneratorPayload);
+    const result = await this.createQRService.handlePostQr(qrGeneratorPayload);
 
     // Update Payment Entry with QR code URL
     await this.frappeClient.upsert({
