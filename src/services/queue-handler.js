@@ -42,6 +42,9 @@ export default {
     case "erpnext-payment-entry":
       await ERP.Accounting.PaymentEntryService.dequeuePaymentEntryQueue(batch, env);
       break;
+    case "sepay-transaction":
+      await ERP.Accounting.SepayTransactionService.dequeueSepayTransactionQueue(batch, env);
+      break;
     default:
       break;
     }

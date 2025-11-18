@@ -3,8 +3,6 @@ import SepayTransactionController from "controllers/webhook/sepay/sepay-transact
 export default class SepayWebhook {
   static async register(webhook) {
     const sepayWebhookNamespace = webhook.basePath("/sepay");
-
-    // TODO: verify webhook signature
     sepayWebhookNamespace.post("transactions", SepayTransactionController.create);
   }
 }
