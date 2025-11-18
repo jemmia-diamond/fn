@@ -200,20 +200,15 @@ export default class SalesOrderService {
   };
 
   getRealOrderDate = async (orderId) => {
-    try {
-      const refOrders = await getRefOrderChain(this.db, Number(orderId), true);
+    const refOrders = await getRefOrderChain(this.db, Number(orderId), true);
 
-      if (!refOrders || refOrders.length === 0) {
-        return null;
-      }
-
-      // getRefOrderChain returns orders sorted by created_at ASC, so the first one is the original order
-      const firstOrder = refOrders[0];
-      return dayjs(firstOrder.created_at).utc().format("YYYY-MM-DD");
-    } catch (e) {
-      Sentry.captureException(e);
+    if (!refOrders || refOrders.length === 0) {
       return null;
     }
+
+    // getRefOrderChain returns orders sorted by created_at ASC, so the first one is the original order
+    const firstOrder = refOrders[0];
+    return dayjs(firstOrder.created_at).utc().format("YYYY-MM-DD");
   };
 
   mapLineItemsFields = (lineItemData) => {
