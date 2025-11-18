@@ -64,7 +64,7 @@ export default class SepayTransactionService {
 
     await this.db.qrPaymentTransaction.update({
       where: { id: qr.id },
-      data: { status: "success" }
+      data: { transfer_status: "success" }
     });
 
     await this.frappeClient.upsert(
