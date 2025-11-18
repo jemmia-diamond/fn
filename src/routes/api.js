@@ -8,6 +8,7 @@ import Ecommerce from "controllers/ecommerce";
 import Delivery from "controllers/delivery";
 import Payment from "controllers/payment";
 import Salesaya from "controllers/salesaya";
+import Larksuite from "controllers/larksuite";
 
 export default class APIRoutes {
   static register(api) {
@@ -60,5 +61,8 @@ export default class APIRoutes {
 
     const salesayaNamespaceApi = api.basePath("/salesaya");
     salesayaNamespaceApi.get("/product-searches", Salesaya.ProductSearchController.index);
+
+    const larksuiteApi = api.basePath("/larksuites");
+    larksuiteApi.get("/buyback-exchanges", Larksuite.BuybackExchangeController.index);
   };
 };
