@@ -5,7 +5,6 @@ import { neonConfig, Pool } from "@neondatabase/serverless";
 // Example usage:
 // const db = Database.instance(c.env);
 // const users = await db.$queryRaw`SELECT * FROM larksuite.users`;
-neonConfig.webSocketConstructor = WebSocket;
 neonConfig.poolQueryViaFetch = true;
 
 class Database {
