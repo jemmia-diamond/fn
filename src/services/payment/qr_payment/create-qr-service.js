@@ -46,8 +46,7 @@ export default class CreateQRService {
       "haravan_order_total_price": "Missing 'haravan_order_total_price' in request body.",
       "haravan_order_number": "Missing 'haravan_order_number' in request body.",
       "haravan_order_status": "Missing 'haravan_order_status' in request body.",
-      "haravan_order_id": "Missing 'haravan_order_id' in request body.",
-      "lark_record_id": "Missing 'lark_record_id' in request body."
+      "haravan_order_id": "Missing 'haravan_order_id' in request body."
     };
 
     const isOrderLater = body.haravan_order_number === "Đơn hàng cọc";
@@ -92,6 +91,7 @@ export default class CreateQRService {
       bank_code: body.bank_code,
       transfer_amount: body.transfer_amount,
       lark_record_id: body.lark_record_id,
+      payment_entry_name: body.payment_entry_name,
       haravan_order_number: isOrderLater ? "ORDERLATER" : body.haravan_order_number,
       customer_name: isOrderLater ? body.customer_name_order_later : body.customer_name,
       customer_phone_number: isOrderLater ? body.customer_phone_order_later : body.customer_phone_number

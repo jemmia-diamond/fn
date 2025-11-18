@@ -62,7 +62,8 @@ export default class PaymentEntryService {
       haravan_order_number: salesOrderReference ? salesOrderReference.sales_order_details.haravan_order_number : (paymentEntry.haravan_order_number || "Đơn hàng cọc"),
       haravan_order_status: salesOrderReference ? salesOrderReference.sales_order_details.haravan_financial_status : null,
       haravan_order_id: salesOrderReference ? salesOrderReference.sales_order_details.haravan_order_id : null,
-      lark_record_id: paymentEntry.lark_record_id || paymentEntry.name,
+      lark_record_id: paymentEntry.lark_record_id,
+      payment_entry_name: paymentEntry.name,
       customer_phone_order_later: paymentEntry.customer_details.phone,
       customer_name_order_later: paymentEntry.customer_details.name
     };
