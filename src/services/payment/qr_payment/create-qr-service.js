@@ -1,0 +1,112 @@
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc.js";
+import Database from "services/database";
+import OrderTransactionClient from "services/haravan/api-client/modules/order-transactions/order-transaction-client";
+
+dayjs.extend(utc);
+
+function formatQuickQrUrl({ bankAccountNumber, bankBin, transferAmount, transferNote }) {
+  const params = new URLSearchParams({
+    acc: bankAccountNumber,
+    bank: bankBin,
+    amount: transferAmount.toString(),
+    des: transferNote,
+    template: "",
+    download: "no"
+  });
+  const baseUrl = "https://qr.sepay.vn/img";
+  return `${baseUrl}?${params.toString()}`;
+}
+
+const MISSING_REQUEST_BODY = "MISSING_REQUEST_BODY";
+const MISSING_FIELD = "MISSING_FIELD";
+const PRICE_OVER_LIMIT = "PRICE_OVER_LIMIT";
+
+export default class CreateQRService {
+  constructor(env) {
+    this.env = env;
+    this.db = Database.instance(env);
+    this.transactionConnector = new OrderTransactionClient(env);
+  }
+
+  async handlePostQr(body) {
+    if (!body) {
+      throw new Error(JSON.stringify({ error_msg: "Missing request body.", error_code: MISSING_REQUEST_BODY }));
+    }
+
+    const requiredFields = {
+      "bank_code": "Missing 'bank_code' in request body.",
+      "bank_account_number": "Missing 'bank_account_number' in request body.",
+      "bank_account_name": "Missing 'bank_account_name' in request body.",
+      "bank_bin": "Missing 'bank_bin' in request body.",
+      "bank_name": "Missing 'bank_name' in request body.",
+      "customer_name": "Missing 'customer_name' in request body.",
+      "customer_phone_number": "Missing 'customer_phone_number' in request body.",
+      "transfer_amount": "Missing 'transfer_amount' in request body.",
+      "haravan_order_total_price": "Missing 'haravan_order_total_price' in request body.",
+      "haravan_order_number": "Missing 'haravan_order_number' in request body.",
+      "haravan_order_status": "Missing 'haravan_order_status' in request body.",
+      "haravan_order_id": "Missing 'haravan_order_id' in request body.",
+      "lark_record_id": "Missing 'lark_record_id' in request body."
+    };
+
+    const isOrderLater = body.haravan_order_number === "Đơn hàng cọc";
+
+    if (isOrderLater) {
+      if (!body.customer_phone_order_later) {
+        throw new Error(JSON.stringify({ error_msg: "'customer_phone_order_later' cannot be empty for 'Đơn hàng cọc' order", error_code: MISSING_FIELD }));
+      }
+      if (!body.customer_name_order_later) {
+        throw new Error(JSON.stringify({ error_msg: "'customer_name_order_later' cannot be empty for 'Đơn hàng cọc' order", error_code: MISSING_FIELD }));
+      }
+      if (!body.transfer_amount) {
+        throw new Error(JSON.stringify({ error_msg: "'transfer_amount' cannot be empty for 'Đơn hàng cọc' order", error_code: MISSING_FIELD }));
+      }
+    } else {
+      for (const [field, errorMessage] of Object.entries(requiredFields)) {
+        if (!(field in body)) {
+          throw new Error(JSON.stringify({ error_msg: errorMessage, error_code: MISSING_FIELD }));
+        }
+      }
+
+      if (parseFloat(body.transfer_amount) > parseFloat(body.haravan_order_total_price)) {
+        throw new Error(JSON.stringify({ error_msg: "Transfer amount cannot be greater than order total price", error_code: PRICE_OVER_LIMIT }));
+      }
+    }
+
+    let description = "";
+    if (isOrderLater) {
+      description = body.bank_code === "icb" ? "SEVQR ORDERLATER" : "ORDERLATER";
+    } else {
+      description = body.bank_code === "icb" ? `SEVQR ${body.haravan_order_number}` : body.haravan_order_number;
+    }
+
+    const nowUtc = dayjs.utc();
+    const untilUnix = nowUtc.unix();
+    description = `${description} ${untilUnix}`;
+
+    const transactionBody = {
+      transfer_status: "pending",
+      transfer_note: description,
+      bank_account_number: body.bank_account_number,
+      bank_code: body.bank_code,
+      transfer_amount: body.transfer_amount,
+      lark_record_id: body.lark_record_id,
+      haravan_order_number: isOrderLater ? "ORDERLATER" : body.haravan_order_number,
+      customer_name: isOrderLater ? body.customer_name_order_later : body.customer_name,
+      customer_phone_number: isOrderLater ? body.customer_phone_order_later : body.customer_phone_number
+    };
+
+    const qrUrl = formatQuickQrUrl({
+      bankAccountNumber: transactionBody.bank_account_number,
+      bankBin: body.bank_bin,
+      transferAmount: transactionBody.transfer_amount,
+      transferNote: description
+    });
+    transactionBody.qr_url = qrUrl;
+
+    return await this.db.qrPaymentTransaction.create({
+      data: transactionBody
+    });
+  }
+}
