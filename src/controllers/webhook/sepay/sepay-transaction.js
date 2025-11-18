@@ -1,0 +1,7 @@
+export default class SepayTransactionController {
+  static async create(ctx) {
+    const data = await ctx.req.json();
+    await ctx.env["MESSAGE_QUEUE"].send(data);
+    return ctx.json({ message: "Message Received" });
+  }
+}
