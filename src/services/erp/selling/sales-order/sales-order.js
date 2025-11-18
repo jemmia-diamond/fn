@@ -122,7 +122,7 @@ export default class SalesOrderService {
       grand_total: haravanOrderData.total_price,
       paid_amount: paidAmount,
       balance: haravanOrderData.total_price - paidAmount,
-      real_order_date: dayjs(haravanOrderData.created_at).utc().format("YYYY-MM-DD"),
+      real_order_date: await this.getRealOrderDate(haravanOrderData.id) || dayjs(haravanOrderData.created_at).utc().format("YYYY-MM-DD"),
       ref_sales_orders: await this.mapRefSalesOrder(haravanOrderData.id)
     };
     const order = await this.frappeClient.upsert(mappedOrderData, "haravan_order_id", ["items"]);
@@ -196,6 +196,23 @@ export default class SalesOrderService {
     } catch (e) {
       Sentry.captureException(e);
       return [];
+    }
+  };
+
+  getRealOrderDate = async (orderId) => {
+    try {
+      const refOrders = await getRefOrderChain(this.db, Number(orderId), true);
+
+      if (!refOrders || refOrders.length === 0) {
+        return null;
+      }
+
+      // getRefOrderChain returns orders sorted by created_at ASC, so the first one is the original order
+      const firstOrder = refOrders[0];
+      return dayjs(firstOrder.created_at).utc().format("YYYY-MM-DD");
+    } catch (e) {
+      Sentry.captureException(e);
+      return null;
     }
   };
 
@@ -524,64 +541,6 @@ export default class SalesOrderService {
       minutesBack: 10,
       isSyncType: SalesOrderService.SYNC_TYPE_AUTO
     });
-  }
-
-  static async fillSalesOrderRealDate(env) {
-    const salesOrderService = new SalesOrderService(env);
-    const salesOrders = [];
-    try {
-      const orders = await salesOrderService.frappeClient.getList("Sales Order", {
-        filters: [
-          ["real_order_date", "is", "not set"],
-          ["cancelled_status", "=", "uncancelled"]
-        ]
-      });
-      salesOrders.push(...orders);
-    } catch (error) {
-      Sentry.captureException(error);
-      return;
-    }
-
-    for (const salesOrder of salesOrders) {
-      const haravanId = Number(salesOrder.haravan_order_id);
-
-      const orderChain = await salesOrderService.db.$queryRaw`
-        WITH RECURSIVE order_chain AS (
-         SELECT id, ref_order_id
-         FROM haravan.orders
-         WHERE id = ${haravanId}
-         UNION ALL
-         SELECT o.id, o.ref_order_id
-         FROM haravan.orders o
-         	INNER JOIN order_chain oc ON o.id = oc.ref_order_id
-        )
-        SELECT
-        o.id ,
-        o.order_number ,
-        o.created_at
-        FROM haravan.orders o
-        WHERE o.id IN (
-        	SELECT id FROM order_chain
-        )
-        ORDER BY o.created_at ASC
-      `;
-
-      if (!orderChain.length) { continue; }
-
-      const firstOfChain = orderChain[0];
-      const realOrderDate = dayjs(firstOfChain.created_at).utc().format("YYYY-MM-DD");
-      try {
-        await salesOrderService.frappeClient.update(
-          {
-            doctype: "Sales Order",
-            name: salesOrder.name,
-            real_order_date: realOrderDate
-          }
-        );
-      } catch (error) {
-        Sentry.captureException(error);
-      }
-    }
   }
 
   static async fillSerialNumbersToTemporaryOrderItems(env) {

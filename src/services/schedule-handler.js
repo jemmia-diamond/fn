@@ -12,7 +12,6 @@ export default {
       await ERP.CRM.LeadService.syncWebsiteLeads(env);
       await ERP.Telephony.CallLogService.syncStringeeCallLogs(env);
       await ERP.CRM.LeadService.syncCallLogLead(env);
-      await ERP.Selling.SalesOrderService.fillSalesOrderRealDate(env);
       await ERP.Selling.SalesOrderService.fillSerialNumbersToTemporaryOrderItems(env);
       break;
     case "*/5 * * * *": // At every 5th minute
