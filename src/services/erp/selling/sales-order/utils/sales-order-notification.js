@@ -72,8 +72,10 @@ export const composeSalesOrderNotification = (salesOrder, promotionData, leadSou
 };
 
 const composeItemContent = (item, idx, promotionData) => {
+  const parentOrderInfo = `#${item.parent_order_number || "N/A"} <i>(tổng đơn: ${numberToCurrency(item.parent_grand_total || 0)})</i>`;
   if (item.sku?.startsWith(SKU_PREFIX.GIFT)) {
     return `
+      ${parentOrderInfo}
       ${idx}. ${item.item_name}
       Mã gốc: ${item.variant_title}
     `;
@@ -81,6 +83,7 @@ const composeItemContent = (item, idx, promotionData) => {
 
   const serialNumbers = item.serial_numbers ? item.serial_numbers.split("\n").join(", ") : "";
   const content = `
+    ${parentOrderInfo}
     ${idx}. ${item.item_name}
     Mã gốc: ${extractVariantTitle(item)}
     SKU: ${item.sku}
@@ -251,6 +254,7 @@ const composeLineItemsChangeMessage = (oldItems, newItems, promotionData) => {
   if (addedItems.length > 0) {
     message += "* <b>Sản phẩm được thêm mới: </b>\n";
     addedItems.forEach(item => {
+      message += `#${item.parent_order_number || "N/A"} <i>(tổng đơn: ${numberToCurrency(item.parent_grand_total || 0)})</i>\n`;
       message += `<i>${item.item_name}</i>\n`;
       message += `Mã gốc: ${extractVariantTitle(item)}\n`;
       message += `SKU: ${item.sku}\n`;
@@ -272,13 +276,14 @@ const composeLineItemsChangeMessage = (oldItems, newItems, promotionData) => {
   if (removedItems.length > 0) {
     message += "* <b>Sản phẩm bị loại bỏ: </b>\n";
     removedItems.forEach(item => {
+      message += `#${item.parent_order_number || "N/A"} <i>(tổng đơn: ${numberToCurrency(item.parent_grand_total || 0)})</i>\n`;
       message += `- ${item.item_name} (SKU: ${item.sku})\n`;
     });
     message += "\n";
   }
 
   if (updatedItems.length > 0) {
-    let itemMessges = "";
+    let itemMessages = "";
     updatedItems.forEach(newItem => {
       const oldItem = oldItems.find(oldItem => oldItem.name === newItem.name);
       if (oldItem) {
@@ -320,18 +325,20 @@ const composeLineItemsChangeMessage = (oldItems, newItems, promotionData) => {
         }
 
         if (changes.length > 0) {
+          const parentOrderInfo = `#${newItem.parent_order_number || "N/A"} <i>(tổng đơn: ${numberToCurrency(newItem.parent_grand_total || 0)})</i>`;
           changes.unshift(`<i>${newItem.item_name} - ${newItem.variant_title}</i>`);
+          changes.unshift(parentOrderInfo);
           changes.forEach(change => {
-            itemMessges += `${change}\n`;
+            itemMessages += `${change}\n`;
           });
-          itemMessges += "\n";
+          itemMessages += "\n";
         }
       }
     });
 
-    if (itemMessges) {
+    if (itemMessages) {
       message += "* <b>Sản phẩm được cập nhật:</b>\n";
-      message += itemMessges;
+      message += itemMessages;
       message += "\n";
     }
   }
