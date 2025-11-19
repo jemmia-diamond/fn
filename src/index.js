@@ -1,3 +1,5 @@
+import "polyfills/bigint";
+
 import * as Sentry from "@sentry/cloudflare";
 
 import { Hono } from "hono";
