@@ -22,8 +22,8 @@ model gold_pricing {
   gold_type  String?   @db.VarChar
   buy        Decimal?  @db.Decimal
   sell       Decimal?  @db.Decimal
-  created_at DateTime? @db.Timestamptz(6)
-  updated_at DateTime? @db.Timestamptz(6)
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at DateTime? @updatedAt @db.Timestamptz(6)
 
   @@unique([location, gold_type, time])
   @@index([time(sort: Desc)])
