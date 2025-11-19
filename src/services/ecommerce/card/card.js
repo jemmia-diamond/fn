@@ -3,7 +3,7 @@ import Database from "services/database";
 
 export default class CardService {
   constructor(env) {
-    this.db = Database.instance(env, "neon");
+    this.db = Database.instance(env);
   }
 
   async create(rawData) {

@@ -5,7 +5,7 @@ import * as Sentry from "@sentry/cloudflare";
 
 export default class DiamondService {
   constructor(env) {
-    this.db = Database.instance(env, "neon");
+    this.db = Database.instance(env);
     this.env = env;
   }
 

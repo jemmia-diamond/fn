@@ -4,7 +4,7 @@ import { Prisma } from "@prisma-cli";
 export default class ProductSearchService {
   constructor(env) {
     this.env = env;
-    this.db = Database.instance(env, "neon");
+    this.db = Database.instance(env);
   }
 
   /**
