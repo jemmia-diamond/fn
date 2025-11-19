@@ -58,6 +58,7 @@ export default class APIRoutes {
     const paymentApi = api.basePath("/payments");
     paymentApi.post("/manual-payments", Payment.ManualPaymentsController.create);
     paymentApi.patch("/manual-payments/:id", Payment.ManualPaymentsController.update);
+    paymentApi.post("/qr-payments", Payment.QRPaymentsController.create);
 
     const salesayaNamespaceApi = api.basePath("/salesaya");
     salesayaNamespaceApi.get("/product-searches", Salesaya.ProductSearchController.index);
