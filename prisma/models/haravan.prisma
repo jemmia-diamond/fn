@@ -577,5 +577,6 @@ model warehouses {
   id   Int     @id
   name String?
 
+  @@map("warehouses")
   @@schema("haravan")
 }
