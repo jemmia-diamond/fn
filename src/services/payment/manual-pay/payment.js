@@ -5,6 +5,7 @@ import { TABLES } from "services/larksuite/docs/constant";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import { BadRequestException } from "src/exception/exceptions";
+import TransactionOrderConnector from "services/clients/haravan-client/order-transaction";
 
 dayjs.extend(utc);
 
@@ -262,37 +263,21 @@ export default class ManualPaymentService {
     }
 
     const HRV_API_KEY = await env.HARAVAN_TOKEN_SECRET.get();
-    const HARAVAN_API_BASE_URL = env.HARAVAN_API_BASE_URL;
 
-    if (!HARAVAN_API_BASE_URL || !HRV_API_KEY) {
+    if (!HRV_API_KEY) {
       throw new BadRequestException("Haravan API credentials or base URL are not configured in the environment.");
     }
 
-    const apiUrl = `${HARAVAN_API_BASE_URL}/com/orders/${haravanOrderId}/transactions.json`;
+    const orderTransactionClient = new TransactionOrderConnector(HRV_API_KEY);
 
-    const transactionPayload = {
-      transaction: {
+    const responseData = await orderTransactionClient.createTransaction(
+      haravanOrderId,
+      {
         amount: parsedTransferAmount,
         kind: "capture",
         gateway: paymentType
       }
-    };
-
-    const response = await fetch(apiUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${HRV_API_KEY}`
-      },
-      body: JSON.stringify(transactionPayload)
-    });
-
-    if (!response.ok) {
-      const errorBody = await response.text();
-      throw new BadRequestException(`Failed to create Haravan transaction. Status: ${response.status}, Body: ${errorBody}`);
-    }
-
-    const responseData = await response.json();
+    );
     return responseData.transaction;
   }
 }
