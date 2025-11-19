@@ -6,7 +6,8 @@ export function buildQuery(jsonParams) {
     handleFinenessPriority,
     collectionJoinEcomProductsClause,
     linkedCollectionJoinEcomProductsClause,
-    havingString
+    havingString,
+    warehouseJoinClause
   } = aggregateQuery(jsonParams);
 
   const finenessOrder = handleFinenessPriority === "14K" ? "ASC" : "DESC";
@@ -128,6 +129,7 @@ export function buildQuery(jsonParams) {
       ) img ON img.product_id = p.haravan_product_id
 
       ${lateralJoinClause}
+      ${warehouseJoinClause}
     WHERE 1 = 1
       AND (p.haravan_product_type != 'Nhẫn Cưới')
       ${filterString}
@@ -157,6 +159,7 @@ export function buildQuery(jsonParams) {
         INNER JOIN ecom.materialized_variants v
           ON v.haravan_product_id = p.haravan_product_id
         ${diamondJoinsForCount}
+        ${warehouseJoinClause}
       WHERE 1 = 1
         AND p.haravan_product_type != 'Nhẫn Cưới'
         ${filterString}
@@ -277,6 +280,7 @@ export function aggregateQuery(jsonParams) {
   let havingString = "";
   let linkedCollectionJoinEcomProductsClause = "";
   let needsP2Join = false;
+  let warehouseJoinClause = "";
 
   if (jsonParams.is_in_stock) {
     havingString += "HAVING SUM(v.qty_available) > 0\n";
@@ -297,6 +301,10 @@ export function aggregateQuery(jsonParams) {
 
   if (jsonParams.material_colors && jsonParams.material_colors.length > 0) {
     filterString += `AND v.material_color IN ('${jsonParams.material_colors.join("','")}')\n`;
+  }
+
+  if (jsonParams.ring_sizes && jsonParams.ring_sizes.length > 0) {
+    filterString += `AND v.ring_size IN ('${jsonParams.ring_sizes.join("','")}')\n`;
   }
 
   if (jsonParams.fineness && jsonParams.fineness.length > 0) {
@@ -417,6 +425,17 @@ export function aggregateQuery(jsonParams) {
     collectionJoinEcomProductsClause = "LEFT JOIN ecom.products p2 ON p.haravan_product_id = p2.haravan_product_id";
   }
 
+  if (jsonParams.warehouse_ids && jsonParams.warehouse_ids.length > 0) {
+    warehouseJoinClause = `
+      INNER JOIN haravan.warehouse_inventories wi 
+        ON wi.variant_id = v.haravan_variant_id
+      INNER JOIN haravan.warehouses w 
+        ON w.id = wi.loc_id
+    `;
+
+    filterString += `AND w.id IN (${jsonParams.warehouse_ids.join(",")})\n`;
+  }
+
   return {
     filterString,
     sortString,
@@ -424,6 +443,7 @@ export function aggregateQuery(jsonParams) {
     handleFinenessPriority,
     collectionJoinEcomProductsClause,
     linkedCollectionJoinEcomProductsClause,
-    havingString
+    havingString,
+    warehouseJoinClause
   };
 }
