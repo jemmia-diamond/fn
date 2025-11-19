@@ -5,7 +5,7 @@ import { TABLES } from "services/larksuite/docs/constant";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import { BadRequestException } from "src/exception/exceptions";
-import TransactionOrderConnector from "services/clients/haravan-client/order-transaction";
+import HaravanAPI from "services/clients/haravan-client";
 
 dayjs.extend(utc);
 
@@ -268,9 +268,9 @@ export default class ManualPaymentService {
       throw new BadRequestException("Haravan API credentials or base URL are not configured in the environment.");
     }
 
-    const orderTransactionClient = new TransactionOrderConnector(HRV_API_KEY);
+    const hrvClient = new HaravanAPI(HRV_API_KEY);
 
-    const responseData = await orderTransactionClient.createTransaction(
+    const responseData = await hrvClient.orderTransaction.createTransaction(
       haravanOrderId,
       {
         amount: parsedTransferAmount,
