@@ -275,9 +275,21 @@ export default class SalesOrderService {
     salesOrderData = mainOrder;
     childOrders = subOrders;
 
+    salesOrderData.items = salesOrderData.items.map((item) => ({
+      ...item,
+      parent_order_number: salesOrderData.order_number,
+      parent_grand_total: salesOrderData.grand_total
+    }));
+
     // Compose all sales order into one
     for (const childOrder of childOrders) {
-      salesOrderData.items.push(...childOrder.items);
+      salesOrderData.items.push(
+        ...childOrder.items.map((item) => ({
+          ...item,
+          parent_order_number: childOrder.order_number,
+          parent_grand_total: childOrder.grand_total
+        }))
+      );
       salesOrderData.attachments.push(...childOrder.attachments);
       salesOrderData.promotions.push(...childOrder.promotions);
       salesOrderData.product_categories.push(...childOrder.product_categories);

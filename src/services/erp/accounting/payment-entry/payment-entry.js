@@ -62,7 +62,8 @@ export default class PaymentEntryService {
       haravan_order_number: salesOrderReference ? salesOrderReference.sales_order_details.haravan_order_number : (paymentEntry.haravan_order_number || "Đơn hàng cọc"),
       haravan_order_status: salesOrderReference ? salesOrderReference.sales_order_details.haravan_financial_status : null,
       haravan_order_id: salesOrderReference ? salesOrderReference.sales_order_details.haravan_order_id : null,
-      lark_record_id: paymentEntry.lark_record_id || paymentEntry.name,
+      lark_record_id: paymentEntry.lark_record_id || "",
+      payment_entry_name: paymentEntry.name || "",
       customer_phone_order_later: paymentEntry.customer_details.phone,
       customer_name_order_later: paymentEntry.customer_details.name
     };
@@ -70,14 +71,16 @@ export default class PaymentEntryService {
     const result = await this.createQRService.handlePostQr(qrGeneratorPayload);
 
     // Update Payment Entry with QR code URL
-    await this.frappeClient.upsert({
-      doctype: this.doctype,
-      name: paymentEntry.name,
-      qr_url: result.qr_url,
-      custom_transaction_id: result.id,
-      custom_transfer_note: result.transfer_note,
-      custom_transfer_status: result.transfer_status
-    }, "name");
+    if (result && result.payment_entry_name) {
+      await this.frappeClient.upsert({
+        doctype: this.doctype,
+        name: result.payment_entry_name,
+        qr_url: result.qr_url,
+        custom_transaction_id: result.id,
+        custom_transfer_note: result.transfer_note,
+        custom_transfer_status: result.transfer_status
+      }, "name");
+    }
 
     return result;
   }

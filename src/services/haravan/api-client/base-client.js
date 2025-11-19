@@ -20,17 +20,6 @@ export default class BaseClient {
     return await this.postProcess(response);
   }
 
-  async makePostRequest(path, body = {}) {
-    const url = `${this.baseUrl}${path}`;
-    const headers = await this.composeHeaders();
-    const response = await fetch(url, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(body)
-    });
-    return await this.postProcess(response);
-  }
-
   async postProcess(response) {
     if (!response.ok) {
       return {
