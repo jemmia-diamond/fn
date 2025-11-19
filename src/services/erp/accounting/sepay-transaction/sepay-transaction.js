@@ -4,6 +4,8 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import * as Sentry from "@sentry/cloudflare";
 import OrderTransactionClient from "services/haravan/api-client/modules/order-transactions/order-transaction-client";
+import { TABLES } from "services/larksuite/docs/constant";
+import RecordService from "services/larksuite/docs/base/record/record";
 
 dayjs.extend(utc);
 
@@ -67,15 +69,30 @@ export default class SepayTransactionService {
       data: { transfer_status: "success" }
     });
 
-    await this.frappeClient.upsert(
-      {
-        doctype: "Payment Entry",
-        name: qr.lark_record_id,
-        custom_transfer_status: "success"
-      },
-      "name"
-    );
+    if (qr.payment_entry_name) {
+      await this.frappeClient.upsert(
+        {
+          doctype: "Payment Entry",
+          name: qr.payment_entry_name,
+          custom_transfer_status: "success"
+        },
+        "name"
+      );
+    }
 
+    if (qr.lark_record_id) {
+      const fieldsToUpdate = {
+        ["Trạng thái chuyển khoản"]: "Đã hoàn thành"
+      };
+      await RecordService.updateLarksuiteRecord({
+        env: this.env,
+        appToken: TABLES.QR_PAYMENT.app_token,
+        tableId: TABLES.QR_PAYMENT.table_id,
+        recordId: qr.lark_record_id,
+        fields: fieldsToUpdate,
+        userIdType: "open_id"
+      });
+    }
     return true;
   }
 
