@@ -93,7 +93,6 @@ export default class FrappeClient {
 
   async upsert(doc, key, ignoredFields = []) {
     const documents = await this.getList(doc.doctype, { filters: [[key, "=", doc[key]]] });
-
     if (documents.length > 1) {
       throw new Error(`Multiple ${doc.doctype} found for ${key} ${doc[key]}`);
     } else if (documents.length === 1) {

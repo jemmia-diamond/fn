@@ -1,7 +1,6 @@
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import Database from "services/database";
-import OrderTransactionClient from "services/haravan/api-client/modules/order-transactions/order-transaction-client";
 
 dayjs.extend(utc);
 
@@ -26,7 +25,6 @@ export default class CreateQRService {
   constructor(env) {
     this.env = env;
     this.db = Database.instance(env);
-    this.transactionConnector = new OrderTransactionClient(env);
   }
 
   async handlePostQr(body) {
