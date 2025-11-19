@@ -4,32 +4,41 @@ import Database from "services/database";
 
 dayjs.extend(utc);
 
-function formatQuickQrUrl({ bankAccountNumber, bankBin, transferAmount, transferNote }) {
-  const params = new URLSearchParams({
-    acc: bankAccountNumber,
-    bank: bankBin,
-    amount: transferAmount.toString(),
-    des: transferNote,
-    template: "",
-    download: "no"
-  });
-  const baseUrl = "https://qr.sepay.vn/img";
-  return `${baseUrl}?${params.toString()}`;
-}
-
-const MISSING_REQUEST_BODY = "MISSING_REQUEST_BODY";
-const MISSING_FIELD = "MISSING_FIELD";
-const PRICE_OVER_LIMIT = "PRICE_OVER_LIMIT";
-
 export default class CreateQRService {
+  static MISSING_REQUEST_BODY = "MISSING_REQUEST_BODY";
+  static MISSING_FIELD = "MISSING_FIELD";
+  static PRICE_OVER_LIMIT = "PRICE_OVER_LIMIT";
+
   constructor(env) {
     this.env = env;
     this.db = Database.instance(env);
   }
 
+  /**
+   * Formats the Quick QR URL.
+   * @param {Object} params - The parameters for the QR code.
+   * @param {string} params.bankAccountNumber - The bank account number.
+   * @param {string} params.bankBin - The bank BIN.
+   * @param {number|string} params.transferAmount - The transfer amount.
+   * @param {string} params.transferNote - The transfer note.
+   * @returns {string} - The formatted QR URL.
+   */
+  static formatQuickQrUrl({ bankAccountNumber, bankBin, transferAmount, transferNote }) {
+    const params = new URLSearchParams({
+      acc: bankAccountNumber,
+      bank: bankBin,
+      amount: transferAmount.toString(),
+      des: transferNote,
+      template: "",
+      download: "no"
+    });
+    const baseUrl = "https://qr.sepay.vn/img";
+    return `${baseUrl}?${params.toString()}`;
+  }
+
   async handlePostQr(body) {
     if (!body) {
-      throw new Error(JSON.stringify({ error_msg: "Missing request body.", error_code: MISSING_REQUEST_BODY }));
+      throw new Error(JSON.stringify({ error_msg: "Missing request body.", error_code: CreateQRService.MISSING_REQUEST_BODY }));
     }
 
     const requiredFields = {
@@ -51,23 +60,23 @@ export default class CreateQRService {
 
     if (isOrderLater) {
       if (!body.customer_phone_order_later) {
-        throw new Error(JSON.stringify({ error_msg: "'customer_phone_order_later' cannot be empty for 'Đơn hàng cọc' order", error_code: MISSING_FIELD }));
+        throw new Error(JSON.stringify({ error_msg: "'customer_phone_order_later' cannot be empty for 'Đơn hàng cọc' order", error_code: CreateQRService.MISSING_FIELD }));
       }
       if (!body.customer_name_order_later) {
-        throw new Error(JSON.stringify({ error_msg: "'customer_name_order_later' cannot be empty for 'Đơn hàng cọc' order", error_code: MISSING_FIELD }));
+        throw new Error(JSON.stringify({ error_msg: "'customer_name_order_later' cannot be empty for 'Đơn hàng cọc' order", error_code: CreateQRService.MISSING_FIELD }));
       }
       if (!body.transfer_amount) {
-        throw new Error(JSON.stringify({ error_msg: "'transfer_amount' cannot be empty for 'Đơn hàng cọc' order", error_code: MISSING_FIELD }));
+        throw new Error(JSON.stringify({ error_msg: "'transfer_amount' cannot be empty for 'Đơn hàng cọc' order", error_code: CreateQRService.MISSING_FIELD }));
       }
     } else {
       for (const [field, errorMessage] of Object.entries(requiredFields)) {
         if (!(field in body)) {
-          throw new Error(JSON.stringify({ error_msg: errorMessage, error_code: MISSING_FIELD }));
+          throw new Error(JSON.stringify({ error_msg: errorMessage, error_code: CreateQRService.MISSING_FIELD }));
         }
       }
 
       if (parseFloat(body.transfer_amount) > parseFloat(body.haravan_order_total_price)) {
-        throw new Error(JSON.stringify({ error_msg: "Transfer amount cannot be greater than order total price", error_code: PRICE_OVER_LIMIT }));
+        throw new Error(JSON.stringify({ error_msg: "Transfer amount cannot be greater than order total price", error_code: CreateQRService.PRICE_OVER_LIMIT }));
       }
     }
 
@@ -101,7 +110,7 @@ export default class CreateQRService {
       transactionBody.payment_entry_name = body.payment_entry_name;
     }
 
-    const qrUrl = formatQuickQrUrl({
+    const qrUrl = CreateQRService.formatQuickQrUrl({
       bankAccountNumber: transactionBody.bank_account_number,
       bankBin: body.bank_bin,
       transferAmount: transactionBody.transfer_amount,
