@@ -9,3 +9,4 @@ eslint/ @fongfan999
 
 # Database
 prisma/ @fongfan999
+src/services/database.js @fongfan999
