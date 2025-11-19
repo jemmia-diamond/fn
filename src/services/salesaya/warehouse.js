@@ -14,7 +14,7 @@ export default class WarehouseService {
      *   name: string,
      */
   async fetchWarehouses() {
-    const warehouses = await this.db.warehouses.findMany({
+    const warehouses = await this.db.haravanWarehouses.findMany({
       where: {
         name: {
           contains: "Cửa Hàng",
