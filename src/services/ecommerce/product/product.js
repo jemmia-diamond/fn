@@ -2,7 +2,7 @@ import Database from "services/database";
 import { Prisma } from "@prisma-cli";
 import { buildQuerySingle, buildQuery } from "services/ecommerce/product/utils/jewelry";
 import { buildQueryV2 } from "services/ecommerce/product/utils/jewelry-v2";
-import { buildWeddingRingsQuery } from "services/ecommerce/product/utils/wedding-ring";
+import { buildWeddingRingByIdQuery, buildWeddingRingsQuery } from "services/ecommerce/product/utils/wedding-ring";
 import { JEWELRY_IMAGE } from "src/controllers/ecommerce/constant";
 import * as Sentry from "@sentry/cloudflare";
 
@@ -134,6 +134,12 @@ export default class ProductService {
         fineness: fineness
       }
     };
+  }
+
+  async getWeddingRingById(id) {
+    const dataSql = buildWeddingRingByIdQuery(id);
+    const data = await this.db.$queryRaw`${Prisma.raw(dataSql)}`;
+    return data?.[0] || null;
   }
 
   async getJewelryById(id, params) {
