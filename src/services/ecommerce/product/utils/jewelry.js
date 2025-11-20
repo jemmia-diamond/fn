@@ -38,7 +38,7 @@ export function buildQuery(jsonParams) {
 
     lateralJoinClause = `
       INNER JOIN LATERAL (
-        SELECT 
+        SELECT
           v.*,
           JSON_AGG(
             JSON_BUILD_OBJECT(
@@ -60,17 +60,17 @@ export function buildQuery(jsonParams) {
             )
           ) FILTER (WHERE dia.product_id IS NOT NULL) AS diamonds
         FROM ecom.materialized_variants v
-        LEFT JOIN ecom.jewelry_diamond_pairs jdp 
-          ON CAST(jdp.haravan_product_id AS BIGINT) = v.haravan_product_id 
+        LEFT JOIN ecom.jewelry_diamond_pairs jdp
+          ON CAST(jdp.haravan_product_id AS BIGINT) = v.haravan_product_id
          AND CAST(jdp.haravan_variant_id AS BIGINT) = v.haravan_variant_id
          AND jdp.is_active = TRUE
-        LEFT JOIN workplace.diamonds dia 
-          ON dia.product_id = CAST(jdp.haravan_diamond_product_id AS BIGINT) 
+        LEFT JOIN workplace.diamonds dia
+          ON dia.product_id = CAST(jdp.haravan_diamond_product_id AS BIGINT)
          AND dia.variant_id = CAST(jdp.haravan_diamond_variant_id AS BIGINT)
         WHERE v.haravan_product_id = p.haravan_product_id
-        GROUP BY v.haravan_product_id, v.haravan_variant_id, v.sku, v.price, 
-                 v.price_compare_at, v.material_color, v.fineness, v.ring_size, 
-                 v.qty_available, v.qty_onhand, v.applique_material, 
+        GROUP BY v.haravan_product_id, v.haravan_variant_id, v.sku, v.price,
+                 v.price_compare_at, v.material_color, v.fineness, v.ring_size,
+                 v.qty_available, v.qty_onhand, v.applique_material,
                  v.estimated_gold_weight, v.ring_band_style, v.ring_head_style
         ORDER BY v.fineness ${finenessOrder}, v.price DESC
       ) v ON TRUE
@@ -100,7 +100,7 @@ export function buildQuery(jsonParams) {
   }
 
   const dataSql = `
-    SELECT  
+    SELECT
       CAST(p.haravan_product_id AS INT) AS id,
       p.title,
       d.design_code,
@@ -114,14 +114,14 @@ export function buildQuery(jsonParams) {
       JSON_AGG(
         ${variantJsonBuildObject}
       ) AS variants
-    FROM ecom.materialized_products p 
-      INNER JOIN workplace.designs d ON p.design_id = d.id 
+    FROM ecom.materialized_products p
+      INNER JOIN workplace.designs d ON p.design_id = d.id
       ${collectionJoinEcomProductsClause}
       ${linkedCollectionJoinEcomProductsClause}
 
       -- Subquery for pre-aggregated images
       INNER JOIN (
-        SELECT 
+        SELECT
           i.product_id,
           array_agg(i.src ORDER BY i.src) AS images
         FROM haravan.images i
@@ -133,10 +133,10 @@ export function buildQuery(jsonParams) {
     WHERE 1 = 1
       AND (p.haravan_product_type != 'Nhẫn Cưới')
       ${filterString}
-    GROUP BY 
-      p.haravan_product_id, p.title, d.design_code, p.handle, 
+    GROUP BY
+      p.haravan_product_id, p.title, d.design_code, p.handle,
       d.diamond_holder, d.main_stone, d.ring_band_type, p.haravan_product_type,
-      p.max_price, p.min_price, p.max_price_18, p.max_price_14, 
+      p.max_price, p.min_price, p.max_price_18, p.max_price_14,
       img.images, p.has_360 ${collectionJoinEcomProductsClause ? ", p2.image_updated_at" : ""}
     ${havingString}
     ${sortString}
@@ -188,18 +188,18 @@ export function buildQuerySingle({ matchedDiamonds }) {
       'applique_material', v.applique_material,
       'estimated_gold_weight', v.estimated_gold_weight,
       'qty_available', v.qty_available,
-      'qty_onhand', v.qty_onhand 
+      'qty_onhand', v.qty_onhand
     ) \n
   `;
 
   let lateralJoinClause = `
-    \n 
+    \n
     INNER JOIN LATERAL (
       SELECT *
       FROM ecom.materialized_variants v
       WHERE v.haravan_product_id = p.haravan_product_id
       ORDER BY v.fineness, v.price DESC
-    ) v ON TRUE 
+    ) v ON TRUE
     \n
   `;
 
@@ -218,14 +218,14 @@ export function buildQuerySingle({ matchedDiamonds }) {
         'qty_available', v.qty_available,
         'qty_onhand', v.qty_onhand,
         'diamonds', COALESCE(v.diamonds, '[]'::json)
-      ) 
+      )
       \n
     `;
 
     lateralJoinClause = `
       \n
       LEFT JOIN LATERAL (
-        SELECT 
+        SELECT
           v.*,
           JSON_AGG(
             JSON_BUILD_OBJECT(
@@ -247,19 +247,19 @@ export function buildQuerySingle({ matchedDiamonds }) {
             )
           ) FILTER (WHERE dia.product_id IS NOT NULL) AS diamonds
         FROM ecom.materialized_variants v
-        LEFT JOIN ecom.jewelry_diamond_pairs jdp 
-          ON CAST(jdp.haravan_product_id AS BIGINT) = v.haravan_product_id 
+        LEFT JOIN ecom.jewelry_diamond_pairs jdp
+          ON CAST(jdp.haravan_product_id AS BIGINT) = v.haravan_product_id
          AND CAST(jdp.haravan_variant_id AS BIGINT) = v.haravan_variant_id
          AND jdp.is_active = TRUE
-        LEFT JOIN workplace.diamonds dia 
-          ON dia.product_id = CAST(jdp.haravan_diamond_product_id AS BIGINT) 
+        LEFT JOIN workplace.diamonds dia
+          ON dia.product_id = CAST(jdp.haravan_diamond_product_id AS BIGINT)
          AND dia.variant_id = CAST(jdp.haravan_diamond_variant_id AS BIGINT)
         WHERE v.haravan_product_id = p.haravan_product_id
-        GROUP BY 
-          v.haravan_product_id, v.haravan_variant_id, v.sku, 
-          v.price, v.price_compare_at, v.material_color, v.fineness, 
-          v.ring_size, v.qty_available, v.qty_onhand, 
-          v.applique_material, v.estimated_gold_weight, 
+        GROUP BY
+          v.haravan_product_id, v.haravan_variant_id, v.sku,
+          v.price, v.price_compare_at, v.material_color, v.fineness,
+          v.ring_size, v.qty_available, v.qty_onhand,
+          v.applique_material, v.estimated_gold_weight,
           v.ring_band_style, v.ring_head_style
         ORDER BY v.fineness, v.price DESC
       ) v ON TRUE
@@ -427,9 +427,9 @@ export function aggregateQuery(jsonParams) {
 
   if (jsonParams.warehouse_ids && jsonParams.warehouse_ids.length > 0) {
     warehouseJoinClause = `
-      INNER JOIN haravan.warehouse_inventories wi 
+      INNER JOIN haravan.warehouse_inventories wi
         ON wi.variant_id = v.haravan_variant_id
-      INNER JOIN haravan.warehouses w 
+      INNER JOIN haravan.warehouses w
         ON w.id = wi.loc_id
     `;
 

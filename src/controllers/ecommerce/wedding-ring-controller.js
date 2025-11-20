@@ -40,4 +40,18 @@ export default class WeddingRingController {
     const result = await productService.getWeddingRings(jsonParams);
     return ctx.json(result);
   }
+
+  static async show(ctx) {
+    const { id } = ctx.req.param();
+    const productId = Number(id);
+    if (!Number.isInteger(productId) || productId <= 0) {
+      return ctx.json({ message: "Invalid wedding ring ID" }, 400);
+    }
+    const productService = new Ecommerce.ProductService(ctx.env);
+    const result = await productService.getWeddingRingById(productId);
+    if (!result) {
+      return ctx.json({ message: "Wedding ring not found" }, 404);
+    }
+    return ctx.json(result);
+  }
 }
