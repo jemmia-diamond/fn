@@ -10,5 +10,9 @@ export const TABLES = {
   MANUAL_PAYMENT: {
     table_id: "tbltEB1BSxNLzVvj",
     app_token: "SfjFbVLUHaGbhksKPnBlPDEdgZd"
+  },
+  QR_PAYMENT: {
+    table_id: "tblp2wmtsTruZVZR",
+    app_token: "SfjFbVLUHaGbhksKPnBlPDEdgZd"
   }
 };

@@ -167,7 +167,11 @@
       {
         "queue": "erpnext-payment-entry",
         "binding": "ERPNEXT_PAYMENT_ENTRY_QUEUE"
-      }
+      },
+      {
+        "queue": "sepay-transaction",
+        "binding": "SEPAY_TRANSACTION_QUEUE"
+      },
     ],
     "consumers": [
       {
@@ -199,6 +203,9 @@
       },
       {
         "queue": "misa"
+      },
+      {
+        "queue": "sepay-transaction"
       }
     ]
   },
