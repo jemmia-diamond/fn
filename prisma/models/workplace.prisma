@@ -1,7 +1,7 @@
 model nc_m2m_haravan_collect_products {
   products_id            Int
   haravan_collections_id Int
-  products               workplace_products  @relation(fields: [products_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_haravan_co_products_8v31fxenpy")
+  products               workplaceProducts  @relation(fields: [products_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_haravan_co_products_8v31fxenpy")
   haravan_collections    haravan_collections @relation(fields: [haravan_collections_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_haravan_co_products_q3phsaq_nx")
 
   @@id([products_id, haravan_collections_id])
@@ -148,7 +148,7 @@ model designs {
   collections             collections?              @relation(fields: [collections_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_collection_designs_0ry69f9nc6")
   ecom_old_products       ecom_old_products[]
   jewelries               jewelries[]
-  products                workplace_products?
+  products                workplaceProducts?
   temporary_products      temporary_products[]
 
   @@unique([design_type, gender, diamond_holder, source, design_year, design_seq, variant_number], map: "design_code_attributes_unique")
@@ -232,7 +232,7 @@ model ecom_360 {
   product_id Int?
   path       String?             @default("https://90814f99c119cd5dc08362580f81a76f.r2.cloudflarestorage.com/jemmia-images/glb/")
   file_name  String?
-  products   workplace_products? @relation(fields: [product_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  products   workplaceProducts? @relation(fields: [product_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
 
   @@schema("workplace")
 }
@@ -269,7 +269,7 @@ model haravan_collections {
   handle                          String?
   nc_m2m_haravan_collect_products nc_m2m_haravan_collect_products[]
   diamonds                        diamonds[]
-  products                        workplace_products[]
+  products                        workplaceProducts[]
 
   @@schema("workplace")
 }
@@ -407,7 +407,7 @@ model moissanite_serials {
   @@schema("workplace")
 }
 
-model workplace_products {
+model workplaceProducts {
   id                              Int                               @id @default(autoincrement())
   haravan_product_id              BigInt?                           @unique(map: "uniqe_product_id")
   created_at                      DateTime?                         @db.Timestamp(6)
@@ -705,7 +705,7 @@ model workplace_variants {
   note                   String?
   estimated_gold_weight  Float?              @db.Real
   variant_serials        variant_serials[]
-  products               workplace_products? @relation(fields: [product_id], references: [id], onDelete: Restrict, onUpdate: NoAction, map: "fk_variants_products")
+  products               workplaceProducts? @relation(fields: [product_id], references: [id], onDelete: Restrict, onUpdate: NoAction, map: "fk_variants_products")
 
   @@unique([product_id, category, applique_material, fineness, material_color, size_type, ring_size], map: "unique_sku_attributes")
   @@index([haravan_variant_id], map: "idx_harvan_variant_id_workplace_variants")
