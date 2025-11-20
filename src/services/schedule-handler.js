@@ -4,6 +4,7 @@ import Ecommerce from "services/ecommerce";
 import InventoryCMS from "services/inventory-cms";
 import DatabaseOperations from "services/db-operations";
 import Payment from "services/payment";
+import Misa from "services/misa";
 
 export default {
   scheduled: async (controller, env, _ctx) => {
@@ -16,6 +17,7 @@ export default {
       break;
     case "*/5 * * * *": // At every 5th minute
       await new Ecommerce.JewelryDiamondPairService(env).processOutOfStockDiamonds();
+      await new Misa.InventoryItemSyncService(env).syncInventoryItems();
       break;
     case "*/10 * * * *": // At every 10th minute
       await ERP.Selling.SerialService.syncSerialsToERP(env);
