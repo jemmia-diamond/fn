@@ -48,6 +48,23 @@ export default class MisaClient {
   }
 
   /**
+   * Save dictionary to MISA
+   * @param {*} dictionaryPayload
+   * @returns
+   */
+  async saveDictionary(dictionaryPayload) {
+    const url = `${this.baseUrl}/apir/sync/actopen/save_dictionary`;
+
+    const response = await axios.post(url, dictionaryPayload, {
+      headers: {
+        "X-MISA-AccessToken": this.accessToken,
+        "Content-Type": "application/json"
+      }
+    });
+    return response.data;
+  }
+
+  /**
    * Return list of configured bank info in MISA
    * @param {Number} data_type - type of dictionary, check here https://actdocs.misa.vn/g2/graph/ACTOpenAPIHelp/index.html#3-3
    * @param {Number} skip
