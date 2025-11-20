@@ -118,6 +118,11 @@ export function validateOrderInfo(salesOrderData, customer) {
   let message = null;
   let isValid = false;
 
+  if (!salesOrderData.customer_personal_id && !salesOrderData.custom_passport_id) {
+    message = "Vui lòng nhập số CMND/CCCD/Hộ chiếu của khách hàng trước khi gửi đơn hàng đến Lark.";
+    return { isValid, message };
+  }
+
   if (!salesOrderData.sales_team.length) {
     message = "Chưa nhập chia doanh số";
     return { isValid, message };
