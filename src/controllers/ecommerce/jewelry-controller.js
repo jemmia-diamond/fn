@@ -41,7 +41,9 @@ export default class JewelryController {
           .filter((n) => Number.isInteger(n) && n > 0)
         : [],
       linked_collections: params.linked_collections ? params.linked_collections.split(",") : [],
-      matched_diamonds: params.matched_diamonds === "true"
+      matched_diamonds: params.matched_diamonds === "true",
+      ring_sizes: params.ring_sizes ? params.ring_sizes.split(",").map((size) => size.trim()) : [],
+      warehouse_ids: params.warehouse_ids ? params.warehouse_ids.split(",").map((id) => id.trim()) : []
     };
 
     const productService = new Ecommerce.ProductService(ctx.env);

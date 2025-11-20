@@ -573,9 +573,10 @@ model haravan_warehouse_inventories {
   @@schema("haravan")
 }
 
-model warehouses {
+model haravanWarehouses {
   id   Int     @id
   name String?
 
+  @@map("warehouses")
   @@schema("haravan")
 }

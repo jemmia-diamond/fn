@@ -2,15 +2,36 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "auth/*": ["src/auth/*"],
-      "controllers/*": ["src/controllers/*"],
-      "frappe/*": ["src/frappe/*"],
-      "middlewares/*": ["src/middlewares/*"],
-      "pancake/*": ["src/pancake/*"],
-      "routes/*": ["src/routes/*"],
-      "services/*": ["src/services/*"],
-      "stringee/*": ["src/stringee/*"]
+      "auth/*": [
+        "src/auth/*"
+      ],
+      "controllers/*": [
+        "src/controllers/*"
+      ],
+      "frappe/*": [
+        "src/frappe/*"
+      ],
+      "middlewares/*": [
+        "src/middlewares/*"
+      ],
+      "pancake/*": [
+        "src/pancake/*"
+      ],
+      "polyfills/*": [
+        "src/polyfills/*"
+      ],
+      "routes/*": [
+        "src/routes/*"
+      ],
+      "services/*": [
+        "src/services/*"
+      ],
+      "stringee/*": [
+        "src/stringee/*"
+      ]
     }
   },
-  "include": ["src/**/*"]
+  "include": [
+    "src/**/*"
+  ]
 }

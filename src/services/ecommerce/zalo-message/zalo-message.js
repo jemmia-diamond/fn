@@ -86,7 +86,7 @@ export default class SendZaloMessage {
           continue;
         }
 
-        const db = Database.instance(env, "neon");
+        const db = Database.instance(env);
 
         // Retrieve oldest order ID in case the order has been re-ordered
         let firstOrder = {
@@ -180,7 +180,7 @@ export default class SendZaloMessage {
           continue;
         }
 
-        const db = Database.instance(env, "neon");
+        const db = Database.instance(env);
 
         const latestOrderId = await getLatestOrderId(db, orderData.id);
 

@@ -14,7 +14,7 @@ import crypto from "crypto";
 export default class OrderTrackingService {
   constructor(env) {
     this.env = env;
-    this.db = Database.instance(env, "neon");
+    this.db = Database.instance(env);
   }
 
   async trackOrder(orderId, reqBearerToken) {

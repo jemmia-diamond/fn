@@ -62,6 +62,7 @@ export default class APIRoutes {
 
     const salesayaNamespaceApi = api.basePath("/salesaya");
     salesayaNamespaceApi.get("/product-searches", Salesaya.ProductSearchController.index);
+    salesayaNamespaceApi.get("/warehouses", Salesaya.WarehouseController.index);
 
     const larksuiteApi = api.basePath("/larksuites");
     larksuiteApi.get("/buyback-exchanges", Larksuite.BuybackExchangeController.index);
