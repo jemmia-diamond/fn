@@ -2,30 +2,65 @@ import * as Sentry from "@sentry/cloudflare";
 import dayjs from "dayjs";
 import Database from "services/database";
 import MisaClient from "services/clients/misa-client";
-import HaravanAPIClient from "services/haravan/api-client/api-client";
+import HaravanAPI from "services/clients/haravan-client";
 import ProductToMisaMapper from "services/haravan/dtos/product-to-misa";
-import InventoryItemMappingService from "services/misa/mapping/inventory-item-mapping-service";
+import Misa from "services/misa";
 
 export default class MisaInventoryItemSyncService {
   constructor(env) {
     this.env = env;
     this.db = Database.instance(env);
-    this.haravanClient = new HaravanAPIClient(env);
   }
 
   async syncInventoryItems() {
-    const now = dayjs().utc();
-    const updatedAtMin = now.subtract(1, "hour").format("YYYY-MM-DDTHH:mm:ss[Z]");
+    const kv = this.env.FN_KV;
+    const KV_KEY = "misa_inventory_sync:last_date";
+    const toDate = dayjs().utc().format("YYYY-MM-DDTHH:mm:ss[Z]");
+    const lastSyncDate = await kv.get(KV_KEY);
 
-    const misaClient = new MisaClient(this.env);
-    await misaClient.getAccessToken();
+    const fromDate = lastSyncDate
+      ? dayjs(lastSyncDate).subtract(5, "minutes").format("YYYY-MM-DDTHH:mm:ss[Z]")
+      : dayjs().utc().subtract(1, "hour").format("YYYY-MM-DDTHH:mm:ss[Z]");
 
-    await this.haravanClient.products.product.getListOfProductBaseOnUpdatedTime(
-      updatedAtMin,
-      async (products) => await this._processProductBatch(products, misaClient)
-    );
+    const updatedAtMin = fromDate;
 
-    return;
+    try {
+      const misaClient = new MisaClient(this.env);
+      await misaClient.getAccessToken();
+      const HRV_API_KEY = await this.env.HARAVAN_TOKEN_SECRET.get();
+      const haravanClient = new HaravanAPI(HRV_API_KEY);
+
+      await this._fetchAndProcessProducts(haravanClient, misaClient, updatedAtMin);
+      await kv.put(KV_KEY, toDate);
+    } catch (error) {
+      if (lastSyncDate && dayjs(toDate).diff(dayjs(lastSyncDate), "hour") >= 1) {
+        await kv.put(KV_KEY, toDate);
+      }
+
+      Sentry.captureException(error);
+    }
+  }
+
+  async _fetchAndProcessProducts(haravanClient, misaClient, updatedAtMin) {
+    let page = 1;
+    let hasMore = true;
+    const limit = 50;
+
+    while (hasMore) {
+      const response = await haravanClient.product.getProducts({
+        updated_at_min: updatedAtMin,
+        page,
+        limit
+      });
+      const products = response?.products || [];
+
+      if (products.length > 0) {
+        await this._processProductBatch(products, misaClient);
+        page++;
+      } else {
+        hasMore = false;
+      }
+    }
   }
 
   async _processProductBatch(products, misaClient) {
@@ -54,7 +89,7 @@ export default class MisaInventoryItemSyncService {
 
     const currentTime = String(Date.now());
     const inventoryItems = newVariants.map(variant =>
-      InventoryItemMappingService.transformHaravanItemToMisa(variant, currentTime)
+      Misa.InventoryItemMappingService.transformHaravanItemToMisa(variant, currentTime)
     );
 
     const misaResponse = await this._saveDictionaryToMisa(misaClient, inventoryItems);
@@ -68,7 +103,7 @@ export default class MisaInventoryItemSyncService {
         count: newVariants.length,
         misa_response: misaResponse?.ErrorMessage
       };
-      Sentry.captureMessage(`MISA Inventory Sync failed at ${currentTime}`, {
+      Sentry.captureMessage(`MISA Inventory Item Sync failed at ${currentTime}`, {
         level: "error",
         extra: errorMsg
       });
