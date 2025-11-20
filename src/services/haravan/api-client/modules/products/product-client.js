@@ -15,7 +15,7 @@ export default class ProductClient extends BaseClient {
     return await this.makeGetRequest(path);
   }
 
-  async getListOfProductBaseOnUpdatedTime(updated_at_min, processor = null) {
+  async getListOfProductBaseOnUpdatedTime(updated_at_min) {
     let allProducts = [];
     let page = 1;
     let hasMore = true;
@@ -27,16 +27,12 @@ export default class ProductClient extends BaseClient {
       const products = data?.data?.products || [];
 
       if (products.length > 0) {
-        if (processor) {
-          await processor(products);
-        } else {
-          allProducts = allProducts.concat(products);
-        }
+        allProducts = allProducts.concat(products);
         page++;
       } else {
         hasMore = false;
       }
     }
-    return processor ? null : allProducts;
+    return allProducts;
   }
 }
