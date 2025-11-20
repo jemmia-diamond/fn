@@ -9,6 +9,7 @@ import CardController from "controllers/ecommerce/card-controller";
 import ProductAvailabilityController from "controllers/ecommerce/product-availability-controller";
 import JewelryDiamondPairController from "controllers/ecommerce/jewelry-diamond-pair-controller";
 import DiamondProfileImageController from "controllers/ecommerce/diamond-profile-image-controller";
+import DiamondPricesController from "controllers/ecommerce/diamond-prices-controller";
 
 export default {
   JewelryController: JewelryController,
@@ -21,5 +22,6 @@ export default {
   CardController: CardController,
   ProductAvailabilityController: ProductAvailabilityController,
   JewelryDiamondPairController: JewelryDiamondPairController,
-  DiamondProfileImageController: DiamondProfileImageController
+  DiamondProfileImageController: DiamondProfileImageController,
+  DiamondPricesController: DiamondPricesController
 };
