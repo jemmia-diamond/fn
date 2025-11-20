@@ -204,7 +204,6 @@ export default class ProductService {
         haravan_product_id: true,
         ecom_360: {
           select: {
-            path: true,
             file_name: true
           }
         }
@@ -217,7 +216,7 @@ export default class ProductService {
 
     return {
       product_id: Number(product.haravan_product_id),
-      path_to_3dm: `${item.path}${item.file_name}`
+      path_to_3dm: `glb/${item.file_name}`
     };
   }
 
