@@ -143,13 +143,6 @@ export function buildQuery(jsonParams) {
     ${paginationString}
   `;
 
-  // eslint-disable-next-line no-console
-  console.log("[buildQuery] warehouse_ids:", jsonParams.warehouse_ids);
-  // eslint-disable-next-line no-console
-  console.log("[buildQuery] warehouseJoinClause:", warehouseJoinClause);
-  // eslint-disable-next-line no-console
-  console.log("[buildQuery] Full SQL Query:", dataSql);
-
   const countSql = `
     SELECT
       COUNT(*) AS total,
