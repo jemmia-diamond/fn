@@ -180,7 +180,7 @@ model diamond_price_list {
   clarity             String?
   carat               String?
   price               Decimal?  @db.Decimal
-
+  @@map("diamond_price_list")
   @@schema("workplace")
 }
 
