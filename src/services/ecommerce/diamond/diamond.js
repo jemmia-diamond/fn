@@ -81,29 +81,24 @@ export default class DiamondService {
     }
   }
 
-  async getDiamondPriceListMatrix() {
-    try {
-      const rowsRaw = await this.db.diamond_price_list.findMany({
-        select: { size: true, carat: true, color: true, clarity: true, price: true },
-        orderBy: [
-          { size: "asc" },
-          { carat: "asc" }
-        ]
-      });
+  async getDiamondPriceList() {
+    const rowsRaw = await this.db.diamond_price_list.findMany({
+      select: { size: true, carat: true, color: true, clarity: true, price: true },
+      orderBy: [
+        { size: "asc" },
+        { carat: "asc" }
+      ]
+    });
 
-      const rows = rowsRaw.map(r => ({
-        title: `${r.size ?? ""}${r.carat ?? ""}`,
-        color: r.color || "",
-        clarity: r.clarity || "",
-        price: r.price != null ? Math.trunc(Number(r.price)) : null,
-        sale_off_price: r.price != null ? Math.trunc(Number(r.price) * 0.92) : null
-      }));
+    const rows = rowsRaw.map(r => ({
+      title: `${r.size ?? ""}${r.carat ?? ""}`,
+      color: r.color || "",
+      clarity: r.clarity || "",
+      price: r.price != null ? Math.trunc(Number(r.price)) : null,
+      sale_off_price: r.price != null ? Math.trunc(Number(r.price) * 0.92) : null
+    }));
 
-      const result = formatData(rows);
-      return result;
-    } catch (e) {
-      Sentry.captureException(e);
-      throw e;
-    }
+    const result = formatData(rows);
+    return result;
   }
 }
