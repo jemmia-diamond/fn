@@ -16,7 +16,7 @@ model jewelryDiamondPairing {
   @@schema("ecom")
 }
 
-model ecom_leads {
+model ecomLeads {
   id                  Int       @id @default(autoincrement())
   raw_data            Json?
   database_created_at DateTime? @default(now()) @db.Timestamp(6)

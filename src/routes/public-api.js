@@ -23,5 +23,8 @@ export default class PublicAPIRoutes {
 
     // Search
     ecommerceNamespaceApi.get("/search", Ecommerce.SearchController.index);
+
+    // Web form
+    ecommerceNamespaceApi.post("/website-forms", Ecommerce.WebsiteFormSubmissionController.create);
   };
 };
