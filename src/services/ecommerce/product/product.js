@@ -193,6 +193,28 @@ export default class ProductService {
     return result?.[0] || null;
   }
 
+  async get3dMetadataByJewelryId(productId) {
+    const id = BigInt(productId);
+
+    const products = await this.db.$queryRaw`
+      SELECT 
+        p.haravan_product_id AS product_id,
+        CONCAT('glb/', e.file_name) AS path_to_3dm
+      FROM workplace.products p 
+          INNER JOIN workplace.ecom_360 e ON p.id = e.product_id
+      WHERE p.haravan_product_id = ${id}
+    `;
+
+    if (!products || products.length === 0) return null;
+
+    const item = products[0];
+
+    return {
+      product_id: Number(item.product_id),
+      path_to_3dm: item.path_to_3dm
+    };
+  }
+
   static async refreshMaterializedViews(env) {
     const db = Database.instance(env);
     await db.$queryRaw`REFRESH MATERIALIZED VIEW ecom.materialized_products;`;
