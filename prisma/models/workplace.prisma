@@ -171,7 +171,7 @@ model designs_temporary_products {
   @@schema("workplace")
 }
 
-model diamondPriceList {
+model workplaceDiamondPriceList {
   id                  Int       @id @default(autoincrement())
   database_created_at DateTime? @default(now()) @db.Timestamp(6)
   database_updated_at DateTime? @default(now()) @db.Timestamp(6)

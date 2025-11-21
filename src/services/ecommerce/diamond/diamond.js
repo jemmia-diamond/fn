@@ -82,7 +82,7 @@ export default class DiamondService {
   }
 
   async getDiamondPriceList() {
-    const rowsRaw = await this.db.diamondPriceList.findMany({
+    const rowsRaw = await this.db.workplaceDiamondPriceList.findMany({
       select: { size: true, carat: true, color: true, clarity: true, price: true },
       orderBy: [
         { size: "asc" },
