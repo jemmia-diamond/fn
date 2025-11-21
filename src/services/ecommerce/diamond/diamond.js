@@ -1,6 +1,7 @@
 import Database from "services/database";
 import { Prisma } from "@prisma-cli";
 import { buildGetDiamondsQuery } from "services/ecommerce/diamond/utils/diamond";
+import { dataSql, formatData } from "services/ecommerce/diamond/utils/diamond-prices";
 import * as Sentry from "@sentry/cloudflare";
 
 export default class DiamondService {
@@ -78,5 +79,11 @@ export default class DiamondService {
       Sentry.captureException(e);
       throw e;
     }
+  }
+
+  async getDiamondPriceList() {
+    const rows = await this.db.$queryRaw`${Prisma.raw(dataSql)}`;
+    const result = formatData(rows);
+    return result;
   }
 }

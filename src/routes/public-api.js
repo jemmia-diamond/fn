@@ -23,6 +23,8 @@ export default class PublicAPIRoutes {
     ecommerceNamespaceApi.get("/products/diamonds/gia-report", Ecommerce.DiamondProfileImageController.show);
     ecommerceNamespaceApi.get("/products/diamonds/:id", Ecommerce.DiamondController.index);
 
+    ecommerceNamespaceApi.get("/diamonds/prices", Ecommerce.DiamondPricesController.index);
+
     // Search
     ecommerceNamespaceApi.get("/search", Ecommerce.SearchController.index);
 
