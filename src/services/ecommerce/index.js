@@ -7,6 +7,7 @@ import CardService from "services/ecommerce/card/card";
 import WarehouseService from "services/ecommerce/warehouse/warehouse";
 import JewelryDiamondPairService from "services/ecommerce/jewelry-diamond-pair-service";
 import DiamondService from "services/ecommerce/diamond/diamond";
+import FormService from "services/ecommerce/form/form";
 
 export default {
   ProductService: ProductService,
@@ -17,5 +18,6 @@ export default {
   CardService: CardService,
   WarehouseService: WarehouseService,
   DiamondService: DiamondService,
-  JewelryDiamondPairService: JewelryDiamondPairService
+  JewelryDiamondPairService: JewelryDiamondPairService,
+  FormService: FormService
 };
