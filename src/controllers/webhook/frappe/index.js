@@ -2,6 +2,7 @@ import { verifyHmacBase64Auth } from "auth/hmac-base64-auth";
 import FrappePancakeConversationAssignmentController from "controllers/webhook/frappe/pancake/conversation-assignment";
 import FrappeERPContactsController from "controllers/webhook/frappe/erp/contacts/contacts";
 import FrappeERPSalesOrderController from "controllers/webhook/frappe/erp/sales-order/sales-order";
+import FrappeERPPaymentEntryController from "controllers/webhook/frappe/erp/payment-entry/payment-entry";
 
 export default class FrappeWebhook {
   static register(webhook) {
@@ -10,5 +11,6 @@ export default class FrappeWebhook {
     frappeWebhookNamespace.post("/pancake/conversation_assignments", FrappePancakeConversationAssignmentController.create);
     frappeWebhookNamespace.post("/erp/contacts", FrappeERPContactsController.create);
     frappeWebhookNamespace.post("/erp/sales-orders", FrappeERPSalesOrderController.create);
+    frappeWebhookNamespace.post("/erp/payment-entries", FrappeERPPaymentEntryController.create);
   }
 }

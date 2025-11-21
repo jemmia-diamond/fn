@@ -1,8 +1,8 @@
 import * as Sentry from "@sentry/cloudflare";
-import PaymentServices from "services/payment";
 import { BadRequestException } from "src/exception/exceptions";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
+import ManualPaymentService from "services/payment/manual-pay/payment";
 
 dayjs.extend(utc);
 
@@ -67,7 +67,9 @@ export default class ManualPaymentsController {
 
       const paymentData = ManualPaymentsController._parseAndTypecast(body);
 
-      const newPayment = await PaymentServices.ManualPaymentService.createManualPayment(c.env, paymentData);
+      const manualPaymentService = new ManualPaymentService(c.env);
+
+      const newPayment = await manualPaymentService.createManualPayment(paymentData);
 
       if (newPayment) {
         return c.json(ManualPaymentsController._serializePayment(newPayment), 201);
@@ -90,8 +92,9 @@ export default class ManualPaymentsController {
 
       const paymentData = ManualPaymentsController._parseAndTypecast(body);
 
-      const updatedPayment = await PaymentServices.ManualPaymentService.updateManualPayment(
-        c.env,
+      const manualPaymentService = new ManualPaymentService(c.env);
+
+      const updatedPayment = await manualPaymentService.updateManualPayment(
         id,
         paymentData
       );

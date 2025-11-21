@@ -5,6 +5,7 @@ import Contacts from "services/erp/contacts";
 import Core from "services/erp/core";
 import Telephony from "services/erp/telephony";
 import Setup from "services/erp/setup";
+import Accounting from "services/erp/accounting";
 
 export default {
   Automation: Automation,
@@ -13,5 +14,6 @@ export default {
   Contacts: Contacts,
   Core: Core,
   Telephony: Telephony,
-  Setup: Setup
+  Setup: Setup,
+  Accounting: Accounting
 };
