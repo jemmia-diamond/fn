@@ -1,5 +1,5 @@
 function processSize(text) {
-  return Number.isInteger(Number(text)) ? text + "ly" : text.toString().replace(".", "ly");
+  return text.replace(".0", "ly").replaceAll(".", "ly");
 }
 
 function dataAgg(rows, title) {
@@ -50,3 +50,17 @@ export function formatData(rows) {
     data: dataAgg(rows, title)
   }));
 }
+
+export const dataSql = `
+  SELECT
+    CONCAT(dpl."size", dpl.carat) AS title,
+    dpl.color,
+    dpl.clarity,
+    CAST(dpl.price AS INT) AS price,
+    CAST(dpl.price * 0.92 AS INT) AS sale_off_price
+  FROM workplace.diamond_price_list dpl
+  ORDER BY
+    dpl."size" ASC,
+    (dpl.carat IS NOT NULL),
+    dpl.carat ASC
+`;
