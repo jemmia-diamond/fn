@@ -1,4 +1,3 @@
-import * as Sentry from "@sentry/cloudflare";
 import LarksuiteService from "services/larksuite/lark";
 import Database from "services/database";
 import { TABLES } from "services/larksuite/docs/constant";
@@ -85,23 +84,18 @@ export default class RecordService {
   }) {
     const larkClient = await LarksuiteService.createClientV2(env);
 
-    try {
-      const response = await larkClient.bitable.appTableRecord.get({
-        path: {
-          app_token: appToken,
-          table_id: tableId,
-          record_id: recordId
-        },
-        params: {
-          user_id_type: userIdType
-        }
-      });
+    const response = await larkClient.bitable.appTableRecord.get({
+      path: {
+        app_token: appToken,
+        table_id: tableId,
+        record_id: recordId
+      },
+      params: {
+        user_id_type: userIdType
+      }
+    });
 
-      return response.data.record;
-    } catch (error) {
-      Sentry.captureException(error);
-      return null;
-    }
+    return response.data.record;
   }
 
   /**
@@ -120,26 +114,66 @@ export default class RecordService {
   }) {
     const larkClient = await LarksuiteService.createClientV2(env);
 
-    try {
-      const response = await larkClient.bitable.appTableRecord.update({
-        path: {
-          app_token: appToken,
-          table_id: tableId,
-          record_id: recordId
-        },
-        params: {
-          user_id_type: userIdType
-        },
-        data: {
-          fields: fields
-        }
-      });
+    const response = await larkClient.bitable.appTableRecord.update({
+      path: {
+        app_token: appToken,
+        table_id: tableId,
+        record_id: recordId
+      },
+      params: {
+        user_id_type: userIdType
+      },
+      data: {
+        fields: fields
+      }
+    });
 
-      return response.data.record;
-    } catch (error) {
-      Sentry.captureException(error);
-      return null;
-    }
+    return response.data.record;
+  }
+
+  static async createLarksuiteRecords({
+    env, appToken, tableId, records, userIdType = "open_id"
+  }) {
+    const larkClient = await LarksuiteService.createClientV2(env);
+
+    const response = await larkClient.bitable.appTableRecord.batchCreate({
+      path: {
+        app_token: appToken,
+        table_id: tableId
+      },
+      params: {
+        user_id_type: userIdType
+      },
+      data: {
+        records: records.map(e => ({ fields: e }))
+      }
+    });
+
+    return response;
+  }
+
+  static async updateLarksuiteRecords({
+    env, appToken, tableId, records, userIdType = "open_id"
+  }) {
+    const larkClient = await LarksuiteService.createClientV2(env);
+
+    const response = await larkClient.bitable.appTableRecord.batchUpdate({
+      path: {
+        app_token: appToken,
+        table_id: tableId
+      },
+      params: {
+        user_id_type: userIdType
+      },
+      data: {
+        records: records.map(({ record_id, ...fields }) => ({
+          record_id,
+          fields
+        }))
+      }
+    });
+
+    return response.data.records;
   }
 }
 

@@ -10,5 +10,9 @@ export const TABLES = {
   MANUAL_PAYMENT: {
     table_id: "tbltEB1BSxNLzVvj",
     app_token: "SfjFbVLUHaGbhksKPnBlPDEdgZd"
+  },
+  DESIGN_CODE: {
+    table_id: "tblvfKSnxj0ZS1X8",
+    app_token: "QPSDbhGD2adxzpsNoCIlk81Pgzh"
   }
 };
