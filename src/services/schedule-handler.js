@@ -5,6 +5,7 @@ import InventoryCMS from "services/inventory-cms";
 import DatabaseOperations from "services/db-operations";
 import Payment from "services/payment";
 import Misa from "services/misa";
+import ProductQuote from "services/product_quote";
 
 export default {
   scheduled: async (controller, env, _ctx) => {
@@ -22,6 +23,7 @@ export default {
     case "*/10 * * * *": // At every 10th minute
       await ERP.Selling.SerialService.syncSerialsToERP(env);
       await ERP.CRM.LeadService.cronSyncLeadsToDatabase(env);
+      await new ProductQuote.DesignCodeService(env).syncDesignCodeToLark();
       break;
     case "*/15 * * * *": // At every 15th minute
       await ERP.Contacts.ContactService.cronSyncContactsToDatabase(env);
