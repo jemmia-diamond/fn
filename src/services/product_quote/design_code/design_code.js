@@ -4,6 +4,7 @@ import { Prisma } from "@prisma-cli/client";
 import utc from "dayjs/plugin/utc.js";
 import dayjs from "dayjs";
 import RecordService from "services/larksuite/docs/base/record/record";
+import * as Sentry from "@sentry/cloudflare";
 
 dayjs.extend(utc);
 
@@ -139,62 +140,69 @@ export default class DesignCodeService {
     const KV_KEY = "design_code_to_lark:last_date";
     const lastDate = await kv.get(KV_KEY);
 
-    const minutesBack = 100;
+    const minutesBack = 10;
     const fromDate = lastDate || dayjs().utc().subtract(minutesBack, "minutes").format("YYYY-MM-DD HH:mm:ss");
     const toDate = dayjs().utc().format("YYYY-MM-DD HH:mm:ss");
 
-    const newDesigns = await this.findNewDesigns({
-      limit: 100,
-      updatedAt: fromDate,
-      offset: 0
-    });
-
-    if (newDesigns && newDesigns.length > 0) {
-      const recordItems = newDesigns.map(d => ({
-        fields: this.mapToLarkFields(d)
-      }));
-
-      const createdRecords = await RecordService.createLarksuiteRecords({
-        env: this.env,
-        appToken: designCodeAppToken,
-        tableId: designCodeTableId,
-        records: recordItems,
-        userIdType: "open_id"
+    try {
+      const newDesigns = await this.findNewDesigns({
+        limit: 100,
+        updatedAt: fromDate,
+        offset: 0
       });
 
-      if (createdRecords && createdRecords.length === newDesigns.length) {
-        const updatedNewDesigns = newDesigns.map((design, idx) => ({
-          ...design,
-          lark_record_id: createdRecords[idx].record_id
+      if (newDesigns && newDesigns.length > 0) {
+        const recordItems = newDesigns.map(d => ({
+          fields: this.mapToLarkFields(d)
         }));
 
-        await this.upsertDesigns(updatedNewDesigns);
+        const createdRecords = await RecordService.createLarksuiteRecords({
+          env: this.env,
+          appToken: designCodeAppToken,
+          tableId: designCodeTableId,
+          records: recordItems,
+          userIdType: "open_id"
+        });
+
+        if (createdRecords && createdRecords.length === newDesigns.length) {
+          const updatedNewDesigns = newDesigns.map((design, idx) => ({
+            ...design,
+            lark_record_id: createdRecords[idx].record_id
+          }));
+
+          await this.upsertDesigns(updatedNewDesigns);
+        }
       }
-    }
 
-    const existingDesigns = await this.findUpdateDesigns({
-      limit: 100,
-      updatedAt: fromDate,
-      offset: 0
-    });
-
-    if (existingDesigns && existingDesigns.length > 0) {
-      const updateRecordItems = existingDesigns.map(design => ({
-        record_id: design.lark_record_id,
-        ...this.mapToLarkFields(design)
-      }));
-
-      await RecordService.updateLarksuiteRecords({
-        env: this.env,
-        appToken: designCodeAppToken,
-        tableId: designCodeTableId,
-        records: updateRecordItems,
-        userIdType: "open_id"
+      const existingDesigns = await this.findUpdateDesigns({
+        limit: 100,
+        updatedAt: fromDate,
+        offset: 0
       });
 
-      await this.upsertDesigns(existingDesigns);
-    }
+      if (existingDesigns && existingDesigns.length > 0) {
+        const updateRecordItems = existingDesigns.map(design => ({
+          record_id: design.lark_record_id,
+          ...this.mapToLarkFields(design)
+        }));
 
-    await kv.put(KV_KEY, toDate);
+        await RecordService.updateLarksuiteRecords({
+          env: this.env,
+          appToken: designCodeAppToken,
+          tableId: designCodeTableId,
+          records: updateRecordItems,
+          userIdType: "open_id"
+        });
+
+        await this.upsertDesigns(existingDesigns);
+      }
+
+      await kv.put(KV_KEY, toDate);
+    } catch (error) {
+      Sentry.captureException(error);
+      if (dayjs(toDate).diff(dayjs(await kv.get(KV_KEY)), "hour") >= 1) {
+        await kv.put(KV_KEY, toDate);
+      }
+    }
   }
 }
