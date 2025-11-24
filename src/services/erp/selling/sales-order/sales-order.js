@@ -112,7 +112,7 @@ export default class SalesOrderService {
       fulfillment_status: this.fulfillmentStatusMapper[haravanOrderData.fulfillment_status],
       cancelled_status: this.cancelledStatusMapper[haravanOrderData.cancelled_status],
       carrier_status: haravanOrderData.fulfillments.length ? this.carrierStatusMapper[haravanOrderData.fulfillments[0].carrier_status_code] : this.carrierStatusMapper.notdelivered,
-      transaction_date: convertIsoToDatetime(haravanOrderData.created_at, "date"),
+      transaction_date: dayjs(haravanOrderData.created_at).add(7, "hour").format("YYYY-MM-DD"),
       haravan_created_at: convertIsoToDatetime(haravanOrderData.created_at, "datetime"),
       total: haravanOrderData.total_line_items_price,
       payment_records: haravanOrderData.transactions.filter(transaction => transaction.kind.toLowerCase() === "capture").map(this.mapPaymentRecordFields),
@@ -122,7 +122,7 @@ export default class SalesOrderService {
       grand_total: haravanOrderData.total_price,
       paid_amount: paidAmount,
       balance: haravanOrderData.total_price - paidAmount,
-      real_order_date: await this.getRealOrderDate(haravanOrderData.id) || dayjs(haravanOrderData.created_at).utc().format("YYYY-MM-DD"),
+      real_order_date: await this.getRealOrderDate(haravanOrderData.id) || dayjs(haravanOrderData.created_at).add(7, "hour").format("YYYY-MM-DD"),
       ref_sales_orders: await this.mapRefSalesOrder(haravanOrderData.id)
     };
     const order = await this.frappeClient.upsert(mappedOrderData, "haravan_order_id", ["items"]);
@@ -208,7 +208,7 @@ export default class SalesOrderService {
 
     // getRefOrderChain returns orders sorted by created_at ASC, so the first one is the original order
     const firstOrder = refOrders[0];
-    return dayjs(firstOrder.created_at).utc().format("YYYY-MM-DD");
+    return dayjs(firstOrder.created_at).add(7, "hour").format("YYYY-MM-DD");
   };
 
   mapLineItemsFields = (lineItemData) => {
