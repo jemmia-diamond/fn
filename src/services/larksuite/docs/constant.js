@@ -11,6 +11,10 @@ export const TABLES = {
     table_id: "tbltEB1BSxNLzVvj",
     app_token: "SfjFbVLUHaGbhksKPnBlPDEdgZd"
   },
+  QR_PAYMENT: {
+    table_id: "tblp2wmtsTruZVZR",
+    app_token: "SfjFbVLUHaGbhksKPnBlPDEdgZd"
+  },
   DESIGN_CODE: {
     table_id: "tblvfKSnxj0ZS1X8",
     app_token: "QPSDbhGD2adxzpsNoCIlk81Pgzh"

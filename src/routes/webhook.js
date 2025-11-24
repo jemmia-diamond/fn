@@ -6,6 +6,7 @@ import PancakeWebhook from "controllers/webhook/pancake";
 import InventoryCmsWebhook from "controllers/webhook/inventory-cms";
 import ZaloMessageWebhook from "controllers/webhook/zalo-message";
 import MisaWebhook from "controllers/webhook/misa";
+import SepayWebhook from "controllers/webhook/sepay";
 
 export default class WebhookRoutes {
   static register(webhook) {
@@ -20,5 +21,6 @@ export default class WebhookRoutes {
     InventoryCmsWebhook.register(webhook);
     ZaloMessageWebhook.register(webhook);
     MisaWebhook.register(webhook);
+    SepayWebhook.register(webhook);
   };
 };
