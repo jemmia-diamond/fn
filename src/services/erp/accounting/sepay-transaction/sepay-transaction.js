@@ -3,9 +3,9 @@ import Database from "src/services/database";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import * as Sentry from "@sentry/cloudflare";
-import OrderTransactionClient from "services/haravan/api-client/modules/order-transactions/order-transaction-client";
 import { TABLES } from "services/larksuite/docs/constant";
 import RecordService from "services/larksuite/docs/base/record/record";
+import HaravanAPI from "services/clients/haravan-client";
 
 dayjs.extend(utc);
 
@@ -47,10 +47,15 @@ export default class SepayTransactionService {
 
     if (!qr) throw new Error("QR code not found");
 
-    if (!isOrderLater) {
-      const transactionClient = new OrderTransactionClient(this.env);
+    const HRV_API_KEY = await env.HARAVAN_TOKEN_SECRET.get();
+    if (!HRV_API_KEY) {
+      throw new BadRequestException("Haravan API credentials or base URL are not configured in the environment.");
+    }
 
-      const created = await transactionClient.createTransaction(
+    if (!isOrderLater) {
+      const hrvClient = new HaravanAPI(HRV_API_KEY);
+
+      const created = await hrvClient.orderTransaction.createTransaction(
         qr.haravan_order_id,
         {
           amount: transferAmount,
