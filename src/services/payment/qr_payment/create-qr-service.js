@@ -99,12 +99,15 @@ export default class CreateQRService {
       transfer_amount: body.transfer_amount,
       lark_record_id: body.lark_record_id || "",
       haravan_order_number: isOrderLater ? "ORDERLATER" : body.haravan_order_number,
-      haravan_order_id: body.haravan_order_id,
-      haravan_order_status: body.haravan_order_status,
-      haravan_order_total_price: body.haravan_order_total_price,
       customer_name: isOrderLater ? body.customer_name_order_later : body.customer_name,
       customer_phone_number: isOrderLater ? body.customer_phone_order_later : body.customer_phone_number
     };
+
+    if (!isOrderLater) {
+      transactionBody.haravan_order_id = body.haravan_order_id;
+      transactionBody.haravan_order_status = body.haravan_order_status;
+      transactionBody.haravan_order_total_price = body.haravan_order_total_price;
+    }
 
     if (body.payment_entry_name) {
       transactionBody.payment_entry_name = body.payment_entry_name;
