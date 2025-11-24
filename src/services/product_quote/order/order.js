@@ -6,7 +6,7 @@ import { TABLES } from "services/larksuite/docs/constant";
 export default class ProductQuoteOrderService {
   constructor(env) {
     this.env = env;
-    this.db = Database.instance(env, "neon");
+    this.db = Database.instance(env);
   }
 
   static async dequeueOrderQueue(batch, _env) {

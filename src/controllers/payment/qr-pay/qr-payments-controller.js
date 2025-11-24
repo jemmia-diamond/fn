@@ -1,8 +1,7 @@
 import * as Sentry from "@sentry/cloudflare";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
-import CreateQRService from "services/payment/qr_payment/create-qr-service";
-
+import PaymentService from "services/payment";
 dayjs.extend(utc);
 
 export default class QRPaymentsController {
@@ -33,7 +32,7 @@ export default class QRPaymentsController {
 
       const qrData = QRPaymentsController.preProcessQRRequest(body);
 
-      const createQRService = new CreateQRService(c.env);
+      const createQRService = new PaymentService.CreateQRService(c.env);
 
       const createdQR = await createQRService.handlePostQr(qrData);
 

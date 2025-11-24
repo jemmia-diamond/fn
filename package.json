@@ -7,7 +7,6 @@
     "deploy": "wrangler deploy --minify --outdir dist --upload-source-maps --var SENTRY_RELEASE:$(sentry-cli releases propose-version)",
     "lint": "eslint",
     "lint:staged": "lint-staged",
-    "prepare": "husky",
     "format": "eslint --fix",
     "sentry:sourcemaps": "_SENTRY_RELEASE=$(sentry-cli releases propose-version) && sentry-cli releases new $_SENTRY_RELEASE --org=jemmia --project=jemmia-fn && sentry-cli sourcemaps upload --org=jemmia --project=jemmia-fn --release=$_SENTRY_RELEASE --strip-prefix 'dist/..' dist",
     "postdeploy": "pnpm sentry:sourcemaps"
@@ -17,8 +16,7 @@
     "@haverstack/axios-fetch-adapter": "^0.12.0",
     "@hono/sentry": "^1.2.1",
     "@larksuiteoapi/node-sdk": "1.47.1",
-    "@neondatabase/serverless": "^1.0.1",
-    "@prisma/adapter-neon": "^6.15.0",
+    "@prisma/adapter-pg": "^6.15.0",
     "@prisma/client": "^6.15.0",
     "@sentry/cloudflare": "^10.19.0",
     "axios": "^1.13.2",
@@ -27,6 +25,7 @@
     "dayjs": "^1.11.13",
     "form-data": "^4.0.4",
     "hono": "^4.10.4",
+    "pg": "^8.16.3",
     "uuid": "^11.1.0"
   },
   "devDependencies": {

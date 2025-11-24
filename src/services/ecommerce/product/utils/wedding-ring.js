@@ -1,7 +1,47 @@
 export function buildWeddingRingsQuery(jsonParams) {
   const { filterString, sortString, paginationString } = aggregateQuery(jsonParams);
 
-  const dataSql = `
+  const dataSql = findDataSql({
+    filterString,
+    sortString,
+    paginationString
+  });
+
+  const countSql = findCountSql({
+    filterString
+  });
+  return {
+    dataSql,
+    countSql
+  };
+}
+
+export function buildWeddingRingByIdQuery(weddingRingId) {
+  const sortString = "";
+  const paginationString = "";
+  const filterString = `
+    AND d.wedding_ring_id IN (
+      SELECT
+        d.wedding_ring_id 
+      FROM workplace.products p 
+        INNER JOIN workplace.designs d ON p.design_id = d.id 
+      WHERE p.haravan_product_id = ${weddingRingId}
+    )
+  `;
+  const dataSql = findDataSql({
+    filterString,
+    sortString,
+    paginationString
+  });
+  return dataSql;
+}
+
+export function findDataSql({
+  filterString,
+  sortString,
+  paginationString
+}) {
+  return `
     SELECT 
         wr.id,
         wr.title,
@@ -54,8 +94,10 @@ export function buildWeddingRingsQuery(jsonParams) {
     ${paginationString}
 
   `;
+}
 
-  const countSql = `
+export function findCountSql({ filterString }) {
+  return `
     SELECT 
       CAST(COUNT(DISTINCT wr.id) AS INT) AS total,
       (SELECT ARRAY_AGG(DISTINCT mwr.fineness) FROM ecom.materialized_wedding_rings mwr WHERE mwr.fineness NOT LIKE '%,%' ) AS fineness,
@@ -66,11 +108,6 @@ export function buildWeddingRingsQuery(jsonParams) {
     WHERE 1 = 1
     ${filterString}
   `;
-
-  return {
-    dataSql,
-    countSql
-  };
 }
 
 export function aggregateQuery(jsonParams) {

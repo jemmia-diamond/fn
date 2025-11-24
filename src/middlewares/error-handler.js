@@ -4,16 +4,18 @@ import { HTTPException } from "hono/http-exception";
 export default async (c, next) => {
   try {
     await next();
+
+    // Don't send 404 responses to Sentry
+    if (c.res.status === 404) { return; }
   } catch (error) {
     // If it's already an HTTPException, let it bubble up
     if (error instanceof HTTPException) {
       throw error;
     }
 
-    // Log the error with context
     Sentry.captureException(error);
 
     // Return generic 500 error to client
-    throw new HTTPException(500, "Internal server error");
+    return c.json({ error: "Internal server error" }, 500);
   }
 };

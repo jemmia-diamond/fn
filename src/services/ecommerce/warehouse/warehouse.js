@@ -4,7 +4,7 @@ import { buildQuery } from "services/ecommerce/warehouse/utils/warehouse";
 
 export default class WarehouseService {
   constructor(env) {
-    this.db = Database.instance(env, "neon");
+    this.db = Database.instance(env);
   }
 
   async getAvailableWarehouses(productId) {

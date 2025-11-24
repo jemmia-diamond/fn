@@ -3,7 +3,7 @@ import Database from "src/services/database";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import * as Sentry from "@sentry/cloudflare";
-import CreateQRService from "src/services/payment/qr_payment/create-qr-service";
+import PaymentService from "services/payment";
 
 dayjs.extend(utc);
 
@@ -18,8 +18,9 @@ export default class PaymentEntryService {
         apiSecret: env.JEMMIA_ERP_API_SECRET
       }
     );
+
     this.db = Database.instance(env);
-    this.createQRService = new CreateQRService(env);
+    this.createQRService = new PaymentService.CreateQRService(env);
   };
 
   async processPaymentEntry(paymentEntry) {

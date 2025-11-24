@@ -13,7 +13,7 @@ export default class InventoryCheckSheetService {
   static PAGE_SIZE = 50;
   constructor(env) {
     this.env = env;
-    this.db = Database.instance(env, "neon");
+    this.db = Database.instance(env);
   }
 
   async processInventoryCheckSheetToDatabase(data) {

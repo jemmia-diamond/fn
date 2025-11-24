@@ -38,13 +38,6 @@ export default class APIRoutes {
     dashboardNamespaceApi.get("/tv", Dashboard.TVController.show);
 
     const ecommerceNamespaceApi = api.basePath("/ecommerce");
-    ecommerceNamespaceApi.get("/search", Ecommerce.SearchController.index);
-    ecommerceNamespaceApi.get("/product/jewelries", Ecommerce.JewelryController.index); // [DEPRECATED]
-    ecommerceNamespaceApi.get("/product/wedding_rings", Ecommerce.WeddingRingController.index);
-
-    ecommerceNamespaceApi.get("/products/diamonds", Ecommerce.DiamondProfileImageController.show);
-    ecommerceNamespaceApi.get("/products/jewelries", Ecommerce.JewelryController.index);
-    ecommerceNamespaceApi.get("/products/wedding_rings", Ecommerce.WeddingRingController.index);
     ecommerceNamespaceApi.delete("/ind-day-stats", Ecommerce.IndDayStatController.destroy);
     ecommerceNamespaceApi.post("/products/jewelries/diamond-replacements", Ecommerce.JewelryDiamondPairController.create);
 
@@ -62,6 +55,7 @@ export default class APIRoutes {
 
     const salesayaNamespaceApi = api.basePath("/salesaya");
     salesayaNamespaceApi.get("/product-searches", Salesaya.ProductSearchController.index);
+    salesayaNamespaceApi.get("/warehouses", Salesaya.WarehouseController.index);
 
     const larksuiteApi = api.basePath("/larksuites");
     larksuiteApi.get("/buyback-exchanges", Larksuite.BuybackExchangeController.index);
