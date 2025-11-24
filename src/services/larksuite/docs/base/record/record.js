@@ -141,5 +141,60 @@ export default class RecordService {
       return null;
     }
   }
+
+  static async createLarksuiteRecords({
+    env, appToken, tableId, records, userIdType = "open_id"
+  }) {
+    const larkClient = await LarksuiteService.createClientV2(env);
+
+    try {
+      const response = await larkClient.bitable.appTableRecord.batchCreate({
+        path: {
+          app_token: appToken,
+          table_id: tableId
+        },
+        params: {
+          user_id_type: userIdType
+        },
+        data: {
+          records: records.map(e => ({ fields: e }))
+        }
+      });
+
+      return response;
+    } catch (error) {
+      Sentry.captureException(error);
+      return null;
+    }
+  }
+
+  static async updateLarksuiteRecords({
+    env, appToken, tableId, records, userIdType = "open_id"
+  }) {
+    const larkClient = await LarksuiteService.createClientV2(env);
+
+    try {
+      const response = await larkClient.bitable.appTableRecord.batchUpdate({
+        path: {
+          app_token: appToken,
+          table_id: tableId
+        },
+        params: {
+          user_id_type: userIdType
+        },
+        data: {
+          records: records.map(({ record_id, ...fields }) => ({
+            record_id,
+            fields
+          }))
+        }
+      });
+
+      return response.data.records;
+    } catch (error) {
+      Sentry.captureException(error);
+      return null;
+    }
+  }
 }
 
