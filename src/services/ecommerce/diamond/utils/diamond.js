@@ -45,21 +45,34 @@ function buildFilterString(jsonParams) {
   }
 
   if (jsonParams.linked_collections && jsonParams.linked_collections.length > 0) {
-    const collectionIds = jsonParams.linked_collections.map(c => parseInt(c, 10)).filter(c => !isNaN(c));
-    if (collectionIds.length > 0) {
-      const collectionIdString = collectionIds.join(",");
+    const collectionNames = jsonParams.linked_collections.map(f => escapeSingleQuotes(f)).join("','");
+    if (collectionNames) {
       filterString += `
-        AND d.id IN (
-          SELECT m2m.diamonds_id
-          FROM workplace._nc_m2m_diamonds_haravan_collect m2m
-          WHERE m2m.haravan_collections_id IN (${collectionIdString})
-        )
         AND NOT EXISTS (
           SELECT 1
-          FROM workplace._nc_m2m_diamonds_haravan_collect m2m2
-          JOIN workplace.haravan_collections hc2 ON m2m2.haravan_collections_id = hc2.id
-          WHERE m2m2.diamonds_id = d.id
-            AND hc2.is_excluded = true
+          FROM workplace._nc_m2m_diamonds_haravan_collect m
+          JOIN workplace.haravan_collections hc ON m.haravan_collections_id = hc.id
+          WHERE m.diamonds_id = d.id
+            AND hc.title IN ('${collectionNames}')
+            AND hc.is_excluded = true
+        )
+
+        AND (
+          NOT EXISTS (
+            SELECT 1
+            FROM workplace.haravan_collections hc2
+            WHERE hc2.title IN ('${collectionNames}')
+              AND hc2.is_excluded = false
+          )
+          OR
+          EXISTS (
+            SELECT 1
+            FROM workplace._nc_m2m_diamonds_haravan_collect m2
+            JOIN workplace.haravan_collections hc3 ON m2.haravan_collections_id = hc3.id
+            WHERE m2.diamonds_id = d.id
+              AND hc3.title IN ('${collectionNames}')
+              AND hc3.is_excluded = false
+          )
         )
       `;
     }
