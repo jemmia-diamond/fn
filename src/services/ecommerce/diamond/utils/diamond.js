@@ -44,6 +44,27 @@ function buildFilterString(jsonParams) {
     filterString += `AND edge_size_2 <= ${parseFloat(jsonParams.edge_size.upper)}\n`;
   }
 
+  if (jsonParams.linked_collections && jsonParams.linked_collections.length > 0) {
+    const collectionIds = jsonParams.linked_collections.map(c => parseInt(c, 10)).filter(c => !isNaN(c));
+    if (collectionIds.length > 0) {
+      const collectionIdString = collectionIds.join(",");
+      filterString += `
+        AND d.id IN (
+          SELECT m2m.diamonds_id
+          FROM workplace._nc_m2m_diamonds_haravan_collect m2m
+          WHERE m2m.haravan_collections_id IN (${collectionIdString})
+        )
+        AND NOT EXISTS (
+          SELECT 1
+          FROM workplace._nc_m2m_diamonds_haravan_collect m2m2
+          JOIN workplace.haravan_collections hc2 ON m2m2.haravan_collections_id = hc2.id
+          WHERE m2m2.diamonds_id = d.id
+            AND hc2.is_excluded = true
+        )
+      `;
+    }
+  }
+
   return filterString;
 }
 

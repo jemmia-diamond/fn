@@ -28,7 +28,8 @@ export default class DiamondController {
       pagination: {
         limit: isNaN(limit) || limit <= 0 ? 20 : Math.min(limit, 100),
         from: isNaN(from) || from <= 0 ? 1 : from
-      }
+      },
+      linked_collections: params.linked_collections ? params.linked_collections.split(",") : []
     };
 
     const diamondService = new DiamondService(ctx.env);
