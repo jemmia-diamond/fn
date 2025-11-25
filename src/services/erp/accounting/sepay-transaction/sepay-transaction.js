@@ -6,6 +6,7 @@ import * as Sentry from "@sentry/cloudflare";
 import { TABLES } from "services/larksuite/docs/constant";
 import RecordService from "services/larksuite/docs/base/record/record";
 import HaravanAPI from "services/clients/haravan-client";
+import { BadRequestException } from "src/exception/exceptions";
 
 dayjs.extend(utc);
 
@@ -47,7 +48,7 @@ export default class SepayTransactionService {
 
     if (!qr) throw new Error("QR code not found");
 
-    const HRV_API_KEY = await env.HARAVAN_TOKEN_SECRET.get();
+    const HRV_API_KEY = await this.env.HARAVAN_TOKEN_SECRET.get();
     if (!HRV_API_KEY) {
       throw new BadRequestException("Haravan API credentials or base URL are not configured in the environment.");
     }
