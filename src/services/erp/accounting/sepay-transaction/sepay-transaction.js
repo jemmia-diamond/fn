@@ -102,7 +102,7 @@ export default class SepayTransactionService {
       });
     }
 
-    if (qr.transfer_status === "success") {
+    if (qr.transfer_status === "success" && !isOrderLater && qr.haravan_order_id) {
       await this.enqueueMisaBackgroundJob(qr);
     }
     return true;
