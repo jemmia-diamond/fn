@@ -4,6 +4,7 @@ import MisaClient from "services/clients/misa-client";
 import VoucherMappingService from "services/misa/mapping/voucher-mapping-service";
 import { VOUCHER_TYPES, VOUCHER_REF_TYPES } from "services/misa/constant";
 import Misa from "services/misa";
+import Payment from "services/payment";
 import dayjs from "dayjs";
 
 export default class QrTransactionService {
@@ -69,12 +70,13 @@ export default class QrTransactionService {
   }
 
   async findQrRecordByGuid(id) {
+    const fetchService = new Payment.QrPaymentFetchingService(this.env);
     return this.db.qrPaymentTransaction.findUnique({
       where: {
         id,
         is_deleted: false
       },
-      select: Misa.QrTransactionService.misaRequiredFields()
+      select: fetchService.misaRequiredFields()
     });
   }
 }
