@@ -39,6 +39,8 @@ export default class QrPaymentFetchingService {
       created_at: true,
       updated_at: true,
       haravan_order_id: true,
+      misa_sync_guid: true,
+      misa_synced_at: true,
       haravan_order: {
         select: {
           id: true,

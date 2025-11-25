@@ -14,6 +14,10 @@ export default class QrTransactionService {
   }
 
   async processTransaction(qrTransaction) {
+    if (qrTransaction.misa_sync_guid && qrTransaction.misa_synced_at) {
+      return true;
+    }
+
     const currentTime = dayjs().utc().toDate();
     const misaClient = new MisaClient(this.env);
     await misaClient.getAccessToken();
