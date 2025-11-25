@@ -47,6 +47,17 @@ export default class QRPaymentsController {
     }
   }
 
+  static async show(c) {
+    const findQRService = new PaymentService.FindQRService(c.env);
+    const { id } = c.req.param();
+    const queryParams = c.req.query();
+    const result = await findQRService.getOneById(id, queryParams);
+    if (result) {
+      return c.json(QRPaymentsController._serializePayment(result));
+    }
+    return c.json(null);
+  }
+
   static _serializePayment(payment) {
     if (!payment) {
       return null;
