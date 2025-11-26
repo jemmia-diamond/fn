@@ -10,23 +10,6 @@ import { BadRequestException } from "src/exception/exceptions";
 
 dayjs.extend(utc);
 
-function standardizeOrderNumber(content) {
-  if (!content) {
-    return { orderNumber: null, orderDesc: null };
-  }
-  const pattern = /(?:SEVQR\s+)?(ORDER\w+(?:\s+\d+)?|ORDERLATER(?:\s+\d+)?)/;
-  const match = content.match(pattern);
-  if (!match) {
-    return { orderNumber: null, orderDesc: null };
-  }
-
-  const orderDesc = match[0];
-  const parts = orderDesc.split(" ");
-  const orderNumber = parts[0] === "SEVQR" ? parts[1] : parts[0];
-
-  return { orderNumber, orderDesc };
-}
-
 export default class SepayTransactionService {
   constructor(env) {
     this.env = env;
@@ -43,7 +26,7 @@ export default class SepayTransactionService {
   async processTransaction(sepayTransaction) {
     const { content, transferAmount } = sepayTransaction;
 
-    const { orderNumber, orderDesc } = standardizeOrderNumber(content);
+    const { orderNumber, orderDesc } = this.standardizeOrderNumber(content);
 
     if (!orderNumber && !orderDesc) {
       if (!match) throw new Error("Order description not found");
@@ -113,10 +96,47 @@ export default class SepayTransactionService {
     return true;
   }
 
-  async sendToLark(sepayTransaction) {
+  standardizeOrderNumber(content) {
+    if (!content) {
+      return { orderNumber: null, orderDesc: null };
+    }
+    const pattern = /(?:SEVQR\s+)?(ORDER\w+(?:\s+\d+)?|ORDERLATER(?:\s+\d+)?)/;
+    const match = content.match(pattern);
+    if (!match) {
+      return { orderNumber: null, orderDesc: null };
+    }
+
+    const orderDesc = match[0];
+    const parts = orderDesc.split(" ");
+    const orderNumber = parts[0] === "SEVQR" ? parts[1] : parts[0];
+
+    return { orderNumber, orderDesc };
+  }
+
+  mapRawSepayTransactionToPrisma(rawSepayTransaction) {
+    return {
+      id: String(rawSepayTransaction.id),
+      bank_brand_name: rawSepayTransaction.gateway,
+      account_number: rawSepayTransaction.accountNumber,
+      transaction_date: rawSepayTransaction.transactionDate,
+      amount_out: String(rawSepayTransaction.amountOut ?? 0.0),
+      amount_in: String(rawSepayTransaction.transferAmount ?? 0.0),
+      accumulated: String(rawSepayTransaction.accumulated),
+      transaction_content: rawSepayTransaction.content,
+      reference_number: rawSepayTransaction.referenceCode,
+      code: rawSepayTransaction.code,
+      sub_account: rawSepayTransaction.subAccount,
+      bank_account_id: null
+    };
+  }
+
+  async sendToLark(rawSepayTransaction) {
+
+    const sepayTransaction = this.mapRawSepayTransactionToPrisma(rawSepayTransaction);
+
     if (parseFloat(sepayTransaction.amount_in) < 0) return;
 
-    const { orderNumber, orderDesc } = standardizeOrderNumber(sepayTransaction.transaction_content);
+    const { orderNumber, orderDesc } = this.standardizeOrderNumber(sepayTransaction.transaction_content);
 
     const fields = {
       "Số Tiền Giao Dịch": Number(sepayTransaction.amount_in),
@@ -136,33 +156,35 @@ export default class SepayTransactionService {
       userIdType: "open_id"
     };
 
-    const sepayTransactionId = sepayTransaction.id;
-
     const existingTransaction = await this.db.sepay_transaction.findUnique({
-      where: { id: sepayTransactionId }
+      where: { id: sepayTransaction.id }
     });
 
+    let upsertedLarkRecord = null;
     if (existingTransaction && existingTransaction.lark_record_id) {
-      await RecordService.updateLarksuiteRecord({
+      upsertedLarkRecord = await RecordService.updateLarksuiteRecord({
         ...larkParams,
-        recordId: sepayTransaction.lark_record_id,
+        recordId: existingTransaction.lark_record_id,
         fields
       });
     } else {
-      const { data } = await RecordService.createLarksuiteRecord({
+      upsertedLarkRecord = await RecordService.createLarksuiteRecord({
         ...larkParams,
         fields
       });
-      if (data && data.record_id) {
-        await this.db.sepayTransaction.update({
-          where: { id: sepayTransaction.id },
-          data: { lark_record_id: data.record_id }
-        });
-      }
+    }
+    if (upsertedLarkRecord && upsertedLarkRecord.id) {
+      await this.db.sepay_transaction.update({
+        where: { id: existingTransaction.id },
+        data: { lark_record_id: upsertedLarkRecord.id }
+      });
     }
   }
 
-  async saveToDb(sepayTransaction) {
+  async saveToDb(rawSepayTransaction) {
+
+    const sepayTransaction = this.mapRawSepayTransactionToPrisma(rawSepayTransaction);
+
     if (parseFloat(sepayTransaction.amount_in) < 0) return;
     const {
       id,
