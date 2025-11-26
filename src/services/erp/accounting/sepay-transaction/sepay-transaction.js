@@ -188,7 +188,7 @@ export default class SepayTransactionService {
       const upsertedBankTransaction = await this.frappeClient.upsert(
         {
           doctype: "Bank Transaction",
-          name: existingTransaction.bank_transaction_name,
+          name: existingTransaction.bank_transaction_name ?? "",
           sepay_id: sepayTransaction.id,
           sepay_order_number: orderNumber,
           sepay_order_description: orderDesc,
