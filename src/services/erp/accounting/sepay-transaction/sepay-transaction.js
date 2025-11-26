@@ -131,7 +131,6 @@ export default class SepayTransactionService {
   }
 
   async sendToLark(rawSepayTransaction, existingTransaction) {
-
     const sepayTransaction = this.mapRawSepayTransactionToPrisma(rawSepayTransaction);
 
     if (parseFloat(sepayTransaction.amount_in) < 0) return;
