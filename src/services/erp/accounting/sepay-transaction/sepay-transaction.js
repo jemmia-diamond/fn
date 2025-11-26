@@ -216,7 +216,6 @@ export default class SepayTransactionService {
   }
 
   async saveToDb(rawSepayTransaction) {
-
     const sepayTransaction = this.mapRawSepayTransactionToPrisma(rawSepayTransaction);
 
     if (parseFloat(sepayTransaction.amount_in) < 0) return;
@@ -235,35 +234,30 @@ export default class SepayTransactionService {
       bank_account_id
     } = sepayTransaction;
 
-    try {
-      const upsertedTransaction = await this.db.sepay_transaction.upsert({
-        where: { id },
-        update: {
-          bank_brand_name,
-          account_number,
-          transaction_date,
-          amount_out,
-          amount_in,
-          accumulated,
-          transaction_content,
-          reference_number,
-          code,
-          sub_account,
-          bank_account_id,
-          updated_at: new Date()
-        },
-        create: sepayTransaction
-      });
+    const upsertedTransaction = await this.db.sepay_transaction.upsert({
+      where: { id },
+      update: {
+        bank_brand_name,
+        account_number,
+        transaction_date,
+        amount_out,
+        amount_in,
+        accumulated,
+        transaction_content,
+        reference_number,
+        code,
+        sub_account,
+        bank_account_id,
+        updated_at: new Date()
+      },
+      create: sepayTransaction
+    });
 
-      if (!upsertedTransaction) {
-        throw new Error("Failed to save Sepay transaction to database");
-      }
-
-      return upsertedTransaction;
-    } catch (e) {
-      Sentry.captureException(e);
-      return null;
+    if (!upsertedTransaction) {
+      throw new Error("Failed to save Sepay transaction to database");
     }
+
+    return upsertedTransaction;
   }
 
   async findQrRecord({ orderNumber, orderDesc, transferAmount }) {
