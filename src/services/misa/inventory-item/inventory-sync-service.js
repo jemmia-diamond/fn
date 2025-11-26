@@ -7,6 +7,8 @@ import ProductToMisaMapper from "services/haravan/dtos/product-to-misa";
 import Misa from "services/misa";
 
 export default class MisaInventoryItemSyncService {
+  static RATE_LIMIT_DELAY = 500;
+
   constructor(env) {
     this.env = env;
     this.db = Database.instance(env);
@@ -47,6 +49,10 @@ export default class MisaInventoryItemSyncService {
     const limit = 50;
 
     while (hasMore) {
+      if (page > 1) {
+        await this._sleep(MisaInventoryItemSyncService.RATE_LIMIT_DELAY);
+      }
+
       const response = await haravanClient.product.getProducts({
         updated_at_min: updatedAtMin,
         page,
@@ -61,6 +67,10 @@ export default class MisaInventoryItemSyncService {
         hasMore = false;
       }
     }
+  }
+
+  _sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 
   async _processProductBatch(products, misaClient) {
