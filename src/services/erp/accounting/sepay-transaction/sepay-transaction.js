@@ -123,7 +123,7 @@ export default class SepayTransactionService {
 
   async enqueueMisaBackgroundJob(qrRecord) {
     const payload = {
-      job_type: Misa.JOB_TYPE.CREATE_QR_VOUCHER,
+      job_type: Misa.Constants.JOB_TYPE.CREATE_QR_VOUCHER,
       data: {
         qr_transaction_id: qrRecord.id
       }
