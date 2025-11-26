@@ -10,6 +10,23 @@ import { BadRequestException } from "src/exception/exceptions";
 
 dayjs.extend(utc);
 
+function standardizeOrderNumber(content) {
+  if (!content) {
+    return { orderNumber: null, orderDesc: null };
+  }
+  const pattern = /(?:SEVQR\s+)?(ORDER\w+(?:\s+\d+)?|ORDERLATER(?:\s+\d+)?)/;
+  const match = content.match(pattern);
+  if (!match) {
+    return { orderNumber: null, orderDesc: null };
+  }
+
+  const orderDesc = match[0];
+  const parts = orderDesc.split(" ");
+  const orderNumber = parts[0] === "SEVQR" ? parts[1] : parts[0];
+
+  return { orderNumber, orderDesc };
+}
+
 export default class SepayTransactionService {
   constructor(env) {
     this.env = env;
@@ -26,17 +43,11 @@ export default class SepayTransactionService {
   async processTransaction(sepayTransaction) {
     const { content, transferAmount } = sepayTransaction;
 
-    const pattern = /(?:SEVQR\s+)?(ORDER\w+(?:\s+\d+)?|ORDERLATER(?:\s+\d+)?)/;
-    const match = content.match(pattern);
-    if (!match) throw new Error("Order description not found");
+    const { orderNumber, orderDesc } = standardizeOrderNumber(content);
 
-    const orderDesc = match[0];
-    const parts = orderDesc.split(" ");
-
-    const orderNumber =
-      parts[0] === "SEVQR"
-        ? parts[1]
-        : parts[0];
+    if (!orderNumber && !orderDesc) {
+      if (!match) throw new Error("Order description not found");
+    }
 
     const isOrderLater = orderNumber === "ORDERLATER";
 
@@ -102,6 +113,103 @@ export default class SepayTransactionService {
     return true;
   }
 
+  async sendToLark(sepayTransaction) {
+    if (parseFloat(sepayTransaction.amount_in) < 0) return;
+
+    const { orderNumber, orderDesc } = standardizeOrderNumber(sepayTransaction.transaction_content);
+
+    const fields = {
+      "Số Tiền Giao Dịch": Number(sepayTransaction.amount_in),
+      "Sepay - Nội dung giao dịch": sepayTransaction.transaction_content,
+      "Sepay - ID Giao Dịch": sepayTransaction.id,
+      "Sepay - Mã Đơn Từ Giao Dịch": orderNumber,
+      "Sepay - Nội Dung Đơn Từ Giao Dịch": orderDesc,
+      "Ngày Nhận Tiền": dayjs(sepayTransaction.transaction_date, "YYYY-MM-DD HH:mm:ss").valueOf(),
+      "Ngân Hàng": sepayTransaction.bank_brand_name,
+      "Số Tài Khoản": sepayTransaction.account_number
+    };
+
+    const larkParams = {
+      env: this.env,
+      appToken: TABLES.SEPAY_TRANSACTION.app_token,
+      tableId: TABLES.SEPAY_TRANSACTION.table_id,
+      userIdType: "open_id"
+    };
+
+    const sepayTransactionId = sepayTransaction.id;
+
+    const existingTransaction = await this.db.sepay_transaction.findUnique({
+      where: { id: sepayTransactionId }
+    });
+
+    if (existingTransaction && existingTransaction.lark_record_id) {
+      await RecordService.updateLarksuiteRecord({
+        ...larkParams,
+        recordId: sepayTransaction.lark_record_id,
+        fields
+      });
+    } else {
+      const { data } = await RecordService.createLarksuiteRecord({
+        ...larkParams,
+        fields
+      });
+      if (data && data.record_id) {
+        await this.db.sepayTransaction.update({
+          where: { id: sepayTransaction.id },
+          data: { lark_record_id: data.record_id }
+        });
+      }
+    }
+  }
+
+  async saveToDb(sepayTransaction) {
+    if (parseFloat(sepayTransaction.amount_in) < 0) return;
+    const {
+      id,
+      bank_brand_name,
+      account_number,
+      transaction_date,
+      amount_out,
+      amount_in,
+      accumulated,
+      transaction_content,
+      reference_number,
+      code,
+      sub_account,
+      bank_account_id
+    } = sepayTransaction;
+
+    try {
+      const upsertedTransaction = await this.db.sepay_transaction.upsert({
+        where: { id },
+        update: {
+          bank_brand_name,
+          account_number,
+          transaction_date,
+          amount_out,
+          amount_in,
+          accumulated,
+          transaction_content,
+          reference_number,
+          code,
+          sub_account,
+          bank_account_id,
+          updated_at: new Date()
+        },
+        create: sepayTransaction
+      });
+
+      if (!upsertedTransaction) {
+        throw new Error("Failed to save Sepay transaction to database");
+      }
+
+      return upsertedTransaction;
+    } catch (e) {
+      Sentry.captureException(e);
+      throw e;
+    }
+  }
+
   async findQrRecord({ orderNumber, orderDesc, transferAmount }) {
     return this.db.qrPaymentTransaction.findFirst({
       where: {
@@ -120,6 +228,19 @@ export default class SepayTransactionService {
     for (const message of batch.messages) {
       try {
         await service.processTransaction(message.body);
+      } catch (error) {
+        Sentry.captureException(error);
+      }
+    }
+  }
+
+  static async dequeueSaveToDb(batch, env) {
+    const service = new SepayTransactionService(env);
+
+    for (const message of batch.messages) {
+      try {
+        await service.saveToDb(message.body);
+        await service.sendToLark(message.body);
       } catch (error) {
         Sentry.captureException(error);
       }

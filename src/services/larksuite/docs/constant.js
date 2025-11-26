@@ -18,5 +18,9 @@ export const TABLES = {
   DESIGN_CODE: {
     table_id: "tblvfKSnxj0ZS1X8",
     app_token: "QPSDbhGD2adxzpsNoCIlk81Pgzh"
+  },
+  SEPAY_TRANSACTION: {
+    table_id: "tblJHy14ijF6ITSu",
+    app_token: "SfjFbVLUHaGbhksKPnBlPDEdgZd"
   }
 };

@@ -99,6 +99,37 @@ export default class RecordService {
   }
 
   /**
+ * Creates a single record in a Larksuite table.
+ *
+ * @param {string} env - The environment configuration.
+ * @param {string} appToken - The app token of the Larksuite application.
+ * @param {string} tableId - The table ID where the record will be created.
+ * @param {object} fields - An object containing the fields and values for the new record.
+ * @param {string} userIdType - The type of user ID to use (default is "open_id").
+ * @returns {Promise<object|null>} - The created record object if successful, otherwise null.
+ */
+  static async createLarksuiteRecord({
+    env, appToken, tableId, fields, userIdType = "open_id"
+  }) {
+    const larkClient = await LarksuiteService.createClientV2(env);
+
+    const response = await larkClient.bitable.appTableRecord.create({
+      path: {
+        app_token: appToken,
+        table_id: tableId
+      },
+      params: {
+        user_id_type: userIdType
+      },
+      data: {
+        fields: fields
+      }
+    });
+
+    return response?.data?.record ?? null;
+  }
+
+  /**
    * Updates a single record in a Larksuite table.
    *
    * @param {string} env - The environment configuration.
