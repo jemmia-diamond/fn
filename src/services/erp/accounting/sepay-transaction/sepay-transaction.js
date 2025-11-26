@@ -130,7 +130,7 @@ export default class SepayTransactionService {
     };
   }
 
-  async sendToLark(rawSepayTransaction) {
+  async sendToLark(rawSepayTransaction, existingTransaction) {
 
     const sepayTransaction = this.mapRawSepayTransactionToPrisma(rawSepayTransaction);
 
@@ -155,10 +155,6 @@ export default class SepayTransactionService {
       tableId: TABLES.SEPAY_TRANSACTION.table_id,
       userIdType: "open_id"
     };
-
-    const existingTransaction = await this.db.sepay_transaction.findUnique({
-      where: { id: sepayTransaction.id }
-    });
 
     let upsertedLarkRecord = null;
     if (existingTransaction && existingTransaction.lark_record_id) {
@@ -228,7 +224,7 @@ export default class SepayTransactionService {
       return upsertedTransaction;
     } catch (e) {
       Sentry.captureException(e);
-      throw e;
+      return null;
     }
   }
 
@@ -261,8 +257,10 @@ export default class SepayTransactionService {
 
     for (const message of batch.messages) {
       try {
-        await service.saveToDb(message.body);
-        await service.sendToLark(message.body);
+        const createdSepayTransaction = await service.saveToDb(message.body);
+        if (createdSepayTransaction) {
+          await service.sendToLark(message.body, createdSepayTransaction);
+        }
       } catch (error) {
         Sentry.captureException(error);
       }
