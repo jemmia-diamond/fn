@@ -202,7 +202,7 @@ export default class SepayTransactionService {
           sepay_reference_number: sepayTransaction.reference_number,
           sepay_code: sepayTransaction.code,
           sepay_sub_account: sepayTransaction.sub_account,
-          bank_account_id: sepayTransaction.bank_account_id
+          sepay_bank_account_id: sepayTransaction.bank_account_id
         },
         "name"
       );
