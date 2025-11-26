@@ -132,3 +132,7 @@ export const CALLBACK_TYPE = {
 export const JOB_TYPE = {
   CREATE_QR_VOUCHER: "create_qr_voucher"
 };
+
+export const DELAYS = {
+  ONE_MINUTE: 60
+};

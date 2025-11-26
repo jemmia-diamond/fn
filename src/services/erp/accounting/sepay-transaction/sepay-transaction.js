@@ -12,8 +12,6 @@ import { BadRequestException } from "src/exception/exceptions";
 dayjs.extend(utc);
 
 export default class SepayTransactionService {
-  static ONE_MINUTE_DELAY = 60;
-
   constructor(env) {
     this.env = env;
 
@@ -129,7 +127,7 @@ export default class SepayTransactionService {
       }
     };
 
-    await this.env["MISA_QUEUE"].send(payload, { delaySeconds: SepayTransactionService.ONE_MINUTE_DELAY });
+    await this.env["MISA_QUEUE"].send(payload, { delaySeconds: Misa.Constants.DELAYS.ONE_MINUTE });
   }
 
   static async dequeueSepayTransactionQueue(batch, env) {
