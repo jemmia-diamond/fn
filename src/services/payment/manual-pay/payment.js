@@ -238,7 +238,7 @@ export default class ManualPaymentService {
       throw new BadRequestException(`Invalid payment method. Must be one of: ${validPaymentMethods.join(", ")}`);
     }
 
-    const orderResult = await this.$queryRaw`
+    const orderResult = await this.db.$queryRaw`
       SELECT id, cancelled_status, financial_status, closed_status, total_price
       FROM haravan.orders
       WHERE id = ${haravanOrderId}
@@ -256,7 +256,7 @@ export default class ManualPaymentService {
       throw new BadRequestException("Transaction amount exceeds order total price.");
     }
 
-    const HRV_API_KEY = await env.HARAVAN_TOKEN_SECRET.get();
+    const HRV_API_KEY = await this.env.HARAVAN_TOKEN_SECRET.get();
 
     if (!HRV_API_KEY) {
       throw new BadRequestException("Haravan API credentials or base URL are not configured in the environment.");
