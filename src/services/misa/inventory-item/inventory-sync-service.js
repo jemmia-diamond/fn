@@ -7,7 +7,8 @@ import ProductToMisaMapper from "services/haravan/dtos/product-to-misa";
 import Misa from "services/misa";
 
 export default class MisaInventoryItemSyncService {
-  static RATE_LIMIT_DELAY = 500;
+  static RATE_LIMIT_DELAY_MS = 500;
+  static MAX_RETRY_AFTER_SECONDS = 3;
 
   constructor(env) {
     this.env = env;
@@ -46,25 +47,46 @@ export default class MisaInventoryItemSyncService {
   async _fetchAndProcessProducts(haravanClient, misaClient, updatedAtMin) {
     let page = 1;
     let hasMore = true;
+    let skipNextSleep = false;
     const limit = 50;
 
     while (hasMore) {
-      if (page > 1) {
-        await this._sleep(MisaInventoryItemSyncService.RATE_LIMIT_DELAY);
+      if (page > 1 && !skipNextSleep) {
+        await this._sleep(MisaInventoryItemSyncService.RATE_LIMIT_DELAY_MS);
       }
+      skipNextSleep = false;
 
-      const response = await haravanClient.product.getProducts({
-        updated_at_min: updatedAtMin,
-        page,
-        limit
-      });
-      const products = response?.products || [];
+      try {
+        const response = await haravanClient.product.getProducts({
+          updated_at_min: updatedAtMin,
+          page,
+          limit
+        });
+        const products = response?.products || [];
 
-      if (products.length > 0) {
-        await this._processProductBatch(products, misaClient);
-        page++;
-      } else {
-        hasMore = false;
+        if (products.length > 0) {
+          await this._processProductBatch(products, misaClient);
+          page++;
+        } else {
+          hasMore = false;
+        }
+
+      } catch (error) {
+        if (error.status === 429) {
+          const retryAfter = parseFloat(error.retryAfter || 2);
+          const allowedRetrySeconds = MisaInventoryItemSyncService.MAX_RETRY_AFTER_SECONDS;
+
+          if (retryAfter > allowedRetrySeconds) {
+            throw new Error(
+              `Rate limited for ${retryAfter}s (exceeds ${allowedRetrySeconds}s threshold) - aborting sync.`
+            );
+          }
+
+          await this._sleep(retryAfter * 1000);
+          skipNextSleep = true;
+          continue;
+        }
+        throw error;
       }
     }
   }
