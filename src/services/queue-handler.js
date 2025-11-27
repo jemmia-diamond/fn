@@ -43,7 +43,10 @@ export default {
       await ERP.Accounting.PaymentEntryService.dequeuePaymentEntryQueue(batch, env);
       break;
     case "sepay-transaction":
-      await ERP.Accounting.SepayTransactionService.dequeueSepayTransactionQueue(batch, env);
+      await Promise.allSettled([
+        ERP.Accounting.SepayTransactionService.dequeueSepayTransactionQueue(batch, env),
+        ERP.Accounting.SepayTransactionService.dequeueSaveToDb(batch, env)
+      ]);
       break;
     case "noco-collect":
       await Haravan.Collect.CollectService.dequeueCollectQueue(batch, env);
