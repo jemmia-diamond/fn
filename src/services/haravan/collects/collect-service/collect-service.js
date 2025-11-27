@@ -8,8 +8,11 @@ export default class CollectService {
   }
 
   async createCollect(body) {
-    const { haravan_collections_id, diamonds_id } = body.data.rows[0];
-    if (!haravan_collections_id || !diamonds_id) {
+    const { haravan_collections_id, diamonds_id, products_id } = body.data.rows[0];
+
+    const targetProductId = diamonds_id || products_id;
+
+    if (!haravan_collections_id || !targetProductId) {
       return;
     }
 
@@ -22,7 +25,7 @@ export default class CollectService {
     const hrvClient = new HaravanAPI(HRV_API_KEY);
 
     const newCollect = await hrvClient.collect.createCollect({
-      "product_id": diamonds_id,
+      "product_id": targetProductId,
       "collection_id": haravan_collections_id
     });
 
@@ -30,9 +33,11 @@ export default class CollectService {
   }
 
   async removeCollect(body) {
-    const { haravan_collections_id, diamonds_id } = body.data.rows[0];
+    const { haravan_collections_id, diamonds_id, products_id } = body.data.rows[0];
 
-    if (!haravan_collections_id || !diamonds_id) {
+    const targetProductId = diamonds_id || products_id;
+
+    if (!haravan_collections_id || !targetProductId) {
       return;
     }
 
@@ -44,7 +49,7 @@ export default class CollectService {
     const hrvClient = new HaravanAPI(HRV_API_KEY);
     const collectsData = await hrvClient.collect.getCollects({
       "collection_id": haravan_collections_id,
-      "product_id": diamonds_id
+      "product_id": targetProductId
     });
 
     if (collectsData && collectsData.collects && collectsData.collects.length > 0) {
