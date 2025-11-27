@@ -45,6 +45,9 @@ export default {
     case "sepay-transaction":
       await ERP.Accounting.SepayTransactionService.dequeueSepayTransactionQueue(batch, env);
       break;
+    case "noco-collect":
+      await Haravan.Collect.CollectService.dequeueCollectQueue(batch, env);
+      break;
     default:
       break;
     }
