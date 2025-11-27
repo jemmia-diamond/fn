@@ -42,13 +42,13 @@ export default class CollectService {
       throw new BadRequestException("Haravan API credentials or base URL are not configured in the environment.");
     }
     const hrvClient = new HaravanAPI(HRV_API_KEY);
-    const collects = await hrvClient.collect.getCollects({
+    const collectsData = await hrvClient.collect.getCollects({
       "collection_id": haravan_collections_id,
       "product_id": diamonds_id
     });
 
-    if (collects && collects.length > 0) {
-      const collectId = collects[0].id;
+    if (collectsData && collectsData.collects && collectsData.collects.length > 0) {
+      const collectId = collectsData.collects[0].id;
       const deletedCollect = await hrvClient.collect.deleteCollect(collectId);
       return deletedCollect;
     }
