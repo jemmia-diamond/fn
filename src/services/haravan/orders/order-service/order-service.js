@@ -47,16 +47,17 @@ export default class OrderService {
     }
   }
 
-  async syncOrdersToLark(order) {
+  async syncOrderToLark(order) {
     const exists = await this.db.larkOrderQrGenerator.findFirst({
       where: {
         haravan_order_id: order.id
       }
     });
 
-    const paidAmount = order.transactions
-      ?.filter(t => t.kind === "capture")
-      .reduce((sum, t) => sum + (t.amount || 0), 0) || 0;
+    const paidAmount =
+      order.transactions
+        ?.filter(t => ["capture", "authorization"].includes(t.kind))
+        .reduce((sum, t) => sum + (t.amount || 0), 0) || 0;
 
     const recordFields = {
       "ID": String(order.order_number),
@@ -114,7 +115,7 @@ export default class OrderService {
         if (haravan_topic === HARAVAN_TOPIC.CREATED) {
           await orderService.invalidOrderNotification(data, env);
         }
-        await orderService.syncOrdersToLark(data);
+        await orderService.syncOrderToLark(data);
       }
       catch (error) {
         Sentry.captureException(error);
