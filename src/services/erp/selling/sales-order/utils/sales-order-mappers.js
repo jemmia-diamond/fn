@@ -21,6 +21,10 @@ export const mapSalesOrdersToDatabase = (salesOrders) => {
     po_date: safeValue(salesOrder?.po_date,"date"),
     company: safeValue(salesOrder?.company,"string"),
     amended_from: safeValue(salesOrder?.amended_from,"string"),
+    is_split_order: safeValue(salesOrder?.is_split_order,"number"),
+    split_order_group: safeValue(salesOrder?.split_order_group,"string"),
+    split_order_group_name: safeValue(salesOrder?.split_order_group_name,"string"),
+    split_reason: safeValue(salesOrder?.split_reason,"string"),
 
     // Customer information
     customer_name: safeValue(salesOrder?.customer_name,"string"),
