@@ -96,14 +96,16 @@ export default class OrderService {
         });
       }
     }
+    else {
+      await RecordService.updateLarksuiteRecord({
+        env: this.env,
+        appToken: app_token,
+        tableId: table_id,
+        recordId: exists.lark_record_id,
+        fields: recordFields
+      });
+    }
 
-    await RecordService.updateLarksuiteRecord({
-      env: this.env,
-      appToken: app_token,
-      tableId: table_id,
-      recordId: exists.lark_record_id,
-      fields: recordFields
-    });
   }
 
   static async dequeueOrderQueue(batch, env) {
