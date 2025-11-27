@@ -1,11 +1,9 @@
 
-import CreateProductController from "controllers/webhook/nocodb/create-product";
-import RemoveProductController from "controllers/webhook/nocodb/remove-product";
+import CollectController from "controllers/webhook/nocodb/collect";
 
 export default class NocoWebhook {
   static async register(webhook) {
-    const sepayWebhookNamespace = webhook.basePath("/noco");
-    sepayWebhookNamespace.post("collects/create", CreateProductController.create);
-    sepayWebhookNamespace.post("collects/remove", RemoveProductController.create);
+    const nocoWebhookNamespace = webhook.basePath("/noco");
+    nocoWebhookNamespace.post("collects", CollectController.create);
   }
 }
