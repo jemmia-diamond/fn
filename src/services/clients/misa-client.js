@@ -45,6 +45,13 @@ export default class MisaClient {
     return this.accessToken;
   }
 
+  _getAuthHeaders() {
+    return {
+      "X-MISA-AccessToken": this.accessToken,
+      "Content-Type": "application/json"
+    };
+  }
+
   /**
    * Save the Accounting Document Proposal to MISA
    * @param {*} voucherPayload
@@ -52,12 +59,8 @@ export default class MisaClient {
    */
   async saveVoucher(voucherPayload) {
     const url = `${this.baseUrl}/apir/sync/actopen/save`;
-
     const response = await axios.post(url, voucherPayload, {
-      headers: {
-        "X-MISA-AccessToken": this.accessToken,
-        "Content-Type": "application/json"
-      }
+      headers: this._getAuthHeaders()
     });
     return response.data;
   }
@@ -69,12 +72,8 @@ export default class MisaClient {
    */
   async saveDictionary(dictionaryPayload) {
     const url = `${this.baseUrl}/apir/sync/actopen/save_dictionary`;
-
     const response = await axios.post(url, dictionaryPayload, {
-      headers: {
-        "X-MISA-AccessToken": this.accessToken,
-        "Content-Type": "application/json"
-      }
+      headers: this._getAuthHeaders()
     });
     return response.data;
   }
@@ -93,10 +92,7 @@ export default class MisaClient {
     };
 
     const response = await axios.post(url, payload, {
-      headers: {
-        "X-MISA-AccessToken": this.accessToken,
-        "Content-Type": "application/json"
-      }
+      headers: this._getAuthHeaders()
     });
     return JSON.parse(response.data.Data);
   }
