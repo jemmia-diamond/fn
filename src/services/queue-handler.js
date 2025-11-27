@@ -48,6 +48,9 @@ export default {
         ERP.Accounting.SepayTransactionService.dequeueSaveToDb(batch, env)
       ]);
       break;
+    case "noco-collect":
+      await Haravan.Collect.CollectService.dequeueCollectQueue(batch, env);
+      break;
     default:
       break;
     }

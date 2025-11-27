@@ -6,6 +6,7 @@ import * as Sentry from "@sentry/cloudflare";
 import { TABLES } from "services/larksuite/docs/constant";
 import RecordService from "services/larksuite/docs/base/record/record";
 import HaravanAPI from "services/clients/haravan-client";
+import Misa from "services/misa";
 import { BadRequestException } from "src/exception/exceptions";
 
 dayjs.extend(utc);
@@ -93,6 +94,10 @@ export default class SepayTransactionService {
         userIdType: "open_id"
       });
     }
+
+    if (qr.transfer_status === "success" && !isOrderLater && qr.haravan_order_id) {
+      await this.enqueueMisaBackgroundJob(qr);
+    }
     return true;
   }
 
@@ -131,7 +136,6 @@ export default class SepayTransactionService {
   }
 
   async sendToLark(rawSepayTransaction, existingTransaction) {
-
     const sepayTransaction = this.mapRawSepayTransactionToPrisma(rawSepayTransaction);
 
     if (parseFloat(sepayTransaction.amount_in) < 0) return;
@@ -270,6 +274,17 @@ export default class SepayTransactionService {
         is_deleted: false
       }
     });
+  }
+
+  async enqueueMisaBackgroundJob(qrRecord) {
+    const payload = {
+      job_type: Misa.Constants.JOB_TYPE.CREATE_QR_VOUCHER,
+      data: {
+        qr_transaction_id: qrRecord.id
+      }
+    };
+
+    await this.env["MISA_QUEUE"].send(payload, { delaySeconds: Misa.Constants.DELAYS.ONE_MINUTE });
   }
 
   static async dequeueSepayTransactionQueue(batch, env) {

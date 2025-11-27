@@ -486,6 +486,10 @@ model erpnextSalesOrders {
   docstatus                      Int?
   idx                            Int?
   title                          String?
+  split_order_group              String?
+  split_order_group_name         String?
+  is_split_order                 Int?
+  split_reason                   String?
   naming_series                  String?
   tax_id                         String?
   order_type                     String?
