@@ -6,6 +6,7 @@ import * as Sentry from "@sentry/cloudflare";
 import { TABLES } from "services/larksuite/docs/constant";
 import RecordService from "services/larksuite/docs/base/record/record";
 import HaravanAPI from "services/clients/haravan-client";
+import Misa from "services/misa";
 import { BadRequestException } from "src/exception/exceptions";
 
 dayjs.extend(utc);
@@ -26,17 +27,11 @@ export default class SepayTransactionService {
   async processTransaction(sepayTransaction) {
     const { content, transferAmount } = sepayTransaction;
 
-    const pattern = /(?:SEVQR\s+)?(ORDER\w+(?:\s+\d+)?|ORDERLATER(?:\s+\d+)?)/;
-    const match = content.match(pattern);
-    if (!match) throw new Error("Order description not found");
+    const { orderNumber, orderDesc } = this.standardizeOrderNumber(content);
 
-    const orderDesc = match[0];
-    const parts = orderDesc.split(" ");
-
-    const orderNumber =
-      parts[0] === "SEVQR"
-        ? parts[1]
-        : parts[0];
+    if (!orderNumber && !orderDesc) {
+      if (!match) throw new Error("Order description not found");
+    }
 
     const isOrderLater = orderNumber === "ORDERLATER";
 
@@ -99,7 +94,136 @@ export default class SepayTransactionService {
         userIdType: "open_id"
       });
     }
+
+    if (qr.transfer_status === "success" && !isOrderLater && qr.haravan_order_id) {
+      await this.enqueueMisaBackgroundJob(qr);
+    }
     return true;
+  }
+
+  standardizeOrderNumber(content) {
+    if (!content) {
+      return { orderNumber: null, orderDesc: null };
+    }
+    const pattern = /(?:SEVQR\s+)?(ORDER\w+(?:\s+\d+)?|ORDERLATER(?:\s+\d+)?)/;
+    const match = content.match(pattern);
+    if (!match) {
+      return { orderNumber: null, orderDesc: null };
+    }
+
+    const orderDesc = match[0];
+    const parts = orderDesc.split(" ");
+    const orderNumber = parts[0] === "SEVQR" ? parts[1] : parts[0];
+
+    return { orderNumber, orderDesc };
+  }
+
+  mapRawSepayTransactionToPrisma(rawSepayTransaction) {
+    return {
+      id: String(rawSepayTransaction.id),
+      bank_brand_name: rawSepayTransaction.gateway,
+      account_number: rawSepayTransaction.accountNumber,
+      transaction_date: rawSepayTransaction.transactionDate,
+      amount_out: String(rawSepayTransaction.amountOut ?? 0.0),
+      amount_in: String(rawSepayTransaction.transferAmount ?? 0.0),
+      accumulated: String(rawSepayTransaction.accumulated),
+      transaction_content: rawSepayTransaction.content,
+      reference_number: rawSepayTransaction.referenceCode,
+      code: rawSepayTransaction.code,
+      sub_account: rawSepayTransaction.subAccount,
+      bank_account_id: null
+    };
+  }
+
+  async sendToLark(rawSepayTransaction, existingTransaction) {
+    const sepayTransaction = this.mapRawSepayTransactionToPrisma(rawSepayTransaction);
+
+    if (parseFloat(sepayTransaction.amount_in) < 0) return;
+
+    const { orderNumber, orderDesc } = this.standardizeOrderNumber(sepayTransaction.transaction_content);
+
+    const fields = {
+      "Số Tiền Giao Dịch": Number(sepayTransaction.amount_in),
+      "Sepay - Nội dung giao dịch": sepayTransaction.transaction_content,
+      "Sepay - ID Giao Dịch": sepayTransaction.id,
+      "Sepay - Mã Đơn Từ Giao Dịch": orderNumber,
+      "Sepay - Nội Dung Đơn Từ Giao Dịch": orderDesc,
+      "Ngày Nhận Tiền": dayjs(sepayTransaction.transaction_date, "YYYY-MM-DD HH:mm:ss").valueOf(),
+      "Ngân Hàng": sepayTransaction.bank_brand_name,
+      "Số Tài Khoản": sepayTransaction.account_number
+    };
+
+    const larkParams = {
+      env: this.env,
+      appToken: TABLES.SEPAY_TRANSACTION.app_token,
+      tableId: TABLES.SEPAY_TRANSACTION.table_id,
+      userIdType: "open_id"
+    };
+
+    let upsertedLarkRecord = null;
+    if (existingTransaction && existingTransaction.lark_record_id) {
+      upsertedLarkRecord = await RecordService.updateLarksuiteRecord({
+        ...larkParams,
+        recordId: existingTransaction.lark_record_id,
+        fields
+      });
+    } else {
+      upsertedLarkRecord = await RecordService.createLarksuiteRecord({
+        ...larkParams,
+        fields
+      });
+    }
+    if (upsertedLarkRecord && upsertedLarkRecord.id) {
+      await this.db.sepay_transaction.update({
+        where: { id: existingTransaction.id },
+        data: { lark_record_id: upsertedLarkRecord.id }
+      });
+    }
+  }
+
+  async saveToDb(rawSepayTransaction) {
+    const sepayTransaction = this.mapRawSepayTransactionToPrisma(rawSepayTransaction);
+
+    if (parseFloat(sepayTransaction.amount_in) < 0) return;
+    const {
+      id,
+      bank_brand_name,
+      account_number,
+      transaction_date,
+      amount_out,
+      amount_in,
+      accumulated,
+      transaction_content,
+      reference_number,
+      code,
+      sub_account,
+      bank_account_id
+    } = sepayTransaction;
+
+    const upsertedTransaction = await this.db.sepay_transaction.upsert({
+      where: { id },
+      update: {
+        bank_brand_name,
+        account_number,
+        transaction_date,
+        amount_out,
+        amount_in,
+        accumulated,
+        transaction_content,
+        reference_number,
+        code,
+        sub_account,
+        bank_account_id,
+        updated_at: new Date()
+      },
+      create: sepayTransaction
+    });
+
+    if (!upsertedTransaction) {
+      throw new Error("Failed to save Sepay transaction to database");
+    }
+
+    return upsertedTransaction;
   }
 
   async findQrRecord({ orderNumber, orderDesc, transferAmount }) {
@@ -114,12 +238,38 @@ export default class SepayTransactionService {
     });
   }
 
+  async enqueueMisaBackgroundJob(qrRecord) {
+    const payload = {
+      job_type: Misa.Constants.JOB_TYPE.CREATE_QR_VOUCHER,
+      data: {
+        qr_transaction_id: qrRecord.id
+      }
+    };
+
+    await this.env["MISA_QUEUE"].send(payload, { delaySeconds: Misa.Constants.DELAYS.ONE_MINUTE });
+  }
+
   static async dequeueSepayTransactionQueue(batch, env) {
     const service = new SepayTransactionService(env);
 
     for (const message of batch.messages) {
       try {
         await service.processTransaction(message.body);
+      } catch (error) {
+        Sentry.captureException(error);
+      }
+    }
+  }
+
+  static async dequeueSaveToDb(batch, env) {
+    const service = new SepayTransactionService(env);
+
+    for (const message of batch.messages) {
+      try {
+        const createdSepayTransaction = await service.saveToDb(message.body);
+        if (createdSepayTransaction) {
+          await service.sendToLark(message.body, createdSepayTransaction);
+        }
       } catch (error) {
         Sentry.captureException(error);
       }
