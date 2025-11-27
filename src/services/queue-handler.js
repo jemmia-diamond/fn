@@ -48,6 +48,9 @@ export default {
     case "haravan-product":
       await Haravan.Product.ProductVariantService.dequeueProductQueue(batch, env);
       break;
+    case "noco-collect":
+      await Haravan.Collect.CollectService.dequeueCollectQueue(batch, env);
+      break;
     default:
       break;
     }

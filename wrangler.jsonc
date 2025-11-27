@@ -176,6 +176,10 @@
         "queue": "haravan-product",
         "binding": "HARAVAN_PRODUCT_QUEUE"
       },
+      {
+        "queue": "noco-collect",
+        "binding": "NOCO_COLLECT_QUEUE"
+      }
     ],
     "consumers": [
       {
@@ -213,6 +217,9 @@
       },
       {
         "queue": "haravan-product"
+      },
+      {
+        "queue": "noco-collect"
       }
     ]
   },
