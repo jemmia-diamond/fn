@@ -2,6 +2,8 @@ import axios from "axios";
 
 export default class MisaClient {
   static RETRIEVABLE_LIMIT = 1000;
+  static KV_TOKEN_KEY = "misa:access_token";
+  static TOKEN_TTL_HOURS = 11;
 
   constructor(env) {
     this.env = env;
@@ -14,8 +16,15 @@ export default class MisaClient {
    * @returns String access token (save to instance variable)
    */
   async getAccessToken() {
-    const url = `${this.baseUrl}/api/oauth/actopen/connect`;
+    const kv = this.env.FN_KV;
+    const cachedToken = await kv.get(MisaClient.KV_TOKEN_KEY);
 
+    if (cachedToken) {
+      this.accessToken = cachedToken;
+      return this.accessToken;
+    }
+
+    const url = `${this.baseUrl}/api/oauth/actopen/connect`;
     const payload = {
       app_id: this.env.MISA_APP_ID,
       access_code: this.env.MISA_ACCESS_CODE,
@@ -27,6 +36,12 @@ export default class MisaClient {
     });
 
     this.accessToken = JSON.parse(response.data.Data).access_token;
+
+    const ttlSeconds = MisaClient.TOKEN_TTL_HOURS * 60 * 60;
+    await kv.put(MisaClient.KV_TOKEN_KEY, this.accessToken, {
+      expirationTtl: ttlSeconds
+    });
+
     return this.accessToken;
   }
 
