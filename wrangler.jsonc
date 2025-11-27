@@ -172,6 +172,10 @@
         "queue": "sepay-transaction",
         "binding": "SEPAY_TRANSACTION_QUEUE"
       },
+      {
+        "queue": "haravan-product",
+        "binding": "HARAVAN_PRODUCT_QUEUE"
+      },
     ],
     "consumers": [
       {
@@ -206,6 +210,9 @@
       },
       {
         "queue": "sepay-transaction"
+      },
+      {
+        "queue": "haravan-product"
       }
     ]
   },

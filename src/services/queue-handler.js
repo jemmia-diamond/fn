@@ -45,6 +45,9 @@ export default {
     case "sepay-transaction":
       await ERP.Accounting.SepayTransactionService.dequeueSepayTransactionQueue(batch, env);
       break;
+    case "haravan-product":
+      await Haravan.Product.ProductVariantService.dequeueProductQueue(batch, env);
+      break;
     default:
       break;
     }
