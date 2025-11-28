@@ -30,7 +30,7 @@ export default class SepayTransactionService {
     const { orderNumber, orderDesc } = this.standardizeOrderNumber(content);
 
     if (!orderNumber && !orderDesc) {
-      if (!match) throw new Error("Order description not found");
+      throw new Error("Order description not found");
     }
 
     const isOrderLater = orderNumber === "ORDERLATER";
