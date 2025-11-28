@@ -195,8 +195,8 @@ export default class ManualPaymentService {
       });
 
       const shouldCreateTransaction =
-      data.transfer_status === "Xác nhận" &&
-      paymentBeforeUpdate.transfer_status !== "Xác nhận";
+        data.transfer_status === "Xác nhận" &&
+        paymentBeforeUpdate.transfer_status !== "Xác nhận";
 
       if (shouldCreateTransaction) {
         if (updatedPayment.haravan_order_name === "Đơn hàng cọc") {
@@ -237,7 +237,7 @@ export default class ManualPaymentService {
       }
     };
 
-    await this.env["MISA_QUEUE"].send(payload);
+    await this.env["MISA_QUEUE"].send(payload, { delaySeconds: Misa.Constants.DELAYS.ONE_MINUTE });
   }
 
   async createManualTransactionsToHaravanOrder(
