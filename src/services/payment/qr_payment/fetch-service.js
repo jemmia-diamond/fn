@@ -17,6 +17,14 @@ export default class QrPaymentFetchingService {
         haravan_order: {
           financial_status: { in: ["paid", "partially_paid"] }
         },
+        misa_sync_guid: null,
+        misa_synced_at: null,
+        haravan_order_id: {
+          not: null
+        },
+        haravan_order_number: {
+          not: "ORDERLATER"
+        },
         misa_synced: false,
         updated_at: {
           gte: startDate,
