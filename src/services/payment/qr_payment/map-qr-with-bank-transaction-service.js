@@ -23,7 +23,7 @@ export default class MapQRWithBankTransactionService {
 
   async mapTransaction(qrPaymentId, sepayTransactionId) {
     const qrPayment = await this.db.qrPaymentTransaction.findUnique({
-      where: { id: qrPaymentId }
+      where: { id: qrPaymentId, is_deleted: false }
     });
 
     if (!qrPayment) {
