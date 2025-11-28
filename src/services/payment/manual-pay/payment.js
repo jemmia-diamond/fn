@@ -6,6 +6,7 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import { BadRequestException } from "src/exception/exceptions";
 import HaravanAPI from "services/clients/haravan-client";
+import Misa from "services/misa";
 
 dayjs.extend(utc);
 
@@ -13,7 +14,7 @@ export default class ManualPaymentService {
   static PAGE_SIZE = 100;
   static INTERVAL_IN_MINUTES = 30;
 
-  constructor (env) {
+  constructor(env) {
     this.env = env;
     this.db = Database.instance(env);
   }
@@ -132,6 +133,11 @@ export default class ManualPaymentService {
           misa_synced: data.misa_synced ?? false
         }
       });
+
+      if (newPayment.transfer_status === "Xác nhận" && newPayment.receive_date && newPayment.haravan_order_id) {
+        await this._enqueueMisaBackgroundJob(newPayment);
+      }
+
       return newPayment;
     } catch (error) {
       Sentry.captureException(error);
@@ -164,10 +170,16 @@ export default class ManualPaymentService {
         delete updateData.haravan_order_id;
         delete updateData.haravan_order_number;
 
-        return this.db.manualPaymentTransaction.update({
+        const updatedPayment = await this.db.manualPaymentTransaction.update({
           where: { uuid: uuid },
           data: updateData
         });
+
+        if (data.receive_date && !paymentBeforeUpdate.receive_date && updatedPayment.haravan_order_id) {
+          await this._enqueueMisaBackgroundJob(updatedPayment);
+        }
+
+        return updatedPayment;
       }
 
       const dataForFirstUpdate = {
@@ -203,6 +215,10 @@ export default class ManualPaymentService {
           }
         });
 
+        if (finalUpdatedPayment.receive_date && finalUpdatedPayment.haravan_order_id) {
+          await this._enqueueMisaBackgroundJob(finalUpdatedPayment);
+        }
+
         return finalUpdatedPayment;
       }
 
@@ -211,6 +227,17 @@ export default class ManualPaymentService {
       Sentry.captureException(error);
       throw error;
     }
+  }
+
+  async _enqueueMisaBackgroundJob(manualPayment) {
+    const payload = {
+      job_type: Misa.Constants.JOB_TYPE.CREATE_MANUAL_VOUCHER,
+      data: {
+        manual_payment_uuid: manualPayment.uuid
+      }
+    };
+
+    await this.env["MISA_QUEUE"].send(payload);
   }
 
   async createManualTransactionsToHaravanOrder(
