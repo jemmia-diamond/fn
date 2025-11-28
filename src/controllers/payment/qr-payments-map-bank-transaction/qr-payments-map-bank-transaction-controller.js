@@ -3,7 +3,7 @@ import utc from "dayjs/plugin/utc.js";
 import PaymentService from "services/payment";
 dayjs.extend(utc);
 
-export default class QRPaymentsMapSepayController {
+export default class QRPaymentsMapBankTransactionController {
 
   static async create(c) {
     const { id } = c.req.param();
