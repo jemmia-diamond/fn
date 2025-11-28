@@ -190,6 +190,19 @@ export default class SepayTransactionService {
       const { orderNumber, orderDesc } = this.standardizeOrderNumber(sepayTransaction.transaction_content);
 
       if (existingTransaction) {
+        const bank = sepayTransaction.bank_brand_name && await this.frappeClient.getList(
+          "Bank",
+          { filters: [["bank_name", "=", sepayTransaction.bank_brand_name]] }
+        );
+        const bankAccount = bank && bank[0] && sepayTransaction.account_number && await this.frappeClient.getList(
+          "Bank Account",
+          {
+            filters: [
+              ["bank", "=", bank[0].name],
+              ["bank_account_no", "=", sepayTransaction.account_number]
+            ]
+          }
+        );
         const upsertedBankTransaction = await this.frappeClient.upsert(
           {
             doctype: "Bank Transaction",
@@ -207,12 +220,16 @@ export default class SepayTransactionService {
             sepay_reference_number: sepayTransaction.reference_number,
             sepay_code: sepayTransaction.code,
             sepay_sub_account: sepayTransaction.sub_account,
-            sepay_bank_account_id: sepayTransaction.bank_account_id
+            sepay_bank_account_id: sepayTransaction.bank_account_id,
+            deposit: sepayTransaction.amount_in,
+            reference_number: sepayTransaction.reference_number,
+            date: dayjs(sepayTransaction.transaction_date, "YYYY-MM-DD HH:mm:ss").format("YYYY-MM-DD"),
+            bank_account: bankAccount && bankAccount[0] ? bankAccount[0].name : null
           },
           "name"
         );
         if (upsertedBankTransaction && upsertedBankTransaction.name) {
-          this.db.sepay_transaction.update({
+          await this.db.sepay_transaction.update({
             where: { id: existingTransaction.id },
             data: { bank_transaction_name: upsertedBankTransaction.name }
           });
