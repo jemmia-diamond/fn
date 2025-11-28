@@ -26,10 +26,28 @@ export default class ManualPaymentFetchingService {
     const whereCondition = {
       transfer_status: "Xác nhận",
       misa_synced: false,
-      created_date: {
-        gte: startDate,
-        lte: endDate
+      misa_sync_guid: null,
+      misa_synced_at: null,
+      haravan_order_id: {
+        not: null
       },
+      haravan_order_name: {
+        not: "ORDERLATER"
+      },
+      OR: [
+        {
+          created_date: {
+            gte: startDate,
+            lte: endDate
+          }
+        },
+        {
+          updated_date: {
+            gte: startDate,
+            lte: endDate
+          }
+        }
+      ],
       payment_type: paymentType === "cash" ? "Tiền Mặt" : { not: "Tiền Mặt" },
       haravan_order: {
         financial_status: {
