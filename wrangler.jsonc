@@ -57,7 +57,8 @@
     "INVENTORY_CMS_ENDPOINT": "https://inventory-cms.jemmia.vn",
     "MISA_APP_ID": "4bc7a4b1-ed15-433a-aaf6-2137d01729bd",
     "MISA_ORG_CODE": "Jemmia_Diamond",
-    "R2_JEMMIA_WEBSITE_PUBLIC_URL": "https://assets.jemmia.vn"
+    "R2_JEMMIA_WEBSITE_PUBLIC_URL": "https://assets.jemmia.vn",
+    "NOCODB_SUPPLY_BASE_ID": "pl4e7zwnui0k8y1"
   },
   "secrets_store_secrets": [
     {
@@ -114,6 +115,11 @@
       "binding": "INVENTORY_CMS_STATIC_TOKEN_SECRET",
       "store_id": "dff6fef7003446178302a7874af64fde",
       "secret_name": "INVENTORY_CMS_STATIC_TOKEN"
+    },
+    {
+      "binding": "NOCODB_API_TOKEN_SECRET",
+      "store_id": "dff6fef7003446178302a7874af64fde",
+      "secret_name": "NOCODB_API_TOKEN"
     }
   ],
   "kv_namespaces": [

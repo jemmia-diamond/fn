@@ -1,12 +1,11 @@
 import * as Sentry from "@sentry/cloudflare";
-import Database from "services/database";
 import HaravanAPI from "services/clients/haravan-client";
+import { WorkplaceClient } from "services/clients/workplace-client";
 import { BadRequestException } from "src/exception/exceptions";
 
 export default class CollectService {
   constructor(env) {
     this.env = env;
-    this.db = Database.instance(env);
   }
 
   async createCollect(body) {
@@ -18,25 +17,30 @@ export default class CollectService {
       return;
     }
 
-    // Get Haravan Collection ID from ID
-    const collection = await this.db.$queryRaw`
-      SELECT haravan_id FROM workplace.haravan_collections WHERE id = ${haravan_collection_id} LIMIT 1
-    `;
+    const NOCO_TOKEN = await this.env.NOCODB_API_TOKEN.get();
+    const WORKPLACE_BASE_ID = this.env.NOCODB_SUPPLY_BASE_ID;
 
-    if (!collection || collection.length === 0) {
+    if (!NOCO_TOKEN || !WORKPLACE_BASE_ID) {
+      throw new BadRequestException("NocoDB credentials are not configured.");
+    }
+
+    const workplaceClient = new WorkplaceClient(NOCO_TOKEN, WORKPLACE_BASE_ID);
+
+    // Get Haravan Collection ID from ID
+    const collection = await workplaceClient.getHaravanCollection(haravan_collection_id);
+
+    if (!collection) {
       return;
     }
-    const realCollectionId = collection[0].haravan_id;
+    const realCollectionId = collection.haravan_id;
 
     // Get Haravan Product ID from ID
     let realProductId;
     if (targetId) {
       // TODO: Apply for jewelry
-      const diamond = await this.db.$queryRaw`
-        SELECT product_id FROM workplace.diamonds WHERE id = ${targetId} LIMIT 1
-      `;
-      if (diamond && diamond.length > 0) {
-        realProductId = diamond[0].product_id;
+      const diamond = await workplaceClient.getDiamond(targetId);
+      if (diamond) {
+        realProductId = diamond.product_id;
       }
     }
 
@@ -69,29 +73,34 @@ export default class CollectService {
       return;
     }
 
-    // Get Haravan Collection ID
-    const collection = await this.db.$queryRaw`
-      SELECT haravan_id FROM workplace.haravan_collections WHERE id = ${haravan_collection_id} LIMIT 1
-    `;
+    const NOCO_TOKEN = await this.env.NOCODB_API_TOKEN.get();
+    const WORKPLACE_BASE_ID = this.env.NOCODB_SUPPLY_BASE_ID;
 
-    if (!collection || collection.length === 0) {
+    if (!NOCO_TOKEN || !WORKPLACE_BASE_ID) {
+      throw new BadRequestException("NocoDB credentials are not configured.");
+    }
+
+    const workplaceClient = new WorkplaceClient(NOCO_TOKEN, WORKPLACE_BASE_ID);
+
+    // Get Haravan Collection ID
+    const collection = await workplaceClient.getHaravanCollection(haravan_collection_id);
+
+    if (!collection) {
       return;
     }
-    const realCollectionId = collection[0].haravan_id;
+    const realCollectionId = collection.haravan_id;
 
     // Get Haravan Product ID
     let realProductId;
     if (targetId) {
       // TODO: Apply for jewelry
-      const diamond = await this.db.$queryRaw`
-        SELECT product_id FROM workplace.diamonds WHERE id = ${targetId} LIMIT 1
-      `;
-      if (diamond && diamond.length > 0) {
-        realProductId = diamond[0].product_id;
+      const diamond = await workplaceClient.getDiamond(targetId);
+      if (diamond) {
+        realProductId = diamond.product_id;
       }
     }
 
-    if (!realProductId || !realCollectionId) {
+    if (!realProductId) {
       return;
     }
 
