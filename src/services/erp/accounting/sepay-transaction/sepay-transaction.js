@@ -181,49 +181,6 @@ export default class SepayTransactionService {
     }
   }
 
-  async sendToERP(rawSepayTransaction, existingTransaction) {
-    try {
-      const sepayTransaction = this.mapRawSepayTransactionToPrisma(rawSepayTransaction);
-
-      if (parseFloat(sepayTransaction.amount_in) < 0) return;
-
-      const { orderNumber, orderDesc } = this.standardizeOrderNumber(sepayTransaction.transaction_content);
-
-      if (existingTransaction) {
-        const upsertedBankTransaction = await this.frappeClient.upsert(
-          {
-            doctype: "Bank Transaction",
-            name: existingTransaction.bank_transaction_name ?? "",
-            sepay_id: sepayTransaction.id,
-            sepay_order_number: orderNumber,
-            sepay_order_description: orderDesc,
-            sepay_bank_brand_name: sepayTransaction.bank_brand_name,
-            sepay_account_number: sepayTransaction.account_number,
-            sepay_transaction_date: sepayTransaction.transaction_date,
-            sepay_amount_out: sepayTransaction.amount_out,
-            sepay_amount_in: sepayTransaction.amount_in,
-            sepay_accumulated: sepayTransaction.accumulated,
-            sepay_transaction_content: sepayTransaction.transaction_content,
-            sepay_reference_number: sepayTransaction.reference_number,
-            sepay_code: sepayTransaction.code,
-            sepay_sub_account: sepayTransaction.sub_account,
-            sepay_bank_account_id: sepayTransaction.bank_account_id
-          },
-          "name"
-        );
-        if (upsertedBankTransaction && upsertedBankTransaction.name) {
-          this.db.sepay_transaction.update({
-            where: { id: existingTransaction.id },
-            data: { bank_transaction_name: upsertedBankTransaction.name }
-          });
-        }
-      }
-    } catch (error) {
-      // Better to capture exception right here than fail the whole flow
-      Sentry.captureException(error);
-    }
-  }
-
   async saveToDb(rawSepayTransaction) {
     const sepayTransaction = this.mapRawSepayTransactionToPrisma(rawSepayTransaction);
 
@@ -312,7 +269,6 @@ export default class SepayTransactionService {
         const createdSepayTransaction = await service.saveToDb(message.body);
         if (createdSepayTransaction) {
           await service.sendToLark(message.body, createdSepayTransaction);
-          await service.sendToERP(message.body, createdSepayTransaction);
         }
       } catch (error) {
         Sentry.captureException(error);
