@@ -27,7 +27,7 @@ export default class CollectService {
     const workplaceClient = new WorkplaceClient(NOCO_TOKEN, WORKPLACE_BASE_ID);
 
     // Get Haravan Collection ID from ID
-    const collection = await workplaceClient.getHaravanCollection(haravan_collection_id);
+    const collection = await workplaceClient.haravanCollections.get(haravan_collection_id);
 
     if (!collection) {
       return;
@@ -38,7 +38,7 @@ export default class CollectService {
     let realProductId;
     if (targetId) {
       // TODO: Apply for jewelry
-      const diamond = await workplaceClient.getDiamond(targetId);
+      const diamond = await workplaceClient.diamonds.get(targetId);
       if (diamond) {
         realProductId = diamond.product_id;
       }
@@ -83,7 +83,7 @@ export default class CollectService {
     const workplaceClient = new WorkplaceClient(NOCO_TOKEN, WORKPLACE_BASE_ID);
 
     // Get Haravan Collection ID
-    const collection = await workplaceClient.getHaravanCollection(haravan_collection_id);
+    const collection = await workplaceClient.haravanCollections.get(haravan_collection_id);
 
     if (!collection) {
       return;
@@ -94,7 +94,7 @@ export default class CollectService {
     let realProductId;
     if (targetId) {
       // TODO: Apply for jewelry
-      const diamond = await workplaceClient.getDiamond(targetId);
+      const diamond = await workplaceClient.diamonds.get(targetId);
       if (diamond) {
         realProductId = diamond.product_id;
       }
