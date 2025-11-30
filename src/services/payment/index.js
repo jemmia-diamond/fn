@@ -4,6 +4,7 @@ import ManualPaymentFetchingService from "services/payment/manual-pay/fetch-serv
 import MisaVoucherSyncService from "services/payment/misa/voucher-sync-service";
 import CreateQRService from "services/payment/qr_payment/create-qr-service";
 import FindQRService from "services/payment/qr_payment/find-qr-service";
+import MapQRWithBankTransactionService from "services/payment/qr_payment/map-qr-with-bank-transaction-service";
 
 export default {
   ManualPaymentService: ManualPaymentService,
@@ -11,5 +12,6 @@ export default {
   ManualPaymentFetchingService,
   MisaVoucherSyncService,
   CreateQRService: CreateQRService,
-  FindQRService: FindQRService
+  FindQRService: FindQRService,
+  MapQRWithBankTransactionService: MapQRWithBankTransactionService
 };

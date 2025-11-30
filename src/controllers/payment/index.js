@@ -1,7 +1,9 @@
 import ManualPaymentsController from "controllers/payment/manual-pay/manual-payment-controller";
 import QRPaymentsController from "controllers/payment/qr-pay/qr-payments-controller";
+import QRPaymentsMapBankTransactionController from "controllers/payment/qr-payments-map-bank-transaction/qr-payments-map-bank-transaction-controller";
 
 export default {
   ManualPaymentsController,
-  QRPaymentsController
+  QRPaymentsController,
+  QRPaymentsMapBankTransactionController
 };
