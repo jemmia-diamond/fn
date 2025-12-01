@@ -130,7 +130,8 @@ export const CALLBACK_TYPE = {
 };
 
 export const JOB_TYPE = {
-  CREATE_QR_VOUCHER: "create_qr_voucher"
+  CREATE_QR_VOUCHER: "create_qr_voucher",
+  CREATE_MANUAL_VOUCHER: "create_manual_voucher"
 };
 
 export const DELAYS = {
