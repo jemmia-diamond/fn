@@ -180,6 +180,10 @@
         "binding": "SEPAY_TRANSACTION_QUEUE"
       },
       {
+        "queue": "haravan-product",
+        "binding": "HARAVAN_PRODUCT_QUEUE"
+      },
+      {
         "queue": "noco-collect",
         "binding": "NOCO_COLLECT_QUEUE"
       }
@@ -217,6 +221,9 @@
       },
       {
         "queue": "sepay-transaction"
+      },
+      {
+        "queue": "haravan-product"
       },
       {
         "queue": "noco-collect"
