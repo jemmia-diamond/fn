@@ -48,6 +48,11 @@ export default class OrderService {
   }
 
   async syncOrderToLark(order, haravan_topic) {
+    const exists = await this.db.larksuiteOrderQrGenerator.findFirst({
+      where: {
+        haravan_order_id: order.id
+      }
+    });
     const paidAmount =
       order.transactions
         ?.filter(t => ["capture", "authorization"].includes(t.kind))
@@ -74,7 +79,7 @@ export default class OrderService {
 
     const { app_token, table_id } = TABLES.ORDER_QR_GENERATOR;
 
-    if (haravan_topic === HARAVAN_TOPIC.CREATED) {
+    if (!exists && haravan_topic === HARAVAN_TOPIC.CREATED) {
       const response = await RecordService.createLarksuiteRecords({
         env: this.env,
         appToken: app_token,
