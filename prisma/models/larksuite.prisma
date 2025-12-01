@@ -136,7 +136,7 @@ model lark_line_items_payment {
   @@schema("larksuite")
 }
 
-model larkOrderQrGenerator {
+model larksađuiteOrderQrGenerator {
   haravan_order_id BigInt @id
   lark_record_id   String @db.VarChar(255)
 
