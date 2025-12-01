@@ -82,7 +82,7 @@ export default class OrderService {
         records: [recordFields]
       });
       if (response.data.records[0].record_id) {
-        await this.db.larkOrderQrGenerator.create({
+        await this.db.larksuiteOrderQrGenerator.create({
           data: {
             haravan_order_id: order.id,
             lark_record_id: response.data.records[0].record_id
