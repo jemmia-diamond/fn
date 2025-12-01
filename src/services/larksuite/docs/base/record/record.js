@@ -206,47 +206,4 @@ export default class RecordService {
 
     return response.data.records;
   }
-
-  /**
-   * Retrieves a single record in a Larksuite table by order_id field.
-   *
-   * @param {string} env - Environment configuration.
-   * @param {string} appToken - The app token of the Larksuite application.
-   * @param {string} tableId - The table ID.
-   * @param {string|number} orderId - The order ID to search for.
-   * @param {string} userIdType - The user ID type (default "open_id").
-   * @returns {Promise<object|null>} - The record if found, otherwise null.
-   */
-  static async getRecordByOrderId({
-    env,
-    appToken,
-    tableId,
-    orderId,
-    userIdType = "open_id"
-  }) {
-    const larkClient = await LarksuiteService.createClientV2(env);
-
-    const response = await larkClient.bitable.appTableRecord.search({
-      path: {
-        app_token: appToken,
-        table_id: tableId
-      },
-      params: {
-        user_id_type: userIdType
-      },
-      data: {
-        filter: {
-          conjunction: "and",
-          conditions: [
-            {
-              field_name: "ID",
-              operator: "is",
-              value: [`${orderId}`]
-            }
-          ]
-        }
-      }
-    });
-    return response?.data?.items?.[0] ?? null;
-  }
 }

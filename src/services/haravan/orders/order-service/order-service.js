@@ -47,16 +47,7 @@ export default class OrderService {
     }
   }
 
-  async syncOrderToLark(order) {
-    const { app_token, table_id } = TABLES.ORDER_QR_GENERATOR;
-
-    const exists = await RecordService.getRecordByOrderId({
-      env: this.env,
-      appToken: app_token,
-      tableId: table_id,
-      orderId: order.order_number
-    });
-
+  async syncOrderToLark(order, haravan_topic) {
     const paidAmount =
       order.transactions
         ?.filter(t => ["capture", "authorization"].includes(t.kind))
@@ -81,20 +72,30 @@ export default class OrderService {
       "Đơn mới nhất": order.customer.last_order_name
     };
 
-    if (!exists) {
-      await RecordService.createLarksuiteRecords({
+    const { app_token, table_id } = TABLES.ORDER_QR_GENERATOR;
+
+    if (haravan_topic === HARAVAN_TOPIC.CREATED) {
+      const response = await RecordService.createLarksuiteRecords({
         env: this.env,
         appToken: app_token,
         tableId: table_id,
         records: [recordFields]
       });
+      if (response.data.records[0].record_id) {
+        await this.db.larkOrderQrGenerator.create({
+          data: {
+            haravan_order_id: order.id,
+            lark_record_id: response.data.records[0].record_id
+          }
+        });
+      }
     }
     else {
       await RecordService.updateLarksuiteRecord({
         env: this.env,
         appToken: app_token,
         tableId: table_id,
-        recordId: exists.record_id,
+        recordId: exists.lark_record_id,
         fields: recordFields
       });
     }
@@ -110,7 +111,7 @@ export default class OrderService {
         if (haravan_topic === HARAVAN_TOPIC.CREATED) {
           await orderService.invalidOrderNotification(data, env);
         }
-        await orderService.syncOrderToLark(data);
+        await orderService.syncOrderToLark(data, haravan_topic);
       }
       catch (error) {
         Sentry.captureException(error);
