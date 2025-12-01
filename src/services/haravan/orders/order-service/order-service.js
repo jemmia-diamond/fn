@@ -1,13 +1,19 @@
 import * as Sentry from "@sentry/cloudflare";
+import Database from "services/database";
 import HaravanAPIClient from "services/haravan/api-client/api-client";
 import LarksuiteService from "services/larksuite/lark";
+import RecordService from "services/larksuite/docs/base/record/record";
 import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/constant";
 import { negativeStockOrderMessage } from "services/haravan/orders/order-service/helpers/messages-compose";
 import { HARAVAN_TOPIC } from "services/ecommerce/enum";
+import { toUnixTimestamp } from "services/utils/date-helper";
+import { getFinancialStatus } from "services/haravan/orders/order-service/helpers/financial-status";
+import { TABLES } from "services/larksuite/docs/constant";
 
 export default class OrderService {
   constructor(env) {
     this.env = env;
+    this.db = Database.instance(env);
     this.hrvClient = new HaravanAPIClient(env);
     this.larkClient = LarksuiteService.createClient(env);
   }
@@ -41,6 +47,67 @@ export default class OrderService {
     }
   }
 
+  async syncOrderToLark(order) {
+    const exists = await this.db.larksuiteOrderQrGenerator.findFirst({
+      where: {
+        haravan_order_id: order.id
+      }
+    });
+
+    const paidAmount =
+      order.transactions
+        ?.filter(t => ["capture", "authorization"].includes(t.kind))
+        .reduce((sum, t) => sum + (t.amount || 0), 0) || 0;
+
+    const recordFields = {
+      "ID": String(order.order_number),
+      "Mã đơn hàng": order.order_number,
+      "Mã đơn cũ": order.ref_order_number,
+      "Trạng thái": getFinancialStatus(order.financial_status),
+      "ID đơn hàng": order.id,
+      "Tổng số tiền": parseInt(order.total_price),
+      "Tên khách hàng": order.billing_address.name,
+      "SĐT thanh toán": order.billing_address.phone,
+      "SĐT giao hàng": order.shipping_address.phone,
+      "Số điện thoại": order.customer.phone,
+      "Trạng thái hủy": order.cancelled_status === "cancelled" ? "Đã hủy" : "Chưa hủy",
+      "Trạng thái đóng": order.closed_status === "closed" ? "Đã đóng" : "Chưa đóng",
+      "Thời gian tạo": toUnixTimestamp(order.created_at),
+      "Đã thanh toán": parseInt(paidAmount),
+      "Cần thanh toán": parseInt(order.total_price - paidAmount),
+      "Đơn mới nhất": order.customer.last_order_name
+    };
+
+    const { app_token, table_id } = TABLES.ORDER_QR_GENERATOR;
+
+    if (!exists) {
+      const response = await RecordService.createLarksuiteRecords({
+        env: this.env,
+        appToken: app_token,
+        tableId: table_id,
+        records: [recordFields]
+      });
+      if (response.data.records[0].record_id) {
+        await this.db.larksuiteOrderQrGenerator.create({
+          data: {
+            haravan_order_id: order.id,
+            lark_record_id: response.data.records[0].record_id
+          }
+        });
+      }
+    }
+    else {
+      await RecordService.updateLarksuiteRecord({
+        env: this.env,
+        appToken: app_token,
+        tableId: table_id,
+        recordId: exists.lark_record_id,
+        fields: recordFields
+      });
+    }
+
+  }
+
   static async dequeueOrderQueue(batch, env) {
     const orderService = new OrderService(env);
     for (const message of batch.messages) {
@@ -50,6 +117,7 @@ export default class OrderService {
         if (haravan_topic === HARAVAN_TOPIC.CREATED) {
           await orderService.invalidOrderNotification(data, env);
         }
+        await orderService.syncOrderToLark(data);
       }
       catch (error) {
         Sentry.captureException(error);

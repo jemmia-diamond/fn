@@ -7,6 +7,7 @@ import InventoryItemMappingService from "services/misa/mapping/inventory-item-ma
 import QrTransactionService from "services/misa/transactions/qr-transaction";
 import * as Constants from "services/misa/constant";
 import Utils from "services/misa/utils";
+import ManualTransactionService from "services/misa/transactions/manual-transaction";
 
 export default {
   VoucherMappingService,
@@ -17,5 +18,6 @@ export default {
   InventoryItemMappingService,
   QrTransactionService,
   Utils,
-  Constants
+  Constants,
+  ManualTransactionService
 };

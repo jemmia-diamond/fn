@@ -181,6 +181,66 @@ export default class SepayTransactionService {
     }
   }
 
+  async sendToERP(rawSepayTransaction, existingTransaction) {
+    try {
+      const sepayTransaction = this.mapRawSepayTransactionToPrisma(rawSepayTransaction);
+
+      if (parseFloat(sepayTransaction.amount_in) < 0) return;
+
+      const { orderNumber, orderDesc } = this.standardizeOrderNumber(sepayTransaction.transaction_content);
+
+      if (existingTransaction) {
+        const bank = sepayTransaction.bank_brand_name && await this.frappeClient.getList(
+          "Bank",
+          { filters: [["bank_name", "=", sepayTransaction.bank_brand_name]] }
+        );
+        const bankAccount = bank && bank[0] && sepayTransaction.account_number && await this.frappeClient.getList(
+          "Bank Account",
+          {
+            filters: [
+              ["bank", "=", bank[0].name],
+              ["bank_account_no", "=", sepayTransaction.account_number]
+            ]
+          }
+        );
+        const upsertedBankTransaction = await this.frappeClient.upsert(
+          {
+            doctype: "Bank Transaction",
+            name: existingTransaction.bank_transaction_name ?? "",
+            sepay_id: sepayTransaction.id,
+            sepay_order_number: orderNumber,
+            sepay_order_description: orderDesc,
+            sepay_bank_brand_name: sepayTransaction.bank_brand_name,
+            sepay_account_number: sepayTransaction.account_number,
+            sepay_transaction_date: sepayTransaction.transaction_date,
+            sepay_amount_out: sepayTransaction.amount_out,
+            sepay_amount_in: sepayTransaction.amount_in,
+            sepay_accumulated: sepayTransaction.accumulated,
+            sepay_transaction_content: sepayTransaction.transaction_content,
+            sepay_reference_number: sepayTransaction.reference_number,
+            sepay_code: sepayTransaction.code,
+            sepay_sub_account: sepayTransaction.sub_account,
+            sepay_bank_account_id: sepayTransaction.bank_account_id,
+            deposit: sepayTransaction.amount_in,
+            reference_number: sepayTransaction.reference_number,
+            date: dayjs(sepayTransaction.transaction_date, "YYYY-MM-DD HH:mm:ss").format("YYYY-MM-DD"),
+            bank_account: bankAccount && bankAccount[0] ? bankAccount[0].name : null
+          },
+          "name"
+        );
+        if (upsertedBankTransaction && upsertedBankTransaction.name) {
+          await this.db.sepay_transaction.update({
+            where: { id: existingTransaction.id },
+            data: { bank_transaction_name: upsertedBankTransaction.name }
+          });
+        }
+      }
+    } catch (error) {
+      // Better to capture exception right here than fail the whole flow
+      Sentry.captureException(error);
+    }
+  }
+
   async saveToDb(rawSepayTransaction) {
     const sepayTransaction = this.mapRawSepayTransactionToPrisma(rawSepayTransaction);
 
@@ -269,6 +329,7 @@ export default class SepayTransactionService {
         const createdSepayTransaction = await service.saveToDb(message.body);
         if (createdSepayTransaction) {
           await service.sendToLark(message.body, createdSepayTransaction);
+          await service.sendToERP(message.body, createdSepayTransaction);
         }
       } catch (error) {
         Sentry.captureException(error);
