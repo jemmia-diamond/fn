@@ -28,7 +28,7 @@ export default class SepayTransactionService {
    * Process a Sepay transaction
    * 1. For Larksuite, we directly update status and create haravan transaction
    * 2. For ERPNext, we just need to link payment entry to bank transaction.
-   * After that, another webhook will be triggered when payment entry is attached to bank transaction and update static + create haravan transaction
+   * After that, another webhook will be triggered when payment entry is attached to bank transaction and update status + create haravan transaction
    * Make sure sepay transaction is synced to ERPNext before processing
    * @param {*} sepayTransaction
    * @returns {Promise<boolean>}
