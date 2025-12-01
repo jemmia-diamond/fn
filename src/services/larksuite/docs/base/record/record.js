@@ -207,4 +207,3 @@ export default class RecordService {
     return response.data.records;
   }
 }
-

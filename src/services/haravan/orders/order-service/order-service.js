@@ -47,13 +47,12 @@ export default class OrderService {
     }
   }
 
-  async syncOrderToLark(order) {
+  async syncOrderToLark(order, haravan_topic) {
     const exists = await this.db.larksuiteOrderQrGenerator.findFirst({
       where: {
         haravan_order_id: order.id
       }
     });
-
     const paidAmount =
       order.transactions
         ?.filter(t => ["capture", "authorization"].includes(t.kind))
@@ -80,7 +79,7 @@ export default class OrderService {
 
     const { app_token, table_id } = TABLES.ORDER_QR_GENERATOR;
 
-    if (!exists) {
+    if (!exists && haravan_topic === HARAVAN_TOPIC.CREATED) {
       const response = await RecordService.createLarksuiteRecords({
         env: this.env,
         appToken: app_token,
@@ -117,7 +116,7 @@ export default class OrderService {
         if (haravan_topic === HARAVAN_TOPIC.CREATED) {
           await orderService.invalidOrderNotification(data, env);
         }
-        await orderService.syncOrderToLark(data);
+        await orderService.syncOrderToLark(data, haravan_topic);
       }
       catch (error) {
         Sentry.captureException(error);
