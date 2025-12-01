@@ -3,9 +3,9 @@ import HaravanCollectionClient from "services/clients/workplace-client/haravan-c
 import DiamondClient from "services/clients/workplace-client/diamond-client";
 
 export class WorkplaceClient {
-  constructor(apiToken, baseId) {
+  constructor(apiToken, baseId, baseUrl) {
     this.api = new Api({
-      baseURL: "https://workplace.jemmia.vn/",
+      baseURL: baseUrl,
       headers: {
         "xc-token": apiToken
       }

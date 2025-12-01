@@ -58,7 +58,8 @@
     "MISA_APP_ID": "4bc7a4b1-ed15-433a-aaf6-2137d01729bd",
     "MISA_ORG_CODE": "Jemmia_Diamond",
     "R2_JEMMIA_WEBSITE_PUBLIC_URL": "https://assets.jemmia.vn",
-    "NOCODB_SUPPLY_BASE_ID": "pl4e7zwnui0k8y1"
+    "NOCODB_SUPPLY_BASE_ID": "pl4e7zwnui0k8y1",
+    "NOCODB_WORKPLACE_BASE_URL": "https://workplace.jemmia.vn/"
   },
   "secrets_store_secrets": [
     {

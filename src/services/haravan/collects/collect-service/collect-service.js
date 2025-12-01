@@ -19,12 +19,13 @@ export default class CollectService {
 
     const NOCO_TOKEN = await this.env.NOCODB_API_TOKEN.get();
     const WORKPLACE_BASE_ID = this.env.NOCODB_SUPPLY_BASE_ID;
+    const WORKPLACE_BASE_URL = this.env.NOCODB_WORKPLACE_BASE_URL;
 
-    if (!NOCO_TOKEN || !WORKPLACE_BASE_ID) {
+    if (!NOCO_TOKEN || !WORKPLACE_BASE_ID || !WORKPLACE_BASE_URL) {
       throw new BadRequestException("NocoDB credentials are not configured.");
     }
 
-    const workplaceClient = new WorkplaceClient(NOCO_TOKEN, WORKPLACE_BASE_ID);
+    const workplaceClient = new WorkplaceClient(NOCO_TOKEN, WORKPLACE_BASE_ID, WORKPLACE_BASE_URL);
 
     // Get Haravan Collection ID from ID
     const collection = await workplaceClient.haravanCollections.get(haravan_collection_id);
@@ -75,12 +76,13 @@ export default class CollectService {
 
     const NOCO_TOKEN = await this.env.NOCODB_API_TOKEN.get();
     const WORKPLACE_BASE_ID = this.env.NOCODB_SUPPLY_BASE_ID;
+    const WORKPLACE_BASE_URL = this.env.NOCODB_WORKPLACE_BASE_URL;
 
-    if (!NOCO_TOKEN || !WORKPLACE_BASE_ID) {
+    if (!NOCO_TOKEN || !WORKPLACE_BASE_ID || !WORKPLACE_BASE_URL) {
       throw new BadRequestException("NocoDB credentials are not configured.");
     }
 
-    const workplaceClient = new WorkplaceClient(NOCO_TOKEN, WORKPLACE_BASE_ID);
+    const workplaceClient = new WorkplaceClient(NOCO_TOKEN, WORKPLACE_BASE_ID, WORKPLACE_BASE_URL);
 
     // Get Haravan Collection ID
     const collection = await workplaceClient.haravanCollections.get(haravan_collection_id);
