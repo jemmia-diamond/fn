@@ -48,10 +48,13 @@ export default class OrderService {
   }
 
   async syncOrderToLark(order) {
-    const exists = await this.db.larksuiteOrderQrGenerator.findFirst({
-      where: {
-        haravan_order_id: order.id
-      }
+    const { app_token, table_id } = TABLES.ORDER_QR_GENERATOR;
+
+    const exists = await RecordService.getRecordByOrderId({
+      env: this.env,
+      appToken: app_token,
+      tableId: table_id,
+      orderId: order.order_number
     });
 
     const paidAmount =
@@ -78,30 +81,20 @@ export default class OrderService {
       "Đơn mới nhất": order.customer.last_order_name
     };
 
-    const { app_token, table_id } = TABLES.ORDER_QR_GENERATOR;
-
     if (!exists) {
-      const response = await RecordService.createLarksuiteRecords({
+      await RecordService.createLarksuiteRecords({
         env: this.env,
         appToken: app_token,
         tableId: table_id,
         records: [recordFields]
       });
-      if (response.data.records[0].record_id) {
-        await this.db.larksuiteOrderQrGenerator.create({
-          data: {
-            haravan_order_id: order.id,
-            lark_record_id: response.data.records[0].record_id
-          }
-        });
-      }
     }
     else {
       await RecordService.updateLarksuiteRecord({
         env: this.env,
         appToken: app_token,
         tableId: table_id,
-        recordId: exists.lark_record_id,
+        recordId: exists.record_id,
         fields: recordFields
       });
     }
