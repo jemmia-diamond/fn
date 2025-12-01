@@ -10,11 +10,33 @@ import { PAYMENT_TYPES, VOUCHER_MODEL, VOUCHER_REF_TYPES, VOUCHER_TYPES } from "
 import { getRefOrderChains } from "services/ecommerce/order-tracking/queries/get-initial-order";
 
 export default class MisaVoucherSyncService {
+  static BATCH_JOB_TIMES = [
+    { hour: 1, minute: 30 },
+    { hour: 6, minute: 30 },
+    { hour: 11, minute: 0 }
+  ];
+
   constructor(env) {
     this.env = env;
     this.db = Database.instance(env);
     this.qrPaymentFetcher = new QrPaymentFetchingService(env);
     this.manualPaymentFetcher = new ManualPaymentFetchingService(env);
+  }
+
+  /**
+   * Run every 30min - processes vouchers from last 30 minutes
+   * Skips execution at 8:30, 13:30, and 18:00
+   */
+  async runThirtyMinutesBatch() {
+    const now = dayjs().utc();
+    const isBatchJobTime = MisaVoucherSyncService.BATCH_JOB_TIMES.some(
+      time => time.hour === now.hour() && time.minute === now.minute()
+    );
+    if (isBatchJobTime) return;
+
+    const endDate = now.toDate();
+    const startDate = now.subtract(30, "minutes").toDate();
+    await this._createVouchersForDateRange(startDate, endDate);
   }
 
   /**

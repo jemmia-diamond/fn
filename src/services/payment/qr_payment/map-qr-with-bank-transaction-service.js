@@ -58,8 +58,8 @@ export default class MapQRWithBankTransactionService {
       }));
     }
 
-    const sepayTransactionAmount = parseInt(sepayTransaction.amount_in);
-    if (Math.abs(sepayTransactionAmount - Number(qrPayment.transfer_amount)) > 1000) {
+    const sepayTransactionAmount = parseFloat(sepayTransaction.amount_in);
+    if (Math.abs(sepayTransactionAmount - parseFloat(qrPayment.transfer_amount)) > 1000) {
       throw new Error(JSON.stringify({
         error_msg: `Sepay transaction with id ${sepayTransactionId} amount is not equal to QR's amount`,
         error_code: MapQRWithBankTransactionService.AMOUNT_MISMATCH
@@ -102,7 +102,7 @@ export default class MapQRWithBankTransactionService {
     const createdOrderTransaction = await haravanService.orderTransaction.createTransaction(
       qrPayment.haravan_order_id,
       {
-        amount: Number(qrPayment.transfer_amount),
+        amount: parseFloat(qrPayment.transfer_amount),
         kind: "capture",
         gateway: "Chuyển khoản ngân hàng (tự động xác nhận giao dịch)"
       }

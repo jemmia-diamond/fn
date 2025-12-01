@@ -104,7 +104,7 @@ export default class CreateQRService {
     };
 
     if (!isOrderLater) {
-      transactionBody.haravan_order_id = body.haravan_order_id;
+      transactionBody.haravan_order_id = parseInt(body.haravan_order_id);
       transactionBody.haravan_order_status = body.haravan_order_status;
       transactionBody.haravan_order_total_price = body.haravan_order_total_price;
     }

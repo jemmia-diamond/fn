@@ -22,5 +22,9 @@ export const TABLES = {
   SEPAY_TRANSACTION: {
     table_id: "tblJHy14ijF6ITSu",
     app_token: "SfjFbVLUHaGbhksKPnBlPDEdgZd"
+  },
+  ORDER_QR_GENERATOR: {
+    table_id: "tblsUW3YbGPoyQ9E",
+    app_token: "SfjFbVLUHaGbhksKPnBlPDEdgZd"
   }
 };
