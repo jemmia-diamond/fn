@@ -49,8 +49,11 @@ export default class MisaWebhookHandler {
     const { job_type, data } = body;
 
     switch (job_type) {
-    case "create_qr_voucher":
+    case Misa.Constants.JOB_TYPE.CREATE_QR_VOUCHER:
       await this._createQrVoucher(data.qr_transaction_id);
+      break;
+    case Misa.Constants.JOB_TYPE.CREATE_MANUAL_VOUCHER:
+      await this._createManualVoucher(data.manual_payment_uuid);
       break;
     default:
       break;
@@ -58,7 +61,7 @@ export default class MisaWebhookHandler {
   }
 
   /**
-   * Create MISA voucher Job
+   * Create MISA voucher Job for QR Payment
    * @private
    */
   async _createQrVoucher(id) {
@@ -70,5 +73,20 @@ export default class MisaWebhookHandler {
     }
 
     await service.processTransaction(qrTransaction);
+  }
+
+  /**
+   * Create MISA voucher Job for Manual Payment ( Cash and Non-cash )
+   * @private
+   */
+  async _createManualVoucher(uuid) {
+    const service = new Misa.ManualTransactionService(this.env);
+    const manualPayment = await service.findManualPaymentByUuid(uuid);
+    if (!manualPayment) {
+      Sentry.captureMessage(`MISA: Manual Payment record not found for UUID: ${uuid}`);
+      return;
+    }
+
+    await service.processTransaction(manualPayment);
   }
 }
