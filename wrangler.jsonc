@@ -59,7 +59,9 @@
     "MISA_ORG_CODE": "Jemmia_Diamond",
     "R2_JEMMIA_WEBSITE_PUBLIC_URL": "https://assets.jemmia.vn",
     "NOCODB_SUPPLY_BASE_ID": "pl4e7zwnui0k8y1",
-    "NOCODB_WORKPLACE_BASE_URL": "https://workplace.jemmia.vn/"
+    "NOCODB_MARKETING_BASE_ID": "pbzopuiobhc8xf1",
+    "NOCODB_WORKPLACE_BASE_URL": "https://workplace.jemmia.vn/",
+    "SALESAYA_API_BASE_URL": "https://api.salesaya.com",
   },
   "secrets_store_secrets": [
     {

@@ -22,5 +22,9 @@ export const CHAT_GROUPS = {
   ECOM_ORDER_NOTIFICATION: {
     chat_id: "oc_2ec804ef9b7eb205424edfb92ec85e81",
     group_name: "[BOT] Thông báo đơn hàng ecom"
+  },
+  MEDIA_GROUP: {
+    chat_id: "oc_40d8eb138d11d3121a0baf1d9eba5863",
+    group_name: "Group Ảnh/Video"
   }
 };
