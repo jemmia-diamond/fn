@@ -1,0 +1,124 @@
+import RecordService from "services/larksuite/docs/base/record/record";
+import LarkChatResourceFetcher from "services/salesaya/lark-chat/lark-chat-resource-fetcher";
+import LarkChatMediaUploader from "services/salesaya/lark-chat/lark-chat-media-uploader";
+import LarkChatParser from "services/salesaya/lark-chat/lark-chat-parser";
+import { TABLES } from "services/larksuite/docs/constant";
+import { getFilename } from "services/salesaya/lark-chat/lark-chat-helper";
+import { WorkplaceClient } from "services/clients/workplace-client";
+import { BadRequestException } from "src/exception/exceptions";
+
+export default class LarkChatSyncService {
+  constructor(env, larkAxiosClient, larkClientV2) {
+    this.env = env;
+    this.larkAxiosClient = larkAxiosClient;
+    this.larkV2 = larkClientV2;
+    this.appToken = TABLES.SALESAYA_MEDIA.app_token;
+    this.tableId = TABLES.SALESAYA_MEDIA.table_id;
+    this.workplaceBaseId = this.env.NOCODB_MARKETING_BASE_ID;
+    this.workplaceBaseUrl = this.env.NOCODB_WORKPLACE_BASE_URL;
+    this.fetcher = new LarkChatResourceFetcher(env, larkAxiosClient);
+    this.uploader = new LarkChatMediaUploader(`${this.env.SALESAYA_API_BASE_URL}/files/upload`);
+    this.parser = new LarkChatParser(larkClientV2);
+  }
+  async writeRecord(code, links, status, reason = "") {
+    await RecordService.createLarksuiteRecords({
+      env: this.env,
+      appToken: this.appToken,
+      tableId: this.tableId,
+      records: [
+        {
+          "Mã sản phẩm": code,
+          "Hình ảnh/Video": links,
+          "Trạng thái": status,
+          "Lí do": reason
+        }
+      ]
+    });
+  };
+  async syncChat(chatId) {
+    const NOCO_TOKEN = await this.env.NOCODB_API_TOKEN_SECRET.get();
+    if (!NOCO_TOKEN || !this.workplaceBaseId || !this.workplaceBaseUrl) {
+      throw new BadRequestException("NocoDB credentials are not configured.");
+    }
+
+    const workplaceClient = new WorkplaceClient(NOCO_TOKEN, this.workplaceBaseId, this.workplaceBaseUrl);
+
+    let pageToken = "";
+    let hasMore = true;
+
+    while (hasMore) {
+      const res = await this.larkV2.im.message.list({
+        params: {
+          container_id_type: "chat",
+          container_id: chatId,
+          page_size: 50,
+          page_token: pageToken || undefined,
+          sort_type: "ByCreateTimeDesc"
+        }
+      });
+
+      const items = res?.data?.items || [];
+
+      for (const msg of items) {
+        if (!msg.thread_id) continue;
+
+        const parsed = await this.parser.parseThread(msg.thread_id);
+        if (parsed.codes.length === 0) continue;
+
+        const buffersCache = {};
+        const imageLinks = [];
+        const fileLinks = [];
+
+        for (let i = 0; i < parsed.images.length; i++) {
+          const img = parsed.images[i];
+          const key = `${img.message_id}_${img.key}`;
+
+          if (!buffersCache[key]) {
+            buffersCache[key] = await this.fetcher.getBufferByKey(
+              img.message_id,
+              img.key,
+              "image"
+            );
+          }
+
+          const filename = getFilename(parsed.codes[0], i + 1, "jpg");
+          const link = await this.uploader.upload(buffersCache[key], filename);
+          if (link) imageLinks.push(link);
+        }
+
+        for (let i = 0; i < parsed.files.length; i++) {
+          const f = parsed.files[i];
+          const key = `${f.message_id}_${f.key}`;
+
+          if (!buffersCache[key]) {
+            buffersCache[key] = await this.fetcher.getBufferByKey(
+              f.message_id,
+              f.key,
+              "file"
+            );
+          }
+
+          const filename = getFilename(parsed.codes[0], i + 1, "mp4");
+          const link = await this.uploader.upload(buffersCache[key], filename);
+          if (link) fileLinks.push(link);
+        }
+
+        const links = [...imageLinks, ...fileLinks].join(", ");
+        if (parsed.codes.length === 1) {
+          const updated = await workplaceClient.designImages.updateMediaByDesignCode(parsed.codes[0], fileLinks, imageLinks);
+          if (!updated) {
+            const existDesign = await workplaceClient.designs.getByDesignCode(parsed.codes[0]);
+            await workplaceClient.designImages.createByDesignCode(existDesign, fileLinks, imageLinks);
+          }
+          await this.writeRecord(parsed.codes[0], links, "Thành công");
+
+        } else {
+          await this.writeRecord(parsed.codes.join(", "), links, "Thất bại", "Tin nhắn chứa nhiều mã sản phẩm");
+        }
+      }
+
+      pageToken = res?.data?.page_token || null;
+      hasMore = !!pageToken;
+    }
+  }
+}
