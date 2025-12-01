@@ -95,7 +95,7 @@ export default class OrderService {
         });
       }
     }
-    else {
+    if (exists && haravan_topic !== HARAVAN_TOPIC.CREATED) {
       await RecordService.updateLarksuiteRecord({
         env: this.env,
         appToken: app_token,
