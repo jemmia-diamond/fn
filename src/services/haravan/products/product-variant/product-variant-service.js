@@ -1,6 +1,5 @@
 import * as Sentry from "@sentry/cloudflare";
 import { WorkplaceClient } from "services/clients/workplace-client";
-import { BadRequestException } from "src/exception/exceptions";
 
 export default class ProductVariantService {
   constructor(env) {
@@ -10,15 +9,8 @@ export default class ProductVariantService {
   async clearIncomingStockTag(product) {
     const variants = product.variants || [];
 
-    const NOCO_TOKEN = await this.env.NOCODB_API_TOKEN_SECRET.get();
     const WORKPLACE_BASE_ID = this.env.NOCODB_SUPPLY_BASE_ID;
-    const WORKPLACE_BASE_URL = this.env.NOCODB_WORKPLACE_BASE_URL;
-
-    if (!NOCO_TOKEN || !WORKPLACE_BASE_ID || !WORKPLACE_BASE_URL) {
-      throw new BadRequestException("NocoDB credentials are not configured.");
-    }
-
-    const workplaceClient = new WorkplaceClient(NOCO_TOKEN, WORKPLACE_BASE_ID, WORKPLACE_BASE_URL);
+    const workplaceClient = await WorkplaceClient.create(this.env, WORKPLACE_BASE_ID);
 
     for (const variant of variants) {
       const qty = variant.qty_available ?? 0;

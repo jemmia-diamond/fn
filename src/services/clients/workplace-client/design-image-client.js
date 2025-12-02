@@ -1,20 +1,16 @@
-export default class DesignImageClient {
+import BaseWorkplaceClient from "services/clients/workplace-client/base-client";
+
+export default class DesignImageClient extends BaseWorkplaceClient {
   constructor(api, baseId) {
-    this.api = api;
-    this.baseId = baseId;
-    this.tableName = "design_images";
+    super(api, baseId, "design_images");
   }
 
   async findByDesignCode(designCode) {
-    const res = await this.api.dbTableRow.list("noco", this.baseId, this.tableName, {
-      where: `(design_code,eq,${designCode})`,
-      limit: 1
-    });
-    return res.list?.[0] ?? null;
+    return await this.findOne({ where: `(design_code,eq,${designCode})` });
   }
 
   async updateRecords(records) {
-    return await this.api.dbTableRow.bulkUpdate("noco", this.baseId, this.tableName, records);
+    return await this.bulkUpdate(records);
   }
 
   async updateMediaByDesignCode(design_code, videos = [], images = []) {
@@ -38,7 +34,7 @@ export default class DesignImageClient {
     };
 
     try {
-      return await this.api.dbTableRow.create("noco", this.baseId, this.tableName, data);
+      return await this.create(data);
     } catch (error) {
       if (
         error.response?.status === 422 &&

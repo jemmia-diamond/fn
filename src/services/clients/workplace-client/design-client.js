@@ -1,16 +1,11 @@
-export default class DesignsClient {
+import BaseWorkplaceClient from "services/clients/workplace-client/base-client";
+
+export default class DesignsClient extends BaseWorkplaceClient {
   constructor(api, baseId) {
-    this.api = api;
-    this.baseId = baseId;
-    this.tableName = "designs";
+    super(api, baseId, "designs");
   }
 
   async getByDesignCode(designCode) {
-    const res = await this.api.dbTableRow.list("noco", this.baseId, this.tableName, {
-      where: `(design_code,eq,${designCode})`,
-      limit: 1
-    });
-    return res.list?.[0] ?? null;
+    return await this.findOne({ where: `(design_code,eq,${designCode})` });
   }
-
 }
