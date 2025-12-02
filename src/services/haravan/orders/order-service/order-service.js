@@ -9,6 +9,8 @@ import { HARAVAN_TOPIC } from "services/ecommerce/enum";
 import { toUnixTimestamp } from "services/utils/date-helper";
 import { getFinancialStatus } from "services/haravan/orders/order-service/helpers/financial-status";
 import { TABLES } from "services/larksuite/docs/constant";
+import { BadRequestException } from "src/exception/exceptions";
+import HaravanAPI from "services/clients/haravan-client";
 
 export default class OrderService {
   constructor(env) {
@@ -113,14 +115,16 @@ export default class OrderService {
       return;
     }
 
+    const HRV_API_KEY = await this.env.HARAVAN_TOKEN_SECRET.get();
+    if (!HRV_API_KEY) {
+      throw new BadRequestException("Haravan API credentials or base URL are not configured in the environment.");
+    }
+
+    const hrvClient = new HaravanAPI(HRV_API_KEY);
+
     try {
-      const refTransactionsResponse = await this.hrvClient.orders.order.getTransactions(refOrderId);
+      const refTransactions = await hrvClient.orderTransaction.getTransactions(refOrderId);
 
-      if (!refTransactionsResponse || !refTransactionsResponse.transactions) {
-        return;
-      }
-
-      const refTransactions = refTransactionsResponse.transactions;
       if (!refTransactions || refTransactions.length === 0) {
         return;
       }
@@ -137,7 +141,7 @@ export default class OrderService {
             gateway: refTransactionGateway
           };
 
-          await this.hrvClient.orders.order.createTransaction(order.id, transactionData);
+          await hrvClient.orderTransaction.createTransaction(order.id, transactionData);
         }
       }
     } catch (error) {
