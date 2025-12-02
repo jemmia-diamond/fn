@@ -130,7 +130,7 @@ export default class LinkQRWithRealOrderService {
     }
   }
 
-  async updateOrderLater(id, existingQr, body) {
+  async updateOrderLater(id, body) {
     const dataToUpdate = {
       haravan_order_number: body.haravan_order_number,
       haravan_order_id: body.haravan_order_id,
