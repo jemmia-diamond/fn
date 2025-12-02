@@ -18,7 +18,7 @@ export default class CollectService {
     }
 
     const WORKPLACE_BASE_ID = this.env.NOCODB_SUPPLY_BASE_ID;
-    const workplaceClient = await WorkplaceClient.create(this.env, WORKPLACE_BASE_ID);
+    const workplaceClient = await WorkplaceClient.initialize(this.env, WORKPLACE_BASE_ID);
 
     // Get Haravan Collection ID from ID
     const collection = await workplaceClient.haravanCollections.get(haravan_collection_id);
@@ -68,7 +68,7 @@ export default class CollectService {
     }
 
     const WORKPLACE_BASE_ID = this.env.NOCODB_SUPPLY_BASE_ID;
-    const workplaceClient = await WorkplaceClient.create(this.env, WORKPLACE_BASE_ID);
+    const workplaceClient = await WorkplaceClient.initialize(this.env, WORKPLACE_BASE_ID);
 
     // Get Haravan Collection ID
     const collection = await workplaceClient.haravanCollections.get(haravan_collection_id);

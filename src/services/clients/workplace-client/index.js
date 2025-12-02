@@ -19,7 +19,7 @@ export class WorkplaceClient {
     this.designs = new DesignsClient(this.api, baseId);
   }
 
-  static async create(env, baseId) {
+  static async initialize(env, baseId) {
     const token = await env.NOCODB_API_TOKEN_SECRET.get();
     const baseUrl = env.NOCODB_WORKPLACE_BASE_URL;
     if (!token || !baseId || !baseUrl) {

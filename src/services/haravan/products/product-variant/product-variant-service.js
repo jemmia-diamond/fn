@@ -10,7 +10,7 @@ export default class ProductVariantService {
     const variants = product.variants || [];
 
     const WORKPLACE_BASE_ID = this.env.NOCODB_SUPPLY_BASE_ID;
-    const workplaceClient = await WorkplaceClient.create(this.env, WORKPLACE_BASE_ID);
+    const workplaceClient = await WorkplaceClient.initialize(this.env, WORKPLACE_BASE_ID);
 
     for (const variant of variants) {
       const qty = variant.qty_available ?? 0;
