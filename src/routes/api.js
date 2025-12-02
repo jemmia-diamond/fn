@@ -53,6 +53,7 @@ export default class APIRoutes {
     paymentApi.patch("/manual-payments/:id", Payment.ManualPaymentsController.update);
     paymentApi.post("/qr-payments", Payment.QRPaymentsController.create);
     paymentApi.patch("/qr-payments/:id/map-bank-transaction", Payment.QRPaymentsMapBankTransactionController.create);
+    paymentApi.patch("/qr-payments/:id/link-order", Payment.QRPaymentsLinkOrderController.create);
     paymentApi.get("/qr-payments/:id", Payment.QRPaymentsController.show);
 
     const salesayaNamespaceApi = api.basePath("/salesaya");
