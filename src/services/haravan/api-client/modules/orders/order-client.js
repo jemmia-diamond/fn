@@ -14,4 +14,14 @@ export default class OrderClient extends BaseClient {
     const path = "/com/orders.json";
     return await this.makeGetRequest(path);
   }
+
+  async getTransactions(orderId) {
+    const path = `/com/orders/${orderId}/transactions.json`;
+    return await this.makeGetRequest(path);
+  }
+
+  async createTransaction(orderId, transactionData) {
+    const path = `/com/orders/${orderId}/transactions.json`;
+    return await this.makePostRequest(path, { transaction: transactionData });
+  }
 }

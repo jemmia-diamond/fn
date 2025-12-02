@@ -107,6 +107,44 @@ export default class OrderService {
 
   }
 
+  async syncRefTransactions(order) {
+    const refOrderId = order.ref_order_id;
+    if (!refOrderId) {
+      return;
+    }
+
+    try {
+      const refTransactionsResponse = await this.hrvClient.orders.order.getTransactions(refOrderId);
+
+      if (!refTransactionsResponse || !refTransactionsResponse.transactions) {
+        return;
+      }
+
+      const refTransactions = refTransactionsResponse.transactions;
+      if (!refTransactions || refTransactions.length === 0) {
+        return;
+      }
+
+      for (const refTransac of refTransactions) {
+        const refTransactionAmount = parseFloat(refTransac.amount);
+        const refTransactionKind = refTransac.kind;
+        const refTransactionGateway = refTransac.gateway;
+
+        if (refTransactionAmount > 0 && ["pending", "authorization"].includes(refTransactionKind.toLowerCase())) {
+          const transactionData = {
+            amount: refTransactionAmount,
+            kind: refTransactionKind,
+            gateway: refTransactionGateway
+          };
+
+          await this.hrvClient.orders.order.createTransaction(order.id, transactionData);
+        }
+      }
+    } catch (error) {
+      Sentry.captureException(error);
+    }
+  }
+
   static async dequeueOrderQueue(batch, env) {
     const orderService = new OrderService(env);
     for (const message of batch.messages) {
@@ -115,6 +153,7 @@ export default class OrderService {
         const haravan_topic = data.haravan_topic;
         if (haravan_topic === HARAVAN_TOPIC.CREATED) {
           await orderService.invalidOrderNotification(data, env);
+          await orderService.syncRefTransactions(data);
         }
         await orderService.syncOrderToLark(data, haravan_topic);
       }
