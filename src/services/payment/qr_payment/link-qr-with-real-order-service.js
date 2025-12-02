@@ -82,8 +82,8 @@ export default class LinkQRWithRealOrderService {
       }));
     }
 
-    let toPayAmount = qrPayment.transfer_amount;
-    const haravanOrderRemainPay = parseInt(body.haravan_order_remain_pay);
+    let toPayAmount = parseFloat(qrPayment.transfer_amount);
+    const haravanOrderRemainPay = parseFloat(body.haravan_order_remain_pay);
 
     if (Math.abs(haravanOrderRemainPay - toPayAmount) <= 1000) {
       toPayAmount = haravanOrderRemainPay;
