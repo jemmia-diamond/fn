@@ -17,4 +17,28 @@ export default class DiamondClient {
     );
     return res.list[0];
   }
+
+  async update(id, data) {
+    const res = await this.api.dbTableRow.update(
+      "noco",
+      this.baseId,
+      this.tableName,
+      id,
+      data
+    );
+    return res;
+  }
+
+  async findOne(params = {}) {
+    const res = await this.api.dbTableRow.list(
+      "noco",
+      this.baseId,
+      this.tableName,
+      {
+        ...params,
+        limit: 1
+      }
+    );
+    return res.list[0];
+  }
 }

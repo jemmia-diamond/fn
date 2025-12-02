@@ -17,7 +17,7 @@ export default class CollectService {
       return;
     }
 
-    const NOCO_TOKEN = await this.env.NOCODB_API_TOKEN.get();
+    const NOCO_TOKEN = await this.env.NOCODB_API_TOKEN_SECRET.get();
     const WORKPLACE_BASE_ID = this.env.NOCODB_SUPPLY_BASE_ID;
     const WORKPLACE_BASE_URL = this.env.NOCODB_WORKPLACE_BASE_URL;
 
@@ -74,7 +74,7 @@ export default class CollectService {
       return;
     }
 
-    const NOCO_TOKEN = await this.env.NOCODB_API_TOKEN.get();
+    const NOCO_TOKEN = await this.env.NOCODB_API_TOKEN_SECRET.get();
     const WORKPLACE_BASE_ID = this.env.NOCODB_SUPPLY_BASE_ID;
     const WORKPLACE_BASE_URL = this.env.NOCODB_WORKPLACE_BASE_URL;
 
