@@ -135,7 +135,7 @@ export default class LinkQRWithRealOrderService {
       haravan_order_number: body.haravan_order_number,
       haravan_order_id: parseInt(body.haravan_order_id, 10),
       haravan_order_status: body.haravan_order_status,
-      haravan_order_total_price: parseFloat(body.haravan_order_total_price),
+      haravan_order_total_price: body.haravan_order_total_price,
       transfer_status: "success"
     };
 
