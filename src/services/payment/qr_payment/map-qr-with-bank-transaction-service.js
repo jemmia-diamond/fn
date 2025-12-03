@@ -108,7 +108,7 @@ export default class MapQRWithBankTransactionService {
       }
     );
 
-    if (createdOrderTransaction && createdOrderTransaction.id) {
+    if (createdOrderTransaction) {
       const updatedQrPayment = await this.updateQRToSuccess(qrPaymentId);
 
       if (!updatedQrPayment) {
