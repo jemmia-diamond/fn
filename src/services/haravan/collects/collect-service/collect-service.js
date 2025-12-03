@@ -34,7 +34,7 @@ export default class CollectService {
         realProductId = diamond.product_id;
       }
     } else if (product_id) {
-      const jewelry = await workplaceClient.jewelry.get(product_id);
+      const jewelry = await workplaceClient.jewelries.get(product_id);
       if (jewelry) {
         realProductId = jewelry.haravan_product_id;
       }

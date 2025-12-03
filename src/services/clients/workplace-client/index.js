@@ -16,7 +16,7 @@ export class WorkplaceClient {
     });
     this.haravanCollections = new HaravanCollectionClient(this.api, baseId);
     this.diamonds = new DiamondClient(this.api, baseId);
-    this.jewelry = new JewelryClient(this.api, baseId);
+    this.jewelries = new JewelryClient(this.api, baseId);
     this.designImages = new DesignImageClient(this.api, baseId);
     this.designs = new DesignsClient(this.api, baseId);
   }
