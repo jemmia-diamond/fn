@@ -1,20 +1,11 @@
-export default class HaravanCollectionClient {
+import BaseWorkplaceClient from "services/clients/workplace-client/base-client";
+
+export default class HaravanCollectionClient extends BaseWorkplaceClient {
   constructor(api, baseId) {
-    this.api = api;
-    this.baseId = baseId;
-    this.tableName = "haravan_collections";
+    super(api, baseId, "haravan_collections");
   }
 
   async get(id) {
-    const res = await this.api.dbTableRow.list(
-      "noco",
-      this.baseId,
-      this.tableName,
-      {
-        where: `(id,eq,${id})`,
-        limit: 1
-      }
-    );
-    return res.list[0];
+    return await this.getById(id);
   }
 }

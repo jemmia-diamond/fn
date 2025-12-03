@@ -9,6 +9,8 @@ import { HARAVAN_TOPIC } from "services/ecommerce/enum";
 import { toUnixTimestamp } from "services/utils/date-helper";
 import { getFinancialStatus } from "services/haravan/orders/order-service/helpers/financial-status";
 import { TABLES } from "services/larksuite/docs/constant";
+import { BadRequestException } from "src/exception/exceptions";
+import HaravanAPI from "services/clients/haravan-client";
 
 export default class OrderService {
   constructor(env) {
@@ -107,6 +109,48 @@ export default class OrderService {
 
   }
 
+  async syncRefTransactions(order) {
+    const refOrderId = order.ref_order_id;
+    if (!refOrderId) {
+      return;
+    }
+
+    const HRV_API_KEY = await this.env.HARAVAN_TOKEN_SECRET.get();
+    if (!HRV_API_KEY) {
+      throw new BadRequestException("Haravan API credentials or base URL are not configured in the environment.");
+    }
+
+    const hrvClient = new HaravanAPI(HRV_API_KEY);
+
+    try {
+      const refTransactionsResponse = await hrvClient.orderTransaction.getTransactions(refOrderId);
+
+      const refTransactions = refTransactionsResponse.transactions;
+
+      if (!refTransactions || refTransactions.length === 0) {
+        return;
+      }
+
+      for (const refTransac of refTransactions) {
+        const refTransactionAmount = parseFloat(refTransac.amount);
+        const refTransactionKind = refTransac.kind;
+        const refTransactionGateway = refTransac.gateway;
+
+        if (refTransactionAmount > 0 && ["capture", "authorization"].includes(refTransactionKind.toLowerCase())) {
+          const transactionData = {
+            amount: refTransactionAmount,
+            kind: refTransactionKind,
+            gateway: refTransactionGateway
+          };
+
+          await hrvClient.orderTransaction.createTransaction(order.id, transactionData);
+        }
+      }
+    } catch (error) {
+      Sentry.captureException(error);
+    }
+  }
+
   static async dequeueOrderQueue(batch, env) {
     const orderService = new OrderService(env);
     for (const message of batch.messages) {
@@ -115,6 +159,7 @@ export default class OrderService {
         const haravan_topic = data.haravan_topic;
         if (haravan_topic === HARAVAN_TOPIC.CREATED) {
           await orderService.invalidOrderNotification(data, env);
+          await orderService.syncRefTransactions(data);
         }
         await orderService.syncOrderToLark(data, haravan_topic);
       }

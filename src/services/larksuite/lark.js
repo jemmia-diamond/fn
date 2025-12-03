@@ -1,5 +1,6 @@
 import * as lark from "@larksuiteoapi/node-sdk";
 import { createFetchAdapter } from "@haverstack/axios-fetch-adapter";
+import axios from "axios";
 const fetchAdapter = createFetchAdapter();
 
 export default class LarksuiteService {
@@ -23,6 +24,17 @@ export default class LarksuiteService {
       domain: larkApiEndpoint
     });
     client.httpInstance.defaults.adapter = fetchAdapter;
+    return client;
+  }
+
+  static async createAxiosClient(env) {
+    const token = await this.getTenantAccessToken(env);
+    const client = axios.create({
+      baseURL: env.LARK_API_ENDPOINT,
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
     return client;
   }
 
