@@ -3,7 +3,7 @@ import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/cons
 import LarksuiteService from "services/larksuite/lark";
 
 export default class LarkChatSyncController {
-  static async update(ctx) {
+  static async create(ctx) {
     const larkAxiosClient = await LarksuiteService.createAxiosClient(ctx.env);
     const larkSdkClient = await LarksuiteService.createClientV2(ctx.env);
     const service = new Salesaya.LarkChatSyncService(ctx.env, larkAxiosClient, larkSdkClient);
