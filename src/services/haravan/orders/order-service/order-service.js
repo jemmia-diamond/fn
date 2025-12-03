@@ -123,7 +123,9 @@ export default class OrderService {
     const hrvClient = new HaravanAPI(HRV_API_KEY);
 
     try {
-      const refTransactions = await hrvClient.orderTransaction.getTransactions(refOrderId);
+      const refTransactionsResponse = await hrvClient.orderTransaction.getTransactions(refOrderId);
+
+      const refTransactions = refTransactionsResponse.transactions;
 
       if (!refTransactions || refTransactions.length === 0) {
         return;
@@ -134,7 +136,7 @@ export default class OrderService {
         const refTransactionKind = refTransac.kind;
         const refTransactionGateway = refTransac.gateway;
 
-        if (refTransactionAmount > 0 && ["pending", "authorization"].includes(refTransactionKind.toLowerCase())) {
+        if (refTransactionAmount > 0 && ["capture", "authorization"].includes(refTransactionKind.toLowerCase())) {
           const transactionData = {
             amount: refTransactionAmount,
             kind: refTransactionKind,
