@@ -140,6 +140,7 @@ export default class SepayTransactionService {
         const amountToAllocate = bankTransaction.unallocated_amount > 0 ? bankTransaction.unallocated_amount : bankTransaction.deposit;
 
         paymentEntries.push({
+          payment_document: "Payment Entry",
           payment_entry: paymentEntryName,
           allocated_amount: amountToAllocate
         });
