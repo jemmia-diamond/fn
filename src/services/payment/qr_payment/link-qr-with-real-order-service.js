@@ -133,7 +133,7 @@ export default class LinkQRWithRealOrderService {
   async updateOrderLater(id, body) {
     const dataToUpdate = {
       haravan_order_number: body.haravan_order_number,
-      haravan_order_id: body.haravan_order_id,
+      haravan_order_id: parseInt(body.haravan_order_id, 10),
       haravan_order_status: body.haravan_order_status,
       haravan_order_total_price: body.haravan_order_total_price,
       transfer_status: "success"
