@@ -13,9 +13,9 @@ export default class ProductVariantService {
     const workplaceClient = await WorkplaceClient.initialize(this.env, WORKPLACE_BASE_ID);
 
     for (const variant of variants) {
-      const qty = variant.qty_available ?? 0;
+      const qty = variant?.inventory_advance?.qty_available ?? 0;
 
-      if (qty > 0) {
+      if (qty && qty > 0) {
         const diamond = await workplaceClient.diamonds.findOne({
           where: `(product_id,eq,${product.id})~and(variant_id,eq,${variant.id})~and(is_incoming,is,true)`
         });
