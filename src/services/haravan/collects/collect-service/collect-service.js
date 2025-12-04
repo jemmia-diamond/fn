@@ -9,7 +9,15 @@ export default class CollectService {
   }
 
   async createCollect(body) {
-    const { haravan_collection_id, diamond_id, product_id } = body.data.rows[0];
+    let { haravan_collection_id, diamond_id, product_id, products_id, haravan_collections_id } = body.data.rows[0];
+
+    if (!haravan_collection_id && haravan_collections_id) {
+      haravan_collection_id = haravan_collections_id;
+    }
+
+    if (!product_id && products_id) {
+      product_id = products_id;
+    }
 
     if (!haravan_collection_id || (!diamond_id && !product_id)) {
       return;
@@ -61,7 +69,15 @@ export default class CollectService {
   }
 
   async removeCollect(body) {
-    const { haravan_collection_id, diamond_id, product_id } = body.data.rows[0];
+    let { haravan_collection_id, diamond_id, product_id, products_id, haravan_collections_id } = body.data.rows[0];
+
+    if (!haravan_collection_id && haravan_collections_id) {
+      haravan_collection_id = haravan_collections_id;
+    }
+
+    if (!product_id && products_id) {
+      product_id = products_id;
+    }
 
     if (!haravan_collection_id || (!diamond_id && !product_id)) {
       return;
