@@ -61,7 +61,8 @@
     "NOCODB_SUPPLY_BASE_ID": "pl4e7zwnui0k8y1",
     "NOCODB_MARKETING_BASE_ID": "pbzopuiobhc8xf1",
     "NOCODB_WORKPLACE_BASE_URL": "https://workplace.jemmia.vn/",
-    "SALESAYA_API_BASE_URL": "https://api.salesaya.com"
+    "SALESAYA_API_BASE_URL": "https://api.salesaya.com",
+    "DEFAULT_HARAVAN_DISCOUNT_COLLECTION_ID": 1004602301
   },
   "secrets_store_secrets": [
     {

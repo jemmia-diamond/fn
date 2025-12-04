@@ -36,7 +36,7 @@ export default class AutoAddToDiscountProgramService {
     });
 
     if (isDiamond) {
-      const DIAMOND_COLLECTION_ID = 1004602301;
+      const DIAMOND_COLLECTION_ID = this.env.DEFAULT_HARAVAN_DISCOUNT_COLLECTION_ID;
       await this.addCollect(product.id, DIAMOND_COLLECTION_ID);
     }
   }
