@@ -332,8 +332,8 @@ export function aggregateQuery(jsonParams) {
   }
 
   if (jsonParams.linked_collections && jsonParams.linked_collections.length > 0) {
-    linkedCollectionJoinEcomProductsClause += "INNER JOIN workplace.products_haravan_collection linked_cp ON linked_cp.products_id = p.workplace_id \n";
-    linkedCollectionJoinEcomProductsClause += "INNER JOIN workplace.haravan_collections hc ON hc.id = linked_cp.haravan_collections_id \n";
+    linkedCollectionJoinEcomProductsClause += "INNER JOIN workplace.products_haravan_collection linked_cp ON linked_cp.product_id = p.workplace_id \n";
+    linkedCollectionJoinEcomProductsClause += "INNER JOIN workplace.haravan_collections hc ON hc.id = linked_cp.haravan_collection_id \n";
     filterString += `AND hc.title IN ('${jsonParams.linked_collections.join("','")}')\n`;
   }
 

@@ -50,9 +50,9 @@ function buildFilterString(jsonParams) {
       filterString += `
         AND NOT EXISTS (
           SELECT 1
-          FROM workplace._nc_m2m_diamonds_haravan_collect m
-          JOIN workplace.haravan_collections hc ON m.haravan_collections_id = hc.id
-          WHERE m.diamonds_id = d.id
+          FROM workplace.diamonds_haravan_collection m
+          JOIN workplace.haravan_collections hc ON m.haravan_collection_id = hc.id
+          WHERE m.diamond_id = d.id
             AND hc.title IN ('${collectionNames}')
             AND hc.is_excluded = true
         )
@@ -67,9 +67,9 @@ function buildFilterString(jsonParams) {
           OR
           EXISTS (
             SELECT 1
-            FROM workplace._nc_m2m_diamonds_haravan_collect m2
-            JOIN workplace.haravan_collections hc3 ON m2.haravan_collections_id = hc3.id
-            WHERE m2.diamonds_id = d.id
+            FROM workplace.diamonds_haravan_collection m2
+            JOIN workplace.haravan_collections hc3 ON m2.haravan_collection_id = hc3.id
+            WHERE m2.diamond_id = d.id
               AND hc3.title IN ('${collectionNames}')
               AND hc3.is_excluded = false
           )
