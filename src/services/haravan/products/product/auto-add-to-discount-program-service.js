@@ -27,7 +27,7 @@ export default class AutoAddToDiscountProgramService {
 
   async checkAndAddDiamondToCollection(product) {
     const variants = product.variants || [];
-    const isDiamond = variants.some(variant => {
+    const isDiamond = variants.length > 0 && variants.every(variant => {
       const sku = variant.sku || "";
       const title = variant.title || "";
       const skuParts = sku.split("-");
