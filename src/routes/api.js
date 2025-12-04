@@ -62,5 +62,6 @@ export default class APIRoutes {
 
     const larksuiteApi = api.basePath("/larksuites");
     larksuiteApi.get("/buyback-exchanges", Larksuite.BuybackExchangeController.index);
+    larksuiteApi.post("/lark-chat-sync", Larksuite.LarkChatSyncController.create);
   };
 };

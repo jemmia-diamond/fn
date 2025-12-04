@@ -26,5 +26,9 @@ export const TABLES = {
   ORDER_QR_GENERATOR: {
     table_id: "tblsUW3YbGPoyQ9E",
     app_token: "SfjFbVLUHaGbhksKPnBlPDEdgZd"
+  },
+  SALESAYA_MEDIA: {
+    table_id: "tblBwLRn8AFJmgaw",
+    app_token: "IsswbuOmJaZKtgsHV0Vl4wZWgaf"
   }
 };
