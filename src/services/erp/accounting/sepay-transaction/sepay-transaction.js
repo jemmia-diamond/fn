@@ -24,6 +24,15 @@ export default class SepayTransactionService {
     this.db = Database.instance(env);
   }
 
+  /**
+   * Process a Sepay transaction
+   * 1. For Larksuite, we directly update status and create haravan transaction
+   * 2. For ERPNext, we just need to link payment entry to bank transaction.
+   * After that, another webhook will be triggered when payment entry is attached to bank transaction and update status + create haravan transaction
+   * Make sure sepay transaction is synced to ERPNext before processing
+   * @param {*} sepayTransaction
+   * @returns {Promise<boolean>}
+   */
   async processTransaction(sepayTransaction) {
     const { content, transferAmount } = sepayTransaction;
 
@@ -42,6 +51,26 @@ export default class SepayTransactionService {
     });
 
     if (!qr) throw new Error("QR code not found");
+
+    if (qr.payment_entry_name) {
+      const bankTransactions = await this.frappeClient.getList("Bank Transaction", {
+        filters: [["sepay_id", "=", sepayTransaction.id]],
+        fields: ["name"]
+      });
+
+      const bankTransactionName = bankTransactions && bankTransactions.length > 0 ? bankTransactions[0].name : null;
+
+      if (!bankTransactionName) {
+        throw new Error("Bank Transaction not found in ERPNext");
+      }
+
+      const linkPaymentEntryToBankTransactionResult = await this.linkPaymentEntryToBankTransaction({
+        paymentEntryName: qr.payment_entry_name,
+        bankTransactionName: bankTransactionName
+      });
+
+      return linkPaymentEntryToBankTransactionResult;
+    }
 
     const HRV_API_KEY = await this.env.HARAVAN_TOKEN_SECRET.get();
     if (!HRV_API_KEY) {
@@ -70,17 +99,6 @@ export default class SepayTransactionService {
       data: { transfer_status: "success" }
     });
 
-    if (qr.payment_entry_name) {
-      await this.frappeClient.upsert(
-        {
-          doctype: "Payment Entry",
-          name: qr.payment_entry_name,
-          custom_transfer_status: "success"
-        },
-        "name"
-      );
-    }
-
     if (qr.lark_record_id) {
       const fieldsToUpdate = {
         ["Trạng thái chuyển khoản"]: "Đã hoàn thành"
@@ -99,6 +117,45 @@ export default class SepayTransactionService {
       await this.enqueueMisaBackgroundJob(qr);
     }
     return true;
+  }
+
+  async linkPaymentEntryToBankTransaction({
+    paymentEntryName,
+    bankTransactionName
+  }) {
+    try {
+      const bankTransaction = await this.frappeClient.getDoc("Bank Transaction", bankTransactionName);
+
+      if (!bankTransaction) {
+        throw new Error(`Bank Transaction ${bankTransactionName} not found`);
+      }
+
+      const paymentEntries = bankTransaction.payment_entries || [];
+      const isAlreadyLinked = paymentEntries.some(
+        (entry) => entry.payment_entry === paymentEntryName
+      );
+
+      if (!isAlreadyLinked) {
+        // Assume we allocate the full unallocated amount or deposit if unallocated is not set/zero but it should be valid
+        const amountToAllocate = bankTransaction.unallocated_amount > 0 ? bankTransaction.unallocated_amount : bankTransaction.deposit;
+
+        paymentEntries.push({
+          payment_document: "Payment Entry",
+          payment_entry: paymentEntryName,
+          allocated_amount: amountToAllocate
+        });
+
+        await this.frappeClient.update({
+          doctype: "Bank Transaction",
+          name: bankTransactionName,
+          payment_entries: paymentEntries
+        });
+      }
+      return true;
+    } catch (error) {
+      Sentry.captureException(error);
+      return false;
+    }
   }
 
   standardizeOrderNumber(content) {
