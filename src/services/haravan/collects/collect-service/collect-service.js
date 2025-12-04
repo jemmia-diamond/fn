@@ -11,9 +11,7 @@ export default class CollectService {
   async createCollect(body) {
     const { haravan_collection_id, diamond_id, product_id } = body.data.rows[0];
 
-    const targetId = diamond_id || product_id;
-
-    if (!haravan_collection_id || !targetId) {
+    if (!haravan_collection_id || (!diamond_id && !product_id)) {
       return;
     }
 
@@ -30,11 +28,15 @@ export default class CollectService {
 
     // Get Haravan Product ID from ID
     let realProductId;
-    if (targetId) {
-      // TODO: Apply for jewelry
-      const diamond = await workplaceClient.diamonds.get(targetId);
+    if (diamond_id) {
+      const diamond = await workplaceClient.diamonds.get(diamond_id);
       if (diamond) {
         realProductId = diamond.product_id;
+      }
+    } else if (product_id) {
+      const jewelry = await workplaceClient.jewelries.get(product_id);
+      if (jewelry) {
+        realProductId = jewelry.haravan_product_id;
       }
     }
 
@@ -61,9 +63,7 @@ export default class CollectService {
   async removeCollect(body) {
     const { haravan_collection_id, diamond_id, product_id } = body.data.rows[0];
 
-    const targetId = diamond_id || product_id;
-
-    if (!haravan_collection_id || !targetId) {
+    if (!haravan_collection_id || (!diamond_id && !product_id)) {
       return;
     }
 
@@ -80,11 +80,15 @@ export default class CollectService {
 
     // Get Haravan Product ID
     let realProductId;
-    if (targetId) {
-      // TODO: Apply for jewelry
-      const diamond = await workplaceClient.diamonds.get(targetId);
+    if (diamond_id) {
+      const diamond = await workplaceClient.diamonds.get(diamond_id);
       if (diamond) {
         realProductId = diamond.product_id;
+      }
+    } else if (product_id) {
+      const jewelry = await workplaceClient.jewelry.get(product_id);
+      if (jewelry) {
+        realProductId = jewelry.haravan_product_id;
       }
     }
 
