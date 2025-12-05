@@ -89,6 +89,18 @@ export default class LinkQRWithRealOrderService {
       toPayAmount = haravanOrderRemainPay;
     }
 
+    const haravanOrderId = parseInt(body.haravan_order_id, 10);
+    const existingOrder = await this.db.order.findUnique({
+      where: { id: haravanOrderId }
+    });
+
+    if (!existingOrder) {
+      throw new Error(JSON.stringify({
+        error_msg: `Order with id ${haravanOrderId} not found`,
+        error_code: LinkQRWithRealOrderService.NOT_FOUND
+      }));
+    }
+
     try {
       const HRV_API_KEY = await this.env.HARAVAN_TOKEN_SECRET.get();
       if (!HRV_API_KEY) {
