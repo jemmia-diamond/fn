@@ -1,7 +1,5 @@
-import ProductVariantService from "services/haravan/products/product-variant/product-variant-service";
 import AutoAddToDiscountProgramService from "services/haravan/products/product/auto-add-to-discount-program-service";
 
 export default {
-  ProductVariantService: ProductVariantService,
   AutoAddToDiscountProgramService: AutoAddToDiscountProgramService
 };
