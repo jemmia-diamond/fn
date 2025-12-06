@@ -1,9 +1,9 @@
-import BankTransactionVerificationService from "services/erp/accounting/bank-transaction/verification-service";
+import ERP from "services/erp";
 
 export default class BankTransactionVerifyController {
   static async create(ctx) {
     const payload = await ctx.req.json();
-    const service = new BankTransactionVerificationService(ctx.env);
+    const service = new ERP.Accounting.BankTransactionVerificationService(ctx.env);
     const result = await service.verifyAndUpdatePaymentEntry(payload);
 
     if (!result.success) {
