@@ -4,6 +4,7 @@ import Database from "src/services/database";
 const NOT_FOUND = 404;
 const OK = 200;
 const BAD_REQUEST = 400;
+const JEMMIA_TECH_TEAM = "tech@jemmia.vn";
 
 /**
  * Service to verify Bank Transaction to Payment Entry links
@@ -103,7 +104,8 @@ export default class BankTransactionVerificationService {
         doctype: "Payment Entry",
         name: paymentEntryName,
         payment_order_status: "Success",
-        customer_transfer_status: "success"
+        customer_transfer_status: "success",
+        verified_by: JEMMIA_TECH_TEAM
       });
 
       return {
