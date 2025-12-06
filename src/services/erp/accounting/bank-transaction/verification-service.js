@@ -1,0 +1,174 @@
+import FrappeClient from "src/frappe/frappe-client";
+import Database from "src/services/database";
+
+const NOT_FOUND = 404;
+const OK = 200;
+const BAD_REQUEST = 400;
+
+/**
+ * Service to verify Bank Transaction to Payment Entry links
+ * Validates that automatic linking is correct before updating PE status
+ */
+export default class BankTransactionVerificationService {
+  constructor(env) {
+    this.env = env;
+    this.db = Database.instance(env);
+    this.frappeClient = new FrappeClient({
+      url: env.JEMMIA_ERP_BASE_URL,
+      apiKey: env.JEMMIA_ERP_API_KEY,
+      apiSecret: env.JEMMIA_ERP_API_SECRET
+    });
+  }
+
+  async verifyAndUpdatePaymentEntry(payload) {
+    const {
+      bank_transaction_name, sepay_id, sepay_order_number, sepay_order_description, sepay_amount_in
+    } = payload;
+
+    const validation = await this.validatePayload(payload);
+    if (!validation.success) {
+      return validation;
+    }
+
+    const { paymentEntryName, references } = validation;
+
+    const qrPayment = await this.db.qrPaymentTransaction.findFirst({
+      where: {
+        payment_entry_name: paymentEntryName,
+        is_deleted: false
+      }
+    });
+
+    if (!qrPayment) {
+      return this.failedPayload(
+        `QR Payment with payment_entry_name ${paymentEntryName} not found`, "QR_NOT_FOUND",
+        { payment_entry: paymentEntryName }, NOT_FOUND);
+    }
+
+    if (qrPayment.haravan_order_number !== sepay_order_number) {
+      return this.failedPayload("Order number mismatch", "ORDER_NUMBER_MISMATCH",
+        {
+          payment_entry: paymentEntryName,
+          qr_order_number: qrPayment.haravan_order_number,
+          sepay_order_number: sepay_order_number
+        });
+    }
+
+    if (qrPayment.transfer_note !== sepay_order_description) {
+      return this.failedPayload("Order description mismatch", "ORDER_DESC_MISMATCH",
+        {
+          payment_entry: paymentEntryName,
+          qr_transfer_note: qrPayment.transfer_note,
+          sepay_order_description: sepay_order_description
+        });
+    }
+
+    if (parseFloat(qrPayment.transfer_amount) !== parseFloat(sepay_amount_in)) {
+      return this.failedPayload("Amount mismatch", "AMOUNT_MISMATCH", {
+        payment_entry: paymentEntryName,
+        qr_amount: qrPayment.transfer_amount,
+        sepay_amount: sepay_amount_in
+      });
+    }
+
+    const sepayTransaction = await this.db.sepay_transaction.findUnique({
+      where: { id: sepay_id }
+    });
+
+    if (!sepayTransaction) {
+      return this.failedPayload(
+        `Sepay transaction with ID ${sepay_id} not found`, "SEPAY_NOT_FOUND",
+        { payment_entry: paymentEntryName }, NOT_FOUND);
+    }
+
+    if (qrPayment.transfer_status !== "pending") {
+      return this.failedPayload(
+        `QR Payment status is not pending (current: ${qrPayment.transfer_status})`, "INVALID_QR_STATUS",
+        {
+          payment_entry: paymentEntryName,
+          current_status: qrPayment.transfer_status
+        });
+    }
+
+    const hasSalesOrder = references && references.length > 0 &&
+      references.some((ref) => ref.reference_doctype === "Sales Order");
+
+    await this.db.qrPaymentTransaction.update({
+      where: { id: qrPayment.id },
+      data: { transfer_status: "success" }
+    });
+
+    if (hasSalesOrder) {
+      await this.frappeClient.update({
+        doctype: "Payment Entry",
+        name: paymentEntryName,
+        payment_order_status: "Success",
+        customer_transfer_status: "success"
+      });
+
+      return {
+        success: true,
+        message: "Payment Entry verified and status updated to success",
+        payment_entry: paymentEntryName,
+        action: "real_order",
+        bank_transaction: bank_transaction_name
+      };
+    } else {
+      await this.frappeClient.update({
+        doctype: "Payment Entry",
+        name: paymentEntryName,
+        customer_transfer_status: "success"
+      });
+
+      return {
+        success: true,
+        message: "Deposit order verified and QR status updated",
+        payment_entry: paymentEntryName,
+        action: "deposit_order",
+        bank_transaction: bank_transaction_name
+      };
+    }
+  }
+
+  failedPayload(error, error_code, details = null, statusCode = BAD_REQUEST) {
+    const response = { success: false, error, error_code, statusCode };
+    if (details) response.details = details;
+    return response;
+  }
+
+  async validatePayload(payload) {
+    const { sepay_id, payment_entries, payment_entry_name } = payload;
+
+    if (!sepay_id) {
+      return this.failedPayload("Bank transaction has no sepay_id", "BANK_TRANSACTION_NO_SEPAY_ID", { sepay_id }, OK);
+    }
+
+    if (!payment_entries || payment_entries.length === 0) {
+      return this.failedPayload("No payment entries linked", "NO_PAYMENT_ENTRIES", { payment_entries }, OK);
+    }
+
+    if (!payment_entry_name) {
+      return this.failedPayload("No payment_entry_name provided", "NO_PAYMENT_ENTRY_NAME", { payment_entry_name }, BAD_REQUEST);
+    }
+
+    const paymentEntryLink = payment_entries.find(
+      (entry) => entry.payment_document === "Payment Entry" && entry.payment_entry === payment_entry_name
+    );
+
+    if (!paymentEntryLink) {
+      return this.failedPayload("No Payment Entry found in links", "NO_PAYMENT_ENTRY_LINK", { payment_entries, payment_entry_name }, OK);
+    }
+
+    const paymentEntry = await this.frappeClient.getDoc("Payment Entry", payment_entry_name);
+
+    if (!paymentEntry) {
+      return this.failedPayload("Payment Entry not found in ERPNext", "PE_NOT_FOUND", { payment_entry: payment_entry_name }, NOT_FOUND);
+    }
+
+    return {
+      success: true,
+      paymentEntryName: payment_entry_name,
+      references: paymentEntry.references || []
+    };
+  }
+}
