@@ -50,6 +50,10 @@ export default class PaymentEntryService {
   _extractManualPaymentData(paymentEntry) {
     const references = paymentEntry.references || [];
     const salesOrderReference = references.find((ref) => ref.reference_doctype === "Sales Order");
+    const haravan_order_id = salesOrderReference?.sales_order_details?.haravan_order_id
+      ? parseInt(salesOrderReference.sales_order_details.haravan_order_id, 10) : null;
+    const receive_date = paymentEntry.payment_date ? dayjs(paymentEntry.payment_date).utc().toDate() : null;
+    const created_date = paymentEntry.creation ? dayjs(paymentEntry.creation).utc().toDate() : null;
 
     const data = {
       payment_entry_name: paymentEntry.name,
@@ -57,17 +61,16 @@ export default class PaymentEntryService {
       branch: this._mapBranch(paymentEntry.bank_account_branch),
       shipping_code: null,
       send_date: null,
-      receive_date: null,
-      created_date: null,
+      receive_date,
+      created_date,
       updated_date: null,
       bank_account: paymentEntry.bank_account_no || null,
       bank_name: paymentEntry.bank || null,
       transfer_amount: paymentEntry.paid_amount || paymentEntry.received_amount || null,
       transfer_note: paymentEntry.remarks || null,
-      haravan_order_id: salesOrderReference?.sales_order_details?.haravan_order_id
-        ? parseInt(salesOrderReference.sales_order_details.haravan_order_id, 10) : null,
+      haravan_order_id,
       haravan_order_name: salesOrderReference?.order_number || null,
-      transfer_status: Constants.TRANSFER_STATUS.PENDING,
+      transfer_status: (receive_date && haravan_order_id) ? "Xác nhận" : Constants.TRANSFER_STATUS.PENDING,
       gateway: paymentEntry.gateway
     };
 
@@ -76,9 +79,7 @@ export default class PaymentEntryService {
 
   async processManualPayment(paymentEntry) {
     const manualPaymentData = this._extractManualPaymentData(paymentEntry);
-    const result = await this.manualPaymentService.createManualPayment(manualPaymentData);
-
-    return result;
+    await this.manualPaymentService.createManualPayment(manualPaymentData);
   }
 
   async processQRPayment(paymentEntry) {
