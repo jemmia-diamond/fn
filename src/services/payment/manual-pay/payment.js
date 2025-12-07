@@ -118,15 +118,21 @@ export default class ManualPaymentService {
 
   /**
    * Creates a single manual payment transaction in the database.
+   * Supports both legacy Larkbase (lark_record_id) and new ERPNext (payment_entry_name) identifiers.
    * @param {object} data - The data for the new payment transaction, matching the Prisma model.
    * @returns {Promise<object|null>} The created payment transaction or null on error.
    */
   async createManualPayment(data) {
     try {
+      let whereClause;
+      if (data.payment_entry_name) {
+        whereClause = { payment_entry_name: data.payment_entry_name };
+      } else {
+        whereClause = { lark_record_id: data.lark_record_id };
+      }
+
       const newPayment = await this.db.manualPaymentTransaction.upsert({
-        where: {
-          lark_record_id: data.lark_record_id
-        },
+        where: whereClause,
         update: data,
         create: {
           ...data,

@@ -4,6 +4,7 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import * as Sentry from "@sentry/cloudflare";
 import PaymentService from "services/payment";
+import * as Constants from "services/erp/accounting/constants";
 
 dayjs.extend(utc);
 
@@ -21,30 +22,66 @@ export default class PaymentEntryService {
 
     this.db = Database.instance(env);
     this.createQRService = new PaymentService.CreateQRService(env);
+    this.manualPaymentService = new PaymentService.ManualPaymentService(env);
   };
 
-  async processPaymentEntry(paymentEntry) {
-    /**
-      "bank_code": "",
-      "bank_account_number": "",
-      "bank_account_name": "",
-      "bank_bin": "",
-      "bank_name": "",
+  _isQRPayment(modeOfPayment) {
+    return Constants.QR_PAYMENT_METHODS.includes(modeOfPayment);
+  }
 
-      "customer_name": "",
-      "customer_phone_number": "",
-      "transfer_amount": 0,
+  _isManualPayment(modeOfPayment) {
+    return Constants.MANUAL_PAYMENT_METHODS.includes(modeOfPayment);
+  }
 
-      "haravan_order_total_price": "",
-      "haravan_order_number": "",
-      "haravan_order_status": "",
-      "haravan_order_id": "",
-      "lark_record_id": "",
+  _mapPaymentMethod(modeOfPayment) {
+    return Constants.PAYMENT_METHOD_MAPPING[modeOfPayment] || null;
+  }
 
-      "customer_phone_order_later": "",
-      "customer_name_order_later": ""
-    */
+  _mapBranch(branch) {
+    const mapping = {
+      "Cửa hàng HCM": "Hồ Chí Minh",
+      "Cửa hàng Hồ Chí Minh": "Hồ Chí Minh",
+      "Cửa hàng Hà Nội": "Hà Nội",
+      "Cửa hàng Cần Thơ": "Cần Thơ"
+    };
+    return mapping[branch] || branch || null;
+  }
 
+  _extractManualPaymentData(paymentEntry) {
+    const references = paymentEntry.references || [];
+    const salesOrderReference = references.find((ref) => ref.reference_doctype === "Sales Order");
+
+    const data = {
+      payment_entry_name: paymentEntry.name,
+      payment_type: this._mapPaymentMethod(paymentEntry.mode_of_payment),
+      branch: this._mapBranch(paymentEntry.bank_account_branch),
+      shipping_code: null,
+      send_date: null,
+      receive_date: null,
+      created_date: null,
+      updated_date: null,
+      bank_account: paymentEntry.bank_account_no || null,
+      bank_name: paymentEntry.bank || null,
+      transfer_amount: paymentEntry.paid_amount || paymentEntry.received_amount || null,
+      transfer_note: paymentEntry.remarks || null,
+      haravan_order_id: salesOrderReference?.sales_order_details?.haravan_order_id
+        ? parseInt(salesOrderReference.sales_order_details.haravan_order_id, 10) : null,
+      haravan_order_name: salesOrderReference?.order_number || null,
+      transfer_status: Constants.TRANSFER_STATUS.PENDING,
+      gateway: paymentEntry.gateway
+    };
+
+    return data;
+  }
+
+  async processManualPayment(paymentEntry) {
+    const manualPaymentData = this._extractManualPaymentData(paymentEntry);
+    const result = await this.manualPaymentService.createManualPayment(manualPaymentData);
+
+    return result;
+  }
+
+  async processQRPayment(paymentEntry) {
     const references = paymentEntry.references || [];
     const salesOrderReference = references.find(
       (ref) => ref.reference_doctype === "Sales Order"
@@ -84,6 +121,22 @@ export default class PaymentEntryService {
     }
 
     return result;
+  }
+
+  async processPaymentEntry(paymentEntry) {
+    const modeOfPayment = paymentEntry.mode_of_payment;
+
+    if (!modeOfPayment) {
+      throw new Error("mode_of_payment is required in Payment Entry");
+    }
+
+    if (this._isQRPayment(modeOfPayment)) {
+      return await this.processQRPayment(paymentEntry);
+    } else if (this._isManualPayment(modeOfPayment)) {
+      return await this.processManualPayment(paymentEntry);
+    } else {
+      throw new Error(`Unsupported mode_of_payment: ${modeOfPayment}`);
+    }
   }
 
   static async dequeuePaymentEntryQueue(batch, env) {
