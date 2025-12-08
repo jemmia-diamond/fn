@@ -82,15 +82,6 @@ export default class BankTransactionVerificationService {
         { payment_entry: paymentEntryName }, NOT_FOUND);
     }
 
-    if (qrPayment.transfer_status !== "pending") {
-      return this.failedPayload(
-        `QR Payment status is not pending (current: ${qrPayment.transfer_status})`, "INVALID_QR_STATUS",
-        {
-          payment_entry: paymentEntryName,
-          current_status: qrPayment.transfer_status
-        });
-    }
-
     const hasSalesOrder = references && references.length > 0 &&
       references.some((ref) => ref.reference_doctype === "Sales Order");
 
@@ -104,7 +95,7 @@ export default class BankTransactionVerificationService {
         doctype: "Payment Entry",
         name: paymentEntryName,
         payment_order_status: "Success",
-        customer_transfer_status: "success",
+        custom_transfer_status: "success",
         verified_by: JEMMIA_TECH_TEAM
       });
 
@@ -119,7 +110,7 @@ export default class BankTransactionVerificationService {
       await this.frappeClient.update({
         doctype: "Payment Entry",
         name: paymentEntryName,
-        customer_transfer_status: "success"
+        custom_transfer_status: "success"
       });
 
       return {
