@@ -247,19 +247,48 @@ export default class SepayTransactionService {
       const { orderNumber, orderDesc } = this.standardizeOrderNumber(sepayTransaction.transaction_content);
 
       if (existingTransaction) {
-        const bank = sepayTransaction.bank_brand_name && await this.frappeClient.getList(
-          "Bank",
-          { filters: [["bank_name", "=", sepayTransaction.bank_brand_name]] }
-        );
-        const bankAccount = bank && bank[0] && sepayTransaction.account_number && await this.frappeClient.getList(
-          "Bank Account",
-          {
+        let bankName = sepayTransaction.bank_brand_name;
+        if (bankName) {
+          const bankList = await this.frappeClient.getList("Bank", {
+            filters: [["bank_name", "=", bankName]]
+          });
+
+          if (!bankList || bankList.length === 0) {
+            const newBank = await this.frappeClient.insert({
+              doctype: "Bank",
+              bank_name: bankName
+            });
+            if (!newBank) throw new Error(`Failed to create Bank: ${bankName}`);
+          }
+        }
+
+        let bankAccountName = null;
+        if (bankName && sepayTransaction.account_number) {
+          const bankAccountList = await this.frappeClient.getList("Bank Account", {
             filters: [
-              ["bank", "=", bank[0].name],
+              ["bank", "=", bankName],
               ["bank_account_no", "=", sepayTransaction.account_number]
             ]
+          });
+
+          if (bankAccountList && bankAccountList.length > 0) {
+            bankAccountName = bankAccountList[0].name;
+          } else {
+            const newBankAccount = await this.frappeClient.insert({
+              doctype: "Bank Account",
+              bank: bankName,
+              bank_account_no: sepayTransaction.account_number,
+              account_name: `${bankName} - ${sepayTransaction.account_number}`,
+              is_default: 0,
+              company: "Jemmia Diamond"
+            });
+            if (newBankAccount) {
+              bankAccountName = newBankAccount.name;
+            } else {
+              throw new Error(`Failed to create Bank Account: ${bankName} - ${sepayTransaction.account_number}`);
+            }
           }
-        );
+        }
         const upsertedBankTransaction = await this.frappeClient.upsert(
           {
             doctype: "Bank Transaction",
@@ -281,7 +310,7 @@ export default class SepayTransactionService {
             deposit: sepayTransaction.amount_in,
             reference_number: sepayTransaction.reference_number,
             date: dayjs(sepayTransaction.transaction_date, "YYYY-MM-DD HH:mm:ss").format("YYYY-MM-DD"),
-            bank_account: bankAccount && bankAccount[0] ? bankAccount[0].name : null
+            bank_account: bankAccountName
           },
           "name"
         );
@@ -392,5 +421,37 @@ export default class SepayTransactionService {
         Sentry.captureException(error);
       }
     }
+  }
+
+  async syncAllTransactions() {
+    try {
+      const transactions = await this.db.sepay_transaction.findMany();
+      for (const transaction of transactions) {
+        try {
+          const rawSepayTransaction = this.mapPrismaToRawSepayTransaction(transaction);
+          await this.sendToERP(rawSepayTransaction, transaction);
+        } catch (error) {
+          Sentry.captureException(error);
+        }
+      }
+    } catch (error) {
+      Sentry.captureException(error);
+    }
+  }
+
+  mapPrismaToRawSepayTransaction(prismaTransaction) {
+    return {
+      id: prismaTransaction.id,
+      gateway: prismaTransaction.bank_brand_name,
+      accountNumber: prismaTransaction.account_number,
+      transactionDate: prismaTransaction.transaction_date,
+      amountOut: prismaTransaction.amount_out,
+      transferAmount: prismaTransaction.amount_in,
+      accumulated: prismaTransaction.accumulated,
+      content: prismaTransaction.transaction_content,
+      referenceCode: prismaTransaction.reference_number,
+      code: prismaTransaction.code,
+      subAccount: prismaTransaction.sub_account
+    };
   }
 }
