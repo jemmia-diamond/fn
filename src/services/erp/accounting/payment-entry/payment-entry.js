@@ -142,9 +142,10 @@ export default class PaymentEntryService {
       throw new Error(JSON.stringify({
 
       }));
-    }
-
-    const updateQr = await this.updateOrderLater(
+        throw new Error(JSON.stringify({
+          error_msg: `Payment amount ${toPayAmount} exceeds remaining amount ${remainingAmount}`,
+          error_code: LinkQRWithRealOrderService.OVERPAYMENT
+        }));
       qrPaymentId, {
         haravan_order_number: mappedSalesOrderReference.sales_order_details.haravan_order_number,
         haravan_order_id: parseInt(mappedSalesOrderReference.sales_order_details.haravan_order_id, 10),
