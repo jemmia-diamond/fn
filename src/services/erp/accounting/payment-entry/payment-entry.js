@@ -185,9 +185,9 @@ export default class PaymentEntryService {
         if (erpTopic === "create") {
           await paymentEntryService.processPaymentEntry(paymentEntry);
         } else if (erpTopic == "update") {
+          await paymentEntryService.processPaymentEntry(paymentEntry);
+        } else if (erpTopic === "update") {
           await paymentEntryService.updatePaymentEntry(paymentEntry);
-        }
-      } catch (error) {
         Sentry.captureException(error);
       }
     }
