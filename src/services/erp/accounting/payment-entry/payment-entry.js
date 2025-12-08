@@ -94,19 +94,16 @@ export default class PaymentEntryService {
    */
   async updatePaymentEntry(paymentEntry) {
     const references = paymentEntry.references || [];
-    const salesOrderReference = references.find(
+    const salesOrderReferences = references.filter(
       (ref) => ref.reference_doctype === "Sales Order"
     );
 
-    if (!salesOrderReference || salesOrderReference.length === 0) {
+    if (salesOrderReferences.length !== 1) {
+      // Exit if there isn't exactly one sales order reference.
       return;
     }
 
-    if (salesOrderReference.length > 1) {
-      return;
-    }
-
-    const mappedSalesOrderReference = salesOrderReference[0];
+    const mappedSalesOrderReference = salesOrderReferences[0];
 
     const qrPaymentId = paymentEntry.custom_transaction_id;
 
