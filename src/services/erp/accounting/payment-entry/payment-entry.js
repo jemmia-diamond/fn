@@ -140,12 +140,12 @@ export default class PaymentEntryService {
 
     if (toPayAmount > remainingAmount) {
       throw new Error(JSON.stringify({
-
+        error_msg: `Payment amount ${toPayAmount} exceeds remaining amount ${remainingAmount}`,
+        error_code: LinkQRWithRealOrderService.OVERPAYMENT
       }));
-        throw new Error(JSON.stringify({
-          error_msg: `Payment amount ${toPayAmount} exceeds remaining amount ${remainingAmount}`,
-          error_code: LinkQRWithRealOrderService.OVERPAYMENT
-        }));
+    }
+
+    const updateQr = await this.updateOrderLater(
       qrPaymentId, {
         haravan_order_number: mappedSalesOrderReference.sales_order_details.haravan_order_number,
         haravan_order_id: parseInt(mappedSalesOrderReference.sales_order_details.haravan_order_id, 10),
@@ -184,10 +184,10 @@ export default class PaymentEntryService {
       try {
         if (erpTopic === "create") {
           await paymentEntryService.processPaymentEntry(paymentEntry);
-        } else if (erpTopic == "update") {
-          await paymentEntryService.processPaymentEntry(paymentEntry);
         } else if (erpTopic === "update") {
           await paymentEntryService.updatePaymentEntry(paymentEntry);
+        }
+      } catch (error) {
         Sentry.captureException(error);
       }
     }
