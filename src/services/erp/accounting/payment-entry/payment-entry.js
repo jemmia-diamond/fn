@@ -5,6 +5,7 @@ import utc from "dayjs/plugin/utc.js";
 import * as Sentry from "@sentry/cloudflare";
 import PaymentService from "services/payment";
 import LinkQRWithRealOrderService from "services/payment/qr_payment/link-qr-with-real-order-service";
+import { rawToPaymentEntry, rawToReference } from "services/erp/accounting/payment-entry/mapping";
 
 dayjs.extend(utc);
 
@@ -24,7 +25,7 @@ export default class PaymentEntryService {
     this.createQRService = new PaymentService.CreateQRService(env);
   };
 
-  async processPaymentEntry(paymentEntry) {
+  async processPaymentEntry(rawPaymentEntry) {
     /**
       "bank_code": "",
       "bank_account_number": "",
@@ -45,6 +46,7 @@ export default class PaymentEntryService {
       "customer_phone_order_later": "",
       "customer_name_order_later": ""
     */
+    const paymentEntry = rawToPaymentEntry(rawPaymentEntry);
 
     const references = paymentEntry.references || [];
     const salesOrderReference = references.find(
@@ -89,22 +91,22 @@ export default class PaymentEntryService {
 
   /**
    * Map Payment Entry to Sales Order
-   * @param {*} paymentEntry
+   * @param {*} rawPaymentEntry
    * @returns
    */
-  async updatePaymentEntry(paymentEntry) {
+  async updatePaymentEntry(rawPaymentEntry) {
+    const paymentEntry = rawToPaymentEntry(rawPaymentEntry);
+
     const references = paymentEntry.references || [];
     const salesOrderReferences = references.filter(
       (ref) => ref.reference_doctype === "Sales Order"
     );
 
     if (salesOrderReferences.length !== 1) {
-      // Exit if there isn't exactly one sales order reference.
       return;
     }
 
-    const mappedSalesOrderReference = salesOrderReferences[0];
-
+    const mappedSalesOrderReference = rawToReference(salesOrderReferences[0]);
     const qrPaymentId = paymentEntry.custom_transaction_id;
 
     const qrPayment = await this.db.qrPaymentTransaction.findUnique({
@@ -156,8 +158,8 @@ export default class PaymentEntryService {
         haravan_order_id: mappedSalesOrderReference.sales_order_details.haravan_order_id,
         haravan_order_status: mappedSalesOrderReference.sales_order_details.haravan_financial_status,
         haravan_order_total_price: mappedSalesOrderReference.total_amount,
-        customer_name: mappedSalesOrderReference.sales_order_details.customer_name,
-        customer_phone_number: mappedSalesOrderReference.sales_order_details.customer_phone_number
+        customer_name: paymentEntry.customer_details.name,
+        customer_phone_number: paymentEntry.customer_details.phone || paymentEntry.customer_details.mobile_no
       }
     );
 
@@ -183,13 +185,13 @@ export default class PaymentEntryService {
     for (const message of messages) {
       const messageBody = message.body;
       const erpTopic = messageBody.erpTopic || "";
-      const paymentEntry = messageBody.data || messageBody;
+      const rawPaymentEntry = messageBody.data;
 
       try {
         if (erpTopic === "create") {
-          await paymentEntryService.processPaymentEntry(paymentEntry);
+          await paymentEntryService.processPaymentEntry(rawPaymentEntry);
         } else if (erpTopic === "update") {
-          await paymentEntryService.updatePaymentEntry(paymentEntry);
+          await paymentEntryService.updatePaymentEntry(rawPaymentEntry);
         }
       } catch (error) {
         Sentry.captureException(error);
