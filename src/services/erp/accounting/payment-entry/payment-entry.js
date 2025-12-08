@@ -4,6 +4,8 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import * as Sentry from "@sentry/cloudflare";
 import PaymentService from "services/payment";
+import LinkQRWithRealOrderService from "services/payment/qr_payment/link-qr-with-real-order-service";
+import { rawToPaymentEntry, rawToReference } from "services/erp/accounting/payment-entry/mapping";
 
 dayjs.extend(utc);
 
@@ -23,7 +25,7 @@ export default class PaymentEntryService {
     this.createQRService = new PaymentService.CreateQRService(env);
   };
 
-  async processPaymentEntry(paymentEntry) {
+  async processPaymentEntry(rawPaymentEntry) {
     /**
       "bank_code": "",
       "bank_account_number": "",
@@ -44,6 +46,7 @@ export default class PaymentEntryService {
       "customer_phone_order_later": "",
       "customer_name_order_later": ""
     */
+    const paymentEntry = rawToPaymentEntry(rawPaymentEntry);
 
     const references = paymentEntry.references || [];
     const salesOrderReference = references.find(
@@ -86,16 +89,136 @@ export default class PaymentEntryService {
     return result;
   }
 
+  /**
+   * Map Payment Entry to Sales Order
+   * @param {*} rawPaymentEntry
+   * @returns
+   */
+  async updatePaymentEntry(rawPaymentEntry) {
+    const paymentEntry = rawToPaymentEntry(rawPaymentEntry);
+
+    const references = paymentEntry.references || [];
+    const salesOrderReferences = references.filter(
+      (ref) => ref.reference_doctype === "Sales Order"
+    );
+
+    if (salesOrderReferences.length !== 1) {
+      return;
+    }
+
+    const mappedSalesOrderReference = rawToReference(salesOrderReferences[0]);
+    const qrPaymentId = paymentEntry.custom_transaction_id;
+
+    const qrPayment = await this.db.qrPaymentTransaction.findUnique({
+      where: { id: qrPaymentId, is_deleted: false }
+    });
+
+    if (!qrPayment) {
+      throw new Error(JSON.stringify({
+        error_msg: `QR with id ${qrPaymentId} not found`,
+        error_code: LinkQRWithRealOrderService.NOT_FOUND
+      }));
+    }
+
+    // return if QR's payment entry name is not match with payment entry name
+    if (qrPayment.payment_entry_name !== paymentEntry.name) {
+      return;
+    }
+
+    // return if QR is not success
+    if (qrPayment.transfer_status !== "success") {
+      return;
+    }
+
+    // return if QR is not ORDERLATER
+    if (qrPayment.haravan_order_number !== "ORDERLATER" && qrPayment.haravan_order_number && qrPayment.haravan_order_number !== "") {
+      if (qrPayment.haravan_order_number === mappedSalesOrderReference.sales_order_details.haravan_order_number) {
+        return;
+      }
+
+      throw new Error(JSON.stringify({
+        error_msg: `QR with id ${qrPaymentId} is not order later`,
+        error_code: LinkQRWithRealOrderService.ORDER_NOT_LATER
+      }));
+    }
+
+    let toPayAmount = parseFloat(qrPayment.transfer_amount);
+    const outstandingAmount = parseFloat(mappedSalesOrderReference.outstanding_amount);
+
+    if (toPayAmount > outstandingAmount) {
+      throw new Error(JSON.stringify({
+        error_msg: `Payment amount ${toPayAmount} exceeds remaining amount ${outstandingAmount}`,
+        error_code: LinkQRWithRealOrderService.OVERPAYMENT
+      }));
+    }
+
+    const updateQr = await this.updateOrderLaterToSuccess(
+      qrPaymentId, {
+        haravan_order_number: mappedSalesOrderReference.sales_order_details.haravan_order_number,
+        haravan_order_id: mappedSalesOrderReference.sales_order_details.haravan_order_id,
+        haravan_order_status: mappedSalesOrderReference.sales_order_details.haravan_financial_status,
+        haravan_order_total_price: mappedSalesOrderReference.total_amount,
+        customer_name: paymentEntry.customer_details.name,
+        customer_phone_number: paymentEntry.customer_details.phone || paymentEntry.customer_details.mobile_no
+      }
+    );
+
+    if (!updateQr) {
+      throw new Error(JSON.stringify({
+        error_msg: `Failed to update QR with id ${qrPaymentId}`,
+        error_code: LinkQRWithRealOrderService.UPDATE_QR_FAILED
+      }));
+    }
+
+    await this.frappeClient.update({
+      doctype: this.doctype,
+      name: paymentEntry.name,
+      custom_transfer_status: updateQr.transfer_status
+    }, "name");
+
+    return updateQr;
+  }
+
   static async dequeuePaymentEntryQueue(batch, env) {
     const paymentEntryService = new PaymentEntryService(env);
     const messages = batch.messages;
     for (const message of messages) {
-      const paymentEntry = message.body;
+      const messageBody = message.body;
+      const erpTopic = messageBody.erpTopic || "";
+      const rawPaymentEntry = messageBody.data;
+
       try {
-        await paymentEntryService.processPaymentEntry(paymentEntry);
+        if (erpTopic === "create") {
+          await paymentEntryService.processPaymentEntry(rawPaymentEntry);
+        } else if (erpTopic === "update") {
+          await paymentEntryService.updatePaymentEntry(rawPaymentEntry);
+        }
       } catch (error) {
         Sentry.captureException(error);
       }
     }
+  }
+
+  async updateOrderLaterToSuccess(id, body) {
+    const dataToUpdate = {
+      haravan_order_number: body.haravan_order_number,
+      haravan_order_id: parseInt(body.haravan_order_id, 10),
+      haravan_order_status: body.haravan_order_status,
+      haravan_order_total_price: body.haravan_order_total_price,
+      transfer_status: "success"
+    };
+
+    if (body.customer_name) {
+      dataToUpdate.customer_name = body.customer_name;
+    }
+
+    if (body.customer_phone_number) {
+      dataToUpdate.customer_phone_number = body.customer_phone_number;
+    }
+
+    return await this.db.qrPaymentTransaction.update({
+      where: { id: id },
+      data: dataToUpdate
+    });
   }
 }

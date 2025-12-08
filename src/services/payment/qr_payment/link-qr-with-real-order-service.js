@@ -18,6 +18,8 @@ export default class LinkQRWithRealOrderService {
   static CUSTOMER_MISMATCH = "CUSTOMER_MISMATCH";
   static ORDER_NOT_LATER = "ORDER_NOT_LATER";
   static TRANSACTION_CREATION_ERROR = "TRANSACTION_CREATION_ERROR";
+  static OVERPAYMENT = "OVERPAYMENT";
+  static UPDATE_QR_FAILED = "UPDATE_QR_FAILED";
 
   constructor(env) {
     this.env = env;
