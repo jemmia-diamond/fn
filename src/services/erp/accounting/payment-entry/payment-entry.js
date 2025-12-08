@@ -118,12 +118,17 @@ export default class PaymentEntryService {
       }));
     }
 
-    // ignore if QR is not success
+    // return if QR's payment entry name is not match with payment entry name
+    if (qrPayment.payment_entry_name !== paymentEntry.name) {
+      return;
+    }
+
+    // return if QR is not success
     if (qrPayment.transfer_status !== "success") {
       return;
     }
 
-    // ignore if QR is not ORDERLATER
+    // return if QR is not ORDERLATER
     if (qrPayment.haravan_order_number !== "ORDERLATER" && qrPayment.haravan_order_number && qrPayment.haravan_order_number !== "") {
       if (qrPayment.haravan_order_number === mappedSalesOrderReference.sales_order_details.haravan_order_number) {
         return;
@@ -136,22 +141,21 @@ export default class PaymentEntryService {
     }
 
     let toPayAmount = parseFloat(qrPayment.transfer_amount);
-    const remainingAmount = parseFloat(mappedSalesOrderReference.remaining_amount);
+    const outstandingAmount = parseFloat(mappedSalesOrderReference.outstanding_amount);
 
-    if (toPayAmount > remainingAmount) {
+    if (toPayAmount > outstandingAmount) {
       throw new Error(JSON.stringify({
-        error_msg: `Payment amount ${toPayAmount} exceeds remaining amount ${remainingAmount}`,
+        error_msg: `Payment amount ${toPayAmount} exceeds remaining amount ${outstandingAmount}`,
         error_code: LinkQRWithRealOrderService.OVERPAYMENT
       }));
     }
 
-    const updateQr = await this.updateOrderLater(
+    const updateQr = await this.updateOrderLaterToSuccess(
       qrPaymentId, {
         haravan_order_number: mappedSalesOrderReference.sales_order_details.haravan_order_number,
-        haravan_order_id: parseInt(mappedSalesOrderReference.sales_order_details.haravan_order_id, 10),
+        haravan_order_id: mappedSalesOrderReference.sales_order_details.haravan_order_id,
         haravan_order_status: mappedSalesOrderReference.sales_order_details.haravan_financial_status,
-        haravan_order_total_price: mappedSalesOrderReference.sales_order_details.haravan_order_total_price,
-        transfer_status: "success",
+        haravan_order_total_price: mappedSalesOrderReference.total_amount,
         customer_name: mappedSalesOrderReference.sales_order_details.customer_name,
         customer_phone_number: mappedSalesOrderReference.sales_order_details.customer_phone_number
       }
@@ -193,7 +197,7 @@ export default class PaymentEntryService {
     }
   }
 
-  async updateOrderLater(id, body) {
+  async updateOrderLaterToSuccess(id, body) {
     const dataToUpdate = {
       haravan_order_number: body.haravan_order_number,
       haravan_order_id: parseInt(body.haravan_order_id, 10),
