@@ -131,7 +131,7 @@ export default class PaymentEntryService {
     }
 
     // return if QR is not ORDERLATER
-    if (qrPayment.haravan_order_number !== "ORDERLATER" && qrPayment.haravan_order_number && qrPayment.haravan_order_number !== "") {
+    if (qrPayment.haravan_order_number && qrPayment.haravan_order_number !== "ORDERLATER") {
       if (qrPayment.haravan_order_number === mappedSalesOrderReference.sales_order_details.haravan_order_number) {
         return;
       }
@@ -142,7 +142,7 @@ export default class PaymentEntryService {
       }));
     }
 
-    let toPayAmount = parseFloat(qrPayment.transfer_amount);
+    const toPayAmount = parseFloat(qrPayment.transfer_amount);
     const outstandingAmount = parseFloat(mappedSalesOrderReference.outstanding_amount);
 
     if (toPayAmount > outstandingAmount) {
