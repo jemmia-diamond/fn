@@ -6,6 +6,7 @@ import * as Sentry from "@sentry/cloudflare";
 import PaymentService from "services/payment";
 import LinkQRWithRealOrderService from "services/payment/qr_payment/link-qr-with-real-order-service";
 import { rawToPaymentEntry, rawToReference } from "services/erp/accounting/payment-entry/mapping";
+import BankTransactionVerificationService from "services/erp/accounting/payment-entry/verification-service";
 
 dayjs.extend(utc);
 
@@ -53,14 +54,16 @@ export default class PaymentEntryService {
       (ref) => ref.reference_doctype === "Sales Order"
     );
 
+    const customer_name = paymentEntry?.customer_details?.name;
+    const customer_phone_number = paymentEntry?.customer_details?.phone || paymentEntry?.customer_details?.mobile_no;
     const qrGeneratorPayload = {
-      bank_code: paymentEntry.bank_details.bank_code,
-      bank_account_number: paymentEntry.bank_account_no,
+      bank_code: paymentEntry?.bank_details?.bank_code,
+      bank_account_number: paymentEntry?.bank_account_no,
       bank_account_name: paymentEntry.bank_account,
-      bank_bin: paymentEntry.bank_details.bank_bin,
-      bank_name: paymentEntry.bank_details.bank_name,
-      customer_name: paymentEntry.customer_details.name,
-      customer_phone_number: paymentEntry.customer_details.phone,
+      bank_bin: paymentEntry?.bank_details?.bank_bin,
+      bank_name: paymentEntry?.bank_details?.bank_name,
+      customer_name,
+      customer_phone_number,
       transfer_amount: paymentEntry.paid_amount,
       haravan_order_total_price: salesOrderReference ? salesOrderReference.total_amount : null,
       haravan_order_number: salesOrderReference ? salesOrderReference.sales_order_details.haravan_order_number : (paymentEntry.haravan_order_number || "Đơn hàng cọc"),
@@ -68,8 +71,8 @@ export default class PaymentEntryService {
       haravan_order_id: salesOrderReference ? salesOrderReference.sales_order_details.haravan_order_id : null,
       lark_record_id: paymentEntry.lark_record_id || "",
       payment_entry_name: paymentEntry.name || "",
-      customer_phone_order_later: paymentEntry.customer_details.phone,
-      customer_name_order_later: paymentEntry.customer_details.name
+      customer_phone_order_later: customer_phone_number,
+      customer_name_order_later: customer_name
     };
 
     const result = await this.createQRService.handlePostQr(qrGeneratorPayload);
@@ -179,6 +182,15 @@ export default class PaymentEntryService {
     return updateQr;
   }
 
+  async verifyPaymentEntryBankTransaction(paymentEntry) {
+    if (!paymentEntry.bank_transactions || paymentEntry.bank_transactions.length !== 1) {
+      return;
+    }
+
+    const service = new BankTransactionVerificationService(this.env);
+    await service.verifyAndUpdatePaymentEntry(paymentEntry);
+  }
+
   static async dequeuePaymentEntryQueue(batch, env) {
     const paymentEntryService = new PaymentEntryService(env);
     const messages = batch.messages;
@@ -192,6 +204,8 @@ export default class PaymentEntryService {
           await paymentEntryService.processPaymentEntry(rawPaymentEntry);
         } else if (erpTopic === "update") {
           await paymentEntryService.updatePaymentEntry(rawPaymentEntry);
+        } else if (erpTopic === "verify") {
+          await paymentEntryService.verifyPaymentEntryBankTransaction(rawPaymentEntry);
         }
       } catch (error) {
         Sentry.captureException(error);
