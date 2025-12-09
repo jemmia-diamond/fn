@@ -91,9 +91,19 @@ export default class PaymentEntryService {
   }
 
   /**
-   * Map Payment Entry to Sales Order
-   * @param {*} rawPaymentEntry
-   * @returns
+   * Process payment entry update (link payment to sales order)
+   *
+   * IMPORTANT: This function is strictly for processing "ORDERLATER" transactions.
+   * It handles the linkage between a Payment Entry (from ERP) and a specific
+   * Sales Order when the original QR payment was created with an "ORDERLATER" placeholder,
+   * and the transaction status is "success".
+   *
+   * It validates the QR payment transaction associated with the payment, checks for
+   * overpayment, and updates both the QR transaction status and the Payment Entry's
+   * status in the ERP system.
+   *
+   * @param {*} rawPaymentEntry - The raw payment entry data from the webhook/queue
+   * @returns {Promise<Object|void>} - The updated QR transaction object or void if skipped
    */
   async updatePaymentEntry(rawPaymentEntry) {
     const paymentEntry = rawToPaymentEntry(rawPaymentEntry);
@@ -153,7 +163,7 @@ export default class PaymentEntryService {
       }));
     }
 
-    const updateQr = await this.updateOrderLaterToSuccess(
+    const updateQr = await this.updateOrderLater(
       qrPaymentId, {
         haravan_order_number: mappedSalesOrderReference.sales_order_details.haravan_order_number,
         haravan_order_id: mappedSalesOrderReference.sales_order_details.haravan_order_id,
@@ -170,13 +180,6 @@ export default class PaymentEntryService {
         error_code: LinkQRWithRealOrderService.UPDATE_QR_FAILED
       }));
     }
-
-    await this.frappeClient.update({
-      doctype: this.doctype,
-      name: paymentEntry.name,
-      custom_transfer_status: updateQr.transfer_status,
-      payment_order_status: mapPaymentOrderStatus(updateQr.transfer_status)
-    }, "name");
 
     return updateQr;
   }
@@ -201,13 +204,12 @@ export default class PaymentEntryService {
     }
   }
 
-  async updateOrderLaterToSuccess(id, body) {
+  async updateOrderLater(id, body) {
     const dataToUpdate = {
       haravan_order_number: body.haravan_order_number,
       haravan_order_id: parseInt(body.haravan_order_id, 10),
       haravan_order_status: body.haravan_order_status,
-      haravan_order_total_price: body.haravan_order_total_price,
-      transfer_status: "success"
+      haravan_order_total_price: body.haravan_order_total_price
     };
 
     if (body.customer_name) {
