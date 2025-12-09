@@ -48,12 +48,12 @@ export default {
       break;
     case "0 17 * * *": // 00:00
       await new DiamondCollectService(env).syncDiamondsToCollects();
-      await Larksuite.Contact.UserService.syncUsersToDatabase(env);
-      await ERP.Core.UserService.syncLarkIds(env);
-      await ERP.Core.UserService.syncUsersToDatabase(env);
-      await ERP.Setup.EmployeeService.syncEmployeesToDatabase(env);
-      await ERP.Selling.SalesPersonService.syncSalesPersonToDatabase(env);
-      await Larksuite.Docs.Base.RecordService.syncRecordsToDatabase(env);
+      // await Larksuite.Contact.UserService.syncUsersToDatabase(env);
+      // await ERP.Core.UserService.syncLarkIds(env);
+      // await ERP.Core.UserService.syncUsersToDatabase(env);
+      // await ERP.Setup.EmployeeService.syncEmployeesToDatabase(env);
+      // await ERP.Selling.SalesPersonService.syncSalesPersonToDatabase(env);
+      // await Larksuite.Docs.Base.RecordService.syncRecordsToDatabase(env);
       break;
     case "30 0 * * *": // 07:30
       await ERP.CRM.LeadDemandService.syncLeadDemandToDatabase(env);

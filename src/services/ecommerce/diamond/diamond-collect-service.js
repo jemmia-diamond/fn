@@ -13,13 +13,14 @@ export default class DiamondCollectService {
       const workplaceClient = await WorkplaceClient.initialize(this.env, WORKPLACE_BASE_ID);
 
       let offset = 0;
-      const limit = 200;
+      const limit = 100;
 
       while (true) {
         const diamonds = await workplaceClient.diamonds.list({
           where: "(auto_create_haravan_product,is,true)~and(product_id,gt,0)~and(variant_id,gt,0)",
           limit: limit,
-          offset: offset
+          offset: offset,
+          sort: "-id"
         });
 
         if (!diamonds.list || diamonds.list.length === 0) {
@@ -38,17 +39,39 @@ export default class DiamondCollectService {
             else if (discountPercent === 10) haravanCollectionId = 34;
             else if (discountPercent === 12) haravanCollectionId = 33;
 
+            // Get existing collections for this diamond
+            const existingEntries = await workplaceClient.diamondHaravanCollections.list({
+              where: `(diamond_id,eq,${diamond.id})`
+            });
+
+            const existingList = existingEntries.list || [];
+
+            // 1. Remove invalid entries (only for 10% and 12% collections)
+            for (const entry of existingList) {
+              // If we have an entry for 33 (12%) or 34 (10%), but it's not the current valid collection, remove it.
+              if ((entry.haravan_collection_id === 33 || entry.haravan_collection_id === 34) && entry.haravan_collection_id !== haravanCollectionId) {
+                await workplaceClient.diamondHaravanCollections.delete(entry.id);
+                await new Promise(resolve => setTimeout(resolve, 1000));
+              }
+            }
+
+            // 2. Add new entry if needed
             if (haravanCollectionId) {
-              await workplaceClient.diamondHaravanCollections.create({
-                diamond_id: diamond.id,
-                haravan_collection_id: haravanCollectionId
-              });
+              const exists = existingList.some(e => e.haravan_collection_id === haravanCollectionId);
+              if (!exists) {
+                await workplaceClient.diamondHaravanCollections.create({
+                  diamond_id: diamond.id,
+                  haravan_collection_id: haravanCollectionId
+                });
+                await new Promise(resolve => setTimeout(resolve, 1000));
+              }
             }
           } catch (error) {
             const errorData = error.response?.data;
             if (errorData?.code === "23505" || errorData?.message === "This record already exists.") {
               continue;
             }
+            console.warn("Error processing diamond:", diamond.id, error);
             Sentry.captureException(error);
           }
         }
@@ -56,6 +79,7 @@ export default class DiamondCollectService {
         offset += limit;
       }
     } catch (error) {
+      console.warn("Error in syncDiamondsToCollects:", error);
       Sentry.captureException(error);
     }
   }
