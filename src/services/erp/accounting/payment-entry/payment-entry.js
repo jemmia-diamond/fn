@@ -183,6 +183,10 @@ export default class PaymentEntryService {
   }
 
   async verifyPaymentEntryBankTransaction(paymentEntry) {
+    if (!paymentEntry.bank_transactions || paymentEntry.bank_transactions.length === 0) {
+      return;
+    }
+
     const service = new ERP.Accounting.BankTransactionVerificationService(this.env);
     await service.verifyAndUpdatePaymentEntry(paymentEntry);
   }

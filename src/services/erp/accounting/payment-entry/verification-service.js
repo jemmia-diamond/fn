@@ -22,11 +22,26 @@ export default class BankTransactionVerificationService {
   }
 
   async verifyAndUpdatePaymentEntry(payload) {
+    const bank_transactions = payload?.bank_transactions;
     const {
-      bank_transaction_name, sepay_id, sepay_order_number, sepay_order_description, sepay_amount_in, qr_payment_id
-    } = payload;
+      bank_transaction_name,
+      sepay_id,
+      sepay_order_number,
+      sepay_order_description,
+      sepay_amount_in,
+      qr_payment_id
+    } = bank_transactions[0];
 
-    const validation = await this.validatePayload(payload);
+    const validation = await this.validatePayload({
+      bank_transaction_name,
+      payment_entry_name: payload?.name,
+      sepay_id,
+      sepay_order_number,
+      sepay_order_description,
+      sepay_amount_in,
+      qr_payment_id
+    });
+
     if (!validation.success) {
       return validation;
     }
@@ -131,26 +146,14 @@ export default class BankTransactionVerificationService {
   }
 
   async validatePayload(payload) {
-    const { sepay_id, payment_entries, payment_entry_name } = payload;
+    const { sepay_id, payment_entry_name } = payload;
 
     if (!sepay_id) {
       return this.failedPayload("Bank transaction has no sepay_id", "BANK_TRANSACTION_NO_SEPAY_ID", { sepay_id }, OK);
     }
 
-    if (!payment_entries || payment_entries.length === 0) {
-      return this.failedPayload("No payment entries linked", "NO_PAYMENT_ENTRIES", { payment_entries }, OK);
-    }
-
     if (!payment_entry_name) {
       return this.failedPayload("No payment_entry_name provided", "NO_PAYMENT_ENTRY_NAME", { payment_entry_name }, BAD_REQUEST);
-    }
-
-    const paymentEntryLink = payment_entries.find(
-      (entry) => entry.payment_document === "Payment Entry" && entry.payment_entry === payment_entry_name
-    );
-
-    if (!paymentEntryLink) {
-      return this.failedPayload("No Payment Entry found in links", "NO_PAYMENT_ENTRY_LINK", { payment_entries, payment_entry_name }, OK);
     }
 
     const paymentEntry = await this.frappeClient.getDoc("Payment Entry", payment_entry_name);
