@@ -18,6 +18,8 @@ export default class LinkQRWithRealOrderService {
   static CUSTOMER_MISMATCH = "CUSTOMER_MISMATCH";
   static ORDER_NOT_LATER = "ORDER_NOT_LATER";
   static TRANSACTION_CREATION_ERROR = "TRANSACTION_CREATION_ERROR";
+  static OVERPAYMENT = "OVERPAYMENT";
+  static UPDATE_QR_FAILED = "UPDATE_QR_FAILED";
 
   constructor(env) {
     this.env = env;
@@ -87,6 +89,18 @@ export default class LinkQRWithRealOrderService {
 
     if (Math.abs(haravanOrderRemainPay - toPayAmount) <= 1000) {
       toPayAmount = haravanOrderRemainPay;
+    }
+
+    const haravanOrderId = parseInt(body.haravan_order_id, 10);
+    const existingOrder = await this.db.order.findUnique({
+      where: { id: haravanOrderId }
+    });
+
+    if (!existingOrder) {
+      throw new Error(JSON.stringify({
+        error_msg: `Order with id ${haravanOrderId} not found`,
+        error_code: LinkQRWithRealOrderService.NOT_FOUND
+      }));
     }
 
     try {
