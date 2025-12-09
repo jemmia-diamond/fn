@@ -144,16 +144,9 @@ export default class PaymentEntryService {
       return;
     }
 
-    // return if QR is not ORDERLATER
-    if (qrPayment.haravan_order_number && qrPayment.haravan_order_number !== "ORDERLATER") {
-      if (qrPayment.haravan_order_number === mappedSalesOrderReference.sales_order_details.haravan_order_number) {
-        return;
-      }
-
-      throw new Error(JSON.stringify({
-        error_msg: `QR with id ${qrPaymentId} is not order later`,
-        error_code: LinkQRWithRealOrderService.ORDER_NOT_LATER
-      }));
+    // return if QR's haravan_order_number is empty
+    if (!qrPayment.haravan_order_number) {
+      return;
     }
 
     const toPayAmount = parseFloat(qrPayment.transfer_amount);
@@ -166,22 +159,25 @@ export default class PaymentEntryService {
       }));
     }
 
-    const updateQr = await this.updateOrderLater(
-      qrPaymentId, {
-        haravan_order_number: mappedSalesOrderReference.sales_order_details.haravan_order_number,
-        haravan_order_id: mappedSalesOrderReference.sales_order_details.haravan_order_id,
-        haravan_order_status: mappedSalesOrderReference.sales_order_details.haravan_financial_status,
-        haravan_order_total_price: mappedSalesOrderReference.total_amount,
-        customer_name: paymentEntry.customer_details.name,
-        customer_phone_number: paymentEntry.customer_details.phone || paymentEntry.customer_details.mobile_no
-      }
-    );
+    let updateQr = qrPayment;
+    if (qrPayment.haravan_order_number === "ORDERLATER") {
+      updateQr = await this.updateOrderLater(
+        qrPaymentId, {
+          haravan_order_number: mappedSalesOrderReference.sales_order_details.haravan_order_number,
+          haravan_order_id: mappedSalesOrderReference.sales_order_details.haravan_order_id,
+          haravan_order_status: mappedSalesOrderReference.sales_order_details.haravan_financial_status,
+          haravan_order_total_price: mappedSalesOrderReference.total_amount,
+          customer_name: paymentEntry.customer_details.name,
+          customer_phone_number: paymentEntry.customer_details.phone || paymentEntry.customer_details.mobile_no
+        }
+      );
 
-    if (!updateQr) {
-      throw new Error(JSON.stringify({
-        error_msg: `Failed to update QR with id ${qrPaymentId}`,
-        error_code: LinkQRWithRealOrderService.UPDATE_QR_FAILED
-      }));
+      if (!updateQr) {
+        throw new Error(JSON.stringify({
+          error_msg: `Failed to update QR with id ${qrPaymentId}`,
+          error_code: LinkQRWithRealOrderService.UPDATE_QR_FAILED
+        }));
+      }
     }
 
     await this.frappeClient.update({
