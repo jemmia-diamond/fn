@@ -4,7 +4,6 @@ import Database from "src/services/database";
 const NOT_FOUND = 404;
 const OK = 200;
 const BAD_REQUEST = 400;
-const JEMMIA_TECH_TEAM = "tech@jemmia.vn";
 
 /**
  * Service to verify Bank Transaction to Payment Entry links
@@ -46,7 +45,7 @@ export default class BankTransactionVerificationService {
       return validation;
     }
 
-    const { paymentEntryName, references } = validation;
+    const { paymentEntryName } = validation;
 
     const qrPayment = await this.db.qrPaymentTransaction.findFirst({
       where: {
@@ -98,45 +97,19 @@ export default class BankTransactionVerificationService {
         { payment_entry: paymentEntryName }, NOT_FOUND);
     }
 
-    const hasSalesOrder = references && references.length > 0 &&
-      references.some((ref) => ref.reference_doctype === "Sales Order");
-
     await this.db.qrPaymentTransaction.update({
       where: { id: qrPayment.id },
       data: { transfer_status: "success" }
     });
 
-    if (hasSalesOrder) {
-      await this.frappeClient.update({
-        doctype: "Payment Entry",
-        name: paymentEntryName,
-        payment_order_status: "Success",
-        custom_transfer_status: "success",
-        verified_by: JEMMIA_TECH_TEAM
-      });
+    await this.frappeClient.update({
+      doctype: "Payment Entry",
+      name: paymentEntryName,
+      custom_transfer_status: "success",
+      verified_by: payload?.modified_by
+    });
 
-      return {
-        success: true,
-        message: "Payment Entry verified and status updated to success",
-        payment_entry: paymentEntryName,
-        action: "real_order",
-        bank_transaction: bank_transaction_name
-      };
-    } else {
-      await this.frappeClient.update({
-        doctype: "Payment Entry",
-        name: paymentEntryName,
-        custom_transfer_status: "success"
-      });
-
-      return {
-        success: true,
-        message: "Deposit order verified and QR status updated",
-        payment_entry: paymentEntryName,
-        action: "deposit_order",
-        bank_transaction: bank_transaction_name
-      };
-    }
+    return true;
   }
 
   failedPayload(error, error_code, details = null, statusCode = BAD_REQUEST) {
@@ -164,8 +137,7 @@ export default class BankTransactionVerificationService {
 
     return {
       success: true,
-      paymentEntryName: payment_entry_name,
-      references: paymentEntry.references || []
+      paymentEntryName: payment_entry_name
     };
   }
 }
