@@ -4,9 +4,9 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import * as Sentry from "@sentry/cloudflare";
 import PaymentService from "services/payment";
-import ERP from "services/erp";
 import LinkQRWithRealOrderService from "services/payment/qr_payment/link-qr-with-real-order-service";
 import { rawToPaymentEntry, rawToReference } from "services/erp/accounting/payment-entry/mapping";
+import BankTransactionVerificationService from "services/erp/accounting/payment-entry/verification-service";
 
 dayjs.extend(utc);
 
@@ -55,7 +55,7 @@ export default class PaymentEntryService {
     );
 
     const customer_name = paymentEntry?.customer_details?.name;
-    const customer_phone_number = paymentEntry?.customer_details?.mobile_no || paymentEntry?.customer_details?.phone;
+    const customer_phone_number = paymentEntry?.customer_details?.phone || paymentEntry?.customer_details?.mobile_no;
     const qrGeneratorPayload = {
       bank_code: paymentEntry?.bank_details?.bank_code,
       bank_account_number: paymentEntry?.bank_account_no,
@@ -183,11 +183,11 @@ export default class PaymentEntryService {
   }
 
   async verifyPaymentEntryBankTransaction(paymentEntry) {
-    if (!paymentEntry.bank_transactions || paymentEntry.bank_transactions.length === 0) {
+    if (!paymentEntry.bank_transactions || paymentEntry.bank_transactions.length !== 1) {
       return;
     }
 
-    const service = new ERP.Accounting.BankTransactionVerificationService(this.env);
+    const service = new BankTransactionVerificationService(this.env);
     await service.verifyAndUpdatePaymentEntry(paymentEntry);
   }
 
