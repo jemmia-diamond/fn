@@ -6,6 +6,7 @@ import HaravanAPI from "services/clients/haravan-client";
 import { BadRequestException } from "src/exception/exceptions";
 import RecordService from "services/larksuite/docs/base/record/record";
 import { TABLES } from "services/larksuite/docs/constant";
+import Misa from "services/misa";
 
 dayjs.extend(utc);
 
@@ -135,6 +136,7 @@ export default class LinkQRWithRealOrderService {
         }
 
         await this.updateLarksuiteRecordToSuccess(qrPayment.lark_record_id);
+        await this.enqueueMisaBackgroundJob(qrPayment);
       }
     } catch (e) {
       throw new Error(JSON.stringify({
@@ -165,6 +167,17 @@ export default class LinkQRWithRealOrderService {
       where: { id: id },
       data: dataToUpdate
     });
+  }
+
+  async enqueueMisaBackgroundJob(qr) {
+    const payload = {
+      job_type: Misa.Constants.JOB_TYPE.CREATE_QR_VOUCHER,
+      data: {
+        qr_transaction_id: qr.id
+      }
+    };
+
+    await this.env["MISA_QUEUE"].send(payload, { delaySeconds: Misa.Constants.DELAYS.ONE_MINUTE });
   }
 
   async updateLarksuiteRecordToSuccess(larkRecordId) {
