@@ -82,7 +82,8 @@ export default class PaymentEntryService {
         qr_url: result.qr_url,
         custom_transaction_id: result.id,
         custom_transfer_note: result.transfer_note,
-        custom_transfer_status: result.transfer_status
+        custom_transfer_status: result.transfer_status,
+        payment_order_status: this.mapPaymentOrderStatus(result.transfer_status)
       }, "name");
     }
 
@@ -173,7 +174,8 @@ export default class PaymentEntryService {
     await this.frappeClient.update({
       doctype: this.doctype,
       name: paymentEntry.name,
-      custom_transfer_status: updateQr.transfer_status
+      custom_transfer_status: updateQr.transfer_status,
+      payment_order_status: this.mapPaymentOrderStatus(updateQr.transfer_status)
     }, "name");
 
     return updateQr;
@@ -220,5 +222,16 @@ export default class PaymentEntryService {
       where: { id: id },
       data: dataToUpdate
     });
+  }
+
+  mapPaymentOrderStatus(str) {
+    switch (str) {
+    case "success":
+      return "Success";
+    case "cancel":
+      return "Cancel";
+    default:
+      return "Pending";
+    }
   }
 }
