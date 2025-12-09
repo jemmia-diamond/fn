@@ -4,6 +4,7 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import * as Sentry from "@sentry/cloudflare";
 import PaymentService from "services/payment";
+import ERP from "services/erp";
 
 dayjs.extend(utc);
 
@@ -88,13 +89,22 @@ export default class PaymentEntryService {
     return result;
   }
 
+  async verifyPaymentEntryBankTransaction(paymentEntry) {
+    const service = new ERP.Accounting.BankTransactionVerificationService(this.env);
+    await service.verifyAndUpdatePaymentEntry(paymentEntry);
+  }
+
   static async dequeuePaymentEntryQueue(batch, env) {
     const paymentEntryService = new PaymentEntryService(env);
     const messages = batch.messages;
     for (const message of messages) {
       const paymentEntry = message.body;
       try {
-        await paymentEntryService.processPaymentEntry(paymentEntry);
+        if(paymentEntry?.action === "verify") {
+          await paymentEntryService.verifyPaymentEntryBankTransaction(paymentEntry.bank_transaction);
+        } else {
+          await paymentEntryService.processPaymentEntry(paymentEntry);
+        }
       } catch (error) {
         Sentry.captureException(error);
       }

@@ -3,7 +3,6 @@ import FrappePancakeConversationAssignmentController from "controllers/webhook/f
 import FrappeERPContactsController from "controllers/webhook/frappe/erp/contacts/contacts";
 import FrappeERPSalesOrderController from "controllers/webhook/frappe/erp/sales-order/sales-order";
 import FrappeERPPaymentEntryController from "controllers/webhook/frappe/erp/payment-entry/payment-entry";
-import BankTransactionController from "controllers/webhook/frappe/erp/bank-transaction/bank-transaction";
 
 export default class FrappeWebhook {
   static register(webhook) {
@@ -13,6 +12,5 @@ export default class FrappeWebhook {
     frappeWebhookNamespace.post("/erp/contacts", FrappeERPContactsController.create);
     frappeWebhookNamespace.post("/erp/sales-orders", FrappeERPSalesOrderController.create);
     frappeWebhookNamespace.post("/erp/payment-entries", FrappeERPPaymentEntryController.create);
-    frappeWebhookNamespace.post("/erp/bank-transactions", BankTransactionController.create);
   }
 }
