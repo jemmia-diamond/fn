@@ -301,6 +301,13 @@ export default class SalesOrderService {
       salesOrderData.deposit_amount += childOrder.deposit_amount;
     }
 
+    const customer = await this.frappeClient.getDoc("Customer", salesOrderData.customer);
+
+    const { isValid, message } = validateOrderInfo(salesOrderData, customer);
+    if (!isValid) {
+      return { success: false, message: message };
+    }
+
     if (haravanRefOrderId && Number(haravanRefOrderId) > 0) {
       // find the very first order in history
       const refOrders = await getRefOrderChain(this.db, Number(salesOrderData.haravan_order_id));
@@ -340,7 +347,7 @@ export default class SalesOrderService {
             salesOrderData
           ));
         } else {
-          content = await this.composeNewOrderContent(salesOrderData);
+          content = await this.composeNewOrderContent(salesOrderData, customer);
         }
 
         if (!content && !diffAttachments) {
@@ -460,13 +467,6 @@ export default class SalesOrderService {
 
     if (isUpdateMessage) {
       return { success: true, message: "Ok" };
-    }
-
-    const customer = await this.frappeClient.getDoc("Customer", salesOrderData.customer);
-
-    const { isValid, message } = validateOrderInfo(salesOrderData, customer);
-    if (!isValid) {
-      return { success: false, message: message };
     }
 
     const content = await this.composeNewOrderContent(salesOrderData, customer);
