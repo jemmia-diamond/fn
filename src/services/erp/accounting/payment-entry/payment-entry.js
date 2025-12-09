@@ -25,7 +25,7 @@ export default class PaymentEntryService {
     this.createQRService = new PaymentService.CreateQRService(env);
   };
 
-  async processPaymentEntry(rawPaymentEntry) {
+  async createPaymentEntry(rawPaymentEntry) {
     /**
       "bank_code": "",
       "bank_account_number": "",
@@ -98,9 +98,10 @@ export default class PaymentEntryService {
    * Sales Order when the original QR payment was created with an "ORDERLATER" placeholder,
    * and the transaction status is "success".
    *
+   * NOTE: The mapping process should be performed only once to ensure transparency.
+   *
    * It validates the QR payment transaction associated with the payment, checks for
-   * overpayment, and updates both the QR transaction status and the Payment Entry's
-   * status in the ERP system.
+   * overpayment, and updates the QR transaction with the real Haravan Order details.
    *
    * @param {*} rawPaymentEntry - The raw payment entry data from the webhook/queue
    * @returns {Promise<Object|void>} - The updated QR transaction object or void if skipped
@@ -194,7 +195,7 @@ export default class PaymentEntryService {
 
       try {
         if (erpTopic === "create") {
-          await paymentEntryService.processPaymentEntry(rawPaymentEntry);
+          await paymentEntryService.createPaymentEntry(rawPaymentEntry);
         } else if (erpTopic === "update") {
           await paymentEntryService.updatePaymentEntry(rawPaymentEntry);
         }
