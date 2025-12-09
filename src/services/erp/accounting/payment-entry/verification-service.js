@@ -23,7 +23,7 @@ export default class BankTransactionVerificationService {
 
   async verifyAndUpdatePaymentEntry(payload) {
     const {
-      bank_transaction_name, sepay_id, sepay_order_number, sepay_order_description, sepay_amount_in
+      bank_transaction_name, sepay_id, sepay_order_number, sepay_order_description, sepay_amount_in, qr_payment_id
     } = payload;
 
     const validation = await this.validatePayload(payload);
@@ -35,6 +35,7 @@ export default class BankTransactionVerificationService {
 
     const qrPayment = await this.db.qrPaymentTransaction.findFirst({
       where: {
+        id: qr_payment_id,
         payment_entry_name: paymentEntryName,
         is_deleted: false
       }
