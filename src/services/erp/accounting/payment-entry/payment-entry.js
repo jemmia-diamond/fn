@@ -93,17 +93,17 @@ export default class PaymentEntryService {
   /**
    * Process payment entry update (link payment to sales order)
    *
-   * IMPORTANT: This function is strictly for processing "ORDERLATER" transactions.
-   * It handles the linkage between a Payment Entry (from ERP) and a specific
-   * Sales Order when the original QR payment was created with an "ORDERLATER" placeholder,
-   * and the transaction status is "success".
+   * It handles the linkage between a Payment Entry (from ERP) and a specific Sales Order.
    *
-   * NOTE: The mapping process should be performed only once to ensure transparency.
-   *
-   * It validates the QR payment transaction associated with the payment, checks for
-   * overpayment, and updates the QR transaction with the real Haravan Order details.
-   *
-   * Then, it update payment_order_status to Success
+   * Logic:
+   * 1. Validates the QR payment transaction (must be "success" and match details).
+   * 2. Checks for overpayment against the Sales Order's outstanding amount.
+   * 3. IF the QR payment was an "ORDERLATER" placeholder:
+   *    - It maps the real Haravan Order details to the QR transaction.
+   *    - NOTE: This mapping should be performed only once to ensure transparency.
+   * 4. IF the QR payment was ALREADY linked to a specific order (not "ORDERLATER"):
+   *    - It skips the mapping step and proceeds to update the status.
+   * 5. Updates the Payment Entry's `payment_order_status` to "Success" in the ERP system.
    *
    * @param {*} rawPaymentEntry - The raw payment entry data from the webhook/queue
    * @returns {Promise<Object|void>} - The updated QR transaction object or void if skipped
