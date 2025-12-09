@@ -149,10 +149,14 @@ export function rawToReference(ref) {
   };
 }
 
-export function mapPaymentOrderStatus(str) {
-  switch (str) {
-  case "success": return "Success";
-  case "cancel": return "Cancel";
-  default: return "Pending";
-  }
-}
+export const PaymentOrderStatus = {
+  PENDING: "Pending",
+  SUCCESS: "Success",
+  CANCEL: "Cancel"
+};
+
+export const PaymentEntryStatus = {
+  PENDING: "pending",
+  SUCCESS: "success",
+  CANCEL: "cancel"
+};

@@ -5,7 +5,7 @@ import utc from "dayjs/plugin/utc.js";
 import * as Sentry from "@sentry/cloudflare";
 import PaymentService from "services/payment";
 import LinkQRWithRealOrderService from "services/payment/qr_payment/link-qr-with-real-order-service";
-import { mapPaymentOrderStatus, rawToPaymentEntry, rawToReference } from "services/erp/accounting/payment-entry/mapping";
+import { PaymentEntryStatus, PaymentOrderStatus, rawToPaymentEntry, rawToReference } from "services/erp/accounting/payment-entry/mapping";
 
 dayjs.extend(utc);
 
@@ -83,7 +83,7 @@ export default class PaymentEntryService {
         custom_transaction_id: result.id,
         custom_transfer_note: result.transfer_note,
         custom_transfer_status: result.transfer_status,
-        payment_order_status: mapPaymentOrderStatus(result.transfer_status)
+        payment_order_status: PaymentOrderStatus.PENDING
       }, "name");
     }
 
@@ -138,7 +138,7 @@ export default class PaymentEntryService {
     }
 
     // return if QR is not success
-    if (qrPayment.transfer_status !== "success") {
+    if (qrPayment.transfer_status !== PaymentEntryStatus.SUCCESS) {
       return;
     }
 
@@ -181,6 +181,12 @@ export default class PaymentEntryService {
         error_code: LinkQRWithRealOrderService.UPDATE_QR_FAILED
       }));
     }
+
+    await this.frappeClient.update({
+      doctype: this.doctype,
+      name: paymentEntry.name,
+      payment_order_status: PaymentOrderStatus.SUCCESS
+    }, "name");
 
     return updateQr;
   }
