@@ -5,7 +5,7 @@ import utc from "dayjs/plugin/utc.js";
 import * as Sentry from "@sentry/cloudflare";
 import PaymentService from "services/payment";
 import LinkQRWithRealOrderService from "services/payment/qr_payment/link-qr-with-real-order-service";
-import { rawToPaymentEntry, rawToReference } from "services/erp/accounting/payment-entry/mapping";
+import { mapPaymentOrderStatus, rawToPaymentEntry, rawToReference } from "services/erp/accounting/payment-entry/mapping";
 
 dayjs.extend(utc);
 
@@ -83,7 +83,7 @@ export default class PaymentEntryService {
         custom_transaction_id: result.id,
         custom_transfer_note: result.transfer_note,
         custom_transfer_status: result.transfer_status,
-        payment_order_status: this.mapPaymentOrderStatus(result.transfer_status)
+        payment_order_status: mapPaymentOrderStatus(result.transfer_status)
       }, "name");
     }
 
@@ -175,7 +175,7 @@ export default class PaymentEntryService {
       doctype: this.doctype,
       name: paymentEntry.name,
       custom_transfer_status: updateQr.transfer_status,
-      payment_order_status: this.mapPaymentOrderStatus(updateQr.transfer_status)
+      payment_order_status: mapPaymentOrderStatus(updateQr.transfer_status)
     }, "name");
 
     return updateQr;
@@ -222,16 +222,5 @@ export default class PaymentEntryService {
       where: { id: id },
       data: dataToUpdate
     });
-  }
-
-  mapPaymentOrderStatus(str) {
-    switch (str) {
-    case "success":
-      return "Success";
-    case "cancel":
-      return "Cancel";
-    default:
-      return "Pending";
-    }
   }
 }

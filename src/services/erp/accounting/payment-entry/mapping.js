@@ -148,3 +148,11 @@ export function rawToReference(ref) {
       : null
   };
 }
+
+export function mapPaymentOrderStatus(str) {
+  switch (str) {
+  case "success": return "Success";
+  case "cancel": return "Cancel";
+  default: return "Pending";
+  }
+}
