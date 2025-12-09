@@ -5,7 +5,7 @@ import utc from "dayjs/plugin/utc.js";
 import * as Sentry from "@sentry/cloudflare";
 import PaymentService from "services/payment";
 import LinkQRWithRealOrderService from "services/payment/qr_payment/link-qr-with-real-order-service";
-import { rawToPaymentEntry, rawToReference } from "services/erp/accounting/payment-entry/mapping";
+import { PaymentEntryStatus, PaymentOrderStatus, rawToPaymentEntry, rawToReference } from "services/erp/accounting/payment-entry/mapping";
 import BankTransactionVerificationService from "services/erp/accounting/payment-entry/verification-service";
 
 dayjs.extend(utc);
@@ -26,7 +26,7 @@ export default class PaymentEntryService {
     this.createQRService = new PaymentService.CreateQRService(env);
   };
 
-  async processPaymentEntry(rawPaymentEntry) {
+  async createPaymentEntry(rawPaymentEntry) {
     /**
       "bank_code": "",
       "bank_account_number": "",
@@ -85,7 +85,8 @@ export default class PaymentEntryService {
         qr_url: result.qr_url,
         custom_transaction_id: result.id,
         custom_transfer_note: result.transfer_note,
-        custom_transfer_status: result.transfer_status
+        custom_transfer_status: result.transfer_status,
+        payment_order_status: PaymentOrderStatus.PENDING
       }, "name");
     }
 
@@ -93,9 +94,22 @@ export default class PaymentEntryService {
   }
 
   /**
-   * Map Payment Entry to Sales Order
-   * @param {*} rawPaymentEntry
-   * @returns
+   * Process payment entry update (link payment to sales order)
+   *
+   * It handles the linkage between a Payment Entry (from ERP) and a specific Sales Order.
+   *
+   * Logic:
+   * 1. Validates the QR payment transaction (must be "success" and match details).
+   * 2. Checks for overpayment against the Sales Order's outstanding amount.
+   * 3. IF the QR payment was an "ORDERLATER" placeholder:
+   *    - It maps the real Haravan Order details to the QR transaction.
+   *    - NOTE: This mapping should be performed only once to ensure transparency.
+   * 4. IF the QR payment was ALREADY linked to a specific order (not "ORDERLATER"):
+   *    - It skips the mapping step and proceeds to update the status.
+   * 5. Updates the Payment Entry's `payment_order_status` to "Success" in the ERP system.
+   *
+   * @param {*} rawPaymentEntry - The raw payment entry data from the webhook/queue
+   * @returns {Promise<Object|void>} - The updated QR transaction object or void if skipped
    */
   async updatePaymentEntry(rawPaymentEntry) {
     const paymentEntry = rawToPaymentEntry(rawPaymentEntry);
@@ -129,20 +143,13 @@ export default class PaymentEntryService {
     }
 
     // return if QR is not success
-    if (qrPayment.transfer_status !== "success") {
+    if (qrPayment.transfer_status !== PaymentEntryStatus.SUCCESS) {
       return;
     }
 
-    // return if QR is not ORDERLATER
-    if (qrPayment.haravan_order_number && qrPayment.haravan_order_number !== "ORDERLATER") {
-      if (qrPayment.haravan_order_number === mappedSalesOrderReference.sales_order_details.haravan_order_number) {
-        return;
-      }
-
-      throw new Error(JSON.stringify({
-        error_msg: `QR with id ${qrPaymentId} is not order later`,
-        error_code: LinkQRWithRealOrderService.ORDER_NOT_LATER
-      }));
+    // return if QR's haravan_order_number is empty
+    if (!qrPayment.haravan_order_number) {
+      return;
     }
 
     const toPayAmount = parseFloat(qrPayment.transfer_amount);
@@ -155,28 +162,31 @@ export default class PaymentEntryService {
       }));
     }
 
-    const updateQr = await this.updateOrderLaterToSuccess(
-      qrPaymentId, {
-        haravan_order_number: mappedSalesOrderReference.sales_order_details.haravan_order_number,
-        haravan_order_id: mappedSalesOrderReference.sales_order_details.haravan_order_id,
-        haravan_order_status: mappedSalesOrderReference.sales_order_details.haravan_financial_status,
-        haravan_order_total_price: mappedSalesOrderReference.total_amount,
-        customer_name: paymentEntry.customer_details.name,
-        customer_phone_number: paymentEntry.customer_details.phone || paymentEntry.customer_details.mobile_no
-      }
-    );
+    let updateQr = qrPayment;
+    if (qrPayment.haravan_order_number === "ORDERLATER") {
+      updateQr = await this.updateOrderLater(
+        qrPaymentId, {
+          haravan_order_number: mappedSalesOrderReference.sales_order_details.haravan_order_number,
+          haravan_order_id: mappedSalesOrderReference.sales_order_details.haravan_order_id,
+          haravan_order_status: mappedSalesOrderReference.sales_order_details.haravan_financial_status,
+          haravan_order_total_price: mappedSalesOrderReference.total_amount,
+          customer_name: paymentEntry.customer_details.name,
+          customer_phone_number: paymentEntry.customer_details.phone || paymentEntry.customer_details.mobile_no
+        }
+      );
 
-    if (!updateQr) {
-      throw new Error(JSON.stringify({
-        error_msg: `Failed to update QR with id ${qrPaymentId}`,
-        error_code: LinkQRWithRealOrderService.UPDATE_QR_FAILED
-      }));
+      if (!updateQr) {
+        throw new Error(JSON.stringify({
+          error_msg: `Failed to update QR with id ${qrPaymentId}`,
+          error_code: LinkQRWithRealOrderService.UPDATE_QR_FAILED
+        }));
+      }
     }
 
     await this.frappeClient.update({
       doctype: this.doctype,
       name: paymentEntry.name,
-      custom_transfer_status: updateQr.transfer_status
+      payment_order_status: PaymentOrderStatus.SUCCESS
     }, "name");
 
     return updateQr;
@@ -201,7 +211,7 @@ export default class PaymentEntryService {
 
       try {
         if (erpTopic === "create") {
-          await paymentEntryService.processPaymentEntry(rawPaymentEntry);
+          await paymentEntryService.createPaymentEntry(rawPaymentEntry);
         } else if (erpTopic === "update") {
           await paymentEntryService.updatePaymentEntry(rawPaymentEntry);
         } else if (erpTopic === "verify") {
@@ -213,13 +223,12 @@ export default class PaymentEntryService {
     }
   }
 
-  async updateOrderLaterToSuccess(id, body) {
+  async updateOrderLater(id, body) {
     const dataToUpdate = {
       haravan_order_number: body.haravan_order_number,
       haravan_order_id: parseInt(body.haravan_order_id, 10),
       haravan_order_status: body.haravan_order_status,
-      haravan_order_total_price: body.haravan_order_total_price,
-      transfer_status: "success"
+      haravan_order_total_price: body.haravan_order_total_price
     };
 
     if (body.customer_name) {

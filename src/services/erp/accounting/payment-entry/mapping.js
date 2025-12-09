@@ -148,3 +148,15 @@ export function rawToReference(ref) {
       : null
   };
 }
+
+export const PaymentOrderStatus = {
+  PENDING: "Pending",
+  SUCCESS: "Success",
+  CANCEL: "Cancel"
+};
+
+export const PaymentEntryStatus = {
+  PENDING: "pending",
+  SUCCESS: "success",
+  CANCEL: "cancel"
+};
