@@ -103,6 +103,8 @@ export default class PaymentEntryService {
    * It validates the QR payment transaction associated with the payment, checks for
    * overpayment, and updates the QR transaction with the real Haravan Order details.
    *
+   * Then, it update payment_order_status to Success
+   *
    * @param {*} rawPaymentEntry - The raw payment entry data from the webhook/queue
    * @returns {Promise<Object|void>} - The updated QR transaction object or void if skipped
    */
