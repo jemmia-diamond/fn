@@ -155,7 +155,7 @@ export default class CustomerService {
       const haravanClient = new HaravanAPI(accessToken);
       await haravanClient.customer.createCustomer(haravanPayload);
     } catch (error) {
-      if (error.response.status === 422) return;
+      if (error.response && error.response.status === 422) return;
       Sentry.captureException(error);
     }
   }
