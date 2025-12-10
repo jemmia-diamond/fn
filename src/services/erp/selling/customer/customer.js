@@ -151,7 +151,12 @@ export default class CustomerService {
       phone: customerData.mobile_no || customerData.phone
     };
 
-    const haravanClient = new HaravanAPI(accessToken);
-    await haravanClient.customer.createCustomer(haravanPayload);
+    try {
+      const haravanClient = new HaravanAPI(accessToken);
+      await haravanClient.customer.createCustomer(haravanPayload);
+    } catch (error) {
+      if (error.response.status === 422) return;
+      Sentry.captureException(error);
+    }
   }
 }
