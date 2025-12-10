@@ -5,6 +5,7 @@ import DiamondClient from "services/clients/workplace-client/diamond-client";
 import JewelryClient from "services/clients/workplace-client/jewelry-client";
 import DesignImageClient from "services/clients/workplace-client/design-image-client";
 import DesignsClient from "services/clients/workplace-client/design-client";
+import JewelryHaravanCollectionClient from "services/clients/workplace-client/jewelry-haravan-collection-client";
 import DiamondHaravanCollectionClient from "services/clients/workplace-client/diamond-haravan-collection-client";
 
 export class WorkplaceClient {
@@ -21,6 +22,7 @@ export class WorkplaceClient {
     this.designImages = new DesignImageClient(this.api, baseId);
     this.designs = new DesignsClient(this.api, baseId);
     this.diamondHaravanCollections = new DiamondHaravanCollectionClient(this.api, baseId);
+    this.jewelryHaravanCollections = new JewelryHaravanCollectionClient(this.api, baseId);
   }
 
   static async initialize(env, baseId) {

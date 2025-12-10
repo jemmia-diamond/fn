@@ -7,6 +7,7 @@ import Payment from "services/payment";
 import Misa from "services/misa";
 import ProductQuote from "services/product_quote";
 
+import ProductCollectService from "services/ecommerce/product/product-collect-service";
 import DiamondCollectService from "services/ecommerce/diamond/diamond-collect-service";
 
 export default {
@@ -47,6 +48,7 @@ export default {
       await DatabaseOperations.DatabaseFunctionService.runWorkplaceUpdateLastRfidScanTime(env);
       break;
     case "0 17 * * *": // 00:00
+      await new ProductCollectService(env).syncProductsToCollects();
       await new DiamondCollectService(env).syncDiamondsToCollects();
       // await Larksuite.Contact.UserService.syncUsersToDatabase(env);
       // await ERP.Core.UserService.syncLarkIds(env);
