@@ -29,6 +29,10 @@ export default class CustomerService {
       0: "Female",
       1: "Male"
     };
+    this.genderMapReverse = {
+      "Female": 0,
+      "Male": 1
+    };
   };
 
   async processHaravanCustomer(customerData, contact, address, options = {}) {
@@ -148,12 +152,20 @@ export default class CustomerService {
       first_name: customerData.first_name,
       last_name: customerData.last_name,
       email: customerData.email_id || null,
-      phone: customerData.mobile_no || customerData.phone
+      phone: customerData.mobile_no || customerData.phone,
+      gender: this.genderMapReverse[customerData.gender]
     };
 
     try {
       const haravanClient = new HaravanAPI(accessToken);
-      await haravanClient.customer.createCustomer(haravanPayload);
+      const haravanResult = await haravanClient.customer.createCustomer(haravanPayload);
+      const customer = await this.frappeClient.getDoc(this.doctype, customerData.name);
+
+      if (customer) {
+        customer.haravan_id = String(haravanResult.customer.id);
+        customer.customer_primary_contact = haravanResult.customer.phone;
+        await this.frappeClient.update(customer);
+      }
     } catch (error) {
       if (error.response && error.response.status === 422) return;
       Sentry.captureException(error);
