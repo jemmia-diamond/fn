@@ -2,6 +2,7 @@ import * as Sentry from "@sentry/cloudflare";
 import MisaCallbackVoucherHandler from "services/misa/callback-voucher-handler";
 import { CALLBACK_TYPE } from "services/misa/constant";
 import Misa from "services/misa";
+import CustomerCreator from "services/misa/customer/customer-creator";
 
 export default class MisaWebhookHandler {
   constructor(env) {
@@ -55,9 +56,17 @@ export default class MisaWebhookHandler {
     case Misa.Constants.JOB_TYPE.CREATE_MANUAL_VOUCHER:
       await this._createManualVoucher(data.manual_payment_uuid);
       break;
+    case Misa.Constants.JOB_TYPE.SYNC_CUSTOMER:
+      await this._syncCustomerToMisa(data);
+      break;
     default:
       break;
     }
+  }
+
+  async _syncCustomerToMisa(customerData) {
+    const service = new CustomerCreator(this.env);
+    await service.syncCustomer(customerData);
   }
 
   /**

@@ -131,9 +131,26 @@ export const CALLBACK_TYPE = {
 
 export const JOB_TYPE = {
   CREATE_QR_VOUCHER: "create_qr_voucher",
-  CREATE_MANUAL_VOUCHER: "create_manual_voucher"
+  CREATE_MANUAL_VOUCHER: "create_manual_voucher",
+  SYNC_CUSTOMER: "sync_customer"
 };
 
 export const DELAYS = {
   ONE_MINUTE: 60
 };
+
+export const DICTIONARY_TYPE = {
+  ACCOUNT_OBJECT: 1
+};
+
+export const ACCOUNT_TYPE = {
+  CUSTOMER: 0,
+  ORGANIZATION: 1
+};
+
+export const STATE = {
+  ADD: 1,
+  EDIT: 2,
+  DELETE: 3
+};
+
