@@ -3,7 +3,8 @@ import SepayTransactionService from "services/erp/accounting/sepay-transaction/s
 import * as Constants from "services/erp/accounting/constants";
 
 export default {
-  PaymentEntryService,
-  SepayTransactionService,
+  PaymentEntryService: PaymentEntryService,
+  SepayTransactionService: SepayTransactionService,
+  BankTransactionVerificationService,
   Constants
 };

@@ -55,6 +55,7 @@ export default {
     case "30 0 * * *": // 07:30
       await ERP.CRM.LeadDemandService.syncLeadDemandToDatabase(env);
       await ERP.CRM.LeadBudgetService.syncLeadBudgetsToDatabase(env);
+      await ERP.CRM.LeadProductService.syncLeadProductToDatabase(env);
       await ERP.CRM.RegionService.syncRegionsToDatabase(env);
       await ERP.CRM.ProvinceService.syncProvincesToDatabase(env);
       await ERP.Selling.PurchasePurposeService.syncPurchasePurposeToDatabase(env);
