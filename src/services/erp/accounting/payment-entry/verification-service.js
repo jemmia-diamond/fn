@@ -70,7 +70,7 @@ export default class BankTransactionVerificationService {
         });
     }
 
-    if (modified_by === "tech@jemmia.vn" && qrPayment.transfer_note !== sepay_order_description) {
+    if (payload.modified_by === "tech@jemmia.vn" && qrPayment.transfer_note !== sepay_order_description) {
       return this.failedPayload("Order description mismatch", "ORDER_DESC_MISMATCH",
         {
           payment_entry: paymentEntryName,
