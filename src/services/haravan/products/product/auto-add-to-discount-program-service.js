@@ -42,7 +42,7 @@ export default class AutoAddToDiscountProgramService {
       await this.addCollect(product.id, DIAMOND_COLLECTION_ID);
     } else {
       // Check for Jewelry
-      const isJewelry = variants.length > 0 && variants.every(variant => {
+      const isJewelry = variants.length > 0 && variants.some(variant => {
         const sku = variant.sku || "";
         return sku.length === 21;
       });
