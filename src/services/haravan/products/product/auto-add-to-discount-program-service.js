@@ -15,7 +15,7 @@ export default class AutoAddToDiscountProgramService {
         const body = message.body;
         const haravanTopic = body.haravan_topic;
 
-        if (haravanTopic === HARAVAN_TOPIC.PRODUCT_UPDATE) {
+        if (haravanTopic === HARAVAN_TOPIC.PRODUCT_UPDATE || haravanTopic === HARAVAN_TOPIC.PRODUCT_CREATED) {
           await service.processProduct(body);
         }
       }
@@ -29,7 +29,7 @@ export default class AutoAddToDiscountProgramService {
     const variants = product.variants || [];
 
     // Check for Diamond
-    const isDiamond = variants.length > 0 && variants.every(variant => {
+    const isDiamond = variants.length > 0 && variants.some(variant => {
       const sku = variant.sku || "";
       const title = variant.title || "";
       const skuParts = sku.split("-");
