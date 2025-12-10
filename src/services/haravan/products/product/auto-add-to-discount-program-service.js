@@ -2,6 +2,7 @@ import * as Sentry from "@sentry/cloudflare";
 import HaravanAPI from "services/clients/haravan-client";
 import { HARAVAN_TOPIC } from "services/ecommerce/enum";
 import { BadRequestException } from "src/exception/exceptions";
+import { SKU_LENGTH } from "services/haravan/products/product-variant/constant";
 
 export default class AutoAddToDiscountProgramService {
   constructor(env) {
@@ -44,7 +45,7 @@ export default class AutoAddToDiscountProgramService {
       // Check for Jewelry
       const isJewelry = variants.length > 0 && variants.some(variant => {
         const sku = variant.sku || "";
-        return sku.length === 21;
+        return sku.length === SKU_LENGTH.JEWELRY;
       });
 
       if (isJewelry) {
