@@ -16,7 +16,7 @@ export default class AutoAddToDiscountProgramService {
         const haravanTopic = body.haravan_topic;
 
         if (haravanTopic === HARAVAN_TOPIC.PRODUCT_CREATED) {
-          await service.checkAndAddDiamondToCollection(body);
+          await service.processProduct(body);
         }
       }
       catch (error) {
@@ -25,8 +25,10 @@ export default class AutoAddToDiscountProgramService {
     }
   }
 
-  async checkAndAddDiamondToCollection(product) {
+  async processProduct(product) {
     const variants = product.variants || [];
+
+    // Check for Diamond
     const isDiamond = variants.length > 0 && variants.every(variant => {
       const sku = variant.sku || "";
       const title = variant.title || "";
@@ -36,8 +38,19 @@ export default class AutoAddToDiscountProgramService {
     });
 
     if (isDiamond) {
-      const DIAMOND_COLLECTION_ID = this.env.DEFAULT_HARAVAN_DISCOUNT_COLLECTION_ID;
+      const DIAMOND_COLLECTION_ID = this.env.DEFAULT_HARAVAN_DIAMOND_DISCOUNT_COLLECTION_ID;
       await this.addCollect(product.id, DIAMOND_COLLECTION_ID);
+    } else {
+      // Check for Jewelry
+      const isJewelry = variants.length > 0 && variants.every(variant => {
+        const sku = variant.sku || "";
+        return sku.length === 21;
+      });
+
+      if (isJewelry) {
+        const JEWELRY_COLLECTION_ID = this.env.DEFAULT_HARAVAN_JEWELRY_DISCOUNT_COLLECTION_ID;
+        await this.addCollect(product.id, JEWELRY_COLLECTION_ID);
+      }
     }
   }
 
