@@ -8,66 +8,103 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 
 export default class DiamondDiscountService {
+  static getCampaigns() {
+    return [
+      {
+        name: "Flash Sale Phase 1",
+        startDate: "2025-12-05",
+        endDate: "2025-12-07",
+        priority: 10,
+        rules: [
+          { max: 4.5, percent: 8 },
+          { min: 4.5, max: 6.3, percent: 10 },
+          { min: 6.3, percent: 12 }
+        ]
+      },
+      {
+        name: "Flash Sale Phase 2",
+        startDate: "2025-12-12",
+        endDate: "2025-12-14",
+        priority: 10,
+        rules: [
+          { max: 4.5, percent: 8 },
+          { min: 4.5, max: 6.3, percent: 10 },
+          { min: 6.3, percent: 12 }
+        ]
+      },
+      {
+        name: "Flash Sale Phase 3",
+        startDate: "2025-12-19",
+        endDate: "2025-12-21",
+        priority: 10,
+        rules: [
+          { max: 4.5, percent: 8 },
+          { min: 4.5, max: 6.3, percent: 10 },
+          { min: 6.3, percent: 12 }
+        ]
+      },
+      {
+        name: "Early Dec 2025",
+        startDate: "2025-12-01",
+        endDate: "2025-12-24",
+        priority: 5,
+        rules: [
+          { max: 6.3, percent: 8 },
+          { min: 6.3, percent: 12 }
+        ]
+      },
+      {
+        name: "Late Dec 2025",
+        startDate: "2025-12-25",
+        endDate: "2025-12-31",
+        priority: 5,
+        rules: [
+          { max: 4.5, percent: 8 },
+          { min: 4.5, percent: 12 }
+        ]
+      }
+    ];
+  }
+
   /**
-   * Calculate discount percentage based on rules
+   * Calculate discount percentage based on campaign rules
    * @param {Object} params
    * @param {string|Date} [params.date] - Current date (defaults to now)
    * @param {number} params.diamondSize - Size of the diamond in mm
-   * @param {string} params.productType - 'KCV' (Kim cuong vien) or 'VTS' (Vo trang suc)
-   * @param {number} [params.bundleDiamondSize] - Size of the bundled diamond (if productType is VTS and bought with KCV)
+   * @param {string} params.productType - 'KCV' (Kim cuong vien) or others
    * @returns {number} Discount percentage (0-100)
    */
   static calculateDiscountPercent({ date = new Date(), diamondSize = 0, productType = "KCV" }) {
-    // Current date in ICT
+    // Only handle KCV as per request
+    if (productType !== "KCV") return 0;
+
     const now = dayjs(date).tz("Asia/Ho_Chi_Minh");
-    const year = 2025; // Explicitly set to 2025 as per request "till 31/12/2025"
+    const campaigns = this.getCampaigns().sort((a, b) => b.priority - a.priority);
 
-    // Helper to check date range (inclusive)
-    const isDateIn = (startDay, endDay, month = 12) => {
-      // Handle month boundary if needed, but here all are Dec 2025
-      const start = dayjs.tz(`${year}-${month}-${startDay}`, "Asia/Ho_Chi_Minh").startOf("day");
-      const end = dayjs.tz(`${year}-${month}-${endDay}`, "Asia/Ho_Chi_Minh").endOf("day");
-      return now.isBetween(start, end, null, "[]");
-    };
+    for (const campaign of campaigns) {
+      const start = dayjs.tz(campaign.startDate, "Asia/Ho_Chi_Minh").startOf("day");
+      const end = dayjs.tz(campaign.endDate, "Asia/Ho_Chi_Minh").endOf("day");
 
-    // 1. Flash Sale Dates check (Priority)
-    // 05-07, 12-14, 19-21 Dec
-    const isFlashSale = isDateIn(5, 7) || isDateIn(12, 14) || isDateIn(19, 21);
+      const isTime = now.isBetween(start, end, null, "[]");
 
-    if (isFlashSale) {
-      if (productType === "KCV") {
-        if (diamondSize < 4.5) return 8;
-        if (diamondSize < 6.3) return 10; // 4.5 <= x < 6.3
-        return 12; // >= 6.3
-      }
-      if (productType === "VTS") {
-        return 16;
-      }
-    }
-
-    // 2. Early Dec (01 - 24 Dec)
-    // Note: If falling through from Flash Sale, it means it's NOT a flash sale date.
-    if (isDateIn(1, 24)) {
-      if (productType === "KCV") {
-        if (diamondSize < 6.3) return 8;
-        return 12; // >= 6.3
-      }
-      if (productType === "VTS") {
-        return 16;
-      }
-    }
-
-    // 3. Late Dec (25 - 31 Dec)
-    if (isDateIn(25, 31)) {
-      if (productType === "KCV") {
-        if (diamondSize < 4.5) return 8;
-        return 12; // >= 4.5
-      }
-      if (productType === "VTS") {
-        return 16;
+      if (isTime) {
+        if (Array.isArray(campaign.rules)) {
+          for (const rule of campaign.rules) {
+            // Check max condition (if defined)
+            if (rule.max !== undefined && diamondSize >= rule.max) {
+              continue;
+            }
+            // Check min condition (if defined)
+            if (rule.min !== undefined && diamondSize < rule.min) {
+              continue;
+            }
+            return rule.percent;
+          }
+        }
       }
     }
 
     return 0;
   }
 }
+

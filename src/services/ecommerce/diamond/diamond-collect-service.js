@@ -1,6 +1,7 @@
 import * as Sentry from "@sentry/cloudflare";
 import { WorkplaceClient } from "services/clients/workplace-client";
 import DiamondDiscountService from "services/ecommerce/diamond/diamond-discount-service";
+import Database from "src/services/database";
 
 export default class DiamondCollectService {
   constructor(env) {
@@ -12,22 +13,40 @@ export default class DiamondCollectService {
       const WORKPLACE_BASE_ID = this.env.NOCODB_SUPPLY_BASE_ID;
       const workplaceClient = await WorkplaceClient.initialize(this.env, WORKPLACE_BASE_ID);
 
+      const db = Database.instance(this.env);
       let offset = 0;
       const limit = 100;
 
       while (true) {
-        const diamonds = await workplaceClient.diamonds.list({
-          where: "(auto_create_haravan_product,is,true)~and(product_id,gt,0)~and(variant_id,gt,0)",
-          limit: limit,
-          offset: offset,
-          sort: "-id"
-        });
+        const diamonds = await db.$queryRaw`
+          SELECT
+            d.*
+          FROM
+            workplace.diamonds d
+          LEFT JOIN (
+            SELECT variant_id, SUM(qty_available) as total_qty
+            FROM haravan.warehouse_inventories
+            GROUP BY variant_id
+          ) i ON d.variant_id = i.variant_id
+          WHERE
+            d.auto_create_haravan_product = true
+            AND d.product_id > 0
+            AND d.variant_id > 0
+            AND (
+              d.is_incoming = true
+              OR COALESCE(i.total_qty, 0) > 0
+            )
+          ORDER BY
+            d.id DESC
+          LIMIT ${limit}
+          OFFSET ${offset}
+        `;
 
-        if (!diamonds.list || diamonds.list.length === 0) {
+        if (!diamonds || diamonds.length === 0) {
           break;
         }
 
-        for (const diamond of diamonds.list) {
+        for (const diamond of diamonds) {
           try {
             const discountPercent = DiamondDiscountService.calculateDiscountPercent({
               diamondSize: parseFloat(diamond.edge_size_2 || 0),
