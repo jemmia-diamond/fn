@@ -8,6 +8,7 @@ import Misa from "services/misa";
 import ProductQuote from "services/product_quote";
 
 import ProductCollectService from "services/ecommerce/product/product-collect-service";
+import DiamondCollectService from "services/ecommerce/diamond/diamond-collect-service";
 
 export default {
   scheduled: async (controller, env, _ctx) => {
@@ -47,8 +48,8 @@ export default {
       await DatabaseOperations.DatabaseFunctionService.runWorkplaceUpdateLastRfidScanTime(env);
       break;
     case "0 17 * * *": // 00:00
-      // await new DiamondCollectService(env).syncDiamondsToCollects();
       await new ProductCollectService(env).syncProductsToCollects();
+      await new DiamondCollectService(env).syncDiamondsToCollects();
       // await Larksuite.Contact.UserService.syncUsersToDatabase(env);
       // await ERP.Core.UserService.syncLarkIds(env);
       // await ERP.Core.UserService.syncUsersToDatabase(env);
@@ -59,6 +60,7 @@ export default {
     case "30 0 * * *": // 07:30
       await ERP.CRM.LeadDemandService.syncLeadDemandToDatabase(env);
       await ERP.CRM.LeadBudgetService.syncLeadBudgetsToDatabase(env);
+      await ERP.CRM.LeadProductService.syncLeadProductToDatabase(env);
       await ERP.CRM.RegionService.syncRegionsToDatabase(env);
       await ERP.CRM.ProvinceService.syncProvincesToDatabase(env);
       await ERP.Selling.PurchasePurposeService.syncPurchasePurposeToDatabase(env);

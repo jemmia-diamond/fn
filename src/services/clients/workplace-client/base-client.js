@@ -30,12 +30,9 @@ export default class BaseWorkplaceClient {
   async bulkUpdate(records) {
     return await this.api.dbTableRow.bulkUpdate("noco", this.baseId, this.tableName, records);
   }
+
   async delete(id) {
     return await this.api.dbTableRow.delete("noco", this.baseId, this.tableName, id);
-  }
-
-  async nestedUnlink(id, relationName, relatedId) {
-    return await this.api.dbTableRow.nested.remove("noco", this.baseId, this.tableName, id, "mm", relationName, relatedId);
   }
 }
 
