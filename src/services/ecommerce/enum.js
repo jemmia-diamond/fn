@@ -2,7 +2,7 @@ export const HARAVAN_TOPIC = {
   CREATED: "orders/create",
   UPDATED: "orders/updated",
   PAID: "orders/paid",
-  PRODUCT_CREATED: "products/create"
+  PRODUCT_UPDATE: "products/update"
 };
 
 export const HARAVAN_DISPATCH_TYPE_ZALO_MSG = {

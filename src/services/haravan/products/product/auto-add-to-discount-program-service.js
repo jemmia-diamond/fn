@@ -15,7 +15,7 @@ export default class AutoAddToDiscountProgramService {
         const body = message.body;
         const haravanTopic = body.haravan_topic;
 
-        if (haravanTopic === HARAVAN_TOPIC.PRODUCT_CREATED) {
+        if (haravanTopic === HARAVAN_TOPIC.PRODUCT_UPDATE) {
           await service.processProduct(body);
         }
       }
