@@ -24,6 +24,7 @@ model conversation {
   @@index([page_id], map: "idx_conversation_page_id")
   @@index([id], map: "idx_id")
   @@index([uuid], map: "ix_pancake_conversation_uuid")
+  @@index([ad_ids], type: Gin)
   @@schema("pancake")
 }
 
