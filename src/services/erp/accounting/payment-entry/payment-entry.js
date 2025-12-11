@@ -168,9 +168,68 @@ export default class PaymentEntryService {
 
     if (this._isQRPayment(paymentCode)) {
       return await this.updateQRPayment(paymentEntry);
+    } else if (this._isManualPayment(paymentCode)) {
+      return await this.updateManualPayment(paymentEntry);
     } else {
       throw new Error(`Unsupported payment_code: ${paymentCode}`);
     }
+  }
+
+  async updateManualPayment(rawPaymentEntry) {
+    const paymentEntry = rawToPaymentEntry(rawPaymentEntry);
+    const manualPaymentUuid = paymentEntry.custom_transaction_id;
+    if (!manualPaymentUuid) return;
+
+    const existingPayment = await this.db.manualPaymentTransaction.findUnique({
+      where: { uuid: manualPaymentUuid }
+    });
+
+    if (!existingPayment) return;
+
+    const references = paymentEntry.references || [];
+    const salesOrderReference = references.find((ref) => ref.reference_doctype === "Sales Order");
+    const haravan_order_id = salesOrderReference?.sales_order_details?.haravan_order_id
+      ? parseInt(salesOrderReference.sales_order_details.haravan_order_id, 10) : null;
+    const receive_date = paymentEntry.payment_date ? dayjs(paymentEntry.payment_date).utc().toDate() : null;
+
+    const isOrderLinking =
+      existingPayment.haravan_order_name === "ORDERLATER" &&
+      salesOrderReference &&
+      haravan_order_id;
+
+    const data = {
+      payment_type: this._mapPaymentMethod(paymentEntry.payment_code),
+      branch: this._mapBranch(paymentEntry.bank_account_branch),
+      receive_date,
+      bank_account: paymentEntry.bank_account_no || null,
+      bank_name: paymentEntry.bank || null,
+      transfer_amount: paymentEntry.paid_amount || paymentEntry.received_amount || null,
+      transfer_note: salesOrderReference?.order_number || paymentEntry.custom_transfer_note || "",
+      haravan_order_id: isOrderLinking ? haravan_order_id : null,
+      haravan_order_name: isOrderLinking ? salesOrderReference.order_number : null,
+      transfer_status: paymentEntry.custom_transfer_status === PaymentEntryStatus.SUCCESS ? "Xác nhận" :
+        paymentEntry.custom_transfer_status === PaymentEntryStatus.CANCEL ? "Hủy" :
+          Constants.TRANSFER_STATUS.PENDING,
+      gateway: paymentEntry.gateway
+    };
+
+    const result = await this.manualPaymentService.updateManualPayment(manualPaymentUuid, data);
+
+    if (result && result.payment_entry_name) {
+      const isConfirmed = result.transfer_status === "Xác nhận";
+      const custom_transfer_status = isConfirmed ? PaymentEntryStatus.SUCCESS : PaymentEntryStatus.PENDING;
+      const payment_order_status = isConfirmed ? PaymentOrderStatus.SUCCESS : PaymentOrderStatus.PENDING;
+
+      await this.frappeClient.upsert({
+        doctype: this.doctype,
+        name: result.payment_entry_name,
+        custom_transfer_note: result.transfer_note,
+        custom_transfer_status,
+        payment_order_status
+      }, "name");
+    }
+
+    return result;
   }
 
   /**
