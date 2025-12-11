@@ -8,6 +8,7 @@ export default class CreateQRService {
   static MISSING_REQUEST_BODY = "MISSING_REQUEST_BODY";
   static MISSING_FIELD = "MISSING_FIELD";
   static PRICE_OVER_LIMIT = "PRICE_OVER_LIMIT";
+  static NOT_FOUND = "NOT_FOUND";
 
   constructor(env) {
     this.env = env;
@@ -104,7 +105,15 @@ export default class CreateQRService {
     };
 
     if (!isOrderLater) {
-      transactionBody.haravan_order_id = parseInt(body.haravan_order_id);
+      const orderId = parseInt(body.haravan_order_id);
+      const orderExists = await this.db.order.findUnique({
+        where: { id: orderId }
+      });
+      if (!orderExists) {
+        throw new Error(JSON.stringify({ error_msg: `Haravan Order ID ${orderId} does not exist.`, error_code: CreateQRService.NOT_FOUND }));
+      }
+
+      transactionBody.haravan_order_id = orderId;
       transactionBody.haravan_order_status = body.haravan_order_status;
       transactionBody.haravan_order_total_price = body.haravan_order_total_price;
     }
