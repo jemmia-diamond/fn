@@ -4,6 +4,7 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import * as Sentry from "@sentry/cloudflare";
 import PaymentService from "services/payment";
+import * as Constants from "services/erp/accounting/constants";
 import LinkQRWithRealOrderService from "services/payment/qr_payment/link-qr-with-real-order-service";
 import { PaymentEntryStatus, PaymentOrderStatus, rawToPaymentEntry, rawToReference } from "services/erp/accounting/payment-entry/mapping";
 import BankTransactionVerificationService from "services/erp/accounting/payment-entry/verification-service";
@@ -24,31 +25,62 @@ export default class PaymentEntryService {
 
     this.db = Database.instance(env);
     this.createQRService = new PaymentService.CreateQRService(env);
+    this.manualPaymentService = new PaymentService.ManualPaymentService(env);
   };
 
-  async createPaymentEntry(rawPaymentEntry) {
-    /**
-      "bank_code": "",
-      "bank_account_number": "",
-      "bank_account_name": "",
-      "bank_bin": "",
-      "bank_name": "",
+  _isQRPayment(modeOfPayment) {
+    return Constants.QR_PAYMENT_METHODS.includes(modeOfPayment);
+  }
 
-      "customer_name": "",
-      "customer_phone_number": "",
-      "transfer_amount": 0,
+  _isManualPayment(modeOfPayment) {
+    return Constants.MANUAL_PAYMENT_METHODS.includes(modeOfPayment);
+  }
 
-      "haravan_order_total_price": "",
-      "haravan_order_number": "",
-      "haravan_order_status": "",
-      "haravan_order_id": "",
-      "lark_record_id": "",
+  _mapPaymentMethod(modeOfPayment) {
+    return Constants.PAYMENT_METHOD_MAPPING[modeOfPayment] || null;
+  }
 
-      "customer_phone_order_later": "",
-      "customer_name_order_later": ""
-    */
+  _mapBranch(branch) {
+    const mapping = {
+      "Cửa hàng HCM": "Hồ Chí Minh",
+      "Cửa hàng Hồ Chí Minh": "Hồ Chí Minh",
+      "Cửa hàng Hà Nội": "Hà Nội",
+      "Cửa hàng Cần Thơ": "Cần Thơ"
+    };
+    return mapping[branch] || branch || null;
+  }
+
+  async processManualPayment(rawPaymentEntry) {
     const paymentEntry = rawToPaymentEntry(rawPaymentEntry);
+    const references = paymentEntry.references || [];
+    const salesOrderReference = references.find((ref) => ref.reference_doctype === "Sales Order");
+    const haravan_order_id = salesOrderReference?.sales_order_details?.haravan_order_id
+      ? parseInt(salesOrderReference.sales_order_details.haravan_order_id, 10) : null;
+    const receive_date = paymentEntry.payment_date ? dayjs(paymentEntry.payment_date).utc().toDate() : null;
+    const created_date = paymentEntry.creation ? dayjs(paymentEntry.creation).utc().toDate() : null;
 
+    const data = {
+      payment_entry_name: paymentEntry.name,
+      payment_type: this._mapPaymentMethod(paymentEntry.payment_code),
+      branch: this._mapBranch(paymentEntry.bank_account_branch),
+      shipping_code: null,
+      send_date: null,
+      receive_date,
+      created_date,
+      updated_date: null,
+      bank_account: paymentEntry.bank_account_no || null,
+      bank_name: paymentEntry.bank || null,
+      transfer_amount: paymentEntry.paid_amount || paymentEntry.received_amount || null,
+      transfer_note: salesOrderReference?.order_number || "",
+      haravan_order_id,
+      haravan_order_name: salesOrderReference?.order_number || "ORDERLATER",
+      transfer_status: (receive_date && haravan_order_id) ? "Xác nhận" : Constants.TRANSFER_STATUS.PENDING,
+      gateway: paymentEntry.gateway
+    };
+    await this.manualPaymentService.createManualPayment(data);
+  }
+
+  async processQRPayment(paymentEntry) {
     const references = paymentEntry.references || [];
     const salesOrderReference = references.find(
       (ref) => ref.reference_doctype === "Sales Order"
@@ -93,6 +125,38 @@ export default class PaymentEntryService {
     return result;
   }
 
+  async processPaymentEntry(rawPaymentEntry) {
+    const paymentEntry = rawToPaymentEntry(rawPaymentEntry);
+    const paymentCode = paymentEntry.payment_code;
+
+    if (!paymentCode) {
+      throw new Error("payment_code is required in Payment Entry");
+    }
+
+    if (this._isQRPayment(paymentCode)) {
+      return await this.processQRPayment(paymentEntry);
+    } else if (this._isManualPayment(paymentCode)) {
+      return await this.processManualPayment(paymentEntry);
+    } else {
+      throw new Error(`Unsupported payment_code: ${paymentCode}`);
+    }
+  }
+
+  async updatePaymentEntry(rawPaymentEntry) {
+    const paymentEntry = rawToPaymentEntry(rawPaymentEntry);
+    const paymentCode = paymentEntry.payment_code;
+
+    if (!paymentCode) {
+      throw new Error("payment_code is required in Payment Entry");
+    }
+
+    if (this._isQRPayment(paymentCode)) {
+      return await this.updateQRPayment(paymentEntry);
+    } else {
+      throw new Error(`Unsupported payment_code: ${paymentCode}`);
+    }
+  }
+
   /**
    * Process payment entry update (link payment to sales order)
    *
@@ -111,7 +175,7 @@ export default class PaymentEntryService {
    * @param {*} rawPaymentEntry - The raw payment entry data from the webhook/queue
    * @returns {Promise<Object|void>} - The updated QR transaction object or void if skipped
    */
-  async updatePaymentEntry(rawPaymentEntry) {
+  async updateQRPayment(rawPaymentEntry) {
     const paymentEntry = rawToPaymentEntry(rawPaymentEntry);
 
     const references = paymentEntry.references || [];
@@ -211,13 +275,14 @@ export default class PaymentEntryService {
 
       try {
         if (erpTopic === "create") {
-          await paymentEntryService.createPaymentEntry(rawPaymentEntry);
+          await paymentEntryService.processPaymentEntry(rawPaymentEntry);
         } else if (erpTopic === "update") {
           await paymentEntryService.updatePaymentEntry(rawPaymentEntry);
         } else if (erpTopic === "verify") {
           await paymentEntryService.verifyPaymentEntryBankTransaction(rawPaymentEntry);
         }
       } catch (error) {
+        console.warn(error);
         Sentry.captureException(error);
       }
     }
