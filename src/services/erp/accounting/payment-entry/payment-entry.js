@@ -77,7 +77,23 @@ export default class PaymentEntryService {
       transfer_status: (receive_date && haravan_order_id) ? "Xác nhận" : Constants.TRANSFER_STATUS.PENDING,
       gateway: paymentEntry.gateway
     };
-    await this.manualPaymentService.createManualPayment(data);
+
+    const result = await this.manualPaymentService.createManualPayment(data);
+    if (result && result.payment_entry_name) {
+      const isConfirmed = result.transfer_status === "Xác nhận";
+      const custom_transfer_status = isConfirmed ? PaymentEntryStatus.SUCCESS : PaymentEntryStatus.PENDING;
+      const payment_order_status = isConfirmed ? PaymentOrderStatus.SUCCESS : PaymentOrderStatus.PENDING;
+      await this.frappeClient.upsert({
+        doctype: this.doctype,
+        name: result.payment_entry_name,
+        custom_transaction_id: result.uuid,
+        custom_transfer_note: result.transfer_note,
+        custom_transfer_status,
+        payment_order_status
+      }, "name");
+    }
+
+    return result;
   }
 
   async processQRPayment(paymentEntry) {
