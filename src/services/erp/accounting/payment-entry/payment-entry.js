@@ -4,7 +4,7 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import * as Sentry from "@sentry/cloudflare";
 import PaymentService from "services/payment";
-import * as Constants from "services/erp/accounting/constants";
+import * as Constants from "services/erp/accounting/payment-entry/constants";
 import LinkQRWithRealOrderService from "services/payment/qr_payment/link-qr-with-real-order-service";
 import { PaymentEntryStatus, PaymentOrderStatus, rawToPaymentEntry, rawToReference } from "services/erp/accounting/payment-entry/mapping";
 import BankTransactionVerificationService from "services/erp/accounting/payment-entry/verification-service";
@@ -28,16 +28,16 @@ export default class PaymentEntryService {
     this.manualPaymentService = new PaymentService.ManualPaymentService(env);
   };
 
-  _isQRPayment(modeOfPayment) {
-    return Constants.QR_PAYMENT_METHODS.includes(modeOfPayment);
+  _isQRPayment(paymentCode) {
+    return Constants.QR_PAYMENT_METHODS.includes(paymentCode);
   }
 
-  _isManualPayment(modeOfPayment) {
-    return Constants.MANUAL_PAYMENT_METHODS.includes(modeOfPayment);
+  _isManualPayment(paymentCode) {
+    return Constants.MANUAL_PAYMENT_METHODS.includes(paymentCode);
   }
 
-  _mapPaymentMethod(modeOfPayment) {
-    return Constants.PAYMENT_METHOD_MAPPING[modeOfPayment] || null;
+  _mapPaymentMethod(paymentCode) {
+    return Constants.PAYMENT_METHOD_MAPPING[paymentCode] || null;
   }
 
   _mapBranch(branch) {
@@ -71,13 +71,29 @@ export default class PaymentEntryService {
       bank_account: paymentEntry.bank_account_no || null,
       bank_name: paymentEntry.bank || null,
       transfer_amount: paymentEntry.paid_amount || paymentEntry.received_amount || null,
-      transfer_note: salesOrderReference?.order_number || "",
+      transfer_note: salesOrderReference?.order_number || "ORDERLATER",
       haravan_order_id,
-      haravan_order_name: salesOrderReference?.order_number || "ORDERLATER",
+      haravan_order_name: salesOrderReference?.order_number || "Đơn hàng cọc",
       transfer_status: (receive_date && haravan_order_id) ? "Xác nhận" : Constants.TRANSFER_STATUS.PENDING,
       gateway: paymentEntry.gateway
     };
-    await this.manualPaymentService.createManualPayment(data);
+
+    const result = await this.manualPaymentService.createManualPayment(data);
+    if (result && result.payment_entry_name) {
+      const isConfirmed = result.transfer_status === "Xác nhận";
+      const custom_transfer_status = isConfirmed ? PaymentEntryStatus.SUCCESS : PaymentEntryStatus.PENDING;
+      const payment_order_status = isConfirmed ? PaymentOrderStatus.SUCCESS : PaymentOrderStatus.PENDING;
+      await this.frappeClient.upsert({
+        doctype: this.doctype,
+        name: result.payment_entry_name,
+        custom_transaction_id: result.uuid,
+        custom_transfer_note: result.transfer_note,
+        custom_transfer_status,
+        payment_order_status
+      }, "name");
+    }
+
+    return result;
   }
 
   async processQRPayment(paymentEntry) {
@@ -152,9 +168,66 @@ export default class PaymentEntryService {
 
     if (this._isQRPayment(paymentCode)) {
       return await this.updateQRPayment(paymentEntry);
+    } else if (this._isManualPayment(paymentCode)) {
+      return await this.updateManualPayment(paymentEntry);
     } else {
       throw new Error(`Unsupported payment_code: ${paymentCode}`);
     }
+  }
+
+  async updateManualPayment(rawPaymentEntry) {
+    const paymentEntry = rawToPaymentEntry(rawPaymentEntry);
+    const manualPaymentUuid = paymentEntry.custom_transaction_id;
+    if (!manualPaymentUuid) return;
+
+    const existingPayment = await this.db.manualPaymentTransaction.findUnique({
+      where: { uuid: manualPaymentUuid }
+    });
+
+    if (!existingPayment) return;
+
+    const references = paymentEntry.references || [];
+    const salesOrderReference = references.find((ref) => ref.reference_doctype === "Sales Order");
+    const haravan_order_id = salesOrderReference?.sales_order_details?.haravan_order_id
+      ? parseInt(salesOrderReference.sales_order_details.haravan_order_id, 10) : null;
+    const receive_date = paymentEntry.payment_date ? dayjs(paymentEntry.payment_date).utc().toDate() : null;
+
+    const isOrderLinking =
+      existingPayment.haravan_order_name === "Đơn hàng cọc" && haravan_order_id;
+
+    const data = {
+      payment_type: this._mapPaymentMethod(paymentEntry.payment_code),
+      branch: this._mapBranch(paymentEntry.bank_account_branch),
+      receive_date,
+      bank_account: paymentEntry.bank_account_no || null,
+      bank_name: paymentEntry.bank || null,
+      transfer_amount: paymentEntry.paid_amount || paymentEntry.received_amount || null,
+      transfer_note: salesOrderReference?.order_number || paymentEntry.custom_transfer_note || "",
+      haravan_order_id: isOrderLinking ? haravan_order_id : null,
+      haravan_order_name: isOrderLinking ? salesOrderReference.order_number : null,
+      transfer_status: paymentEntry.custom_transfer_status === PaymentEntryStatus.SUCCESS ? "Xác nhận" :
+        paymentEntry.custom_transfer_status === PaymentEntryStatus.CANCEL ? "Hủy" :
+          Constants.TRANSFER_STATUS.PENDING,
+      gateway: paymentEntry.gateway
+    };
+
+    const result = await this.manualPaymentService.updateManualPayment(manualPaymentUuid, data);
+
+    if (result && result.payment_entry_name) {
+      const isConfirmed = result.transfer_status === "Xác nhận";
+      const custom_transfer_status = isConfirmed ? PaymentEntryStatus.SUCCESS : PaymentEntryStatus.PENDING;
+      const payment_order_status = isConfirmed ? PaymentOrderStatus.SUCCESS : PaymentOrderStatus.PENDING;
+
+      await this.frappeClient.upsert({
+        doctype: this.doctype,
+        name: result.payment_entry_name,
+        custom_transfer_note: result.transfer_note,
+        custom_transfer_status,
+        payment_order_status
+      }, "name");
+    }
+
+    return result;
   }
 
   /**
@@ -282,7 +355,6 @@ export default class PaymentEntryService {
           await paymentEntryService.verifyPaymentEntryBankTransaction(rawPaymentEntry);
         }
       } catch (error) {
-        console.warn(error);
         Sentry.captureException(error);
       }
     }
