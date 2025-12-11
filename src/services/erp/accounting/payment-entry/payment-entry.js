@@ -50,7 +50,8 @@ export default class PaymentEntryService {
     return mapping[branch] || branch || null;
   }
 
-  _extractManualPaymentData(paymentEntry) {
+  async processManualPayment(rawPaymentEntry) {
+    const paymentEntry = rawToPaymentEntry(rawPaymentEntry);
     const references = paymentEntry.references || [];
     const salesOrderReference = references.find((ref) => ref.reference_doctype === "Sales Order");
     const haravan_order_id = salesOrderReference?.sales_order_details?.haravan_order_id
@@ -60,7 +61,7 @@ export default class PaymentEntryService {
 
     const data = {
       payment_entry_name: paymentEntry.name,
-      payment_type: this._mapPaymentMethod(paymentEntry.mode_of_payment),
+      payment_type: this._mapPaymentMethod(paymentEntry.payment_code),
       branch: this._mapBranch(paymentEntry.bank_account_branch),
       shipping_code: null,
       send_date: null,
@@ -70,24 +71,16 @@ export default class PaymentEntryService {
       bank_account: paymentEntry.bank_account_no || null,
       bank_name: paymentEntry.bank || null,
       transfer_amount: paymentEntry.paid_amount || paymentEntry.received_amount || null,
-      transfer_note: paymentEntry.remarks || null,
+      transfer_note: salesOrderReference?.order_number || "",
       haravan_order_id,
-      haravan_order_name: salesOrderReference?.order_number || null,
+      haravan_order_name: salesOrderReference?.order_number || "ORDERLATER",
       transfer_status: (receive_date && haravan_order_id) ? "Xác nhận" : Constants.TRANSFER_STATUS.PENDING,
       gateway: paymentEntry.gateway
     };
-
-    return data;
+    await this.manualPaymentService.createManualPayment(data);
   }
 
-  async processManualPayment(paymentEntry) {
-    const manualPaymentData = this._extractManualPaymentData(paymentEntry);
-    await this.manualPaymentService.createManualPayment(manualPaymentData);
-  }
-
-  async processQRPayment(rawPaymentEntry) {
-    const paymentEntry = rawToPaymentEntry(rawPaymentEntry);
-
+  async processQRPayment(paymentEntry) {
     const references = paymentEntry.references || [];
     const salesOrderReference = references.find(
       (ref) => ref.reference_doctype === "Sales Order"
@@ -134,33 +127,33 @@ export default class PaymentEntryService {
 
   async processPaymentEntry(rawPaymentEntry) {
     const paymentEntry = rawToPaymentEntry(rawPaymentEntry);
-    const modeOfPayment = paymentEntry.mode_of_payment;
+    const paymentCode = paymentEntry.payment_code;
 
-    if (!modeOfPayment) {
-      throw new Error("mode_of_payment is required in Payment Entry");
+    if (!paymentCode) {
+      throw new Error("payment_code is required in Payment Entry");
     }
 
-    if (this._isQRPayment(modeOfPayment)) {
+    if (this._isQRPayment(paymentCode)) {
       return await this.processQRPayment(paymentEntry);
-    } else if (this._isManualPayment(modeOfPayment)) {
+    } else if (this._isManualPayment(paymentCode)) {
       return await this.processManualPayment(paymentEntry);
     } else {
-      throw new Error(`Unsupported mode_of_payment: ${modeOfPayment}`);
+      throw new Error(`Unsupported payment_code: ${paymentCode}`);
     }
   }
 
   async updatePaymentEntry(rawPaymentEntry) {
     const paymentEntry = rawToPaymentEntry(rawPaymentEntry);
-    const modeOfPayment = paymentEntry.mode_of_payment;
+    const paymentCode = paymentEntry.payment_code;
 
-    if (!modeOfPayment) {
-      throw new Error("mode_of_payment is required in Payment Entry");
+    if (!paymentCode) {
+      throw new Error("payment_code is required in Payment Entry");
     }
 
-    if (this._isQRPayment(modeOfPayment)) {
+    if (this._isQRPayment(paymentCode)) {
       return await this.updateQRPayment(paymentEntry);
     } else {
-      throw new Error(`Unsupported mode_of_payment: ${modeOfPayment}`);
+      throw new Error(`Unsupported payment_code: ${paymentCode}`);
     }
   }
 
@@ -289,6 +282,7 @@ export default class PaymentEntryService {
           await paymentEntryService.verifyPaymentEntryBankTransaction(rawPaymentEntry);
         }
       } catch (error) {
+        console.warn(error);
         Sentry.captureException(error);
       }
     }
