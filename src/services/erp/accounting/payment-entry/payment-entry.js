@@ -4,7 +4,7 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import * as Sentry from "@sentry/cloudflare";
 import PaymentService from "services/payment";
-import * as Constants from "services/erp/accounting/constants";
+import * as Constants from "services/erp/accounting/payment-entry/constants";
 import LinkQRWithRealOrderService from "services/payment/qr_payment/link-qr-with-real-order-service";
 import { PaymentEntryStatus, PaymentOrderStatus, rawToPaymentEntry, rawToReference } from "services/erp/accounting/payment-entry/mapping";
 import BankTransactionVerificationService from "services/erp/accounting/payment-entry/verification-service";
@@ -28,16 +28,16 @@ export default class PaymentEntryService {
     this.manualPaymentService = new PaymentService.ManualPaymentService(env);
   };
 
-  _isQRPayment(modeOfPayment) {
-    return Constants.QR_PAYMENT_METHODS.includes(modeOfPayment);
+  _isQRPayment(paymentCode) {
+    return Constants.QR_PAYMENT_METHODS.includes(paymentCode);
   }
 
-  _isManualPayment(modeOfPayment) {
-    return Constants.MANUAL_PAYMENT_METHODS.includes(modeOfPayment);
+  _isManualPayment(paymentCode) {
+    return Constants.MANUAL_PAYMENT_METHODS.includes(paymentCode);
   }
 
-  _mapPaymentMethod(modeOfPayment) {
-    return Constants.PAYMENT_METHOD_MAPPING[modeOfPayment] || null;
+  _mapPaymentMethod(paymentCode) {
+    return Constants.PAYMENT_METHOD_MAPPING[paymentCode] || null;
   }
 
   _mapBranch(branch) {
@@ -282,7 +282,6 @@ export default class PaymentEntryService {
           await paymentEntryService.verifyPaymentEntryBankTransaction(rawPaymentEntry);
         }
       } catch (error) {
-        console.warn(error);
         Sentry.captureException(error);
       }
     }
