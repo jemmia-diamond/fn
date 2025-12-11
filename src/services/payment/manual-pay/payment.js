@@ -194,6 +194,20 @@ export default class ManualPaymentService {
 
       delete dataForFirstUpdate.transfer_status;
 
+      const isOrderLater = dataForFirstUpdate.haravan_order_name === "Đơn hàng cọc";
+      if (!isOrderLater) {
+        const orderExists = await this.db.order.findUnique({
+          where: { id: dataForFirstUpdate.haravan_order_id }
+        });
+        if (!orderExists) {
+          throw new BadRequestException(`Haravan Order ID ${dataForFirstUpdate.haravan_order_id} does not exist.`);
+        }
+      }
+
+      if (isOrderLater) {
+        delete dataForFirstUpdate.haravan_order_id;
+      }
+
       // Update other fields
       const updatedPayment = await this.db.manualPaymentTransaction.update({
         where: { uuid: uuid },
