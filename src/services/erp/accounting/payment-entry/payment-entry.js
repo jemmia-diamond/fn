@@ -71,9 +71,9 @@ export default class PaymentEntryService {
       bank_account: paymentEntry.bank_account_no || null,
       bank_name: paymentEntry.bank || null,
       transfer_amount: paymentEntry.paid_amount || paymentEntry.received_amount || null,
-      transfer_note: salesOrderReference?.order_number || "",
+      transfer_note: salesOrderReference?.order_number || "ORDERLATER",
       haravan_order_id,
-      haravan_order_name: salesOrderReference?.order_number || "ORDERLATER",
+      haravan_order_name: salesOrderReference?.order_number || "Đơn hàng cọc",
       transfer_status: (receive_date && haravan_order_id) ? "Xác nhận" : Constants.TRANSFER_STATUS.PENDING,
       gateway: paymentEntry.gateway
     };
@@ -193,9 +193,7 @@ export default class PaymentEntryService {
     const receive_date = paymentEntry.payment_date ? dayjs(paymentEntry.payment_date).utc().toDate() : null;
 
     const isOrderLinking =
-      existingPayment.haravan_order_name === "ORDERLATER" &&
-      salesOrderReference &&
-      haravan_order_id;
+      existingPayment.haravan_order_name === "Đơn hàng cọc" && haravan_order_id;
 
     const data = {
       payment_type: this._mapPaymentMethod(paymentEntry.payment_code),
