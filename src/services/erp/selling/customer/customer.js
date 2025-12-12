@@ -29,11 +29,14 @@ export default class CustomerService {
       0: "Female",
       1: "Male"
     };
-
-    this.genderMapReverse = Object.fromEntries(
-      Object.entries(this.genderMap).map(([key, value]) => [value, Number(key)])
-    );
+    this.genderMapReverse = CustomerService.reverseMap(this.genderMap);
   };
+
+  static reverseMap(map) {
+    return Object.fromEntries(
+      Object.entries(map).map(([key, value]) => [value, Number(key)])
+    );
+  }
 
   async processHaravanCustomer(customerData, contact, address, options = {}) {
     const nameParts = [customerData.last_name, customerData.first_name].filter(Boolean);
@@ -116,7 +119,7 @@ export default class CustomerService {
 
     for (const message of messages) {
       const body = message.body;
-      const erpTopic = body.erpTopic || "";
+      const erpTopic = body.erpTopic;
       await this.processPayload(body.data, erpTopic).catch(err => Sentry.captureException(err));
     }
   }
@@ -151,23 +154,19 @@ export default class CustomerService {
     const haravanPayload = {
       first_name: customerData.first_name,
       last_name: customerData.last_name,
-      email: customerData.email_id || null,
+      email: customerData.email_id,
       phone: customerData.mobile_no || customerData.phone,
       gender: this.genderMapReverse[customerData.gender]
     };
 
-    try {
-      const haravanClient = new HaravanAPI(accessToken);
-      const haravanResult = await haravanClient.customer.createCustomer(haravanPayload);
-      const customer = await this.frappeClient.getDoc(this.doctype, customerData.name);
+    const haravanClient = new HaravanAPI(accessToken);
+    const haravanResult = await haravanClient.customer.createCustomer(haravanPayload);
+    const customer = await this.frappeClient.getDoc(this.doctype, customerData.name);
 
-      if (customer) {
-        customer.haravan_id = String(haravanResult.customer.id);
-        customer.customer_primary_contact = haravanResult.customer.phone;
-        await this.frappeClient.update(customer);
-      }
-    } catch (error) {
-      if (error.response && error.response.status === 422) return;
+    if (customer) {
+      customer.haravan_id = String(haravanResult.customer.id);
+      customer.customer_primary_contact = haravanResult.customer.phone;
+      await this.frappeClient.update(customer);
     }
   }
 }
