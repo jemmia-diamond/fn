@@ -140,7 +140,8 @@ export default class ManualPaymentService {
         }
       });
 
-      if (newPayment.transfer_status === "Xác nhận" && newPayment.receive_date && newPayment.haravan_order_id) {
+      // Temporary for larkbase usage, we'll remove this block once we're all move over to erp
+      if (newPayment.transfer_status === "Xác nhận" && newPayment.receive_date && newPayment.haravan_order_id && !newPayment.payment_entry_name) {
         await this._enqueueMisaBackgroundJob(newPayment);
       }
 
@@ -181,7 +182,8 @@ export default class ManualPaymentService {
           data: updateData
         });
 
-        if (data.receive_date && !paymentBeforeUpdate.receive_date && updatedPayment.haravan_order_id) {
+        // Temporary for larkbase usage, we'll remove this block once we're all move over to erp
+        if (data.receive_date && !paymentBeforeUpdate.receive_date && updatedPayment.haravan_order_id && !updatedPayment.payment_entry_name) {
           await this._enqueueMisaBackgroundJob(updatedPayment);
         }
 
@@ -235,7 +237,8 @@ export default class ManualPaymentService {
           }
         });
 
-        if (finalUpdatedPayment.receive_date && finalUpdatedPayment.haravan_order_id) {
+        // Temporary for larkbase usage, we'll remove this block once we're all move over to erp
+        if (finalUpdatedPayment.receive_date && finalUpdatedPayment.haravan_order_id && !finalUpdatedPayment.payment_entry_name) {
           await this._enqueueMisaBackgroundJob(finalUpdatedPayment);
         }
 

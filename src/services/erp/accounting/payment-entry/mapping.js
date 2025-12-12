@@ -103,7 +103,8 @@ export function rawToPaymentEntry(body) {
     unallocated_amount: body.unallocated_amount,
     verified_by: body.modified_by,
     gateway: body.gateway,
-    payment_code: body.payment_code
+    payment_code: body.payment_code,
+    custom_webhook_processed: body.custom_webhook_processed
   };
 }
 

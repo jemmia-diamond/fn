@@ -113,7 +113,8 @@ export default class SepayTransactionService {
       });
     }
 
-    if (qr.transfer_status === "success" && !isOrderLater && qr.haravan_order_id) {
+    // Temporary for larkbase usage, we'll remove this block once we're all move over to erp
+    if (qr.transfer_status === "success" && !isOrderLater && qr.haravan_order_id && !qr.payment_entry_name) {
       await this.enqueueMisaBackgroundJob(qr);
     }
     return true;
