@@ -8,6 +8,7 @@ import * as Constants from "services/erp/accounting/payment-entry/constants";
 import LinkQRWithRealOrderService from "services/payment/qr_payment/link-qr-with-real-order-service";
 import { PaymentEntryStatus, PaymentOrderStatus, rawToPaymentEntry, rawToReference } from "services/erp/accounting/payment-entry/mapping";
 import BankTransactionVerificationService from "services/erp/accounting/payment-entry/verification-service";
+import Misa from "services/misa";
 
 dayjs.extend(utc);
 
@@ -227,6 +228,13 @@ export default class PaymentEntryService {
       }, "name");
     }
 
+    if (isConfirmed && isOrderLinking && paymentEntry.verified_by && haravan_order_id) {
+      const jobType = Misa.Constants.JOB_TYPE.CREATE_MANUAL_VOUCHER;
+      await this._enqueueMisaBackgroundJob(
+        jobType, {
+          manual_payment_uuid: manualPaymentUuid
+        });
+    }
     return result;
   }
 
@@ -326,6 +334,11 @@ export default class PaymentEntryService {
       payment_order_status: PaymentOrderStatus.SUCCESS
     }, "name");
 
+    const jobType = Misa.Constants.JOB_TYPE.CREATE_QR_VOUCHER;
+    await this._enqueueMisaBackgroundJob(jobType, {
+      qr_transaction_id: qrPaymentId
+    });
+
     return updateQr;
   }
 
@@ -380,5 +393,10 @@ export default class PaymentEntryService {
       where: { id: id },
       data: dataToUpdate
     });
+  }
+
+  async _enqueueMisaBackgroundJob(job_type, data) {
+    const payload = { job_type, data };
+    await this.env["MISA_QUEUE"].send(payload, { delaySeconds: Misa.Constants.DELAYS.ONE_MINUTE });
   }
 }
