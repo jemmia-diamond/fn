@@ -154,14 +154,19 @@ export default class CustomerService {
       gender: this.genderMapReverse[customerData.gender]
     };
 
-    const haravanClient = new HaravanAPI(accessToken);
-    const haravanResult = await haravanClient.customer.createCustomer(haravanPayload);
-    const customer = await this.frappeClient.getDoc(this.doctype, customerData.name);
+    try {
+      const haravanClient = new HaravanAPI(accessToken);
+      const haravanResult = await haravanClient.customer.createCustomer(haravanPayload);
+      const customer = await this.frappeClient.getDoc(this.doctype, customerData.name);
 
-    if (customer) {
-      customer.haravan_id = String(haravanResult.customer.id);
-      customer.customer_primary_contact = haravanResult.customer.phone;
-      await this.frappeClient.update(customer);
+      if (customer) {
+        customer.haravan_id = String(haravanResult.customer.id);
+        customer.customer_primary_contact = haravanResult.customer.phone;
+        await this.frappeClient.update(customer);
+      }
+    } catch (error) {
+      if (error.response && error.response.status === 422) return;
+      throw error;
     }
   }
 }
