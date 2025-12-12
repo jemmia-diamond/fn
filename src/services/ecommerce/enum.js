@@ -2,6 +2,7 @@ export const HARAVAN_TOPIC = {
   CREATED: "orders/create",
   UPDATED: "orders/updated",
   PAID: "orders/paid",
+  PRODUCT_UPDATE: "products/update",
   PRODUCT_CREATED: "products/create"
 };
 

@@ -55,7 +55,7 @@ export default {
     case "noco-collect":
       await Haravan.Collect.CollectService.dequeueCollectQueue(batch, env);
       break;
-    case "erpnext-customer":
+    case "erpnext-selling":
       await new ERP.Selling.CustomerService(env).dequeueCustomerQueue(batch);
       break;
     default:

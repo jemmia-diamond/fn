@@ -101,7 +101,9 @@ export function rawToPaymentEntry(body) {
     total_order_amount: body.total_order_amount,
     total_taxes_and_charges: body.total_taxes_and_charges,
     unallocated_amount: body.unallocated_amount,
-    verified_by: body.verified_by
+    verified_by: body.modified_by,
+    gateway: body.gateway,
+    payment_code: body.payment_code
   };
 }
 
@@ -148,3 +150,15 @@ export function rawToReference(ref) {
       : null
   };
 }
+
+export const PaymentOrderStatus = {
+  PENDING: "Pending",
+  SUCCESS: "Success",
+  CANCEL: "Cancel"
+};
+
+export const PaymentEntryStatus = {
+  PENDING: "pending",
+  SUCCESS: "success",
+  CANCEL: "cancel"
+};

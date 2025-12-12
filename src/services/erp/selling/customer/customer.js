@@ -5,6 +5,7 @@ import { fetchCustomersFromERP, saveCustomersToDatabase } from "src/services/erp
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import HaravanAPI from "services/clients/haravan-client";
+import { reverseMap } from "services/utils/object";
 import Misa from "services/misa";
 
 dayjs.extend(utc);
@@ -30,10 +31,7 @@ export default class CustomerService {
       0: "Female",
       1: "Male"
     };
-    this.genderMapReverse = {
-      "Female": 0,
-      "Male": 1
-    };
+    this.genderMapReverse = reverseMap(this.genderMap);
   };
 
   async processHaravanCustomer(customerData, contact, address, options = {}) {
@@ -117,7 +115,7 @@ export default class CustomerService {
 
     for (const message of messages) {
       const body = message.body;
-      const erpTopic = body.erpTopic || "";
+      const erpTopic = body.erpTopic;
       await this.processPayload(body.data, erpTopic).catch(err => Sentry.captureException(err));
     }
   }
@@ -152,7 +150,7 @@ export default class CustomerService {
     const haravanPayload = {
       first_name: customerData.first_name,
       last_name: customerData.last_name,
-      email: customerData.email_id || null,
+      email: customerData.email_id,
       phone: customerData.mobile_no || customerData.phone,
       gender: this.genderMapReverse[customerData.gender]
     };
@@ -170,7 +168,7 @@ export default class CustomerService {
       }
     } catch (error) {
       if (error.response && error.response.status === 422) return;
-      Sentry.captureException(error);
+      throw error;
     }
   }
 

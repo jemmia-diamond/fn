@@ -1,5 +1,6 @@
 import FrappeClient from "src/frappe/frappe-client";
 import Database from "src/services/database";
+import Misa from "services/misa";
 
 const NOT_FOUND = 404;
 const OK = 200;
@@ -70,7 +71,7 @@ export default class BankTransactionVerificationService {
         });
     }
 
-    if (qrPayment.transfer_note !== sepay_order_description) {
+    if (payload.modified_by === "tech@jemmia.vn" && qrPayment.transfer_note !== sepay_order_description) {
       return this.failedPayload("Order description mismatch", "ORDER_DESC_MISMATCH",
         {
           payment_entry: paymentEntryName,
@@ -87,16 +88,6 @@ export default class BankTransactionVerificationService {
       });
     }
 
-    const sepayTransaction = await this.db.sepay_transaction.findUnique({
-      where: { id: sepay_id }
-    });
-
-    if (!sepayTransaction) {
-      return this.failedPayload(
-        `Sepay transaction with ID ${sepay_id} not found`, "SEPAY_NOT_FOUND",
-        { payment_entry: paymentEntryName }, NOT_FOUND);
-    }
-
     await this.db.qrPaymentTransaction.update({
       where: { id: qrPayment.id },
       data: { transfer_status: "success" }
@@ -108,6 +99,10 @@ export default class BankTransactionVerificationService {
       custom_transfer_status: "success",
       verified_by: payload?.modified_by
     });
+
+    if (qrPayment.transfer_status == "success") {
+      await this.enqueueMisaBackgroundJob(qrPayment);
+    }
 
     return true;
   }
@@ -129,15 +124,20 @@ export default class BankTransactionVerificationService {
       return this.failedPayload("No payment_entry_name provided", "NO_PAYMENT_ENTRY_NAME", { payment_entry_name }, BAD_REQUEST);
     }
 
-    const paymentEntry = await this.frappeClient.getDoc("Payment Entry", payment_entry_name);
-
-    if (!paymentEntry) {
-      return this.failedPayload("Payment Entry not found in ERPNext", "PE_NOT_FOUND", { payment_entry: payment_entry_name }, NOT_FOUND);
-    }
-
     return {
       success: true,
       paymentEntryName: payment_entry_name
     };
+  }
+
+  async enqueueMisaBackgroundJob(qrRecord) {
+    const payload = {
+      job_type: Misa.Constants.JOB_TYPE.CREATE_QR_VOUCHER,
+      data: {
+        qr_transaction_id: qrRecord.id
+      }
+    };
+
+    await this.env["MISA_QUEUE"].send(payload, { delaySeconds: Misa.Constants.DELAYS.ONE_MINUTE });
   }
 }
