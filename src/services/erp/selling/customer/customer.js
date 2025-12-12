@@ -6,6 +6,7 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import HaravanAPI from "services/clients/haravan-client";
 import { reverseMap } from "services/utils/object";
+import Misa from "services/misa";
 
 dayjs.extend(utc);
 
@@ -157,16 +158,27 @@ export default class CustomerService {
     try {
       const haravanClient = new HaravanAPI(accessToken);
       const haravanResult = await haravanClient.customer.createCustomer(haravanPayload);
+      haravanResult.customer.created_by = customerData.modified_by;
       const customer = await this.frappeClient.getDoc(this.doctype, customerData.name);
 
       if (customer) {
         customer.haravan_id = String(haravanResult.customer.id);
         customer.customer_primary_contact = haravanResult.customer.phone;
         await this.frappeClient.update(customer);
+        await this.enqueueMisaBackgroundJob(haravanResult.customer);
       }
     } catch (error) {
       if (error.response && error.response.status === 422) return;
       throw error;
     }
+  }
+
+  async enqueueMisaBackgroundJob(customerData) {
+    const payload = {
+      job_type: Misa.Constants.JOB_TYPE.SYNC_CUSTOMER,
+      data: customerData
+    };
+
+    await this.env["MISA_QUEUE"].send(payload);
   }
 }
