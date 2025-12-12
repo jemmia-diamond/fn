@@ -44,4 +44,3 @@ export default class CustomerCreator {
     await this.misaClient.saveDictionary(misaPayload);
   }
 }
-

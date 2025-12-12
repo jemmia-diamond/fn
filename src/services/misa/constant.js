@@ -153,4 +153,3 @@ export const STATE = {
   EDIT: 2,
   DELETE: 3
 };
-
