@@ -158,6 +158,7 @@ export default class CustomerService {
     try {
       const haravanClient = new HaravanAPI(accessToken);
       const haravanResult = await haravanClient.customer.createCustomer(haravanPayload);
+      haravanResult.customer.created_by = customerData.modified_by;
       const customer = await this.frappeClient.getDoc(this.doctype, customerData.name);
 
       if (customer) {

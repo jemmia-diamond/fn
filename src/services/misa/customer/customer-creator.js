@@ -12,6 +12,10 @@ export default class CustomerCreator {
   async syncCustomer(customerData) {
     await this.misaClient.getAccessToken();
     const haravanId = customerData.id;
+    const created_by = customerData.created_by;
+    const description = `Khách hàng tạo bởi ${created_by} từ ERP`;
+    const phoneNumber = customerData.phone;
+
     const customerPayload = {
       branch_id: DEFAULT_BRANCH_ID,
       account_object_type: Constants.ACCOUNT_TYPE.CUSTOMER,
@@ -24,6 +28,10 @@ export default class CustomerCreator {
       is_vendor: false,
       is_customer: true,
       is_employee: false,
+      mobile: phoneNumber,
+      tel: phoneNumber,
+      created_by,
+      description,
       State: Constants.STATE.ADD
     };
 
