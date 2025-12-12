@@ -29,10 +29,10 @@ export default class CustomerService {
       0: "Female",
       1: "Male"
     };
-    this.genderMapReverse = {
-      "Female": 0,
-      "Male": 1
-    };
+
+    this.genderMapReverse = Object.fromEntries(
+      Object.entries(this.genderMap).map(([key, value]) => [value, Number(key)])
+    );
   };
 
   async processHaravanCustomer(customerData, contact, address, options = {}) {
@@ -168,7 +168,6 @@ export default class CustomerService {
       }
     } catch (error) {
       if (error.response && error.response.status === 422) return;
-      Sentry.captureException(error);
     }
   }
 }
