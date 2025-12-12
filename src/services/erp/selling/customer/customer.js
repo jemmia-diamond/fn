@@ -5,6 +5,7 @@ import { fetchCustomersFromERP, saveCustomersToDatabase } from "src/services/erp
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import HaravanAPI from "services/clients/haravan-client";
+import { reverseMap } from "services/utils/object";
 
 dayjs.extend(utc);
 
@@ -29,14 +30,8 @@ export default class CustomerService {
       0: "Female",
       1: "Male"
     };
-    this.genderMapReverse = CustomerService.reverseMap(this.genderMap);
+    this.genderMapReverse = reverseMap(this.genderMap);
   };
-
-  static reverseMap(map) {
-    return Object.fromEntries(
-      Object.entries(map).map(([key, value]) => [value, Number(key)])
-    );
-  }
 
   async processHaravanCustomer(customerData, contact, address, options = {}) {
     const nameParts = [customerData.last_name, customerData.first_name].filter(Boolean);
