@@ -1,3 +1,9 @@
+export const PAYMENT_ENTRY_WEBHOOK_TOPIC = {
+  CREATE: "create",
+  UPDATE: "update",
+  VERIFY: "verify"
+};
+
 export const ERPNEXT_PAYMENT_METHODS = {
   cash: "cash",
   cash_on_delivery: "cash_on_delivery",
@@ -42,5 +48,21 @@ export const TRANSFER_STATUS = {
   CREATING: "Đang tạo",
   REFUND: "Đơn hoàn trả",
   CANCELLED: "Hủy"
+};
+
+export const BRANCH_MAPPING = {
+  "Cửa hàng HCM": "Hồ Chí Minh",
+  "Cửa hàng Hồ Chí Minh": "Hồ Chí Minh",
+  "Cửa hàng Hà Nội": "Hà Nội",
+  "Cửa hàng Cần Thơ": "Cần Thơ"
+};
+
+export const REFERENCE_DOCTYPES = {
+  SALES_ORDER: "Sales Order"
+};
+
+export const HARAVAN_DEFAULTS = {
+  DEPOSIT_ORDER: "Đơn hàng cọc",
+  ORDER_LATER: "ORDERLATER"
 };
 
