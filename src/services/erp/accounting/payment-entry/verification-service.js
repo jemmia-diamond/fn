@@ -1,5 +1,6 @@
 import FrappeClient from "src/frappe/frappe-client";
 import Database from "src/services/database";
+import Misa from "services/misa";
 
 const NOT_FOUND = 404;
 const OK = 200;
@@ -99,6 +100,10 @@ export default class BankTransactionVerificationService {
       verified_by: payload?.modified_by
     });
 
+    if (qrPayment.transfer_status == "success") {
+      await this.enqueueMisaBackgroundJob(qrPayment);
+    }
+
     return true;
   }
 
@@ -123,5 +128,16 @@ export default class BankTransactionVerificationService {
       success: true,
       paymentEntryName: payment_entry_name
     };
+  }
+
+  async enqueueMisaBackgroundJob(qrRecord) {
+    const payload = {
+      job_type: Misa.Constants.JOB_TYPE.CREATE_QR_VOUCHER,
+      data: {
+        qr_transaction_id: qrRecord.id
+      }
+    };
+
+    await this.env["MISA_QUEUE"].send(payload, { delaySeconds: Misa.Constants.DELAYS.ONE_MINUTE });
   }
 }
