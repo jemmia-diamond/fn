@@ -7,6 +7,7 @@ export default async (c, next) => {
 
     // Don't send 404 responses to Sentry
     if (c.res.status === 404) { return; }
+    if (c.res.status === 422) { return; }
   } catch (error) {
     // If it's already an HTTPException, let it bubble up
     if (error instanceof HTTPException) {
