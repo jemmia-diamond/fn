@@ -1,4 +1,3 @@
-import * as Sentry from "@sentry/cloudflare";
 import { WorkplaceClient } from "services/clients/workplace-client";
 import DiamondDiscountService from "services/ecommerce/diamond/diamond-discount-service";
 import Database from "src/services/database";
@@ -16,6 +15,7 @@ export default class DiamondCollectService {
       const db = Database.instance(this.env);
       let offset = 0;
       const limit = 100;
+      const activeRules = await DiamondDiscountService.getActiveRules(this.env);
 
       while (true) {
         const diamonds = await db.$queryRaw`
@@ -50,8 +50,11 @@ export default class DiamondCollectService {
           try {
             const discountPercent = DiamondDiscountService.calculateDiscountPercent({
               diamondSize: parseFloat(diamond.edge_size_2 || 0),
-              productType: "KCV"
+              rules: activeRules
             });
+
+            // eslint-disable-next-line no-console
+            console.info("Discount percent for diamond:", diamond.id, discountPercent, diamond.edge_size_2);
 
             let haravanCollectionId = null;
             if (discountPercent === 8) haravanCollectionId = 32;
@@ -65,18 +68,21 @@ export default class DiamondCollectService {
 
             const existingList = existingEntries.list || [];
 
-            // 1. Remove invalid entries (only for 10% and 12% collections)
+            // Remove invalid entries (only for 10% and 12% collections)
             for (const entry of existingList) {
               // If we have an entry for 33 (12%) or 34 (10%), but it's not the current valid collection, remove it.
               if ((entry.haravan_collection_id === 33 || entry.haravan_collection_id === 34) && entry.haravan_collection_id !== haravanCollectionId) {
-                await workplaceClient.diamondHaravanCollections.delete(entry.id);
+                await workplaceClient.diamondHaravanCollections.deleteMany([{
+                  diamond_id: diamond.id,
+                  haravan_collection_id: entry.haravan_collection_id
+                }]);
                 await new Promise(resolve => setTimeout(resolve, 1000));
               }
             }
 
-            // 2. Add new entry if needed
+            // Add new entry if needed
             if (haravanCollectionId) {
-              const exists = existingList.some(e => e.haravan_collection_id === haravanCollectionId);
+              const exists = existingList.some(entry => entry.haravan_collection_id === haravanCollectionId);
               if (!exists) {
                 await workplaceClient.diamondHaravanCollections.create({
                   diamond_id: diamond.id,

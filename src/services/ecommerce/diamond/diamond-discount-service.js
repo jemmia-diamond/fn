@@ -2,109 +2,105 @@ import dayjs from "dayjs";
 import isBetween from "dayjs/plugin/isBetween.js";
 import utc from "dayjs/plugin/utc.js";
 import timezone from "dayjs/plugin/timezone.js";
+import FrappeClient from "src/frappe/frappe-client";
+import * as Sentry from "@sentry/cloudflare";
 
 dayjs.extend(isBetween);
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
 export default class DiamondDiscountService {
-  static getCampaigns() {
-    return [
-      {
-        name: "Flash Sale Phase 1",
-        startDate: "2025-12-05",
-        endDate: "2025-12-07",
-        priority: 10,
-        rules: [
-          { max: 4.5, percent: 8 },
-          { min: 4.5, max: 6.3, percent: 10 },
-          { min: 6.3, percent: 12 }
-        ]
-      },
-      {
-        name: "Flash Sale Phase 2",
-        startDate: "2025-12-12",
-        endDate: "2025-12-14",
-        priority: 10,
-        rules: [
-          { max: 4.5, percent: 8 },
-          { min: 4.5, max: 6.3, percent: 10 },
-          { min: 6.3, percent: 12 }
-        ]
-      },
-      {
-        name: "Flash Sale Phase 3",
-        startDate: "2025-12-19",
-        endDate: "2025-12-21",
-        priority: 10,
-        rules: [
-          { max: 4.5, percent: 8 },
-          { min: 4.5, max: 6.3, percent: 10 },
-          { min: 6.3, percent: 12 }
-        ]
-      },
-      {
-        name: "Early Dec 2025",
-        startDate: "2025-12-01",
-        endDate: "2025-12-24",
-        priority: 5,
-        rules: [
-          { max: 6.3, percent: 8 },
-          { min: 6.3, percent: 12 }
-        ]
-      },
-      {
-        name: "Late Dec 2025",
-        startDate: "2025-12-25",
-        endDate: "2025-12-31",
-        priority: 5,
-        rules: [
-          { max: 4.5, percent: 8 },
-          { min: 4.5, percent: 12 }
-        ]
-      }
-    ];
+
+  /**
+   * Fetch active promotion rules from database
+   * @param {Object} env - Environment variables
+   * @returns {Promise<Array>} List of active rules
+   */
+  static async getActiveRules(env) {
+    try {
+      const frappeClient = new FrappeClient({
+        url: env.JEMMIA_ERP_BASE_URL,
+        apiKey: env.JEMMIA_ERP_API_KEY,
+        apiSecret: env.JEMMIA_ERP_API_SECRET
+      });
+
+      const now = dayjs().format("YYYY-MM-DD");
+
+      // Get valid Promotion Groups (active by date)
+      const groups = await frappeClient.getList("Promotion Group", {
+        fields: ["name", "priority"],
+        filters: [
+          ["start_date", "<=", now],
+          ["end_date", ">=", now]
+        ],
+        order_by: "creation desc",
+        limit_page_length: 1000
+      });
+
+      if (!groups || groups.length === 0) return [];
+
+      const validGroupNames = groups.map(g => g.name);
+      const groupPriorityMap = groups.reduce((acc, g) => {
+        acc[g.name] = g.priority || 0;
+        return acc;
+      }, {});
+
+      // Get active Promotions in those groups
+      const promotions = await frappeClient.getList("Promotion", {
+        fields: "*",
+        filters: [
+          ["product_category", "=", "Kim Cương Viên"],
+          ["discount_type", "=", "Percentage"],
+          ["is_active", "=", 1],
+          ["is_expired", "=", 1],
+          ["promotion_group", "in", validGroupNames]
+        ],
+        limit_page_length: 1000
+      });
+
+      // Attach priority and sort
+      const rules = promotions.map(p => ({
+        ...p,
+        priority: groupPriorityMap[p.promotion_group] || 0
+      })).sort((a, b) => b.priority - a.priority);
+
+      return rules;
+    } catch (error) {
+      Sentry.captureException(error);
+      return [];
+    }
   }
 
   /**
-   * Calculate discount percentage based on campaign rules
+   * Calculate discount percentage based on fetched rules
    * @param {Object} params
-   * @param {string|Date} [params.date] - Current date (defaults to now)
    * @param {number} params.diamondSize - Size of the diamond in mm
-   * @param {string} params.productType - 'KCV' (Kim cuong vien) or others
+   * @param {Array} params.rules - List of active rules fetched from DB
    * @returns {number} Discount percentage (0-100)
    */
-  static calculateDiscountPercent({ date = new Date(), diamondSize = 0, productType = "KCV" }) {
-    // Only handle KCV as per request
-    if (productType !== "KCV") return 0;
+  static calculateDiscountPercent({ diamondSize = 0, rules = [] }) {
+    if (!rules || rules.length === 0) return 0;
 
-    const now = dayjs(date).tz("Asia/Ho_Chi_Minh");
-    const campaigns = this.getCampaigns().sort((a, b) => b.priority - a.priority);
+    for (const rule of rules) {
+      const hasMin = rule.min_value != null && rule.min_value !== "" && rule.min_value > 0;
+      const hasMax = rule.max_value != null && rule.max_value !== "" && rule.max_value > 0;
 
-    for (const campaign of campaigns) {
-      const start = dayjs.tz(campaign.startDate, "Asia/Ho_Chi_Minh").startOf("day");
-      const end = dayjs.tz(campaign.endDate, "Asia/Ho_Chi_Minh").endOf("day");
-
-      const isTime = now.isBetween(start, end, null, "[]");
-
-      if (isTime) {
-        if (Array.isArray(campaign.rules)) {
-          for (const rule of campaign.rules) {
-            // Check max condition (if defined)
-            if (rule.max !== undefined && diamondSize >= rule.max) {
-              continue;
-            }
-            // Check min condition (if defined)
-            if (rule.min !== undefined && diamondSize < rule.min) {
-              continue;
-            }
-            return rule.percent;
-          }
-        }
+      // Range: bounded by both min and max
+      if (hasMin && hasMax) {
+        if (diamondSize < rule.min_value || diamondSize >= rule.max_value) continue;
       }
+      // Lower Bound: valid from min upwards (no max limit)
+      else if (hasMin && !hasMax) {
+        if (diamondSize < rule.min_value) continue;
+      }
+      // Upper Bound: valid up to max (starts from 0)
+      else if (!hasMin && hasMax) {
+        if (diamondSize >= rule.max_value) continue;
+      }
+
+      return rule.discount_percent;
     }
 
     return 0;
   }
 }
-
