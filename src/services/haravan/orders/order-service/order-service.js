@@ -160,14 +160,20 @@ export default class OrderService {
       update: {
         order_number: order.order_number,
         ref_order_id: order.ref_order_id ? BigInt(order.ref_order_id) : null,
-        ref_order_number: order.ref_order_number
+        ref_order_number: order.ref_order_number,
+        created_at: order.created_at ? new Date(order.created_at) : null,
+        financial_status: order.financial_status,
+        order_processing_status: order.order_processing_status
       },
       create: {
         uuid: crypto.randomUUID(),
         id: order.id,
         order_number: order.order_number,
         ref_order_id: order.ref_order_id ? BigInt(order.ref_order_id) : null,
-        ref_order_number: order.ref_order_number
+        ref_order_number: order.ref_order_number,
+        created_at: order.created_at ? new Date(order.created_at) : null,
+        financial_status: order.financial_status,
+        order_processing_status: order.order_processing_status
       }
     });
   }
