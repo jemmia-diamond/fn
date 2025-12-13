@@ -270,6 +270,7 @@ export default class PaymentEntryService {
 
     const mappedSalesOrderReference = rawToReference(salesOrderReferences[0]);
     const qrPaymentId = paymentEntry.custom_transaction_id;
+    if (!qrPaymentId) return;
 
     const qrPayment = await this.db.qrPaymentTransaction.findUnique({
       where: { id: qrPaymentId, is_deleted: false }
