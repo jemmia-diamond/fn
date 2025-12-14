@@ -2,6 +2,7 @@ import * as Sentry from "@sentry/cloudflare";
 import Database from "services/database";
 import FrappeClient from "src/frappe/frappe-client";
 import { VOUCHER_TYPES } from "services/misa/constant";
+import dayjs from "dayjs";
 
 export default class MisaCallbackVoucherHandler {
   constructor(env) {
@@ -43,11 +44,7 @@ export default class MisaCallbackVoucherHandler {
         });
 
         const record = await this.db[modelName].findFirst({
-          where: { misa_sync_guid: org_refid },
-          select: {
-            payment_entry_name: true,
-            misa_synced_at: true
-          }
+          where: { misa_sync_guid: org_refid }
         });
 
         if (record?.payment_entry_name) {
@@ -56,7 +53,7 @@ export default class MisaCallbackVoucherHandler {
             name: record.payment_entry_name,
             misa_sync_error_msg: record.misa_sync_error_msg,
             misa_synced: record.misa_synced,
-            misa_synced_at: record.misa_synced_at,
+            misa_synced_at: record.misa_synced_at ? dayjs(record.misa_synced_at).format("YYYY-MM-DD HH:mm:ss") : null,
             misa_sync_guid: org_refid
           }, "name");
         }
