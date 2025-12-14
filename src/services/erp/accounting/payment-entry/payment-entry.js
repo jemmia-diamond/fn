@@ -84,14 +84,23 @@ export default class PaymentEntryService {
       const isConfirmed = result.transfer_status === "Xác nhận";
       const custom_transfer_status = isConfirmed ? PaymentEntryStatus.SUCCESS : PaymentEntryStatus.PENDING;
       const payment_order_status = isConfirmed ? PaymentOrderStatus.SUCCESS : PaymentOrderStatus.PENDING;
+      const verified_by = isConfirmed && salesOrderReference
+        && haravan_order_id && paymentEntry.payment_code == "cash" ? paymentEntry.owner : null;
+
       await this.frappeClient.upsert({
         doctype: this.doctype,
         name: result.payment_entry_name,
         custom_transaction_id: result.uuid,
         custom_transfer_note: result.transfer_note,
         custom_transfer_status,
-        payment_order_status
+        payment_order_status,
+        verified_by
       }, "name");
+
+      if (isConfirmed && verified_by && haravan_order_id) {
+        const jobType = Misa.Constants.JOB_TYPE.CREATE_MANUAL_VOUCHER;
+        await this._enqueueMisaBackgroundJob(jobType, { manual_payment_uuid: result.uuid });
+      }
     }
 
     return result;
@@ -192,9 +201,7 @@ export default class PaymentEntryService {
     const haravan_order_id = salesOrderReference?.sales_order_details?.haravan_order_id
       ? parseInt(salesOrderReference.sales_order_details.haravan_order_id, 10) : null;
     const receive_date = paymentEntry.payment_date ? dayjs(paymentEntry.payment_date).utc().toDate() : null;
-
-    const isOrderLinking =
-      existingPayment.haravan_order_name === "Đơn hàng cọc" && haravan_order_id;
+    const isOrderLinking = salesOrderReference && haravan_order_id;
 
     const data = {
       payment_type: this._mapPaymentMethod(paymentEntry.payment_code),
@@ -209,8 +216,13 @@ export default class PaymentEntryService {
       transfer_status: paymentEntry.custom_transfer_status === PaymentEntryStatus.SUCCESS ? "Xác nhận" :
         paymentEntry.custom_transfer_status === PaymentEntryStatus.CANCEL ? "Hủy" :
           Constants.TRANSFER_STATUS.PENDING,
-      gateway: paymentEntry.gateway
+      gateway: paymentEntry.gateway,
+      payment_entry_name: paymentEntry.name
     };
+
+    if(paymentEntry.verified_by != paymentEntry.owner) {
+      data.transfer_status = "Xác nhận";
+    }
 
     const result = await this.manualPaymentService.updateManualPayment(manualPaymentUuid, data);
 
@@ -226,15 +238,13 @@ export default class PaymentEntryService {
         custom_transfer_status,
         payment_order_status
       }, "name");
+
+      if (isConfirmed && isOrderLinking && (paymentEntry.verified_by != paymentEntry.owner) && haravan_order_id) {
+        const jobType = Misa.Constants.JOB_TYPE.CREATE_MANUAL_VOUCHER;
+        await this._enqueueMisaBackgroundJob(jobType, { manual_payment_uuid: manualPaymentUuid });
+      }
     }
 
-    if (isConfirmed && isOrderLinking && paymentEntry.verified_by && haravan_order_id) {
-      const jobType = Misa.Constants.JOB_TYPE.CREATE_MANUAL_VOUCHER;
-      await this._enqueueMisaBackgroundJob(
-        jobType, {
-          manual_payment_uuid: manualPaymentUuid
-        });
-    }
     return result;
   }
 
@@ -336,10 +346,7 @@ export default class PaymentEntryService {
     }, "name");
 
     const jobType = Misa.Constants.JOB_TYPE.CREATE_QR_VOUCHER;
-    await this._enqueueMisaBackgroundJob(jobType, {
-      qr_transaction_id: qrPaymentId
-    });
-
+    await this._enqueueMisaBackgroundJob(jobType, { qr_transaction_id: qrPaymentId });
     return updateQr;
   }
 
