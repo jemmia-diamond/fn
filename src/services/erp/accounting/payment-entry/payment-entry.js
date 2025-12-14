@@ -205,7 +205,7 @@ export default class PaymentEntryService {
       payment_entry_name: paymentEntry.name
     };
 
-    if(paymentEntry.verified_by != paymentEntry.owner) {
+    if (paymentEntry.verified_by != paymentEntry.owner) {
       data.transfer_status = "Xác nhận";
     }
 

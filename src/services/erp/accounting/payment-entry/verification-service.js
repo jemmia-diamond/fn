@@ -65,7 +65,7 @@ export default class BankTransactionVerificationService {
         { payment_entry: paymentEntryName }, NOT_FOUND);
     }
 
-    if(auto_updated == 1){
+    if (auto_updated == 1) {
       if (qrPayment.haravan_order_number !== sepay_order_number) {
         return this.failedPayload("Order number mismatch", "ORDER_NUMBER_MISMATCH",
           {
