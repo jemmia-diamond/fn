@@ -84,8 +84,6 @@ export default class PaymentEntryService {
       const isConfirmed = result.transfer_status === "Xác nhận";
       const custom_transfer_status = isConfirmed ? PaymentEntryStatus.SUCCESS : PaymentEntryStatus.PENDING;
       const payment_order_status = isConfirmed ? PaymentOrderStatus.SUCCESS : PaymentOrderStatus.PENDING;
-      const verified_by = isConfirmed && salesOrderReference
-        && haravan_order_id && paymentEntry.payment_code == "cash" ? paymentEntry.owner : null;
 
       await this.frappeClient.upsert({
         doctype: this.doctype,
@@ -93,14 +91,8 @@ export default class PaymentEntryService {
         custom_transaction_id: result.uuid,
         custom_transfer_note: result.transfer_note,
         custom_transfer_status,
-        payment_order_status,
-        verified_by
+        payment_order_status
       }, "name");
-
-      if (isConfirmed && verified_by && haravan_order_id) {
-        const jobType = Misa.Constants.JOB_TYPE.CREATE_MANUAL_VOUCHER;
-        await this._enqueueMisaBackgroundJob(jobType, { manual_payment_uuid: result.uuid });
-      }
     }
 
     return result;
