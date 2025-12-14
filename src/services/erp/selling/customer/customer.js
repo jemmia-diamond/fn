@@ -181,4 +181,11 @@ export default class CustomerService {
 
     await this.env["MISA_QUEUE"].send(payload);
   }
+
+  async fetchCustomerByHrvID(hrvID) {
+    const customers = await this.frappeClient.getList(this.doctype, {
+      filters: [["haravan_id", "=", String(hrvID)]]
+    });
+    return customers[0];
+  }
 }
