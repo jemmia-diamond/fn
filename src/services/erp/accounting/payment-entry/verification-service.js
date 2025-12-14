@@ -104,7 +104,7 @@ export default class BankTransactionVerificationService {
       name: paymentEntryName,
       payment_order_status: successPayment,
       custom_transfer_status: "success",
-      verified_by: payload?.modified_by
+      verified_by: auto_updated == 1 ? "tech@jemmia.vn" : payload?.modified_by
     });
 
     if (qrPayment.transfer_status == "success" && references.length != 0) {
