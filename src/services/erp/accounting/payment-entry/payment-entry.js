@@ -205,7 +205,7 @@ export default class PaymentEntryService {
       payment_entry_name: paymentEntry.name
     };
 
-    if (paymentEntry.verified_by != paymentEntry.owner) {
+    if(paymentEntry.verified_by) {
       data.transfer_status = "Xác nhận";
     }
 
@@ -224,7 +224,7 @@ export default class PaymentEntryService {
         payment_order_status
       }, "name");
 
-      if (isConfirmed && isOrderLinking && (paymentEntry.verified_by != paymentEntry.owner) && haravan_order_id) {
+      if (isConfirmed && isOrderLinking && paymentEntry.verified_by && haravan_order_id) {
         const jobType = Misa.Constants.JOB_TYPE.CREATE_MANUAL_VOUCHER;
         await this._enqueueMisaBackgroundJob(jobType, { manual_payment_uuid: manualPaymentUuid });
       }
