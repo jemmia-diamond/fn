@@ -1,6 +1,7 @@
 import FrappeClient from "src/frappe/frappe-client";
 import Database from "src/services/database";
 import Misa from "services/misa";
+import { PaymentOrderStatus } from "services/erp/accounting/payment-entry/mapping";
 
 const NOT_FOUND = 404;
 const OK = 200;
@@ -22,6 +23,7 @@ export default class BankTransactionVerificationService {
   }
 
   async verifyAndUpdatePaymentEntry(payload) {
+    const references = payload?.references;
     const bank_transactions = payload?.bank_transactions;
     const {
       bank_transaction_name,
@@ -29,7 +31,8 @@ export default class BankTransactionVerificationService {
       sepay_order_number,
       sepay_order_description,
       sepay_amount_in,
-      qr_payment_id
+      qr_payment_id,
+      auto_updated
     } = bank_transactions[0];
 
     const validation = await this.validatePayload({
@@ -62,22 +65,24 @@ export default class BankTransactionVerificationService {
         { payment_entry: paymentEntryName }, NOT_FOUND);
     }
 
-    if (qrPayment.haravan_order_number !== sepay_order_number) {
-      return this.failedPayload("Order number mismatch", "ORDER_NUMBER_MISMATCH",
-        {
-          payment_entry: paymentEntryName,
-          qr_order_number: qrPayment.haravan_order_number,
-          sepay_order_number: sepay_order_number
-        });
-    }
+    if(auto_updated == 1){
+      if (qrPayment.haravan_order_number !== sepay_order_number) {
+        return this.failedPayload("Order number mismatch", "ORDER_NUMBER_MISMATCH",
+          {
+            payment_entry: paymentEntryName,
+            qr_order_number: qrPayment.haravan_order_number,
+            sepay_order_number: sepay_order_number
+          });
+      }
 
-    if (payload.modified_by === "tech@jemmia.vn" && qrPayment.transfer_note !== sepay_order_description) {
-      return this.failedPayload("Order description mismatch", "ORDER_DESC_MISMATCH",
-        {
-          payment_entry: paymentEntryName,
-          qr_transfer_note: qrPayment.transfer_note,
-          sepay_order_description: sepay_order_description
-        });
+      if (payload.modified_by === "tech@jemmia.vn" && qrPayment.transfer_note !== sepay_order_description) {
+        return this.failedPayload("Order description mismatch", "ORDER_DESC_MISMATCH",
+          {
+            payment_entry: paymentEntryName,
+            qr_transfer_note: qrPayment.transfer_note,
+            sepay_order_description: sepay_order_description
+          });
+      }
     }
 
     if (parseFloat(qrPayment.transfer_amount) !== parseFloat(sepay_amount_in)) {
@@ -93,14 +98,16 @@ export default class BankTransactionVerificationService {
       data: { transfer_status: "success" }
     });
 
+    const successPayment = references.length != 0 ? PaymentOrderStatus.SUCCESS : PaymentOrderStatus.PENDING;
     await this.frappeClient.update({
       doctype: "Payment Entry",
       name: paymentEntryName,
+      payment_order_status: successPayment,
       custom_transfer_status: "success",
       verified_by: payload?.modified_by
     });
 
-    if (qrPayment.transfer_status == "success") {
+    if (qrPayment.transfer_status == "success" && references.length != 0) {
       await this.enqueueMisaBackgroundJob(qrPayment);
     }
 

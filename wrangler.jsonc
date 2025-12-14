@@ -190,6 +190,10 @@
       {
         "queue": "noco-collect",
         "binding": "NOCO_COLLECT_QUEUE"
+      },
+      {
+        "queue": "erpnext-selling",
+        "binding": "ERPNEXT_SELLING_QUEUE"
       }
     ],
     "consumers": [
@@ -231,6 +235,9 @@
       },
       {
         "queue": "noco-collect"
+      },
+      {
+        "queue": "erpnext-selling"
       }
     ]
   },

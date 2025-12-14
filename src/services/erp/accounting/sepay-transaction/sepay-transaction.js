@@ -64,7 +64,7 @@ export default class SepayTransactionService {
         throw new Error("Bank Transaction not found in ERPNext");
       }
 
-      const linkPaymentEntryToBankTransactionResult = await this.linkPaymentEntryToBankTransaction({
+      const linkPaymentEntryToBankTransactionResult = await this.linkPaymentEntryToBankTransaction(qr, {
         paymentEntryName: qr.payment_entry_name,
         bankTransactionName: bankTransactionName
       });
@@ -113,13 +113,14 @@ export default class SepayTransactionService {
       });
     }
 
-    if (qr.transfer_status === "success" && !isOrderLater && qr.haravan_order_id) {
+    // Temporary for larkbase usage, we'll remove this block once we're all move over to erp
+    if (qr.transfer_status === "success" && !isOrderLater && qr.haravan_order_id && !qr.payment_entry_name) {
       await this.enqueueMisaBackgroundJob(qr);
     }
     return true;
   }
 
-  async linkPaymentEntryToBankTransaction({
+  async linkPaymentEntryToBankTransaction(qrRecord, {
     paymentEntryName,
     bankTransactionName
   }) {
@@ -136,6 +137,12 @@ export default class SepayTransactionService {
       );
 
       if (!isAlreadyLinked) {
+
+        await this.db.qrPaymentTransaction.update({
+          where: { id: qrRecord.id },
+          data: { transfer_status: "success" }
+        });
+
         // Assume we allocate the full unallocated amount or deposit if unallocated is not set/zero but it should be valid
         const amountToAllocate = bankTransaction.unallocated_amount > 0 ? bankTransaction.unallocated_amount : bankTransaction.deposit;
 

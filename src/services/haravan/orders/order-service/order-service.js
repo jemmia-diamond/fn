@@ -151,11 +151,39 @@ export default class OrderService {
     }
   }
 
+  async upsertHaravanOrder(order) {
+    if (!order.id) return;
+    await this.db.order.upsert({
+      where: {
+        id: order.id
+      },
+      update: {
+        order_number: order.order_number,
+        ref_order_id: order.ref_order_id ? BigInt(order.ref_order_id) : null,
+        ref_order_number: order.ref_order_number,
+        created_at: order.created_at ? new Date(order.created_at) : null,
+        financial_status: order.financial_status,
+        order_processing_status: order.order_processing_status
+      },
+      create: {
+        uuid: crypto.randomUUID(),
+        id: order.id,
+        order_number: order.order_number,
+        ref_order_id: order.ref_order_id ? BigInt(order.ref_order_id) : null,
+        ref_order_number: order.ref_order_number,
+        created_at: order.created_at ? new Date(order.created_at) : null,
+        financial_status: order.financial_status,
+        order_processing_status: order.order_processing_status
+      }
+    });
+  }
+
   static async dequeueOrderQueue(batch, env) {
     const orderService = new OrderService(env);
     for (const message of batch.messages) {
       try {
         const data = message.body;
+        await orderService.upsertHaravanOrder(data);
         const haravan_topic = data.haravan_topic;
         if (haravan_topic === HARAVAN_TOPIC.CREATED) {
           await orderService.invalidOrderNotification(data, env);
