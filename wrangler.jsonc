@@ -40,6 +40,7 @@
     "HOST": "https://fn.jemmia.vn",
     "HARAVAN_API_BASE_URL": "https://apis.haravan.com",
     "WEBSITE_BASE_URL": "https://jemmia.vn",
+    "PAYMENT_QR_BASE_URL": "https://pay.jemmia.vn/#/qr",
     "ZNS_API_BASE_URL": "https://api-partner.zalopay.vn",
     "ZNS_CLIENT_ID": "zpmc_jemmia",
     "ZNS_OA_ID": "2838947343790196672",
