@@ -45,6 +45,19 @@ model sepay_transaction {
   updated_at          DateTime? @default(now()) @db.Timestamp(6)
   lark_record_id      String?   @db.VarChar(255)
   bank_transaction_name      String?   @db.VarChar(255)
+  app_id              Int?
+  app_trans_id        String?   @db.VarChar(255)
+  app_time            BigInt?
+  app_user            String?   @db.VarChar(255)
+  amount              BigInt?
+  embed_data          Json?
+  item                Json?
+  zp_trans_id         BigInt?
+  server_time         BigInt?
+  channel             Int?
+  merchant_user_id    String?   @db.VarChar(255)
+  user_fee_amount     BigInt?
+  discount_amount     BigInt?
 
   @@schema("payment")
 }
