@@ -116,7 +116,7 @@ export default class SalesOrderService {
       transaction_date: dayjs(haravanOrderData.created_at).add(7, "hour").format("YYYY-MM-DD"),
       haravan_created_at: convertIsoToDatetime(haravanOrderData.created_at, "datetime"),
       total: haravanOrderData.total_line_items_price,
-      payment_records: haravanOrderData.transactions.filter(transaction => ["capture", "authorization"].includes(transaction.kind.toLowerCase())).map(this.mapPaymentRecordFields),
+      payment_records: paymentTransactions.map(this.mapPaymentRecordFields),
       contact_person: contact.name,
       customer_address: customerDefaultAdress.name,
       total_amount: haravanOrderData.total_price,
