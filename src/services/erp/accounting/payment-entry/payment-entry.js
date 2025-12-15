@@ -132,7 +132,7 @@ export default class PaymentEntryService {
       await this.frappeClient.upsert({
         doctype: this.doctype,
         name: result.payment_entry_name,
-        qr_url: result.qr_url,
+        qr_url: `${this.env.PAYMENT_QR_BASE_URL}/${result.id}`,
         custom_transaction_id: result.id,
         custom_transfer_note: result.transfer_note,
         custom_transfer_status: result.transfer_status,
