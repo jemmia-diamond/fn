@@ -78,6 +78,7 @@ export default class ManualPaymentFetchingService {
       haravan_order_id: true,
       misa_sync_guid: true,
       misa_synced_at: true,
+      payment_entry_name: true,
       haravan_order: {
         select: {
           id: true,
