@@ -1,24 +1,11 @@
 import LarkBaseConnector from "services/clients/lark-connector/base-connector";
-
-/**
- * Lark Bitable Record connector
- * Handles all CRUD operations for Bitable table records
- */
 export default class RecordConnector extends LarkBaseConnector {
   /**
-   * @param {string} appId - Lark App ID
-   * @param {string} appSecret - Lark App Secret
-   * @param {string} [accessToken] - Pre-existing access token
-   * @param {string} [baseURL] - API base URL
-   * @param {number} [timeout=30] - Request timeout in seconds
+   * @param {object} env
    */
-  constructor(appId, appSecret, accessToken = null, baseURL = "https://open.larksuite.com/open-apis", timeout = 30) {
-    super(appId, appSecret, accessToken, baseURL, timeout);
+  constructor(env) {
+    super(env);
   }
-
-  // ==========================================
-  // Single Record Operations
-  // ==========================================
 
   /**
    * Get a single record
@@ -148,10 +135,6 @@ export default class RecordConnector extends LarkBaseConnector {
     return this.delete(endpoint);
   }
 
-  // ==========================================
-  // Batch Operations
-  // ==========================================
-
   /**
    * Batch create records
    * @param {string} appToken - Bitable app token
@@ -245,10 +228,6 @@ export default class RecordConnector extends LarkBaseConnector {
       await this.deleteRecords(appToken, tableId, batch, options);
     }
   }
-
-  // ==========================================
-  // Helper Methods
-  // ==========================================
 
   /**
    * Clean parameters by removing null/undefined values

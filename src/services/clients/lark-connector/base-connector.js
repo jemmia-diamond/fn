@@ -1,147 +1,145 @@
 import axios from "axios";
+import axiosRetry from "axios-retry";
 
-/**
- * Base connector for Lark/Feishu API
- * Provides authentication and generic HTTP methods
- */
+const RETRY_CONFIG = {
+  retries: 2,
+  retryDelay: axiosRetry.exponentialDelay,
+  retryCondition: (error) =>
+    axiosRetry.isNetworkOrIdempotentRequestError(error) ||
+    error.response?.status >= 500
+};
+
 export default class LarkBaseConnector {
+  #env;
+  #appId;
+  #appSecret;
+  #accessToken;
+  #tokenExpiry;
+  #baseUrl;
+
   /**
-   * @param {string} appId - Lark App ID
-   * @param {string} appSecret - Lark App Secret
-   * @param {string} [accessToken] - Pre-existing access token (optional)
-   * @param {string} [baseURL] - API base URL
-   * @param {number} [timeout=30] - Request timeout in seconds
+   * @param {object} env
    */
-  constructor(appId, appSecret, accessToken = null, baseURL = "https://open.larksuite.com/open-apis", timeout = 30) {
-    this.appId = appId;
-    this.appSecret = appSecret;
-    this.baseURL = baseURL;
-    this.timeout = timeout * 1000; // Convert to milliseconds
-    this.accessToken = accessToken || null;
-    this.tokenExpiry = null;
+  constructor(env) {
+    this.#env = env;
+    this.#baseUrl = "https://open.larksuite.com/open-apis";
   }
 
-  /**
-   * Get tenant access token (with caching)
-   * @returns {Promise<string>} Access token
-   */
-  async getAccessToken() {
-    // Return cached token if still valid (with 5 min buffer)
-    if (this.accessToken && this.tokenExpiry && Date.now() < this.tokenExpiry - 300000) {
-      return this.accessToken;
+  async #getAppCredentials() {
+    if (this.#appId && this.#appSecret) {
+      return { appId: this.#appId, appSecret: this.#appSecret };
     }
+
+    this.#appId = this.#env.LARK_APP_ID;
+
+    try {
+      this.#appSecret = await this.#env.LARK_APP_SECRET_SECRET?.get();
+    } catch {
+    }
+
+    if (!this.#appSecret) {
+      this.#appSecret = this.#env.LARK_APP_SECRET;
+    }
+
+    if (!this.#appId || !this.#appSecret) {
+      throw new Error("LARK_APP_ID or LARK_APP_SECRET is missing in environment");
+    }
+
+    return { appId: this.#appId, appSecret: this.#appSecret };
+  }
+
+  async #getAccessToken() {
+    if (this.#accessToken && this.#tokenExpiry && Date.now() < this.#tokenExpiry - 300000) {
+      return this.#accessToken;
+    }
+
+    const { appId, appSecret } = await this.#getAppCredentials();
 
     try {
       const response = await axios.post(
-        `${this.baseURL}/auth/v3/tenant_access_token/internal`,
+        `${this.#baseUrl}/auth/v3/tenant_access_token/internal`,
         {
-          app_id: this.appId,
-          app_secret: this.appSecret
+          app_id: appId,
+          app_secret: appSecret
         },
-        { timeout: this.timeout }
+        { timeout: 30000 }
       );
 
       if (response.data.code !== 0) {
         throw new Error(`Failed to get access token: ${response.data.msg}`);
       }
 
-      this.accessToken = response.data.tenant_access_token;
-      // Tokens expire in 2 hours, cache for 1.5 hours
-      this.tokenExpiry = Date.now() + (90 * 60 * 1000);
+      this.#accessToken = response.data.tenant_access_token;
+      this.#tokenExpiry = Date.now() + (response.data.expire * 1000); // Usually 2 hours
 
-      return this.accessToken;
+      return this.#accessToken;
     } catch (error) {
       throw new Error(`Authentication failed: ${error.message}`, { cause: error });
     }
   }
 
-  /**
-   * Get request headers with authentication
-   * @returns {Promise<object>} Headers object
-   */
-  async getHeaders() {
-    const token = await this.getAccessToken();
-    return {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`
-    };
+  async #createClient() {
+    const token = await this.#getAccessToken();
+
+    const client = axios.create({
+      baseURL: this.#baseUrl,
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      timeout: 30000
+    });
+
+    axiosRetry(client, RETRY_CONFIG);
+
+    return client;
   }
 
   /**
-   * Generic request method
-   * @param {string} method - HTTP method
-   * @param {string} endpoint - API endpoint
-   * @param {object} [options] - Request options
-   * @param {object} [options.params] - Query parameters
-   * @param {object} [options.data] - Request body
-   * @returns {Promise<any>} Response data
+   * Generic request method using internal client
    */
-  async request(method, endpoint, options = {}) {
-    const headers = await this.getHeaders();
-    const url = `${this.baseURL}${endpoint}`;
-
+  async #request(method, endpoint, options = {}) {
+    const client = await this.#createClient();
     try {
-      const response = await axios({
+      const response = await client.request({
         method,
-        url,
-        headers,
+        url: endpoint,
         params: options.params,
-        data: options.data,
-        timeout: this.timeout
+        data: options.data
       });
 
-      // Check Lark API response code
       if (response.data.code !== 0) {
         throw new Error(`Lark API error: ${response.data.msg} (code: ${response.data.code})`);
       }
 
       return response.data;
     } catch (error) {
-      if (error.response) {
-        const errorMsg = error.response.data?.msg || error.response.statusText;
-        throw new Error(`API request failed: ${errorMsg}`, { cause: error });
-      }
-      throw error;
+      const context = `[${method}] ${endpoint}`;
+      throw new Error(`Lark API Request Failed ${context}: ${error.message}`, {
+        cause: error.response?.data || error
+      });
     }
   }
 
-  /**
-   * GET request
-   * @param {string} endpoint - API endpoint
-   * @param {object} [params] - Query parameters
-   * @returns {Promise<any>} Response data
-   */
+  // Public methods
+
+  async request(method, endpoint, options = {}) {
+    return this.#request(method, endpoint, options);
+  }
+
   async get(endpoint, params = null) {
-    return this.request("GET", endpoint, { params });
+    return this.#request("GET", endpoint, { params });
   }
 
-  /**
-   * POST request
-   * @param {string} endpoint - API endpoint
-   * @param {object} data - Request body
-   * @param {object} [params] - Query parameters
-   * @returns {Promise<any>} Response data
-   */
   async post(endpoint, data, params = null) {
-    return this.request("POST", endpoint, { data, params });
+    return this.#request("POST", endpoint, { data, params });
   }
 
-  /**
-   * PUT request
-   * @param {string} endpoint - API endpoint
-   * @param {object} data - Request body
-   * @returns {Promise<any>} Response data
-   */
   async put(endpoint, data) {
-    return this.request("PUT", endpoint, { data });
+    return this.#request("PUT", endpoint, { data });
   }
 
-  /**
-   * DELETE request
-   * @param {string} endpoint - API endpoint
-   * @returns {Promise<any>} Response data
-   */
   async delete(endpoint) {
-    return this.request("DELETE", endpoint);
+    return this.#request("DELETE", endpoint);
   }
 }

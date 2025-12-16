@@ -1,19 +1,11 @@
 import LarkBaseConnector from "services/clients/lark-connector/base-connector";
 
-/**
- * Lark Message Management connector
- * Handles all messaging operations
- */
 export default class MessageManagementConnector extends LarkBaseConnector {
   /**
-   * @param {string} appId - Lark App ID
-   * @param {string} appSecret - Lark App Secret
-   * @param {string} [accessToken] - Pre-existing access token
-   * @param {string} [baseURL] - API base URL
-   * @param {number} [timeout=30] - Request timeout in seconds
+   * @param {object} env
    */
-  constructor(appId, appSecret, accessToken = null, baseURL = "https://open.larksuite.com/open-apis", timeout = 30) {
-    super(appId, appSecret, accessToken, baseURL, timeout);
+  constructor(env) {
+    super(env);
   }
 
   /**
