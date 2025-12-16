@@ -2,6 +2,16 @@ import { WorkplaceClient } from "services/clients/workplace-client";
 import DiamondDiscountService from "services/ecommerce/diamond/diamond-discount-service";
 import Database from "src/services/database";
 
+/**
+ * TODO: Implement linking ERP discount program to noco db's collections
+ */
+
+const DISCOUNT_PERCENT_COLLECTION_MAP = {
+  8: 32,
+  10: 34,
+  12: 33
+};
+
 export default class DiamondCollectService {
   constructor(env) {
     this.env = env;
@@ -56,22 +66,20 @@ export default class DiamondCollectService {
             // eslint-disable-next-line no-console
             console.info("Discount percent for diamond:", diamond.id, discountPercent, diamond.edge_size_2);
 
-            let haravanCollectionId = null;
-            if (discountPercent === 8) haravanCollectionId = 32;
-            else if (discountPercent === 10) haravanCollectionId = 34;
-            else if (discountPercent === 12) haravanCollectionId = 33;
+            const haravanCollectionId = DISCOUNT_PERCENT_COLLECTION_MAP[discountPercent] || null;
 
-            // Get existing collections for this diamond
             const existingEntries = await workplaceClient.diamondHaravanCollections.list({
               where: `(diamond_id,eq,${diamond.id})`
             });
 
             const existingList = existingEntries.list || [];
+            const discountCollectionIds = Object.values(DISCOUNT_PERCENT_COLLECTION_MAP);
 
-            // Remove invalid entries (only for 10% and 12% collections)
             for (const entry of existingList) {
-              // If we have an entry for 33 (12%) or 34 (10%), but it's not the current valid collection, remove it.
-              if ((entry.haravan_collection_id === 33 || entry.haravan_collection_id === 34) && entry.haravan_collection_id !== haravanCollectionId) {
+              const isDiscountCollection = discountCollectionIds.includes(entry.haravan_collection_id);
+              const isCurrentCollection = entry.haravan_collection_id === haravanCollectionId;
+
+              if (isDiscountCollection && !isCurrentCollection) {
                 await workplaceClient.diamondHaravanCollections.deleteMany([{
                   diamond_id: diamond.id,
                   haravan_collection_id: entry.haravan_collection_id
@@ -80,7 +88,6 @@ export default class DiamondCollectService {
               }
             }
 
-            // Add new entry if needed
             if (haravanCollectionId) {
               const exists = existingList.some(entry => entry.haravan_collection_id === haravanCollectionId);
               if (!exists) {

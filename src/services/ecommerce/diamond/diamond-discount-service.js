@@ -26,7 +26,6 @@ export default class DiamondDiscountService {
 
       const now = dayjs().format("YYYY-MM-DD");
 
-      // Get active Promotions directly
       const promotions = await frappeClient.getList("Promotion", {
         fields: "*",
         filters: [
@@ -40,7 +39,6 @@ export default class DiamondDiscountService {
         limit_page_length: 1000
       });
 
-      // Sort by priority
       const rules = promotions.sort((a, b) => {
         if (a.priority === b.priority) return 0;
         if (!a.priority) return 1;
@@ -69,15 +67,12 @@ export default class DiamondDiscountService {
       const hasMin = rule.min_value != null && rule.min_value !== "" && rule.min_value > 0;
       const hasMax = rule.max_value != null && rule.max_value !== "" && rule.max_value > 0;
 
-      // Range: bounded by both min and max
       if (hasMin && hasMax) {
         if (diamondSize < rule.min_value || diamondSize >= rule.max_value) continue;
       }
-      // Lower Bound: valid from min upwards (no max limit)
       else if (hasMin && !hasMax) {
         if (diamondSize < rule.min_value) continue;
       }
-      // Upper Bound: valid up to max (starts from 0)
       else if (!hasMin && hasMax) {
         if (diamondSize >= rule.max_value) continue;
       }
