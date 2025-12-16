@@ -26,26 +26,7 @@ export default class DiamondDiscountService {
 
       const now = dayjs().format("YYYY-MM-DD");
 
-      // Get valid Promotion Groups (active by date)
-      const groups = await frappeClient.getList("Promotion Group", {
-        fields: ["name", "priority"],
-        filters: [
-          ["start_date", "<=", now],
-          ["end_date", ">=", now]
-        ],
-        order_by: "creation desc",
-        limit_page_length: 1000
-      });
-
-      if (!groups || groups.length === 0) return [];
-
-      const validGroupNames = groups.map(g => g.name);
-      const groupPriorityMap = groups.reduce((acc, g) => {
-        acc[g.name] = g.priority || 0;
-        return acc;
-      }, {});
-
-      // Get active Promotions in those groups
+      // Get active Promotions directly
       const promotions = await frappeClient.getList("Promotion", {
         fields: "*",
         filters: [
@@ -53,16 +34,19 @@ export default class DiamondDiscountService {
           ["discount_type", "=", "Percentage"],
           ["is_active", "=", 1],
           ["is_expired", "=", 1],
-          ["promotion_group", "in", validGroupNames]
+          ["start_date", "<=", now],
+          ["end_date", ">=", now]
         ],
         limit_page_length: 1000
       });
 
-      // Attach priority and sort
-      const rules = promotions.map(p => ({
-        ...p,
-        priority: groupPriorityMap[p.promotion_group] || 0
-      })).sort((a, b) => b.priority - a.priority);
+      // Sort by priority
+      const rules = promotions.sort((a, b) => {
+        if (a.priority === b.priority) return 0;
+        if (!a.priority) return 1;
+        if (!b.priority) return -1;
+        return a.priority.localeCompare(b.priority, undefined, { numeric: true });
+      });
 
       return rules;
     } catch (error) {
