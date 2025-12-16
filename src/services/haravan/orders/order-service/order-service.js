@@ -189,7 +189,6 @@ export default class OrderService {
           await orderService.invalidOrderNotification(data, env);
           await orderService.syncRefTransactions(data);
         }
-        await orderService.syncOrderToLark(data, haravan_topic);
       }
       catch (error) {
         Sentry.captureException(error);
