@@ -1,5 +1,5 @@
-import LarkBaseConnector from "services/clients/lark-connector/base-connector";
-export default class RecordConnector extends LarkBaseConnector {
+import LarkBaseClient from "services/clients/lark-client/base-client.js";
+export default class RecordConnector extends LarkBaseClient {
   /**
    * @param {object} env
    */

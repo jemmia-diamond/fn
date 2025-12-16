@@ -1,6 +1,6 @@
-import LarkBaseConnector from "services/clients/lark-connector/base-connector";
+import LarkBaseClient from "services/clients/lark-client/base-client.js";
 
-export default class MessageManagementConnector extends LarkBaseConnector {
+export default class MessageManagementConnector extends LarkBaseClient {
   /**
    * @param {object} env
    */

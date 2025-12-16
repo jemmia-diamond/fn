@@ -9,7 +9,7 @@ const RETRY_CONFIG = {
     error.response?.status >= 500
 };
 
-export default class LarkBaseConnector {
+export default class LarkBaseClient {
   #env;
   #appId;
   #appSecret;
