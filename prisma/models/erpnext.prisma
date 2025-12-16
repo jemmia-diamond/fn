@@ -137,6 +137,7 @@ model erpnextContact {
   database_updated_at         DateTime? @db.Timestamp(6)
 
   @@index([name])
+  @@index([pancake_conversation_id])
   @@map("contacts")
   @@schema("erpnext")
 }
@@ -238,6 +239,7 @@ model erpnextCustomer {
   @@index([customer_name])
   @@index([haravan_id])
   @@index([name])
+  @@index([lead_name])
   @@map("customers")
   @@schema("erpnext")
 }
@@ -256,6 +258,21 @@ model erpnextLeadBudget {
 
   @@index([name])
   @@map("lead_budgets")
+  @@schema("erpnext")
+}
+
+model erpnextLeadProduct {
+  uuid                String    @id @default(uuid()) @db.Uuid
+  name                String    @unique @db.VarChar(255)
+  owner               String?   @db.VarChar(255)
+  creation            DateTime? @db.Timestamp(6)
+  modified            DateTime? @db.Timestamp(6)
+  product_type       String?   @db.VarChar(255)
+  database_created_at DateTime  @default(now()) @db.Timestamp(6)
+  database_updated_at DateTime? @db.Timestamp(6)
+
+  @@index([name])
+  @@map("lead_products")
   @@schema("erpnext")
 }
 
@@ -367,6 +384,10 @@ model erpnextLead {
   database_updated_at    DateTime? @db.Timestamp(6)
 
   @@index([name])
+  @@index([purpose_lead])
+  @@index([budget_lead])
+  @@index([province])
+  @@index([region])
   @@map("leads")
   @@schema("erpnext")
 }

@@ -40,6 +40,7 @@
     "HOST": "https://fn.jemmia.vn",
     "HARAVAN_API_BASE_URL": "https://apis.haravan.com",
     "WEBSITE_BASE_URL": "https://jemmia.vn",
+    "PAYMENT_QR_BASE_URL": "https://pay.jemmia.vn/#/qr",
     "ZNS_API_BASE_URL": "https://api-partner.zalopay.vn",
     "ZNS_CLIENT_ID": "zpmc_jemmia",
     "ZNS_OA_ID": "2838947343790196672",
@@ -61,7 +62,9 @@
     "NOCODB_SUPPLY_BASE_ID": "pl4e7zwnui0k8y1",
     "NOCODB_MARKETING_BASE_ID": "pbzopuiobhc8xf1",
     "NOCODB_WORKPLACE_BASE_URL": "https://workplace.jemmia.vn/",
-    "SALESAYA_API_BASE_URL": "https://api.salesaya.com"
+    "SALESAYA_API_BASE_URL": "https://api.salesaya.com",
+    "DEFAULT_HARAVAN_DIAMOND_DISCOUNT_COLLECTION_ID": 32,
+    "DEFAULT_HARAVAN_JEWELRY_DISCOUNT_COLLECTION_ID": 31
   },
   "secrets_store_secrets": [
     {
@@ -188,6 +191,10 @@
       {
         "queue": "noco-collect",
         "binding": "NOCO_COLLECT_QUEUE"
+      },
+      {
+        "queue": "erpnext-selling",
+        "binding": "ERPNEXT_SELLING_QUEUE"
       }
     ],
     "consumers": [
@@ -229,6 +236,9 @@
       },
       {
         "queue": "noco-collect"
+      },
+      {
+        "queue": "erpnext-selling"
       }
     ]
   },

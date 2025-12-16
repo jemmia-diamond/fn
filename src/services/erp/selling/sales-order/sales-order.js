@@ -95,7 +95,7 @@ export default class SalesOrderService {
       await addressService.processHaravanAddress(address, customer);
     }
 
-    const paymentTransactions = haravanOrderData.transactions.filter(transaction => transaction.kind.toLowerCase() === "capture");
+    const paymentTransactions = haravanOrderData.transactions.filter(transaction => ["capture", "authorization"].includes(transaction.kind.toLowerCase()));
     const paidAmount = paymentTransactions.reduce((total, transaction) => total + transaction.amount, 0);
 
     const mappedOrderData = {
@@ -110,12 +110,13 @@ export default class SalesOrderService {
       skip_delivery_note: 1,
       financial_status: this.financialStatusMapper[haravanOrderData.financial_status],
       fulfillment_status: this.fulfillmentStatusMapper[haravanOrderData.fulfillment_status],
+      fulfillment_completion_date: haravanOrderData.fulfillments.length && haravanOrderData.fulfillments[0].delivered_date ? dayjs(haravanOrderData.fulfillments[0].delivered_date).format("YYYY-MM-DD HH:mm:ss") : null,
       cancelled_status: this.cancelledStatusMapper[haravanOrderData.cancelled_status],
       carrier_status: haravanOrderData.fulfillments.length ? this.carrierStatusMapper[haravanOrderData.fulfillments[0].carrier_status_code] : this.carrierStatusMapper.notdelivered,
       transaction_date: dayjs(haravanOrderData.created_at).add(7, "hour").format("YYYY-MM-DD"),
       haravan_created_at: convertIsoToDatetime(haravanOrderData.created_at, "datetime"),
       total: haravanOrderData.total_line_items_price,
-      payment_records: haravanOrderData.transactions.filter(transaction => transaction.kind.toLowerCase() === "capture").map(this.mapPaymentRecordFields),
+      payment_records: paymentTransactions.map(this.mapPaymentRecordFields),
       contact_person: contact.name,
       customer_address: customerDefaultAdress.name,
       total_amount: haravanOrderData.total_price,
@@ -301,6 +302,13 @@ export default class SalesOrderService {
       salesOrderData.deposit_amount += childOrder.deposit_amount;
     }
 
+    const customer = await this.frappeClient.getDoc("Customer", salesOrderData.customer);
+
+    const { isValid, message } = validateOrderInfo(salesOrderData, customer);
+    if (!isValid) {
+      return { success: false, message: message };
+    }
+
     if (haravanRefOrderId && Number(haravanRefOrderId) > 0) {
       // find the very first order in history
       const refOrders = await getRefOrderChain(this.db, Number(salesOrderData.haravan_order_id));
@@ -340,7 +348,7 @@ export default class SalesOrderService {
             salesOrderData
           ));
         } else {
-          content = await this.composeNewOrderContent(salesOrderData);
+          content = await this.composeNewOrderContent(salesOrderData, customer);
         }
 
         if (!content && !diffAttachments) {
@@ -460,13 +468,6 @@ export default class SalesOrderService {
 
     if (isUpdateMessage) {
       return { success: true, message: "Ok" };
-    }
-
-    const customer = await this.frappeClient.getDoc("Customer", salesOrderData.customer);
-
-    const { isValid, message } = validateOrderInfo(salesOrderData, customer);
-    if (!isValid) {
-      return { success: false, message: message };
     }
 
     const content = await this.composeNewOrderContent(salesOrderData, customer);

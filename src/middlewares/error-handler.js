@@ -13,7 +13,9 @@ export default async (c, next) => {
       throw error;
     }
 
-    Sentry.captureException(error);
+    Sentry.captureException(error, {
+      fingerprint: [error.name || "Error", error.message || "Unknown error"]
+    });
 
     // Return generic 500 error to client
     return c.json({ error: "Internal server error" }, 500);

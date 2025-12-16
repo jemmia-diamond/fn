@@ -2,6 +2,8 @@
 package.json @fongfan999
 wrangler.jsonc @fongfan999
 src/index.js @fongfan999
+src/routes @fongfan999
+src/middlewares @fongfan999
 
 # ESLint configuration files
 eslint.config.mjs @fongfan999

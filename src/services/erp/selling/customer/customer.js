@@ -4,6 +4,9 @@ import Database from "services/database";
 import { fetchCustomersFromERP, saveCustomersToDatabase } from "src/services/erp/selling/customer/utils/customer-helppers";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
+import HaravanAPI from "services/clients/haravan-client";
+import { reverseMap } from "services/utils/object";
+import Misa from "services/misa";
 
 dayjs.extend(utc);
 
@@ -28,6 +31,7 @@ export default class CustomerService {
       0: "Female",
       1: "Male"
     };
+    this.genderMapReverse = reverseMap(this.genderMap);
   };
 
   async processHaravanCustomer(customerData, contact, address, options = {}) {
@@ -104,5 +108,84 @@ export default class CustomerService {
       minutesBack: 10,
       isSyncType: CustomerService.SYNC_TYPE_AUTO
     });
+  }
+
+  async dequeueCustomerQueue(batch) {
+    const messages = batch.messages;
+
+    for (const message of messages) {
+      const body = message.body;
+      const erpTopic = body.erpTopic;
+      await this.processPayload(body.data, erpTopic).catch(err => Sentry.captureException(err));
+    }
+  }
+
+  async processPayload(data, erpTopic) {
+    switch (erpTopic) {
+    case "create":
+      await this._createCustomer(data);
+      break;
+    default:
+      break;
+    }
+  }
+
+  async _createCustomer(customerData) {
+    if (customerData.customer_name) {
+      const parts = customerData.customer_name.trim().split(" ");
+      if (parts.length > 1) {
+        customerData.first_name = parts.pop();
+        customerData.last_name = parts.join(" ");
+      } else {
+        customerData.first_name = parts[0];
+        customerData.last_name = "";
+      }
+    }
+
+    const accessToken = await this.env.HARAVAN_TOKEN_SECRET.get();
+    if (!accessToken) {
+      throw new Error("Haravan access token not found");
+    }
+
+    const haravanPayload = {
+      first_name: customerData.first_name,
+      last_name: customerData.last_name,
+      email: customerData.email_id,
+      phone: customerData.mobile_no || customerData.phone,
+      gender: this.genderMapReverse[customerData.gender]
+    };
+
+    try {
+      const haravanClient = new HaravanAPI(accessToken);
+      const haravanResult = await haravanClient.customer.createCustomer(haravanPayload);
+      haravanResult.customer.created_by = customerData.modified_by;
+      const customer = await this.frappeClient.getDoc(this.doctype, customerData.name);
+
+      if (customer) {
+        customer.haravan_id = String(haravanResult.customer.id);
+        customer.customer_primary_contact = haravanResult.customer.phone;
+        await this.frappeClient.update(customer);
+        await this.enqueueMisaBackgroundJob(haravanResult.customer);
+      }
+    } catch (error) {
+      if (error.response && error.response.status === 422) return;
+      throw error;
+    }
+  }
+
+  async enqueueMisaBackgroundJob(customerData) {
+    const payload = {
+      job_type: Misa.Constants.JOB_TYPE.SYNC_CUSTOMER,
+      data: customerData
+    };
+
+    await this.env["MISA_QUEUE"].send(payload);
+  }
+
+  async fetchCustomerByHrvID(hrvID) {
+    const customers = await this.frappeClient.getList(this.doctype, {
+      filters: [["haravan_id", "=", String(hrvID)]]
+    });
+    return customers[0];
   }
 }

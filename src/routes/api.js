@@ -27,6 +27,7 @@ export default class APIRoutes {
     const jemmiaERPNamespaceApi = api.basePath("/erp");
     jemmiaERPNamespaceApi.get("/leads", ERP.LeadController.index);
     jemmiaERPNamespaceApi.patch("/leads/:id", ERP.LeadController.update);
+    jemmiaERPNamespaceApi.get("/customers/:id", ERP.CustomersController.show);
 
     jemmiaERPNamespaceApi.post("/sales_orders", ERP.SalesOrderController.create);
     jemmiaERPNamespaceApi.post("/sales_orders/:id/notifications", ERP.SalesOrderNotificationController.create);
