@@ -15,6 +15,7 @@ import { fetchSalesOrdersFromERP, saveSalesOrdersToDatabase } from "src/services
 import { getRefOrderChain } from "services/ecommerce/order-tracking/queries/get-initial-order";
 import Larksuite from "services/larksuite";
 import { ERPR2StorageService } from "services/r2-object/erp/erp-r2-storage-service";
+import HaravanAPI from "services/clients/haravan-client";
 
 dayjs.extend(utc);
 
@@ -146,6 +147,7 @@ export default class SalesOrderService {
       try {
         const orderData = message.body;
         await salesOrderService.sendNotificationToLark(orderData, true);
+        await salesOrderService.syncHaravanFinancialStatus(orderData);
       } catch (error) {
         Sentry.captureException(error);
       }
@@ -683,6 +685,42 @@ export default class SalesOrderService {
     } catch (e) {
       Sentry.captureException(e);
       return null;
+    }
+  }
+
+  async syncHaravanFinancialStatus(salesOrderData) {
+    if (salesOrderData.grand_total === salesOrderData.paid_amount) {
+      const HRV_API_KEY = await this.env.HARAVAN_TOKEN_SECRET.get();
+      if (!HRV_API_KEY) {
+        return;
+      }
+      const haravanClient = new HaravanAPI(HRV_API_KEY);
+      try {
+        const response = await haravanClient.order.getOrder(salesOrderData.haravan_order_id);
+        const haravanOrder = response.order;
+
+        if (haravanOrder.financial_status === "paid") {
+          return;
+        }
+
+        const transactions = haravanOrder.transactions || [];
+
+        const paidAmount = transactions
+          .filter(t => ["capture", "authorization"].includes(t.kind?.toLowerCase()))
+          .reduce((total, t) => total + parseFloat(t.amount || 0), 0);
+
+        const remainingAmount = salesOrderData.grand_total - paidAmount;
+
+        if (remainingAmount > 0) {
+          await haravanClient.orderTransaction.createTransaction(salesOrderData.haravan_order_id, {
+            amount: remainingAmount,
+            kind: "capture",
+            gateway: "Thanh toán qua ERP"
+          });
+        }
+      } catch (error) {
+        Sentry.captureException(error);
+      }
     }
   }
 }
