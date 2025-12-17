@@ -127,6 +127,8 @@ function buildPaginationString(jsonParams) {
 }
 
 export function buildGetDiamondsQuery(jsonParams) {
+  const EXCLUDED_COLLECTION_IDS = [25, 26, 27, 29];
+
   const filterString = buildFilterString(jsonParams);
   const sortString = buildSortString(jsonParams);
   const paginationString = buildPaginationString(jsonParams);
@@ -162,7 +164,7 @@ export function buildGetDiamondsQuery(jsonParams) {
       SELECT 1
       FROM workplace.diamonds_haravan_collection dhc
       WHERE dhc.diamond_id = d.id
-        AND dhc.haravan_collection_id IN (25, 26, 27, 29)
+        AND dhc.haravan_collection_id IN (${EXCLUDED_COLLECTION_IDS.join(", ")})
     )
   `;
 
