@@ -157,6 +157,15 @@ export function buildGetDiamondsQuery(jsonParams) {
     ) discount_info ON discount_info.diamond_id = d.id
   `;
 
+  const excludedCollectionCondition = `
+    AND NOT EXISTS (
+      SELECT 1
+      FROM workplace.diamonds_haravan_collection dhc
+      WHERE dhc.diamond_id = d.id
+        AND dhc.haravan_collection_id IN (25, 26, 27, 29)
+    )
+  `;
+
   const dataSql = `
     SELECT
       CAST(d.product_id AS INT) AS product_id,
@@ -198,6 +207,7 @@ export function buildGetDiamondsQuery(jsonParams) {
     WHERE 1 = 1
     AND jsonb_array_length(p.variants) = 1
     ${filterString}
+    ${excludedCollectionCondition}
     ${sortString}
     ${paginationString}
   `;
@@ -210,6 +220,7 @@ export function buildGetDiamondsQuery(jsonParams) {
     ${discountJoin}
     WHERE 1 = 1
     AND jsonb_array_length(p.variants) = 1
+    ${excludedCollectionCondition}
     ${filterString}
   `;
 
