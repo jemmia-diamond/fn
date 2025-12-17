@@ -1,4 +1,5 @@
 import * as crypto from "crypto";
+import HaravanAPI from "services/clients/haravan-client";
 import { CREDIT_ACCOUNT_MAP, DEBIT_ACCOUNT_MAP, EXCHANGE_RATE, REASON_TYPES, SORT_ORDER, VOUCHER_REF_TYPES, VOUCHER_TYPES } from "services/misa/constant";
 
 export default class VoucherMappingService {
@@ -10,7 +11,7 @@ export default class VoucherMappingService {
    * @param {Number} ref_type reference type - check here https://actdocs.misa.vn/g2/graph/ACTOpenAPIHelp/index.html#3-9
    * @returns
    */
-  static transformQrToVoucher(v, bankMap, voucher_type = VOUCHER_TYPES.QR_PAYMENT, ref_type = VOUCHER_REF_TYPES.QR_PAYMENT, order_chain = null) {
+  static async transformQrToVoucher(v, bankMap, voucher_type = VOUCHER_TYPES.QR_PAYMENT, ref_type = VOUCHER_REF_TYPES.QR_PAYMENT, order_chain = null) {
     // Company credit and debit account
     const creditInfo = CREDIT_ACCOUNT_MAP[v.haravan_order?.source] || {};
     const debitAccount = DEBIT_ACCOUNT_MAP[v.bank_code] || null;
@@ -20,13 +21,14 @@ export default class VoucherMappingService {
     const employee_name = `${v.haravan_order?.user?.last_name} ${v.haravan_order?.user?.first_name}`;
 
     // Customer's code, name and address
-    const customerCode = v.haravan_order?.customer_id?.toString() || null;
-    const customerName = v.customer_name;
-    const street1 = v.haravan_order?.customer_default_address_address1;
-    const street2 = v.haravan_order?.customer_default_address_address2;
-    const ward = v.haravan_order?.customer_default_address_ward;
-    const district = v.haravan_order?.customer_default_address_district;
-    const province = v.haravan_order?.customer_default_address_province;
+    const customerInfo = await VoucherMappingService.fetchCustomer(v, v.haravan_order);
+    const customerCode = customerInfo?.customer_id?.toString();
+    const customerName = v?.customer_name || `${customerInfo?.customer_last_name} ${customerInfo?.customer_first_name}`;
+    const street1 = customerInfo?.customer_default_address_address1;
+    const street2 = customerInfo?.customer_default_address_address2;
+    const ward = customerInfo?.customer_default_address_ward;
+    const district = customerInfo?.customer_default_address_district;
+    const province = customerInfo?.customer_default_address_province;
     const customerAddress = [street1, street2, ward, district, province].filter(Boolean).join(", ");
 
     // Bank name mapping
@@ -77,5 +79,27 @@ export default class VoucherMappingService {
     };
 
     return { misaVoucher, originalId: v.id, generatedGuid };
+  }
+
+  static async fetchCustomer(v, customer) {
+    if(customer) return customer;
+
+    const accessToken = await this.env.HARAVAN_TOKEN_SECRET.get();
+    const haravanClient = new HaravanAPI(accessToken);
+    const haravanResult = await haravanClient.order.getOrder(v.haravan_order_id);
+    const customerData = haravanResult?.order?.customer;
+
+    if(!customerData) return null;
+
+    return {
+      customer_id: customerData.id,
+      customer_first_name: customerData.first_name,
+      customer_last_name: customerData.last_name,
+      customer_default_address_address1: customerData.default_address?.address1,
+      customer_default_address_address2: customerData.default_address?.address2,
+      customer_default_address_ward: customerData.default_address?.ward,
+      customer_default_address_district: customerData.default_address?.district,
+      customer_default_address_province: customerData.default_address?.province
+    };
   }
 }
