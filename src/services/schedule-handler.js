@@ -3,7 +3,6 @@ import ERP from "services/erp";
 import Ecommerce from "services/ecommerce";
 import InventoryCMS from "services/inventory-cms";
 import DatabaseOperations from "services/db-operations";
-import Payment from "services/payment";
 import Misa from "services/misa";
 import ProductQuote from "services/product_quote";
 
@@ -37,7 +36,6 @@ export default {
       await ERP.Contacts.AddressService.cronSyncAddressesToDatabase(env);
       await Ecommerce.ProductService.refreshMaterializedViews(env);
       await DatabaseOperations.MaterializedViewService.refresh30Minutes(env);
-      await new Payment.MisaVoucherSyncService(env).runThirtyMinutesBatch();
       break;
     case "0 */3 * * *": // At every 3rd hour
       await InventoryCMS.InventoryCheckSheetService.syncInventoryCheckSheetToDatabase(env);
@@ -70,18 +68,15 @@ export default {
       await ERP.Automation.AssignmentRuleService.disableAssignmentRuleOffHour(env);
       await ERP.Automation.AssignmentRuleService.updateAssignmentRulesStartDay(env);
       await ERP.Automation.AssignmentRuleService.reAssignOffHourLeads(env);
-      await new Payment.MisaVoucherSyncService(env).runMorningBatch();
       break;
     case "30 5 * * *": // 12:30
       await ERP.Automation.AssignmentRuleService.updateAssignmentRulesMidDay(env);
       break;
     case "30 6 * * *": // 13:30
-      await new Payment.MisaVoucherSyncService(env).runAfternoonBatch();
       break;
     case "0 10 * * *": // 17:00
       await ERP.Automation.AssignmentRuleService.updateAssignmentRulesEndDay(env);
     case "0 11 * * *": // 18:00
-      await new Payment.MisaVoucherSyncService(env).runEndOfDayBatch();
       break;
     case "0 14 * * *": // 21:00
       await ERP.Automation.AssignmentRuleService.enableAssignmentRuleOffHour(env);
