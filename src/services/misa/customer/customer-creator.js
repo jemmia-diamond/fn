@@ -12,7 +12,7 @@ export default class CustomerCreator {
   async syncCustomer(customerData) {
     await this.misaClient.getAccessToken();
     const haravanId = customerData.id;
-    const created_by = customerData.created_by;
+    const created_by = customerData.created_by || null;
     const description = `Khách hàng tạo bởi ${created_by} từ ERP`;
     const phoneNumber = customerData.phone;
 
