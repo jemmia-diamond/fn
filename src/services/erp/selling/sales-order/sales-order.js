@@ -95,9 +95,6 @@ export default class SalesOrderService {
       await addressService.processHaravanAddress(address, customer);
     }
 
-    const paymentTransactions = haravanOrderData.transactions.filter(transaction => ["capture", "authorization"].includes(transaction.kind.toLowerCase()));
-    const paidAmount = paymentTransactions.reduce((total, transaction) => total + transaction.amount, 0);
-
     const mappedOrderData = {
       doctype: this.doctype,
       customer: customer.name,
@@ -116,13 +113,13 @@ export default class SalesOrderService {
       transaction_date: dayjs(haravanOrderData.created_at).add(7, "hour").format("YYYY-MM-DD"),
       haravan_created_at: convertIsoToDatetime(haravanOrderData.created_at, "datetime"),
       total: haravanOrderData.total_line_items_price,
-      payment_records: paymentTransactions.map(this.mapPaymentRecordFields),
+      payment_records: [],
       contact_person: contact.name,
       customer_address: customerDefaultAdress.name,
       total_amount: haravanOrderData.total_price,
       grand_total: haravanOrderData.total_price,
-      paid_amount: paidAmount,
-      balance: haravanOrderData.total_price - paidAmount,
+      paid_amount: 0,
+      balance: haravanOrderData.total_price,
       real_order_date: await this.getRealOrderDate(haravanOrderData.id) || dayjs(haravanOrderData.created_at).add(7, "hour").format("YYYY-MM-DD"),
       ref_sales_orders: await this.mapRefSalesOrder(haravanOrderData.id)
     };
