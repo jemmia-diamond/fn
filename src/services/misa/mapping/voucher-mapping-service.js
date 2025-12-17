@@ -81,8 +81,8 @@ export default class VoucherMappingService {
     return { misaVoucher, originalId: v.id, generatedGuid };
   }
 
-  static async fetchCustomer(v, customer) {
-    if(customer) return customer;
+  static async fetchCustomer(v, haravanOrder) {
+    if(haravanOrder && haravanOrder?.customer_id) return haravanOrder;
 
     const accessToken = await this.env.HARAVAN_TOKEN_SECRET.get();
     const haravanClient = new HaravanAPI(accessToken);
