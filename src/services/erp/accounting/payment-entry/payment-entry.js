@@ -51,6 +51,24 @@ export default class PaymentEntryService {
     return mapping[branch] || branch || null;
   }
 
+  _mapBank(payment_code, branch, gateway) {
+    const bankMapping = {
+      "cash_on_delivery": { bank_account: "1054449999", bank_name: "VCB" },
+      "pos_Vietcombank_Hồ Chí Minh": { bank_account: "1054449999", bank_name: "VCB" },
+      "pos_Vietcombank_Hà Nội": { bank_account: "1063499999", bank_name: "VCB" },
+      "pos_Vietcombank_Cần Thơ": { bank_account: "1054499999", bank_name: "VCB" },
+      "pos_Payoo_Hà Nội": { bank_account: "1121699999", bank_name: "MB" },
+      "payment_link_ZaloPay": { bank_account: "1054449999", bank_name: "VCB" }
+    };
+
+    const key = payment_code === "cash_on_delivery"
+      ? payment_code
+      : `${payment_code}_${gateway}_${branch}`.replace(/ /g, " ");
+    console.warn(key);
+
+    return bankMapping[key] || { bank_account: null, bank_name: null };
+  }
+
   async processManualPayment(rawPaymentEntry) {
     const paymentEntry = rawToPaymentEntry(rawPaymentEntry);
     const references = paymentEntry.references || [];
@@ -59,18 +77,20 @@ export default class PaymentEntryService {
       ? parseInt(salesOrderReference.sales_order_details.haravan_order_id, 10) : null;
     const receive_date = paymentEntry.payment_date ? dayjs(paymentEntry.payment_date).utc().toDate() : null;
     const created_date = paymentEntry.creation ? dayjs(paymentEntry.creation).utc().toDate() : null;
+    const branch = this._mapBranch(paymentEntry.bank_account_branch);
+    const { bank_account, bank_name } = this._mapBank(paymentEntry.payment_code, branch, paymentEntry.gateway);
 
     const data = {
       payment_entry_name: paymentEntry.name,
       payment_type: this._mapPaymentMethod(paymentEntry.payment_code),
-      branch: this._mapBranch(paymentEntry.bank_account_branch),
+      branch,
       shipping_code: null,
       send_date: null,
       receive_date,
       created_date,
       updated_date: null,
-      bank_account: paymentEntry.bank_account_no || null,
-      bank_name: paymentEntry.bank || null,
+      bank_account,
+      bank_name,
       transfer_amount: paymentEntry.paid_amount || paymentEntry.received_amount || null,
       transfer_note: salesOrderReference?.order_number || "ORDERLATER",
       haravan_order_id,
