@@ -38,7 +38,8 @@ export default class QrTransactionService {
       bankMap,
       VOUCHER_TYPES.QR_PAYMENT,
       VOUCHER_REF_TYPES.QR_PAYMENT,
-      journalNote
+      journalNote,
+      this.env
     );
 
     const payload = {

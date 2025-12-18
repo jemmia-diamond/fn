@@ -41,7 +41,8 @@ export default class ManualTransactionService {
       bankMap,
       voucherType,
       refType,
-      journalNote
+      journalNote,
+      this.env
     );
 
     const payload = {
