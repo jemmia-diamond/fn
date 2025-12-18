@@ -1,7 +1,6 @@
 import Larksuite from "services/larksuite";
 import ERP from "services/erp";
 import Ecommerce from "services/ecommerce";
-import InventoryCMS from "services/inventory-cms";
 import DatabaseOperations from "services/db-operations";
 import Payment from "services/payment";
 import Misa from "services/misa";
@@ -41,9 +40,9 @@ export default {
       await new Payment.MisaVoucherSyncService(env).runThirtyMinutesBatch();
       break;
     case "0 */3 * * *": // At every 3rd hour
-      await InventoryCMS.InventoryCheckSheetService.syncInventoryCheckSheetToDatabase(env);
-      await InventoryCMS.InventoryCheckLineService.syncInventoryCheckLineToDatabase(env);
-      await DatabaseOperations.DatabaseFunctionService.runWorkplaceUpdateLastRfidScanTime(env);
+      // await InventoryCMS.InventoryCheckSheetService.syncInventoryCheckSheetToDatabase(env);
+      // await InventoryCMS.InventoryCheckLineService.syncInventoryCheckLineToDatabase(env);
+      // await DatabaseOperations.DatabaseFunctionService.runWorkplaceUpdateLastRfidScanTime(env);
       await WorkshopOrderServices.WorkshopOrderServices.cronJobSyncLarkToNocoDB(env);
       break;
     case "0 17 * * *": // 00:00

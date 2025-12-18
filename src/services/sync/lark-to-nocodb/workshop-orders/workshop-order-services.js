@@ -48,10 +48,10 @@ export default class WorkshopOrderServices {
 
     } catch (error) {
       Sentry.captureException(error);
-      // Self-Healing: If stuck for > 1 hour, force update checkpoint to skip problematic range
+      // Self-Healing: If stuck for > 6 hour, force update checkpoint to skip problematic range
       if (isSyncType === WorkshopOrderServices.SYNC_TYPE_AUTO) {
         const lastDate = await this.kv.get(KV_KEY);
-        if (lastDate && (currentRunTime - parseInt(lastDate) > 60 * 60 * 1000)) {
+        if (lastDate && (currentRunTime - parseInt(lastDate) > 6 * 60 * 60 * 1000)) {
           await this.kv.put(KV_KEY, currentRunTime.toString());
         }
       }
