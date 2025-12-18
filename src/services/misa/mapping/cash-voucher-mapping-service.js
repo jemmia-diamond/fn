@@ -3,7 +3,7 @@ import HaravanAPI from "services/clients/haravan-client";
 import { CREDIT_ACCOUNT_MAP, DEBIT_ACCOUNT_MAP, EXCHANGE_RATE, MANUAL_PAYMENT_CREDIT_MAP, MANUAL_PAYMENT_DEBIT_MAP, REASON_TYPES, SORT_ORDER, VOUCHER_REF_TYPES, VOUCHER_TYPES } from "services/misa/constant";
 
 export default class CashVoucherMappingService {
-  static async transforManualToVoucher(v, bankMap, voucher_type = VOUCHER_TYPES.MANUAL_PAYMENT, ref_type = VOUCHER_REF_TYPES.MANUAL_PAYMENT, order_chain = null) {
+  static async transforManualToVoucher(v, bankMap, voucher_type = VOUCHER_TYPES.MANUAL_PAYMENT, ref_type = VOUCHER_REF_TYPES.MANUAL_PAYMENT, order_chain = null, env) {
     // Company credit and debit account
     // manual payment using "branch" field (branch is actually vietnamese province)
     const isManual = voucher_type === VOUCHER_TYPES.MANUAL_PAYMENT;
@@ -21,7 +21,7 @@ export default class CashVoucherMappingService {
     const employee_name = `${v.haravan_order?.user?.last_name} ${v.haravan_order?.user?.first_name}`;
 
     // Customer's code, name and address
-    const customerInfo = await CashVoucherMappingService.fetchCustomer(v, v.haravan_order);
+    const customerInfo = await CashVoucherMappingService.fetchCustomer(v, v.haravan_order, env);
     const customerCode = customerInfo?.customer_id?.toString();
     const customerName = `${customerInfo?.customer_last_name} ${customerInfo?.customer_first_name}`;
     const street1 = customerInfo?.customer_default_address_address1;
@@ -85,10 +85,10 @@ export default class CashVoucherMappingService {
     return { misaVoucher, originalId: v.uuid, generatedGuid };
   }
 
-  static async fetchCustomer(v, haravanOrder) {
+  static async fetchCustomer(v, haravanOrder, env) {
     if(haravanOrder && haravanOrder?.customer_id) return haravanOrder;
 
-    const accessToken = await this.env.HARAVAN_TOKEN_SECRET.get();
+    const accessToken = await env.HARAVAN_TOKEN_SECRET.get();
     const haravanClient = new HaravanAPI(accessToken);
     const haravanResult = await haravanClient.order.getOrder(v.haravan_order_id);
     const customerData = haravanResult?.order?.customer;

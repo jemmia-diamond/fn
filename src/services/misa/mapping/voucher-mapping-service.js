@@ -11,7 +11,7 @@ export default class VoucherMappingService {
    * @param {Number} ref_type reference type - check here https://actdocs.misa.vn/g2/graph/ACTOpenAPIHelp/index.html#3-9
    * @returns
    */
-  static async transformQrToVoucher(v, bankMap, voucher_type = VOUCHER_TYPES.QR_PAYMENT, ref_type = VOUCHER_REF_TYPES.QR_PAYMENT, order_chain = null) {
+  static async transformQrToVoucher(v, bankMap, voucher_type = VOUCHER_TYPES.QR_PAYMENT, ref_type = VOUCHER_REF_TYPES.QR_PAYMENT, order_chain = null, env) {
     // Company credit and debit account
     const creditInfo = CREDIT_ACCOUNT_MAP[v.haravan_order?.source] || {};
     const debitAccount = DEBIT_ACCOUNT_MAP[v.bank_code] || null;
@@ -21,7 +21,7 @@ export default class VoucherMappingService {
     const employee_name = `${v.haravan_order?.user?.last_name} ${v.haravan_order?.user?.first_name}`;
 
     // Customer's code, name and address
-    const customerInfo = await VoucherMappingService.fetchCustomer(v, v.haravan_order);
+    const customerInfo = await VoucherMappingService.fetchCustomer(v, v.haravan_order, env);
     const customerCode = customerInfo?.customer_id?.toString();
     const customerName = v?.customer_name || `${customerInfo?.customer_last_name} ${customerInfo?.customer_first_name}`;
     const street1 = customerInfo?.customer_default_address_address1;
@@ -81,10 +81,10 @@ export default class VoucherMappingService {
     return { misaVoucher, originalId: v.id, generatedGuid };
   }
 
-  static async fetchCustomer(v, haravanOrder) {
+  static async fetchCustomer(v, haravanOrder, env) {
     if(haravanOrder && haravanOrder?.customer_id) return haravanOrder;
 
-    const accessToken = await this.env.HARAVAN_TOKEN_SECRET.get();
+    const accessToken = await env.HARAVAN_TOKEN_SECRET.get();
     const haravanClient = new HaravanAPI(accessToken);
     const haravanResult = await haravanClient.order.getOrder(v.haravan_order_id);
     const customerData = haravanResult?.order?.customer;
