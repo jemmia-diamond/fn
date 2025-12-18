@@ -1,6 +1,7 @@
 import Larksuite from "services/larksuite";
 import ERP from "services/erp";
 import Ecommerce from "services/ecommerce";
+import InventoryCMS from "services/inventory-cms";
 import DatabaseOperations from "services/db-operations";
 import Misa from "services/misa";
 import ProductQuote from "services/product_quote";
