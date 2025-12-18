@@ -1,10 +1,10 @@
 import Larksuite from "services/larksuite";
 import ERP from "services/erp";
 import Ecommerce from "services/ecommerce";
-import InventoryCMS from "services/inventory-cms";
 import DatabaseOperations from "services/db-operations";
 import Misa from "services/misa";
 import ProductQuote from "services/product_quote";
+import WorkshopOrderServices from "services/sync/lark-to-nocodb/workshop-orders";
 
 export default {
   scheduled: async (controller, env, _ctx) => {
@@ -41,6 +41,7 @@ export default {
       await InventoryCMS.InventoryCheckSheetService.syncInventoryCheckSheetToDatabase(env);
       await InventoryCMS.InventoryCheckLineService.syncInventoryCheckLineToDatabase(env);
       await DatabaseOperations.DatabaseFunctionService.runWorkplaceUpdateLastRfidScanTime(env);
+      await WorkshopOrderServices.WorkshopOrderServices.cronJobSyncLarkToNocoDB(env);
       break;
     case "0 17 * * *": // 00:00
       await Larksuite.Contact.UserService.syncUsersToDatabase(env);
