@@ -22,7 +22,9 @@ export default class ProductService {
         data,
         count: count.length ? Number(count[0].total) : 0,
         material_colors: count.length ? count[0].material_colors : [],
-        fineness: count.length ? count[0].fineness : []
+        fineness: count.length ? count[0].fineness : [],
+        start_promotion_date: count.length ? count[0].start_date : null,
+        end_promotion_date: count.length ? count[0].end_date : null
       };
     } catch (e) {
       Sentry.captureException(e);
@@ -31,14 +33,16 @@ export default class ProductService {
   }
 
   async getJewelry(jsonParams) {
-    const { data, count, material_colors, fineness } = await this.getJewelryData(jsonParams);
+    const { data, count, material_colors, fineness, start_promotion_date, end_promotion_date } = await this.getJewelryData(jsonParams);
     return {
       data,
       metadata: {
         total: count,
         material_colors: material_colors,
         fineness: fineness,
-        pagination: jsonParams.pagination
+        pagination: jsonParams.pagination,
+        start_promotion_date: start_promotion_date,
+        end_promotion_date: end_promotion_date
       }
     };
   }

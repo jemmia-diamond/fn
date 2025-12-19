@@ -143,6 +143,14 @@ export function buildQuery(jsonParams) {
     ${paginationString}
   `;
 
+  let extraSelectInner = "";
+  let extraSelectOuter = "";
+
+  if (jsonParams.linked_collections && jsonParams.linked_collections.length > 0) {
+    extraSelectInner = ", MAX(hc.start_date) as start_date, MAX(hc.end_date) as end_date";
+    extraSelectOuter = ", MAX(sub.start_date) as start_date, MAX(sub.end_date) as end_date";
+  }
+
   const countSql = `
     SELECT
       COUNT(*) AS total,
@@ -150,8 +158,9 @@ export function buildQuery(jsonParams) {
        FROM ecom.materialized_variants mv) AS material_colors,
       (SELECT ARRAY_AGG(DISTINCT mv.fineness)
        FROM ecom.materialized_variants mv) AS fineness
+       ${extraSelectOuter}
     FROM (
-      SELECT p.haravan_product_id
+      SELECT p.haravan_product_id ${extraSelectInner}
       FROM ecom.materialized_products p
         INNER JOIN workplace.designs d ON d.id = p.design_id
         ${collectionJoinEcomProductsClause}
@@ -281,7 +290,6 @@ export function aggregateQuery(jsonParams) {
   let linkedCollectionJoinEcomProductsClause = "";
   let needsP2Join = false;
   let warehouseJoinClause = "";
-
   if (jsonParams.is_in_stock) {
     havingString += "HAVING SUM(v.qty_available) > 0\n";
   }
