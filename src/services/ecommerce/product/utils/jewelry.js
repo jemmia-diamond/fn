@@ -12,16 +12,21 @@ export function buildQuery(jsonParams) {
 
   const finenessOrder = handleFinenessPriority === "14K" ? "ASC" : "DESC";
 
-  const isLinkedCollection = jsonParams.linked_collections && jsonParams.linked_collections.length > 0;
-  const priceField = isLinkedCollection
-    ? `
-      CASE
-              WHEN hc.start_date <= NOW() AND hc.end_date >= NOW() AND v.final_discount_price IS NOT NULL
-              THEN CAST(v.final_discount_price AS DECIMAL)
-              ELSE CAST(v.price AS DECIMAL)
-            END
-    `
-    : "CAST(v.price AS DECIMAL)";
+  const priceField = `
+    CASE
+      WHEN EXISTS (
+        SELECT 1 
+        FROM workplace.products wp
+        INNER JOIN workplace.products_haravan_collection phc ON phc.products_id = wp.id
+        INNER JOIN workplace.haravan_collections hc ON hc.id = phc.haravan_collections_id
+        WHERE wp.haravan_product_id = v.haravan_product_id
+          AND hc.start_date <= NOW() 
+          AND hc.end_date >= NOW()
+      ) AND v.final_discount_price IS NOT NULL
+      THEN CAST(v.final_discount_price AS DECIMAL)
+      ELSE CAST(v.price AS DECIMAL)
+    END
+  `;
 
   let diamondJoinsForCount = "";
   let diamondFiltersForCount = "";
@@ -155,14 +160,6 @@ export function buildQuery(jsonParams) {
     ${paginationString}
   `;
 
-  let extraSelectInner = "";
-  let extraSelectOuter = "";
-
-  if (jsonParams.linked_collections && jsonParams.linked_collections.length > 0) {
-    extraSelectInner = ", MAX(hc.start_date) as start_date, MAX(hc.end_date) as end_date";
-    extraSelectOuter = ", MAX(sub.start_date) as start_date, MAX(sub.end_date) as end_date";
-  }
-
   const countSql = `
     SELECT
       COUNT(*) AS total,
@@ -170,9 +167,8 @@ export function buildQuery(jsonParams) {
        FROM ecom.materialized_variants mv) AS material_colors,
       (SELECT ARRAY_AGG(DISTINCT mv.fineness)
        FROM ecom.materialized_variants mv) AS fineness
-       ${extraSelectOuter}
     FROM (
-      SELECT p.haravan_product_id ${extraSelectInner}
+      SELECT p.haravan_product_id
       FROM ecom.materialized_products p
         INNER JOIN workplace.designs d ON d.id = p.design_id
         ${collectionJoinEcomProductsClause}
@@ -197,6 +193,22 @@ export function buildQuery(jsonParams) {
 }
 
 export function buildQuerySingle({ matchedDiamonds }) {
+  const priceField = `
+    CASE
+      WHEN EXISTS (
+        SELECT 1 
+        FROM workplace.products wp
+        INNER JOIN workplace.products_haravan_collection phc ON phc.products_id = wp.id
+        INNER JOIN workplace.haravan_collections hc ON hc.id = phc.haravan_collections_id
+        WHERE wp.haravan_product_id = v.haravan_product_id
+          AND hc.start_date <= NOW() 
+          AND hc.end_date >= NOW()
+      ) AND v.final_discount_price IS NOT NULL
+      THEN CAST(v.final_discount_price AS DECIMAL)
+      ELSE CAST(v.price AS DECIMAL)
+    END
+  `;
+
   let variantJsonBuildObject = `
      \n
     JSON_BUILD_OBJECT(
@@ -204,9 +216,8 @@ export function buildQuerySingle({ matchedDiamonds }) {
       'fineness', v.fineness,
       'material_color', v.material_color,
       'ring_size', v.ring_size,
-      'price', CAST(v.price AS DECIMAL),
+      'price', ${priceField},
       'price_compare_at', CAST(v.price_compare_at AS DECIMAL),
-      'final_discount_price', CAST(v.final_discount_price AS DECIMAL),
       'applique_material', v.applique_material,
       'estimated_gold_weight', v.estimated_gold_weight,
       'qty_available', v.qty_available,
@@ -233,9 +244,8 @@ export function buildQuerySingle({ matchedDiamonds }) {
         'fineness', v.fineness,
         'material_color', v.material_color,
         'ring_size', v.ring_size,
-        'price', CAST(v.price AS DECIMAL),
+        'price', ${priceField},
         'price_compare_at', CAST(v.price_compare_at AS DECIMAL),
-        'final_discount_price', CAST(v.final_discount_price AS DECIMAL),
         'applique_material', v.applique_material,
         'estimated_gold_weight', v.estimated_gold_weight,
         'qty_available', v.qty_available,
