@@ -123,7 +123,7 @@ export function validateOrderInfo(salesOrderData, customer) {
     return { isValid, message };
   }
 
-  if (!customer.customer_passport_id && !customer.customer_personal_id) {
+  if (!customer.passport_id && !customer.personal_id) {
     message = "Chưa nhập số hộ chiếu hoặc số CMND/CCCD khách hàng";
     return { isValid, message };
   }
