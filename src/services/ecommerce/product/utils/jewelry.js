@@ -30,6 +30,7 @@ export function buildQuery(jsonParams) {
         'ring_size', v.ring_size,
         'price', CAST(v.price AS DECIMAL),
         'price_compare_at', CAST(v.price_compare_at AS DECIMAL),
+        'final_discount_price', CAST(v.final_discount_price AS DECIMAL),
         'qty_available', v.qty_available,
         'qty_onhand', v.qty_onhand,
         'diamonds', COALESCE(v.diamonds, '[]'::json)
@@ -71,7 +72,8 @@ export function buildQuery(jsonParams) {
         GROUP BY v.haravan_product_id, v.haravan_variant_id, v.sku, v.price,
                  v.price_compare_at, v.material_color, v.fineness, v.ring_size,
                  v.qty_available, v.qty_onhand, v.applique_material,
-                 v.estimated_gold_weight, v.ring_band_style, v.ring_head_style
+                 v.estimated_gold_weight, v.ring_band_style, v.ring_head_style,
+                 v.final_discount_price
         ORDER BY v.fineness ${finenessOrder}, v.price DESC
       ) v ON TRUE
     `;
@@ -84,6 +86,7 @@ export function buildQuery(jsonParams) {
         'ring_size', v.ring_size,
         'price', CAST(v.price AS DECIMAL),
         'price_compare_at', CAST(v.price_compare_at AS DECIMAL),
+        'final_discount_price', CAST(v.final_discount_price AS DECIMAL),
         'qty_available', v.qty_available,
         'qty_onhand', v.qty_onhand
       )
@@ -194,6 +197,7 @@ export function buildQuerySingle({ matchedDiamonds }) {
       'ring_size', v.ring_size,
       'price', CAST(v.price AS DECIMAL),
       'price_compare_at', CAST(v.price_compare_at AS DECIMAL),
+      'final_discount_price', CAST(v.final_discount_price AS DECIMAL),
       'applique_material', v.applique_material,
       'estimated_gold_weight', v.estimated_gold_weight,
       'qty_available', v.qty_available,
@@ -222,6 +226,7 @@ export function buildQuerySingle({ matchedDiamonds }) {
         'ring_size', v.ring_size,
         'price', CAST(v.price AS DECIMAL),
         'price_compare_at', CAST(v.price_compare_at AS DECIMAL),
+        'final_discount_price', CAST(v.final_discount_price AS DECIMAL),
         'applique_material', v.applique_material,
         'estimated_gold_weight', v.estimated_gold_weight,
         'qty_available', v.qty_available,
@@ -269,7 +274,7 @@ export function buildQuerySingle({ matchedDiamonds }) {
           v.price, v.price_compare_at, v.material_color, v.fineness,
           v.ring_size, v.qty_available, v.qty_onhand,
           v.applique_material, v.estimated_gold_weight,
-          v.ring_band_style, v.ring_head_style
+          v.ring_band_style, v.ring_head_style, v.final_discount_price
         ORDER BY v.fineness, v.price DESC
       ) v ON TRUE
       \n
