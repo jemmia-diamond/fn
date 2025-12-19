@@ -12,6 +12,22 @@ export function buildQuery(jsonParams) {
 
   const finenessOrder = handleFinenessPriority === "14K" ? "ASC" : "DESC";
 
+  const priceField = `
+    CASE
+      WHEN EXISTS (
+        SELECT 1 
+        FROM workplace.products wp
+        INNER JOIN workplace.products_haravan_collection phc ON phc.products_id = wp.id
+        INNER JOIN workplace.haravan_collections hc ON hc.id = phc.haravan_collections_id
+        WHERE wp.haravan_product_id = v.haravan_product_id
+          AND hc.start_date <= NOW() 
+          AND hc.end_date >= NOW()
+      ) AND v.final_discount_price IS NOT NULL
+      THEN CAST(v.final_discount_price AS DECIMAL)
+      ELSE CAST(v.price AS DECIMAL)
+    END
+  `;
+
   let diamondJoinsForCount = "";
   let diamondFiltersForCount = "";
   let lateralJoinClause = "";
@@ -28,7 +44,7 @@ export function buildQuery(jsonParams) {
         'fineness', v.fineness,
         'material_color', v.material_color,
         'ring_size', v.ring_size,
-        'price', CAST(v.price AS DECIMAL),
+        'price', ${priceField},
         'price_compare_at', CAST(v.price_compare_at AS DECIMAL),
         'qty_available', v.qty_available,
         'qty_onhand', v.qty_onhand,
@@ -71,7 +87,8 @@ export function buildQuery(jsonParams) {
         GROUP BY v.haravan_product_id, v.haravan_variant_id, v.sku, v.price,
                  v.price_compare_at, v.material_color, v.fineness, v.ring_size,
                  v.qty_available, v.qty_onhand, v.applique_material,
-                 v.estimated_gold_weight, v.ring_band_style, v.ring_head_style
+                 v.estimated_gold_weight, v.ring_band_style, v.ring_head_style,
+                 v.final_discount_price
         ORDER BY v.fineness ${finenessOrder}, v.price DESC
       ) v ON TRUE
     `;
@@ -82,7 +99,7 @@ export function buildQuery(jsonParams) {
         'fineness', v.fineness,
         'material_color', v.material_color,
         'ring_size', v.ring_size,
-        'price', CAST(v.price AS DECIMAL),
+        'price', ${priceField},
         'price_compare_at', CAST(v.price_compare_at AS DECIMAL),
         'qty_available', v.qty_available,
         'qty_onhand', v.qty_onhand
@@ -176,6 +193,22 @@ export function buildQuery(jsonParams) {
 }
 
 export function buildQuerySingle({ matchedDiamonds }) {
+  const priceField = `
+    CASE
+      WHEN EXISTS (
+        SELECT 1 
+        FROM workplace.products wp
+        INNER JOIN workplace.products_haravan_collection phc ON phc.products_id = wp.id
+        INNER JOIN workplace.haravan_collections hc ON hc.id = phc.haravan_collections_id
+        WHERE wp.haravan_product_id = v.haravan_product_id
+          AND hc.start_date <= NOW() 
+          AND hc.end_date >= NOW()
+      ) AND v.final_discount_price IS NOT NULL
+      THEN CAST(v.final_discount_price AS DECIMAL)
+      ELSE CAST(v.price AS DECIMAL)
+    END
+  `;
+
   let variantJsonBuildObject = `
      \n
     JSON_BUILD_OBJECT(
@@ -183,7 +216,7 @@ export function buildQuerySingle({ matchedDiamonds }) {
       'fineness', v.fineness,
       'material_color', v.material_color,
       'ring_size', v.ring_size,
-      'price', CAST(v.price AS DECIMAL),
+      'price', ${priceField},
       'price_compare_at', CAST(v.price_compare_at AS DECIMAL),
       'applique_material', v.applique_material,
       'estimated_gold_weight', v.estimated_gold_weight,
@@ -211,7 +244,7 @@ export function buildQuerySingle({ matchedDiamonds }) {
         'fineness', v.fineness,
         'material_color', v.material_color,
         'ring_size', v.ring_size,
-        'price', CAST(v.price AS DECIMAL),
+        'price', ${priceField},
         'price_compare_at', CAST(v.price_compare_at AS DECIMAL),
         'applique_material', v.applique_material,
         'estimated_gold_weight', v.estimated_gold_weight,
@@ -260,7 +293,7 @@ export function buildQuerySingle({ matchedDiamonds }) {
           v.price, v.price_compare_at, v.material_color, v.fineness,
           v.ring_size, v.qty_available, v.qty_onhand,
           v.applique_material, v.estimated_gold_weight,
-          v.ring_band_style, v.ring_head_style
+          v.ring_band_style, v.ring_head_style, v.final_discount_price
         ORDER BY v.fineness, v.price DESC
       ) v ON TRUE
       \n
@@ -281,7 +314,6 @@ export function aggregateQuery(jsonParams) {
   let linkedCollectionJoinEcomProductsClause = "";
   let needsP2Join = false;
   let warehouseJoinClause = "";
-
   if (jsonParams.is_in_stock) {
     havingString += "HAVING SUM(v.qty_available) > 0\n";
   }
