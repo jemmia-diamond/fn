@@ -178,12 +178,21 @@ export default class PaymentEntryService {
 
   async updateManualPayment(rawPaymentEntry) {
     const paymentEntry = rawToPaymentEntry(rawPaymentEntry);
-    const manualPaymentUuid = paymentEntry.custom_transaction_id;
-    if (!manualPaymentUuid) return;
+    let manualPaymentUuid = paymentEntry.custom_transaction_id;
 
-    const existingPayment = await this.db.manualPaymentTransaction.findUnique({
-      where: { uuid: manualPaymentUuid }
-    });
+    let existingPayment;
+    if (manualPaymentUuid) {
+      existingPayment = await this.db.manualPaymentTransaction.findUnique({
+        where: { uuid: manualPaymentUuid }
+      });
+    }
+
+    if (!existingPayment && paymentEntry.name) {
+      existingPayment = await this.db.manualPaymentTransaction.findFirst({
+        where: { payment_entry_name: paymentEntry.name }
+      });
+      manualPaymentUuid = existingPayment?.uuid;
+    }
 
     if (!existingPayment) return;
 
