@@ -121,8 +121,6 @@ export default class SalesOrderService {
       customer_address: customerDefaultAdress.name,
       total_amount: haravanOrderData.total_price,
       grand_total: haravanOrderData.total_price,
-      paid_amount: 0,
-      balance: haravanOrderData.total_price,
       real_order_date: await this.getRealOrderDate(haravanOrderData.id) || dayjs(haravanOrderData.created_at).add(7, "hour").format("YYYY-MM-DD"),
       ref_sales_orders: await this.mapRefSalesOrder(haravanOrderData.id)
     };
@@ -149,8 +147,8 @@ export default class SalesOrderService {
       try {
         const orderData = message.body;
         await salesOrderService.sendNotificationToLark(orderData, true);
-        const updatedOrder = await salesOrderService.updateSalesOrderPaidAmount(orderData.name);
-        await salesOrderService.syncHaravanFinancialStatus(updatedOrder || orderData);
+        await salesOrderService.syncHaravanFinancialStatus(orderData);
+        await salesOrderService.updateSalesOrderPaidAmount(orderData.name);
       } catch (error) {
         Sentry.captureException(error);
       }
@@ -697,50 +695,34 @@ export default class SalesOrderService {
       if (!currentSalesOrder) return null;
 
       // Calculate total from Payment Entries
-      const references = await this.frappeClient.getList("Payment Entry Reference", {
-        fields: ["parent", "allocated_amount"],
+      const paymentEntries = await this.frappeClient.getList("Payment Entry", {
+        fields: ["name", "payment_type"],
         filters: [
-          ["reference_doctype", "=", "Sales Order"],
-          ["reference_name", "=", salesOrderName]
+          ["Payment Entry Reference", "reference_doctype", "=", "Sales Order"],
+          ["Payment Entry Reference", "reference_name", "=", salesOrderName],
+          ["docstatus", "<", 2],
+          ["payment_order_status", "=", "Success"]
         ]
       });
 
       let paymentEntriesTotal = 0.0;
-      if (references.length > 0) {
-        const parentNames = [...new Set(references.map(ref => ref.parent))];
-        const parents = await this.frappeClient.getList("Payment Entry", {
-          fields: ["name", "payment_type", "payment_order_status"],
-          filters: [
-            ["name", "in", parentNames],
-            ["docstatus", "<", 2],
-            ["payment_order_status", "=", "Success"]
-          ]
-        });
-
-        const parentMap = new Map(parents.map(p => [p.name, p]));
-
-        for (const ref of references) {
-          const parent = parentMap.get(ref.parent);
-          if (parent) {
-            const allocatedAmount = parseFloat(ref.allocated_amount || 0);
-            if (parent.payment_type === "Pay") {
-              paymentEntriesTotal -= allocatedAmount;
+      for (const entry of paymentEntries) {
+        const fullEntry = await this.frappeClient.getDoc("Payment Entry", entry.name);
+        if (fullEntry && fullEntry.references) {
+          const ref = fullEntry.references.find(r => r.reference_doctype === "Sales Order" && r.reference_name === salesOrderName);
+          if (ref) {
+            const allocated = parseFloat(ref.allocated_amount || 0);
+            if (entry.payment_type === "Pay") {
+              paymentEntriesTotal -= allocated;
             } else {
-              paymentEntriesTotal += allocatedAmount;
+              paymentEntriesTotal += allocated;
             }
           }
         }
       }
 
       // Calculate total from Sales Order Payment Records
-      const paymentRecords = await this.frappeClient.getList("Sales Order Payment Record", {
-        fields: ["amount"],
-        filters: [
-          ["parent", "=", salesOrderName],
-          ["kind", "in", ["capture", "authorization"]]
-        ]
-      });
-
+      const paymentRecords = (currentSalesOrder.payment_records || []).filter(r => ["capture", "authorization"].includes(r.kind));
       const paymentRecordsTotal = paymentRecords.reduce((sum, record) => sum + parseFloat(record.amount || 0), 0);
 
       // Logic to determine total_paid
