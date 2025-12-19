@@ -12,6 +12,17 @@ export function buildQuery(jsonParams) {
 
   const finenessOrder = handleFinenessPriority === "14K" ? "ASC" : "DESC";
 
+  const isLinkedCollection = jsonParams.linked_collections && jsonParams.linked_collections.length > 0;
+  const priceField = isLinkedCollection
+    ? `
+      CASE
+              WHEN hc.start_date <= NOW() AND hc.end_date >= NOW() AND v.final_discount_price IS NOT NULL
+              THEN CAST(v.final_discount_price AS DECIMAL)
+              ELSE CAST(v.price AS DECIMAL)
+            END
+    `
+    : "CAST(v.price AS DECIMAL)";
+
   let diamondJoinsForCount = "";
   let diamondFiltersForCount = "";
   let lateralJoinClause = "";
@@ -28,9 +39,8 @@ export function buildQuery(jsonParams) {
         'fineness', v.fineness,
         'material_color', v.material_color,
         'ring_size', v.ring_size,
-        'price', CAST(v.price AS DECIMAL),
+        'price', ${priceField},
         'price_compare_at', CAST(v.price_compare_at AS DECIMAL),
-        'final_discount_price', CAST(v.final_discount_price AS DECIMAL),
         'qty_available', v.qty_available,
         'qty_onhand', v.qty_onhand,
         'diamonds', COALESCE(v.diamonds, '[]'::json)
@@ -84,9 +94,8 @@ export function buildQuery(jsonParams) {
         'fineness', v.fineness,
         'material_color', v.material_color,
         'ring_size', v.ring_size,
-        'price', CAST(v.price AS DECIMAL),
+        'price', ${priceField},
         'price_compare_at', CAST(v.price_compare_at AS DECIMAL),
-        'final_discount_price', CAST(v.final_discount_price AS DECIMAL),
         'qty_available', v.qty_available,
         'qty_onhand', v.qty_onhand
       )
