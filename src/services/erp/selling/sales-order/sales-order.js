@@ -121,8 +121,6 @@ export default class SalesOrderService {
       customer_address: customerDefaultAdress.name,
       total_amount: haravanOrderData.total_price,
       grand_total: haravanOrderData.total_price,
-      paid_amount: 0,
-      balance: haravanOrderData.total_price,
       real_order_date: await this.getRealOrderDate(haravanOrderData.id) || dayjs(haravanOrderData.created_at).add(7, "hour").format("YYYY-MM-DD"),
       ref_sales_orders: await this.mapRefSalesOrder(haravanOrderData.id)
     };
@@ -150,6 +148,7 @@ export default class SalesOrderService {
         const orderData = message.body;
         await salesOrderService.sendNotificationToLark(orderData, true);
         await salesOrderService.syncHaravanFinancialStatus(orderData);
+        await salesOrderService.updateSalesOrderPaidAmount(orderData.name);
       } catch (error) {
         Sentry.captureException(error);
       }
@@ -686,6 +685,80 @@ export default class SalesOrderService {
       return null;
     } catch (e) {
       Sentry.captureException(e);
+      return null;
+    }
+  }
+
+  async updateSalesOrderPaidAmount(salesOrderName) {
+    try {
+      const currentSalesOrder = await this.frappeClient.getDoc("Sales Order", salesOrderName);
+      if (!currentSalesOrder) return null;
+
+      // Calculate total from Payment Entries
+      const paymentEntries = await this.frappeClient.getList("Payment Entry", {
+        fields: ["name", "payment_type"],
+        filters: [
+          ["Payment Entry Reference", "reference_doctype", "=", "Sales Order"],
+          ["Payment Entry Reference", "reference_name", "=", salesOrderName],
+          ["docstatus", "<", 2],
+          ["payment_order_status", "=", "Success"]
+        ]
+      });
+
+      let paymentEntriesTotal = 0.0;
+      for (const entry of paymentEntries) {
+        const fullEntry = await this.frappeClient.getDoc("Payment Entry", entry.name);
+        if (fullEntry && fullEntry.references) {
+          const ref = fullEntry.references.find(r => r.reference_doctype === "Sales Order" && r.reference_name === salesOrderName);
+          if (ref) {
+            const allocated = parseFloat(ref.allocated_amount || 0);
+            if (entry.payment_type === "Pay") {
+              paymentEntriesTotal -= allocated;
+            } else {
+              paymentEntriesTotal += allocated;
+            }
+          }
+        }
+      }
+
+      // Calculate total from Sales Order Payment Records
+      const paymentRecords = (currentSalesOrder.payment_records || []).filter(r => ["capture", "authorization"].includes(r.kind));
+      const paymentRecordsTotal = paymentRecords.reduce((sum, record) => sum + parseFloat(record.amount || 0), 0);
+
+      // Logic to determine total_paid
+      const salesOrderGrandTotal = currentSalesOrder.grand_total;
+      const currentPaidAmount = currentSalesOrder.paid_amount;
+      const currentBalance = currentSalesOrder.balance;
+
+      let totalPaid = 0.0;
+
+      if (parseFloat(paymentRecordsTotal) >= parseFloat(salesOrderGrandTotal)) {
+        totalPaid = parseFloat(paymentRecordsTotal);
+      } else {
+        totalPaid = parseFloat(paymentEntriesTotal) + parseFloat(paymentRecordsTotal);
+      }
+
+      if (totalPaid >= parseFloat(salesOrderGrandTotal)) {
+        totalPaid = parseFloat(salesOrderGrandTotal);
+      }
+
+      const balance = parseFloat(salesOrderGrandTotal) - parseFloat(totalPaid);
+
+      // Update if changed
+      if (parseFloat(totalPaid) !== parseFloat(currentPaidAmount) || parseFloat(currentBalance) !== parseFloat(balance)) {
+        const updatedDoc = await this.frappeClient.update({
+          doctype: "Sales Order",
+          name: salesOrderName,
+          paid_amount: totalPaid,
+          balance: balance
+        });
+        console.warn(`Updated Sales Order ${salesOrderName}: Paid ${totalPaid}, Balance ${balance}`);
+        return updatedDoc;
+      }
+
+      return currentSalesOrder;
+    } catch (error) {
+      Sentry.captureException(error);
       return null;
     }
   }
