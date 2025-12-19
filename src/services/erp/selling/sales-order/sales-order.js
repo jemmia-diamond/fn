@@ -738,6 +738,10 @@ export default class SalesOrderService {
         totalPaid = parseFloat(paymentEntriesTotal) + parseFloat(paymentRecordsTotal);
       }
 
+      if (totalPaid >= parseFloat(salesOrderGrandTotal)) {
+        totalPaid = parseFloat(salesOrderGrandTotal);
+      }
+
       const balance = parseFloat(salesOrderGrandTotal) - parseFloat(totalPaid);
 
       // Update if changed
