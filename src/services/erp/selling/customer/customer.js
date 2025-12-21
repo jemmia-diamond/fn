@@ -168,7 +168,19 @@ export default class CustomerService {
         await this.enqueueMisaBackgroundJob(haravanResult.customer);
       }
     } catch (error) {
-      if (error.response && error.response.status === 422) return;
+      if (error.status === 422) {
+        const haravanClient = new HaravanAPI(accessToken);
+        const hrvCustomers = await haravanClient.customer.getCustomers(haravanPayload.phone);
+        const customer = await this.frappeClient.getDoc(this.doctype, customerData.name);
+
+        if (customer) {
+          customer.haravan_id = String(hrvCustomers.customers[0].id);
+          customer.customer_primary_contact = hrvCustomers.customers[0].phone;
+          await this.frappeClient.update(customer);
+          await this.enqueueMisaBackgroundJob(hrvCustomers.customers[0]);
+        }
+      }
+
       throw error;
     }
   }

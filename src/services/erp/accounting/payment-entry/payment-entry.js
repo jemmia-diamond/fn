@@ -54,7 +54,7 @@ export default class PaymentEntryService {
   async processManualPayment(rawPaymentEntry) {
     const paymentEntry = rawToPaymentEntry(rawPaymentEntry);
     const references = paymentEntry.references || [];
-    const salesOrderReference = references.find((ref) => ref.reference_doctype === "Sales Order");
+    const salesOrderReference = references?.find((ref) => ref.reference_doctype === "Sales Order");
     const haravan_order_id = salesOrderReference?.sales_order_details?.haravan_order_id
       ? parseInt(salesOrderReference.sales_order_details.haravan_order_id, 10) : null;
     const receive_date = paymentEntry.payment_date ? dayjs(paymentEntry.payment_date).utc().toDate() : null;
@@ -75,15 +75,14 @@ export default class PaymentEntryService {
       transfer_note: salesOrderReference?.order_number || "ORDERLATER",
       haravan_order_id,
       haravan_order_name: salesOrderReference?.order_number || "Đơn hàng cọc",
-      transfer_status: (receive_date && haravan_order_id) ? "Xác nhận" : Constants.TRANSFER_STATUS.PENDING,
+      transfer_status: Constants.TRANSFER_STATUS.PENDING,
       gateway: paymentEntry.gateway
     };
 
     const result = await this.manualPaymentService.createManualPayment(data);
     if (result && result.payment_entry_name) {
-      const isConfirmed = result.transfer_status === "Xác nhận";
-      const custom_transfer_status = isConfirmed ? PaymentEntryStatus.SUCCESS : PaymentEntryStatus.PENDING;
-      const payment_order_status = isConfirmed ? PaymentOrderStatus.SUCCESS : PaymentOrderStatus.PENDING;
+      const custom_transfer_status = PaymentEntryStatus.PENDING;
+      const payment_order_status = PaymentOrderStatus.PENDING;
 
       await this.frappeClient.upsert({
         doctype: this.doctype,
@@ -179,21 +178,31 @@ export default class PaymentEntryService {
 
   async updateManualPayment(rawPaymentEntry) {
     const paymentEntry = rawToPaymentEntry(rawPaymentEntry);
-    const manualPaymentUuid = paymentEntry.custom_transaction_id;
-    if (!manualPaymentUuid) return;
+    let manualPaymentUuid = paymentEntry.custom_transaction_id;
 
-    const existingPayment = await this.db.manualPaymentTransaction.findUnique({
-      where: { uuid: manualPaymentUuid }
-    });
+    let existingPayment;
+    if (manualPaymentUuid) {
+      existingPayment = await this.db.manualPaymentTransaction.findUnique({
+        where: { uuid: manualPaymentUuid }
+      });
+    }
+
+    if (!existingPayment && paymentEntry.name) {
+      existingPayment = await this.db.manualPaymentTransaction.findFirst({
+        where: { payment_entry_name: paymentEntry.name }
+      });
+      manualPaymentUuid = existingPayment?.uuid;
+    }
 
     if (!existingPayment) return;
 
     const references = paymentEntry.references || [];
-    const salesOrderReference = references.find((ref) => ref.reference_doctype === "Sales Order");
+    const salesOrderReference = references?.find((ref) => ref.reference_doctype === "Sales Order");
     const haravan_order_id = salesOrderReference?.sales_order_details?.haravan_order_id
       ? parseInt(salesOrderReference.sales_order_details.haravan_order_id, 10) : null;
     const receive_date = paymentEntry.payment_date ? dayjs(paymentEntry.payment_date).utc().toDate() : null;
     const isOrderLinking = salesOrderReference && haravan_order_id;
+    const transfer_status = paymentEntry.verified_by ? Constants.TRANSFER_STATUS.CONFIRMED : Constants.TRANSFER_STATUS.PENDING;
 
     const data = {
       payment_type: this._mapPaymentMethod(paymentEntry.payment_code),
@@ -202,24 +211,18 @@ export default class PaymentEntryService {
       bank_account: paymentEntry.bank_account_no || null,
       bank_name: paymentEntry.bank || null,
       transfer_amount: paymentEntry.paid_amount || paymentEntry.received_amount || null,
-      transfer_note: salesOrderReference?.order_number || paymentEntry.custom_transfer_note || "",
+      transfer_note: salesOrderReference?.order_number || "ORDERLATER",
       haravan_order_id: isOrderLinking ? haravan_order_id : null,
-      haravan_order_name: isOrderLinking ? salesOrderReference.order_number : null,
-      transfer_status: paymentEntry.custom_transfer_status === PaymentEntryStatus.SUCCESS ? "Xác nhận" :
-        paymentEntry.custom_transfer_status === PaymentEntryStatus.CANCEL ? "Hủy" :
-          Constants.TRANSFER_STATUS.PENDING,
+      haravan_order_name: isOrderLinking ? salesOrderReference.order_number : "Đơn hàng cọc",
+      transfer_status,
       gateway: paymentEntry.gateway,
       payment_entry_name: paymentEntry.name
     };
 
-    if(paymentEntry.verified_by) {
-      data.transfer_status = "Xác nhận";
-    }
-
     const result = await this.manualPaymentService.updateManualPayment(manualPaymentUuid, data);
 
     if (result && result.payment_entry_name) {
-      const isConfirmed = result.transfer_status === "Xác nhận";
+      const isConfirmed = paymentEntry.verified_by != null;
       const custom_transfer_status = isConfirmed ? PaymentEntryStatus.SUCCESS : PaymentEntryStatus.PENDING;
       const payment_order_status = isConfirmed ? PaymentOrderStatus.SUCCESS : PaymentOrderStatus.PENDING;
 
