@@ -229,7 +229,7 @@ export default class SalesOrderService {
   };
 
   async sendNotificationToLark(initialSalesOrderData, isUpdateMessage = false) {
-    let salesOrderData = initialSalesOrderData;
+    let salesOrderData = structuredClone(initialSalesOrderData);
 
     const larkClient = await LarksuiteService.createClientV2(this.env);
 
