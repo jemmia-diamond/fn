@@ -22,6 +22,7 @@ model manualPaymentTransaction {
   haravan_order       Order? @relation(fields: [haravan_order_id], references: [id])
   payment_entry_name  String?   @unique @db.VarChar(255)
   gateway             String?   @db.VarChar(255)
+  payment_references  Json?
 
   @@index([uuid])
   @@map("manual_payments")

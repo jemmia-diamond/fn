@@ -75,6 +75,7 @@ model qrPaymentTransaction {
   misa_sync_guid            String?   @db.VarChar(255)
   misa_sync_error_msg       String?
   payment_entry_name        String?   @db.VarChar
+  payment_references        Json?
   haravan_order             Order? @relation(fields: [haravan_order_id], references: [id])
 
   @@index([id], map: "ix_ecom_qr_generator_id")
