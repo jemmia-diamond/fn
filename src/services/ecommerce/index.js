@@ -8,6 +8,7 @@ import WarehouseService from "services/ecommerce/warehouse/warehouse";
 import JewelryDiamondPairService from "services/ecommerce/jewelry-diamond-pair-service";
 import DiamondService from "services/ecommerce/diamond/diamond";
 import FormService from "services/ecommerce/form/form";
+import DiamondCollectService from "services/ecommerce/diamond/diamond-collect-service";
 
 export default {
   ProductService: ProductService,
@@ -19,5 +20,6 @@ export default {
   WarehouseService: WarehouseService,
   DiamondService: DiamondService,
   JewelryDiamondPairService: JewelryDiamondPairService,
-  FormService: FormService
+  FormService: FormService,
+  DiamondCollectService: DiamondCollectService
 };

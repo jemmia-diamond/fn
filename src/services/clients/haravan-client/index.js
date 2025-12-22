@@ -14,6 +14,7 @@ import InventoryTransferConnector from "services/clients/haravan-client/inventor
 import LocationConnector from "services/clients/haravan-client/location";
 import CollectConnector from "services/clients/haravan-client/collect";
 import CustomCollectConnector from "services/clients/haravan-client/collect-custom";
+import PromotionConnector from "services/clients/haravan-client/promotion";
 
 class HaravanAPI {
   constructor(accessToken) {
@@ -33,6 +34,7 @@ class HaravanAPI {
     this.location = new LocationConnector(accessToken);
     this.collect = new CollectConnector(accessToken);
     this.collectCustom = new CustomCollectConnector(accessToken);
+    this.promotion = new PromotionConnector(accessToken);
   }
 }
 

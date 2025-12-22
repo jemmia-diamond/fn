@@ -1,6 +1,14 @@
 import { WorkplaceClient } from "services/clients/workplace-client";
 import DiamondDiscountService from "services/ecommerce/diamond/diamond-discount-service";
 import Database from "src/services/database";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc.js";
+import timezone from "dayjs/plugin/timezone.js";
+import HaravanClient from "services/clients/haravan-client";
+import * as Sentry from "@sentry/cloudflare";
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 /**
  * TODO: Implement linking ERP discount program to noco db's collections
@@ -112,6 +120,102 @@ export default class DiamondCollectService {
       }
     } catch (error) {
       console.warn("Error in syncDiamondsToCollects:", error);
+      Sentry.captureException(error);
+    }
+  }
+
+  async createFinalDiscountPromotions() {
+    try {
+      const db = Database.instance(this.env);
+
+      const HRV_API_KEY = await this.env.HARAVAN_TOKEN_SECRET.get();
+      if (!HRV_API_KEY) {
+        throw new BadRequestException("Haravan API credentials or base URL are not configured in the environment.");
+      }
+
+      const haravanClient = new HaravanClient(HRV_API_KEY);
+
+      // Cleanup existing "Final Discount Price" promotions (latest 100)
+      try {
+        const [page1Data, page2Data] = await Promise.all([
+          haravanClient.promotion.list({ limit: 50, page: 1 }),
+          haravanClient.promotion.list({ limit: 50, page: 2 })
+        ]);
+
+        const existingPromotions = [
+          ...(page1Data.promotions || []),
+          ...(page2Data.promotions || [])
+        ];
+
+        console.warn(`Checking ${existingPromotions.length} latest promotions for cleanup...`);
+
+        for (const promo of existingPromotions) {
+          if (promo.name && promo.name.includes("Final Discount Price")) {
+            try {
+              await haravanClient.promotion.delete(promo.id);
+              console.warn(`Deleted old promotion: ${promo.id} - ${promo.name}`);
+            } catch (deleteError) {
+              console.warn(`Failed to delete promotion ${promo.id}:`, deleteError);
+            }
+          }
+        }
+      } catch (cleanupError) {
+        console.warn("Error cleaning up existing promotions:", cleanupError);
+        Sentry.captureException(cleanupError);
+      }
+
+      const variants = await db.$queryRaw`
+        SELECT
+          haravan_variant_id,
+          haravan_product_id,
+          final_discount_price
+        FROM
+          workplace.variants
+        WHERE
+          final_discount_price IS NOT NULL
+      `;
+
+      if (!variants || variants.length === 0) {
+        // eslint-disable-next-line no-console
+        console.info("No variants with final_discount_price found.");
+        return;
+      }
+
+      console.warn(`Found ${variants.length} variants with final_discount_price.`);
+
+      const startDate = dayjs.tz("2025-12-22 00:00:00", "Asia/Ho_Chi_Minh").format();
+      const endDate = dayjs.tz("2025-12-31 23:59:59", "Asia/Ho_Chi_Minh").format();
+
+      for (const variant of variants) {
+        try {
+          const promotionPayload = {
+            name: `Final Discount Price - ${variant.haravan_variant_id}`,
+            discount_type: "same_price",
+            value: Number(variant.final_discount_price),
+            applies_to_resource: "product_variant",
+            starts_at: startDate,
+            ends_at: endDate,
+            applies_to_quantity: 1,
+            usage_limit: null,
+            cant_combine_with_other_discounts: true,
+            variants: [
+              {
+                product_id: Number(variant.haravan_product_id),
+                variant_id: Number(variant.haravan_variant_id)
+              }
+            ]
+          };
+
+          await haravanClient.promotion.create(promotionPayload);
+        } catch (error) {
+          console.warn(`Failed to create promotion for variant ${variant.haravan_variant_id}:`, error);
+          Sentry.captureException(error);
+        }
+      }
+
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error("Error in createFinalDiscountPromotions:", error);
       Sentry.captureException(error);
     }
   }

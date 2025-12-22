@@ -36,7 +36,14 @@ class BaseConnector {
     const response = await fetch(url.toString(), options);
 
     if (!response.ok) {
-      const error = new Error(`HTTP error! status: ${response.status}`);
+      let errorMessage = `HTTP error! status: ${response.status}`;
+      try {
+        const errorBody = await response.text();
+        errorMessage += ` - Body: ${errorBody}`;
+      } catch {
+        // ignore
+      }
+      const error = new Error(errorMessage);
       error.status = response.status;
 
       if (response.status === 429) {

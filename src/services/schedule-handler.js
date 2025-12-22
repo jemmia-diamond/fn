@@ -54,6 +54,7 @@ export default {
       await ERP.Selling.SalesPersonService.syncSalesPersonToDatabase(env);
       await Larksuite.Docs.Base.RecordService.syncRecordsToDatabase(env);
       await new DiamondCollectService(env).syncDiamondsToCollects();
+      await new Ecommerce.DiamondCollectService(env).createFinalDiscountPromotions();
       break;
     case "30 0 * * *": // 07:30
       await ERP.CRM.LeadDemandService.syncLeadDemandToDatabase(env);
