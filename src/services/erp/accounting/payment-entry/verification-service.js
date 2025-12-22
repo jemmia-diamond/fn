@@ -66,7 +66,7 @@ export default class BankTransactionVerificationService {
     }
 
     if(auto_updated == 1){
-      if (qrPayment.haravan_order_number !== sepay_order_number) {
+      if (qrPayment.haravan_order_number !== sepay_order_number && !qrPayment.haravan_order_id) {
         return this.failedPayload("Order number mismatch", "ORDER_NUMBER_MISMATCH",
           {
             payment_entry: paymentEntryName,
@@ -107,7 +107,7 @@ export default class BankTransactionVerificationService {
       verified_by: auto_updated == 1 ? "tech@jemmia.vn" : payload?.modified_by
     });
 
-    if (updatedQrPayment.transfer_status == "success" && references.length != 0) {
+    if (updatedQrPayment.transfer_status == "success" && updatedQrPayment.haravan_order_id && auto_updated == 1) {
       await this.enqueueMisaBackgroundJob(qrPayment);
     }
 
@@ -145,6 +145,6 @@ export default class BankTransactionVerificationService {
       }
     };
 
-    await this.env["MISA_QUEUE"].send(payload, { delaySeconds: Misa.Constants.DELAYS.ONE_MINUTE });
+    await this.env["MISA_QUEUE"].send(payload);
   }
 }
