@@ -22,7 +22,7 @@ export function buildQuery(jsonParams) {
         WHERE wp.haravan_product_id = v.haravan_product_id
           AND hc.start_date <= NOW() 
           AND hc.end_date >= NOW()
-      ) AND v.final_discount_price IS NOT NULL
+      ) AND v.final_discount_price IS NOT NULL AND v.final_discount_price != 0
       THEN CAST(v.final_discount_price AS DECIMAL)
       ELSE CAST(v.price AS DECIMAL)
     END
@@ -203,7 +203,7 @@ export function buildQuerySingle({ matchedDiamonds }) {
         WHERE wp.haravan_product_id = v.haravan_product_id
           AND hc.start_date <= NOW() 
           AND hc.end_date >= NOW()
-      ) AND v.final_discount_price IS NOT NULL
+      ) AND v.final_discount_price IS NOT NULL AND v.final_discount_price != 0
       THEN CAST(v.final_discount_price AS DECIMAL)
       ELSE CAST(v.price AS DECIMAL)
     END
