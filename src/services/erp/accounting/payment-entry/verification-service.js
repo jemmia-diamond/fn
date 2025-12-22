@@ -83,14 +83,14 @@ export default class BankTransactionVerificationService {
             sepay_order_description: sepay_order_description
           });
       }
-    }
 
-    if (parseFloat(qrPayment.transfer_amount) !== parseFloat(sepay_amount_in)) {
-      return this.failedPayload("Amount mismatch", "AMOUNT_MISMATCH", {
-        payment_entry: paymentEntryName,
-        qr_amount: qrPayment.transfer_amount,
-        sepay_amount: sepay_amount_in
-      });
+      if (parseFloat(qrPayment.transfer_amount) !== parseFloat(sepay_amount_in)) {
+        return this.failedPayload("Amount mismatch", "AMOUNT_MISMATCH", {
+          payment_entry: paymentEntryName,
+          qr_amount: qrPayment.transfer_amount,
+          sepay_amount: sepay_amount_in
+        });
+      }
     }
 
     const updatedQrPayment = await this.db.qrPaymentTransaction.update({

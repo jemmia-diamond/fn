@@ -269,10 +269,6 @@ export default class PaymentEntryService {
       (ref) => ref.reference_doctype === "Sales Order"
     );
 
-    if (salesOrderReferences.length !== 1) {
-      return;
-    }
-
     const mappedSalesOrderReference = rawToReference(salesOrderReferences[0]);
     const qrPaymentId = paymentEntry.custom_transaction_id;
     if (!qrPaymentId) return;
