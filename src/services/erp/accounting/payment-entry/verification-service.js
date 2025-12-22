@@ -93,7 +93,7 @@ export default class BankTransactionVerificationService {
       });
     }
 
-    await this.db.qrPaymentTransaction.update({
+    const updatedQrPayment = await this.db.qrPaymentTransaction.update({
       where: { id: qrPayment.id },
       data: { transfer_status: "success" }
     });
@@ -107,7 +107,7 @@ export default class BankTransactionVerificationService {
       verified_by: auto_updated == 1 ? "tech@jemmia.vn" : payload?.modified_by
     });
 
-    if (qrPayment.transfer_status == "success" && references.length != 0) {
+    if (updatedQrPayment.transfer_status == "success" && references.length != 0) {
       await this.enqueueMisaBackgroundJob(qrPayment);
     }
 
