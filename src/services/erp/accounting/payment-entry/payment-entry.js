@@ -42,16 +42,14 @@ export default class PaymentEntryService {
   }
 
   _mapBranch(branch) {
-    const mapping = {
-      "Cửa hàng HCM": "Hồ Chí Minh",
-      "Cửa hàng Hồ Chí Minh": "Hồ Chí Minh",
-      "Cửa hàng Hà Nội": "Hà Nội",
-      "Cửa hàng Cần Thơ": "Cần Thơ"
-    };
-    return mapping[branch] || branch || null;
+    return Constants.BRANCH_MAPPING[branch] || branch || null;
   }
 
-  async processManualPayment(rawPaymentEntry) {
+  _getSalesOrderReference(references) {
+    return (references || []).find((ref) => ref.reference_doctype === Constants.REFERENCE_DOCTYPES.SALES_ORDER);
+  }
+
+  async createManualPayment(rawPaymentEntry) {
     const paymentEntry = rawToPaymentEntry(rawPaymentEntry);
     const references = paymentEntry.references || [];
     const salesOrderReferences = references.filter((ref) => ref.reference_doctype === "Sales Order");
@@ -99,7 +97,7 @@ export default class PaymentEntryService {
     return result;
   }
 
-  async processQRPayment(paymentEntry) {
+  async createQRPayment(paymentEntry) {
     const references = paymentEntry.references || [];
     const salesOrderReferences = references.filter((ref) => ref.reference_doctype === "Sales Order");
 
@@ -152,7 +150,7 @@ export default class PaymentEntryService {
     return result;
   }
 
-  async processPaymentEntry(rawPaymentEntry) {
+  async createPaymentEntry(rawPaymentEntry) {
     const paymentEntry = rawToPaymentEntry(rawPaymentEntry);
     const paymentCode = paymentEntry.payment_code;
 
@@ -161,9 +159,9 @@ export default class PaymentEntryService {
     }
 
     if (this._isQRPayment(paymentCode)) {
-      return await this.processQRPayment(paymentEntry);
+      return await this.createQRPayment(paymentEntry);
     } else if (this._isManualPayment(paymentCode)) {
-      return await this.processManualPayment(paymentEntry);
+      return await this.createManualPayment(paymentEntry);
     } else {
       throw new Error(`Unsupported payment_code: ${paymentCode}`);
     }
@@ -275,11 +273,8 @@ export default class PaymentEntryService {
    */
   async updateQRPayment(rawPaymentEntry) {
     const paymentEntry = rawToPaymentEntry(rawPaymentEntry);
-
     const references = paymentEntry.references || [];
-    const salesOrderReferences = references.filter(
-      (ref) => ref.reference_doctype === "Sales Order"
-    );
+    const salesOrderReferences = references.filter((ref) => ref.reference_doctype === "Sales Order");
 
     const primaryOrder = salesOrderReferences[0] ? rawToReference(salesOrderReferences[0]) : null;
     const qrPaymentId = paymentEntry.custom_transaction_id;
@@ -364,11 +359,11 @@ export default class PaymentEntryService {
       const rawPaymentEntry = messageBody.data;
 
       try {
-        if (erpTopic === "create") {
-          await paymentEntryService.processPaymentEntry(rawPaymentEntry);
-        } else if (erpTopic === "update") {
+        if (erpTopic === Constants.PAYMENT_ENTRY_WEBHOOK_TOPIC.CREATE) {
+          await paymentEntryService.createPaymentEntry(rawPaymentEntry);
+        } else if (erpTopic === Constants.PAYMENT_ENTRY_WEBHOOK_TOPIC.UPDATE) {
           await paymentEntryService.updatePaymentEntry(rawPaymentEntry);
-        } else if (erpTopic === "verify") {
+        } else if (erpTopic === Constants.PAYMENT_ENTRY_WEBHOOK_TOPIC.VERIFY) {
           await paymentEntryService.verifyPaymentEntryBankTransaction(rawPaymentEntry);
         }
       } catch (error) {
