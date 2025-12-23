@@ -36,12 +36,13 @@ export default class ManualTransactionService {
     const voucherType = isCash ? VOUCHER_TYPES.MANUAL_PAYMENT : VOUCHER_TYPES.OTHER_MANUAL_PAYMENT;
     const refType = isCash ? VOUCHER_REF_TYPES.MANUAL_PAYMENT : VOUCHER_REF_TYPES.OTHER_MANUAL_PAYMENT;
 
-    const { misaVoucher, originalId, generatedGuid } = CashVoucherMappingService.transforManualToVoucher(
+    const { misaVoucher, originalId, generatedGuid } = await CashVoucherMappingService.transforManualToVoucher(
       manualPayment,
       bankMap,
       voucherType,
       refType,
-      journalNote
+      journalNote,
+      this.env
     );
 
     const payload = {

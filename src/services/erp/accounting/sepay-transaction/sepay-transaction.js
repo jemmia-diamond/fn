@@ -39,7 +39,8 @@ export default class SepayTransactionService {
     const { orderNumber, orderDesc } = this.standardizeOrderNumber(content);
 
     if (!orderNumber && !orderDesc) {
-      throw new Error("Order description not found");
+      Sentry.captureMessage("Order description not found");
+      return;
     }
 
     const isOrderLater = orderNumber === "ORDERLATER";
@@ -392,7 +393,6 @@ export default class SepayTransactionService {
       try {
         const createdSepayTransaction = await service.saveToDb(message.body);
         if (createdSepayTransaction) {
-          await service.sendToLark(message.body, createdSepayTransaction);
           await service.sendToERP(message.body, createdSepayTransaction);
         }
       } catch (error) {

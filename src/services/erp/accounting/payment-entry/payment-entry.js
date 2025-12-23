@@ -51,9 +51,12 @@ export default class PaymentEntryService {
 
   async createManualPayment(rawPaymentEntry) {
     const paymentEntry = rawToPaymentEntry(rawPaymentEntry);
-    const salesOrderReference = this._getSalesOrderReference(paymentEntry.references);
-    const haravan_order_id = salesOrderReference?.sales_order_details?.haravan_order_id
-      ? parseInt(salesOrderReference.sales_order_details.haravan_order_id, 10) : null;
+    const references = paymentEntry.references || [];
+    const salesOrderReferences = references.filter((ref) => ref.reference_doctype === "Sales Order");
+    const primaryOrder = salesOrderReferences[0] ? rawToReference(salesOrderReferences[0]) : null;
+    const haravan_order_id = primaryOrder?.sales_order_details?.haravan_order_id
+      ? parseInt(primaryOrder.sales_order_details.haravan_order_id, 10) : null;
+
     const receive_date = paymentEntry.payment_date ? dayjs(paymentEntry.payment_date).utc().toDate() : null;
     const created_date = paymentEntry.creation ? dayjs(paymentEntry.creation).utc().toDate() : null;
 
@@ -69,18 +72,17 @@ export default class PaymentEntryService {
       bank_account: paymentEntry.bank_account_no || null,
       bank_name: paymentEntry.bank || null,
       transfer_amount: paymentEntry.paid_amount || paymentEntry.received_amount || null,
-      transfer_note: salesOrderReference?.order_number || Constants.HARAVAN_DEFAULTS.ORDER_LATER,
+      transfer_note: primaryOrder?.order_number || "ORDERLATER",
       haravan_order_id,
-      haravan_order_name: salesOrderReference?.order_number || Constants.HARAVAN_DEFAULTS.DEPOSIT_ORDER,
-      transfer_status: (receive_date && haravan_order_id) ? Constants.TRANSFER_STATUS.CONFIRMED : Constants.TRANSFER_STATUS.PENDING,
+      haravan_order_name: primaryOrder?.order_number || "Đơn hàng cọc",
+      transfer_status: Constants.TRANSFER_STATUS.PENDING,
       gateway: paymentEntry.gateway
     };
 
     const result = await this.manualPaymentService.createManualPayment(data);
     if (result && result.payment_entry_name) {
-      const isConfirmed = result.transfer_status === Constants.TRANSFER_STATUS.CONFIRMED;
-      const custom_transfer_status = isConfirmed ? PaymentEntryStatus.SUCCESS : PaymentEntryStatus.PENDING;
-      const payment_order_status = isConfirmed ? PaymentOrderStatus.SUCCESS : PaymentOrderStatus.PENDING;
+      const custom_transfer_status = PaymentEntryStatus.PENDING;
+      const payment_order_status = PaymentOrderStatus.PENDING;
 
       await this.frappeClient.upsert({
         doctype: this.doctype,
@@ -95,9 +97,19 @@ export default class PaymentEntryService {
     return result;
   }
 
-  async createQRPayment(paymentEntry) {
-    const salesOrderReference = this._getSalesOrderReference(paymentEntry.references);
+  async processQRPayment(paymentEntry) {
+    const references = paymentEntry.references || [];
+    const salesOrderReferences = references.filter((ref) => ref.reference_doctype === "Sales Order");
 
+    const payment_references = salesOrderReferences.length > 0
+      ? salesOrderReferences.map(ref => ({
+        haravan_order_id: parseInt(ref.sales_order_details.haravan_order_id, 10),
+        order_number: ref.order_number,
+        allocated_amount: ref.allocated_amount,
+        outstanding_amount: ref.outstanding_amount
+      })) : [];
+
+    const primaryOrder = salesOrderReferences[0] ? rawToReference(salesOrderReferences[0]) : null;
     const customer_name = paymentEntry?.customer_details?.name;
     const customer_phone_number = paymentEntry?.customer_details?.phone || paymentEntry?.customer_details?.mobile_no;
     const qrGeneratorPayload = {
@@ -109,14 +121,15 @@ export default class PaymentEntryService {
       customer_name,
       customer_phone_number,
       transfer_amount: paymentEntry.paid_amount,
-      haravan_order_total_price: salesOrderReference ? salesOrderReference.total_amount : null,
-      haravan_order_number: salesOrderReference ? salesOrderReference.sales_order_details.haravan_order_number : (paymentEntry.haravan_order_number || Constants.HARAVAN_DEFAULTS.DEPOSIT_ORDER),
-      haravan_order_status: salesOrderReference ? salesOrderReference.sales_order_details.haravan_financial_status : null,
-      haravan_order_id: salesOrderReference ? salesOrderReference.sales_order_details.haravan_order_id : null,
+      haravan_order_total_price: primaryOrder ? primaryOrder.total_amount : null,
+      haravan_order_number: primaryOrder ? primaryOrder.sales_order_details.haravan_order_number : (paymentEntry.haravan_order_number || "Đơn hàng cọc"),
+      haravan_order_status: primaryOrder ? primaryOrder.sales_order_details.haravan_financial_status : null,
+      haravan_order_id: primaryOrder ? primaryOrder.sales_order_details.haravan_order_id : null,
       lark_record_id: paymentEntry.lark_record_id || "",
       payment_entry_name: paymentEntry.name || "",
       customer_phone_order_later: customer_phone_number,
-      customer_name_order_later: customer_name
+      customer_name_order_later: customer_name,
+      payment_references
     };
 
     const result = await this.createQRService.handlePostQr(qrGeneratorPayload);
@@ -126,7 +139,7 @@ export default class PaymentEntryService {
       await this.frappeClient.upsert({
         doctype: this.doctype,
         name: result.payment_entry_name,
-        qr_url: result.qr_url,
+        qr_url: `${this.env.PAYMENT_QR_BASE_URL}/${result.id}`,
         custom_transaction_id: result.id,
         custom_transfer_note: result.transfer_note,
         custom_transfer_status: result.transfer_status,
@@ -173,20 +186,33 @@ export default class PaymentEntryService {
 
   async updateManualPayment(rawPaymentEntry) {
     const paymentEntry = rawToPaymentEntry(rawPaymentEntry);
-    const manualPaymentUuid = paymentEntry.custom_transaction_id;
-    if (!manualPaymentUuid) return;
+    let manualPaymentUuid = paymentEntry.custom_transaction_id;
 
-    const existingPayment = await this.db.manualPaymentTransaction.findUnique({
-      where: { uuid: manualPaymentUuid }
-    });
+    let existingPayment;
+    if (manualPaymentUuid) {
+      existingPayment = await this.db.manualPaymentTransaction.findUnique({
+        where: { uuid: manualPaymentUuid }
+      });
+    }
+
+    if (!existingPayment && paymentEntry.name) {
+      existingPayment = await this.db.manualPaymentTransaction.findFirst({
+        where: { payment_entry_name: paymentEntry.name }
+      });
+      manualPaymentUuid = existingPayment?.uuid;
+    }
 
     if (!existingPayment) return;
 
-    const salesOrderReference = this._getSalesOrderReference(paymentEntry.references);
-    const haravan_order_id = salesOrderReference?.sales_order_details?.haravan_order_id
-      ? parseInt(salesOrderReference.sales_order_details.haravan_order_id, 10) : null;
+    const references = paymentEntry.references || [];
+    const salesOrderReferences = references.filter((ref) => ref.reference_doctype === "Sales Order");
+    const primaryOrder = salesOrderReferences[0] ? rawToReference(salesOrderReferences[0]) : null;
+    const haravan_order_id = primaryOrder?.sales_order_details?.haravan_order_id
+      ? parseInt(primaryOrder.sales_order_details.haravan_order_id, 10) : null;
+
     const receive_date = paymentEntry.payment_date ? dayjs(paymentEntry.payment_date).utc().toDate() : null;
-    const isOrderLinking = salesOrderReference && haravan_order_id;
+    const isOrderLinking = primaryOrder && haravan_order_id;
+    const transfer_status = paymentEntry.verified_by ? Constants.TRANSFER_STATUS.CONFIRMED : Constants.TRANSFER_STATUS.PENDING;
 
     const data = {
       payment_type: this._mapPaymentMethod(paymentEntry.payment_code),
@@ -195,24 +221,18 @@ export default class PaymentEntryService {
       bank_account: paymentEntry.bank_account_no || null,
       bank_name: paymentEntry.bank || null,
       transfer_amount: paymentEntry.paid_amount || paymentEntry.received_amount || null,
-      transfer_note: salesOrderReference?.order_number || paymentEntry.custom_transfer_note || "",
+      transfer_note: primaryOrder?.order_number || "ORDERLATER",
       haravan_order_id: isOrderLinking ? haravan_order_id : null,
-      haravan_order_name: isOrderLinking ? salesOrderReference.order_number : null,
-      transfer_status: paymentEntry.custom_transfer_status === PaymentEntryStatus.SUCCESS ? Constants.TRANSFER_STATUS.CONFIRMED :
-        paymentEntry.custom_transfer_status === PaymentEntryStatus.CANCEL ? Constants.TRANSFER_STATUS.CANCELLED :
-          Constants.TRANSFER_STATUS.PENDING,
+      haravan_order_name: isOrderLinking ? primaryOrder.order_number : "Đơn hàng cọc",
+      transfer_status,
       gateway: paymentEntry.gateway,
       payment_entry_name: paymentEntry.name
     };
 
-    if(paymentEntry.verified_by) {
-      data.transfer_status = "Xác nhận";
-    }
-
     const result = await this.manualPaymentService.updateManualPayment(manualPaymentUuid, data);
 
     if (result && result.payment_entry_name) {
-      const isConfirmed = result.transfer_status === Constants.TRANSFER_STATUS.CONFIRMED;
+      const isConfirmed = paymentEntry.verified_by != null;
       const custom_transfer_status = isConfirmed ? PaymentEntryStatus.SUCCESS : PaymentEntryStatus.PENDING;
       const payment_order_status = isConfirmed ? PaymentOrderStatus.SUCCESS : PaymentOrderStatus.PENDING;
 
@@ -254,13 +274,7 @@ export default class PaymentEntryService {
   async updateQRPayment(rawPaymentEntry) {
     const paymentEntry = rawToPaymentEntry(rawPaymentEntry);
 
-    const salesOrderReference = this._getSalesOrderReference(paymentEntry.references);
-
-    if (!salesOrderReference) {
-      return;
-    }
-
-    const mappedSalesOrderReference = rawToReference(salesOrderReference);
+    const primaryOrder = salesOrderReferences[0] ? rawToReference(salesOrderReferences[0]) : null;
     const qrPaymentId = paymentEntry.custom_transaction_id;
     if (!qrPaymentId) return;
 
@@ -275,44 +289,32 @@ export default class PaymentEntryService {
       }));
     }
 
-    // return if QR's payment entry name is not match with payment entry name
-    if (qrPayment.payment_entry_name !== paymentEntry.name) {
-      return;
-    }
+    if (qrPayment.payment_entry_name !== paymentEntry.name) return;
 
-    // return if QR is not success
-    if (qrPayment.transfer_status !== PaymentEntryStatus.SUCCESS) {
-      return;
-    }
+    if (salesOrderReferences?.length === 1) {
+      const toPayAmount = parseFloat(qrPayment.transfer_amount);
+      const outstandingAmount = parseFloat(primaryOrder.outstanding_amount);
 
-    // return if QR's haravan_order_number is empty
-    if (!qrPayment.haravan_order_number) {
-      return;
-    }
-
-    const toPayAmount = parseFloat(qrPayment.transfer_amount);
-    const outstandingAmount = parseFloat(mappedSalesOrderReference.outstanding_amount);
-
-    if (toPayAmount > outstandingAmount) {
-      throw new Error(JSON.stringify({
-        error_msg: `Payment amount ${toPayAmount} exceeds remaining amount ${outstandingAmount}`,
-        error_code: LinkQRWithRealOrderService.OVERPAYMENT
-      }));
+      if (toPayAmount > outstandingAmount) {
+        throw new Error(JSON.stringify({
+          error_msg: `Payment amount ${toPayAmount} exceeds remaining amount ${outstandingAmount}`,
+          error_code: LinkQRWithRealOrderService.OVERPAYMENT
+        }));
+      }
     }
 
     let updateQr = qrPayment;
-    if (qrPayment.haravan_order_number === Constants.HARAVAN_DEFAULTS.ORDER_LATER) {
+    if (qrPayment.haravan_order_number === "ORDERLATER" && primaryOrder) {
       updateQr = await this.updateOrderLater(
         qrPaymentId, {
-          haravan_order_number: mappedSalesOrderReference.sales_order_details.haravan_order_number,
-          haravan_order_id: mappedSalesOrderReference.sales_order_details.haravan_order_id,
-          haravan_order_status: mappedSalesOrderReference.sales_order_details.haravan_financial_status,
-          haravan_order_total_price: mappedSalesOrderReference.total_amount,
+          haravan_order_number: primaryOrder?.sales_order_details?.haravan_order_number || null,
+          haravan_order_id: primaryOrder?.sales_order_details?.haravan_order_id || null,
+          haravan_order_status: primaryOrder?.sales_order_details?.haravan_financial_status || null,
+          haravan_order_total_price: primaryOrder?.total_amount || null,
           customer_name: paymentEntry.customer_details.name,
           customer_phone_number: paymentEntry.customer_details.phone || paymentEntry.customer_details.mobile_no
         }
       );
-
       if (!updateQr) {
         throw new Error(JSON.stringify({
           error_msg: `Failed to update QR with id ${qrPaymentId}`,
@@ -321,14 +323,19 @@ export default class PaymentEntryService {
       }
     }
 
+    const isSuccess = paymentEntry.bank_transactions?.length >= 1 && updateQr.haravan_order_id;
+    const payment_order_status = isSuccess ? PaymentOrderStatus.SUCCESS : PaymentOrderStatus.PENDING;
+
     await this.frappeClient.update({
       doctype: this.doctype,
       name: paymentEntry.name,
-      payment_order_status: PaymentOrderStatus.SUCCESS
+      payment_order_status
     }, "name");
 
-    const jobType = Misa.Constants.JOB_TYPE.CREATE_QR_VOUCHER;
-    await this._enqueueMisaBackgroundJob(jobType, { qr_transaction_id: qrPaymentId });
+    if (isSuccess && updateQr.haravan_order_id) {
+      const jobType = Misa.Constants.JOB_TYPE.CREATE_QR_VOUCHER;
+      await this._enqueueMisaBackgroundJob(jobType, { qr_transaction_id: qrPaymentId });
+    }
     return updateQr;
   }
 

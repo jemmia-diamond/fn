@@ -28,6 +28,7 @@ export default class ManualPaymentFetchingService {
       misa_synced: false,
       misa_sync_guid: null,
       misa_synced_at: null,
+      payment_entry_name: null,
       haravan_order_id: {
         not: null
       },
