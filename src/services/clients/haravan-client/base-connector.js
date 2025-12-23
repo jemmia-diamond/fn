@@ -1,13 +1,20 @@
 import axios from "axios";
 import axiosRetry from "axios-retry";
 
+const RETRY_CONFIG = {
+  retries: 2,
+  retryDelay: axiosRetry.exponentialDelay,
+  shouldResetTimeout: true,
+  retryCondition: (error) =>
+    axiosRetry.isNetworkOrIdempotentRequestError(error) ||
+    error.response?.status >= 500
+};
+
 class BaseConnector {
   constructor(accessToken = null) {
     this.accessToken = accessToken;
     this.baseUrl = "https://apis.haravan.com/com";
     this.timeout = 30000;
-    this.maxRetries = 2;
-    this.retryDelay = 1000;
   }
 
   getHeaders() {
@@ -23,12 +30,7 @@ class BaseConnector {
       timeout: this.timeout,
       headers: this.getHeaders()
     });
-
-    axiosRetry(client, {
-      retries: this.maxRetries,
-      retryDelay: () => this.retryDelay,
-      shouldResetTimeout: true
-    });
+    axiosRetry(client, RETRY_CONFIG);
 
     return client;
   }
