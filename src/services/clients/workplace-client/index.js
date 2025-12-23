@@ -20,6 +20,7 @@ export class WorkplaceClient {
     this.jewelries = new JewelryClient(this.api, baseId);
     this.designImages = new DesignImageClient(this.api, baseId);
     this.designs = new DesignsClient(this.api, baseId);
+    this.variants = new BaseWorkplaceClient(this.api, baseId, "variants");
     this.diamondHaravanCollections = new BaseWorkplaceClient(this.api, baseId, "diamonds_haravan_collection");
     this.jewelryHaravanCollections = new BaseWorkplaceClient(this.api, baseId, "products_haravan_collection");
   }
