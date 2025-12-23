@@ -60,6 +60,20 @@ export default class PaymentEntryService {
     const receive_date = paymentEntry.payment_date ? dayjs(paymentEntry.payment_date).utc().toDate() : null;
     const created_date = paymentEntry.creation ? dayjs(paymentEntry.creation).utc().toDate() : null;
 
+    let transferAmount = paymentEntry.paid_amount || paymentEntry.received_amount || 0;
+
+    if (primaryOrder && primaryOrder.balance) {
+      const leftAmountToPaid = parseFloat(primaryOrder.balance);
+      const paid = parseFloat(transferAmount);
+
+      // ONLY ACCEPT 1000 VND DIFFERENCE
+      if (Math.abs(paid - leftAmountToPaid) <= 1000) {
+        transferAmount = leftAmountToPaid;
+      } else if (paid > leftAmountToPaid) {
+        throw new Error(`Overpayment: Payment amount ${paid} exceeds outstanding amount ${leftAmountToPaid}`);
+      }
+    }
+
     const data = {
       payment_entry_name: paymentEntry.name,
       payment_type: this._mapPaymentMethod(paymentEntry.payment_code),
@@ -71,7 +85,7 @@ export default class PaymentEntryService {
       updated_date: null,
       bank_account: paymentEntry.bank_account_no || null,
       bank_name: paymentEntry.bank || null,
-      transfer_amount: paymentEntry.paid_amount || paymentEntry.received_amount || null,
+      transfer_amount: transferAmount,
       transfer_note: primaryOrder?.order_number || "ORDERLATER",
       haravan_order_id,
       haravan_order_name: primaryOrder?.order_number || "Đơn hàng cọc",
@@ -90,7 +104,9 @@ export default class PaymentEntryService {
         custom_transaction_id: result.uuid,
         custom_transfer_note: result.transfer_note,
         custom_transfer_status,
-        payment_order_status
+        payment_order_status,
+        paid_amount: transferAmount,
+        received_amount: transferAmount
       }, "name");
     }
 
