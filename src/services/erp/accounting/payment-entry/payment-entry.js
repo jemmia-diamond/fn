@@ -97,7 +97,7 @@ export default class PaymentEntryService {
     return result;
   }
 
-  async processQRPayment(paymentEntry) {
+  async createQRPayment(paymentEntry) {
     const references = paymentEntry.references || [];
     const salesOrderReferences = references.filter((ref) => ref.reference_doctype === "Sales Order");
 
@@ -273,6 +273,8 @@ export default class PaymentEntryService {
    */
   async updateQRPayment(rawPaymentEntry) {
     const paymentEntry = rawToPaymentEntry(rawPaymentEntry);
+    const references = paymentEntry.references || [];
+    const salesOrderReferences = references.filter((ref) => ref.reference_doctype === "Sales Order");
 
     const primaryOrder = salesOrderReferences[0] ? rawToReference(salesOrderReferences[0]) : null;
     const qrPaymentId = paymentEntry.custom_transaction_id;
