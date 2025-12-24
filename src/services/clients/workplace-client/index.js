@@ -23,6 +23,7 @@ export class WorkplaceClient {
     this.variants = new BaseWorkplaceClient(this.api, baseId, "variants");
     this.diamondHaravanCollections = new BaseWorkplaceClient(this.api, baseId, "diamonds_haravan_collection");
     this.jewelryHaravanCollections = new BaseWorkplaceClient(this.api, baseId, "products_haravan_collection");
+    this.collections = new BaseWorkplaceClient(this.api, baseId, "collections");
   }
 
   static async initialize(env, baseId) {
