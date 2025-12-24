@@ -220,6 +220,15 @@ export default class PaymentEntryService {
 
     if (!existingPayment) return;
 
+    if (paymentEntry.payment_order_status == PaymentOrderStatus.CANCEL) {
+      await this.db.manualPaymentTransaction.update({
+        where: { uuid: manualPaymentUuid },
+        data: { transfer_status: Constants.TRANSFER_STATUS.CANCELLED }
+      });
+
+      return;
+    }
+
     const references = paymentEntry.references || [];
     const salesOrderReferences = references.filter((ref) => ref.reference_doctype === "Sales Order");
     const primaryOrder = salesOrderReferences[0] ? rawToReference(salesOrderReferences[0]) : null;
@@ -308,6 +317,15 @@ export default class PaymentEntryService {
     }
 
     if (qrPayment.payment_entry_name !== paymentEntry.name) return;
+
+    if (paymentEntry.payment_order_status == PaymentOrderStatus.CANCEL) {
+      await this.db.qrPaymentTransaction.update({
+        where: { id: qrPayment.id },
+        data: { transfer_status: PaymentEntryStatus.CANCEL }
+      });
+
+      return;
+    }
 
     if (salesOrderReferences?.length === 1) {
       const toPayAmount = parseFloat(qrPayment.transfer_amount);
