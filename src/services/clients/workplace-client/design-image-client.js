@@ -42,7 +42,6 @@ export default class DesignImageClient extends BaseWorkplaceClient {
       ) {
         return { success: true };
       }
-      throw error;
     }
   }
 }

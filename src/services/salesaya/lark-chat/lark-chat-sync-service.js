@@ -19,7 +19,7 @@ export default class LarkChatSyncService {
     this.uploader = new LarkChatMediaUploader(`${this.env.SALESAYA_API_BASE_URL}/files/upload`);
     this.parser = new LarkChatParser(larkSdkClient);
   }
-  async writeRecord(code, links, status, reason = "") {
+  async writeRecord(code, links, status, reason = "", messageId = "") {
     await RecordService.createLarksuiteRecords({
       env: this.env,
       appToken: this.appToken,
@@ -29,16 +29,19 @@ export default class LarkChatSyncService {
           "Mã sản phẩm": code,
           "Hình ảnh/Video": links,
           "Trạng thái": status,
-          "Lí do": reason
+          "Lí do": reason,
+          "Message ID": messageId
         }
       ]
     });
   };
-  async syncChat(chatId) {
+  async syncChat(chatId, startTime, endTime) {
     const workplaceClient = await WorkplaceClient.initialize(this.env, this.workplaceBaseId);
     let pageToken = "";
     let hasMore = true;
-
+    if (!startTime || !endTime) {
+      throw new Error("Missing start time or end time");
+    }
     while (hasMore) {
       const res = await this.larkSdkClient.im.message.list({
         params: {
@@ -46,7 +49,9 @@ export default class LarkChatSyncService {
           container_id: chatId,
           page_size: 50,
           page_token: pageToken || undefined,
-          sort_type: "ByCreateTimeDesc"
+          sort_type: "ByCreateTimeDesc",
+          start_time: startTime,
+          end_time: endTime
         }
       });
 
@@ -56,8 +61,9 @@ export default class LarkChatSyncService {
         if (!msg.thread_id) continue;
 
         const parsed = await this.parser.parseThread(msg.thread_id);
-        if (parsed.codes.length === 0) continue;
 
+        if (parsed.codes.length === 0) continue;
+        const uniqueCodes = [...new Set(parsed.codes.map(c => c.trim()))];
         const buffersCache = {};
         const imageLinks = [];
         const fileLinks = [];
@@ -97,16 +103,26 @@ export default class LarkChatSyncService {
         }
 
         const links = [...imageLinks, ...fileLinks].join(", ");
-        if (parsed.codes.length === 1) {
-          const updated = await workplaceClient.designImages.updateMediaByDesignCode(parsed.codes[0], fileLinks, imageLinks);
+        if (uniqueCodes.length === 1) {
+          const updated = await workplaceClient.designImages.updateMediaByDesignCode(uniqueCodes[0], fileLinks, imageLinks);
           if (!updated) {
-            const existDesign = await workplaceClient.designs.getByDesignCode(parsed.codes[0]);
-            await workplaceClient.designImages.createByDesignCode(existDesign, fileLinks, imageLinks);
+            let existDesign = await workplaceClient.designs.getByDesignCode(uniqueCodes[0]);
+            if (existDesign === null) {
+              existDesign = await workplaceClient.designs.getByErpCode(uniqueCodes[0]);
+            }
+            if (existDesign === null) {
+              existDesign = await workplaceClient.designs.getByCode(uniqueCodes[0]);
+            }
+            if (existDesign !== null) {
+              await workplaceClient.designImages.createByDesignCode(existDesign, fileLinks, imageLinks);
+            } else {
+              await this.writeRecord(uniqueCodes[0], links, "Thất bại", "Không thể get thông tin sản phẩm từ nocodb", msg.message_id);
+              continue;
+            }
           }
-          await this.writeRecord(parsed.codes[0], links, "Thành công");
-
+          await this.writeRecord(uniqueCodes[0], links, "Thành công", "", msg.message_id);
         } else {
-          await this.writeRecord(parsed.codes.join(", "), links, "Thất bại", "Tin nhắn chứa nhiều mã sản phẩm");
+          await this.writeRecord(uniqueCodes.join(", "), links, "Thất bại", "Tin nhắn chứa nhiều mã sản phẩm", msg.message_id);
         }
       }
 

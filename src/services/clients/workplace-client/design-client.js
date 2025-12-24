@@ -8,4 +8,12 @@ export default class DesignsClient extends BaseWorkplaceClient {
   async getByDesignCode(designCode) {
     return await this.findOne({ where: `(design_code,eq,${designCode})` });
   }
+
+  async getByErpCode(erpCode) {
+    return await this.findOne({ where: `(erp_code,eq,${erpCode})` });
+  }
+
+  async getByCode(code) {
+    return await this.findOne({ where: `(code,eq,${code})` });
+  }
 }
