@@ -36,7 +36,8 @@ export default class MaterializedViewService {
     const db = Database.instance(env);
     const views = [
       "crm_dashboard.crm_leads_view",
-      "reporting.policy_rule_materials"
+      "reporting.policy_rule_materials",
+      "reporting.accounting_pending_orders_view"
     ];
     for (const view of views) {
       try {
