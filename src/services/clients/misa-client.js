@@ -1,4 +1,14 @@
 import axios from "axios";
+import axiosRetry from "axios-retry";
+
+const RETRY_CONFIG = {
+  retries: 2,
+  retryDelay: axiosRetry.exponentialDelay,
+  shouldResetTimeout: true,
+  retryCondition: (error) =>
+    axiosRetry.isNetworkOrIdempotentRequestError(error) ||
+    error.response?.status >= 500
+};
 
 export default class MisaClient {
   static RETRIEVABLE_LIMIT = 1000;
@@ -9,6 +19,18 @@ export default class MisaClient {
     this.env = env;
     this.baseUrl = "https://actapp.misa.vn";
     this.accessToken = null;
+    this.timeout = 10000;
+  }
+
+  _createClient() {
+    const client = axios.create({
+      baseURL: this.baseUrl,
+      timeout: this.timeout,
+      headers: this._getAuthHeaders()
+    });
+
+    axiosRetry(client, RETRY_CONFIG);
+    return client;
   }
 
   /**
@@ -58,10 +80,8 @@ export default class MisaClient {
    * @returns
    */
   async saveVoucher(voucherPayload) {
-    const url = `${this.baseUrl}/apir/sync/actopen/save`;
-    const response = await axios.post(url, voucherPayload, {
-      headers: this._getAuthHeaders()
-    });
+    const client = this._createClient();
+    const response = await client.post("/apir/sync/actopen/save", voucherPayload);
     return response.data;
   }
 
@@ -71,10 +91,8 @@ export default class MisaClient {
    * @returns
    */
   async saveDictionary(dictionaryPayload) {
-    const url = `${this.baseUrl}/apir/sync/actopen/save_dictionary`;
-    const response = await axios.post(url, dictionaryPayload, {
-      headers: this._getAuthHeaders()
-    });
+    const client = this._createClient();
+    const response = await client.post("/apir/sync/actopen/save_dictionary", dictionaryPayload);
     return response.data;
   }
 
@@ -85,15 +103,13 @@ export default class MisaClient {
    * @returns
    */
   async getDictionary(data_type, skip = 0, take = RETRIEVABLE_LIMIT, last_sync_time = null) {
-    const url = `${this.baseUrl}/apir/sync/actopen/get_dictionary`;
+    const client = this._createClient();
     const payload = {
       data_type, skip, take, last_sync_time,
       app_id: this.env.MISA_APP_ID
     };
 
-    const response = await axios.post(url, payload, {
-      headers: this._getAuthHeaders()
-    });
+    const response = await client.post("/apir/sync/actopen/get_dictionary", payload);
     return JSON.parse(response.data.Data);
   }
 }
