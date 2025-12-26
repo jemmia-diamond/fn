@@ -48,7 +48,6 @@ model sepay_transaction {
   app_id              Int?
   app_time            BigInt?
   app_user            String?   @db.VarChar(255)
-  amount              BigInt?
   embed_data          Json?
   item                Json?
   zp_trans_id         BigInt?
