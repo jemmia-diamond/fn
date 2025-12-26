@@ -8,7 +8,7 @@ import RecordService from "services/larksuite/docs/base/record/record";
 import HaravanAPI from "services/clients/haravan-client";
 import Misa from "services/misa";
 import { BadRequestException } from "src/exception/exceptions";
-import { TOPICS } from "services/erp/accounting/sepay-transaction/constants";
+import { SEPAY_WEBHOOK_TOPICS } from "services/erp/accounting/sepay-transaction/constants";
 
 dayjs.extend(utc);
 
@@ -385,7 +385,7 @@ export default class SepayTransactionService {
       try {
         const body = message.body;
         // Skip ZaloPay
-        if (body.topic === TOPICS.ZALOPAY) {
+        if (body.topic === SEPAY_WEBHOOK_TOPICS.ZALOPAY) {
           continue;
         }
         await service.processTransaction(body);
@@ -402,12 +402,12 @@ export default class SepayTransactionService {
       try {
         const topic = message.body.topic;
         let createdSepayTransaction = null;
-        if (topic === TOPICS.SEPAY) {
+        if (topic === SEPAY_WEBHOOK_TOPICS.SEPAY) {
           createdSepayTransaction = await service.saveToDb(message.body);
         } else {
           createdSepayTransaction = await service.createZalopayTransaction(message.body);
         }
-        if (createdSepayTransaction && topic === TOPICS.SEPAY) {
+        if (createdSepayTransaction && topic === SEPAY_WEBHOOK_TOPICS.SEPAY) {
           await service.sendToERP(message.body, createdSepayTransaction);
         }
       } catch (error) {
