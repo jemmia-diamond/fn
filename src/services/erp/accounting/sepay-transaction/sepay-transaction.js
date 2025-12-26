@@ -199,52 +199,6 @@ export default class SepayTransactionService {
     };
   }
 
-  async sendToLark(rawSepayTransaction, existingTransaction) {
-    const sepayTransaction = this.mapRawSepayTransactionToPrisma(rawSepayTransaction);
-
-    if (parseFloat(sepayTransaction.amount_in) < 0) return;
-
-    const { orderNumber, orderDesc } = this.standardizeOrderNumber(sepayTransaction.transaction_content);
-
-    const fields = {
-      "Số Tiền Giao Dịch": Number(sepayTransaction.amount_in),
-      "Sepay - Nội dung giao dịch": sepayTransaction.transaction_content,
-      "Sepay - ID Giao Dịch": sepayTransaction.id,
-      "Sepay - Mã Đơn Từ Giao Dịch": orderNumber,
-      "Sepay - Nội Dung Đơn Từ Giao Dịch": orderDesc,
-      "Ngày Nhận Tiền": dayjs(sepayTransaction.transaction_date, "YYYY-MM-DD HH:mm:ss").valueOf(),
-      "Ngân Hàng": sepayTransaction.bank_brand_name,
-      "Số Tài Khoản": sepayTransaction.account_number
-    };
-
-    const larkParams = {
-      env: this.env,
-      appToken: TABLES.SEPAY_TRANSACTION.app_token,
-      tableId: TABLES.SEPAY_TRANSACTION.table_id,
-      userIdType: "open_id"
-    };
-
-    let upsertedLarkRecord = null;
-    if (existingTransaction && existingTransaction.lark_record_id) {
-      upsertedLarkRecord = await RecordService.updateLarksuiteRecord({
-        ...larkParams,
-        recordId: existingTransaction.lark_record_id,
-        fields
-      });
-    } else {
-      upsertedLarkRecord = await RecordService.createLarksuiteRecord({
-        ...larkParams,
-        fields
-      });
-    }
-    if (upsertedLarkRecord && upsertedLarkRecord.id) {
-      await this.db.sepay_transaction.update({
-        where: { id: existingTransaction.id },
-        data: { lark_record_id: upsertedLarkRecord.id }
-      });
-    }
-  }
-
   async sendToERP(rawSepayTransaction, existingTransaction) {
     try {
       const sepayTransaction = this.mapRawSepayTransactionToPrisma(rawSepayTransaction);
@@ -362,6 +316,63 @@ export default class SepayTransactionService {
     });
   }
 
+  async createZalopayTransaction(zalopayTransaction) {
+    try {
+      const body = zalopayTransaction;
+      const { data: dataStr } = body || {};
+
+      console.warn("Received Zalopay transaction webhook:", JSON.stringify(body, null, 2));
+
+      if (dataStr) {
+        try {
+          const parsedData = JSON.parse(dataStr);
+          console.warn("Parsed Zalopay Data:", JSON.stringify(parsedData, null, 2));
+
+          let embedDataJson = null;
+          let itemJson = null;
+
+          try {
+            embedDataJson = parsedData.embed_data ? JSON.parse(parsedData.embed_data) : null;
+          } catch (e) {
+            console.warn("Failed to parse embed_data", e);
+          }
+
+          try {
+            itemJson = parsedData.item ? JSON.parse(parsedData.item) : null;
+          } catch (e) {
+            console.warn("Failed to parse item", e);
+          }
+
+          await this.db.sepay_transaction.create({
+            data: {
+              id: parsedData.app_trans_id,
+              app_id: parsedData.app_id,
+              app_time: parsedData.app_time,
+              app_user: parsedData.app_user,
+              amount: parsedData.amount,
+              embed_data: embedDataJson,
+              item: itemJson,
+              zp_trans_id: parsedData.zp_trans_id,
+              server_time: parsedData.server_time,
+              channel: parsedData.channel,
+              merchant_user_id: parsedData.merchant_user_id,
+              user_fee_amount: parsedData.user_fee_amount,
+              discount_amount: parsedData.discount_amount
+            }
+          });
+        } catch (error) {
+          console.warn("Failed to process Zalopay data:", error);
+          Sentry.captureException(error);
+        }
+      }
+
+      return true;
+    } catch (e) {
+      Sentry.captureException(e);
+      return false;
+    }
+  }
+
   async enqueueMisaBackgroundJob(qrRecord) {
     const payload = {
       job_type: Misa.Constants.JOB_TYPE.CREATE_QR_VOUCHER,
@@ -392,7 +403,6 @@ export default class SepayTransactionService {
       try {
         const createdSepayTransaction = await service.saveToDb(message.body);
         if (createdSepayTransaction) {
-          await service.sendToLark(message.body, createdSepayTransaction);
           await service.sendToERP(message.body, createdSepayTransaction);
         }
       } catch (error) {
