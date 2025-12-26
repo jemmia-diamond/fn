@@ -46,7 +46,6 @@ model sepay_transaction {
   lark_record_id      String?   @db.VarChar(255)
   bank_transaction_name      String?   @db.VarChar(255)
   app_id              Int?
-  app_trans_id        String?   @db.VarChar(255)
   app_time            BigInt?
   app_user            String?   @db.VarChar(255)
   amount              BigInt?
