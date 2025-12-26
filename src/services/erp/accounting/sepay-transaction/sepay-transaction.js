@@ -8,6 +8,7 @@ import RecordService from "services/larksuite/docs/base/record/record";
 import HaravanAPI from "services/clients/haravan-client";
 import Misa from "services/misa";
 import { BadRequestException } from "src/exception/exceptions";
+import { TOPICS } from "services/erp/accounting/sepay-transaction/constants";
 
 dayjs.extend(utc);
 
@@ -325,56 +326,44 @@ export default class SepayTransactionService {
     try {
       const body = zalopayTransaction;
       const { data: dataStr } = body || {};
-
-      console.warn("Received Zalopay transaction webhook:", JSON.stringify(body, null, 2));
-
       if (dataStr) {
-        try {
-          const parsedData = JSON.parse(dataStr);
-          console.warn("Parsed Zalopay Data:", JSON.stringify(parsedData, null, 2));
+        const parsedData = JSON.parse(dataStr);
+        let embedDataJson = null;
+        let itemJson = null;
 
-          let embedDataJson = null;
-          let itemJson = null;
+        embedDataJson = parsedData.embed_data ? JSON.parse(parsedData.embed_data) : null;
+        itemJson = parsedData.item ? JSON.parse(parsedData.item) : null;
+        const createDto = {
+          id: parsedData.app_trans_id,
+          amount_in: String(parsedData.amount || 0),
+          transaction_date: parsedData.server_time ? dayjs(parsedData.server_time).format("YYYY-MM-DD HH:mm:ss") : null,
 
-          try {
-            embedDataJson = parsedData.embed_data ? JSON.parse(parsedData.embed_data) : null;
-          } catch (e) {
-            console.warn("Failed to parse embed_data", e);
+          app_id: parsedData.app_id,
+          app_time: parsedData.app_time ? BigInt(parsedData.app_time) : null,
+          app_user: parsedData.app_user,
+          embed_data: embedDataJson,
+          item: itemJson,
+          zp_trans_id: parsedData.zp_trans_id ? BigInt(parsedData.zp_trans_id) : null,
+          server_time: parsedData.server_time ? BigInt(parsedData.server_time) : null,
+          channel: parsedData.channel,
+          merchant_user_id: parsedData.merchant_user_id,
+          user_fee_amount: parsedData.user_fee_amount ? BigInt(parsedData.user_fee_amount) : null,
+          discount_amount: parsedData.discount_amount ? BigInt(parsedData.discount_amount) : null
+        };
+
+        const { id: _id, ...updateDto } = createDto;
+
+        return await this.db.sepay_transaction.upsert({
+          create: createDto,
+          update: updateDto,
+          where: {
+            id: parsedData.app_trans_id
           }
-
-          try {
-            itemJson = parsedData.item ? JSON.parse(parsedData.item) : null;
-          } catch (e) {
-            console.warn("Failed to parse item", e);
-          }
-
-          await this.db.sepay_transaction.create({
-            data: {
-              id: parsedData.app_trans_id,
-              app_id: parsedData.app_id,
-              app_time: parsedData.app_time,
-              app_user: parsedData.app_user,
-              amount: parsedData.amount,
-              embed_data: embedDataJson,
-              item: itemJson,
-              zp_trans_id: parsedData.zp_trans_id,
-              server_time: parsedData.server_time,
-              channel: parsedData.channel,
-              merchant_user_id: parsedData.merchant_user_id,
-              user_fee_amount: parsedData.user_fee_amount,
-              discount_amount: parsedData.discount_amount
-            }
-          });
-        } catch (error) {
-          console.warn("Failed to process Zalopay data:", error);
-          Sentry.captureException(error);
-        }
+        });
       }
-
-      return true;
     } catch (e) {
       Sentry.captureException(e);
-      return false;
+      return null;
     }
   }
 
@@ -394,7 +383,12 @@ export default class SepayTransactionService {
 
     for (const message of batch.messages) {
       try {
-        await service.processTransaction(message.body);
+        const body = message.body;
+        // Skip ZaloPay
+        if (body.topic === TOPICS.ZALOPAY) {
+          continue;
+        }
+        await service.processTransaction(body);
       } catch (error) {
         Sentry.captureException(error);
       }
@@ -408,13 +402,13 @@ export default class SepayTransactionService {
       try {
         const topic = message.body.topic;
         let createdSepayTransaction = null;
-        if (topic === "sepay") {
-          createdSepayTransaction = await service.saveToDb(message.body.data);
+        if (topic === TOPICS.SEPAY) {
+          createdSepayTransaction = await service.saveToDb(message.body);
         } else {
-          createdSepayTransaction = await service.createZalopayTransaction(message.body.data);
+          createdSepayTransaction = await service.createZalopayTransaction(message.body);
         }
-        if (createdSepayTransaction && topic === "sepay") {
-          await service.sendToERP(message.body.data, createdSepayTransaction);
+        if (createdSepayTransaction && topic === TOPICS.SEPAY) {
+          await service.sendToERP(message.body, createdSepayTransaction);
         }
       } catch (error) {
         Sentry.captureException(error);
