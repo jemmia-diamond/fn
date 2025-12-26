@@ -147,8 +147,8 @@ export default class SalesOrderService {
       try {
         const orderData = message.body;
         await salesOrderService.sendNotificationToLark(orderData, true);
-        await salesOrderService.syncHaravanFinancialStatus(orderData);
         await salesOrderService.updateSalesOrderPaidAmount(orderData.name);
+        await salesOrderService.syncHaravanFinancialStatus(orderData);
       } catch (error) {
         Sentry.captureException(error);
       }

@@ -20,6 +20,10 @@ export default class CashVoucherMappingService {
     const employee_code = v.haravan_order?.user?.misa_user?.employee_code || v.haravan_order?.user?.misa_user?.email;
     const employee_name = `${v.haravan_order?.user?.last_name} ${v.haravan_order?.user?.first_name}`;
 
+    if (!employee_code) {
+      throw new Error(`No employee code found for this order id: ${v.haravan_order?.id}`);
+    }
+
     // Customer's code, name and address
     const customerInfo = await CashVoucherMappingService.fetchCustomer(v, v.haravan_order, env);
     const customerCode = customerInfo?.customer_id?.toString();

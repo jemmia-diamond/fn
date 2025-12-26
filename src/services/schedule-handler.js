@@ -45,6 +45,7 @@ export default {
       await InventoryCMS.InventoryCheckLineService.syncInventoryCheckLineToDatabase(env);
       await DatabaseOperations.DatabaseFunctionService.runWorkplaceUpdateLastRfidScanTime(env);
       await WorkshopOrderServices.WorkshopOrderServices.cronJobSyncLarkToNocoDB(env);
+      await DatabaseOperations.MaterializedViewService.refresh3Hours(env);
       break;
     case "0 17 * * *": // 00:00
       await Larksuite.Contact.UserService.syncUsersToDatabase(env);
