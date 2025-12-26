@@ -34,12 +34,12 @@ export default class SepayTransactionService {
    * @returns {Promise<boolean>}
    */
   async processTransaction(sepayTransaction) {
-    const { content, transferAmount } = sepayTransaction;
-
-    const { orderNumber, orderDesc } = this.standardizeOrderNumber(content);
+    const { content, description, transferAmount } = sepayTransaction;
+    const { orderNumber, orderDesc } = this.standardizeOrderNumber(content, description);
 
     if (!orderNumber && !orderDesc) {
-      throw new Error("Order description not found");
+      Sentry.captureMessage("Order description not found");
+      return;
     }
 
     const isOrderLater = orderNumber === "ORDERLATER";
@@ -64,7 +64,7 @@ export default class SepayTransactionService {
         throw new Error("Bank Transaction not found in ERPNext");
       }
 
-      const linkPaymentEntryToBankTransactionResult = await this.linkPaymentEntryToBankTransaction({
+      const linkPaymentEntryToBankTransactionResult = await this.linkPaymentEntryToBankTransaction(qr, {
         paymentEntryName: qr.payment_entry_name,
         bankTransactionName: bankTransactionName
       });
@@ -113,13 +113,14 @@ export default class SepayTransactionService {
       });
     }
 
-    if (qr.transfer_status === "success" && !isOrderLater && qr.haravan_order_id) {
+    // Temporary for larkbase usage, we'll remove this block once we're all move over to erp
+    if (qr.transfer_status === "success" && !isOrderLater && qr.haravan_order_id && !qr.payment_entry_name) {
       await this.enqueueMisaBackgroundJob(qr);
     }
     return true;
   }
 
-  async linkPaymentEntryToBankTransaction({
+  async linkPaymentEntryToBankTransaction(qrRecord, {
     paymentEntryName,
     bankTransactionName
   }) {
@@ -136,6 +137,12 @@ export default class SepayTransactionService {
       );
 
       if (!isAlreadyLinked) {
+
+        await this.db.qrPaymentTransaction.update({
+          where: { id: qrRecord.id },
+          data: { transfer_status: "success" }
+        });
+
         // Assume we allocate the full unallocated amount or deposit if unallocated is not set/zero but it should be valid
         const amountToAllocate = bankTransaction.unallocated_amount > 0 ? bankTransaction.unallocated_amount : bankTransaction.deposit;
 
@@ -158,14 +165,16 @@ export default class SepayTransactionService {
     }
   }
 
-  standardizeOrderNumber(content) {
-    if (!content) {
+  standardizeOrderNumber(content, description) {
+    if (!content && !description) {
       return { orderNumber: null, orderDesc: null };
     }
     const pattern = /(?:SEVQR\s+)?(ORDER\w+(?:\s+\d+)?|ORDERLATER(?:\s+\d+)?)/;
-    const match = content.match(pattern);
+    let match = content.match(pattern);
+
     if (!match) {
-      return { orderNumber: null, orderDesc: null };
+      match = description.match(pattern);
+      if (!match) return { orderNumber: null, orderDesc: null };
     }
 
     const orderDesc = match[0];
@@ -188,7 +197,8 @@ export default class SepayTransactionService {
       reference_number: rawSepayTransaction.referenceCode,
       code: rawSepayTransaction.code,
       sub_account: rawSepayTransaction.subAccount,
-      bank_account_id: null
+      bank_account_id: null,
+      description: rawSepayTransaction.description
     };
   }
 
@@ -197,7 +207,7 @@ export default class SepayTransactionService {
 
     if (parseFloat(sepayTransaction.amount_in) < 0) return;
 
-    const { orderNumber, orderDesc } = this.standardizeOrderNumber(sepayTransaction.transaction_content);
+    const { orderNumber, orderDesc } = this.standardizeOrderNumber(sepayTransaction.transaction_content, sepayTransaction.description);
 
     const fields = {
       "Số Tiền Giao Dịch": Number(sepayTransaction.amount_in),
@@ -244,7 +254,7 @@ export default class SepayTransactionService {
 
       if (parseFloat(sepayTransaction.amount_in) < 0) return;
 
-      const { orderNumber, orderDesc } = this.standardizeOrderNumber(sepayTransaction.transaction_content);
+      const { orderNumber, orderDesc } = this.standardizeOrderNumber(sepayTransaction.transaction_content, sepayTransaction.description);
 
       if (existingTransaction) {
         const bank = sepayTransaction.bank_brand_name && await this.frappeClient.getList(
@@ -314,7 +324,8 @@ export default class SepayTransactionService {
       reference_number,
       code,
       sub_account,
-      bank_account_id
+      bank_account_id,
+      description
     } = sepayTransaction;
 
     const upsertedTransaction = await this.db.sepay_transaction.upsert({
@@ -331,6 +342,7 @@ export default class SepayTransactionService {
         code,
         sub_account,
         bank_account_id,
+        description,
         updated_at: new Date()
       },
       create: sepayTransaction
@@ -385,7 +397,6 @@ export default class SepayTransactionService {
       try {
         const createdSepayTransaction = await service.saveToDb(message.body);
         if (createdSepayTransaction) {
-          await service.sendToLark(message.body, createdSepayTransaction);
           await service.sendToERP(message.body, createdSepayTransaction);
         }
       } catch (error) {

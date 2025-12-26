@@ -26,7 +26,14 @@ function buildFilterString(jsonParams) {
     filterString += `AND fluorescence IN ('${fluorescence}')\n`;
   }
 
-  const discountedPriceExpression = "(CASE WHEN promotions ILIKE '%8%%' THEN ROUND(price * 0.92, 2) ELSE price END)";
+  const discountedPriceExpression = `
+    (
+        CASE
+          WHEN COALESCE(discount_info.max_discount, 0) > 0 THEN ROUND(d.price * (100 - discount_info.max_discount) / 100, 2)
+          ELSE d.price
+        END
+      )
+  `;
 
   if (jsonParams.price?.min) {
     filterString += `AND ${discountedPriceExpression} >= ${parseFloat(jsonParams.price.min)}\n`;
@@ -37,11 +44,11 @@ function buildFilterString(jsonParams) {
   }
 
   if (jsonParams.edge_size?.lower) {
-    filterString += `AND edge_size_2 >= ${parseFloat(jsonParams.edge_size.lower)}\n`;
+    filterString += `AND d.edge_size_2 >= ${parseFloat(jsonParams.edge_size.lower)}\n`;
   }
 
   if (jsonParams.edge_size?.upper) {
-    filterString += `AND edge_size_2 <= ${parseFloat(jsonParams.edge_size.upper)}\n`;
+    filterString += `AND d.edge_size_2 <= ${parseFloat(jsonParams.edge_size.upper)}\n`;
   }
 
   if (jsonParams.linked_collections && jsonParams.linked_collections.length > 0) {
@@ -50,9 +57,9 @@ function buildFilterString(jsonParams) {
       filterString += `
         AND NOT EXISTS (
           SELECT 1
-          FROM workplace._nc_m2m_diamonds_haravan_collect m
-          JOIN workplace.haravan_collections hc ON m.haravan_collections_id = hc.id
-          WHERE m.diamonds_id = d.id
+          FROM workplace.diamonds_haravan_collection m
+          JOIN workplace.haravan_collections hc ON m.haravan_collection_id = hc.id
+          WHERE m.diamond_id = d.id
             AND hc.title IN ('${collectionNames}')
             AND hc.is_excluded = true
         )
@@ -67,9 +74,9 @@ function buildFilterString(jsonParams) {
           OR
           EXISTS (
             SELECT 1
-            FROM workplace._nc_m2m_diamonds_haravan_collect m2
-            JOIN workplace.haravan_collections hc3 ON m2.haravan_collections_id = hc3.id
-            WHERE m2.diamonds_id = d.id
+            FROM workplace.diamonds_haravan_collection m2
+            JOIN workplace.haravan_collections hc3 ON m2.haravan_collection_id = hc3.id
+            WHERE m2.diamond_id = d.id
               AND hc3.title IN ('${collectionNames}')
               AND hc3.is_excluded = false
           )
@@ -88,13 +95,20 @@ function buildSortString(jsonParams) {
     const validColumns = ["price", "color", "clarity", "shape", "fluorescence"];
     if (validColumns.includes(column)) {
       if (column === "price") {
-        const discountedPriceExpression = "(CASE WHEN promotions ILIKE '%8%%' THEN ROUND(price * 0.92, 2) ELSE price END)";
+        const discountedPriceExpression = `
+          (
+                    CASE
+                      WHEN COALESCE(discount_info.max_discount, 0) > 0 THEN ROUND(d.price * (100 - discount_info.max_discount) / 100, 2)
+                      ELSE d.price
+                    END
+                  )
+        `;
         return `ORDER BY ${discountedPriceExpression} ${order}\n`;
       }
-      return `ORDER BY ${column} ${order}\n`;
+      return `ORDER BY d.${column} ${order}\n`;
     }
   }
-  return "ORDER BY variant_id DESC\n";
+  return "ORDER BY d.variant_id DESC\n";
 }
 
 function buildPaginationString(jsonParams) {
@@ -113,29 +127,44 @@ function buildPaginationString(jsonParams) {
 }
 
 export function buildGetDiamondsQuery(jsonParams) {
+  const EXCLUDED_COLLECTION_IDS = [25, 26, 27, 29];
+
   const filterString = buildFilterString(jsonParams);
   const sortString = buildSortString(jsonParams);
   const paginationString = buildPaginationString(jsonParams);
 
-  const availabilityFilter = `
-    AND EXISTS (
-      SELECT 1
-      FROM haravan.variants hv
-      WHERE hv.id = d.variant_id
-        AND hv.qty_available > 0
-        AND hv.title LIKE 'GIA%'
-    )
-    AND EXISTS (
-      SELECT 1
+  const availabilityJoin = `
+    JOIN haravan.variants hv ON hv.id = d.variant_id AND hv.qty_available > 0 AND hv.title LIKE 'GIA%'
+    JOIN (
+      SELECT hwi.variant_id
       FROM haravan.warehouse_inventories hwi
       JOIN haravan.warehouses hw ON hwi.loc_id = hw.id
-      WHERE hwi.variant_id = d.variant_id
-        AND hwi.qty_available > 0
-        AND hw.name IN (
-          '[HCM] Cửa Hàng HCM',
-          '[HN] Cửa Hàng HN',
-          '[CT] Cửa Hàng Cần Thơ'
-        )
+      WHERE hw.name IN (
+        '[HCM] Cửa Hàng HCM',
+        '[HN] Cửa Hàng HN',
+        '[CT] Cửa Hàng Cần Thơ'
+      )
+      GROUP BY hwi.variant_id
+      HAVING SUM(hwi.qty_available) > 0
+    ) inventory_check ON inventory_check.variant_id = d.variant_id
+  `;
+
+  const discountJoin = `
+    LEFT JOIN (
+      SELECT m.diamond_id, MAX(CAST(hc.discount_value AS NUMERIC)) as max_discount
+      FROM workplace.diamonds_haravan_collection m
+      JOIN workplace.haravan_collections hc ON m.haravan_collection_id = hc.id
+      WHERE hc.discount_type IS NOT NULL AND hc.discount_type <> ''
+      GROUP BY m.diamond_id
+    ) discount_info ON discount_info.diamond_id = d.id
+  `;
+
+  const excludedCollectionCondition = `
+    AND NOT EXISTS (
+      SELECT 1
+      FROM workplace.diamonds_haravan_collection dhc
+      WHERE dhc.diamond_id = d.id
+        AND dhc.haravan_collection_id IN (${EXCLUDED_COLLECTION_IDS.join(", ")})
     )
   `;
 
@@ -152,10 +181,12 @@ export function buildGetDiamondsQuery(jsonParams) {
       d.fluorescence,
       d.edge_size_1, d.edge_size_2,
       CAST(d.price AS DOUBLE PRECISION) as compare_at_price,
-      CAST(CASE
-        WHEN d.promotions ILIKE '%8%%' THEN ROUND(d.price * 0.92, 2)
-        ELSE d.price
-      END AS DOUBLE PRECISION) AS price,
+      CAST(
+        CASE
+          WHEN COALESCE(discount_info.max_discount, 0) > 0 THEN ROUND(d.price * (100 - discount_info.max_discount) / 100, 2)
+          ELSE d.price
+        END
+      AS DOUBLE PRECISION) AS price,
       CAST(d.final_discounted_price AS DOUBLE PRECISION) as final_discounted_price,
       p.handle,
       p.title,
@@ -173,10 +204,12 @@ export function buildGetDiamondsQuery(jsonParams) {
       ) AS images
     FROM workplace.diamonds d
     JOIN haravan.products p ON p.id = d.product_id
+    ${availabilityJoin}
+    ${discountJoin}
     WHERE 1 = 1
     AND jsonb_array_length(p.variants) = 1
-    ${availabilityFilter}
     ${filterString}
+    ${excludedCollectionCondition}
     ${sortString}
     ${paginationString}
   `;
@@ -185,9 +218,11 @@ export function buildGetDiamondsQuery(jsonParams) {
     SELECT COUNT(*) AS total
     FROM workplace.diamonds d
     JOIN haravan.products p ON p.id = d.product_id
+    ${availabilityJoin}
+    ${discountJoin}
     WHERE 1 = 1
     AND jsonb_array_length(p.variants) = 1
-    ${availabilityFilter}
+    ${excludedCollectionCondition}
     ${filterString}
   `;
 

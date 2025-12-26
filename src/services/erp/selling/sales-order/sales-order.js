@@ -15,6 +15,7 @@ import { fetchSalesOrdersFromERP, saveSalesOrdersToDatabase } from "src/services
 import { getRefOrderChain } from "services/ecommerce/order-tracking/queries/get-initial-order";
 import Larksuite from "services/larksuite";
 import { ERPR2StorageService } from "services/r2-object/erp/erp-r2-storage-service";
+import HaravanAPI from "services/clients/haravan-client";
 
 dayjs.extend(utc);
 
@@ -95,8 +96,7 @@ export default class SalesOrderService {
       await addressService.processHaravanAddress(address, customer);
     }
 
-    const paymentTransactions = haravanOrderData.transactions.filter(transaction => transaction.kind.toLowerCase() === "capture");
-    const paidAmount = paymentTransactions.reduce((total, transaction) => total + transaction.amount, 0);
+    const paymentTransactions = haravanOrderData.transactions.filter(transaction => ["capture", "authorization"].includes(transaction.kind.toLowerCase()));
 
     const mappedOrderData = {
       doctype: this.doctype,
@@ -110,18 +110,17 @@ export default class SalesOrderService {
       skip_delivery_note: 1,
       financial_status: this.financialStatusMapper[haravanOrderData.financial_status],
       fulfillment_status: this.fulfillmentStatusMapper[haravanOrderData.fulfillment_status],
+      fulfillment_completion_date: haravanOrderData.fulfillments.length && haravanOrderData.fulfillments[0].delivered_date ? dayjs(haravanOrderData.fulfillments[0].delivered_date).format("YYYY-MM-DD HH:mm:ss") : null,
       cancelled_status: this.cancelledStatusMapper[haravanOrderData.cancelled_status],
       carrier_status: haravanOrderData.fulfillments.length ? this.carrierStatusMapper[haravanOrderData.fulfillments[0].carrier_status_code] : this.carrierStatusMapper.notdelivered,
       transaction_date: dayjs(haravanOrderData.created_at).add(7, "hour").format("YYYY-MM-DD"),
       haravan_created_at: convertIsoToDatetime(haravanOrderData.created_at, "datetime"),
       total: haravanOrderData.total_line_items_price,
-      payment_records: haravanOrderData.transactions.filter(transaction => transaction.kind.toLowerCase() === "capture").map(this.mapPaymentRecordFields),
+      payment_records: paymentTransactions.map(this.mapPaymentRecordFields),
       contact_person: contact.name,
       customer_address: customerDefaultAdress.name,
       total_amount: haravanOrderData.total_price,
       grand_total: haravanOrderData.total_price,
-      paid_amount: paidAmount,
-      balance: haravanOrderData.total_price - paidAmount,
       real_order_date: await this.getRealOrderDate(haravanOrderData.id) || dayjs(haravanOrderData.created_at).add(7, "hour").format("YYYY-MM-DD"),
       ref_sales_orders: await this.mapRefSalesOrder(haravanOrderData.id)
     };
@@ -148,6 +147,8 @@ export default class SalesOrderService {
       try {
         const orderData = message.body;
         await salesOrderService.sendNotificationToLark(orderData, true);
+        await salesOrderService.updateSalesOrderPaidAmount(orderData.name);
+        await salesOrderService.syncHaravanFinancialStatus(orderData);
       } catch (error) {
         Sentry.captureException(error);
       }
@@ -228,7 +229,7 @@ export default class SalesOrderService {
   };
 
   async sendNotificationToLark(initialSalesOrderData, isUpdateMessage = false) {
-    let salesOrderData = initialSalesOrderData;
+    let salesOrderData = structuredClone(initialSalesOrderData);
 
     const larkClient = await LarksuiteService.createClientV2(this.env);
 
@@ -685,6 +686,116 @@ export default class SalesOrderService {
     } catch (e) {
       Sentry.captureException(e);
       return null;
+    }
+  }
+
+  async updateSalesOrderPaidAmount(salesOrderName) {
+    try {
+      const currentSalesOrder = await this.frappeClient.getDoc("Sales Order", salesOrderName);
+      if (!currentSalesOrder) return null;
+
+      // Calculate total from Payment Entries
+      const paymentEntries = await this.frappeClient.getList("Payment Entry", {
+        fields: ["name", "payment_type"],
+        filters: [
+          ["Payment Entry Reference", "reference_doctype", "=", "Sales Order"],
+          ["Payment Entry Reference", "reference_name", "=", salesOrderName],
+          ["docstatus", "<", 2],
+          ["payment_order_status", "=", "Success"]
+        ]
+      });
+
+      let paymentEntriesTotal = 0.0;
+      for (const entry of paymentEntries) {
+        const fullEntry = await this.frappeClient.getDoc("Payment Entry", entry.name);
+        if (fullEntry && fullEntry.references) {
+          const ref = fullEntry.references.find(r => r.reference_doctype === "Sales Order" && r.reference_name === salesOrderName);
+          if (ref) {
+            const allocated = parseFloat(ref.allocated_amount || 0);
+            if (entry.payment_type === "Pay") {
+              paymentEntriesTotal -= allocated;
+            } else {
+              paymentEntriesTotal += allocated;
+            }
+          }
+        }
+      }
+
+      // Calculate total from Sales Order Payment Records
+      const paymentRecords = (currentSalesOrder.payment_records || []).filter(r => ["capture", "authorization"].includes(r.kind));
+      const paymentRecordsTotal = paymentRecords.reduce((sum, record) => sum + parseFloat(record.amount || 0), 0);
+
+      // Logic to determine total_paid
+      const salesOrderGrandTotal = currentSalesOrder.grand_total;
+      const currentPaidAmount = currentSalesOrder.paid_amount;
+      const currentBalance = currentSalesOrder.balance;
+
+      let totalPaid = 0.0;
+
+      if (parseFloat(paymentRecordsTotal) >= parseFloat(salesOrderGrandTotal)) {
+        totalPaid = parseFloat(paymentRecordsTotal);
+      } else {
+        totalPaid = parseFloat(paymentEntriesTotal) + parseFloat(paymentRecordsTotal);
+      }
+
+      if (totalPaid >= parseFloat(salesOrderGrandTotal)) {
+        totalPaid = parseFloat(salesOrderGrandTotal);
+      }
+
+      const balance = parseFloat(salesOrderGrandTotal) - parseFloat(totalPaid);
+
+      // Update if changed
+      if (parseFloat(totalPaid) !== parseFloat(currentPaidAmount) || parseFloat(currentBalance) !== parseFloat(balance)) {
+        const updatedDoc = await this.frappeClient.update({
+          doctype: "Sales Order",
+          name: salesOrderName,
+          paid_amount: totalPaid,
+          balance: balance
+        });
+        console.warn(`Updated Sales Order ${salesOrderName}: Paid ${totalPaid}, Balance ${balance}`);
+        return updatedDoc;
+      }
+
+      return currentSalesOrder;
+    } catch (error) {
+      Sentry.captureException(error);
+      return null;
+    }
+  }
+
+  async syncHaravanFinancialStatus(salesOrderData) {
+    if (salesOrderData.grand_total === salesOrderData.paid_amount) {
+      const HRV_API_KEY = await this.env.HARAVAN_TOKEN_SECRET.get();
+      if (!HRV_API_KEY) {
+        return;
+      }
+      const haravanClient = new HaravanAPI(HRV_API_KEY);
+      try {
+        const response = await haravanClient.order.getOrder(salesOrderData.haravan_order_id);
+        const haravanOrder = response.order;
+
+        if (haravanOrder.financial_status === "paid") {
+          return;
+        }
+
+        const transactions = haravanOrder.transactions || [];
+
+        const paidAmount = transactions
+          .filter(t => ["capture", "authorization"].includes(t.kind?.toLowerCase()))
+          .reduce((total, t) => total + parseFloat(t.amount || 0), 0);
+
+        const remainingAmount = salesOrderData.grand_total - paidAmount;
+
+        if (remainingAmount > 0) {
+          await haravanClient.orderTransaction.createTransaction(salesOrderData.haravan_order_id, {
+            amount: remainingAmount,
+            kind: "capture",
+            gateway: "Thanh toán qua ERP"
+          });
+        }
+      } catch (error) {
+        Sentry.captureException(error);
+      }
     }
   }
 }

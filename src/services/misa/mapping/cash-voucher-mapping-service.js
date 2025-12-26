@@ -1,8 +1,9 @@
 import * as crypto from "crypto";
+import HaravanAPI from "services/clients/haravan-client";
 import { CREDIT_ACCOUNT_MAP, DEBIT_ACCOUNT_MAP, EXCHANGE_RATE, MANUAL_PAYMENT_CREDIT_MAP, MANUAL_PAYMENT_DEBIT_MAP, REASON_TYPES, SORT_ORDER, VOUCHER_REF_TYPES, VOUCHER_TYPES } from "services/misa/constant";
 
 export default class CashVoucherMappingService {
-  static transforManualToVoucher(v, bankMap, voucher_type = VOUCHER_TYPES.MANUAL_PAYMENT, ref_type = VOUCHER_REF_TYPES.MANUAL_PAYMENT, order_chain = null) {
+  static async transforManualToVoucher(v, bankMap, voucher_type = VOUCHER_TYPES.MANUAL_PAYMENT, ref_type = VOUCHER_REF_TYPES.MANUAL_PAYMENT, order_chain = null, env) {
     // Company credit and debit account
     // manual payment using "branch" field (branch is actually vietnamese province)
     const isManual = voucher_type === VOUCHER_TYPES.MANUAL_PAYMENT;
@@ -19,14 +20,19 @@ export default class CashVoucherMappingService {
     const employee_code = v.haravan_order?.user?.misa_user?.employee_code || v.haravan_order?.user?.misa_user?.email;
     const employee_name = `${v.haravan_order?.user?.last_name} ${v.haravan_order?.user?.first_name}`;
 
+    if (!employee_code) {
+      throw new Error(`No employee code found for this order id: ${v.haravan_order?.id}`);
+    }
+
     // Customer's code, name and address
-    const customerCode = v.haravan_order?.customer_id?.toString() || null;
-    const customerName = `${v.haravan_order?.customer_last_name} ${v.haravan_order?.customer_first_name}`;
-    const street1 = v.haravan_order?.customer_default_address_address1;
-    const street2 = v.haravan_order?.customer_default_address_address2;
-    const ward = v.haravan_order?.customer_default_address_ward;
-    const district = v.haravan_order?.customer_default_address_district;
-    const province = v.haravan_order?.customer_default_address_province;
+    const customerInfo = await CashVoucherMappingService.fetchCustomer(v, v.haravan_order, env);
+    const customerCode = customerInfo?.customer_id?.toString();
+    const customerName = `${customerInfo?.customer_last_name} ${customerInfo?.customer_first_name}`;
+    const street1 = customerInfo?.customer_default_address_address1;
+    const street2 = customerInfo?.customer_default_address_address2;
+    const ward = customerInfo?.customer_default_address_ward;
+    const district = customerInfo?.customer_default_address_district;
+    const province = customerInfo?.customer_default_address_province;
     const customerAddress = [street1, street2, ward, district, province].filter(Boolean).join(", ");
 
     // Bank name mapping
@@ -81,5 +87,27 @@ export default class CashVoucherMappingService {
     }
 
     return { misaVoucher, originalId: v.uuid, generatedGuid };
+  }
+
+  static async fetchCustomer(v, haravanOrder, env) {
+    if(haravanOrder && haravanOrder?.customer_id) return haravanOrder;
+
+    const accessToken = await env.HARAVAN_TOKEN_SECRET.get();
+    const haravanClient = new HaravanAPI(accessToken);
+    const haravanResult = await haravanClient.order.getOrder(v.haravan_order_id);
+    const customerData = haravanResult?.order?.customer;
+
+    if(!customerData) return null;
+
+    return {
+      customer_id: customerData.id,
+      customer_first_name: customerData.first_name,
+      customer_last_name: customerData.last_name,
+      customer_default_address_address1: customerData.default_address?.address1,
+      customer_default_address_address2: customerData.default_address?.address2,
+      customer_default_address_ward: customerData.default_address?.ward,
+      customer_default_address_district: customerData.default_address?.district,
+      customer_default_address_province: customerData.default_address?.province
+    };
   }
 }

@@ -20,6 +20,7 @@ export default class QrPaymentFetchingService {
         misa_synced: false,
         misa_sync_guid: null,
         misa_synced_at: null,
+        payment_entry_name: null,
         haravan_order_id: {
           not: null
         },
@@ -49,6 +50,7 @@ export default class QrPaymentFetchingService {
       haravan_order_id: true,
       misa_sync_guid: true,
       misa_synced_at: true,
+      payment_entry_name: true,
       haravan_order: {
         select: {
           id: true,

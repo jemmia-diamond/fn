@@ -137,6 +137,7 @@ model erpnextContact {
   database_updated_at         DateTime? @db.Timestamp(6)
 
   @@index([name])
+  @@index([pancake_conversation_id])
   @@map("contacts")
   @@schema("erpnext")
 }
@@ -238,6 +239,7 @@ model erpnextCustomer {
   @@index([customer_name])
   @@index([haravan_id])
   @@index([name])
+  @@index([lead_name])
   @@map("customers")
   @@schema("erpnext")
 }
@@ -382,6 +384,10 @@ model erpnextLead {
   database_updated_at    DateTime? @db.Timestamp(6)
 
   @@index([name])
+  @@index([purpose_lead])
+  @@index([budget_lead])
+  @@index([province])
+  @@index([region])
   @@map("leads")
   @@schema("erpnext")
 }

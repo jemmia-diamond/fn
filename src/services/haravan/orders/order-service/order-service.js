@@ -22,7 +22,7 @@ export default class OrderService {
 
   async invalidOrderNotification(order) {
     const jewelrySKULength = 21;
-    const jewelryVariants = order.line_items.filter(item => item.sku.toString().length === jewelrySKULength);
+    const jewelryVariants = order.line_items.filter(item => item.sku && item.sku.toString().length === jewelrySKULength);
     const negativeOrderedVariants = [];
     for (const jewelryVariant of jewelryVariants) {
       const productData = (await this.hrvClient.products.product.getProduct(jewelryVariant.product_id)).data.product;
@@ -151,17 +151,53 @@ export default class OrderService {
     }
   }
 
+  async upsertHaravanOrder(order) {
+    if (!order.id) return;
+    await this.db.order.upsert({
+      where: {
+        id: order.id
+      },
+      update: {
+        order_number: order.order_number,
+        ref_order_id: order.ref_order_id ? BigInt(order.ref_order_id) : null,
+        ref_order_number: order.ref_order_number,
+        created_at: order.created_at ? new Date(order.created_at) : null,
+        financial_status: order.financial_status,
+        order_processing_status: order.order_processing_status
+      },
+      create: {
+        uuid: crypto.randomUUID(),
+        id: order.id,
+        order_number: order.order_number,
+        ref_order_id: order.ref_order_id ? BigInt(order.ref_order_id) : null,
+        ref_order_number: order.ref_order_number,
+        created_at: order.created_at ? new Date(order.created_at) : null,
+        financial_status: order.financial_status,
+        order_processing_status: order.order_processing_status,
+        customer_id: order?.customer?.id,
+        customer_first_name: order?.customer?.first_name,
+        customer_last_name: order?.customer?.last_name,
+        customer_default_address_address1: order?.customer?.default_address.address1,
+        customer_default_address_address2: order?.customer?.default_address.address2,
+        customer_default_address_ward: order?.customer?.default_address.ward,
+        customer_default_address_district: order?.customer?.default_address.district,
+        customer_default_address_province: order?.customer?.default_address.province,
+        user_id: order?.user_id
+      }
+    });
+  }
+
   static async dequeueOrderQueue(batch, env) {
     const orderService = new OrderService(env);
     for (const message of batch.messages) {
       try {
         const data = message.body;
+        await orderService.upsertHaravanOrder(data);
         const haravan_topic = data.haravan_topic;
         if (haravan_topic === HARAVAN_TOPIC.CREATED) {
           await orderService.invalidOrderNotification(data, env);
           await orderService.syncRefTransactions(data);
         }
-        await orderService.syncOrderToLark(data, haravan_topic);
       }
       catch (error) {
         Sentry.captureException(error);

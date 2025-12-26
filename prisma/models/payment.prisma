@@ -20,6 +20,8 @@ model manualPaymentTransaction {
   misa_sync_error_msg String?
   misa_synced_at      DateTime? @db.Timestamp(6)
   haravan_order       Order? @relation(fields: [haravan_order_id], references: [id])
+  payment_entry_name  String?   @unique @db.VarChar(255)
+  gateway             String?   @db.VarChar(255)
 
   @@index([uuid])
   @@map("manual_payments")
@@ -43,6 +45,7 @@ model sepay_transaction {
   updated_at          DateTime? @default(now()) @db.Timestamp(6)
   lark_record_id      String?   @db.VarChar(255)
   bank_transaction_name      String?   @db.VarChar(255)
+  description                String?
 
   @@schema("payment")
 }

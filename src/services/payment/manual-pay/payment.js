@@ -118,15 +118,21 @@ export default class ManualPaymentService {
 
   /**
    * Creates a single manual payment transaction in the database.
+   * Supports both legacy Larkbase (lark_record_id) and new ERPNext (payment_entry_name) identifiers.
    * @param {object} data - The data for the new payment transaction, matching the Prisma model.
    * @returns {Promise<object|null>} The created payment transaction or null on error.
    */
   async createManualPayment(data) {
     try {
+      let whereClause;
+      if (data.payment_entry_name) {
+        whereClause = { payment_entry_name: data.payment_entry_name };
+      } else {
+        whereClause = { lark_record_id: data.lark_record_id };
+      }
+
       const newPayment = await this.db.manualPaymentTransaction.upsert({
-        where: {
-          lark_record_id: data.lark_record_id
-        },
+        where: whereClause,
         update: data,
         create: {
           ...data,
@@ -134,7 +140,8 @@ export default class ManualPaymentService {
         }
       });
 
-      if (newPayment.transfer_status === "Xác nhận" && newPayment.receive_date && newPayment.haravan_order_id) {
+      // Temporary for larkbase usage, we'll remove this block once we're all move over to erp
+      if (newPayment.transfer_status === "Xác nhận" && newPayment.receive_date && newPayment.haravan_order_id && !newPayment.payment_entry_name) {
         await this._enqueueMisaBackgroundJob(newPayment);
       }
 
@@ -162,7 +169,7 @@ export default class ManualPaymentService {
         return null;
       }
 
-      if (paymentBeforeUpdate.transfer_status === "Xác nhận") {
+      if (paymentBeforeUpdate.transfer_status === "Xác nhận" && !data.payment_entry_name) {
         const updateData = { ...data };
 
         delete updateData.transfer_status;
@@ -175,7 +182,8 @@ export default class ManualPaymentService {
           data: updateData
         });
 
-        if (data.receive_date && !paymentBeforeUpdate.receive_date && updatedPayment.haravan_order_id) {
+        // Temporary for larkbase usage, we'll remove this block once we're all move over to erp
+        if (data.receive_date && !paymentBeforeUpdate.receive_date && updatedPayment.haravan_order_id && !updatedPayment.payment_entry_name) {
           await this._enqueueMisaBackgroundJob(updatedPayment);
         }
 
@@ -188,6 +196,20 @@ export default class ManualPaymentService {
 
       delete dataForFirstUpdate.transfer_status;
 
+      const isOrderLater = dataForFirstUpdate.haravan_order_name === "Đơn hàng cọc";
+      if (!isOrderLater && !data.payment_entry_name) {
+        const orderExists = await this.db.order.findUnique({
+          where: { id: dataForFirstUpdate.haravan_order_id }
+        });
+        if (!orderExists) {
+          throw new BadRequestException(`Haravan Order ID ${dataForFirstUpdate.haravan_order_id} does not exist.`);
+        }
+      }
+
+      if (isOrderLater && !data.payment_entry_name) {
+        delete dataForFirstUpdate.haravan_order_id;
+      }
+
       // Update other fields
       const updatedPayment = await this.db.manualPaymentTransaction.update({
         where: { uuid: uuid },
@@ -199,15 +221,6 @@ export default class ManualPaymentService {
         paymentBeforeUpdate.transfer_status !== "Xác nhận";
 
       if (shouldCreateTransaction) {
-        if (updatedPayment.haravan_order_name === "Đơn hàng cọc") {
-          throw new BadRequestException("Deposit order cannot be mapped!");
-        }
-
-        await this.createManualTransactionsToHaravanOrder(
-          updatedPayment.haravan_order_id,
-          updatedPayment.transfer_amount,
-          updatedPayment.payment_type
-        );
         const finalUpdatedPayment = await this.db.manualPaymentTransaction.update({
           where: { uuid: uuid },
           data: {
@@ -215,7 +228,8 @@ export default class ManualPaymentService {
           }
         });
 
-        if (finalUpdatedPayment.receive_date && finalUpdatedPayment.haravan_order_id) {
+        // Temporary for larkbase usage, we'll remove this block once we're all move over to erp
+        if (finalUpdatedPayment.receive_date && finalUpdatedPayment.haravan_order_id && !finalUpdatedPayment.payment_entry_name) {
           await this._enqueueMisaBackgroundJob(finalUpdatedPayment);
         }
 
