@@ -43,6 +43,8 @@ export default class CustomerCreator {
         : `Khách hàng tạo bởi ${created_by} từ ERP`;
 
     const phoneNumber = customerData.phone;
+    const birth_date = customerData?.birthday;
+    const contact_email = customerData?.email;
 
     const customerPayload = {
       branch_id: DEFAULT_BRANCH_ID,
@@ -61,6 +63,8 @@ export default class CustomerCreator {
       created_by,
       description,
       address,
+      birth_date,
+      contact_email,
       State: Constants.STATE.ADD
     };
 
