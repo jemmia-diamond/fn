@@ -406,9 +406,15 @@ export default class SepayTransactionService {
 
     for (const message of batch.messages) {
       try {
-        const createdSepayTransaction = await service.saveToDb(message.body);
-        if (createdSepayTransaction) {
-          await service.sendToERP(message.body, createdSepayTransaction);
+        const topic = message.body.topic;
+        let createdSepayTransaction = null;
+        if (topic === "sepay") {
+          createdSepayTransaction = await service.saveToDb(message.body.data);
+        } else {
+          createdSepayTransaction = await service.createZalopayTransaction(message.body.data);
+        }
+        if (createdSepayTransaction && topic === "sepay") {
+          await service.sendToERP(message.body.data, createdSepayTransaction);
         }
       } catch (error) {
         Sentry.captureException(error);
