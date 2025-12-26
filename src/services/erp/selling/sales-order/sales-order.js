@@ -694,7 +694,40 @@ export default class SalesOrderService {
       const currentSalesOrder = await this.frappeClient.getDoc("Sales Order", salesOrderName);
       if (!currentSalesOrder) return null;
 
-      // Calculate total from Payment Entries
+      const relatedOrderNames = await this.getAllRelatedSalesOrders(salesOrderName);
+
+      // Calculate group grand total
+      let groupGrandTotal = 0;
+      if (currentSalesOrder.is_split_order && currentSalesOrder.split_order_group) {
+        const splitOrders = await this.frappeClient.getList("Sales Order", {
+          filters: [
+            ["split_order_group", "=", currentSalesOrder.split_order_group],
+            ["is_split_order", "=", 1],
+            ["cancelled_status", "=", "Uncancelled"]
+          ],
+          fields: ["name", "grand_total"]
+        });
+        groupGrandTotal = splitOrders.reduce((sum, order) => sum + (order.grand_total || 0), 0);
+      } else {
+        groupGrandTotal = currentSalesOrder.grand_total;
+      }
+
+      // Calculate group payment total
+      const groupPaymentTotal = await this.calculateGroupPaymentTotal(relatedOrderNames);
+      if (groupPaymentTotal >= groupGrandTotal) {
+        if (currentSalesOrder.paid_amount !== currentSalesOrder.grand_total) {
+          const updatedDoc = await this.frappeClient.update({
+            doctype: "Sales Order",
+            name: salesOrderName,
+            paid_amount: currentSalesOrder.grand_total,
+            balance: 0
+          });
+          return updatedDoc;
+        }
+        return currentSalesOrder;
+      }
+
+      // Standard Payment Logic
       const paymentEntries = await this.frappeClient.getList("Payment Entry", {
         fields: ["name", "payment_type"],
         filters: [
@@ -797,5 +830,113 @@ export default class SalesOrderService {
         Sentry.captureException(error);
       }
     }
+  }
+
+  async getAllRelatedSalesOrders(initialOrderName) {
+    const relatedOrders = new Set([initialOrderName]);
+    const initialOrder = await this.frappeClient.getDoc("Sales Order", initialOrderName);
+
+    if (!initialOrder) return [];
+
+    if (initialOrder.is_split_order && initialOrder.split_order_group) {
+      const groupOrders = await this.frappeClient.getList("Sales Order", {
+        filters: [
+          ["split_order_group", "=", initialOrder.split_order_group],
+          ["is_split_order", "=", 1]
+        ],
+        fields: ["name"]
+      });
+      groupOrders.forEach(o => relatedOrders.add(o.name));
+    }
+
+    const toVisit = Array.from(relatedOrders);
+    const visited = new Set(relatedOrders);
+
+    while (toVisit.length > 0) {
+      const currentSoName = toVisit.pop();
+      let currentOrderDoc = null;
+      if (currentSoName === initialOrderName) {
+        currentOrderDoc = initialOrder;
+      } else {
+        try {
+          currentOrderDoc = await this.frappeClient.getDoc("Sales Order", currentSoName);
+        } catch (e) {
+          console.warn(`Could not fetch Sales Order ${currentSoName} for traversal`, e);
+          continue;
+        }
+      }
+
+      if (currentOrderDoc && currentOrderDoc.ref_sales_orders) {
+        for (const ref of currentOrderDoc.ref_sales_orders) {
+          if (ref.sales_order && !visited.has(ref.sales_order)) {
+            visited.add(ref.sales_order);
+            toVisit.push(ref.sales_order);
+            relatedOrders.add(ref.sales_order);
+          }
+        }
+      }
+
+      const refsUp = await this.frappeClient.getList("Sales Order", {
+        filters: [["Sales Order Reference", "sales_order", "=", currentSoName]],
+        fields: ["name"]
+      });
+
+      for (const parentOrder of refsUp) {
+        if (parentOrder.name && !visited.has(parentOrder.name)) {
+          visited.add(parentOrder.name);
+          toVisit.push(parentOrder.name);
+          relatedOrders.add(parentOrder.name);
+        }
+      }
+    }
+
+    return Array.from(relatedOrders);
+  }
+
+  async calculateGroupPaymentTotal(relatedOrderNames) {
+    if (!relatedOrderNames || relatedOrderNames.length === 0) return 0;
+
+    const paymentEntries = await this.frappeClient.getList("Payment Entry", {
+      filters: [
+        ["Payment Entry Reference", "reference_doctype", "=", "Sales Order"],
+        ["Payment Entry Reference", "reference_name", "in", relatedOrderNames],
+        ["docstatus", "<", 2],
+        ["payment_order_status", "=", "Success"]
+      ],
+      fields: ["name", "payment_type"]
+    });
+
+    if (!paymentEntries || paymentEntries.length === 0) return 0;
+
+    let totalAllocated = 0;
+    const processedPeIds = new Set();
+
+    for (const peStub of paymentEntries) {
+      if (processedPeIds.has(peStub.name)) continue;
+      processedPeIds.add(peStub.name);
+
+      try {
+        const fullPe = await this.frappeClient.getDoc("Payment Entry", peStub.name);
+        if (fullPe && fullPe.references) {
+          const relevantRefs = fullPe.references.filter(r =>
+            r.reference_doctype === "Sales Order" &&
+            relatedOrderNames.includes(r.reference_name)
+          );
+
+          for (const ref of relevantRefs) {
+            const amount = parseFloat(ref.allocated_amount || 0);
+            if (fullPe.payment_type === "Pay") {
+              totalAllocated -= amount;
+            } else {
+              totalAllocated += amount;
+            }
+          }
+        }
+      } catch (e) {
+        console.warn(`Could not fetch Payment Entry ${peStub.name}`, e);
+      }
+    }
+
+    return totalAllocated;
   }
 }
