@@ -33,12 +33,13 @@ export default class QrTransactionService {
 
     const journalNote = await Misa.Utils.getJournalNote(this.db, qrTransaction);
 
-    const { misaVoucher, originalId, generatedGuid } = VoucherMappingService.transformQrToVoucher(
+    const { misaVoucher, originalId, generatedGuid } = await VoucherMappingService.transformQrToVoucher(
       qrTransaction,
       bankMap,
       VOUCHER_TYPES.QR_PAYMENT,
       VOUCHER_REF_TYPES.QR_PAYMENT,
-      journalNote
+      journalNote,
+      this.env
     );
 
     const payload = {

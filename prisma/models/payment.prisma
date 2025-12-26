@@ -57,6 +57,7 @@ model sepay_transaction {
   merchant_user_id    String?   @db.VarChar(255)
   user_fee_amount     BigInt?
   discount_amount     BigInt?
+  description                String?
 
   @@schema("payment")
 }

@@ -3,6 +3,16 @@ import { WorkplaceClient } from "services/clients/workplace-client";
 import { HARAVAN_TOPIC } from "services/ecommerce/enum";
 import { SKU_LENGTH } from "services/haravan/products/product-variant/constant";
 
+const EXCLUDED_COLLECTION_TITLES = [
+  "Lotus Essence",
+  "Lotus Brilliance",
+  "Lotus Elegance",
+  "Sen Quý Hiển",
+  "Vũ Khúc Thiên Phượng",
+  "BRILLIANCE GLORY",
+  "Ngũ Phúc"
+];
+
 export default class AutoAddToDiscountProgramService {
   constructor(env) {
     this.env = env;
@@ -105,6 +115,30 @@ export default class AutoAddToDiscountProgramService {
 
       if (!product) {
         return;
+      }
+
+      if (product.design_id) {
+        try {
+          const designQuery = await workplaceClient.designs.list({
+            where: `(id,eq,${product.design_id})`,
+            limit: 1
+          });
+          const design = designQuery.list?.[0];
+
+          if (design && design.collections_id) {
+            const collectionQuery = await workplaceClient.collections.list({
+              where: `(id,eq,${design.collections_id})`,
+              limit: 1
+            });
+            const collection = collectionQuery.list?.[0];
+
+            if (collection && EXCLUDED_COLLECTION_TITLES.includes(collection.collection_name)) {
+              return;
+            }
+          }
+        } catch (error) {
+          Sentry.captureException(error, "addToJewelryCollection");
+        }
       }
 
       const JEWELRY_COLLECTION_ID = this.env.DEFAULT_HARAVAN_JEWELRY_DISCOUNT_COLLECTION_ID;
