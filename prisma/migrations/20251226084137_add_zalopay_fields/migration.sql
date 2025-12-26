@@ -1,8 +1,6 @@
 -- AlterTable
-ALTER TABLE "payment"."sepay_transaction" ADD COLUMN     "amount" BIGINT,
-ADD COLUMN     "app_id" INTEGER,
+ALTER TABLE "payment"."sepay_transaction" ADD COLUMN     "app_id" INTEGER,
 ADD COLUMN     "app_time" BIGINT,
-ADD COLUMN     "app_trans_id" VARCHAR(255),
 ADD COLUMN     "app_user" VARCHAR(255),
 ADD COLUMN     "channel" INTEGER,
 ADD COLUMN     "discount_amount" BIGINT,

@@ -127,6 +127,8 @@ function buildPaginationString(jsonParams) {
 }
 
 export function buildGetDiamondsQuery(jsonParams) {
+  const EXCLUDED_COLLECTION_IDS = [25, 26, 27, 29];
+
   const filterString = buildFilterString(jsonParams);
   const sortString = buildSortString(jsonParams);
   const paginationString = buildPaginationString(jsonParams);
@@ -155,6 +157,15 @@ export function buildGetDiamondsQuery(jsonParams) {
       WHERE hc.discount_type IS NOT NULL AND hc.discount_type <> ''
       GROUP BY m.diamond_id
     ) discount_info ON discount_info.diamond_id = d.id
+  `;
+
+  const excludedCollectionCondition = `
+    AND NOT EXISTS (
+      SELECT 1
+      FROM workplace.diamonds_haravan_collection dhc
+      WHERE dhc.diamond_id = d.id
+        AND dhc.haravan_collection_id IN (${EXCLUDED_COLLECTION_IDS.join(", ")})
+    )
   `;
 
   const dataSql = `
@@ -198,6 +209,7 @@ export function buildGetDiamondsQuery(jsonParams) {
     WHERE 1 = 1
     AND jsonb_array_length(p.variants) = 1
     ${filterString}
+    ${excludedCollectionCondition}
     ${sortString}
     ${paginationString}
   `;
@@ -210,6 +222,7 @@ export function buildGetDiamondsQuery(jsonParams) {
     ${discountJoin}
     WHERE 1 = 1
     AND jsonb_array_length(p.variants) = 1
+    ${excludedCollectionCondition}
     ${filterString}
   `;
 

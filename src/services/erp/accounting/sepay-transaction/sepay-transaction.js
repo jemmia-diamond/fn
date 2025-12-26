@@ -34,12 +34,12 @@ export default class SepayTransactionService {
    * @returns {Promise<boolean>}
    */
   async processTransaction(sepayTransaction) {
-    const { content, transferAmount } = sepayTransaction;
-
-    const { orderNumber, orderDesc } = this.standardizeOrderNumber(content);
+    const { content, description, transferAmount } = sepayTransaction;
+    const { orderNumber, orderDesc } = this.standardizeOrderNumber(content, description);
 
     if (!orderNumber && !orderDesc) {
-      throw new Error("Order description not found");
+      Sentry.captureMessage("Order description not found");
+      return;
     }
 
     const isOrderLater = orderNumber === "ORDERLATER";
@@ -165,14 +165,16 @@ export default class SepayTransactionService {
     }
   }
 
-  standardizeOrderNumber(content) {
-    if (!content) {
+  standardizeOrderNumber(content, description) {
+    if (!content && !description) {
       return { orderNumber: null, orderDesc: null };
     }
     const pattern = /(?:SEVQR\s+)?(ORDER\w+(?:\s+\d+)?|ORDERLATER(?:\s+\d+)?)/;
-    const match = content.match(pattern);
+    let match = content.match(pattern);
+
     if (!match) {
-      return { orderNumber: null, orderDesc: null };
+      match = description.match(pattern);
+      if (!match) return { orderNumber: null, orderDesc: null };
     }
 
     const orderDesc = match[0];
@@ -195,7 +197,8 @@ export default class SepayTransactionService {
       reference_number: rawSepayTransaction.referenceCode,
       code: rawSepayTransaction.code,
       sub_account: rawSepayTransaction.subAccount,
-      bank_account_id: null
+      bank_account_id: null,
+      description: rawSepayTransaction.description
     };
   }
 
@@ -205,7 +208,7 @@ export default class SepayTransactionService {
 
       if (parseFloat(sepayTransaction.amount_in) < 0) return;
 
-      const { orderNumber, orderDesc } = this.standardizeOrderNumber(sepayTransaction.transaction_content);
+      const { orderNumber, orderDesc } = this.standardizeOrderNumber(sepayTransaction.transaction_content, sepayTransaction.description);
 
       if (existingTransaction) {
         const bank = sepayTransaction.bank_brand_name && await this.frappeClient.getList(
@@ -275,7 +278,8 @@ export default class SepayTransactionService {
       reference_number,
       code,
       sub_account,
-      bank_account_id
+      bank_account_id,
+      description
     } = sepayTransaction;
 
     const upsertedTransaction = await this.db.sepay_transaction.upsert({
@@ -292,6 +296,7 @@ export default class SepayTransactionService {
         code,
         sub_account,
         bank_account_id,
+        description,
         updated_at: new Date()
       },
       create: sepayTransaction

@@ -173,7 +173,16 @@ export default class OrderService {
         ref_order_number: order.ref_order_number,
         created_at: order.created_at ? new Date(order.created_at) : null,
         financial_status: order.financial_status,
-        order_processing_status: order.order_processing_status
+        order_processing_status: order.order_processing_status,
+        customer_id: order?.customer?.id,
+        customer_first_name: order?.customer?.first_name,
+        customer_last_name: order?.customer?.last_name,
+        customer_default_address_address1: order?.customer?.default_address.address1,
+        customer_default_address_address2: order?.customer?.default_address.address2,
+        customer_default_address_ward: order?.customer?.default_address.ward,
+        customer_default_address_district: order?.customer?.default_address.district,
+        customer_default_address_province: order?.customer?.default_address.province,
+        user_id: order?.user_id
       }
     });
   }
@@ -189,7 +198,6 @@ export default class OrderService {
           await orderService.invalidOrderNotification(data, env);
           await orderService.syncRefTransactions(data);
         }
-        await orderService.syncOrderToLark(data, haravan_topic);
       }
       catch (error) {
         Sentry.captureException(error);

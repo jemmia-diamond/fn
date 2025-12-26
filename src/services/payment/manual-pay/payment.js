@@ -169,7 +169,7 @@ export default class ManualPaymentService {
         return null;
       }
 
-      if (paymentBeforeUpdate.transfer_status === "Xác nhận") {
+      if (paymentBeforeUpdate.transfer_status === "Xác nhận" && !data.payment_entry_name) {
         const updateData = { ...data };
 
         delete updateData.transfer_status;
@@ -197,7 +197,7 @@ export default class ManualPaymentService {
       delete dataForFirstUpdate.transfer_status;
 
       const isOrderLater = dataForFirstUpdate.haravan_order_name === "Đơn hàng cọc";
-      if (!isOrderLater) {
+      if (!isOrderLater && !data.payment_entry_name) {
         const orderExists = await this.db.order.findUnique({
           where: { id: dataForFirstUpdate.haravan_order_id }
         });
@@ -206,7 +206,7 @@ export default class ManualPaymentService {
         }
       }
 
-      if (isOrderLater) {
+      if (isOrderLater && !data.payment_entry_name) {
         delete dataForFirstUpdate.haravan_order_id;
       }
 
@@ -221,15 +221,6 @@ export default class ManualPaymentService {
         paymentBeforeUpdate.transfer_status !== "Xác nhận";
 
       if (shouldCreateTransaction) {
-        if (updatedPayment.haravan_order_name === "Đơn hàng cọc") {
-          throw new BadRequestException("Deposit order cannot be mapped!");
-        }
-
-        await this.createManualTransactionsToHaravanOrder(
-          updatedPayment.haravan_order_id,
-          updatedPayment.transfer_amount,
-          updatedPayment.payment_type
-        );
         const finalUpdatedPayment = await this.db.manualPaymentTransaction.update({
           where: { uuid: uuid },
           data: {
