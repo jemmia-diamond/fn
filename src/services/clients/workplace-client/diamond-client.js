@@ -8,4 +8,8 @@ export default class DiamondClient extends BaseWorkplaceClient {
   async get(id) {
     return await this.getById(id);
   }
+
+  async list(params) {
+    return await super.list(params);
+  }
 }

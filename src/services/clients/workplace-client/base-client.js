@@ -30,5 +30,9 @@ export default class BaseWorkplaceClient {
   async bulkUpdate(records) {
     return await this.api.dbTableRow.bulkUpdate("noco", this.baseId, this.tableName, records);
   }
+
+  async deleteMany(records) {
+    return await this.api.dbTableRow.bulkDelete("noco", this.baseId, this.tableName, records);
+  }
 }
 
