@@ -698,33 +698,46 @@ export default class SalesOrderService {
 
       // Calculate group grand total
       let groupGrandTotal = 0;
+      let splitOrders = [];
       if (currentSalesOrder.is_split_order && currentSalesOrder.split_order_group) {
-        const splitOrders = await this.frappeClient.getList("Sales Order", {
+        splitOrders = await this.frappeClient.getList("Sales Order", {
           filters: [
             ["split_order_group", "=", currentSalesOrder.split_order_group],
             ["is_split_order", "=", 1],
             ["cancelled_status", "=", "Uncancelled"]
           ],
-          fields: ["name", "grand_total"]
+          fields: ["name", "grand_total", "paid_amount"]
         });
-        groupGrandTotal = splitOrders.reduce((sum, order) => sum + (order.grand_total || 0), 0);
+        groupGrandTotal = splitOrders.reduce((sum, order) => sum + parseFloat(order.grand_total || 0), 0);
       } else {
-        groupGrandTotal = currentSalesOrder.grand_total;
+        groupGrandTotal = parseFloat(currentSalesOrder.grand_total || 0);
       }
 
       // Calculate group payment total
       const groupPaymentTotal = await this.calculateGroupPaymentTotal(relatedOrderNames);
-      if (groupPaymentTotal >= groupGrandTotal) {
-        if (currentSalesOrder.paid_amount !== currentSalesOrder.grand_total) {
-          const updatedDoc = await this.frappeClient.update({
-            doctype: "Sales Order",
-            name: salesOrderName,
-            paid_amount: currentSalesOrder.grand_total,
-            balance: 0
-          });
-          return updatedDoc;
+      if (groupPaymentTotal === groupGrandTotal) {
+        const targetOrders = (splitOrders && splitOrders.length > 0) ? splitOrders : [{ name: salesOrderName, grand_total: currentSalesOrder.grand_total }];
+        let updatedCurrentDoc = currentSalesOrder;
+
+        for (const order of targetOrders) {
+          const doc = (order.name === salesOrderName) ? currentSalesOrder : order;
+          const docPaid = parseFloat(doc.paid_amount || 0);
+          const docTotal = parseFloat(doc.grand_total || 0);
+
+          if (docPaid !== docTotal) {
+            const updated = await this.frappeClient.update({
+              doctype: "Sales Order",
+              name: doc.name,
+              paid_amount: docTotal,
+              balance: 0
+            });
+
+            if (order.name === salesOrderName) {
+              updatedCurrentDoc = updated;
+            }
+          }
         }
-        return currentSalesOrder;
+        return updatedCurrentDoc;
       }
 
       // Standard Payment Logic
