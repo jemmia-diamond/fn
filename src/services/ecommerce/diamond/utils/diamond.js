@@ -134,7 +134,7 @@ export function buildGetDiamondsQuery(jsonParams) {
   const paginationString = buildPaginationString(jsonParams);
 
   const availabilityJoin = `
-    JOIN haravan.variants hv ON hv.id = d.variant_id AND hv.qty_available > 0 AND hv.title LIKE 'GIA%'
+    JOIN haravan.variants hv ON hv.id = d.variant_id AND hv.qty_available > 0 AND hv.title LIKE 'GIA%' AND hv.published_scope IN ('web', 'global')
     JOIN (
       SELECT hwi.variant_id
       FROM haravan.warehouse_inventories hwi
@@ -203,7 +203,7 @@ export function buildGetDiamondsQuery(jsonParams) {
           )
       ) AS images
     FROM workplace.diamonds d
-    JOIN haravan.products p ON p.id = d.product_id
+    JOIN haravan.products p ON p.id = d.product_id AND p.published_scope IN ('web', 'global')
     ${availabilityJoin}
     ${discountJoin}
     WHERE 1 = 1
@@ -217,7 +217,7 @@ export function buildGetDiamondsQuery(jsonParams) {
   const countSql = `
     SELECT COUNT(*) AS total
     FROM workplace.diamonds d
-    JOIN haravan.products p ON p.id = d.product_id
+    JOIN haravan.products p ON p.id = d.product_id AND p.published_scope IN ('web', 'global')
     ${availabilityJoin}
     ${discountJoin}
     WHERE 1 = 1
