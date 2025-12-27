@@ -8,6 +8,7 @@ import RecordService from "services/larksuite/docs/base/record/record";
 import HaravanAPI from "services/clients/haravan-client";
 import Misa from "services/misa";
 import { BadRequestException } from "src/exception/exceptions";
+import { SEPAY_WEBHOOK_TOPICS } from "services/erp/accounting/sepay-transaction/constants";
 
 dayjs.extend(utc);
 
@@ -202,52 +203,6 @@ export default class SepayTransactionService {
     };
   }
 
-  async sendToLark(rawSepayTransaction, existingTransaction) {
-    const sepayTransaction = this.mapRawSepayTransactionToPrisma(rawSepayTransaction);
-
-    if (parseFloat(sepayTransaction.amount_in) < 0) return;
-
-    const { orderNumber, orderDesc } = this.standardizeOrderNumber(sepayTransaction.transaction_content, sepayTransaction.description);
-
-    const fields = {
-      "Số Tiền Giao Dịch": Number(sepayTransaction.amount_in),
-      "Sepay - Nội dung giao dịch": sepayTransaction.transaction_content,
-      "Sepay - ID Giao Dịch": sepayTransaction.id,
-      "Sepay - Mã Đơn Từ Giao Dịch": orderNumber,
-      "Sepay - Nội Dung Đơn Từ Giao Dịch": orderDesc,
-      "Ngày Nhận Tiền": dayjs(sepayTransaction.transaction_date, "YYYY-MM-DD HH:mm:ss").valueOf(),
-      "Ngân Hàng": sepayTransaction.bank_brand_name,
-      "Số Tài Khoản": sepayTransaction.account_number
-    };
-
-    const larkParams = {
-      env: this.env,
-      appToken: TABLES.SEPAY_TRANSACTION.app_token,
-      tableId: TABLES.SEPAY_TRANSACTION.table_id,
-      userIdType: "open_id"
-    };
-
-    let upsertedLarkRecord = null;
-    if (existingTransaction && existingTransaction.lark_record_id) {
-      upsertedLarkRecord = await RecordService.updateLarksuiteRecord({
-        ...larkParams,
-        recordId: existingTransaction.lark_record_id,
-        fields
-      });
-    } else {
-      upsertedLarkRecord = await RecordService.createLarksuiteRecord({
-        ...larkParams,
-        fields
-      });
-    }
-    if (upsertedLarkRecord && upsertedLarkRecord.id) {
-      await this.db.sepay_transaction.update({
-        where: { id: existingTransaction.id },
-        data: { lark_record_id: upsertedLarkRecord.id }
-      });
-    }
-  }
-
   async sendToERP(rawSepayTransaction, existingTransaction) {
     try {
       const sepayTransaction = this.mapRawSepayTransactionToPrisma(rawSepayTransaction);
@@ -367,6 +322,51 @@ export default class SepayTransactionService {
     });
   }
 
+  async createZalopayTransaction(zalopayTransaction) {
+    try {
+      const body = zalopayTransaction;
+      const { data: dataStr } = body || {};
+      if (dataStr) {
+        const parsedData = JSON.parse(dataStr);
+        let embedDataJson = null;
+        let itemJson = null;
+
+        embedDataJson = parsedData.embed_data ? JSON.parse(parsedData.embed_data) : null;
+        itemJson = parsedData.item ? JSON.parse(parsedData.item) : null;
+        const createDto = {
+          id: parsedData.app_trans_id,
+          amount_in: String(parsedData.amount || 0),
+          transaction_date: parsedData.server_time ? dayjs(parsedData.server_time).format("YYYY-MM-DD HH:mm:ss") : null,
+
+          app_id: parsedData.app_id,
+          app_time: parsedData.app_time ? BigInt(parsedData.app_time) : null,
+          app_user: parsedData.app_user,
+          embed_data: embedDataJson,
+          item: itemJson,
+          zp_trans_id: parsedData.zp_trans_id ? BigInt(parsedData.zp_trans_id) : null,
+          server_time: parsedData.server_time ? BigInt(parsedData.server_time) : null,
+          channel: parsedData.channel,
+          merchant_user_id: parsedData.merchant_user_id,
+          user_fee_amount: parsedData.user_fee_amount ? BigInt(parsedData.user_fee_amount) : null,
+          discount_amount: parsedData.discount_amount ? BigInt(parsedData.discount_amount) : null
+        };
+
+        const { id: _id, ...updateDto } = createDto;
+
+        return await this.db.sepay_transaction.upsert({
+          create: createDto,
+          update: updateDto,
+          where: {
+            id: parsedData.app_trans_id
+          }
+        });
+      }
+    } catch (e) {
+      Sentry.captureException(e);
+      return null;
+    }
+  }
+
   async enqueueMisaBackgroundJob(qrRecord) {
     const payload = {
       job_type: Misa.Constants.JOB_TYPE.CREATE_QR_VOUCHER,
@@ -383,7 +383,12 @@ export default class SepayTransactionService {
 
     for (const message of batch.messages) {
       try {
-        await service.processTransaction(message.body);
+        const body = message.body;
+        // Skip ZaloPay
+        if (body.topic === SEPAY_WEBHOOK_TOPICS.ZALOPAY) {
+          continue;
+        }
+        await service.processTransaction(body);
       } catch (error) {
         Sentry.captureException(error);
       }
@@ -395,8 +400,14 @@ export default class SepayTransactionService {
 
     for (const message of batch.messages) {
       try {
-        const createdSepayTransaction = await service.saveToDb(message.body);
-        if (createdSepayTransaction) {
+        const topic = message.body.topic;
+        let createdSepayTransaction = null;
+        if (topic === SEPAY_WEBHOOK_TOPICS.SEPAY) {
+          createdSepayTransaction = await service.saveToDb(message.body);
+        } else {
+          createdSepayTransaction = await service.createZalopayTransaction(message.body);
+        }
+        if (createdSepayTransaction && topic === SEPAY_WEBHOOK_TOPICS.SEPAY) {
           await service.sendToERP(message.body, createdSepayTransaction);
         }
       } catch (error) {
