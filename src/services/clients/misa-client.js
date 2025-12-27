@@ -1,4 +1,4 @@
-import axios from "axios";
+import { createAxiosClient } from "services/utils/http-client";
 
 export default class MisaClient {
   static RETRIEVABLE_LIMIT = 1000;
@@ -9,6 +9,16 @@ export default class MisaClient {
     this.env = env;
     this.baseUrl = "https://actapp.misa.vn";
     this.accessToken = null;
+    this.timeout = 30000;
+    this.client = null;
+  }
+
+  _initClient() {
+    this.client = createAxiosClient({
+      baseURL: this.baseUrl,
+      timeout: this.timeout,
+      headers: this._getAuthHeaders()
+    });
   }
 
   /**
@@ -21,26 +31,30 @@ export default class MisaClient {
 
     if (cachedToken) {
       this.accessToken = cachedToken;
+      this._initClient();
       return this.accessToken;
     }
 
-    const url = `${this.baseUrl}/api/oauth/actopen/connect`;
+    const tokenClient = createAxiosClient({
+      baseURL: this.baseUrl,
+      timeout: this.timeout,
+      headers: { "Content-Type": "application/json" }
+    });
+
     const payload = {
       app_id: this.env.MISA_APP_ID,
       access_code: this.env.MISA_ACCESS_CODE,
       org_company_code: this.env.MISA_ORG_CODE
     };
 
-    const response = await axios.post(url, payload, {
-      headers: { "Content-Type": "application/json" }
-    });
-
+    const response = await tokenClient.post("/api/oauth/actopen/connect", payload);
     this.accessToken = JSON.parse(response.data.Data).access_token;
 
     const ttlSeconds = MisaClient.TOKEN_TTL_HOURS * 60 * 60;
     await kv.put(MisaClient.KV_TOKEN_KEY, this.accessToken, {
       expirationTtl: ttlSeconds
     });
+    this._initClient();
 
     return this.accessToken;
   }
@@ -58,10 +72,7 @@ export default class MisaClient {
    * @returns
    */
   async saveVoucher(voucherPayload) {
-    const url = `${this.baseUrl}/apir/sync/actopen/save`;
-    const response = await axios.post(url, voucherPayload, {
-      headers: this._getAuthHeaders()
-    });
+    const response = await this.client.post("/apir/sync/actopen/save", voucherPayload);
     return response.data;
   }
 
@@ -71,10 +82,7 @@ export default class MisaClient {
    * @returns
    */
   async saveDictionary(dictionaryPayload) {
-    const url = `${this.baseUrl}/apir/sync/actopen/save_dictionary`;
-    const response = await axios.post(url, dictionaryPayload, {
-      headers: this._getAuthHeaders()
-    });
+    const response = await this.client.post("/apir/sync/actopen/save_dictionary", dictionaryPayload);
     return response.data;
   }
 
@@ -85,15 +93,12 @@ export default class MisaClient {
    * @returns
    */
   async getDictionary(data_type, skip = 0, take = RETRIEVABLE_LIMIT, last_sync_time = null) {
-    const url = `${this.baseUrl}/apir/sync/actopen/get_dictionary`;
     const payload = {
       data_type, skip, take, last_sync_time,
       app_id: this.env.MISA_APP_ID
     };
 
-    const response = await axios.post(url, payload, {
-      headers: this._getAuthHeaders()
-    });
+    const response = await this.client.post("/apir/sync/actopen/get_dictionary", payload);
     return JSON.parse(response.data.Data);
   }
 }
