@@ -1,3 +1,15 @@
+import axios from "axios";
+import axiosRetry from "axios-retry";
+
+const RETRY_CONFIG = {
+  retries: 2,
+  retryDelay: axiosRetry.exponentialDelay,
+  shouldResetTimeout: true,
+  retryCondition: (error) =>
+    axiosRetry.isNetworkOrIdempotentRequestError(error) ||
+    error.response?.status >= 500
+};
+
 class BaseConnector {
   constructor(accessToken = null) {
     this.accessToken = accessToken;
@@ -12,41 +24,27 @@ class BaseConnector {
     };
   }
 
+  createClient() {
+    const client = axios.create({
+      baseURL: this.baseUrl,
+      timeout: this.timeout,
+      headers: this.getHeaders()
+    });
+    axiosRetry(client, RETRY_CONFIG);
+
+    return client;
+  }
+
   async request(method, endpoint, params = null, data = null) {
-    const url = new URL(`${this.baseUrl}${endpoint}`);
+    const client = this.createClient();
+    const config = { method, url: endpoint, params };
 
-    if (params) {
-      Object.entries(params).forEach(([key, value]) => {
-        if (value !== null && value !== undefined) {
-          url.searchParams.append(key, value);
-        }
-      });
+    if (data && method !== "GET") {
+      config.data = data;
     }
 
-    const options = {
-      method,
-      headers: this.getHeaders(),
-      signal: AbortSignal.timeout(this.timeout)
-    };
-
-    if (data) {
-      options.body = JSON.stringify(data);
-    }
-
-    const response = await fetch(url.toString(), options);
-
-    if (!response.ok) {
-      const error = new Error(`HTTP error! status: ${response.status}`);
-      error.status = response.status;
-
-      if (response.status === 429) {
-        error.retryAfter = response.headers.get("retry-after");
-      }
-
-      throw error;
-    }
-
-    return response.json();
+    const response = await client.request(config);
+    return response.data;
   }
 
   async get(endpoint, params = null) {
