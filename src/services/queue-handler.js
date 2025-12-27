@@ -57,7 +57,7 @@ export default {
       break;
     case "erpnext-selling":
       const sellingMsg = batch.messages[0]?.body;
-      if (sellingMsg?.doctype === "Sales Order Item" || sellingMsg?.erpTopic === "update-sales-order-item") {
+      if (sellingMsg?.doctype === "SalesOrderItem" || sellingMsg?.erpTopic === "update-sales-order-item") {
         await new ERP.Selling.SalesOrderItemService(env).dequeueSalesOrderItemQueue(batch);
       } else {
         await new ERP.Selling.CustomerService(env).dequeueCustomerQueue(batch);
