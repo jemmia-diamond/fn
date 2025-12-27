@@ -68,9 +68,9 @@ export default class DiamondService {
           ) AS images,
           g.simple_encrypted_report_no
         FROM workplace.diamonds AS d
-        JOIN haravan.products AS p ON p.id = d.product_id
+        JOIN haravan.products AS p ON p.id = d.product_id AND p.published_scope IN ('web', 'global')
         LEFT JOIN gia.report_no_data AS g ON g.report_no::BIGINT = d.report_no::BIGINT
-        JOIN haravan.variants hv ON hv.id = d.variant_id AND hv.qty_available > 0 AND hv.title LIKE 'GIA%'
+        JOIN haravan.variants hv ON hv.id = d.variant_id AND hv.qty_available > 0 AND hv.title LIKE 'GIA%' AND hv.published_scope IN ('web', 'global')
         JOIN (
           SELECT hwi.variant_id
           FROM haravan.warehouse_inventories hwi
