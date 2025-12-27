@@ -27,7 +27,7 @@ export default class SalesOrderItemService {
   async processItemPolicy(itemData) {
     const { variant_id, variant_title, real_order_date, serial_numbers, name } = itemData;
     const defaultPolicy = "Chưa có chính sách";
-    const isGiaItem = variant_title?.toUpperCase().includes("GIA");
+    const isGiaItem = variant_title?.toUpperCase().startsWith("GIA");
 
     // Check if the item is a diamond
     if (isGiaItem) {
