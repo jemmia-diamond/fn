@@ -56,7 +56,12 @@ export default {
       await Haravan.Collect.CollectService.dequeueCollectQueue(batch, env);
       break;
     case "erpnext-selling":
-      await new ERP.Selling.CustomerService(env).dequeueCustomerQueue(batch);
+      const sellingMsg = batch.messages[0]?.body;
+      if (sellingMsg?.doctype === "SalesOrderItem" || sellingMsg?.erpTopic === "update-sales-order-item") {
+        await new ERP.Selling.SalesOrderItemService(env).dequeueSalesOrderItemQueue(batch);
+      } else {
+        await new ERP.Selling.CustomerService(env).dequeueCustomerQueue(batch);
+      }
       break;
     default:
       break;
