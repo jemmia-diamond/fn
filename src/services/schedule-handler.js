@@ -79,6 +79,8 @@ export default {
       break;
     case "0 10 * * *": // 17:00
       await ERP.Automation.AssignmentRuleService.updateAssignmentRulesEndDay(env);
+      await ERP.Accounting.BankTransactionService.syncUnlinkedBankTransactions(env);
+      break;
     case "0 11 * * *": // 18:00
       break;
     case "0 14 * * *": // 21:00
