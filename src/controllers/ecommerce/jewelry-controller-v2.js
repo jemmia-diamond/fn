@@ -1,4 +1,5 @@
 import Ecommerce from "services/ecommerce";
+import { parseNumber } from "services/utils/num-helper";
 
 export default class JewelryControllerV2 {
   static async index(ctx) {
@@ -13,16 +14,20 @@ export default class JewelryControllerV2 {
       pages: params.pages ? params.pages.split(",") : [],
       is_in_stock: params.is_in_stock ? params.is_in_stock === "true" : null,
       pagination: {
-        from: params.from ? parseInt(params.from, 10) : 1,
-        limit: params.limit ? parseInt(params.limit, 10) : 24
+        from: parseNumber(params.from, 1),
+        limit: parseNumber(params.limit, 24)
       },
       price: {
-        min: params.min_price ? parseInt(params.min_price) : null,
-        max: params.max_price ? parseInt(params.max_price) : null
+        min: parseNumber(params.min_price, null),
+        max: parseNumber(params.max_price, null)
       },
       sort: {
         by: params.sort_by || "price",
         order: params.sort_order || "asc"
+      },
+      main_holder_size: {
+        lower: parseNumber(params["main_holder_size.lower"], undefined, true),
+        upper: parseNumber(params["main_holder_size.upper"], undefined, true)
       },
       design_tags: params.design_tags ? params.design_tags.split(",") : [],
       ring_head_styles: params.ring_head_styles ? params.ring_head_styles.split(",") : [],
@@ -35,7 +40,10 @@ export default class JewelryControllerV2 {
           .map((v) => Number(v.trim()))
           .filter((n) => Number.isInteger(n) && n > 0)
         : [],
-      linked_collections: params.linked_collections ? params.linked_collections.split(",") : []
+      linked_collections: params.linked_collections ? params.linked_collections.split(",") : [],
+      matched_diamonds: params.matched_diamonds === "true",
+      ring_sizes: params.ring_sizes ? params.ring_sizes.split(",").map((size) => size.trim()) : [],
+      warehouse_ids: params.warehouse_ids ? params.warehouse_ids.split(",").map((id) => id.trim()) : []
     };
 
     const productService = new Ecommerce.ProductService(ctx.env);
@@ -45,11 +53,14 @@ export default class JewelryControllerV2 {
 
   static async show(ctx) {
     const { id } = ctx.req.param();
+    const { matched_diamonds } = ctx.req.query();
     if (isNaN(Number(id))) {
       return ctx.json({ error: "Invalid id. Must be a number." }, 400);
     }
     const productService = new Ecommerce.ProductService(ctx.env);
-    const result = await productService.getJewelryByIdV2(id);
+    const result = await productService.getJewelryByIdV2(id, {
+      matched_diamonds: matched_diamonds === "true"
+    });
     if (!result) {
       return ctx.json({ error: "Jewelry not found" }, 404);
     }
