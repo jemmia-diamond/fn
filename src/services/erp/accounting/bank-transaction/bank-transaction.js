@@ -19,7 +19,8 @@ const EXCLUDED_TRANSACTION_PATTERNS = [
   "VISA:JEMMIA",
   "HTC",
   "HTC TRA COD",
-  "Zalopay"
+  "Zalopay",
+  "nop tien"
 ];
 
 const NOTIFICATION_RECIPIENT_EMAIL = "";
