@@ -15,20 +15,25 @@ export default class PancakeLeadSyncService {
     this.leadService = new LeadService(env);
     this.DEFAULT_TIME_MARK = "2020-05-31 17:00:00";
     this.BATCH_SIZE = 50;
+    this.KV_KEY = "pancake_lead_sync_last_time";
   }
 
   async syncPancakeLeads() {
     console.warn("Starting syncPancakeLeads...");
-    const updatedTime = dayjs().utc().subtract(5, "minutes").subtract(1, "minute").format("YYYY-MM-DD HH:mm:ss");
+
+    // Get latest checkpoint
+    let lastSyncTime = await this.env.FN_KV.get(this.KV_KEY);
+    if (!lastSyncTime) {
+      lastSyncTime = dayjs().utc().subtract(5, "minutes").subtract(1, "minute").format("YYYY-MM-DD HH:mm:ss");
+    }
+
+    const updatedTime = lastSyncTime;
     const defaultTimeMark = this.DEFAULT_TIME_MARK;
 
     console.warn(`Syncing leads updated since ${updatedTime}`);
 
     let offset = 0;
     let totalProcessed = 0;
-
-    // Get base count to know limit (optional optimization from Python script)
-    // We can just loop until no more results are returned.
 
     while (true) {
       const leadsData = await this.getLeadData(offset, this.BATCH_SIZE, updatedTime, defaultTimeMark);
@@ -110,7 +115,11 @@ export default class PancakeLeadSyncService {
       }
     }
 
-    console.warn(`Finished sync. Total processed: ${totalProcessed}`);
+    // Save new checkpoint
+    const currentTime = dayjs().utc().format("YYYY-MM-DD HH:mm:ss");
+    await this.env.FN_KV.put(this.KV_KEY, currentTime);
+
+    console.warn(`Finished sync. Total processed: ${totalProcessed}. Checkpoint saved: ${currentTime}`);
   }
 
   async getLeadData(offset, batchSize, updatedTime, defaultTimeMark) {
