@@ -129,6 +129,10 @@ export default class CustomerService {
     }
   }
 
+  _formatPhoneForHaravan(phone) {
+    return phone.replace(/^\+/, "00");
+  }
+
   async _createCustomer(customerData) {
     if (customerData.customer_name) {
       const parts = customerData.customer_name.trim().split(" ");
@@ -146,11 +150,12 @@ export default class CustomerService {
       throw new Error("Haravan access token not found");
     }
 
+    const rawPhone = customerData.mobile_no || customerData.phone;
     const haravanPayload = {
       first_name: customerData.first_name,
       last_name: customerData.last_name,
       email: customerData.email_id,
-      phone: customerData.mobile_no || customerData.phone,
+      phone: this._formatPhoneForHaravan(rawPhone),
       gender: this.genderMapReverse[customerData.gender]
     };
 
