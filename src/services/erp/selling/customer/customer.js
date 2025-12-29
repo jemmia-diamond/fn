@@ -129,6 +129,10 @@ export default class CustomerService {
     }
   }
 
+  _formatPhoneForHaravan(phone) {
+    return phone.replace(/^\+/, "00");
+  }
+
   async _createCustomer(customerData) {
     if (customerData.customer_name) {
       const parts = customerData.customer_name.trim().split(" ");
@@ -146,16 +150,17 @@ export default class CustomerService {
       throw new Error("Haravan access token not found");
     }
 
+    const haravanClient = new HaravanAPI(accessToken);
+    const rawPhone = customerData.mobile_no || customerData.phone;
     const haravanPayload = {
       first_name: customerData.first_name,
       last_name: customerData.last_name,
       email: customerData.email_id,
-      phone: customerData.mobile_no || customerData.phone,
+      phone: this._formatPhoneForHaravan(rawPhone),
       gender: this.genderMapReverse[customerData.gender]
     };
 
     try {
-      const haravanClient = new HaravanAPI(accessToken);
       const haravanResult = await haravanClient.customer.createCustomer(haravanPayload);
       haravanResult.customer.created_by = customerData.modified_by;
       const customer = await this.frappeClient.getDoc(this.doctype, customerData.name);
@@ -167,14 +172,20 @@ export default class CustomerService {
       }
     } catch (error) {
       if (error.status === 422) {
-        const haravanClient = new HaravanAPI(accessToken);
-        const hrvCustomers = await haravanClient.customer.getCustomers(haravanPayload.phone);
-        const customer = await this.frappeClient.getDoc(this.doctype, customerData.name);
+        const errorMessage = error?.response?.data?.errors || "";
+        const isDuplicate = errorMessage.includes("đã được sử dụng");
 
-        if (customer) {
-          customer.haravan_id = String(hrvCustomers.customers[0].id);
-          customer.customer_primary_contact = hrvCustomers.customers[0].phone;
-          await this.frappeClient.update(customer);
+        if (isDuplicate) {
+          const searchPhone = rawPhone.replace(/^\+/, "");
+          const hrvCustomers = await haravanClient.customer.getCustomers(searchPhone);
+          const customer = await this.frappeClient.getDoc(this.doctype, customerData.name);
+
+          if (customer && hrvCustomers?.customers?.[0]) {
+            customer.haravan_id = String(hrvCustomers.customers[0].id);
+            customer.customer_primary_contact = hrvCustomers.customers[0].phone;
+            await this.frappeClient.update(customer);
+          }
+          return;
         }
       }
 
