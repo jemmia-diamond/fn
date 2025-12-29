@@ -26,8 +26,8 @@ export default class JewelryControllerV2 {
         order: params.sort_order || "asc"
       },
       main_holder_size: {
-        lower: params["main_holder_size.lower"] ? parseFloat(params["main_holder_size.lower"]) : undefined,
-        upper: params["main_holder_size.upper"] ? parseFloat(params["main_holder_size.upper"]) : undefined
+        lower: parseNumber(params["main_holder_size.lower"], undefined, true),
+        upper: parseNumber(params["main_holder_size.upper"], undefined, true)
       },
       design_tags: params.design_tags ? params.design_tags.split(",") : [],
       ring_head_styles: params.ring_head_styles ? params.ring_head_styles.split(",") : [],
