@@ -10,6 +10,20 @@ import Database from "services/database";
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
+const EXCLUDED_TRANSACTION_PATTERNS = [
+  "Nop tien mat",
+  "Tra lai TK",
+  "Rut tien mat",
+  "noi bo",
+  "MASTER:JEMMIA",
+  "VISA:JEMMIA",
+  "HTC",
+  "HTC TRA COD",
+  "Zalopay"
+];
+
+const NOTIFICATION_RECIPIENT_EMAIL = "";
+
 export default class BankTransactionService {
   constructor(env) {
     this.env = env;
@@ -36,12 +50,8 @@ export default class BankTransactionService {
         ["creation", "<=", nowUTC]
       ];
 
-      const excludedPatterns = this.env.BANK_TRANSACTION_EXCLUDED_PATTERNS
-        ? this.env.BANK_TRANSACTION_EXCLUDED_PATTERNS.split(",")
-        : [];
-
-      excludedPatterns.forEach(pattern => {
-        filters.push(["sepay_transaction_content", "not like", `%${pattern.trim()}%`]);
+      EXCLUDED_TRANSACTION_PATTERNS.forEach(pattern => {
+        filters.push(["sepay_transaction_content", "not like", `%${pattern}%`]);
       });
 
       const bankTransactions = await this.frappeClient.getList("Bank Transaction", {
@@ -111,11 +121,9 @@ export default class BankTransactionService {
   }
 
   async sendNotification(transactions, date) {
-    const recipientEmail = this.env.BANK_TRANSACTION_NOTIFICATION_EMAIL;
-
     let userId = null;
-    if (recipientEmail && recipientEmail.trim()) {
-      userId = await this.getUserIdByEmail(recipientEmail);
+    if (NOTIFICATION_RECIPIENT_EMAIL && NOTIFICATION_RECIPIENT_EMAIL.trim()) {
+      userId = await this.getUserIdByEmail(NOTIFICATION_RECIPIENT_EMAIL);
     }
 
     const message = this.formatNotificationMessage(transactions, date, userId);
