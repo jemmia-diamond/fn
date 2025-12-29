@@ -172,14 +172,21 @@ export default class CustomerService {
       }
     } catch (error) {
       if (error.status === 422) {
-        const haravanClient = new HaravanAPI(accessToken);
-        const hrvCustomers = await haravanClient.customer.getCustomers(haravanPayload.phone);
-        const customer = await this.frappeClient.getDoc(this.doctype, customerData.name);
+        const errorMessage = error?.response?.data?.errors || "";
+        const isDuplicate = errorMessage.includes("đã được sử dụng");
 
-        if (customer) {
-          customer.haravan_id = String(hrvCustomers.customers[0].id);
-          customer.customer_primary_contact = hrvCustomers.customers[0].phone;
-          await this.frappeClient.update(customer);
+        if (isDuplicate) {
+          const haravanClient = new HaravanAPI(accessToken);
+          const searchPhone = rawPhone.replace(/^\+/, "");
+          const hrvCustomers = await haravanClient.customer.getCustomers(searchPhone);
+          const customer = await this.frappeClient.getDoc(this.doctype, customerData.name);
+
+          if (customer && hrvCustomers?.customers?.[0]) {
+            customer.haravan_id = String(hrvCustomers.customers[0].id);
+            customer.customer_primary_contact = hrvCustomers.customers[0].phone;
+            await this.frappeClient.update(customer);
+          }
+          return;
         }
       }
 
