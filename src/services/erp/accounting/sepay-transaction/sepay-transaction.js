@@ -38,7 +38,7 @@ export default class SepayTransactionService {
     const { orderNumber, orderDesc } = this.standardizeOrderNumber(content, description);
 
     if (!orderNumber && !orderDesc) {
-      Sentry.captureMessage("Order description not found");
+      // TODO: send notification to larksuite
       return;
     }
 
