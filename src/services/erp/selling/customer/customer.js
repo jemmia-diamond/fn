@@ -150,6 +150,7 @@ export default class CustomerService {
       throw new Error("Haravan access token not found");
     }
 
+    const haravanClient = new HaravanAPI(accessToken);
     const rawPhone = customerData.mobile_no || customerData.phone;
     const haravanPayload = {
       first_name: customerData.first_name,
@@ -160,7 +161,6 @@ export default class CustomerService {
     };
 
     try {
-      const haravanClient = new HaravanAPI(accessToken);
       const haravanResult = await haravanClient.customer.createCustomer(haravanPayload);
       haravanResult.customer.created_by = customerData.modified_by;
       const customer = await this.frappeClient.getDoc(this.doctype, customerData.name);
@@ -176,7 +176,6 @@ export default class CustomerService {
         const isDuplicate = errorMessage.includes("đã được sử dụng");
 
         if (isDuplicate) {
-          const haravanClient = new HaravanAPI(accessToken);
           const searchPhone = rawPhone.replace(/^\+/, "");
           const hrvCustomers = await haravanClient.customer.getCustomers(searchPhone);
           const customer = await this.frappeClient.getDoc(this.doctype, customerData.name);
