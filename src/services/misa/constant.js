@@ -13,84 +13,58 @@ export const DEBIT_ACCOUNT_MAP = {
  * `unit_id`, `unit_name`, and `unit_code` are already saved in AMIS MISA.
  * **unit_id** is important for correct voucher mapping after the accountant creates the accounting document proposal.
  */
-export const CREDIT_ACCOUNT_MAP = {
-  "pos-cua-hang-hcm": {
-    credit_account: "1310001", unit_id: "9af12d4c-11bc-447a-be41-11396d8dffca",
-    unit_name: "Cửa hàng HCM", unit_code: "0302_001"
-  },
-  "pos-cua-hang-hn": {
-    credit_account: "1310101", unit_id: "72a31f58-9432-4df0-861b-9d6b9f228546",
-    unit_name: "Cửa hàng HN", unit_code: "0302_002"
-  },
-  "pos cua hang can tho": {
-    credit_account: "1310002", unit_id: "06bb3daa-fd49-469a-b9fa-ad9e6dd8bc24",
-    unit_name: "Cửa hàng Cần Thơ", unit_code: "0302_003"
-  },
-  "tiktokshop": {
-    credit_account: "1310301", unit_id: "25c43210-81a2-4452-a1c1-d19c87807d56",
-    unit_name: "Phòng Công nghệ", unit_code: "700"
-  },
-  "web": {
-    credit_account: "1310301", unit_id: "25c43210-81a2-4452-a1c1-d19c87807d56",
-    unit_name: "Phòng Công nghệ", unit_code: "700"
-  },
-  "fbshop": {
-    credit_account: "1310301", unit_id: "25c43210-81a2-4452-a1c1-d19c87807d56",
-    unit_name: "Phòng Công nghệ", unit_code: "700"
-  },
-  "phone": {
-    credit_account: "1310302", unit_id: "837f2a22-5583-493d-b261-da083fad76db",
-    unit_name: "Kinh doanh online", unit_code: "301"
-  },
-  "zalo": {
-    credit_account: "1310302", unit_id: "837f2a22-5583-493d-b261-da083fad76db",
-    unit_name: "Kinh doanh online", unit_code: "301"
-  },
-  "zalo-cong-ty-cap": {
-    credit_account: "1310302", unit_id: "837f2a22-5583-493d-b261-da083fad76db",
-    unit_name: "Kinh doanh online", unit_code: "301"
-  },
-  "fb-jemmia-hcm": {
-    credit_account: "1310302", unit_id: "837f2a22-5583-493d-b261-da083fad76db",
-    unit_name: "Kinh doanh online", unit_code: "301"
-  },
-  "fb-jemmia-hn": {
-    credit_account: "1310302", unit_id: "837f2a22-5583-493d-b261-da083fad76db",
-    unit_name: "Kinh doanh online", unit_code: "301"
-  },
-  "fb-kiet-hot-xoan": {
-    credit_account: "1310302", unit_id: "837f2a22-5583-493d-b261-da083fad76db",
-    unit_name: "Kinh doanh online", unit_code: "301"
-  },
-  "bhsc-cua-hang-hcm": {
-    credit_account: "1310001", unit_id: "9af12d4c-11bc-447a-be41-11396d8dffca",
-    unit_name: "Cửa hàng HCM", unit_code: "0302_001"
-  },
-  "bhsc-cua-hang-hn": {
-    credit_account: "1310001", unit_id: "72a31f58-9432-4df0-861b-9d6b9f228546",
-    unit_name: "Cửa hàng HN", unit_code: "0302_002"
-  }
+export const SOURCE_TO_UNIT_CODE = {
+  "pos-cua-hang-hcm": "0302_001",
+  "pos-cua-hang-hn": "0302_002",
+  "pos cua hang can tho": "0302_003",
+  "tiktokshop": "700",
+  "web": "700",
+  "fbshop": "700",
+  "phone": "0301",
+  "zalo": "0301",
+  "zalo-cong-ty-cap": "0301",
+  "fb-jemmia-hcm": "0301",
+  "fb-jemmia-hn": "0301",
+  "fb-kiet-hot-xoan": "0301",
+  "bhsc-cua-hang-hcm": "0302_001",
+  "bhsc-cua-hang-hn": "0302_002"
 };
+
+/**
+ * Maps branch (Vietnamese province) to MISA organization_unit_code for manual payments.
+ */
+export const BRANCH_TO_UNIT_CODE = {
+  "Hồ Chí Minh": "0302_001",
+  "Hà Nội": "0302_002",
+  "Cần Thơ": "0302_003"
+};
+
+export function buildOrgUnitMap(orgUnitDictionary) {
+  return orgUnitDictionary.reduce((map, item) => {
+    if (item.organization_unit_code) {
+      map[item.organization_unit_code] = {
+        credit_account: item.receive_account || null,
+        unit_id: item.organization_unit_id || null,
+        unit_name: item.organization_unit_name || null,
+        unit_code: item.organization_unit_code
+      };
+    }
+    return map;
+  }, {});
+}
+
+export function getCreditInfo(orgUnitMap, source, branch = null, isManualPayment = false) {
+  const unitCode = isManualPayment
+    ? BRANCH_TO_UNIT_CODE[branch]
+    : SOURCE_TO_UNIT_CODE[source];
+
+  return orgUnitMap[unitCode] || {};
+}
 
 export const MANUAL_PAYMENT_DEBIT_MAP = {
   "Hồ Chí Minh": 1111000,
   "Hà Nội": 1111100,
   "Cần Thơ": 1111300
-};
-
-export const MANUAL_PAYMENT_CREDIT_MAP = {
-  "Hồ Chí Minh": {
-    credit_account: "1310001", unit_id: "9af12d4c-11bc-447a-be41-11396d8dffca",
-    unit_name: "Cửa hàng HCM", unit_code: "0302_001"
-  },
-  "Hà Nội": {
-    credit_account: "1310101", unit_id: "72a31f58-9432-4df0-861b-9d6b9f228546",
-    unit_name: "Cửa hàng HN", unit_code: "0302_002"
-  },
-  "Cần Thơ": {
-    credit_account: "1310002", unit_id: "06bb3daa-fd49-469a-b9fa-ad9e6dd8bc24",
-    unit_name: "Cửa hàng Cần Thơ", unit_code: "0302_003"
-  }
 };
 
 export const PAYMENT_TYPES = {
