@@ -229,6 +229,7 @@ export default class SepayTransactionService {
           {
             doctype: "Bank Transaction",
             name: existingTransaction.bank_transaction_name ?? "",
+            transaction_type: "SePay",
             sepay_id: sepayTransaction.id,
             sepay_order_number: orderNumber,
             sepay_order_description: orderDesc,
@@ -433,6 +434,7 @@ export default class SepayTransactionService {
         {
           doctype: "Bank Transaction",
           name: dbRecord.bank_transaction_name ?? "",
+          transaction_type: "ZaloPay",
           date: transactionDate,
           deposit: parsedData.amount || 0,
           app_id: parsedData.app_id,
