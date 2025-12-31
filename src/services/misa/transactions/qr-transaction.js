@@ -2,7 +2,7 @@ import * as Sentry from "@sentry/cloudflare";
 import Database from "services/database";
 import MisaClient from "services/clients/misa-client";
 import VoucherMappingService from "services/misa/mapping/voucher-mapping-service";
-import { VOUCHER_TYPES, VOUCHER_REF_TYPES } from "services/misa/constant";
+import { VOUCHER_TYPES, VOUCHER_REF_TYPES, buildOrgUnitMap } from "services/misa/constant";
 import Misa from "services/misa";
 import Payment from "services/payment";
 import dayjs from "dayjs";
@@ -31,11 +31,15 @@ export default class QrTransactionService {
       return map;
     }, {});
 
+    const orgUnitDictionary = await misaClient.getDictionary(6, 0, MisaClient.RETRIEVABLE_LIMIT, null);
+    const orgUnitMap = buildOrgUnitMap(orgUnitDictionary);
+
     const journalNote = await Misa.Utils.getJournalNote(this.db, qrTransaction);
 
     const { misaVoucher, originalId, generatedGuid } = await VoucherMappingService.transformQrToVoucher(
       qrTransaction,
       bankMap,
+      orgUnitMap,
       VOUCHER_TYPES.QR_PAYMENT,
       VOUCHER_REF_TYPES.QR_PAYMENT,
       journalNote,

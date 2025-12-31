@@ -5,3 +5,21 @@ model reporting_time_dim {
   @@map("time_dim")
   @@schema("reporting")
 }
+
+model reportingUptimeReport {
+  id          String   @id @default(cuid())
+  monitorId   String
+  monitorName String?
+  date        DateTime @db.Date
+  totalTime   Int?
+  uptime      Int?
+  downtime    Int?
+  uptimePercentage Float?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([monitorId, date])
+  @@unique([monitorId, date])
+  @@map("uptime_reports")
+  @@schema("reporting")
+}
