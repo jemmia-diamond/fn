@@ -21,6 +21,7 @@ export default {
     case "*/5 * * * *": // At every 5th minute
       await new Ecommerce.JewelryDiamondPairService(env).processOutOfStockDiamonds();
       await new Misa.InventoryItemSyncService(env).syncInventoryItems();
+      await new ERP.CRM.PancakeLeadSyncService(env).syncPancakeLeads();
       break;
     case "*/10 * * * *": // At every 10th minute
       await ERP.Selling.SerialService.syncSerialsToERP(env);
