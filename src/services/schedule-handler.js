@@ -54,6 +54,9 @@ export default {
       await ERP.Selling.SalesPersonService.syncSalesPersonToDatabase(env);
       await Larksuite.Docs.Base.RecordService.syncRecordsToDatabase(env);
       break;
+    case "0 17 * * 5": // 00:00 UTC / 07:00 Vietnam time - Weekly (Friday)
+      await Larksuite.Ticket.TechTicketService.syncTechTickets(env, { mode: "weekly" });
+      break;
     case "30 0 * * *": // 07:30
       await ERP.CRM.LeadDemandService.syncLeadDemandToDatabase(env);
       await ERP.CRM.LeadBudgetService.syncLeadBudgetsToDatabase(env);

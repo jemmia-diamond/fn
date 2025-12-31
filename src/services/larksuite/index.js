@@ -5,6 +5,7 @@ import Approval from "services/larksuite/approval";
 import Docs from "services/larksuite/docs";
 import Messaging from "services/larksuite/messaging";
 import BuybackExchangeService from "services/larksuite/buyback-exchange-service";
+import Ticket from "services/larksuite/tech-ticket";
 
 export default {
   Contact: Contact,
@@ -13,5 +14,6 @@ export default {
   Approval: Approval,
   Docs: Docs,
   Messaging: Messaging,
-  BuybackExchangeService
+  BuybackExchangeService,
+  Ticket
 };
