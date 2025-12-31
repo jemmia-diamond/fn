@@ -409,10 +409,54 @@ export default class SepayTransactionService {
         }
         if (createdSepayTransaction && topic === SEPAY_WEBHOOK_TOPICS.SEPAY) {
           await service.sendToERP(message.body, createdSepayTransaction);
+        } else if (createdSepayTransaction && topic === SEPAY_WEBHOOK_TOPICS.ZALOPAY) {
+          await service.sendZalopayToERP(message.body, createdSepayTransaction);
         }
       } catch (error) {
         Sentry.captureException(error);
       }
+    }
+  }
+
+  async sendZalopayToERP(zalopayData, dbRecord) {
+    try {
+      const { data: dataStr } = zalopayData || {};
+      if (!dataStr) return;
+
+      const parsedData = JSON.parse(dataStr);
+
+      const transactionDate = parsedData.server_time
+        ? dayjs(parsedData.server_time).format("YYYY-MM-DD")
+        : dayjs().format("YYYY-MM-DD");
+
+      const upsertedBankTransaction = await this.frappeClient.upsert(
+        {
+          doctype: "Bank Transaction",
+          name: dbRecord.bank_transaction_name ?? "",
+          date: transactionDate,
+          deposit: parsedData.amount || 0,
+          app_id: parsedData.app_id,
+          app_time: parsedData.app_time,
+          app_user: parsedData.app_user,
+          zp_trans_id: parsedData.zp_trans_id,
+          embed_data: parsedData.embed_data,
+          item: parsedData.item,
+          server_time: parsedData.server_time,
+          channel: parsedData.channel,
+          merchant_user_id: parsedData.merchant_user_id,
+          user_fee_amount: parsedData.user_fee_amount
+        },
+        "name"
+      );
+
+      if (upsertedBankTransaction && upsertedBankTransaction.name) {
+        await this.db.sepay_transaction.update({
+          where: { id: dbRecord.id },
+          data: { bank_transaction_name: upsertedBankTransaction.name }
+        });
+      }
+    } catch (error) {
+      Sentry.captureException(error);
     }
   }
 }
