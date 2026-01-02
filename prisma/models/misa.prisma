@@ -300,3 +300,24 @@ model warehouse_inventories {
   @@id([inventory_item_id, stock_id])
   @@schema("misa")
 }
+
+
+model misaCustomer {
+  uuid                String    @id @db.VarChar(36)
+  haravan_id          String    @unique(map: "ix_misa_customers_haravan_id") @db.VarChar(50)
+  full_name           String?   @db.VarChar(255)
+  first_name          String?   @db.VarChar(255)
+  last_name           String?   @db.VarChar(255)
+  phone               String?   @db.VarChar(50)
+  email               String?   @db.VarChar(255)
+  address             String?
+  haravan_created_at  DateTime? @db.Timestamp(6)
+  synced_at           DateTime? @db.Timestamp(6)
+  database_created_at DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at DateTime? @default(now()) @db.Timestamp(6)
+
+  @@index([phone], map: "ix_misa_customers_phone")
+  @@index([email], map: "ix_misa_customers_email")
+  @@map("customers")
+  @@schema("misa")
+}
