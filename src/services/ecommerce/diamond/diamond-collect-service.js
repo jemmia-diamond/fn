@@ -1,7 +1,7 @@
 import { WorkplaceClient } from "services/clients/workplace-client";
 import DiamondDiscountService from "services/ecommerce/diamond/diamond-discount-service";
 import Database from "src/services/database";
-
+import * as Sentry from "@sentry/cloudflare";
 /**
  * TODO: Implement linking ERP discount program to noco db's collections
  */
