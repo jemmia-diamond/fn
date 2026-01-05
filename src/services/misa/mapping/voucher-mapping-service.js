@@ -12,7 +12,7 @@ export default class VoucherMappingService {
    * @param {Number} ref_type reference type - check here https://actdocs.misa.vn/g2/graph/ACTOpenAPIHelp/index.html#3-9
    * @returns
    */
-  static async transformQrToVoucher(v, bankMap, orgUnitMap, voucher_type = VOUCHER_TYPES.QR_PAYMENT, ref_type = VOUCHER_REF_TYPES.QR_PAYMENT, order_chain = null, env) {
+  static async transformQrToVoucher(v, bankMap, orgUnitMap, voucher_type = VOUCHER_TYPES.QR_PAYMENT, ref_type = VOUCHER_REF_TYPES.QR_PAYMENT, order_chain = null, env, preGeneratedGuid = null) {
     const creditInfo = getCreditInfo(orgUnitMap, v.haravan_order?.source);
     const debitAccount = DEBIT_ACCOUNT_MAP[v.bank_code] || null;
 
@@ -38,7 +38,7 @@ export default class VoucherMappingService {
     // Bank name mapping
     const bankInfo = bankMap[v.bank_account_number];
     const bankName = bankInfo ? (bankInfo.bank_branch_name ? `${bankInfo.bank_name} - ${bankInfo.bank_branch_name}` : bankInfo.bank_name) : "Bank name not found";
-    const generatedGuid = crypto.randomUUID();
+    const generatedGuid = preGeneratedGuid || crypto.randomUUID();
     const orderNumbers = order_chain || v.haravan_order_number;
 
     const misaVoucher = {
