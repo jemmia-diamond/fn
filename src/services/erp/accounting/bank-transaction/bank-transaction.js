@@ -48,7 +48,8 @@ export default class BankTransactionService {
 
       const filters = [
         ["creation", ">=", oneDayAgoUTC],
-        ["creation", "<=", nowUTC]
+        ["creation", "<=", nowUTC],
+        ["transaction_type", "=", "SePay"]
       ];
 
       EXCLUDED_TRANSACTION_PATTERNS.forEach(pattern => {
