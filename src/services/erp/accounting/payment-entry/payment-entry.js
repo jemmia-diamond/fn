@@ -62,7 +62,7 @@ export default class PaymentEntryService {
 
     let transferAmount = paymentEntry.paid_amount || paymentEntry.received_amount || 0;
 
-    if (primaryOrder && primaryOrder.balance) {
+    if (primaryOrder && primaryOrder.balance && paymentEntry.admin_editing == 0) {
       const leftAmountToPaid = parseFloat(primaryOrder.balance);
       const paid = parseFloat(transferAmount);
 
@@ -145,7 +145,8 @@ export default class PaymentEntryService {
       payment_entry_name: paymentEntry.name || "",
       customer_phone_order_later: customer_phone_number,
       customer_name_order_later: customer_name,
-      payment_references
+      payment_references,
+      admin_editing: paymentEntry.admin_editing
     };
 
     const result = await this.createQRService.handlePostQr(qrGeneratorPayload);
@@ -327,7 +328,7 @@ export default class PaymentEntryService {
       return;
     }
 
-    if (salesOrderReferences?.length === 1) {
+    if (salesOrderReferences?.length === 1 && paymentEntry.admin_editing == 0) {
       const toPayAmount = parseFloat(qrPayment.transfer_amount);
       const outstandingAmount = parseFloat(primaryOrder.outstanding_amount);
 
