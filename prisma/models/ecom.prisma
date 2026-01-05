@@ -21,6 +21,7 @@ model ecomLeads {
   raw_data            Json?
   database_created_at DateTime? @default(now()) @db.Timestamp(6)
   custom_uuid         String?   @unique @default(dbgenerated("(gen_random_uuid())::text"))
+  source              String?   @default("Website")
 
   @@map("leads")
   @@schema("ecom")
