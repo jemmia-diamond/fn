@@ -22,7 +22,7 @@ export default class LeadService {
     });
     this.db = Database.instance(env);
     this.WebsiteFormLeadSource = "CRM-LEAD-SOURCE-0000023";
-    this.PartnerLeadSource = "CRM-LEAD-SOURCE-0000107";
+    this.PartnerLeadSource = "CRM-LEAD-SOURCE-0000108";
     this.defaultLeadOwner = "tech@jemmia.vn";
     this.CallLogLeadSource = "CRM-LEAD-SOURCE-0000022";
   }
@@ -191,10 +191,21 @@ export default class LeadService {
         filters: [["province_name", "LIKE", `%${location}%`]]
       });
 
+      let leadSource = this.WebsiteFormLeadSource;
+      let firstName = data.raw_data.name;
+
+      if (data.source === "Partner") {
+        leadSource = this.PartnerLeadSource;
+        const sourceDoc = await this.frappeClient.getDoc("Lead Source", this.PartnerLeadSource);
+        if (sourceDoc && sourceDoc.source_name) {
+          firstName = `[${sourceDoc.source_name}] ${firstName}`;
+        }
+      }
+
       const leadData = {
         doctype: this.doctype,
-        source: data.source === "Partner" ? this.PartnerLeadSource : this.WebsiteFormLeadSource,
-        first_name: data.raw_data.name,
+        source: leadSource,
+        first_name: firstName,
         phone: data.raw_data.phone,
         lead_owner: this.defaultLeadOwner,
         province: provinces.length ? provinces[0].name : null,
