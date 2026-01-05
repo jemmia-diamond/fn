@@ -40,6 +40,10 @@ export default class CustomerCreator {
     });
     if (existing) return;
 
+    if (!customerData.phone) {
+      throw new Error(`Can’t sync customer to MISA without a phone number, Haravan ID: ${haravanId}`);
+    }
+
     await this.misaClient.getAccessToken();
     const address = customerData?.default_address?.address1 || customerData?.addresses[0]?.address1 || "Không có dữ liệu";
     const erpCustomer = await this.fetchCustomerByHaravanId(haravanId);
@@ -92,10 +96,10 @@ export default class CustomerCreator {
           uuid: accountObjectId,
           haravan_id: haravanId,
           full_name: fullName,
-          first_name: customerData.first_name || null,
-          last_name: customerData.last_name || null,
-          phone: phoneNumber || null,
-          email: contact_email || null,
+          first_name: customerData.first_name,
+          last_name: customerData.last_name,
+          phone: phoneNumber,
+          email: contact_email,
           address,
           haravan_created_at: customerData.created_at ? new Date(customerData.created_at) : null,
           synced_at: new Date()
