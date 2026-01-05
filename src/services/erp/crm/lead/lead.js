@@ -22,7 +22,7 @@ export default class LeadService {
     });
     this.db = Database.instance(env);
     this.WebsiteFormLeadSource = "CRM-LEAD-SOURCE-0000023";
-    this.PartnerLeadSource = "CRM-LEAD-SOURCE-0000108";
+    this.PartnerLeadSource = "CRM-LEAD-SOURCE-0000107";
     this.defaultLeadOwner = "tech@jemmia.vn";
     this.CallLogLeadSource = "CRM-LEAD-SOURCE-0000022";
   }
