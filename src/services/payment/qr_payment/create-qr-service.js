@@ -75,8 +75,7 @@ export default class CreateQRService {
           throw new Error(JSON.stringify({ error_msg: errorMessage, error_code: CreateQRService.MISSING_FIELD }));
         }
       }
-      if (body?.payment_references.length === 1 && parseFloat(body.transfer_amount) > parseFloat(body.haravan_order_total_price) && body.admin_editing !== 1) {
-
+      if (body?.payment_references.length === 1 && parseFloat(body.transfer_amount) > parseFloat(body.haravan_order_total_price) && body.admin_editing == 0) {
         throw new Error(JSON.stringify({ error_msg: "Transfer amount cannot be greater than order total price", error_code: CreateQRService.PRICE_OVER_LIMIT }));
       }
     }
