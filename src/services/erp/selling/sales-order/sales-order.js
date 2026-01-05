@@ -239,19 +239,19 @@ export default class SalesOrderService {
 
     const haravanRefOrderId = salesOrderData.haravan_ref_order_id;
 
+    const allOrders = await this.getAllRelatedSalesOrders(salesOrderData.name);
+    const allOrderNames = allOrders.map(o => o.name);
+
     const splitOrderGroupId = salesOrderData.split_order_group;
     const isSplitOrder = salesOrderData.is_split_order;
 
     let childOrders = [];
     if (splitOrderGroupId && Number(splitOrderGroupId) > 0 && isSplitOrder) {
-      // Find all orders in split order group by name
-      const splitOrders = await this.frappeClient.getList("Sales Order", {
-        filters: [
-          ["split_order_group", "=", splitOrderGroupId],
-          ["name", "!=", salesOrderData.name],
-          ["cancelled_status", "=", "Uncancelled"]
-        ]
-      });
+      const splitOrders = allOrders.filter(o =>
+        o.split_order_group === splitOrderGroupId &&
+        o.name !== salesOrderData.name &&
+        o.cancelled_status === "Uncancelled"
+      );
 
       if (splitOrders && splitOrders.length > 0) {
         // For each order, find its attachments
@@ -302,9 +302,14 @@ export default class SalesOrderService {
 
       salesOrderData.grand_total += childOrder.grand_total;
       salesOrderData.discount_amount += childOrder.discount_amount;
-      salesOrderData.paid_amount += childOrder.paid_amount;
-      salesOrderData.deposit_amount += childOrder.deposit_amount;
     }
+
+    // Calculate Payment Entries Total
+    const paymentEntriesTotal = await this.calculateGroupPaymentTotal(allOrderNames);
+
+    // Set Paid Amount
+    salesOrderData.paid_amount = paymentEntriesTotal;
+    salesOrderData.deposit_amount = paymentEntriesTotal;
 
     const customer = await this.frappeClient.getDoc("Customer", salesOrderData.customer);
 
@@ -698,7 +703,8 @@ export default class SalesOrderService {
       const currentSalesOrder = await this.frappeClient.getDoc("Sales Order", salesOrderName);
       if (!currentSalesOrder) return null;
 
-      const relatedOrderNames = await this.getAllRelatedSalesOrders(salesOrderName);
+      const relatedOrders = await this.getAllRelatedSalesOrders(salesOrderName);
+      const relatedOrderNames = relatedOrders.map(o => o.name);
 
       // Calculate group grand total
       let groupGrandTotal = 0;
@@ -850,10 +856,16 @@ export default class SalesOrderService {
   }
 
   async getAllRelatedSalesOrders(initialOrderName) {
-    const relatedOrders = new Set([initialOrderName]);
+    const relatedOrdersMap = new Map();
     const initialOrder = await this.frappeClient.getDoc("Sales Order", initialOrderName);
 
     if (!initialOrder) return [];
+
+    relatedOrdersMap.set(initialOrderName, {
+      name: initialOrder.name,
+      cancelled_status: initialOrder.cancelled_status,
+      split_order_group: initialOrder.split_order_group
+    });
 
     if (initialOrder.is_split_order && initialOrder.split_order_group) {
       const groupOrders = await this.frappeClient.getList("Sales Order", {
@@ -861,13 +873,17 @@ export default class SalesOrderService {
           ["split_order_group", "=", initialOrder.split_order_group],
           ["is_split_order", "=", 1]
         ],
-        fields: ["name"]
+        fields: ["name", "cancelled_status", "split_order_group"]
       });
-      groupOrders.forEach(o => relatedOrders.add(o.name));
+      groupOrders.forEach(o => relatedOrdersMap.set(o.name, {
+        name: o.name,
+        cancelled_status: o.cancelled_status,
+        split_order_group: o.split_order_group
+      }));
     }
 
-    const toVisit = Array.from(relatedOrders);
-    const visited = new Set(relatedOrders);
+    const toVisit = Array.from(relatedOrdersMap.keys());
+    const visited = new Set(relatedOrdersMap.keys());
 
     while (toVisit.length > 0) {
       const currentSoName = toVisit.pop();
@@ -877,6 +893,11 @@ export default class SalesOrderService {
       } else {
         try {
           currentOrderDoc = await this.frappeClient.getDoc("Sales Order", currentSoName);
+          relatedOrdersMap.set(currentSoName, {
+            name: currentOrderDoc.name,
+            cancelled_status: currentOrderDoc.cancelled_status,
+            split_order_group: currentOrderDoc.split_order_group
+          });
         } catch (e) {
           console.warn(`Could not fetch Sales Order ${currentSoName} for traversal`, e);
           continue;
@@ -888,7 +909,6 @@ export default class SalesOrderService {
           if (ref.sales_order && !visited.has(ref.sales_order)) {
             visited.add(ref.sales_order);
             toVisit.push(ref.sales_order);
-            relatedOrders.add(ref.sales_order);
           }
         }
       }
@@ -902,12 +922,11 @@ export default class SalesOrderService {
         if (parentOrder.name && !visited.has(parentOrder.name)) {
           visited.add(parentOrder.name);
           toVisit.push(parentOrder.name);
-          relatedOrders.add(parentOrder.name);
         }
       }
     }
 
-    return Array.from(relatedOrders);
+    return Array.from(relatedOrdersMap.values());
   }
 
   async calculateGroupPaymentTotal(relatedOrderNames) {
