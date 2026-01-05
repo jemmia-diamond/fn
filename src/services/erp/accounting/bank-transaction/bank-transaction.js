@@ -146,7 +146,8 @@ export default class BankTransactionService {
 
   formatNotificationMessage(transactions, date, userId = null) {
     const formattedHeaderDate = dayjs(date).format("DD-MM-YYYY");
-    const header = `⚠️ [${formattedHeaderDate}] Có ${transactions.length} giao dịch chưa được liên kết với phiếu thu ⚠️:\n`;
+    const header = `⚠️ [${formattedHeaderDate}] Có ${transactions.length} giao dịch chưa được liên kết với phiếu thu ⚠️:\n` +
+      "Lý do: Không thể tự động tìm thấy phiếu thu để gắn giao dịch. Vui lòng tìm và tự gắn lại\n";
 
     const transactionList = transactions.map((transaction, index) => {
       const link = `https://erp.jemmia.vn/app/bank-transaction/${transaction.name}`;
