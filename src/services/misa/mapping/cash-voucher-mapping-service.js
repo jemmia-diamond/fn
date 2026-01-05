@@ -1,9 +1,9 @@
 import * as crypto from "crypto";
 import HaravanAPI from "services/clients/haravan-client";
-import { CREDIT_ACCOUNT_MAP, DEBIT_ACCOUNT_MAP, EXCHANGE_RATE, MANUAL_PAYMENT_CREDIT_MAP, MANUAL_PAYMENT_DEBIT_MAP, REASON_TYPES, SORT_ORDER, VOUCHER_REF_TYPES, VOUCHER_TYPES } from "services/misa/constant";
+import { DEBIT_ACCOUNT_MAP, EXCHANGE_RATE, MANUAL_PAYMENT_DEBIT_MAP, REASON_TYPES, SORT_ORDER, VOUCHER_REF_TYPES, VOUCHER_TYPES, getCreditInfo } from "services/misa/constant";
 
 export default class CashVoucherMappingService {
-  static async transforManualToVoucher(v, bankMap, voucher_type = VOUCHER_TYPES.MANUAL_PAYMENT, ref_type = VOUCHER_REF_TYPES.MANUAL_PAYMENT, order_chain = null, env) {
+  static async transforManualToVoucher(v, bankMap, orgUnitMap, voucher_type = VOUCHER_TYPES.MANUAL_PAYMENT, ref_type = VOUCHER_REF_TYPES.MANUAL_PAYMENT, order_chain = null, env, preGeneratedGuid = null) {
     // Company credit and debit account
     // manual payment using "branch" field (branch is actually vietnamese province)
     const isManual = voucher_type === VOUCHER_TYPES.MANUAL_PAYMENT;
@@ -12,9 +12,7 @@ export default class CashVoucherMappingService {
       ? MANUAL_PAYMENT_DEBIT_MAP[v.branch] || null
       : DEBIT_ACCOUNT_MAP[v.bank_name] || null;
 
-    const creditInfo = isManual
-      ? MANUAL_PAYMENT_CREDIT_MAP[v.branch] || {}
-      : CREDIT_ACCOUNT_MAP[v.haravan_order?.source] || {};
+    const creditInfo = getCreditInfo(orgUnitMap, v.haravan_order?.source, v.branch, isManual);
 
     // Employee code ( from Amis ) and name
     const employee_code = v.haravan_order?.user?.misa_user?.employee_code || v.haravan_order?.user?.misa_user?.email;
@@ -38,7 +36,7 @@ export default class CashVoucherMappingService {
     // Bank name mapping
     const bankInfo = bankMap[v.bank_account] || null;
     const bankName = bankInfo ? (bankInfo.bank_branch_name ? `${bankInfo.bank_name} - ${bankInfo.bank_branch_name}` : bankInfo.bank_name) : "Không tìm thấy ngân hàng";
-    const generatedGuid = crypto.randomUUID();
+    const generatedGuid = preGeneratedGuid || crypto.randomUUID();
     const reason_type_id = voucher_type == VOUCHER_TYPES.MANUAL_PAYMENT ? REASON_TYPES.MANUAL_PAYMENT : REASON_TYPES.OTHER_MANUAL_PAYMENT;
     const orderNumbers = order_chain || v.haravan_order_name;
 

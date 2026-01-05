@@ -231,3 +231,30 @@ model larksuite_users {
   @@map("users")
   @@schema("larksuite")
 }
+
+model larksuiteTechTickets {
+  record_id                   String    @id @map("record_id")
+  ticket_id                   String?   @map("ticket_id")
+  ticket_name                 String?   @map("ticket_name")
+  ticket_type                 String?   @map("ticket_type")
+  ticket_priority             String?   @map("ticket_priority")
+  ticket_status               String?   @map("ticket_status")
+  description                 String?   @map("description")
+  solution_update             String?   @map("solution_update")
+  created_time                DateTime? @map("created_time")
+  updated_time                DateTime? @map("updated_time")
+  manual_updated_time         DateTime? @map("manual_updated_time")
+  completed_time              DateTime? @map("completed_time")
+  expected_completion_time    DateTime? @map("expected_completion_time")
+  ticket_no_in_month          String?   @map("ticket_no_in_month")
+  current_number_in_month     Int?      @map("current_number_in_month")
+  synced_at                   DateTime  @default(now()) @map("synced_at")
+
+  @@map("tech_tickets")
+  @@schema("larksuite")
+  @@index([ticket_id])
+  @@index([ticket_priority])
+  @@index([ticket_status])
+  @@index([created_time])
+  @@index([updated_time])
+}

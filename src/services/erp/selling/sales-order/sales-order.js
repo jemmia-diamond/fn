@@ -98,6 +98,9 @@ export default class SalesOrderService {
 
     const paymentTransactions = haravanOrderData.transactions.filter(transaction => ["capture", "authorization"].includes(transaction.kind.toLowerCase()));
 
+    const discountCodes = haravanOrderData.discount_codes || [];
+    const couponCode = discountCodes.map(item => item.code).join("\n");
+
     const mappedOrderData = {
       doctype: this.doctype,
       customer: customer.name,
@@ -106,6 +109,7 @@ export default class SalesOrderService {
       haravan_ref_order_id: String(haravanOrderData.ref_order_id),
       source_name: haravanOrderData.source_name,
       discount_amount: haravanOrderData.total_discounts,
+      ...(couponCode && { haravan_coupon_code: couponCode }),
       items: haravanOrderData.line_items.map(this.mapLineItemsFields),
       skip_delivery_note: 1,
       financial_status: this.financialStatusMapper[haravanOrderData.financial_status],

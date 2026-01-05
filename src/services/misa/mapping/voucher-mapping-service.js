@@ -1,19 +1,19 @@
 import * as crypto from "crypto";
 import HaravanAPI from "services/clients/haravan-client";
-import { CREDIT_ACCOUNT_MAP, DEBIT_ACCOUNT_MAP, EXCHANGE_RATE, REASON_TYPES, SORT_ORDER, VOUCHER_REF_TYPES, VOUCHER_TYPES } from "services/misa/constant";
+import { DEBIT_ACCOUNT_MAP, EXCHANGE_RATE, REASON_TYPES, SORT_ORDER, VOUCHER_REF_TYPES, VOUCHER_TYPES, getCreditInfo } from "services/misa/constant";
 
 export default class VoucherMappingService {
   /**
    * Return valid voucher payload for MISA
    * @param {QrPaymentFetchingService} v
    * @param any bankMap bank dictionary
+   * @param any orgUnitMap organization unit dictionary keyed by unit_code
    * @param {Number} voucher_type voucher type - check here https://actdocs.misa.vn/g2/graph/ACTOpenAPIHelp/index.html#3-1
    * @param {Number} ref_type reference type - check here https://actdocs.misa.vn/g2/graph/ACTOpenAPIHelp/index.html#3-9
    * @returns
    */
-  static async transformQrToVoucher(v, bankMap, voucher_type = VOUCHER_TYPES.QR_PAYMENT, ref_type = VOUCHER_REF_TYPES.QR_PAYMENT, order_chain = null, env) {
-    // Company credit and debit account
-    const creditInfo = CREDIT_ACCOUNT_MAP[v.haravan_order?.source] || {};
+  static async transformQrToVoucher(v, bankMap, orgUnitMap, voucher_type = VOUCHER_TYPES.QR_PAYMENT, ref_type = VOUCHER_REF_TYPES.QR_PAYMENT, order_chain = null, env, preGeneratedGuid = null) {
+    const creditInfo = getCreditInfo(orgUnitMap, v.haravan_order?.source);
     const debitAccount = DEBIT_ACCOUNT_MAP[v.bank_code] || null;
 
     // Employee code ( from Amis ) and name
@@ -38,7 +38,7 @@ export default class VoucherMappingService {
     // Bank name mapping
     const bankInfo = bankMap[v.bank_account_number];
     const bankName = bankInfo ? (bankInfo.bank_branch_name ? `${bankInfo.bank_name} - ${bankInfo.bank_branch_name}` : bankInfo.bank_name) : "Bank name not found";
-    const generatedGuid = crypto.randomUUID();
+    const generatedGuid = preGeneratedGuid || crypto.randomUUID();
     const orderNumbers = order_chain || v.haravan_order_number;
 
     const misaVoucher = {
