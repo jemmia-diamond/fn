@@ -102,7 +102,7 @@ export default class CustomerCreator {
           email: contact_email,
           address,
           haravan_created_at: customerData.created_at ? new Date(customerData.created_at) : null,
-          synced_at: new Date()
+          last_synced_at: new Date()
         }
       });
     }
