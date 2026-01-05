@@ -229,7 +229,7 @@ export default class LeadService {
       ];
 
       const lead = await this.frappeClient.upsert(leadData, "phone", ignoredFields);
-      await contactService.processWebsiteContact(data, lead);
+      await contactService.processWebsiteContact(data, lead, leadData.source);
     } catch (e) {
       Sentry.captureException(e);
       return;
