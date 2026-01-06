@@ -20,7 +20,8 @@ const EXCLUDED_TRANSACTION_PATTERNS = [
   "HTC",
   "HTC TRA COD",
   "Zalopay",
-  "nop tien"
+  "nop tien",
+  "Payoo"
 ];
 
 const NOTIFICATION_RECIPIENT_EMAIL = "";
@@ -48,7 +49,8 @@ export default class BankTransactionService {
 
       const filters = [
         ["creation", ">=", oneDayAgoUTC],
-        ["creation", "<=", nowUTC]
+        ["creation", "<=", nowUTC],
+        ["transaction_type", "=", "SePay"]
       ];
 
       EXCLUDED_TRANSACTION_PATTERNS.forEach(pattern => {
