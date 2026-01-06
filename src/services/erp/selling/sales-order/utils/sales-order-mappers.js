@@ -168,6 +168,7 @@ export const mapSalesOrdersToDatabase = (salesOrders) => {
     payment_schedule: salesOrder?.payment_schedule || null,
     policies: salesOrder?.policies || null,
     items: salesOrder?.items || null,
-    sales_order_purposes: salesOrder?.sales_order_purposes || null
+    sales_order_purposes: salesOrder?.sales_order_purposes || null,
+    payment_entries: salesOrder?.payment_entries || null
   }));
 };
