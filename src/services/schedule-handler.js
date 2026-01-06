@@ -13,7 +13,6 @@ export default {
   scheduled: async (controller, env, _ctx) => {
     switch (controller.cron) {
     case "0 * * * *": // At minute 0 every hour
-      await ERP.CRM.LeadService.syncWebsiteLeads(env);
       await ERP.Telephony.CallLogService.syncStringeeCallLogs(env);
       await ERP.CRM.LeadService.syncCallLogLead(env);
       await ERP.Selling.SalesOrderService.fillSerialNumbersToTemporaryOrderItems(env);
@@ -30,6 +29,7 @@ export default {
       break;
     case "*/15 * * * *": // At every 15th minute
       await ERP.Contacts.ContactService.cronSyncContactsToDatabase(env);
+      await ERP.CRM.LeadService.syncWebsiteLeads(env);
       break;
     case "*/20 * * * *": // At every 20th minute
       await ERP.Selling.SalesOrderService.cronSyncSalesOrdersToDatabase(env);
@@ -83,6 +83,8 @@ export default {
       break;
     case "0 10 * * *": // 17:00
       await ERP.Automation.AssignmentRuleService.updateAssignmentRulesEndDay(env);
+      await ERP.Accounting.BankTransactionService.syncUnlinkedBankTransactions(env);
+      break;
     case "0 11 * * *": // 18:00
       break;
     case "0 14 * * *": // 21:00

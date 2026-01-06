@@ -635,6 +635,7 @@ model erpnextSalesOrders {
   taxes                          Json?
   pricing_rules                  Json?
   payment_records                Json?
+  payment_entries                Json?
   payment_schedule               Json?
   policies                       Json?
   items                          Json?

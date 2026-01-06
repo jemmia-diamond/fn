@@ -367,11 +367,14 @@ const extractVariantTitle = (item) => {
  * @returns {{mainOrder: *, subOrders: *[]}}
  */
 export const findMainOrder = (orders) => {
-  let mainOrder = orders.find(order => isPrimaryOrder(order));
+  const uncancelledOrders = orders.filter(o => o.cancelled_status === "Uncancelled");
+  const ordersToProcess = uncancelledOrders.length > 0 ? uncancelledOrders : orders;
+
+  let mainOrder = ordersToProcess.find(order => isPrimaryOrder(order));
   if (!mainOrder) {
-    mainOrder = orders[0];
+    mainOrder = ordersToProcess[0];
   }
-  const subOrders = orders.filter(order => order.name !== mainOrder.name);
+  const subOrders = ordersToProcess.filter(order => order.name !== mainOrder.name);
   return {
     mainOrder,
     subOrders
