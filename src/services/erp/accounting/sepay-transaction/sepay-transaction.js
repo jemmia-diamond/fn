@@ -356,7 +356,7 @@ export default class SepayTransactionService {
   }
 
   async findQrRecord({ orderNumber, orderDesc, transferAmount }) {
-    return this.db.qrPaymentTransaction.findFirst({
+    let qr = await this.db.qrPaymentTransaction.findFirst({
       where: {
         haravan_order_number: orderNumber,
         transfer_note: orderDesc,
@@ -365,6 +365,20 @@ export default class SepayTransactionService {
         is_deleted: false
       }
     });
+
+    // If not found, search by transfer_note only (for orders that have been mapped)
+    if (!qr) {
+      qr = await this.db.qrPaymentTransaction.findFirst({
+        where: {
+          transfer_note: orderDesc,
+          transfer_amount: transferAmount,
+          transfer_status: "pending",
+          is_deleted: false
+        }
+      });
+    }
+
+    return qr;
   }
 
   async enqueueMisaBackgroundJob(qrRecord) {
