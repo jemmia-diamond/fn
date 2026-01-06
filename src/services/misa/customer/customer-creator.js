@@ -38,11 +38,31 @@ export default class CustomerCreator {
     const existing = await this.db.misaCustomer.findUnique({
       where: { haravan_id: haravanId }
     });
-    if (existing) return;
+
+    if (existing?.last_synced_at) return;
 
     if (!customerData.phone) {
       throw new Error(`Can’t sync customer to MISA without a phone number, Haravan ID: ${haravanId}`);
     }
+
+    const accountObjectId = crypto.randomUUID();
+    const fullName = customerData.last_name + " " + customerData.first_name;
+
+    await this.db.misaCustomer.upsert({
+      where: { haravan_id: haravanId },
+      update: {},
+      create: {
+        uuid: accountObjectId,
+        haravan_id: haravanId,
+        full_name: fullName,
+        first_name: customerData.first_name,
+        last_name: customerData.last_name,
+        phone: customerData.phone,
+        email: customerData?.email,
+        haravan_created_at: customerData.created_at ? new Date(customerData.created_at) : null,
+        last_synced_at: null
+      }
+    });
 
     await this.misaClient.getAccessToken();
     const address = customerData?.default_address?.address1 || customerData?.addresses[0]?.address1 || "Không có dữ liệu";
@@ -57,8 +77,6 @@ export default class CustomerCreator {
     const phoneNumber = customerData.phone;
     const birth_date = customerData?.birthday;
     const contact_email = customerData?.email;
-    const accountObjectId = crypto.randomUUID();
-    const fullName = customerData.last_name + " " + customerData.first_name;
 
     const customerPayload = {
       branch_id: DEFAULT_BRANCH_ID,
@@ -91,17 +109,10 @@ export default class CustomerCreator {
     const response = await this.misaClient.saveDictionary(misaPayload);
 
     if (response.Success) {
-      await this.db.misaCustomer.create({
+      await this.db.misaCustomer.update({
+        where: { haravan_id: haravanId },
         data: {
-          uuid: accountObjectId,
-          haravan_id: haravanId,
-          full_name: fullName,
-          first_name: customerData.first_name,
-          last_name: customerData.last_name,
-          phone: phoneNumber,
-          email: contact_email,
           address,
-          haravan_created_at: customerData.created_at ? new Date(customerData.created_at) : null,
           last_synced_at: new Date()
         }
       });
