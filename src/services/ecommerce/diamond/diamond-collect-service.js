@@ -2,6 +2,7 @@ import { WorkplaceClient } from "services/clients/workplace-client";
 import DiamondDiscountService from "services/ecommerce/diamond/diamond-discount-service";
 import Database from "src/services/database";
 import * as Sentry from "@sentry/cloudflare";
+import HaravanAPI from "services/clients/haravan-client";
 /**
  * TODO: Implement linking ERP discount program to noco db's collections
  */
@@ -10,6 +11,12 @@ const DISCOUNT_PERCENT_COLLECTION_MAP = {
   8: 32,
   10: 34,
   12: 33
+};
+
+const REAL_HARAVAN_COLLECTION_MAP = {
+  8: 1004602301,
+  10: 1004613369,
+  12: 1004612608
 };
 
 export default class DiamondCollectService {
@@ -73,28 +80,51 @@ export default class DiamondCollectService {
             });
 
             const existingList = existingEntries.list || [];
-            const discountCollectionIds = Object.values(DISCOUNT_PERCENT_COLLECTION_MAP);
+            const discountCollectionIds = Object.values(DISCOUNT_PERCENT_COLLECTION_MAP).filter(id => id !== 32);
 
             for (const entry of existingList) {
               const isDiscountCollection = discountCollectionIds.includes(entry.haravan_collection_id);
               const isCurrentCollection = entry.haravan_collection_id === haravanCollectionId;
 
               if (isDiscountCollection && !isCurrentCollection) {
+                console.warn("Removing discount collection for diamond:", diamond.id, entry.haravan_collection_id);
                 await workplaceClient.diamondHaravanCollections.deleteMany([{
                   diamond_id: diamond.id,
                   haravan_collection_id: entry.haravan_collection_id
                 }]);
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                await new Promise(resolve => setTimeout(resolve, 1500));
               }
             }
 
             if (haravanCollectionId) {
               const exists = existingList.some(entry => entry.haravan_collection_id === haravanCollectionId);
               if (!exists) {
+                console.warn("Adding discount collection for diamond:", diamond.id, haravanCollectionId);
                 await workplaceClient.diamondHaravanCollections.create({
                   diamond_id: diamond.id,
                   haravan_collection_id: haravanCollectionId
                 });
+                await new Promise(resolve => setTimeout(resolve, 1500));
+              } else {
+                const HRV_API_KEY = await this.env.HARAVAN_TOKEN_SECRET.get();
+                const haravanApi = new HaravanAPI(HRV_API_KEY);
+                const realHaravanCollectionId = REAL_HARAVAN_COLLECTION_MAP[discountPercent];
+
+                try {
+                  console.warn("Creating collect for Diamond", diamond.product_id, realHaravanCollectionId);
+                  const collect = await haravanApi.collect.createCollect({
+                    "product_id": diamond.product_id,
+                    "collection_id": realHaravanCollectionId
+                  });
+                  console.warn("Created collect for Diamond", diamond.id, realHaravanCollectionId, collect);
+                } catch (hrvError) {
+                  console.warn("Error creating collect for Diamond", diamond.id, realHaravanCollectionId);
+                  if (hrvError.response?.status === 422) {
+                    console.warn(`Ignored 422 error creating collect for Diamond ${diamond.id} and Collection ${realHaravanCollectionId}`);
+                  } else {
+                    throw hrvError;
+                  }
+                }
                 await new Promise(resolve => setTimeout(resolve, 1000));
               }
             }
