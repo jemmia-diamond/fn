@@ -44,11 +44,7 @@ export default class SepayTransactionService {
 
     const isOrderLater = orderNumber === "ORDERLATER";
 
-    const qr = await this.findQrRecord({
-      orderNumber,
-      orderDesc,
-      transferAmount
-    });
+    const qr = await this.findQrRecord({ orderDesc, transferAmount });
 
     if (!qr) throw new Error("QR code not found");
 
@@ -355,30 +351,15 @@ export default class SepayTransactionService {
     return upsertedTransaction;
   }
 
-  async findQrRecord({ orderNumber, orderDesc, transferAmount }) {
-    let qr = await this.db.qrPaymentTransaction.findFirst({
+  async findQrRecord({ orderDesc, transferAmount }) {
+    return this.db.qrPaymentTransaction.findFirst({
       where: {
-        haravan_order_number: orderNumber,
         transfer_note: orderDesc,
         transfer_amount: transferAmount,
         transfer_status: "pending",
         is_deleted: false
       }
     });
-
-    // If not found, search by transfer_note only (for orders that have been mapped)
-    if (!qr) {
-      qr = await this.db.qrPaymentTransaction.findFirst({
-        where: {
-          transfer_note: orderDesc,
-          transfer_amount: transferAmount,
-          transfer_status: "pending",
-          is_deleted: false
-        }
-      });
-    }
-
-    return qr;
   }
 
   async enqueueMisaBackgroundJob(qrRecord) {
