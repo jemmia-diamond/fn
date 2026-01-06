@@ -20,7 +20,8 @@ const EXCLUDED_TRANSACTION_PATTERNS = [
   "HTC",
   "HTC TRA COD",
   "Zalopay",
-  "nop tien"
+  "nop tien",
+  "Payoo"
 ];
 
 const NOTIFICATION_RECIPIENT_EMAIL = "";
