@@ -156,19 +156,19 @@ export const mapSalesOrdersToDatabase = (salesOrders) => {
     source_name: safeValue(salesOrder?.source_name,"string"),
 
     // JSONB fields - Prisma will handle JSON conversion automatically
-    sales_team: salesOrder?.sales_team || null,
-    ref_sales_orders: salesOrder?.ref_sales_orders || null,
-    promotions: salesOrder?.promotions || null,
-    product_categories: salesOrder?.product_categories || null,
-    debt_histories: salesOrder?.debt_histories || null,
-    packed_items: salesOrder?.packed_items || null,
-    taxes: salesOrder?.taxes || null,
-    pricing_rules: salesOrder?.pricing_rules || null,
-    payment_records: salesOrder?.payment_records || null,
-    payment_schedule: salesOrder?.payment_schedule || null,
-    policies: salesOrder?.policies || null,
-    items: salesOrder?.items || null,
-    sales_order_purposes: salesOrder?.sales_order_purposes || null,
-    payment_entries: salesOrder?.payment_entries || null
+    sales_team: salesOrder?.sales_team || [],
+    ref_sales_orders: salesOrder?.ref_sales_orders || [],
+    promotions: salesOrder?.promotions || [],
+    product_categories: salesOrder?.product_categories || [],
+    debt_histories: salesOrder?.debt_histories || [],
+    packed_items: salesOrder?.packed_items || [],
+    taxes: salesOrder?.taxes || [],
+    pricing_rules: salesOrder?.pricing_rules || [],
+    payment_records: salesOrder?.payment_records || [],
+    payment_schedule: salesOrder?.payment_schedule || [],
+    policies: salesOrder?.policies || [],
+    items: salesOrder?.items || [],
+    sales_order_purposes: salesOrder?.sales_order_purposes || [],
+    payment_entries: salesOrder?.payment_entries || []
   }));
 };
