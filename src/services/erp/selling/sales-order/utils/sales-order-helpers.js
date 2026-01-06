@@ -38,6 +38,7 @@ export async function fetchSalesOrdersFromERP(frappeClient, doctype, fromDate, t
       const salesOrderPurposes = await fetchChildRecordsFromERP(frappeClient, orderNames, "tabSales Order Purpose");
       const salesOrderProductCategories = await fetchChildRecordsFromERP(frappeClient, orderNames, "tabSales Order Product Category");
       const debtHistory = await fetchChildRecordsFromERP(frappeClient, orderNames, "tabOrder and Debt Tracking");
+      const paymentEntries = await fetchChildRecordsFromERP(frappeClient, orderNames, "tabPayment Entry Reference", { parentfield: "payment_entries" });
 
       // group records by sales order name
       const groupByParent = arr => arr.reduce((acc, item) => {
@@ -51,6 +52,7 @@ export async function fetchSalesOrdersFromERP(frappeClient, doctype, fromDate, t
       const salesOrderPurposesMap = groupByParent(salesOrderPurposes);
       const salesOrderProductCategoriesMap = groupByParent(salesOrderProductCategories);
       const debtHistoryMap = groupByParent(debtHistory);
+      const paymentEntriesMap = groupByParent(paymentEntries);
 
       // add sales order items and sales team to each sales order
       batch.forEach(item => {
@@ -61,6 +63,7 @@ export async function fetchSalesOrdersFromERP(frappeClient, doctype, fromDate, t
         item.sales_order_purposes = salesOrderPurposesMap[item.name] || [];
         item.product_categories = salesOrderProductCategoriesMap[item.name] || [];
         item.debt_histories = debtHistoryMap[item.name] || [];
+        item.payment_entries = paymentEntriesMap[item.name] || [];
       });
 
       allSalesOrders.push(...batch);
