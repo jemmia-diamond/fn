@@ -45,7 +45,7 @@ export default class ZNSMessageService {
         "x-request-id": requestId,
         "Content-Type": "application/json"
       };
-      const endpoint = `${this.baseURL}/zns-partner/v1/messages`;
+      const endpoint = `${this.baseURL}/zns-partner/v1/pbmessages`;
       const response = await fetch(endpoint, {
         method: "POST",
         headers,
