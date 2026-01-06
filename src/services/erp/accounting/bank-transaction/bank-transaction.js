@@ -24,7 +24,11 @@ const EXCLUDED_TRANSACTION_PATTERNS = [
   "Payoo"
 ];
 
-const NOTIFICATION_RECIPIENT_EMAIL = "";
+const LOCATION_CC_RULES = [
+  { pattern: "Hồ Chí Minh", label: "Hồ Chí Minh", email: "hue.phan@jemmia.vn" },
+  { pattern: "Hà Nội", label: "Hà Nội", email: "trinh.ngo@jemmia.vn" },
+  { pattern: "Cần Thơ", label: "Cần Thơ", email: "tien.chau@jemmia.vn" }
+];
 
 export default class BankTransactionService {
   constructor(env) {
@@ -124,12 +128,35 @@ export default class BankTransactionService {
   }
 
   async sendNotification(transactions, date) {
-    let userId = null;
-    if (NOTIFICATION_RECIPIENT_EMAIL && NOTIFICATION_RECIPIENT_EMAIL.trim()) {
-      userId = await this.getUserIdByEmail(NOTIFICATION_RECIPIENT_EMAIL);
+    const groupedTransactions = [];
+    let remainingTransactions = [...transactions];
+
+    for (const rule of LOCATION_CC_RULES) {
+      const groupTransactions = remainingTransactions.filter(t => t.bank_account && t.bank_account.includes(rule.pattern));
+
+      if (groupTransactions.length > 0) {
+        const userId = await this.getUserIdByEmail(rule.email);
+        groupedTransactions.push({
+          label: rule.label,
+          transactions: groupTransactions,
+          userId
+        });
+
+        // Remove matches from remaining
+        remainingTransactions = remainingTransactions.filter(t => !groupTransactions.includes(t));
+      }
     }
 
-    const message = this.formatNotificationMessage(transactions, date, userId);
+    // Add remaining as "Others" if any
+    if (remainingTransactions.length > 0) {
+      groupedTransactions.push({
+        label: "Khác",
+        transactions: remainingTransactions,
+        userId: null
+      });
+    }
+
+    const message = this.formatNotificationMessage(groupedTransactions, transactions.length, date);
     const larkClient = await LarksuiteService.createClientV2(this.env);
 
     await larkClient.im.message.create({
@@ -146,28 +173,43 @@ export default class BankTransactionService {
     });
   }
 
-  formatNotificationMessage(transactions, date, userId = null) {
+  formatNotificationMessage(groupedTransactions, totalCount, date) {
     const formattedHeaderDate = dayjs(date).format("DD-MM-YYYY");
-    const header = `⚠️ [${formattedHeaderDate}] Có ${transactions.length} giao dịch chưa được liên kết với phiếu thu ⚠️:\n` +
+    let message = `⚠️ [${formattedHeaderDate}] Có ${totalCount} giao dịch chưa được liên kết với phiếu thu ⚠️:\n` +
       "Lý do: Không thể tự động tìm thấy phiếu thu để gắn giao dịch. Vui lòng tìm và tự gắn lại\n";
 
-    const transactionList = transactions.map((transaction, index) => {
-      const link = `https://erp.jemmia.vn/app/bank-transaction/${transaction.name}`;
-      const amount = new Intl.NumberFormat("vi-VN").format(transaction.amount_in || 0);
-      const formattedDate = transaction.sepay_transaction_date
-        ? dayjs(transaction.sepay_transaction_date).format("DD-MM-YYYY HH:mm:ss")
-        : dayjs(transaction.date).format("DD-MM-YYYY");
+    let globalIndex = 0;
 
-      return `\n${index + 1}. Giao dịch ${transaction.name}\n` +
-             `- Tiền vào: +${amount} ₫\n` +
-             `- Tài khoản: ${transaction.bank_account || "N/A"}\n` +
-             `- Lúc: ${formattedDate}\n` +
-             `- Nội dung CK: ${transaction.sepay_transaction_content || "N/A"}\n` +
-             `- Link: ${link}`;
-    }).join("\n");
+    for (const group of groupedTransactions) {
+      message += "\n";
+      message += `📍 <b>KHU VỰC: ${group.label.toUpperCase()}</b>\n`;
 
-    const mention = userId ? `\n\n<at user_id="${userId}"></at>` : "";
-    return header + transactionList + mention;
+      const groupList = group.transactions.map(transaction => {
+        globalIndex++;
+        const link = `https://erp.jemmia.vn/app/bank-transaction/${transaction.name}`;
+        const amount = new Intl.NumberFormat("vi-VN").format(transaction.amount_in || 0);
+        const formattedDate = transaction.sepay_transaction_date
+          ? dayjs(transaction.sepay_transaction_date).format("DD-MM-YYYY HH:mm:ss")
+          : dayjs(transaction.date).format("DD-MM-YYYY");
+
+        return `\n${globalIndex}. Giao dịch ${transaction.name}\n` +
+               `- Tiền vào: +${amount} ₫\n` +
+               `- Tài khoản: ${transaction.bank_account || "N/A"}\n` +
+               `- Lúc: ${formattedDate}\n` +
+               `- Nội dung CK: ${transaction.sepay_transaction_content || "N/A"}\n` +
+               `- Link: ${link}`;
+      }).join("\n");
+
+      message += groupList;
+
+      if (group.userId) {
+        message += `\n\n<at user_id="${group.userId}"></at>\n`;
+      } else {
+        message += "\n";
+      }
+    }
+
+    return message;
   }
 
   static async syncUnlinkedBankTransactions(env) {
