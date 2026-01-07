@@ -56,7 +56,7 @@ export default class AutoAddToDiscountProgramService {
         return sku.length === SKU_LENGTH.JEWELRY;
       });
 
-      if (isJewelry) {
+      if (isJewelry && product.product_type !== "Dây Chuyền Trơn") {
         await this.addToJewelryCollection(product.id);
       }
     }
