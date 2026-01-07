@@ -25,8 +25,8 @@ const EXCLUDED_TRANSACTION_PATTERNS = [
 ];
 
 const LOCATION_CC_RULES = [
-  { pattern: "Hồ Chí Minh", label: "Hồ Chí Minh", email: "hue.phan@jemmia.vn" },
-  { pattern: "Hà Nội", label: "Hà Nội", email: "trinh.ngo@jemmia.vn" },
+  { pattern: "Hồ Chí Minh", label: "Hồ Chí Minh", email: "trinh.ngo@jemmia.vn" },
+  { pattern: "Hà Nội", label: "Hà Nội", email: "hue.phan@jemmia.vn" },
   { pattern: "Cần Thơ", label: "Cần Thơ", email: "tien.chau@jemmia.vn" }
 ];
 
