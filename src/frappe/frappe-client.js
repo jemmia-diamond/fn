@@ -36,6 +36,7 @@ export default class FrappeClient {
   async getList(doctype, {
     fields = ["*"],
     filters = null,
+    or_filters = null,
     limit_start = 0,
     limit_page_length = 0,
     order_by = null
@@ -43,6 +44,7 @@ export default class FrappeClient {
     const params = {
       fields: JSON.stringify(fields),
       ...(filters && { filters: JSON.stringify(filters) }),
+      ...(or_filters && { or_filters: JSON.stringify(or_filters) }),
       ...(limit_page_length && { limit_start, limit_page_length }),
       ...(order_by && { order_by })
     };

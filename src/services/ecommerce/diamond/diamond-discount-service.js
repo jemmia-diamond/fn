@@ -36,6 +36,10 @@ export default class DiamondDiscountService {
           ["start_date", "<=", now],
           ["end_date", ">=", now]
         ],
+        or_filters: [
+          ["min_value", ">", 0],
+          ["max_value", ">", 0]
+        ],
         limit_page_length: 1000
       });
 
