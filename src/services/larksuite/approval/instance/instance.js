@@ -19,7 +19,8 @@ export default class InstanceService {
     const approvalCodes = [
       APPROVALS.LEAVE_APPROVAL,
       APPROVALS.PAYMENT_APPROVAL,
-      APPROVALS.PURCHASE_APPROVAL
+      APPROVALS.PURCHASE_APPROVAL,
+      APPROVALS.OFFBOARD_APPROVAL
     ];
 
     const transformedInstances = [];
