@@ -44,10 +44,14 @@ export default class DiamondDiscountService {
       });
 
       const rules = promotions.sort((a, b) => {
-        if (a.priority === b.priority) return 0;
-        if (!a.priority) return 1;
-        if (!b.priority) return -1;
-        return a.priority.localeCompare(b.priority, undefined, { numeric: true });
+        const priorityA = a.priority;
+        const priorityB = b.priority;
+
+        if (priorityA == null && priorityB == null) return 0;
+        if (priorityA == null) return 1;
+        if (priorityB == null) return -1;
+
+        return priorityA - priorityB;
       });
 
       return rules;

@@ -218,17 +218,16 @@ export default class DiamondCollectService {
 
   async _createHaravanCollect(diamond, haravanCollectionId, haravanApi) {
     try {
-      console.warn("Creating collect for Diamond", parseInt(diamond.product_id), parseInt(haravanCollectionId));
       const collect = await haravanApi.collect.createCollect({
         "product_id": parseInt(diamond.product_id),
         "collection_id": parseInt(haravanCollectionId)
       });
-      console.warn("Created collect for Diamond", parseInt(diamond.id), parseInt(haravanCollectionId), collect);
+      console.warn("Created collect for Diamond", parseInt(diamond.id), parseInt(diamond.product_id), parseInt(haravanCollectionId), parseInt(collect.collect.id));
     } catch (hrvError) {
       if (hrvError.response?.status === 422) {
         // Ignored 422 (likely exists)
       } else {
-        console.warn("Error creating collect for Diamond", diamond.id, haravanCollectionId);
+        console.warn("Error creating collect for Diamond", parseInt(diamond.id), parseInt(diamond.product_id), parseInt(haravanCollectionId));
         throw hrvError;
       }
     }
