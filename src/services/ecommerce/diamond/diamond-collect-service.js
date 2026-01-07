@@ -150,12 +150,11 @@ export default class DiamondCollectService {
         rules: activeRules
       });
 
-      console.warn("Discount percent for diamond:", diamond.id, discountPercent, diamond.edge_size_2);
+      // eslint-disable-next-line no-console
+      console.info("Discount percent for diamond:", diamond.id, discountPercent, diamond.edge_size_2);
 
       const rules = ruleCollections[discountPercent] || {};
       const targetNocodbCollectionId = rules.nocodbId || null;
-
-      return;
 
       await this._syncNocoDBCollections(diamond, targetNocodbCollectionId, discountCollectionIds, workplaceClient);
       await this._syncHaravanCollections(diamond, targetNocodbCollectionId, rules.haravanId, workplaceClient, haravanApi);
@@ -207,7 +206,8 @@ export default class DiamondCollectService {
         diamond_id: diamond.id,
         haravan_collection_id: targetNocodbCollectionId
       });
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Delay for NocoDB creation
+      await new Promise(resolve => setTimeout(resolve, 1000));
     } else {
       // If NocoDB link exists, ensure Haravan collect exists
       if (targetHaravanCollectionId) {
@@ -218,20 +218,21 @@ export default class DiamondCollectService {
 
   async _createHaravanCollect(diamond, haravanCollectionId, haravanApi) {
     try {
-      console.warn("Creating collect for Diamond", diamond.product_id, haravanCollectionId);
+      console.warn("Creating collect for Diamond", parseInt(diamond.product_id), parseInt(haravanCollectionId));
       const collect = await haravanApi.collect.createCollect({
-        "product_id": diamond.product_id,
-        "collection_id": haravanCollectionId
+        "product_id": parseInt(diamond.product_id),
+        "collection_id": parseInt(haravanCollectionId)
       });
-      console.warn("Created collect for Diamond", diamond.id, haravanCollectionId, collect);
+      console.warn("Created collect for Diamond", parseInt(diamond.id), parseInt(haravanCollectionId), collect);
     } catch (hrvError) {
-      console.warn("Error creating collect for Diamond", diamond.id, haravanCollectionId);
       if (hrvError.response?.status === 422) {
-        console.warn(`Ignored 422 error creating collect for Diamond ${diamond.id} and Collection ${haravanCollectionId}`);
+        // Ignored 422 (likely exists)
       } else {
+        console.warn("Error creating collect for Diamond", diamond.id, haravanCollectionId);
         throw hrvError;
       }
     }
+    // Delay for Haravan rate limit
     await new Promise(resolve => setTimeout(resolve, 1000));
   }
 
