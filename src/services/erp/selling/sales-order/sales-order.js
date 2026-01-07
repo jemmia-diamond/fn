@@ -778,7 +778,7 @@ export default class SalesOrderService {
       }
 
       // Calculate total from Sales Order Payment Records
-      const paymentRecords = (currentSalesOrder.payment_records || []).filter(r => ["capture", "authorization"].includes(r.kind));
+      const paymentRecords = (currentSalesOrder.payment_records || []).filter(r => ["capture", "authorization"].includes(r.kind) && r.gateway !== "Thanh toán qua ERP");
       const paymentRecordsTotal = paymentRecords.reduce((sum, record) => sum + parseFloat(record.amount || 0), 0);
 
       // Logic to determine total_paid
