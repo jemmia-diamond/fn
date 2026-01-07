@@ -126,9 +126,10 @@ export default class SalesOrderService {
       total_amount: haravanOrderData.total_price,
       grand_total: haravanOrderData.total_price,
       real_order_date: await this.getRealOrderDate(haravanOrderData.id) || dayjs(haravanOrderData.created_at).add(7, "hour").format("YYYY-MM-DD"),
-      ref_sales_orders: await this.mapRefSalesOrder(haravanOrderData.id)
+      ref_sales_orders: await this.mapRefSalesOrder(haravanOrderData.id),
+      sales_team: await this.getSalesTeamFromRefOrder(haravanOrderData.ref_order_id)
     };
-    const order = await this.frappeClient.upsert(mappedOrderData, "haravan_order_id", ["items"]);
+    const order = await this.frappeClient.upsert(mappedOrderData, "haravan_order_id", ["items", "sales_team"]);
     return order;
   }
 
@@ -200,6 +201,38 @@ export default class SalesOrderService {
       }).filter(order => order !== null);
     } catch (e) {
       Sentry.captureException(e);
+      return [];
+    }
+  };
+
+  getSalesTeamFromRefOrder = async (haravanRefOrderId) => {
+    if (!haravanRefOrderId) return [];
+    try {
+      const refOrderList = await this.frappeClient.getList("Sales Order", {
+        filters: [["haravan_order_id", "=", String(haravanRefOrderId)]],
+        fields: ["name"],
+        limit_page_length: 1
+      });
+
+      if (!refOrderList || refOrderList.length === 0) return [];
+
+      const refOrderName = refOrderList[0];
+
+      const refOrder = await this.frappeClient.getDoc("Sales Order", refOrderName.name);
+
+      if (refOrder && refOrder.sales_team && refOrder.sales_team.length > 0) {
+        return refOrder.sales_team.map(item => ({
+          doctype: "Sales Team",
+          sales_person: item.sales_person,
+          allocated_percentage: item.allocated_percentage,
+          allocated_amount: item.allocated_amount,
+          incentives: item.incentives
+        }));
+      }
+      return [];
+    } catch (error) {
+      console.warn(`Error getting sales team from ref order ${haravanRefOrderId}:`, error);
+      Sentry.captureException(error);
       return [];
     }
   };
