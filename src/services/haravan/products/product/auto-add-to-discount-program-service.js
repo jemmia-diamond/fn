@@ -1,7 +1,7 @@
 import * as Sentry from "@sentry/cloudflare";
 import { WorkplaceClient } from "services/clients/workplace-client";
 import { HARAVAN_TOPIC } from "services/ecommerce/enum";
-import { SKU_LENGTH } from "services/haravan/products/product-variant/constant";
+import { SKU_LENGTH, HRV_PRODUCT_TYPE } from "services/haravan/products/product-variant/constant";
 
 const EXCLUDED_COLLECTION_TITLES = [
   "Lotus Essence",
@@ -56,7 +56,7 @@ export default class AutoAddToDiscountProgramService {
         return sku.length === SKU_LENGTH.JEWELRY;
       });
 
-      if (isJewelry && product.product_type !== "Dây Chuyền Trơn") {
+      if (isJewelry && product.product_type !== HRV_PRODUCT_TYPE.PLAIN_CHAIN) {
         await this.addToJewelryCollection(product.id);
       }
     }

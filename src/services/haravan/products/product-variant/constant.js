@@ -8,3 +8,7 @@ export const SKU_PREFIX = {
   DIAMOND_TEMPORARY: "GIA",
   GIFT: "QT"
 };
+
+export const HRV_PRODUCT_TYPE = {
+  PLAIN_CHAIN: "Dây Chuyền Trơn"
+};
