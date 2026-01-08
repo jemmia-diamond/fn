@@ -24,6 +24,7 @@ export default class SalesOrderService {
   static SYNC_TYPE_AUTO = 1; // auto sync when deploy app
   static SYNC_TYPE_MANUAL = 0; // manual sync when call function
   static WEBSITE_DEFAULT_FIRST_SOURCE = "CRM-LEAD-SOURCE-0000023";
+  static PAYMENT_GATEWAY_ERP = "Thanh toán qua ERP";
 
   constructor(env) {
     this.env = env;
@@ -767,7 +768,7 @@ export default class SalesOrderService {
       }
 
       // Calculate total from Sales Order Payment Records
-      const paymentRecords = (currentSalesOrder.payment_records || []).filter(r => ["capture", "authorization"].includes(r.kind) && r.gateway !== "Thanh toán qua ERP");
+      const paymentRecords = (currentSalesOrder.payment_records || []).filter(r => ["capture", "authorization"].includes(r.kind) && r.gateway !== SalesOrderService.PAYMENT_GATEWAY_ERP);
       const paymentRecordsTotal = paymentRecords.reduce((sum, record) => sum + parseFloat(record.amount || 0), 0);
 
       const currentLinkedPaymentEntries = currentSalesOrder.payment_entries || [];
@@ -919,7 +920,7 @@ export default class SalesOrderService {
           await haravanClient.orderTransaction.createTransaction(salesOrderData.haravan_order_id, {
             amount: remainingAmount,
             kind: "capture",
-            gateway: "Thanh toán qua ERP"
+            gateway: SalesOrderService.PAYMENT_GATEWAY_ERP
           });
         }
       } catch (error) {
