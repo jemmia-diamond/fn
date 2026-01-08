@@ -858,7 +858,7 @@ export default class SalesOrderService {
   }
 
   async backfillPaidAmount() {
-    let skip = 500;
+    let skip = 0;
     const take = 50;
     while (true) {
       const orders = await this.db.erpnextSalesOrders.findMany({
