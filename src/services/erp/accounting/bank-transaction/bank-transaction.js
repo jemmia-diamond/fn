@@ -17,6 +17,7 @@ const EXCLUDED_TRANSACTION_PATTERNS = [
   "noi bo",
   "MASTER:JEMMIA",
   "VISA:JEMMIA",
+  "JCB:JEMMIA",
   "HTC",
   "HTC TRA COD",
   "Zalopay",
@@ -43,17 +44,25 @@ export default class BankTransactionService {
     this.db = Database.instance(env);
   }
 
-  async syncUnlinkedBankTransactions() {
+  async syncUnlinkedBankTransactions(options = {}) {
     try {
       const nowICT = dayjs().tz("Asia/Bangkok");
-      const oneDayAgoICT = nowICT.subtract(1, "day");
+      const { fromDate, toDate } = options;
 
-      const nowUTC = nowICT.utc().format("YYYY-MM-DD HH:mm:ss");
-      const oneDayAgoUTC = oneDayAgoICT.utc().format("YYYY-MM-DD HH:mm:ss");
+      let fromDateUTC, toDateUTC;
+
+      if (fromDate && toDate) {
+        fromDateUTC = dayjs(fromDate).utc().format("YYYY-MM-DD HH:mm:ss");
+        toDateUTC = dayjs(toDate).utc().format("YYYY-MM-DD HH:mm:ss");
+      } else {
+        const oneDayAgoICT = nowICT.subtract(1, "day");
+        fromDateUTC = oneDayAgoICT.utc().format("YYYY-MM-DD HH:mm:ss");
+        toDateUTC = nowICT.utc().format("YYYY-MM-DD HH:mm:ss");
+      }
 
       const filters = [
-        ["creation", ">=", oneDayAgoUTC],
-        ["creation", "<=", nowUTC],
+        ["creation", ">=", fromDateUTC],
+        ["creation", "<=", toDateUTC],
         ["transaction_type", "=", "SePay"]
       ];
 
@@ -95,7 +104,7 @@ export default class BankTransactionService {
       }
 
       if (unlinkedTransactions.length > 0) {
-        await this.sendNotification(unlinkedTransactions, nowICT.format("YYYY-MM-DD"));
+        await this.sendNotification(unlinkedTransactions, dayjs(toDateUTC).tz("Asia/Bangkok").format("YYYY-MM-DD"));
       }
 
       return unlinkedTransactions;
@@ -212,8 +221,8 @@ export default class BankTransactionService {
     return message;
   }
 
-  static async syncUnlinkedBankTransactions(env) {
+  static async syncUnlinkedBankTransactions(env, options = {}) {
     const service = new BankTransactionService(env);
-    return await service.syncUnlinkedBankTransactions();
+    return await service.syncUnlinkedBankTransactions(options);
   }
 }
