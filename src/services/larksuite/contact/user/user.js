@@ -32,11 +32,39 @@ export default class UserService {
 
     // Insert users into database
     for (const user of usersArrays) {
-      await db.$queryRaw`
-        INSERT INTO larksuite.users (user_id, name, email, avatar, enterprise_email) 
-              VALUES (${user.user_id}, ${user.name}, ${user.email}, ${user.avatar}, ${user.enterprise_email})
-              ON CONFLICT (user_id) DO UPDATE SET name = ${user.name}, email = ${user.email}, avatar = ${user.avatar}, enterprise_email = ${user.enterprise_email}
-      `;
+      const userData = {
+        user_id: user.user_id,
+        open_id: user.open_id,
+        union_id: user.union_id,
+        name: user.name,
+        en_name: user.en_name,
+        email: user.email,
+        enterprise_email: user.enterprise_email,
+        gender: user.gender,
+        city: user.city,
+        country: user.country,
+        department_ids: user.department_ids,
+        description: user.description,
+        employee_no: user.employee_no,
+        employee_type: user.employee_type,
+        is_tenant_manager: user.is_tenant_manager,
+        job_title: user.job_title,
+        join_time: user.join_time ? BigInt(user.join_time) : null,
+        leader_user_id: user.leader_user_id,
+        work_station: user.work_station,
+        status_is_activated: user.status?.is_activated,
+        status_is_exited: user.status?.is_exited,
+        status_is_frozen: user.status?.is_frozen,
+        status_is_resigned: user.status?.is_resigned,
+        status_is_unjoin: user.status?.is_unjoin,
+        avatar: user.avatar
+      };
+
+      await db.larksuite_users.upsert({
+        where: { user_id: user.user_id },
+        create: userData,
+        update: userData
+      });
     }
   }
 
