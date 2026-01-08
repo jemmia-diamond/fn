@@ -884,8 +884,12 @@ export default class SalesOrderService {
       for (const order of orders) {
         if (order.name) {
           console.warn(`Processing backfill for order: ${order.name}`);
-          await this.updateSalesOrderPaidAmount(order.name);
-          // Add timeout between each orders
+          try {
+            await this.updateSalesOrderPaidAmount(order.name);
+          } catch (err) {
+            Sentry.captureException(err);
+          }
+          // Add timeout between orders
           await new Promise(resolve => setTimeout(resolve, 2000));
         }
       }
