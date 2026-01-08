@@ -26,8 +26,6 @@ export default class UptimeRobotClient {
     monitorIds = null,
     logsLimit = LOGS_LIMIT,
     logTypes = DEFAULT_LOG_TYPE,
-    logsStartDate = null,
-    logsEndDate = null,
     customUptimeRanges = null
   ) {
     const params = new URLSearchParams();
@@ -40,22 +38,7 @@ export default class UptimeRobotClient {
     }
 
     params.append("log_types", logTypes);
-
-    if (logsStartDate) {
-      const timestamp = typeof logsStartDate === "number" ?
-        logsStartDate : Math.floor(logsStartDate.getTime() / 1000);
-      params.append("logs_start_date", timestamp.toString());
-    }
-
-    if (logsEndDate) {
-      const timestamp = typeof logsEndDate === "number" ?
-        logsEndDate : Math.floor(logsEndDate.getTime() / 1000);
-      params.append("logs_end_date", timestamp.toString());
-    }
-
-    if (customUptimeRanges) {
-      params.append("custom_uptime_ranges", customUptimeRanges);
-    }
+    params.append("custom_uptime_ranges", customUptimeRanges);
 
     if (monitorIds && monitorIds.length > 0) {
       params.append("monitors", monitorIds.join("-"));
