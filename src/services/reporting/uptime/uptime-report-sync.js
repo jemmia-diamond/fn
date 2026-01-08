@@ -8,7 +8,6 @@ dayjs.extend(utc);
 dayjs.extend(isSameOrBefore);
 
 const ONE_DAY = 1;
-const ONE_SECOND = 1000;
 const SECONDS_IN_DAY = 86400;
 const PERCENTAGE_DIVISOR = 100;
 const LOGS_LIMIT = 0;
@@ -62,7 +61,6 @@ export default class UptimeReportSyncService {
           },
           create: report
         });
-        await new Promise(resolve => setTimeout(resolve, ONE_SECOND));
       }
     }
     return true;
