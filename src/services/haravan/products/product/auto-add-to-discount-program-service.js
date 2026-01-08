@@ -56,7 +56,7 @@ export default class AutoAddToDiscountProgramService {
         return sku.length === SKU_LENGTH.JEWELRY;
       });
 
-      if (isJewelry && product.product_type !== HRV_PRODUCT_TYPE.PLAIN_CHAIN) {
+      if (isJewelry && product.product_type.trim() !== HRV_PRODUCT_TYPE.PLAIN_CHAIN) {
         await this.addToJewelryCollection(product.id);
       }
     }
