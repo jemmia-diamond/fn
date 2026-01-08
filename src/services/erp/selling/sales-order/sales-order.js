@@ -706,50 +706,6 @@ export default class SalesOrderService {
       const relatedOrders = await this.getAllRelatedSalesOrders(salesOrderName);
       const relatedOrderNames = relatedOrders.map(o => o.name);
 
-      // Calculate group grand total
-      let groupGrandTotal = 0;
-      let splitOrders = [];
-      if (currentSalesOrder.is_split_order && currentSalesOrder.split_order_group) {
-        splitOrders = await this.frappeClient.getList("Sales Order", {
-          filters: [
-            ["split_order_group", "=", currentSalesOrder.split_order_group],
-            ["is_split_order", "=", 1],
-            ["cancelled_status", "=", "Uncancelled"]
-          ],
-          fields: ["name", "grand_total", "paid_amount"]
-        });
-        groupGrandTotal = splitOrders.reduce((sum, order) => sum + parseFloat(order.grand_total || 0), 0);
-      } else {
-        groupGrandTotal = parseFloat(currentSalesOrder.grand_total || 0);
-      }
-
-      // Calculate group payment total
-      const groupPaymentTotal = await this.calculateGroupPaymentTotal(relatedOrderNames);
-      if (groupPaymentTotal === groupGrandTotal) {
-        const targetOrders = (splitOrders && splitOrders.length > 0) ? splitOrders : [{ name: salesOrderName, grand_total: currentSalesOrder.grand_total }];
-        let updatedCurrentDoc = currentSalesOrder;
-
-        for (const order of targetOrders) {
-          const doc = (order.name === salesOrderName) ? currentSalesOrder : order;
-          const docPaid = parseFloat(doc.paid_amount || 0);
-          const docTotal = parseFloat(doc.grand_total || 0);
-
-          if (docPaid !== docTotal) {
-            const updated = await this.frappeClient.update({
-              doctype: "Sales Order",
-              name: doc.name,
-              paid_amount: docTotal,
-              balance: 0
-            });
-
-            if (order.name === salesOrderName) {
-              updatedCurrentDoc = updated;
-            }
-          }
-        }
-        return updatedCurrentDoc;
-      }
-
       // Standard Payment Logic
       const paymentEntryNames = await this.frappeClient.getList("Payment Entry", {
         fields: ["name"],
@@ -814,6 +770,64 @@ export default class SalesOrderService {
       const paymentRecords = (currentSalesOrder.payment_records || []).filter(r => ["capture", "authorization"].includes(r.kind) && r.gateway !== "Thanh toán qua ERP");
       const paymentRecordsTotal = paymentRecords.reduce((sum, record) => sum + parseFloat(record.amount || 0), 0);
 
+      const currentLinkedPaymentEntries = currentSalesOrder.payment_entries || [];
+      const isPaymentEntriesChanged = currentLinkedPaymentEntries.length !== linkedPaymentEntries.length ||
+        !linkedPaymentEntries.every(l => currentLinkedPaymentEntries.some(c => c.reference_name === l.reference_name));
+
+      // Calculate group grand total
+      let groupGrandTotal = 0;
+      let splitOrders = [];
+      if (currentSalesOrder.is_split_order && currentSalesOrder.split_order_group) {
+        splitOrders = await this.frappeClient.getList("Sales Order", {
+          filters: [
+            ["split_order_group", "=", currentSalesOrder.split_order_group],
+            ["is_split_order", "=", 1],
+            ["cancelled_status", "=", "Uncancelled"]
+          ],
+          fields: ["name", "grand_total", "paid_amount"]
+        });
+        groupGrandTotal = splitOrders.reduce((sum, order) => sum + parseFloat(order.grand_total || 0), 0);
+      } else {
+        groupGrandTotal = parseFloat(currentSalesOrder.grand_total || 0);
+      }
+
+      // Calculate group payment total
+      let groupPaymentTotal = await this.calculateGroupPaymentTotal(relatedOrderNames);
+      groupPaymentTotal += paymentRecordsTotal;
+
+      if (groupPaymentTotal >= groupGrandTotal) {
+        const targetOrders = (splitOrders && splitOrders.length > 0) ? splitOrders : [{ name: salesOrderName, grand_total: currentSalesOrder.grand_total }];
+        let updatedCurrentDoc = currentSalesOrder;
+
+        for (const order of targetOrders) {
+          const doc = (order.name === salesOrderName) ? currentSalesOrder : order;
+          const docPaid = parseFloat(doc.paid_amount || 0);
+          const docTotal = parseFloat(doc.grand_total || 0);
+
+          if (order.name === salesOrderName) {
+            if (docPaid !== docTotal || isPaymentEntriesChanged) {
+              const updated = await this.frappeClient.update({
+                doctype: "Sales Order",
+                name: doc.name,
+                paid_amount: docTotal,
+                balance: 0,
+                payment_entries: linkedPaymentEntries
+              });
+              updatedCurrentDoc = updated;
+            }
+          }
+          else if (docPaid !== docTotal) {
+            await this.frappeClient.update({
+              doctype: "Sales Order",
+              name: doc.name,
+              paid_amount: docTotal,
+              balance: 0
+            });
+          }
+        }
+        return updatedCurrentDoc;
+      }
+
       // Logic to determine total_paid
       const salesOrderGrandTotal = currentSalesOrder.grand_total;
       const currentPaidAmount = currentSalesOrder.paid_amount;
@@ -832,10 +846,6 @@ export default class SalesOrderService {
       }
 
       const balance = parseFloat(salesOrderGrandTotal) - parseFloat(totalPaid);
-
-      const currentLinkedPaymentEntries = currentSalesOrder.payment_entries || [];
-      const isPaymentEntriesChanged = currentLinkedPaymentEntries.length !== linkedPaymentEntries.length ||
-        !linkedPaymentEntries.every(l => currentLinkedPaymentEntries.some(c => c.reference_name === l.reference_name));
 
       // Update if changed
       if (parseFloat(totalPaid) !== parseFloat(currentPaidAmount) || parseFloat(currentBalance) !== parseFloat(balance) || isPaymentEntriesChanged) {
