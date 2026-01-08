@@ -62,7 +62,7 @@ export default class PaymentEntryService {
 
     let transferAmount = paymentEntry.paid_amount || paymentEntry.received_amount || 0;
 
-    if (primaryOrder && primaryOrder.balance && paymentEntry.admin_editing == 0) {
+    if (primaryOrder && primaryOrder.balance && paymentEntry.admin_editing == 0 && references.length == 1) {
       const leftAmountToPaid = parseFloat(primaryOrder.balance);
       const paid = parseFloat(transferAmount);
 
