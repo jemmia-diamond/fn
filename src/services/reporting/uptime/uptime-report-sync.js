@@ -28,7 +28,7 @@ export default class UptimeReportSyncService {
     }
 
     const allMonitors = await this.client.getAllMonitors();
-    if (allMonitors == []) {
+    if (allMonitors.length === 0) {
       throw new Error(`No monitors found at ${endDate}`);
     }
 
@@ -41,10 +41,10 @@ export default class UptimeReportSyncService {
       iterDate = iterDate.add(1, "day");
     }
 
-    for (const monitorId of targetMonitors) {
-      for (const date of dates) {
-        const report = await this._fetchDailyUptimeForMonitor(monitorId, date);
+    for (const date of dates) {
+      const reports = await this._fetchDailyUptimeForAllMonitors(targetMonitors, date, allMonitors);
 
+      for (const report of reports) {
         await this.db.reportingUptimeReport.upsert({
           where: {
             monitorId_date: {
@@ -66,28 +66,31 @@ export default class UptimeReportSyncService {
     return true;
   }
 
-  async _fetchDailyUptimeForMonitor(monitorId, date) {
+  async _fetchDailyUptimeForAllMonitors(monitorIds, date) {
     const startTimestamp = dayjs(date).startOf("day").unix();
     const endTimestamp = dayjs(date).endOf("day").unix();
 
     const response = await this.client.getMonitors(
-      [monitorId], LOGS_LIMIT, DEFAULT_LOG_TYPE, `${startTimestamp}_${endTimestamp}`
+      monitorIds, LOGS_LIMIT, DEFAULT_LOG_TYPE, `${startTimestamp}_${endTimestamp}`
     );
 
-    const monitor = response.monitors[0];
-    const uptimePercentage = parseFloat(monitor.custom_uptime_ranges || "100");
-    const uptime = Math.round((uptimePercentage / PERCENTAGE_DIVISOR) * SECONDS_IN_DAY);
-    const downtime = SECONDS_IN_DAY - uptime;
+    const reports = [];
+    for (const monitor of response.monitors) {
+      const uptimePercentage = parseFloat(monitor.custom_uptime_ranges || "100");
+      const uptime = Math.round((uptimePercentage / PERCENTAGE_DIVISOR) * SECONDS_IN_DAY);
+      const downtime = SECONDS_IN_DAY - uptime;
 
-    return {
-      monitorId: monitorId.toString(),
-      monitorName: monitor.friendly_name,
-      date: dayjs(date).startOf("day").toDate(),
-      totalTime: SECONDS_IN_DAY,
-      uptime,
-      downtime,
-      uptimePercentage
-    };
+      reports.push({
+        monitorId: monitor.id.toString(),
+        monitorName: monitor.friendly_name,
+        date: dayjs(date).utc().startOf("day").toDate(),
+        totalTime: SECONDS_IN_DAY,
+        uptime,
+        downtime,
+        uptimePercentage
+      });
+    }
+    return reports;
   }
 
   async dailySync() {
