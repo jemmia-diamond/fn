@@ -10,6 +10,7 @@ import Reporting from "services/reporting";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import timezone from "dayjs/plugin/timezone.js";
+import { TIMEZONE_VIETNAM } from "src/constants";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -89,16 +90,16 @@ export default {
     case "0 10 * * *": // 17:00
       await ERP.Automation.AssignmentRuleService.updateAssignmentRulesEndDay(env);
       await ERP.Accounting.BankTransactionService.syncUnlinkedBankTransactions(env, {
-        fromDate: dayjs().tz("Asia/Bangkok").hour(9).minute(30).second(0).toISOString(),
-        toDate: dayjs().tz("Asia/Bangkok").hour(17).minute(0).second(0).toISOString()
+        fromDate: dayjs().tz(TIMEZONE_VIETNAM).hour(9).minute(30).second(0).toISOString(),
+        toDate: dayjs().tz(TIMEZONE_VIETNAM).hour(17).minute(0).second(0).toISOString()
       });
       break;
     case "0 11 * * *": // 18:00
       break;
     case "30 2 * * *": // 09:30
       await ERP.Accounting.BankTransactionService.syncUnlinkedBankTransactions(env, {
-        fromDate: dayjs().tz("Asia/Bangkok").subtract(1, "day").hour(17).minute(0).second(0).toISOString(),
-        toDate: dayjs().tz("Asia/Bangkok").hour(9).minute(30).second(0).toISOString()
+        fromDate: dayjs().tz(TIMEZONE_VIETNAM).subtract(1, "day").hour(17).minute(0).second(0).toISOString(),
+        toDate: dayjs().tz(TIMEZONE_VIETNAM).hour(9).minute(30).second(0).toISOString()
       });
       break;
     case "0 14 * * *": // 21:00

@@ -6,6 +6,7 @@ import * as Sentry from "@sentry/cloudflare";
 import LarksuiteService from "services/larksuite/lark";
 import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/constant";
 import Database from "services/database";
+import { TIMEZONE_VIETNAM } from "src/constants";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -46,7 +47,7 @@ export default class BankTransactionService {
 
   async syncUnlinkedBankTransactions(options = {}) {
     try {
-      const nowICT = dayjs().tz("Asia/Bangkok");
+      const nowICT = dayjs().tz(TIMEZONE_VIETNAM);
       const { fromDate, toDate } = options;
 
       let fromDateUTC, toDateUTC;
@@ -104,7 +105,7 @@ export default class BankTransactionService {
       }
 
       if (unlinkedTransactions.length > 0) {
-        await this.sendNotification(unlinkedTransactions, dayjs(toDateUTC).tz("Asia/Bangkok").format("YYYY-MM-DD"));
+        await this.sendNotification(unlinkedTransactions, dayjs(toDateUTC).tz(TIMEZONE_VIETNAM).format("YYYY-MM-DD"));
       }
 
       return unlinkedTransactions;
