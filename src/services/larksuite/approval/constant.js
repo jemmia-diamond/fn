@@ -1,7 +1,8 @@
 import {
   transformLeaveFormData,
   transformPaymentFormData,
-  transformPurchaseFormData
+  transformPurchaseFormData,
+  transformOffboardData
 } from "services/larksuite/approval/instance/utils/formTransformation";
 
 export const APPROVALS = {
@@ -39,6 +40,16 @@ export const APPROVALS = {
       description: ["widget17464364605980001"],
       estimated_amount: ["widget17394169374020001"],
       expected_receive_date: ["widget17394170111200001"]
+    }
+  },
+  OFFBOARD_APPROVAL: {
+    code: "5A3637EE-DFC5-4837-9C69-8AF57DB7721E",
+    formTransformFunction: transformOffboardData,
+    widgetFieldMapper: {
+      offboardReason: ["widget17001290928990001"],
+      offboardDesireDate: ["widget17001290376100001"],
+      handoverStartDate: ["widget17001290517750001"],
+      handoverReceiver: ["widget17001290735190001"]
     }
   }
 };

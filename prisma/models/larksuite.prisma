@@ -110,7 +110,7 @@ model groups {
   @@schema("larksuite")
 }
 
-model instances {
+model larksuitInstances {
   uuid          String    @id
   serial_number String?   @unique
   instance_code String?   @unique
@@ -124,6 +124,7 @@ model instances {
   form          Json?
   form_data     Json?
 
+  @@map("instances")
   @@schema("larksuite")
 }
 
