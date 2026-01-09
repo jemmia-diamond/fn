@@ -149,8 +149,7 @@ export default class TechTicketService {
           });
 
           return result ? "created" : "failed";
-        } catch (error) {
-          console.warn(`Failed to save record ${record.record_id}:`, error);
+        } catch {
           return "failed";
         }
       }));
@@ -160,8 +159,6 @@ export default class TechTicketService {
         if (res === "created") created++;
         else failed++;
       });
-
-      console.warn(`... saved ${Math.min(i + CHUNK_SIZE, records.length)}/${records.length} records in current batch`);
     }
 
     return {
@@ -189,15 +186,12 @@ export default class TechTicketService {
 
         if (lastSyncTime) {
           startSyncTime = dayjs.utc(lastSyncTime).valueOf();
-          console.warn(`Starting daily tech ticket sync (Incremental): ${lastSyncTime} to ${now.format()}`);
         } else {
           startSyncTime = now.subtract(1, "day").valueOf();
-          console.warn(`Starting daily tech ticket sync (Last 1 day): ${now.subtract(1, "day").format()} to ${now.format()}`);
         }
       } else {
         startSyncTime = dayjs.utc("2024-12-31T17:00:00").valueOf();
         endSyncTime = dayjs.utc("2025-12-31T16:59:59").valueOf();
-        console.warn("Starting full 2025 tech ticket sync...");
       }
 
       const filter = {
@@ -217,7 +211,6 @@ export default class TechTicketService {
       };
 
       let pageToken = null;
-      let batchNumber = 0;
       let totalFetched = 0;
       let totalCreated = 0;
       let totalUpdated = 0;
@@ -226,9 +219,6 @@ export default class TechTicketService {
 
       // Fetch and save in batches
       do {
-        batchNumber++;
-        console.warn(`\nFetching batch ${batchNumber} (${pageSize} records)...`);
-
         // Fetch one page
         const { items, hasMore, pageToken: nextPageToken } = await this.fetchTechTicketsPage(
           env,
@@ -240,16 +230,12 @@ export default class TechTicketService {
         if (items.length === 0) break;
 
         totalFetched += items.length;
-        console.warn(`✓ Fetched ${items.length} records`);
 
         // Save this batch immediately
-        console.warn(`Saving batch ${batchNumber}...`);
         const stats = await this.saveTechTicketsToDatabase(env, items);
         totalCreated += stats.created;
         totalUpdated += stats.updated;
         totalFailed += stats.failed;
-
-        console.warn(`✓ Batch ${batchNumber} complete: ${stats.created} created, ${stats.updated} updated, ${stats.failed} failed`);
 
         // Move to next page
         pageToken = nextPageToken;
@@ -260,16 +246,13 @@ export default class TechTicketService {
         }
       } while (pageToken);
 
-      console.warn("Tech ticket sync completed!");
-
       // If daily mode, save the checkpoint timestamp to KV
       if (options.mode === "daily") {
         try {
           const checkpointTime = dayjs().utc().format("YYYY-MM-DD HH:mm:ss");
           await env.FN_KV.put("TECH_TICKET_LAST_DAILY_SYNC", checkpointTime);
-          console.warn(`Saved daily sync checkpoint to KV (UTC): ${checkpointTime}`);
-        } catch (kvError) {
-          console.warn("Failed to save daily sync checkpoint to KV:", kvError);
+        } catch {
+          // Failed to save daily sync checkpoint to KV, ignore
         }
       }
 
@@ -281,7 +264,6 @@ export default class TechTicketService {
         failed: totalFailed
       };
     } catch (error) {
-      console.warn("Error syncing tech tickets:", error);
       throw error;
     }
   }
