@@ -63,7 +63,6 @@ export default {
       await Larksuite.Docs.Base.RecordService.syncRecordsToDatabase(env);
       await new Reporting.UptimeReportSyncService(env).dailySync();
       break;
-
     case "30 0 * * *": // 07:30
       await ERP.CRM.LeadDemandService.syncLeadDemandToDatabase(env);
       await ERP.CRM.LeadBudgetService.syncLeadBudgetsToDatabase(env);
