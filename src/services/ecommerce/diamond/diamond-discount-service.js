@@ -31,6 +31,7 @@ export default class DiamondDiscountService {
         filters: [
           ["product_category", "=", "Kim Cương Viên"],
           ["discount_type", "=", "Percentage"],
+          ["promotion_type", "=", "Khuyến mãi nền"],
           ["is_active", "=", 1],
           ["is_expired", "=", 1],
           ["start_date", "<=", now],
