@@ -306,7 +306,8 @@ export default class SalesOrderService {
     }
 
     // Calculate Payment Entries Total
-    const paymentEntriesTotal = await this.calculateGroupPaymentTotal(allOrderNames);
+    const allPaymentEntries = await this.getAllRelatedPaymentEntries(allOrderNames);
+    const paymentEntriesTotal = await this.calculateGroupPaymentTotal(allPaymentEntries);
 
     // Set Paid Amount
     salesOrderData.paid_amount = paymentEntriesTotal;
@@ -708,15 +709,7 @@ export default class SalesOrderService {
       const relatedOrderNames = relatedOrders.map(o => o.name);
 
       // Standard Payment Logic
-      const paymentEntryNames = await this.frappeClient.getList("Payment Entry", {
-        fields: ["name"],
-        filters: [
-          ["Payment Entry Reference", "reference_doctype", "=", "Sales Order"],
-          ["Payment Entry Reference", "reference_name", "=", salesOrderName],
-          ["docstatus", "<", 2],
-          ["payment_order_status", "=", "Success"]
-        ]
-      });
+      const paymentEntryNames = await this.getAllRelatedPaymentEntries([salesOrderName]);
 
       // Unique payment entries
       const uniquePaymentEntryNames = [...new Set(paymentEntryNames.map(pe => pe.name))];
@@ -793,7 +786,8 @@ export default class SalesOrderService {
       }
 
       // Calculate group payment total
-      let groupPaymentTotal = await this.calculateGroupPaymentTotal(relatedOrderNames);
+      const allPaymentEntries = await this.getAllRelatedPaymentEntries(relatedOrderNames);
+      let groupPaymentTotal = await this.calculateGroupPaymentTotal(allPaymentEntries);
       groupPaymentTotal += paymentRecordsTotal;
 
       if (groupPaymentTotal >= groupGrandTotal) {
@@ -1007,9 +1001,7 @@ export default class SalesOrderService {
     return Array.from(relatedOrdersMap.values());
   }
 
-  async calculateGroupPaymentTotal(relatedOrderNames) {
-    if (!relatedOrderNames || relatedOrderNames.length === 0) return 0;
-
+  async getAllRelatedPaymentEntries(relatedOrderNames) {
     const paymentEntries = await this.frappeClient.getList("Payment Entry", {
       filters: [
         ["Payment Entry Reference", "reference_doctype", "=", "Sales Order"],
@@ -1019,6 +1011,10 @@ export default class SalesOrderService {
       ],
       fields: ["name", "payment_type"]
     });
+    return paymentEntries;
+  }
+
+  async calculateGroupPaymentTotal(paymentEntries) {
 
     if (!paymentEntries || paymentEntries.length === 0) return 0;
 
