@@ -705,11 +705,15 @@ export default class SalesOrderService {
       const currentSalesOrder = await this.frappeClient.getDoc("Sales Order", salesOrderName);
       if (!currentSalesOrder) return null;
 
-      const relatedOrders = await this.getAllRelatedSalesOrders(salesOrderName);
-      const relatedOrderNames = relatedOrders.map(o => o.name);
-
       // Standard Payment Logic
-      const paymentEntryNames = await this.getAllRelatedPaymentEntries([salesOrderName]);
+      const paymentEntryNames = await this.getAllRelatedPaymentEntries(
+        Array.from(
+          new Set([
+            currentSalesOrder.name,
+            ...currentSalesOrder.ref_sales_orders.map(r => r.sales_order)
+          ])
+        )
+      );
 
       // Unique payment entries
       const uniquePaymentEntryNames = [...new Set(paymentEntryNames.map(pe => pe.name))];
@@ -728,7 +732,7 @@ export default class SalesOrderService {
       const linkedPaymentEntries = [];
       for (const entry of paymentEntries) {
         if (entry && entry.references) {
-          const ref = entry.references.find(r => r.reference_doctype === "Sales Order" && r.reference_name === salesOrderName);
+          const ref = entry.references.find(r => r.reference_doctype === "Sales Order");
           if (ref) {
             const allocated = parseFloat(ref.allocated_amount || 0);
             if (entry.payment_type === "Pay") {
@@ -738,24 +742,26 @@ export default class SalesOrderService {
             }
 
             // Build linked payment entry row
-            const row = {
-              doctype: "Payment Entry Reference",
-              reference_doctype: "Payment Entry",
-              reference_name: entry.name,
-              total_amount: ref.total_amount,
-              outstanding_amount: ref.outstanding_amount,
-              allocated_amount: entry.payment_type === "Pay" ? -Math.abs(ref.allocated_amount) : ref.allocated_amount,
-              mode_of_payment: entry.mode_of_payment,
-              gateway: entry.gateway,
-              paid_amount: entry.paid_amount,
-              payment_date: entry.payment_date,
-              payment_order_status: entry.payment_order_status
-            };
+            if (ref.reference_name === salesOrderName) {
+              const row = {
+                doctype: "Payment Entry Reference",
+                reference_doctype: "Payment Entry",
+                reference_name: entry.name,
+                total_amount: ref.total_amount,
+                outstanding_amount: ref.outstanding_amount,
+                allocated_amount: entry.payment_type === "Pay" ? -Math.abs(ref.allocated_amount) : ref.allocated_amount,
+                mode_of_payment: entry.mode_of_payment,
+                gateway: entry.gateway,
+                paid_amount: entry.paid_amount,
+                payment_date: entry.payment_date,
+                payment_order_status: entry.payment_order_status
+              };
 
-            if (currentPaymentEntriesMap.has(entry.name)) {
-              row.name = currentPaymentEntriesMap.get(entry.name);
+              if (currentPaymentEntriesMap.has(entry.name)) {
+                row.name = currentPaymentEntriesMap.get(entry.name);
+              }
+              linkedPaymentEntries.push(row);
             }
-            linkedPaymentEntries.push(row);
           }
         }
       }
@@ -786,6 +792,8 @@ export default class SalesOrderService {
       }
 
       // Calculate group payment total
+      const relatedOrders = await this.getAllRelatedSalesOrders(salesOrderName);
+      const relatedOrderNames = relatedOrders.map(o => o.name);
       const relatedPaymentEntries = await this.getAllRelatedPaymentEntries(relatedOrderNames);
       let groupPaymentTotal = await this.calculateGroupPaymentTotal(relatedOrderNames, relatedPaymentEntries);
       groupPaymentTotal += paymentRecordsTotal;
