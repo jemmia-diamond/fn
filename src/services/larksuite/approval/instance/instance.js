@@ -89,7 +89,53 @@ export default class InstanceService {
           form_data: instance.form_data
         }
       });
+      await instanceService.createOrUpdateUser(instance.user_id, db, env);
     }
+  }
+
+  async createOrUpdateUser(userId, db, env) {
+    if (!userId) return null;
+
+    let user = await db.larksuite_users.findUnique({
+      where: { user_id: userId },
+      select: { user_id: true, name: true }
+    });
+
+    if (!user) {
+      const larkUser = await LarksuiteService.getUserInfo(env, userId);
+      if (larkUser) {
+        const userData = {
+          user_id: larkUser.user_id,
+          open_id: larkUser.open_id,
+          union_id: larkUser.union_id,
+          name: larkUser.name,
+          en_name: larkUser.en_name,
+          email: larkUser.email,
+          enterprise_email: larkUser.enterprise_email,
+          gender: larkUser.gender,
+          city: larkUser.city,
+          country: larkUser.country,
+          department_ids: larkUser.department_ids,
+          description: larkUser.description,
+          employee_no: larkUser.employee_no,
+          employee_type: larkUser.employee_type,
+          is_tenant_manager: larkUser.is_tenant_manager,
+          job_title: larkUser.job_title,
+          join_time: larkUser.join_time ? BigInt(larkUser.join_time) : null,
+          leader_user_id: larkUser.leader_user_id,
+          work_station: larkUser.work_station,
+          status_is_activated: larkUser.status?.is_activated,
+          status_is_exited: larkUser.status?.is_exited,
+          status_is_frozen: larkUser.status?.is_frozen,
+          status_is_resigned: larkUser.status?.is_resigned,
+          status_is_unjoin: larkUser.status?.is_unjoin,
+          avatar: larkUser.avatar
+        };
+        await db.larksuite_users.create({ data: userData });
+      }
+    }
+
+    return true;
   }
 
   transformInstance = (instance) => {
