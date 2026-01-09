@@ -8,6 +8,7 @@ import RecordService from "services/larksuite/docs/base/record/record";
 import HaravanAPI from "services/clients/haravan-client";
 import Misa from "services/misa";
 import { BadRequestException } from "src/exception/exceptions";
+import { SEPAY_WEBHOOK_TOPICS } from "services/erp/accounting/sepay-transaction/constants";
 
 dayjs.extend(utc);
 
@@ -34,22 +35,17 @@ export default class SepayTransactionService {
    * @returns {Promise<boolean>}
    */
   async processTransaction(sepayTransaction) {
-    const { content, transferAmount } = sepayTransaction;
-
-    const { orderNumber, orderDesc } = this.standardizeOrderNumber(content);
+    const { content, description, transferAmount } = sepayTransaction;
+    const { orderNumber, orderDesc } = this.standardizeOrderNumber(content, description);
 
     if (!orderNumber && !orderDesc) {
-      Sentry.captureMessage("Order description not found");
+      // TODO: send notification to larksuite
       return;
     }
 
     const isOrderLater = orderNumber === "ORDERLATER";
 
-    const qr = await this.findQrRecord({
-      orderNumber,
-      orderDesc,
-      transferAmount
-    });
+    const qr = await this.findQrRecord({ orderDesc, transferAmount });
 
     if (!qr) throw new Error("QR code not found");
 
@@ -166,14 +162,16 @@ export default class SepayTransactionService {
     }
   }
 
-  standardizeOrderNumber(content) {
-    if (!content) {
+  standardizeOrderNumber(content, description) {
+    if (!content && !description) {
       return { orderNumber: null, orderDesc: null };
     }
     const pattern = /(?:SEVQR\s+)?(ORDER\w+(?:\s+\d+)?|ORDERLATER(?:\s+\d+)?)/;
-    const match = content.match(pattern);
+    let match = content.match(pattern);
+
     if (!match) {
-      return { orderNumber: null, orderDesc: null };
+      match = description.match(pattern);
+      if (!match) return { orderNumber: null, orderDesc: null };
     }
 
     const orderDesc = match[0];
@@ -196,54 +194,9 @@ export default class SepayTransactionService {
       reference_number: rawSepayTransaction.referenceCode,
       code: rawSepayTransaction.code,
       sub_account: rawSepayTransaction.subAccount,
-      bank_account_id: null
+      bank_account_id: null,
+      description: rawSepayTransaction.description
     };
-  }
-
-  async sendToLark(rawSepayTransaction, existingTransaction) {
-    const sepayTransaction = this.mapRawSepayTransactionToPrisma(rawSepayTransaction);
-
-    if (parseFloat(sepayTransaction.amount_in) < 0) return;
-
-    const { orderNumber, orderDesc } = this.standardizeOrderNumber(sepayTransaction.transaction_content);
-
-    const fields = {
-      "Số Tiền Giao Dịch": Number(sepayTransaction.amount_in),
-      "Sepay - Nội dung giao dịch": sepayTransaction.transaction_content,
-      "Sepay - ID Giao Dịch": sepayTransaction.id,
-      "Sepay - Mã Đơn Từ Giao Dịch": orderNumber,
-      "Sepay - Nội Dung Đơn Từ Giao Dịch": orderDesc,
-      "Ngày Nhận Tiền": dayjs(sepayTransaction.transaction_date, "YYYY-MM-DD HH:mm:ss").valueOf(),
-      "Ngân Hàng": sepayTransaction.bank_brand_name,
-      "Số Tài Khoản": sepayTransaction.account_number
-    };
-
-    const larkParams = {
-      env: this.env,
-      appToken: TABLES.SEPAY_TRANSACTION.app_token,
-      tableId: TABLES.SEPAY_TRANSACTION.table_id,
-      userIdType: "open_id"
-    };
-
-    let upsertedLarkRecord = null;
-    if (existingTransaction && existingTransaction.lark_record_id) {
-      upsertedLarkRecord = await RecordService.updateLarksuiteRecord({
-        ...larkParams,
-        recordId: existingTransaction.lark_record_id,
-        fields
-      });
-    } else {
-      upsertedLarkRecord = await RecordService.createLarksuiteRecord({
-        ...larkParams,
-        fields
-      });
-    }
-    if (upsertedLarkRecord && upsertedLarkRecord.id) {
-      await this.db.sepay_transaction.update({
-        where: { id: existingTransaction.id },
-        data: { lark_record_id: upsertedLarkRecord.id }
-      });
-    }
   }
 
   async sendToERP(rawSepayTransaction, existingTransaction) {
@@ -252,7 +205,7 @@ export default class SepayTransactionService {
 
       if (parseFloat(sepayTransaction.amount_in) < 0) return;
 
-      const { orderNumber, orderDesc } = this.standardizeOrderNumber(sepayTransaction.transaction_content);
+      const { orderNumber, orderDesc } = this.standardizeOrderNumber(sepayTransaction.transaction_content, sepayTransaction.description);
 
       if (existingTransaction) {
         const bank = sepayTransaction.bank_brand_name && await this.frappeClient.getList(
@@ -272,6 +225,7 @@ export default class SepayTransactionService {
           {
             doctype: "Bank Transaction",
             name: existingTransaction.bank_transaction_name ?? "",
+            transaction_type: "SePay",
             sepay_id: sepayTransaction.id,
             sepay_order_number: orderNumber,
             sepay_order_description: orderDesc,
@@ -322,7 +276,8 @@ export default class SepayTransactionService {
       reference_number,
       code,
       sub_account,
-      bank_account_id
+      bank_account_id,
+      description
     } = sepayTransaction;
 
     const upsertedTransaction = await this.db.sepay_transaction.upsert({
@@ -339,6 +294,7 @@ export default class SepayTransactionService {
         code,
         sub_account,
         bank_account_id,
+        description,
         updated_at: new Date()
       },
       create: sepayTransaction
@@ -351,16 +307,60 @@ export default class SepayTransactionService {
     return upsertedTransaction;
   }
 
-  async findQrRecord({ orderNumber, orderDesc, transferAmount }) {
+  async findQrRecord({ orderDesc, transferAmount }) {
     return this.db.qrPaymentTransaction.findFirst({
       where: {
-        haravan_order_number: orderNumber,
         transfer_note: orderDesc,
         transfer_amount: transferAmount,
         transfer_status: "pending",
         is_deleted: false
       }
     });
+  }
+
+  async createZalopayTransaction(zalopayTransaction) {
+    try {
+      const body = zalopayTransaction;
+      const { data: dataStr } = body || {};
+      if (dataStr) {
+        const parsedData = JSON.parse(dataStr);
+        let embedDataJson = null;
+        let itemJson = null;
+
+        embedDataJson = parsedData.embed_data ? JSON.parse(parsedData.embed_data) : null;
+        itemJson = parsedData.item ? JSON.parse(parsedData.item) : null;
+        const createDto = {
+          id: parsedData.app_trans_id,
+          amount_in: String(parsedData.amount || 0),
+          transaction_date: parsedData.server_time ? dayjs(parsedData.server_time).format("YYYY-MM-DD HH:mm:ss") : null,
+
+          app_id: parsedData.app_id,
+          app_time: parsedData.app_time ? BigInt(parsedData.app_time) : null,
+          app_user: parsedData.app_user,
+          embed_data: embedDataJson,
+          item: itemJson,
+          zp_trans_id: parsedData.zp_trans_id ? BigInt(parsedData.zp_trans_id) : null,
+          server_time: parsedData.server_time ? BigInt(parsedData.server_time) : null,
+          channel: parsedData.channel,
+          merchant_user_id: parsedData.merchant_user_id,
+          user_fee_amount: parsedData.user_fee_amount ? BigInt(parsedData.user_fee_amount) : null,
+          discount_amount: parsedData.discount_amount ? BigInt(parsedData.discount_amount) : null
+        };
+
+        const { id: _id, ...updateDto } = createDto;
+
+        return await this.db.sepay_transaction.upsert({
+          create: createDto,
+          update: updateDto,
+          where: {
+            id: parsedData.app_trans_id
+          }
+        });
+      }
+    } catch (e) {
+      Sentry.captureException(e);
+      return null;
+    }
   }
 
   async enqueueMisaBackgroundJob(qrRecord) {
@@ -379,7 +379,12 @@ export default class SepayTransactionService {
 
     for (const message of batch.messages) {
       try {
-        await service.processTransaction(message.body);
+        const body = message.body;
+        // Skip ZaloPay
+        if (body.topic === SEPAY_WEBHOOK_TOPICS.ZALOPAY) {
+          continue;
+        }
+        await service.processTransaction(body);
       } catch (error) {
         Sentry.captureException(error);
       }
@@ -391,13 +396,64 @@ export default class SepayTransactionService {
 
     for (const message of batch.messages) {
       try {
-        const createdSepayTransaction = await service.saveToDb(message.body);
-        if (createdSepayTransaction) {
+        const topic = message.body.topic;
+        let createdSepayTransaction = null;
+        if (topic === SEPAY_WEBHOOK_TOPICS.SEPAY) {
+          createdSepayTransaction = await service.saveToDb(message.body);
+        } else {
+          createdSepayTransaction = await service.createZalopayTransaction(message.body);
+        }
+        if (createdSepayTransaction && topic === SEPAY_WEBHOOK_TOPICS.SEPAY) {
           await service.sendToERP(message.body, createdSepayTransaction);
+        } else if (createdSepayTransaction && topic === SEPAY_WEBHOOK_TOPICS.ZALOPAY) {
+          await service.sendZalopayToERP(message.body, createdSepayTransaction);
         }
       } catch (error) {
         Sentry.captureException(error);
       }
+    }
+  }
+
+  async sendZalopayToERP(zalopayData, dbRecord) {
+    try {
+      const { data: dataStr } = zalopayData || {};
+      if (!dataStr) return;
+
+      const parsedData = JSON.parse(dataStr);
+
+      const transactionDate = parsedData.server_time
+        ? dayjs(parsedData.server_time).format("YYYY-MM-DD")
+        : dayjs().format("YYYY-MM-DD");
+
+      const upsertedBankTransaction = await this.frappeClient.upsert(
+        {
+          doctype: "Bank Transaction",
+          name: dbRecord.bank_transaction_name ?? "",
+          transaction_type: "ZaloPay",
+          date: transactionDate,
+          deposit: parsedData.amount || 0,
+          app_id: parsedData.app_id,
+          app_time: parsedData.app_time,
+          app_user: parsedData.app_user,
+          zp_trans_id: parsedData.zp_trans_id,
+          embed_data: parsedData.embed_data,
+          item: parsedData.item,
+          server_time: parsedData.server_time,
+          channel: parsedData.channel,
+          merchant_user_id: parsedData.merchant_user_id,
+          user_fee_amount: parsedData.user_fee_amount
+        },
+        "name"
+      );
+
+      if (upsertedBankTransaction && upsertedBankTransaction.name) {
+        await this.db.sepay_transaction.update({
+          where: { id: dbRecord.id },
+          data: { bank_transaction_name: upsertedBankTransaction.name }
+        });
+      }
+    } catch (error) {
+      Sentry.captureException(error);
     }
   }
 }

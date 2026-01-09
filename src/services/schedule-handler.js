@@ -6,12 +6,19 @@ import DatabaseOperations from "services/db-operations";
 import Misa from "services/misa";
 import ProductQuote from "services/product_quote";
 import WorkshopOrderServices from "services/sync/lark-to-nocodb/workshop-orders";
+import Reporting from "services/reporting";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc.js";
+import timezone from "dayjs/plugin/timezone.js";
+import { TIMEZONE_VIETNAM } from "src/constants";
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 export default {
   scheduled: async (controller, env, _ctx) => {
     switch (controller.cron) {
     case "0 * * * *": // At minute 0 every hour
-      await ERP.CRM.LeadService.syncWebsiteLeads(env);
       await ERP.Telephony.CallLogService.syncStringeeCallLogs(env);
       await ERP.CRM.LeadService.syncCallLogLead(env);
       await ERP.Selling.SalesOrderService.fillSerialNumbersToTemporaryOrderItems(env);
@@ -19,6 +26,7 @@ export default {
     case "*/5 * * * *": // At every 5th minute
       await new Ecommerce.JewelryDiamondPairService(env).processOutOfStockDiamonds();
       await new Misa.InventoryItemSyncService(env).syncInventoryItems();
+      await new ERP.CRM.PancakeLeadSyncService(env).syncPancakeLeads();
       break;
     case "*/10 * * * *": // At every 10th minute
       await ERP.Selling.SerialService.syncSerialsToERP(env);
@@ -27,6 +35,7 @@ export default {
       break;
     case "*/15 * * * *": // At every 15th minute
       await ERP.Contacts.ContactService.cronSyncContactsToDatabase(env);
+      await ERP.CRM.LeadService.syncWebsiteLeads(env);
       break;
     case "*/20 * * * *": // At every 20th minute
       await ERP.Selling.SalesOrderService.cronSyncSalesOrdersToDatabase(env);
@@ -43,6 +52,7 @@ export default {
       await InventoryCMS.InventoryCheckLineService.syncInventoryCheckLineToDatabase(env);
       await DatabaseOperations.DatabaseFunctionService.runWorkplaceUpdateLastRfidScanTime(env);
       await WorkshopOrderServices.WorkshopOrderServices.cronJobSyncLarkToNocoDB(env);
+      await DatabaseOperations.MaterializedViewService.refresh3Hours(env);
       break;
     case "0 17 * * *": // 00:00
       await Larksuite.Contact.UserService.syncUsersToDatabase(env);
@@ -51,6 +61,8 @@ export default {
       await ERP.Setup.EmployeeService.syncEmployeesToDatabase(env);
       await ERP.Selling.SalesPersonService.syncSalesPersonToDatabase(env);
       await Larksuite.Docs.Base.RecordService.syncRecordsToDatabase(env);
+      await new Ecommerce.DiamondCollectService(env).syncDiamondsToCollects();
+      await new Reporting.UptimeReportSyncService(env).dailySync();
       break;
     case "30 0 * * *": // 07:30
       await ERP.CRM.LeadDemandService.syncLeadDemandToDatabase(env);
@@ -65,6 +77,7 @@ export default {
     case "0 1 * * *": // 08:00
       await Larksuite.Attendance.ScheduleService.syncScheduleToDatabase(env);
       await Larksuite.Approval.InstanceService.syncInstancesToDatabase(env);
+      await Larksuite.Approval.BuyBackInstanceService.syncInstancesToDatabase(env);
       break;
     case "30 1 * * *": // 08:30
       await ERP.Automation.AssignmentRuleService.disableAssignmentRuleOffHour(env);
@@ -78,7 +91,18 @@ export default {
       break;
     case "0 10 * * *": // 17:00
       await ERP.Automation.AssignmentRuleService.updateAssignmentRulesEndDay(env);
+      await ERP.Accounting.BankTransactionService.syncUnlinkedBankTransactions(env, {
+        fromDate: dayjs().tz(TIMEZONE_VIETNAM).hour(9).minute(0).second(0).toISOString(),
+        toDate: dayjs().tz(TIMEZONE_VIETNAM).hour(17).minute(0).second(0).toISOString()
+      });
+      break;
     case "0 11 * * *": // 18:00
+      break;
+    case "0 2 * * *": // 09:00
+      await ERP.Accounting.BankTransactionService.syncUnlinkedBankTransactions(env, {
+        fromDate: dayjs().tz(TIMEZONE_VIETNAM).subtract(1, "day").hour(17).minute(0).second(0).toISOString(),
+        toDate: dayjs().tz(TIMEZONE_VIETNAM).hour(9).minute(0).second(0).toISOString()
+      });
       break;
     case "0 14 * * *": // 21:00
       await ERP.Automation.AssignmentRuleService.enableAssignmentRuleOffHour(env);

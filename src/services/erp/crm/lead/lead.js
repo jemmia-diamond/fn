@@ -22,6 +22,7 @@ export default class LeadService {
     });
     this.db = Database.instance(env);
     this.WebsiteFormLeadSource = "CRM-LEAD-SOURCE-0000023";
+    this.PartnerLeadSource = "CRM-LEAD-SOURCE-0000107";
     this.defaultLeadOwner = "tech@jemmia.vn";
     this.CallLogLeadSource = "CRM-LEAD-SOURCE-0000022";
   }
@@ -192,7 +193,7 @@ export default class LeadService {
 
       const leadData = {
         doctype: this.doctype,
-        source: this.WebsiteFormLeadSource,
+        source: data.source === "Partner" ? this.PartnerLeadSource : this.WebsiteFormLeadSource,
         first_name: data.raw_data.name,
         phone: data.raw_data.phone,
         lead_owner: this.defaultLeadOwner,
@@ -228,7 +229,7 @@ export default class LeadService {
       ];
 
       const lead = await this.frappeClient.upsert(leadData, "phone", ignoredFields);
-      await contactService.processWebsiteContact(data, lead);
+      await contactService.processWebsiteContact(data, lead, leadData.source);
     } catch (e) {
       Sentry.captureException(e);
       return;

@@ -6,7 +6,6 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import HaravanAPI from "services/clients/haravan-client";
 import { reverseMap } from "services/utils/object";
-import Misa from "services/misa";
 
 dayjs.extend(utc);
 
@@ -130,6 +129,10 @@ export default class CustomerService {
     }
   }
 
+  _formatPhoneForHaravan(phone) {
+    return phone.replace(/^\+/, "00");
+  }
+
   async _createCustomer(customerData) {
     if (customerData.customer_name) {
       const parts = customerData.customer_name.trim().split(" ");
@@ -147,16 +150,17 @@ export default class CustomerService {
       throw new Error("Haravan access token not found");
     }
 
+    const haravanClient = new HaravanAPI(accessToken);
+    const rawPhone = customerData.mobile_no || customerData.phone;
     const haravanPayload = {
       first_name: customerData.first_name,
       last_name: customerData.last_name,
       email: customerData.email_id,
-      phone: customerData.mobile_no || customerData.phone,
+      phone: this._formatPhoneForHaravan(rawPhone),
       gender: this.genderMapReverse[customerData.gender]
     };
 
     try {
-      const haravanClient = new HaravanAPI(accessToken);
       const haravanResult = await haravanClient.customer.createCustomer(haravanPayload);
       haravanResult.customer.created_by = customerData.modified_by;
       const customer = await this.frappeClient.getDoc(this.doctype, customerData.name);
@@ -165,33 +169,28 @@ export default class CustomerService {
         customer.haravan_id = String(haravanResult.customer.id);
         customer.customer_primary_contact = haravanResult.customer.phone;
         await this.frappeClient.update(customer);
-        await this.enqueueMisaBackgroundJob(haravanResult.customer);
       }
     } catch (error) {
       if (error.status === 422) {
-        const haravanClient = new HaravanAPI(accessToken);
-        const hrvCustomers = await haravanClient.customer.getCustomers(haravanPayload.phone);
-        const customer = await this.frappeClient.getDoc(this.doctype, customerData.name);
+        const errorMessage = error?.response?.data?.errors || "";
+        const isDuplicate = errorMessage.includes("đã được sử dụng");
 
-        if (customer) {
-          customer.haravan_id = String(hrvCustomers.customers[0].id);
-          customer.customer_primary_contact = hrvCustomers.customers[0].phone;
-          await this.frappeClient.update(customer);
-          await this.enqueueMisaBackgroundJob(hrvCustomers.customers[0]);
+        if (isDuplicate) {
+          const searchPhone = rawPhone.replace(/^\+/, "");
+          const hrvCustomers = await haravanClient.customer.getCustomers(searchPhone);
+          const customer = await this.frappeClient.getDoc(this.doctype, customerData.name);
+
+          if (customer && hrvCustomers?.customers?.[0]) {
+            customer.haravan_id = String(hrvCustomers.customers[0].id);
+            customer.customer_primary_contact = hrvCustomers.customers[0].phone;
+            await this.frappeClient.update(customer);
+          }
+          return;
         }
       }
 
       throw error;
     }
-  }
-
-  async enqueueMisaBackgroundJob(customerData) {
-    const payload = {
-      job_type: Misa.Constants.JOB_TYPE.SYNC_CUSTOMER,
-      data: customerData
-    };
-
-    await this.env["MISA_QUEUE"].send(payload);
   }
 
   async fetchCustomerByHrvID(hrvID) {

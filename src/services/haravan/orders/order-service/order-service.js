@@ -11,6 +11,7 @@ import { getFinancialStatus } from "services/haravan/orders/order-service/helper
 import { TABLES } from "services/larksuite/docs/constant";
 import { BadRequestException } from "src/exception/exceptions";
 import HaravanAPI from "services/clients/haravan-client";
+import Misa from "services/misa";
 
 export default class OrderService {
   constructor(env) {
@@ -181,9 +182,16 @@ export default class OrderService {
         customer_default_address_address2: order?.customer?.default_address.address2,
         customer_default_address_ward: order?.customer?.default_address.ward,
         customer_default_address_district: order?.customer?.default_address.district,
-        customer_default_address_province: order?.customer?.default_address.province
+        customer_default_address_province: order?.customer?.default_address.province,
+        user_id: order?.user_id
       }
     });
+
+    const payload = {
+      job_type: Misa.Constants.JOB_TYPE.SYNC_CUSTOMER,
+      data: order?.customer
+    };
+    await this.env["MISA_QUEUE"].send(payload);
   }
 
   static async dequeueOrderQueue(batch, env) {

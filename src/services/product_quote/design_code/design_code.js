@@ -152,11 +152,9 @@ export default class DesignCodeService {
       });
 
       if (newDesigns && newDesigns.length > 0) {
-        const recordItems = newDesigns.map(d => ({
-          fields: this.mapToLarkFields(d)
-        }));
+        const recordItems = newDesigns.map(d => this.mapToLarkFields(d));
 
-        const createdRecords = await RecordService.createLarksuiteRecords({
+        const response = await RecordService.createLarksuiteRecords({
           env: this.env,
           appToken: designCodeAppToken,
           tableId: designCodeTableId,
@@ -164,7 +162,8 @@ export default class DesignCodeService {
           userIdType: "open_id"
         });
 
-        if (createdRecords && createdRecords.length === newDesigns.length) {
+        if (response && response.code === 0 && response.data?.records?.length === newDesigns.length) {
+          const createdRecords = response.data.records;
           const updatedNewDesigns = newDesigns.map((design, idx) => ({
             ...design,
             lark_record_id: createdRecords[idx].record_id

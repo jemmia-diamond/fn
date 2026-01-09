@@ -23,6 +23,7 @@ export default class ContactService {
     );
     this.db = Database.instance(env);
     this.defaultContactName = "DEFAULT CONTACT";
+    this.defaultWebsiteContactSourceGroup = "Website Form";
   };
 
   async findContactByPrimaryPhone(phone) {
@@ -71,7 +72,7 @@ export default class ContactService {
     return contact;
   }
 
-  async processWebsiteContact(data, lead) {
+  async processWebsiteContact(data, lead, source = null) {
     const contactData = {
       doctype: this.doctype,
       custom_uuid: data.custom_uuid,
@@ -83,7 +84,8 @@ export default class ContactService {
           "is_primary_phone": 1
         }
       ],
-      source: lead.source
+      source: source || lead.source,
+      source_group: this.defaultWebsiteContactSourceGroup
     };
 
     const defaultContact = await this.frappeClient.getList(this.doctype, {

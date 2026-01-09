@@ -26,5 +26,9 @@ export const CHAT_GROUPS = {
   MEDIA_GROUP: {
     chat_id: "oc_40d8eb138d11d3121a0baf1d9eba5863",
     group_name: "Group Ảnh/Video"
+  },
+  BANK_TRANSACTION_NOTIFICATION: {
+    chat_id: "oc_14f4bb7d2233783133751b70b3eaaa34",
+    group_name: "[Bot] Thông Báo Tiền Vào"
   }
 };
