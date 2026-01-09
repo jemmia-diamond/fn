@@ -15,8 +15,6 @@ import { TIMEZONE_VIETNAM } from "src/constants";
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
-import DiamondCollectService from "services/ecommerce/diamond/diamond-collect-service";
-
 export default {
   scheduled: async (controller, env, _ctx) => {
     switch (controller.cron) {
@@ -63,7 +61,7 @@ export default {
       await ERP.Setup.EmployeeService.syncEmployeesToDatabase(env);
       await ERP.Selling.SalesPersonService.syncSalesPersonToDatabase(env);
       await Larksuite.Docs.Base.RecordService.syncRecordsToDatabase(env);
-      await new DiamondCollectService(env).syncDiamondsToCollects();
+      await new Ecommerce.DiamondCollectService(env).syncDiamondsToCollects();
       await new Reporting.UptimeReportSyncService(env).dailySync();
       break;
     case "30 0 * * *": // 07:30
