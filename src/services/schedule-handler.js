@@ -63,9 +63,7 @@ export default {
       await Larksuite.Docs.Base.RecordService.syncRecordsToDatabase(env);
       await new Reporting.UptimeReportSyncService(env).dailySync();
       break;
-    case "0 17 * * 5": // 00:00 UTC / 07:00 Vietnam time - Weekly (Friday)
-      await Larksuite.Ticket.TechTicketService.syncTechTickets(env, { mode: "weekly" });
-      break;
+
     case "30 0 * * *": // 07:30
       await ERP.CRM.LeadDemandService.syncLeadDemandToDatabase(env);
       await ERP.CRM.LeadBudgetService.syncLeadBudgetsToDatabase(env);
@@ -104,6 +102,7 @@ export default {
         fromDate: dayjs().tz(TIMEZONE_VIETNAM).subtract(1, "day").hour(17).minute(0).second(0).toISOString(),
         toDate: dayjs().tz(TIMEZONE_VIETNAM).hour(9).minute(0).second(0).toISOString()
       });
+      await Larksuite.Ticket.TechTicketService.syncTechTickets(env, { mode: "weekly" });
       break;
     case "0 14 * * *": // 21:00
       await ERP.Automation.AssignmentRuleService.enableAssignmentRuleOffHour(env);
