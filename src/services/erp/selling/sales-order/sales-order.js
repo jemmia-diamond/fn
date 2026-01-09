@@ -24,6 +24,7 @@ export default class SalesOrderService {
   static SYNC_TYPE_AUTO = 1; // auto sync when deploy app
   static SYNC_TYPE_MANUAL = 0; // manual sync when call function
   static WEBSITE_DEFAULT_FIRST_SOURCE = "CRM-LEAD-SOURCE-0000023";
+  static PAYMENT_GATEWAY_ERP = "Thanh toán qua ERP";
 
   constructor(env) {
     this.env = env;
@@ -98,6 +99,9 @@ export default class SalesOrderService {
 
     const paymentTransactions = haravanOrderData.transactions.filter(transaction => ["capture", "authorization"].includes(transaction.kind.toLowerCase()));
 
+    const discountCodes = haravanOrderData.discount_codes || [];
+    const couponCode = discountCodes.map(item => item.code).join("\n");
+
     const mappedOrderData = {
       doctype: this.doctype,
       customer: customer.name,
@@ -106,6 +110,7 @@ export default class SalesOrderService {
       haravan_ref_order_id: String(haravanOrderData.ref_order_id),
       source_name: haravanOrderData.source_name,
       discount_amount: haravanOrderData.total_discounts,
+      ...(couponCode && { haravan_coupon_code: couponCode }),
       items: haravanOrderData.line_items.map(this.mapLineItemsFields),
       skip_delivery_note: 1,
       financial_status: this.financialStatusMapper[haravanOrderData.financial_status],
@@ -235,19 +240,19 @@ export default class SalesOrderService {
 
     const haravanRefOrderId = salesOrderData.haravan_ref_order_id;
 
+    const allOrders = await this.getAllRelatedSalesOrders(salesOrderData.name);
+    const allOrderNames = allOrders.map(o => o.name);
+
     const splitOrderGroupId = salesOrderData.split_order_group;
     const isSplitOrder = salesOrderData.is_split_order;
 
     let childOrders = [];
     if (splitOrderGroupId && Number(splitOrderGroupId) > 0 && isSplitOrder) {
-      // Find all orders in split order group by name
-      const splitOrders = await this.frappeClient.getList("Sales Order", {
-        filters: [
-          ["split_order_group", "=", splitOrderGroupId],
-          ["name", "!=", salesOrderData.name],
-          ["cancelled_status", "=", "Uncancelled"]
-        ]
-      });
+      const splitOrders = allOrders.filter(o =>
+        o.split_order_group === splitOrderGroupId &&
+        o.name !== salesOrderData.name &&
+        o.cancelled_status === "Uncancelled"
+      );
 
       if (splitOrders && splitOrders.length > 0) {
         // For each order, find its attachments
@@ -298,9 +303,14 @@ export default class SalesOrderService {
 
       salesOrderData.grand_total += childOrder.grand_total;
       salesOrderData.discount_amount += childOrder.discount_amount;
-      salesOrderData.paid_amount += childOrder.paid_amount;
-      salesOrderData.deposit_amount += childOrder.deposit_amount;
     }
+
+    // Calculate Payment Entries Total
+    const paymentEntriesTotal = await this.calculateGroupPaymentTotal(allOrderNames);
+
+    // Set Paid Amount
+    salesOrderData.paid_amount = paymentEntriesTotal;
+    salesOrderData.deposit_amount = paymentEntriesTotal;
 
     const customer = await this.frappeClient.getDoc("Customer", salesOrderData.customer);
 
@@ -694,7 +704,76 @@ export default class SalesOrderService {
       const currentSalesOrder = await this.frappeClient.getDoc("Sales Order", salesOrderName);
       if (!currentSalesOrder) return null;
 
-      const relatedOrderNames = await this.getAllRelatedSalesOrders(salesOrderName);
+      const relatedOrders = await this.getAllRelatedSalesOrders(salesOrderName);
+      const relatedOrderNames = relatedOrders.map(o => o.name);
+
+      // Standard Payment Logic
+      const paymentEntryNames = await this.frappeClient.getList("Payment Entry", {
+        fields: ["name"],
+        filters: [
+          ["Payment Entry Reference", "reference_doctype", "=", "Sales Order"],
+          ["Payment Entry Reference", "reference_name", "=", salesOrderName],
+          ["docstatus", "<", 2],
+          ["payment_order_status", "=", "Success"]
+        ]
+      });
+
+      // Unique payment entries
+      const uniquePaymentEntryNames = [...new Set(paymentEntryNames.map(pe => pe.name))];
+
+      // Fetch payment entries in parallel
+      const paymentEntries = await Promise.all(
+        uniquePaymentEntryNames.map(name => this.frappeClient.getDoc("Payment Entry", name))
+      );
+
+      const currentPaymentEntriesMap = new Map();
+      (currentSalesOrder.payment_entries || []).forEach(row => {
+        if (row.reference_name) currentPaymentEntriesMap.set(row.reference_name, row.name);
+      });
+
+      let paymentEntriesTotal = 0.0;
+      const linkedPaymentEntries = [];
+      for (const entry of paymentEntries) {
+        if (entry && entry.references) {
+          const ref = entry.references.find(r => r.reference_doctype === "Sales Order" && r.reference_name === salesOrderName);
+          if (ref) {
+            const allocated = parseFloat(ref.allocated_amount || 0);
+            if (entry.payment_type === "Pay") {
+              paymentEntriesTotal -= allocated;
+            } else {
+              paymentEntriesTotal += allocated;
+            }
+
+            // Build linked payment entry row
+            const row = {
+              doctype: "Payment Entry Reference",
+              reference_doctype: "Payment Entry",
+              reference_name: entry.name,
+              total_amount: ref.total_amount,
+              outstanding_amount: ref.outstanding_amount,
+              allocated_amount: entry.payment_type === "Pay" ? -Math.abs(ref.allocated_amount) : ref.allocated_amount,
+              mode_of_payment: entry.mode_of_payment,
+              gateway: entry.gateway,
+              paid_amount: entry.paid_amount,
+              payment_date: entry.payment_date,
+              payment_order_status: entry.payment_order_status
+            };
+
+            if (currentPaymentEntriesMap.has(entry.name)) {
+              row.name = currentPaymentEntriesMap.get(entry.name);
+            }
+            linkedPaymentEntries.push(row);
+          }
+        }
+      }
+
+      // Calculate total from Sales Order Payment Records
+      const paymentRecords = (currentSalesOrder.payment_records || []).filter(r => ["capture", "authorization"].includes(r.kind) && r.gateway !== SalesOrderService.PAYMENT_GATEWAY_ERP);
+      const paymentRecordsTotal = paymentRecords.reduce((sum, record) => sum + parseFloat(record.amount || 0), 0);
+
+      const currentLinkedPaymentEntries = currentSalesOrder.payment_entries || [];
+      const isPaymentEntriesChanged = currentLinkedPaymentEntries.length !== linkedPaymentEntries.length ||
+        !linkedPaymentEntries.every(l => currentLinkedPaymentEntries.some(c => c.reference_name === l.reference_name));
 
       // Calculate group grand total
       let groupGrandTotal = 0;
@@ -714,8 +793,10 @@ export default class SalesOrderService {
       }
 
       // Calculate group payment total
-      const groupPaymentTotal = await this.calculateGroupPaymentTotal(relatedOrderNames);
-      if (groupPaymentTotal === groupGrandTotal) {
+      let groupPaymentTotal = await this.calculateGroupPaymentTotal(relatedOrderNames);
+      groupPaymentTotal += paymentRecordsTotal;
+
+      if (groupPaymentTotal >= groupGrandTotal) {
         const targetOrders = (splitOrders && splitOrders.length > 0) ? splitOrders : [{ name: salesOrderName, grand_total: currentSalesOrder.grand_total }];
         let updatedCurrentDoc = currentSalesOrder;
 
@@ -724,52 +805,29 @@ export default class SalesOrderService {
           const docPaid = parseFloat(doc.paid_amount || 0);
           const docTotal = parseFloat(doc.grand_total || 0);
 
-          if (docPaid !== docTotal) {
-            const updated = await this.frappeClient.update({
+          if (order.name === salesOrderName) {
+            if (docPaid !== docTotal || isPaymentEntriesChanged) {
+              const updated = await this.frappeClient.update({
+                doctype: "Sales Order",
+                name: doc.name,
+                paid_amount: docTotal,
+                balance: 0,
+                payment_entries: linkedPaymentEntries
+              });
+              updatedCurrentDoc = updated;
+            }
+          }
+          else if (docPaid !== docTotal) {
+            await this.frappeClient.update({
               doctype: "Sales Order",
               name: doc.name,
               paid_amount: docTotal,
               balance: 0
             });
-
-            if (order.name === salesOrderName) {
-              updatedCurrentDoc = updated;
-            }
           }
         }
         return updatedCurrentDoc;
       }
-
-      // Standard Payment Logic
-      const paymentEntries = await this.frappeClient.getList("Payment Entry", {
-        fields: ["name", "payment_type"],
-        filters: [
-          ["Payment Entry Reference", "reference_doctype", "=", "Sales Order"],
-          ["Payment Entry Reference", "reference_name", "=", salesOrderName],
-          ["docstatus", "<", 2],
-          ["payment_order_status", "=", "Success"]
-        ]
-      });
-
-      let paymentEntriesTotal = 0.0;
-      for (const entry of paymentEntries) {
-        const fullEntry = await this.frappeClient.getDoc("Payment Entry", entry.name);
-        if (fullEntry && fullEntry.references) {
-          const ref = fullEntry.references.find(r => r.reference_doctype === "Sales Order" && r.reference_name === salesOrderName);
-          if (ref) {
-            const allocated = parseFloat(ref.allocated_amount || 0);
-            if (entry.payment_type === "Pay") {
-              paymentEntriesTotal -= allocated;
-            } else {
-              paymentEntriesTotal += allocated;
-            }
-          }
-        }
-      }
-
-      // Calculate total from Sales Order Payment Records
-      const paymentRecords = (currentSalesOrder.payment_records || []).filter(r => ["capture", "authorization"].includes(r.kind));
-      const paymentRecordsTotal = paymentRecords.reduce((sum, record) => sum + parseFloat(record.amount || 0), 0);
 
       // Logic to determine total_paid
       const salesOrderGrandTotal = currentSalesOrder.grand_total;
@@ -791,12 +849,13 @@ export default class SalesOrderService {
       const balance = parseFloat(salesOrderGrandTotal) - parseFloat(totalPaid);
 
       // Update if changed
-      if (parseFloat(totalPaid) !== parseFloat(currentPaidAmount) || parseFloat(currentBalance) !== parseFloat(balance)) {
+      if (parseFloat(totalPaid) !== parseFloat(currentPaidAmount) || parseFloat(currentBalance) !== parseFloat(balance) || isPaymentEntriesChanged) {
         const updatedDoc = await this.frappeClient.update({
           doctype: "Sales Order",
           name: salesOrderName,
           paid_amount: totalPaid,
-          balance: balance
+          balance: balance,
+          payment_entries: linkedPaymentEntries
         });
         console.warn(`Updated Sales Order ${salesOrderName}: Paid ${totalPaid}, Balance ${balance}`);
         return updatedDoc;
@@ -806,6 +865,35 @@ export default class SalesOrderService {
     } catch (error) {
       Sentry.captureException(error);
       return null;
+    }
+  }
+
+  async backfillPaidAmount() {
+    let skip = 0;
+    const take = 50;
+    while (true) {
+      const orders = await this.db.erpnextSalesOrders.findMany({
+        select: { name: true },
+        skip: skip,
+        take: take,
+        orderBy: { creation: "desc" }
+      });
+
+      if (orders.length === 0) break;
+
+      for (const order of orders) {
+        if (order.name) {
+          console.warn(`Processing backfill for order: ${order.name}`);
+          try {
+            await this.updateSalesOrderPaidAmount(order.name);
+          } catch (err) {
+            Sentry.captureException(err);
+          }
+          // Add timeout between orders
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+      }
+      skip += take;
     }
   }
 
@@ -836,7 +924,7 @@ export default class SalesOrderService {
           await haravanClient.orderTransaction.createTransaction(salesOrderData.haravan_order_id, {
             amount: remainingAmount,
             kind: "capture",
-            gateway: "Thanh toán qua ERP"
+            gateway: SalesOrderService.PAYMENT_GATEWAY_ERP
           });
         }
       } catch (error) {
@@ -846,10 +934,16 @@ export default class SalesOrderService {
   }
 
   async getAllRelatedSalesOrders(initialOrderName) {
-    const relatedOrders = new Set([initialOrderName]);
+    const relatedOrdersMap = new Map();
     const initialOrder = await this.frappeClient.getDoc("Sales Order", initialOrderName);
 
     if (!initialOrder) return [];
+
+    relatedOrdersMap.set(initialOrderName, {
+      name: initialOrder.name,
+      cancelled_status: initialOrder.cancelled_status,
+      split_order_group: initialOrder.split_order_group
+    });
 
     if (initialOrder.is_split_order && initialOrder.split_order_group) {
       const groupOrders = await this.frappeClient.getList("Sales Order", {
@@ -857,13 +951,17 @@ export default class SalesOrderService {
           ["split_order_group", "=", initialOrder.split_order_group],
           ["is_split_order", "=", 1]
         ],
-        fields: ["name"]
+        fields: ["name", "cancelled_status", "split_order_group"]
       });
-      groupOrders.forEach(o => relatedOrders.add(o.name));
+      groupOrders.forEach(o => relatedOrdersMap.set(o.name, {
+        name: o.name,
+        cancelled_status: o.cancelled_status,
+        split_order_group: o.split_order_group
+      }));
     }
 
-    const toVisit = Array.from(relatedOrders);
-    const visited = new Set(relatedOrders);
+    const toVisit = Array.from(relatedOrdersMap.keys());
+    const visited = new Set(relatedOrdersMap.keys());
 
     while (toVisit.length > 0) {
       const currentSoName = toVisit.pop();
@@ -873,6 +971,11 @@ export default class SalesOrderService {
       } else {
         try {
           currentOrderDoc = await this.frappeClient.getDoc("Sales Order", currentSoName);
+          relatedOrdersMap.set(currentSoName, {
+            name: currentOrderDoc.name,
+            cancelled_status: currentOrderDoc.cancelled_status,
+            split_order_group: currentOrderDoc.split_order_group
+          });
         } catch (e) {
           console.warn(`Could not fetch Sales Order ${currentSoName} for traversal`, e);
           continue;
@@ -884,7 +987,6 @@ export default class SalesOrderService {
           if (ref.sales_order && !visited.has(ref.sales_order)) {
             visited.add(ref.sales_order);
             toVisit.push(ref.sales_order);
-            relatedOrders.add(ref.sales_order);
           }
         }
       }
@@ -898,12 +1000,11 @@ export default class SalesOrderService {
         if (parentOrder.name && !visited.has(parentOrder.name)) {
           visited.add(parentOrder.name);
           toVisit.push(parentOrder.name);
-          relatedOrders.add(parentOrder.name);
         }
       }
     }
 
-    return Array.from(relatedOrders);
+    return Array.from(relatedOrdersMap.values());
   }
 
   async calculateGroupPaymentTotal(relatedOrderNames) {

@@ -64,7 +64,8 @@
     "NOCODB_WORKPLACE_BASE_URL": "https://workplace.jemmia.vn/",
     "SALESAYA_API_BASE_URL": "https://api.salesaya.com",
     "DEFAULT_HARAVAN_DIAMOND_DISCOUNT_COLLECTION_ID": 32,
-    "DEFAULT_HARAVAN_JEWELRY_DISCOUNT_COLLECTION_ID": 31
+    "DEFAULT_HARAVAN_JEWELRY_DISCOUNT_COLLECTION_ID": 31,
+    "UPTIMEROBOT_API_KEY": "ur3236830-be8be169403c7dd3a91daeca"
   },
   "secrets_store_secrets": [
     {
@@ -266,6 +267,7 @@
       "0 14 * * *",
       "30 6 * * *",
       "0 11 * * *",
+      "0 2 * * *",
       "*/5 * * * *"
     ]
   },

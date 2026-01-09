@@ -12,6 +12,18 @@ const accessNestedKey = (data, keys) => {
   return keys.reduce((a, key) => a[key], data);
 };
 
+export const transformOffboardData = (form) => {
+  const widgetsObj = widgetsArrayToObject(form);
+  const widgetFieldMapper = APPROVALS.OFFBOARD_APPROVAL.widgetFieldMapper;
+
+  return {
+    offboard_reason: accessNestedKey(widgetsObj, widgetFieldMapper.offboardReason),
+    offboard_date: accessNestedKey(widgetsObj, widgetFieldMapper.offboardDesireDate),
+    handover_start_date: accessNestedKey(widgetsObj, widgetFieldMapper.handoverStartDate),
+    handover_receiver: accessNestedKey(widgetsObj, widgetFieldMapper.handoverReceiver)
+  };
+};
+
 export const transformLeaveFormData = (form) => {
   const widgetsObj = widgetsArrayToObject(form);
   const widgetFieldMapper = APPROVALS.LEAVE_APPROVAL.widgetFieldMapper;

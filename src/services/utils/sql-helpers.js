@@ -13,12 +13,21 @@ export const escapeSqlValue = (value) => {
   return value;
 };
 
-export async function fetchChildRecordsFromERP(frappeClient, parentNames, tableName) {
+export async function fetchChildRecordsFromERP(frappeClient, parentNames, tableName, additionalConditions = {}) {
   if (!Array.isArray(parentNames) || parentNames.length === 0) {
     return [];
   }
   const quotedNames = parentNames.map(name => `"${name}"`).join(", ");
-  const sql = `SELECT * FROM \`${tableName}\` WHERE parent IN (${quotedNames})`;
+  let sql = `SELECT * FROM \`${tableName}\` WHERE parent IN (${quotedNames})`;
+
+  if (additionalConditions && Object.keys(additionalConditions).length > 0) {
+    const conditions = Object.entries(additionalConditions)
+      .map(([key, value]) => `${key} = '${value}'`)
+      .join(" AND ");
+    sql += ` AND ${conditions}`;
+  }
+
   const childRecords = await frappeClient.executeSQL(sql);
   return childRecords || [];
 }
+
