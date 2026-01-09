@@ -264,7 +264,7 @@ export default class TechTicketService {
         failed: totalFailed
       };
     } catch (error) {
-      throw error;
+      Sentry.captureException(error);
     }
   }
 }
