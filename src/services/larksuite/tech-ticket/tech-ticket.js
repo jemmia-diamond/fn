@@ -182,17 +182,17 @@ export default class TechTicketService {
       // Build 2025 year filter in Vietnam time (UTC+7)
       let startSyncTime, endSyncTime;
 
-      if (options.mode === "weekly") {
-        const lastSyncTime = await env.FN_KV.get("TECH_TICKET_LAST_WEEKLY_SYNC");
+      if (options.mode === "daily") {
+        const lastSyncTime = await env.FN_KV.get("TECH_TICKET_LAST_DAILY_SYNC");
         const now = dayjs().utc();
         endSyncTime = now.valueOf();
 
         if (lastSyncTime) {
           startSyncTime = dayjs.utc(lastSyncTime).valueOf();
-          console.warn(`Starting weekly tech ticket sync (Incremental): ${lastSyncTime} to ${now.format()}`);
+          console.warn(`Starting daily tech ticket sync (Incremental): ${lastSyncTime} to ${now.format()}`);
         } else {
-          startSyncTime = now.subtract(7, "day").valueOf();
-          console.warn(`Starting weekly tech ticket sync (Last 7 days): ${now.subtract(7, "day").format()} to ${now.format()}`);
+          startSyncTime = now.subtract(1, "day").valueOf();
+          console.warn(`Starting daily tech ticket sync (Last 1 day): ${now.subtract(1, "day").format()} to ${now.format()}`);
         }
       } else {
         startSyncTime = dayjs.utc("2024-12-31T17:00:00").valueOf();
@@ -262,14 +262,14 @@ export default class TechTicketService {
 
       console.warn("Tech ticket sync completed!");
 
-      // If weekly mode (Friday), save the checkpoint timestamp to KV
-      if (options.mode === "weekly") {
+      // If daily mode, save the checkpoint timestamp to KV
+      if (options.mode === "daily") {
         try {
           const checkpointTime = dayjs().utc().format("YYYY-MM-DD HH:mm:ss");
-          await env.FN_KV.put("TECH_TICKET_LAST_WEEKLY_SYNC", checkpointTime);
-          console.warn(`Saved weekly sync checkpoint to KV (UTC): ${checkpointTime}`);
+          await env.FN_KV.put("TECH_TICKET_LAST_DAILY_SYNC", checkpointTime);
+          console.warn(`Saved daily sync checkpoint to KV (UTC): ${checkpointTime}`);
         } catch (kvError) {
-          console.warn("Failed to save weekly sync checkpoint to KV:", kvError);
+          console.warn("Failed to save daily sync checkpoint to KV:", kvError);
         }
       }
 

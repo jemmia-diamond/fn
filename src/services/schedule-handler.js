@@ -101,7 +101,7 @@ export default {
         fromDate: dayjs().tz(TIMEZONE_VIETNAM).subtract(1, "day").hour(17).minute(0).second(0).toISOString(),
         toDate: dayjs().tz(TIMEZONE_VIETNAM).hour(9).minute(0).second(0).toISOString()
       });
-      await Larksuite.Ticket.TechTicketService.syncTechTickets(env, { mode: "weekly" });
+      await Larksuite.Ticket.TechTicketService.syncTechTickets(env, { mode: "daily" });
       break;
     case "0 14 * * *": // 21:00
       await ERP.Automation.AssignmentRuleService.enableAssignmentRuleOffHour(env);
