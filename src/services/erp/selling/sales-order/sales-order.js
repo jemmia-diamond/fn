@@ -307,7 +307,7 @@ export default class SalesOrderService {
 
     // Calculate Payment Entries Total
     const allPaymentEntries = await this.getAllRelatedPaymentEntries(allOrderNames);
-    const paymentEntriesTotal = await this.calculateGroupPaymentTotal(allPaymentEntries);
+    const paymentEntriesTotal = await this.calculateGroupPaymentTotal(allOrderNames, allPaymentEntries);
 
     // Set Paid Amount
     salesOrderData.paid_amount = paymentEntriesTotal;
@@ -786,8 +786,8 @@ export default class SalesOrderService {
       }
 
       // Calculate group payment total
-      const allPaymentEntries = await this.getAllRelatedPaymentEntries(relatedOrderNames);
-      let groupPaymentTotal = await this.calculateGroupPaymentTotal(allPaymentEntries);
+      const relatedPaymentEntries = await this.getAllRelatedPaymentEntries(relatedOrderNames);
+      let groupPaymentTotal = await this.calculateGroupPaymentTotal(relatedOrderNames, relatedPaymentEntries);
       groupPaymentTotal += paymentRecordsTotal;
 
       if (groupPaymentTotal >= groupGrandTotal) {
@@ -1001,20 +1001,7 @@ export default class SalesOrderService {
     return Array.from(relatedOrdersMap.values());
   }
 
-  async getAllRelatedPaymentEntries(relatedOrderNames) {
-    const paymentEntries = await this.frappeClient.getList("Payment Entry", {
-      filters: [
-        ["Payment Entry Reference", "reference_doctype", "=", "Sales Order"],
-        ["Payment Entry Reference", "reference_name", "in", relatedOrderNames],
-        ["docstatus", "<", 2],
-        ["payment_order_status", "=", "Success"]
-      ],
-      fields: ["name", "payment_type"]
-    });
-    return paymentEntries;
-  }
-
-  async calculateGroupPaymentTotal(paymentEntries) {
+  async calculateGroupPaymentTotal(relatedOrderNames, paymentEntries) {
 
     if (!paymentEntries || paymentEntries.length === 0) return 0;
 
@@ -1048,5 +1035,18 @@ export default class SalesOrderService {
     }
 
     return totalAllocated;
+  }
+
+  async getAllRelatedPaymentEntries(relatedOrderNames) {
+    const paymentEntries = await this.frappeClient.getList("Payment Entry", {
+      filters: [
+        ["Payment Entry Reference", "reference_doctype", "=", "Sales Order"],
+        ["Payment Entry Reference", "reference_name", "in", relatedOrderNames],
+        ["docstatus", "<", 2],
+        ["payment_order_status", "=", "Success"]
+      ],
+      fields: ["name", "payment_type"]
+    });
+    return paymentEntries;
   }
 }
