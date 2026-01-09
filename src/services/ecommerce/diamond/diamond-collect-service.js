@@ -1,4 +1,4 @@
-import { WorkplaceClient } from "services/clients/workplace-client";
+import NocoDBClient from "services/clients/nocodb-client";
 import DiamondDiscountService from "services/ecommerce/diamond/diamond-discount-service";
 import Database from "src/services/database";
 import * as Sentry from "@sentry/cloudflare";
@@ -10,18 +10,20 @@ export default class DiamondCollectService {
   }
 
   static DEFAULT_DISCOUNT_PERCENT = 8;
+  static HARAVAN_COLLECTIONS_TABLE = "mpgeruya41k3zcg";
+  static DIAMONDS_HARAVAN_COLLECTION_TABLE = "mxu3rae3quofz6n";
 
   async syncDiamondsToCollects() {
     try {
-      const { workplaceClient, haravanApi, db } = await this._initializeClients();
+      const { haravanApi, db, nocoClient } = await this._initializeClients();
       const activeRules = await DiamondDiscountService.getActiveRules(this.env);
-      const allCollections = await this._fetchCollections(workplaceClient, activeRules);
+      const allCollections = await this._fetchCollections(nocoClient, activeRules);
 
       const { ruleCollections, discountCollectionIds } = this._buildRuleCollectionsMap(allCollections);
 
       await this._processDiamondBatches({
         db,
-        workplaceClient,
+        nocoClient,
         haravanApi,
         activeRules,
         ruleCollections,
@@ -35,20 +37,16 @@ export default class DiamondCollectService {
   }
 
   async _initializeClients() {
-    const WORKPLACE_BASE_ID = this.env.NOCODB_SUPPLY_BASE_ID;
-    const [workplaceClient, HRV_API_KEY] = await Promise.all([
-      WorkplaceClient.initialize(this.env, WORKPLACE_BASE_ID),
-      this.env.HARAVAN_TOKEN_SECRET.get()
-    ]);
+    const HRV_API_KEY = await this.env.HARAVAN_TOKEN_SECRET.get();
 
     return {
-      workplaceClient,
       haravanApi: new HaravanAPI(HRV_API_KEY),
-      db: Database.instance(this.env)
+      db: Database.instance(this.env),
+      nocoClient: new NocoDBClient(this.env)
     };
   }
 
-  async _fetchCollections(workplaceClient, activeRules) {
+  async _fetchCollections(nocoClient, activeRules) {
     const uniquePercents = [...new Set(activeRules.map(r => r.discount_percent))];
 
     if (uniquePercents.length === 0) {
@@ -56,7 +54,7 @@ export default class DiamondCollectService {
     }
 
     const where = `(discount_type,eq,percent)~and(discount_value,in,${uniquePercents.join(",")})`;
-    return await workplaceClient.haravanCollections.list({
+    return await nocoClient.listRecords(DiamondCollectService.HARAVAN_COLLECTIONS_TABLE, {
       where: where,
       limit: 1000
     });
@@ -143,7 +141,7 @@ export default class DiamondCollectService {
 
   async _processSingleDiamond(diamond, context) {
     try {
-      const { activeRules, ruleCollections, discountCollectionIds, workplaceClient, haravanApi } = context;
+      const { activeRules, ruleCollections, discountCollectionIds, nocoClient, haravanApi } = context;
 
       const discountPercent = DiamondDiscountService.calculateDiscountPercent({
         diamondSize: parseFloat(diamond.edge_size_2 || 0),
@@ -156,8 +154,8 @@ export default class DiamondCollectService {
       const rules = ruleCollections[discountPercent] || {};
       const targetNocodbCollectionId = rules.nocodbId || null;
 
-      await this._syncNocoDBCollections(diamond, targetNocodbCollectionId, discountCollectionIds, workplaceClient);
-      await this._syncHaravanCollections(diamond, targetNocodbCollectionId, rules.haravanId, workplaceClient, haravanApi);
+      await this._syncNocoDBCollections(diamond, targetNocodbCollectionId, discountCollectionIds, nocoClient);
+      await this._syncHaravanCollections(diamond, targetNocodbCollectionId, rules.haravanId, nocoClient, haravanApi);
 
     } catch (error) {
       if (this._isIgnorableError(error)) {
@@ -168,8 +166,8 @@ export default class DiamondCollectService {
     }
   }
 
-  async _syncNocoDBCollections(diamond, targetCollectionId, discountCollectionIds, workplaceClient) {
-    const existingEntries = await workplaceClient.diamondHaravanCollections.list({
+  async _syncNocoDBCollections(diamond, targetCollectionId, discountCollectionIds, nocoClient) {
+    const existingEntries = await nocoClient.listRecords(DiamondCollectService.DIAMONDS_HARAVAN_COLLECTION_TABLE, {
       where: `(diamond_id,eq,${diamond.id})`
     });
 
@@ -181,7 +179,7 @@ export default class DiamondCollectService {
 
       if (isDiscountCollection && !isCurrentCollection) {
         console.warn("Removing discount collection for diamond:", diamond.id, entry.haravan_collection_id);
-        await workplaceClient.diamondHaravanCollections.deleteMany([{
+        await nocoClient.deleteRecords(DiamondCollectService.DIAMONDS_HARAVAN_COLLECTION_TABLE, [{
           diamond_id: diamond.id,
           haravan_collection_id: entry.haravan_collection_id
         }]);
@@ -190,11 +188,11 @@ export default class DiamondCollectService {
     }
   }
 
-  async _syncHaravanCollections(diamond, targetNocodbCollectionId, targetHaravanCollectionId, workplaceClient, haravanApi) {
+  async _syncHaravanCollections(diamond, targetNocodbCollectionId, targetHaravanCollectionId, nocoClient, haravanApi) {
     if (!targetNocodbCollectionId) return;
 
     // Check if the link exists in NocoDB first
-    const existingEntries = await workplaceClient.diamondHaravanCollections.list({
+    const existingEntries = await nocoClient.listRecords(DiamondCollectService.DIAMONDS_HARAVAN_COLLECTION_TABLE, {
       where: `(diamond_id,eq,${diamond.id})~and(haravan_collection_id,eq,${targetNocodbCollectionId})`
     });
 
@@ -202,9 +200,9 @@ export default class DiamondCollectService {
 
     if (!exists) {
       console.warn("Adding discount collection for diamond:", diamond.id, targetNocodbCollectionId);
-      await workplaceClient.diamondHaravanCollections.create({
-        diamond_id: diamond.id,
-        haravan_collection_id: targetNocodbCollectionId
+      await nocoClient.createRecords(DiamondCollectService.DIAMONDS_HARAVAN_COLLECTION_TABLE, {
+        diamonds: { id: diamond.id },
+        haravan_collections: { id: targetNocodbCollectionId }
       });
       // Delay for NocoDB creation
       await new Promise(resolve => setTimeout(resolve, 1000));
