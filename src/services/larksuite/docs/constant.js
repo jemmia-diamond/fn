@@ -30,5 +30,9 @@ export const TABLES = {
   SALESAYA_MEDIA: {
     table_id: "tblBwLRn8AFJmgaw",
     app_token: "IsswbuOmJaZKtgsHV0Vl4wZWgaf"
+  },
+  TECH_TICKET: {
+    table_id: "tblfEv32pnjHMDTF",
+    app_token: "LecWbGlCqadLdTsVXF9lSCAJgzb"
   }
 };

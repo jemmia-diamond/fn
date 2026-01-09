@@ -70,6 +70,67 @@ export default class RecordService {
   }
 
   /**
+   * Generic method to fetch records from any LarkSuite table with custom filters
+   * @param {Object} env - Environment configuration
+   * @param {Object} tableConfig - Table configuration with app_token and table_id
+   * @param {Object} options - Optional configuration
+   * @param {Object} options.filter - LarkSuite filter object with conjunction and conditions
+   * @param {number} options.pageSize - Records per page (default: 100)
+   * @param {string} options.userIdType - User ID type (default: "user_id")
+   * @param {Object} options.sort - Optional sort configuration
+   * @returns {Promise<Array>} - Array of records
+   */
+  static async fetchRecords(env, tableConfig, options = {}) {
+    const {
+      filter = null,
+      pageSize = 100,
+      userIdType = "open_id",
+      sort = null
+    } = options;
+
+    const larkClient = await LarksuiteService.createClientV2(env);
+
+    const payload = {
+      path: {
+        app_token: tableConfig.app_token,
+        table_id: tableConfig.table_id
+      },
+      params: {
+        user_id_type: userIdType
+      },
+      data: {}
+    };
+
+    // Add filter if provided
+    if (filter) {
+      payload.data.filter = filter;
+    }
+
+    // Add sort if provided
+    if (sort) {
+      payload.data.sort = sort;
+    }
+
+    const responses = await LarksuiteService.requestWithPagination(
+      larkClient.bitable.appTableRecord.search,
+      payload,
+      pageSize
+    );
+
+    // Check for errors in responses (LarkSuite returns errors with 200 status)
+    for (const response of responses) {
+      if (response?.code && response.code !== 0) {
+        throw new Error(
+          `LarkSuite API error: ${response.msg || "Unknown error"} (code: ${response.code}). ` +
+          `Details: ${JSON.stringify(response.error || {})}`
+        );
+      }
+    }
+
+    return responses.flatMap(res => (res?.data?.items ?? []));
+  }
+
+  /**
    * Retrieves a single record from a Larksuite table.
    *
    * @param {string} env - The environment configuration.

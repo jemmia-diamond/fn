@@ -91,7 +91,7 @@ export default {
       break;
     case "0 10 * * *": // 17:00
       await ERP.Automation.AssignmentRuleService.updateAssignmentRulesEndDay(env);
-      await ERP.Accounting.BankTransactionService.syncUnlinkedBankTransactions(env, {
+      await ERP.Accounting.BankTransactionService.notifyUnlinkedBankTransactions(env, {
         fromDate: dayjs().tz(TIMEZONE_VIETNAM).hour(9).minute(0).second(0).toISOString(),
         toDate: dayjs().tz(TIMEZONE_VIETNAM).hour(17).minute(0).second(0).toISOString()
       });
@@ -99,10 +99,11 @@ export default {
     case "0 11 * * *": // 18:00
       break;
     case "0 2 * * *": // 09:00
-      await ERP.Accounting.BankTransactionService.syncUnlinkedBankTransactions(env, {
+      await ERP.Accounting.BankTransactionService.notifyUnlinkedBankTransactions(env, {
         fromDate: dayjs().tz(TIMEZONE_VIETNAM).subtract(1, "day").hour(17).minute(0).second(0).toISOString(),
         toDate: dayjs().tz(TIMEZONE_VIETNAM).hour(9).minute(0).second(0).toISOString()
       });
+      await Larksuite.Ticket.TechTicketService.syncTechTickets(env, { mode: "daily" });
       break;
     case "0 14 * * *": // 21:00
       await ERP.Automation.AssignmentRuleService.enableAssignmentRuleOffHour(env);
