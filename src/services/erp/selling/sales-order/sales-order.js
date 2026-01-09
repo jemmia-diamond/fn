@@ -1046,6 +1046,9 @@ export default class SalesOrderService {
   }
 
   async getAllRelatedPaymentEntries(relatedOrderNames) {
+    if (!relatedOrderNames || relatedOrderNames.length === 0) {
+      return [];
+    }
     const paymentEntries = await this.frappeClient.getList("Payment Entry", {
       filters: [
         ["Payment Entry Reference", "reference_doctype", "=", "Sales Order"],
