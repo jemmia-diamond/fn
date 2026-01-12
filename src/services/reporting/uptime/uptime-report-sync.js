@@ -3,6 +3,7 @@ import Database from "services/database";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
+import * as Sentry from "@sentry/cloudflare";
 
 dayjs.extend(utc);
 dayjs.extend(isSameOrBefore);
@@ -94,6 +95,11 @@ export default class UptimeReportSyncService {
   }
 
   async dailySync() {
-    await this.syncUptimeReports(dayjs().utc());
+    try {
+      await this.syncUptimeReports(dayjs().utc());
+    } catch (error) {
+      Sentry.captureException(error);
+      return;
+    }
   }
 }
