@@ -63,3 +63,73 @@ export const transformPurchaseFormData = (form) => {
   };
 };
 
+export const transformExchangeBuybackdData = (form) => {
+  const widgetsObj = widgetsArrayToObject(form);
+  const widgetFieldMapper = APPROVALS.BUYBACK_EXCHANGE.widgetFieldMapper;
+
+  const phoneData = accessNestedKey(widgetsObj, widgetFieldMapper.phone_number);
+  const phoneNumber = phoneData ? JSON.stringify(phoneData) : null;
+
+  const productsInfoRaw = accessNestedKey(widgetsObj, widgetFieldMapper.products_info);
+  let productsInfo = null;
+  let orderCodeFromProducts = null;
+
+  if (productsInfoRaw && Array.isArray(productsInfoRaw)) {
+    const products = productsInfoRaw.map(productArray => {
+      const product = {};
+      productArray.forEach(field => {
+        switch(field.id) {
+        case "widget17022702745840001":
+          product.product_name = field.value;
+          break;
+        case "widget17022702776620001":
+          product.code = field.value;
+          break;
+        case "widget17022700856220001":
+          product.order_code = field.value;
+          if (!orderCodeFromProducts) orderCodeFromProducts = field.value;
+          break;
+        case "widget17022702791970001":
+          product.sale_price = field.value;
+          break;
+        case "widget17022702829840001":
+          product.buyback_percentage = field.value;
+          break;
+        case "widget17022702867880001":
+          product.calculated_buyback_price = field.value;
+          break;
+        case "widget17035700414220001":
+          product.buyback_price = field.value;
+          break;
+        case "widget17022702902740001":
+          product.notes = field.value;
+          break;
+        }
+      });
+      return product;
+    });
+    productsInfo = JSON.stringify(products);
+  }
+
+  const mainOrderCode = accessNestedKey(widgetsObj, widgetFieldMapper.order_code);
+  const orderCode = mainOrderCode || orderCodeFromProducts;
+
+  return {
+    instance_type: accessNestedKey(widgetsObj, widgetFieldMapper.instance_type),
+    order_code: orderCode ? orderCode.toString().trim() : null,
+    new_order_code: accessNestedKey(widgetsObj, widgetFieldMapper.new_order_code) ?
+      accessNestedKey(widgetsObj, widgetFieldMapper.new_order_code).toString().trim() : null,
+    customer_name: accessNestedKey(widgetsObj, widgetFieldMapper.customer_name) ?
+      accessNestedKey(widgetsObj, widgetFieldMapper.customer_name).toString().trim() : null,
+    phone_number: phoneNumber,
+    national_id: accessNestedKey(widgetsObj, widgetFieldMapper.national_id),
+    reason: accessNestedKey(widgetsObj, widgetFieldMapper.reason) ?
+      accessNestedKey(widgetsObj, widgetFieldMapper.reason).toString().trim() : null,
+    refund_amount: accessNestedKey(widgetsObj, widgetFieldMapper.refund_amount),
+    products_info: productsInfo,
+    bank_info: accessNestedKey(widgetsObj, widgetFieldMapper.bank_info),
+    handover_date: accessNestedKey(widgetsObj, widgetFieldMapper.handover_date),
+    department: accessNestedKey(widgetsObj, widgetFieldMapper.department),
+    other_info: accessNestedKey(widgetsObj, widgetFieldMapper.other_info)
+  };
+};

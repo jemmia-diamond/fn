@@ -2,7 +2,8 @@ import {
   transformLeaveFormData,
   transformPaymentFormData,
   transformPurchaseFormData,
-  transformOffboardData
+  transformOffboardData,
+  transformExchangeBuybackdData
 } from "services/larksuite/approval/instance/utils/formTransformation";
 
 export const APPROVALS = {
@@ -50,6 +51,25 @@ export const APPROVALS = {
       offboardDesireDate: ["widget17001290376100001"],
       handoverStartDate: ["widget17001290517750001"],
       handoverReceiver: ["widget17001290735190001"]
+    }
+  },
+  BUYBACK_EXCHANGE: {
+    code: "EA70553F-D8C6-447F-AD9F-36BA1542B5A9",
+    formTransformFunction: transformExchangeBuybackdData,
+    widgetFieldMapper: {
+      instance_type: ["widget17022699020100001"],
+      customer_name: ["widget17022701687980001"],
+      phone_number: ["widget17022701750620001"],
+      national_id: ["widget17222414055270001"],
+      reason: ["widget17022702391380001"],
+      refund_amount: ["widget17022704878160001"],
+      products_info: ["widget17022702605140001"],
+      bank_info: ["widget17022705103350001"],
+      handover_date: ["widget17023591354370001"],
+      department: ["widget17022701340280001"],
+      other_info: ["widget17022705582580001"],
+      order_code: ["widget17022700856220001"],
+      new_order_code: ["widget17218060319530001"]
     }
   }
 };

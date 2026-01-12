@@ -61,6 +61,7 @@ export default {
       await ERP.Setup.EmployeeService.syncEmployeesToDatabase(env);
       await ERP.Selling.SalesPersonService.syncSalesPersonToDatabase(env);
       await Larksuite.Docs.Base.RecordService.syncRecordsToDatabase(env);
+      await new Ecommerce.DiamondCollectService(env).syncDiamondsToCollects();
       await new Reporting.UptimeReportSyncService(env).dailySync();
       break;
     case "30 0 * * *": // 07:30
@@ -76,6 +77,7 @@ export default {
     case "0 1 * * *": // 08:00
       await Larksuite.Attendance.ScheduleService.syncScheduleToDatabase(env);
       await Larksuite.Approval.InstanceService.syncInstancesToDatabase(env);
+      await Larksuite.Approval.BuyBackInstanceService.syncInstancesToDatabase(env);
       break;
     case "30 1 * * *": // 08:30
       await ERP.Automation.AssignmentRuleService.disableAssignmentRuleOffHour(env);
