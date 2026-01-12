@@ -183,7 +183,8 @@ export default class OrderService {
         customer_default_address_ward: order?.customer?.default_address.ward,
         customer_default_address_district: order?.customer?.default_address.district,
         customer_default_address_province: order?.customer?.default_address.province,
-        user_id: order?.user_id
+        user_id: order?.user_id,
+        source: order?.source
       }
     });
 
