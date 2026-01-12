@@ -137,7 +137,8 @@ export function calculateOrderPaymentRecordsTotal(orderDoc) {
   if (!orderDoc) return 0;
 
   const paymentRecords = (orderDoc.payment_records || []).filter(r =>
-    ["capture", "authorization"].includes(r.kind?.toLowerCase()) &&
+    typeof r.kind === "string" &&
+    ["capture", "authorization"].includes(r.kind.toLowerCase()) &&
     r.gateway !== PAYMENT_GATEWAY_ERP
   );
   const paymentRecordsTotal = paymentRecords.reduce((sum, r) => sum + parseFloat(r.amount || 0), 0);
