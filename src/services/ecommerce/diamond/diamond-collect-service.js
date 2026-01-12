@@ -94,7 +94,7 @@ export default class DiamondCollectService {
   }
 
   async _processDiamondBatches(context) {
-    const { db } = context;
+    const { db, nocoClient } = context;
     let offset = 0;
     const limit = 100;
 
@@ -105,8 +105,40 @@ export default class DiamondCollectService {
         break;
       }
 
+      const diamondIds = diamonds.map(d => d.id);
+      const diamondCollectionsMap = {};
+
+      if (diamondIds.length > 0) {
+        const where = `(diamond_id,in,${diamondIds.join(",")})`;
+        let entriesOffset = 0;
+        const entriesLimit = 1000;
+
+        while (true) {
+          const relatedCollections = await nocoClient.listRecords(DiamondCollectService.DIAMONDS_HARAVAN_COLLECTION_TABLE, {
+            where,
+            limit: entriesLimit,
+            offset: entriesOffset
+          });
+
+          const list = relatedCollections.list || [];
+
+          for (const entry of list) {
+            if (!diamondCollectionsMap[entry.diamond_id]) {
+              diamondCollectionsMap[entry.diamond_id] = [];
+            }
+            diamondCollectionsMap[entry.diamond_id].push(entry);
+          }
+
+          if (list.length < entriesLimit) {
+            break;
+          }
+
+          entriesOffset += entriesLimit;
+        }
+      }
+
       for (const diamond of diamonds) {
-        await this._processSingleDiamond(diamond, context);
+        await this._processSingleDiamond(diamond, context, diamondCollectionsMap[diamond.id] || []);
       }
 
       offset += limit;
@@ -139,7 +171,7 @@ export default class DiamondCollectService {
     `;
   }
 
-  async _processSingleDiamond(diamond, context) {
+  async _processSingleDiamond(diamond, context, existingEntries) {
     try {
       const { activeRules, ruleCollections, discountCollectionIds, nocoClient, haravanApi } = context;
 
@@ -148,14 +180,11 @@ export default class DiamondCollectService {
         rules: activeRules
       });
 
-      // eslint-disable-next-line no-console
-      console.info("Discount percent for diamond:", diamond.id, discountPercent, diamond.edge_size_2);
-
       const rules = ruleCollections[discountPercent] || {};
       const targetNocodbCollectionId = rules.nocodbId || null;
 
-      await this._syncNocoDBCollections(diamond, targetNocodbCollectionId, discountCollectionIds, nocoClient);
-      await this._syncHaravanCollections(diamond, targetNocodbCollectionId, rules.haravanId, nocoClient, haravanApi);
+      await this._syncNocoDBCollections(diamond, targetNocodbCollectionId, discountCollectionIds, nocoClient, existingEntries);
+      await this._syncHaravanCollections(diamond, targetNocodbCollectionId, rules.haravanId, nocoClient, haravanApi, existingEntries);
 
     } catch (error) {
       if (this._isIgnorableError(error)) {
@@ -166,12 +195,8 @@ export default class DiamondCollectService {
     }
   }
 
-  async _syncNocoDBCollections(diamond, targetCollectionId, discountCollectionIds, nocoClient) {
-    const existingEntries = await nocoClient.listRecords(DiamondCollectService.DIAMONDS_HARAVAN_COLLECTION_TABLE, {
-      where: `(diamond_id,eq,${diamond.id})`
-    });
-
-    const existingList = existingEntries.list || [];
+  async _syncNocoDBCollections(diamond, targetCollectionId, discountCollectionIds, nocoClient, existingEntries) {
+    const existingList = existingEntries || [];
 
     for (const entry of existingList) {
       const isDiscountCollection = discountCollectionIds.includes(entry.haravan_collection_id);
@@ -188,44 +213,45 @@ export default class DiamondCollectService {
     }
   }
 
-  async _syncHaravanCollections(diamond, targetNocodbCollectionId, targetHaravanCollectionId, nocoClient, haravanApi) {
+  async _syncHaravanCollections(diamond, targetNocodbCollectionId, targetHaravanCollectionId, nocoClient, haravanApi, existingEntries) {
     if (!targetNocodbCollectionId) return;
 
-    // Check if the link exists in NocoDB first
-    const existingEntries = await nocoClient.listRecords(DiamondCollectService.DIAMONDS_HARAVAN_COLLECTION_TABLE, {
-      where: `(diamond_id,eq,${diamond.id})~and(haravan_collection_id,eq,${targetNocodbCollectionId})`
-    });
-
-    const exists = (existingEntries.list || []).length > 0;
+    let exists = (existingEntries || []).some(entry => entry.haravan_collection_id === targetNocodbCollectionId);
 
     if (!exists) {
-      console.warn("Adding discount collection for diamond:", diamond.id, targetNocodbCollectionId);
-      await nocoClient.createRecords(DiamondCollectService.DIAMONDS_HARAVAN_COLLECTION_TABLE, {
-        diamonds: { id: diamond.id },
-        haravan_collections: { id: targetNocodbCollectionId }
-      });
-      // Delay for NocoDB creation
-      await new Promise(resolve => setTimeout(resolve, 1000));
-    } else {
-      // If NocoDB link exists, ensure Haravan collect exists
-      if (targetHaravanCollectionId) {
-        await this._createHaravanCollect(diamond, targetHaravanCollectionId, haravanApi);
+      try {
+        console.warn("Adding discount collection for diamond:", diamond.id, targetNocodbCollectionId);
+        await nocoClient.createRecords(DiamondCollectService.DIAMONDS_HARAVAN_COLLECTION_TABLE, {
+          diamonds: { id: diamond.id },
+          haravan_collections: { id: targetNocodbCollectionId }
+        });
+        // Delay for NocoDB creation
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        exists = true;
+      } catch (error) {
+        if (this._isIgnorableError(error)) {
+          exists = true;
+        } else {
+          throw error;
+        }
       }
+    }
+
+    if (exists && targetHaravanCollectionId) {
+      await this._createHaravanCollect(diamond, targetHaravanCollectionId, haravanApi);
     }
   }
 
   async _createHaravanCollect(diamond, haravanCollectionId, haravanApi) {
     try {
-      const collect = await haravanApi.collect.createCollect({
+      await haravanApi.collect.createCollect({
         "product_id": parseInt(diamond.product_id),
         "collection_id": parseInt(haravanCollectionId)
       });
-      console.warn("Created collect for Diamond", parseInt(diamond.id), parseInt(diamond.product_id), parseInt(haravanCollectionId), parseInt(collect.collect.id));
     } catch (hrvError) {
       if (hrvError.response?.status === 422) {
         // Ignored 422 (likely exists)
       } else {
-        console.warn("Error creating collect for Diamond", parseInt(diamond.id), parseInt(diamond.product_id), parseInt(haravanCollectionId));
         throw hrvError;
       }
     }
