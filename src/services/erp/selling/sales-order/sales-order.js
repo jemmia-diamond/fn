@@ -926,7 +926,7 @@ export default class SalesOrderService {
     const initialOrder = initialOrderDoc || await this.frappeClient.getDoc("Sales Order", initialOrderName);
 
     if (!initialOrder) return {
-      relatedOrders: [],
+      allRelatedOrders: [],
       allSplitOrders: []
     };
 
