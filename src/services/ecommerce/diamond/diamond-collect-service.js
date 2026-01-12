@@ -216,21 +216,29 @@ export default class DiamondCollectService {
   async _syncHaravanCollections(diamond, targetNocodbCollectionId, targetHaravanCollectionId, nocoClient, haravanApi, existingEntries) {
     if (!targetNocodbCollectionId) return;
 
-    const exists = (existingEntries || []).some(entry => entry.haravan_collection_id === targetNocodbCollectionId);
+    let exists = (existingEntries || []).some(entry => entry.haravan_collection_id === targetNocodbCollectionId);
 
     if (!exists) {
-      console.warn("Adding discount collection for diamond:", diamond.id, targetNocodbCollectionId);
-      await nocoClient.createRecords(DiamondCollectService.DIAMONDS_HARAVAN_COLLECTION_TABLE, {
-        diamonds: { id: diamond.id },
-        haravan_collections: { id: targetNocodbCollectionId }
-      });
-      // Delay for NocoDB creation
-      await new Promise(resolve => setTimeout(resolve, 1000));
-    } else {
-      // If NocoDB link exists, ensure Haravan collect exists
-      if (targetHaravanCollectionId) {
-        await this._createHaravanCollect(diamond, targetHaravanCollectionId, haravanApi);
+      try {
+        console.warn("Adding discount collection for diamond:", diamond.id, targetNocodbCollectionId);
+        await nocoClient.createRecords(DiamondCollectService.DIAMONDS_HARAVAN_COLLECTION_TABLE, {
+          diamonds: { id: diamond.id },
+          haravan_collections: { id: targetNocodbCollectionId }
+        });
+        // Delay for NocoDB creation
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        exists = true;
+      } catch (error) {
+        if (this._isIgnorableError(error)) {
+          exists = true;
+        } else {
+          throw error;
+        }
       }
+    }
+
+    if (exists && targetHaravanCollectionId) {
+      await this._createHaravanCollect(diamond, targetHaravanCollectionId, haravanApi);
     }
   }
 
