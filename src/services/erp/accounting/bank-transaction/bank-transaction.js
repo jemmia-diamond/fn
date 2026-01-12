@@ -23,7 +23,8 @@ const EXCLUDED_TRANSACTION_PATTERNS = [
   "HTC TRA COD",
   "Zalopay",
   "nop tien",
-  "Payoo"
+  "Payoo",
+  "Tra lai tien gui"
 ];
 
 const LOCATION_CC_RULES = [
@@ -45,7 +46,7 @@ export default class BankTransactionService {
     this.db = Database.instance(env);
   }
 
-  async syncUnlinkedBankTransactions(options = {}) {
+  async notifyUnlinkedBankTransactions(options = {}) {
     try {
       const nowICT = dayjs().tz(TIMEZONE_VIETNAM);
       const { fromDate, toDate } = options;
@@ -222,8 +223,8 @@ export default class BankTransactionService {
     return message;
   }
 
-  static async syncUnlinkedBankTransactions(env, options = {}) {
+  static async notifyUnlinkedBankTransactions(env, options = {}) {
     const service = new BankTransactionService(env);
-    return await service.syncUnlinkedBankTransactions(options);
+    return await service.notifyUnlinkedBankTransactions(options);
   }
 }
