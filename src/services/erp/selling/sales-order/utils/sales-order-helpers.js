@@ -130,3 +130,25 @@ export async function saveSalesOrdersToDatabase(db, salesOrders) {
     Sentry.captureException(error);
   }
 }
+
+const PAYMENT_GATEWAY_ERP = "Thanh toán qua ERP";
+
+export function calculateOrderPaymentRecordsTotal(orderDoc) {
+  if (!orderDoc) return 0;
+
+  const paymentRecords = (orderDoc.payment_records || []).filter(r =>
+    typeof r.kind === "string" &&
+    ["capture", "authorization"].includes(r.kind.toLowerCase()) &&
+    r.gateway !== PAYMENT_GATEWAY_ERP
+  );
+  const paymentRecordsTotal = paymentRecords.reduce((sum, r) => sum + parseFloat(r.amount || 0), 0);
+  return paymentRecordsTotal;
+}
+
+export function calculateGroupOrderPaymentRecordsTotal(orderDocs) {
+  if (!orderDocs || orderDocs.length === 0) return 0;
+
+  return orderDocs.reduce((total, order) => {
+    return total + calculateOrderPaymentRecordsTotal(order);
+  }, 0);
+}
