@@ -180,9 +180,6 @@ export default class DiamondCollectService {
         rules: activeRules
       });
 
-      // eslint-disable-next-line no-console
-      console.info("Discount percent for diamond:", diamond.id, discountPercent, diamond.edge_size_2);
-
       const rules = ruleCollections[discountPercent] || {};
       const targetNocodbCollectionId = rules.nocodbId || null;
 
@@ -239,16 +236,14 @@ export default class DiamondCollectService {
 
   async _createHaravanCollect(diamond, haravanCollectionId, haravanApi) {
     try {
-      const collect = await haravanApi.collect.createCollect({
+      await haravanApi.collect.createCollect({
         "product_id": parseInt(diamond.product_id),
         "collection_id": parseInt(haravanCollectionId)
       });
-      console.warn("Created collect for Diamond", parseInt(diamond.id), parseInt(diamond.product_id), parseInt(haravanCollectionId), parseInt(collect.collect.id));
     } catch (hrvError) {
       if (hrvError.response?.status === 422) {
         // Ignored 422 (likely exists)
       } else {
-        console.warn("Error creating collect for Diamond", parseInt(diamond.id), parseInt(diamond.product_id), parseInt(haravanCollectionId));
         throw hrvError;
       }
     }
