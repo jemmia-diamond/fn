@@ -60,10 +60,15 @@ export default class UserService {
         avatar: user.avatar
       };
 
+      const updateData = { ...userData };
+      if (!user.department_ids || (Array.isArray(user.department_ids) && user.department_ids.length === 0)) {
+        delete updateData.department_ids;
+      }
+
       await db.larksuite_users.upsert({
         where: { user_id: user.user_id },
         create: userData,
-        update: userData
+        update: updateData
       });
     }
   }
