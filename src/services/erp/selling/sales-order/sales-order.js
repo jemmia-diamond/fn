@@ -955,7 +955,11 @@ export default class SalesOrderService {
         split_order_group: o.split_order_group
       }));
     } else {
-      allSplitOrders = [initialOrder];
+      allSplitOrders = [{
+        name: initialOrder.name,
+        cancelled_status: initialOrder.cancelled_status,
+        split_order_group: initialOrder.split_order_group
+      }];
     }
 
     const toVisit = Array.from(relatedOrdersMap.keys());
