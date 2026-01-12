@@ -78,4 +78,17 @@ export default class LarksuiteService {
     }
     return responses;
   }
+
+  static async getUserInfo(env, userId) {
+    const client = this.createClient(env);
+    const res = await client.contact.user.get({
+      path: {
+        user_id: userId
+      },
+      params: {
+        user_id_type: "user_id"
+      }
+    });
+    return res.data?.user;
+  }
 };
