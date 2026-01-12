@@ -110,16 +110,30 @@ export default class DiamondCollectService {
 
       if (diamondIds.length > 0) {
         const where = `(diamond_id,in,${diamondIds.join(",")})`;
-        const relatedCollections = await nocoClient.listRecords(DiamondCollectService.DIAMONDS_HARAVAN_COLLECTION_TABLE, {
-          where,
-          limit: 1000
-        });
+        let entriesOffset = 0;
+        const entriesLimit = 1000;
 
-        for (const entry of (relatedCollections.list || [])) {
-          if (!diamondCollectionsMap[entry.diamond_id]) {
-            diamondCollectionsMap[entry.diamond_id] = [];
+        while (true) {
+          const relatedCollections = await nocoClient.listRecords(DiamondCollectService.DIAMONDS_HARAVAN_COLLECTION_TABLE, {
+            where,
+            limit: entriesLimit,
+            offset: entriesOffset
+          });
+
+          const list = relatedCollections.list || [];
+
+          for (const entry of list) {
+            if (!diamondCollectionsMap[entry.diamond_id]) {
+              diamondCollectionsMap[entry.diamond_id] = [];
+            }
+            diamondCollectionsMap[entry.diamond_id].push(entry);
           }
-          diamondCollectionsMap[entry.diamond_id].push(entry);
+
+          if (list.length < entriesLimit) {
+            break;
+          }
+
+          entriesOffset += entriesLimit;
         }
       }
 
