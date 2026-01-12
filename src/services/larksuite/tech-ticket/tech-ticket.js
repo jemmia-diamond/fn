@@ -178,8 +178,10 @@ export default class TechTicketService {
     try {
       // Build 2025 year filter in Vietnam time (UTC+7)
       let startSyncTime, endSyncTime;
+      let fieldName = "Ngày tạo";
 
       if (options.mode === "daily") {
+        fieldName = "Ngày Cập Nhật";
         const lastSyncTime = await env.FN_KV.get("TECH_TICKET_LAST_DAILY_SYNC");
         const now = dayjs().utc();
         endSyncTime = now.valueOf();
@@ -198,12 +200,12 @@ export default class TechTicketService {
         conjunction: "and",
         conditions: [
           {
-            field_name: "Ngày tạo",
+            field_name: fieldName,
             operator: "isGreater",
             value: ["ExactDate", startSyncTime]
           },
           {
-            field_name: "Ngày tạo",
+            field_name: fieldName,
             operator: "isLess",
             value: ["ExactDate", endSyncTime]
           }
