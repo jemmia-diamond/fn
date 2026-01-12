@@ -23,7 +23,8 @@ const EXCLUDED_TRANSACTION_PATTERNS = [
   "HTC TRA COD",
   "Zalopay",
   "nop tien",
-  "Payoo"
+  "Payoo",
+  "Tra lai tien gui"
 ];
 
 const LOCATION_CC_RULES = [

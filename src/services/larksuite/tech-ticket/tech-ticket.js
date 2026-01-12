@@ -1,39 +1,13 @@
 import Database from "services/database";
 import { TABLES } from "services/larksuite/docs/constant";
 import LarksuiteService from "services/larksuite/lark";
+import LarkHelper from "services/larksuite/helper";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 
 dayjs.extend(utc);
 
 export default class TechTicketService {
-  /**
-   * Helper to extract text from LarkSuite field (array of text objects)
-   * @param {Array|String} field - Field value from LarkSuite
-   * @returns {String|null} - Extracted text or null
-   */
-  static extractText(field) {
-    if (!field) return null;
-    if (typeof field === "string") return field;
-    if (Array.isArray(field) && field.length > 0 && field[0].text) {
-      return field[0].text;
-    }
-    return null;
-  }
-
-  /**
-   * Helper to extract integer from LarkSuite field
-   * @param {Number|Object} field - Field value from LarkSuite
-   * @returns {Number|null} - Extracted integer or null
-   */
-  static extractInt(field) {
-    if (!field) return null;
-    if (typeof field === "number") return field;
-    if (typeof field === "object" && field.value !== undefined) {
-      return parseInt(field.value, 10) || null;
-    }
-    return null;
-  }
 
   /**
    * Helper function to map LarkSuite fields to tech ticket database fields
@@ -48,20 +22,20 @@ export default class TechTicketService {
     };
 
     return {
-      ticket_id: this.extractText(fields["Ticket ID"]),
-      ticket_name: this.extractText(fields["Tên Vấn Đề"]),
-      ticket_type: this.extractText(fields["Loại Yêu Cầu"]),
-      ticket_priority: this.extractText(fields["Mức Độ Khẩn Cấp"]),
-      ticket_status: this.extractText(fields["Tình Trạng Xử Lý"]),
-      description: this.extractText(fields["Mô Tả Vấn Đề"]),
-      solution_update: this.extractText(fields["Kết Quả/Cập Nhật Xử Lý"]),
+      ticket_id: LarkHelper.extractText(fields["Ticket ID"]),
+      ticket_name: LarkHelper.extractText(fields["Tên Vấn Đề"]),
+      ticket_type: LarkHelper.extractText(fields["Loại Yêu Cầu"]),
+      ticket_priority: LarkHelper.extractText(fields["Mức Độ Khẩn Cấp"]),
+      ticket_status: LarkHelper.extractText(fields["Tình Trạng Xử Lý"]),
+      description: LarkHelper.extractText(fields["Mô Tả Vấn Đề"]),
+      solution_update: LarkHelper.extractText(fields["Kết Quả/Cập Nhật Xử Lý"]),
       created_time: toDate(fields["Ngày tạo"]),
       updated_time: toDate(fields["Ngày Cập Nhật"]),
       manual_updated_time: toDate(fields["Ngày Cập Nhật (Manual)"]),
       completed_time: toDate(fields["Ngày Hoàn Thành"]),
       expected_completion_time: toDate(fields["Ngày Hoàn Thành Mong Đợi"]),
-      ticket_no_in_month: this.extractText(fields["Ticket No. In Month"]),
-      current_number_in_month: this.extractInt(fields["Current Number In Month"])
+      ticket_no_in_month: LarkHelper.extractText(fields["Ticket No. In Month"]),
+      current_number_in_month: LarkHelper.extractInt(fields["Current Number In Month"])
     };
   }
 
