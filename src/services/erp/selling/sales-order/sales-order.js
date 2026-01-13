@@ -306,7 +306,8 @@ export default class SalesOrderService {
     }
 
     // Calculate Payment Entries Total
-    const paymentEntriesTotal = await this.calculateGroupPaymentTotal(allOrderNames);
+    const allPaymentEntries = await this.getAllRelatedPaymentEntries(allOrderNames);
+    const paymentEntriesTotal = await this.calculateGroupPaymentTotal(allOrderNames, allPaymentEntries);
 
     // Set Paid Amount
     salesOrderData.paid_amount = paymentEntriesTotal;
@@ -705,15 +706,14 @@ export default class SalesOrderService {
       if (!currentSalesOrder) return null;
 
       // Standard Payment Logic
-      const paymentEntryNames = await this.frappeClient.getList("Payment Entry", {
-        fields: ["name"],
-        filters: [
-          ["Payment Entry Reference", "reference_doctype", "=", "Sales Order"],
-          ["Payment Entry Reference", "reference_name", "=", salesOrderName],
-          ["docstatus", "<", 2],
-          ["payment_order_status", "=", "Success"]
-        ]
-      });
+      const paymentEntryNames = await this.getAllRelatedPaymentEntries(
+        Array.from(
+          new Set([
+            currentSalesOrder.name,
+            ...currentSalesOrder.ref_sales_orders.map(r => r.sales_order)
+          ])
+        )
+      );
 
       // Unique payment entries
       const uniquePaymentEntryNames = [...new Set(paymentEntryNames.map(pe => pe.name))];
@@ -779,7 +779,8 @@ export default class SalesOrderService {
       const groupPaymentRecordsTotal = calculateGroupOrderPaymentRecordsTotal(splitOrderDocs);
 
       // Combined Payment Total = (ERP Payment Entries linked to any order in group) + (Haravan Payment Records on each split order)
-      const groupPaymentEntryTotal = await this.calculateGroupPaymentTotal(relatedOrderNames);
+      const relatedPaymentEntries = await this.getAllRelatedPaymentEntries(relatedOrderNames);
+      const groupPaymentEntryTotal = await this.calculateGroupPaymentTotal(relatedOrderNames, relatedPaymentEntries);
       const groupPaymentTotal = groupPaymentEntryTotal + groupPaymentRecordsTotal;
 
       if (groupPaymentTotal >= groupGrandTotal) {
@@ -798,7 +799,9 @@ export default class SalesOrderService {
                 name: doc.name,
                 paid_amount: docTotal,
                 balance: 0,
-                payment_entries: linkedPaymentEntries
+                payment_entries: linkedPaymentEntries,
+                total_allocated_group_payment: groupPaymentTotal,
+                balance_group_payment: groupGrandTotal - groupPaymentTotal
               });
               updatedCurrentDoc = updated;
             }
@@ -808,7 +811,9 @@ export default class SalesOrderService {
               doctype: "Sales Order",
               name: doc.name,
               paid_amount: docTotal,
-              balance: 0
+              balance: 0,
+              total_allocated_group_payment: groupPaymentTotal,
+              balance_group_payment: groupGrandTotal - groupPaymentTotal
             });
           }
         }
@@ -837,13 +842,24 @@ export default class SalesOrderService {
       const balance = parseFloat(salesOrderGrandTotal) - parseFloat(totalPaid);
 
       // Update if changed
-      if (parseFloat(totalPaid) !== parseFloat(currentPaidAmount) || parseFloat(currentBalance) !== parseFloat(balance) || isPaymentEntriesChanged) {
+      const currentTotalAllocatedGroupPayment = parseFloat(currentSalesOrder.total_allocated_group_payment || 0);
+      const currentBalanceGroupPayment = parseFloat(currentSalesOrder.balance_group_payment || 0);
+      const newBalanceGroupPayment = parseFloat(groupGrandTotal - groupPaymentTotal);
+
+      if (parseFloat(totalPaid) !== parseFloat(currentPaidAmount) ||
+          parseFloat(currentBalance) !== parseFloat(balance) ||
+          isPaymentEntriesChanged ||
+          currentTotalAllocatedGroupPayment !== parseFloat(groupPaymentTotal) ||
+          currentBalanceGroupPayment !== newBalanceGroupPayment
+      ) {
         const updatedDoc = await this.frappeClient.update({
           doctype: "Sales Order",
           name: salesOrderName,
           paid_amount: totalPaid,
           balance: balance,
-          payment_entries: linkedPaymentEntries
+          payment_entries: linkedPaymentEntries,
+          total_allocated_group_payment: groupPaymentTotal,
+          balance_group_payment: newBalanceGroupPayment
         });
         console.warn(`Updated Sales Order ${salesOrderName}: Paid ${totalPaid}, Balance ${balance}`);
         return updatedDoc;
@@ -1011,19 +1027,7 @@ export default class SalesOrderService {
     };
   }
 
-  async calculateGroupPaymentTotal(relatedOrderNames) {
-    if (!relatedOrderNames || relatedOrderNames.length === 0) return 0;
-
-    const paymentEntries = await this.frappeClient.getList("Payment Entry", {
-      filters: [
-        ["Payment Entry Reference", "reference_doctype", "=", "Sales Order"],
-        ["Payment Entry Reference", "reference_name", "in", relatedOrderNames],
-        ["docstatus", "<", 2],
-        ["payment_order_status", "=", "Success"]
-      ],
-      fields: ["name", "payment_type"]
-    });
-
+  async calculateGroupPaymentTotal(relatedOrderNames, paymentEntries) {
     if (!paymentEntries || paymentEntries.length === 0) return 0;
 
     let totalAllocated = 0;
@@ -1056,5 +1060,21 @@ export default class SalesOrderService {
     }
 
     return totalAllocated;
+  }
+
+  async getAllRelatedPaymentEntries(relatedOrderNames) {
+    if (!relatedOrderNames || relatedOrderNames.length === 0) {
+      return [];
+    }
+    const paymentEntries = await this.frappeClient.getList("Payment Entry", {
+      filters: [
+        ["Payment Entry Reference", "reference_doctype", "=", "Sales Order"],
+        ["Payment Entry Reference", "reference_name", "in", relatedOrderNames],
+        ["docstatus", "<", 2],
+        ["payment_order_status", "=", "Success"]
+      ],
+      fields: ["name", "payment_type"]
+    });
+    return paymentEntries;
   }
 }
