@@ -4,6 +4,7 @@ import Database from "services/database";
 import LeadService from "services/erp/crm/lead/lead";
 import AIHUBClient from "services/clients/aihub";
 import { shouldReceiveWebhook } from "controllers/webhook/pancake/erp/utils";
+import { EXTRA_HOOKS } from "services/pancake/constants/extra-hook.constant";
 
 export default class ConversationService {
   constructor(env) {
@@ -196,6 +197,21 @@ export default class ConversationService {
     });
   }
 
+  async triggerExtraHooks(body) {
+    const promises = EXTRA_HOOKS.map(url =>
+      fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      }).catch(err => {
+        console.warn(`Failed to forward webhook to ${url}:`, err);
+        Sentry.captureException(err);
+      })
+    );
+
+    await Promise.allSettled(promises);
+  }
+
   static async dequeueMessageSummaryQueue(batch, env) {
     const conversationService = new ConversationService(env);
     const messages = batch.messages;
@@ -223,7 +239,10 @@ export default class ConversationService {
     const messages = batch.messages;
     for (const message of messages) {
       const body = message.body;
-      await conversationService.syncCustomerToLeadCrm(body);
+      await Promise.all([
+        conversationService.syncCustomerToLeadCrm(body),
+        conversationService.triggerExtraHooks(body)
+      ]);
     }
   }
 }
