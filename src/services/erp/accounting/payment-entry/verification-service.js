@@ -2,6 +2,10 @@ import FrappeClient from "src/frappe/frappe-client";
 import Database from "src/services/database";
 import Misa from "services/misa";
 import { PaymentOrderStatus } from "services/erp/accounting/payment-entry/mapping";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc.js";
+
+dayjs.extend(utc);
 
 const NOT_FOUND = 404;
 const OK = 200;
@@ -95,7 +99,10 @@ export default class BankTransactionVerificationService {
 
     const updatedQrPayment = await this.db.qrPaymentTransaction.update({
       where: { id: qrPayment.id },
-      data: { transfer_status: "success" }
+      data: {
+        transfer_status: "success",
+        updated_at: dayjs(payload?.payment_date).utc().toDate()
+      }
     });
 
     const successPayment = references.length != 0 ? PaymentOrderStatus.SUCCESS : PaymentOrderStatus.PENDING;

@@ -371,6 +371,11 @@ export default class PaymentEntryService {
       }
     }
 
+    updateQr = await this.db.qrPaymentTransaction.update({
+      where: { id: qrPaymentId },
+      data: { updated_at: dayjs(paymentEntry.payment_date).utc().toDate() }
+    });
+
     const isSuccess = paymentEntry.bank_transactions?.length >= 1 && updateQr.haravan_order_id;
     const payment_order_status = isSuccess ? PaymentOrderStatus.SUCCESS : PaymentOrderStatus.PENDING;
 
