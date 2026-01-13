@@ -793,9 +793,10 @@ export default class SalesOrderService {
           const currentTotalAllocated = parseFloat(doc.total_allocated_group_payment || 0);
           const currentBalanceGroup = parseFloat(doc.balance_group_payment || 0);
           const newBalanceGroup = groupGrandTotal - groupPaymentTotal;
+          const hasChangeAmount = docPaid !== docTotal || currentTotalAllocated !== groupPaymentTotal || currentBalanceGroup !== newBalanceGroup;
 
           if (order.name === salesOrderName) {
-            if (docPaid !== docTotal || isPaymentEntriesChanged || currentTotalAllocated !== groupPaymentTotal || currentBalanceGroup !== newBalanceGroup) {
+            if (hasChangeAmount || isPaymentEntriesChanged) {
               const updated = await this.frappeClient.update({
                 doctype: "Sales Order",
                 name: doc.name,
@@ -808,7 +809,7 @@ export default class SalesOrderService {
               updatedCurrentDoc = updated;
             }
           }
-          else if (docPaid !== docTotal || currentTotalAllocated !== groupPaymentTotal || currentBalanceGroup !== newBalanceGroup) {
+          else if (hasChangeAmount) {
             await this.frappeClient.update({
               doctype: "Sales Order",
               name: doc.name,
@@ -962,7 +963,7 @@ export default class SalesOrderService {
           ["split_order_group", "=", initialOrder.split_order_group],
           ["is_split_order", "=", 1]
         ],
-        fields: ["name", "cancelled_status", "split_order_group"]
+        fields: ["name", "cancelled_status", "split_order_group", "grand_total", "paid_amount", "total_allocated_group_payment", "balance_group_payment"]
       });
 
       allSplitOrders = groupOrders;
