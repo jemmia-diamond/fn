@@ -27,7 +27,7 @@ export default class GoogleMerchantProductSyncService {
             from: page,
             limit: LIMIT
           },
-          is_in_stock: false,
+          is_in_stock: true,
           sort: { by: "price", order: "desc" }
         };
 
