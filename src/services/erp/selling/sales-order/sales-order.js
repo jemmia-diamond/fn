@@ -798,7 +798,9 @@ export default class SalesOrderService {
                 name: doc.name,
                 paid_amount: docTotal,
                 balance: 0,
-                payment_entries: linkedPaymentEntries
+                payment_entries: linkedPaymentEntries,
+                total_allocated_group_payment: groupPaymentTotal,
+                balance_group_payment: groupGrandTotal - groupPaymentTotal
               });
               updatedCurrentDoc = updated;
             }
@@ -808,7 +810,9 @@ export default class SalesOrderService {
               doctype: "Sales Order",
               name: doc.name,
               paid_amount: docTotal,
-              balance: 0
+              balance: 0,
+              total_allocated_group_payment: groupPaymentTotal,
+              balance_group_payment: groupGrandTotal - groupPaymentTotal
             });
           }
         }
@@ -837,13 +841,24 @@ export default class SalesOrderService {
       const balance = parseFloat(salesOrderGrandTotal) - parseFloat(totalPaid);
 
       // Update if changed
-      if (parseFloat(totalPaid) !== parseFloat(currentPaidAmount) || parseFloat(currentBalance) !== parseFloat(balance) || isPaymentEntriesChanged) {
+      const currentTotalAllocatedGroupPayment = parseFloat(currentSalesOrder.total_allocated_group_payment || 0);
+      const currentBalanceGroupPayment = parseFloat(currentSalesOrder.balance_group_payment || 0);
+      const newBalanceGroupPayment = parseFloat(groupGrandTotal - groupPaymentTotal);
+
+      if (parseFloat(totalPaid) !== parseFloat(currentPaidAmount) ||
+          parseFloat(currentBalance) !== parseFloat(balance) ||
+          isPaymentEntriesChanged ||
+          currentTotalAllocatedGroupPayment !== parseFloat(groupPaymentTotal) ||
+          currentBalanceGroupPayment !== newBalanceGroupPayment
+      ) {
         const updatedDoc = await this.frappeClient.update({
           doctype: "Sales Order",
           name: salesOrderName,
           paid_amount: totalPaid,
           balance: balance,
-          payment_entries: linkedPaymentEntries
+          payment_entries: linkedPaymentEntries,
+          total_allocated_group_payment: groupPaymentTotal,
+          balance_group_payment: newBalanceGroupPayment
         });
         console.warn(`Updated Sales Order ${salesOrderName}: Paid ${totalPaid}, Balance ${balance}`);
         return updatedDoc;
