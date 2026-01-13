@@ -783,16 +783,19 @@ export default class SalesOrderService {
       const groupPaymentTotal = groupPaymentEntryTotal + groupPaymentRecordsTotal;
 
       if (groupPaymentTotal >= groupGrandTotal) {
-        const targetOrders = (splitOrders && splitOrders.length > 0) ? splitOrders : [{ name: salesOrderName, grand_total: currentSalesOrder.grand_total }];
+        const targetOrders = (splitOrders && splitOrders.length > 0) ? splitOrderDocs : [{ name: salesOrderName, grand_total: currentSalesOrder.grand_total }];
         let updatedCurrentDoc = currentSalesOrder;
 
         for (const order of targetOrders) {
           const doc = (order.name === salesOrderName) ? currentSalesOrder : order;
           const docPaid = parseFloat(doc.paid_amount || 0);
           const docTotal = parseFloat(doc.grand_total || 0);
+          const currentTotalAllocated = parseFloat(doc.total_allocated_group_payment || 0);
+          const currentBalanceGroup = parseFloat(doc.balance_group_payment || 0);
+          const newBalanceGroup = groupGrandTotal - groupPaymentTotal;
 
           if (order.name === salesOrderName) {
-            if (docPaid !== docTotal || isPaymentEntriesChanged) {
+            if (docPaid !== docTotal || isPaymentEntriesChanged || currentTotalAllocated !== groupPaymentTotal || currentBalanceGroup !== newBalanceGroup) {
               const updated = await this.frappeClient.update({
                 doctype: "Sales Order",
                 name: doc.name,
@@ -800,19 +803,19 @@ export default class SalesOrderService {
                 balance: 0,
                 payment_entries: linkedPaymentEntries,
                 total_allocated_group_payment: groupPaymentTotal,
-                balance_group_payment: groupGrandTotal - groupPaymentTotal
+                balance_group_payment: newBalanceGroup
               });
               updatedCurrentDoc = updated;
             }
           }
-          else if (docPaid !== docTotal) {
+          else if (docPaid !== docTotal || currentTotalAllocated !== groupPaymentTotal || currentBalanceGroup !== newBalanceGroup) {
             await this.frappeClient.update({
               doctype: "Sales Order",
               name: doc.name,
               paid_amount: docTotal,
               balance: 0,
               total_allocated_group_payment: groupPaymentTotal,
-              balance_group_payment: groupGrandTotal - groupPaymentTotal
+              balance_group_payment: newBalanceGroup
             });
           }
         }
