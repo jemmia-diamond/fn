@@ -243,7 +243,6 @@ export default class PaymentEntryService {
     const data = {
       payment_type: this._mapPaymentMethod(paymentEntry.payment_code),
       branch: this._mapBranch(paymentEntry.bank_account_branch),
-      receive_date,
       bank_account: paymentEntry.bank_account_no || null,
       bank_name: paymentEntry.bank || null,
       transfer_amount: paymentEntry.paid_amount || paymentEntry.received_amount || null,
@@ -255,6 +254,13 @@ export default class PaymentEntryService {
       payment_entry_name: paymentEntry.name
     };
 
+    const existingReceiveDateStr = existingPayment.receive_date ? dayjs(existingPayment.receive_date).format("YYYY-MM-DD") : null;
+    const newReceiveDateStr = receive_date ? dayjs(receive_date).format("YYYY-MM-DD") : null;
+
+    if (!existingReceiveDateStr || (newReceiveDateStr && existingReceiveDateStr !== newReceiveDateStr)) {
+      data.receive_date = receive_date || (paymentEntry.verified_by ? dayjs().utc().toDate() : existingPayment.receive_date);
+    }
+
     const result = await this.manualPaymentService.updateManualPayment(manualPaymentUuid, data);
 
     if (result && result.payment_entry_name) {
@@ -262,13 +268,18 @@ export default class PaymentEntryService {
       const custom_transfer_status = isConfirmed ? PaymentEntryStatus.SUCCESS : PaymentEntryStatus.PENDING;
       const payment_order_status = isConfirmed ? PaymentOrderStatus.SUCCESS : PaymentOrderStatus.PENDING;
 
-      await this.frappeClient.upsert({
+      const updateData = {
         doctype: this.doctype,
         name: result.payment_entry_name,
         custom_transfer_note: result.transfer_note,
         custom_transfer_status,
-        payment_order_status
-      }, "name");
+        payment_order_status,
+        ...(!paymentEntry.payment_date && result?.receive_date && {
+          payment_date: dayjs(result.receive_date).format("YYYY-MM-DD HH:mm:ss")
+        })
+      };
+
+      await this.frappeClient.upsert(updateData, "name");
 
       if (isConfirmed && isOrderLinking && paymentEntry.verified_by && haravan_order_id) {
         const jobType = Misa.Constants.JOB_TYPE.CREATE_MANUAL_VOUCHER;
