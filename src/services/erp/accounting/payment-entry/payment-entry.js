@@ -226,7 +226,9 @@ export default class PaymentEntryService {
           custom_transfer_note: existingPayment.transfer_note,
           custom_transfer_status: PaymentEntryStatus.PENDING,
           paid_amount: existingPayment.transfer_amount
-        }, "name").catch(() => {});
+        }, "name").catch((error) => {
+          Sentry.captureException(error);
+        });
 
         paymentEntry.paid_amount = existingPayment.transfer_amount;
       }
@@ -350,7 +352,9 @@ export default class PaymentEntryService {
           custom_transaction_id: qrPayment.id,
           custom_transfer_note: qrPayment.transfer_note,
           custom_transfer_status: qrPayment.transfer_status
-        }, "name").catch(() => {});
+        }, "name").catch((error) => {
+          Sentry.captureException(error);
+        });
       }
     }
 
