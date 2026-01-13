@@ -399,6 +399,10 @@ export default class PaymentEntryService {
       }
     }
 
+    if (parseFloat(paymentEntry.paid_amount) !== parseFloat(updateQr.transfer_amount)) {
+      updateQr = await this._updateQRAmount(qrPaymentId, paymentEntry, updateQr);
+    }
+
     updateQr = await this.db.qrPaymentTransaction.update({
       where: { id: qrPaymentId },
       data: { updated_at: dayjs(paymentEntry.payment_date).utc().toDate() }
@@ -470,6 +474,24 @@ export default class PaymentEntryService {
     return await this.db.qrPaymentTransaction.update({
       where: { id: id },
       data: dataToUpdate
+    });
+  }
+
+  async _updateQRAmount(qrPaymentId, paymentEntry, currentQrPayment) {
+    const newAmount = parseFloat(paymentEntry.paid_amount);
+    const qrUrl = PaymentService.CreateQRService.formatQuickQrUrl({
+      bankAccountNumber: currentQrPayment.bank_account_number,
+      bankBin: paymentEntry.bank_details?.bank_bin,
+      transferAmount: newAmount,
+      transferNote: currentQrPayment.transfer_note
+    });
+
+    return await this.db.qrPaymentTransaction.update({
+      where: { id: qrPaymentId },
+      data: {
+        transfer_amount: newAmount,
+        qr_url: qrUrl
+      }
     });
   }
 
