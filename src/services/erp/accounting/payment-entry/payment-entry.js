@@ -203,38 +203,36 @@ export default class PaymentEntryService {
 
   async updateManualPayment(rawPaymentEntry) {
     const paymentEntry = rawToPaymentEntry(rawPaymentEntry);
-    let manualPaymentUuid = paymentEntry.custom_transaction_id;
+    let manualPaymentUuid = paymentEntry?.custom_transaction_id;
 
-    let existingPayment;
-    if (manualPaymentUuid) {
-      existingPayment = await this.db.manualPaymentTransaction.findUnique({
-        where: { uuid: manualPaymentUuid }
-      });
-    }
+    const whereConditions = [];
+    manualPaymentUuid ? whereConditions.push({ uuid: manualPaymentUuid }) :
+      whereConditions.push({ payment_entry_name: paymentEntry.name });
 
-    if (!existingPayment && paymentEntry.name) {
-      existingPayment = await this.db.manualPaymentTransaction.findFirst({
-        where: { payment_entry_name: paymentEntry.name }
-      });
-      manualPaymentUuid = existingPayment?.uuid;
-
-      if (existingPayment) {
-        this.frappeClient.upsert({
-          doctype: this.doctype,
-          name: paymentEntry.name,
-          custom_transaction_id: existingPayment.uuid,
-          custom_transfer_note: existingPayment.transfer_note,
-          custom_transfer_status: PaymentEntryStatus.PENDING,
-          paid_amount: existingPayment.transfer_amount
-        }, "name").catch((error) => {
-          Sentry.captureException(error);
-        });
-
-        paymentEntry.paid_amount = existingPayment.transfer_amount;
-      }
-    }
+    let existingPayment = await this.db.manualPaymentTransaction.findFirst({
+      where: { OR: whereConditions }
+    });
 
     if (!existingPayment) return;
+
+    if (existingPayment && !manualPaymentUuid) {
+      manualPaymentUuid = existingPayment.uuid;
+    }
+
+    if (existingPayment && !paymentEntry?.custom_transaction_id) {
+      this.frappeClient.upsert({
+        doctype: this.doctype,
+        name: paymentEntry.name,
+        custom_transaction_id: existingPayment.uuid,
+        custom_transfer_note: existingPayment.transfer_note,
+        custom_transfer_status: PaymentEntryStatus.PENDING,
+        paid_amount: parseFloat(existingPayment.transfer_amount)
+      }, "name").catch((error) => {
+        Sentry.captureException(error);
+      });
+
+      paymentEntry.paid_amount = existingPayment.transfer_amount;
+    }
 
     if (paymentEntry.payment_order_status == PaymentOrderStatus.CANCEL) {
       await this.db.manualPaymentTransaction.update({
@@ -331,34 +329,35 @@ export default class PaymentEntryService {
     const primaryOrder = salesOrderReferences[0] ? rawToReference(salesOrderReferences[0]) : null;
     let qrPaymentId = paymentEntry?.custom_transaction_id;
 
-    let qrPayment;
-    if (qrPaymentId) {
-      qrPayment = await this.db.qrPaymentTransaction.findUnique({
-        where: { id: qrPaymentId, is_deleted: false }
-      });
-    }
+    const whereConditions = [];
+    qrPaymentId ? whereConditions.push({ id: qrPaymentId }) :
+      whereConditions.push({ payment_entry_name: paymentEntry.name });
 
-    if (!qrPayment) {
-      qrPayment = await this.db.qrPaymentTransaction.findFirst({
-        where: { payment_entry_name: paymentEntry.name, is_deleted: false }
-      });
-      qrPaymentId = qrPayment?.id;
-
-      if (qrPayment) {
-        this.frappeClient.upsert({
-          doctype: this.doctype,
-          name: paymentEntry.name,
-          qr_url: `${this.env.PAYMENT_QR_BASE_URL}/${qrPayment.id}`,
-          custom_transaction_id: qrPayment.id,
-          custom_transfer_note: qrPayment.transfer_note,
-          custom_transfer_status: qrPayment.transfer_status
-        }, "name").catch((error) => {
-          Sentry.captureException(error);
-        });
+    let qrPayment = await this.db.qrPaymentTransaction.findFirst({
+      where: {
+        OR: whereConditions,
+        is_deleted: false
       }
-    }
+    });
 
     if (!qrPayment) return;
+
+    if (qrPayment && !qrPaymentId) {
+      qrPaymentId = qrPayment.id;
+    }
+
+    if (qrPayment && !paymentEntry?.custom_transaction_id) {
+      this.frappeClient.upsert({
+        doctype: this.doctype,
+        name: paymentEntry.name,
+        qr_url: `${this.env.PAYMENT_QR_BASE_URL}/${qrPayment.id}`,
+        custom_transaction_id: qrPayment.id,
+        custom_transfer_note: qrPayment.transfer_note,
+        custom_transfer_status: qrPayment.transfer_status
+      }, "name").catch((error) => {
+        Sentry.captureException(error);
+      });
+    }
 
     if (qrPayment.payment_entry_name !== paymentEntry.name) return;
 
