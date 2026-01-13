@@ -1,6 +1,5 @@
 import GoogleAuth from "services/google/auth.js";
 import * as Sentry from "@sentry/cloudflare";
-import defaultCredentials from "services/google/jemmia-merchant-api-bf1a1f2060ca.json";
 
 export default class GoogleMerchantService {
   constructor(env) {
@@ -25,7 +24,6 @@ export default class GoogleMerchantService {
     } else {
       // Fallback to local file for dev
       console.warn("Using local credentials file for Google Merchant auth");
-      this.auth = new GoogleAuth(defaultCredentials);
     }
   }
 
