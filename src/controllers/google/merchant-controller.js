@@ -1,4 +1,4 @@
-import GoogleMerchantProductSyncService from "services/google/sync-products.js";
+import GoogleMerchantProductSyncService from "services/google/google-merchant-product-sync.js";
 
 export default class MerchantController {
   static async create(ctx) {
