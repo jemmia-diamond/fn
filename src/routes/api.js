@@ -9,6 +9,7 @@ import Delivery from "controllers/delivery";
 import Payment from "controllers/payment";
 import Salesaya from "controllers/salesaya";
 import Larksuite from "controllers/larksuite";
+import Google from "controllers/google";
 
 export default class APIRoutes {
   static register(api) {
@@ -64,5 +65,8 @@ export default class APIRoutes {
     const larksuiteApi = api.basePath("/larksuites");
     larksuiteApi.get("/buyback-exchanges", Larksuite.BuybackExchangeController.index);
     larksuiteApi.post("/lark-chat-sync", Larksuite.LarkChatSyncController.create);
+
+    const googleApi = api.basePath("/google");
+    googleApi.post("/merchant/sync", Google.MerchantController.create);
   };
 };
