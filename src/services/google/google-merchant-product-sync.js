@@ -27,8 +27,8 @@ export default class GoogleMerchantProductSyncService {
             from: page,
             limit: LIMIT
           },
-          is_in_stock: true,
-          sort: { by: "price", order: "desc" }
+          sort: { by: "price", order: "desc" },
+          extraFields: ["sku"]
         };
 
         const result = await this.productService.getJewelry(jsonParams);
@@ -81,35 +81,58 @@ export default class GoogleMerchantProductSyncService {
     try {
       let imageLink = product.images && product.images.length > 0 ? product.images[0] : "";
 
-      const availability = variant.qty_available > 0 ? "in stock" : "out of stock";
+      const availability = variant.qty_available > 0 ? "in_stock" : "out_of_stock";
 
       const priceValue = parseInt(variant.price || 0);
-      const amountMicros = (BigInt(priceValue) * BigInt(1000000)).toString();
 
-      const title = `${product.title} - ${variant.material_color} ${variant.fineness}`;
-      const link = `https://jemmia.vn/products/${product.handle}?variant=${variant.id}`;
+      // Title: Max 150 chars
+      let title = `${product.title} - ${variant.material_color} ${variant.fineness}`;
+      if (title.length > 150) {
+        title = title.substring(0, 147) + "...";
+      }
+
+      // Description: Max 200 chars
+      let description = product.description || product.title || "";
+      // Strip HTML tags
+      description = description.replace(/<[^>]*>?/gm, "");
+      if (description.length > 200) {
+        description = description.substring(0, 197) + "...";
+      }
+
+      const link = `https://jemmia.vn/products/${product.handle}`;
+
+      const offerId = variant.sku;
+      if (!offerId) {
+        console.warn(`Product ${product.id} Variant ${variant.id} has no SKU. Skipping.`);
+        return null;
+      }
+
+      const mpn = product.id ? product.id.toString() : "";
+      const itemGroupId = product.code || product.handle || `${product.id}`;
 
       return {
         channel: "ONLINE",
-        offerId: `${variant.id}`,
+        offerId: offerId.toLowerCase(),
         contentLanguage: "vi",
         targetCountry: "VN",
         feedLabel: "VN",
-        attributes: {
-          title: title,
-          description: product.title,
-          link: link,
-          imageLink: imageLink,
-          price: {
-            amountMicros: amountMicros,
-            currency: "VND"
-          },
-          availability: availability,
-          condition: "new",
-          brand: "Jemmia",
-          color: variant.material_color,
-          material: variant.fineness
-        }
+        title: title,
+        description: description,
+        link: link,
+        imageLink: imageLink,
+        price: {
+          value: priceValue.toString(),
+          currency: "VND"
+        },
+        availability: availability,
+        condition: "new",
+        brand: "Jemmia",
+        identifierExists: mpn ? "yes" : "no",
+        mpn: mpn || undefined,
+        itemGroupId: itemGroupId,
+        color: variant.material_color,
+        material: variant.fineness,
+        adult: "no"
       };
     } catch (err) {
       console.warn(`Error mapping product ${product.id} variant ${variant?.id}:`, err);

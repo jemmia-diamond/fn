@@ -1,5 +1,5 @@
 import GoogleAuth from "services/google/auth.js";
-
+import * as Sentry from "@sentry/cloudflare";
 import defaultCredentials from "services/google/jemmia-merchant-api-bf1a1f2060ca.json";
 
 export default class GoogleMerchantService {
@@ -7,15 +7,20 @@ export default class GoogleMerchantService {
     this.env = env;
     this.merchantId = env.GOOGLE_MERCHANT_ID;
     this.auth = null;
+  }
 
-    if (env.GOOGLE_MERCHANT_JSON_KEY) {
+  async _ensureAuth() {
+    if (this.auth) return;
+
+    const jsonKey = await this.env.GOOGLE_MERCHANT_SA_SECRET.get();
+
+    if (jsonKey) {
       try {
-        const credentials = typeof env.GOOGLE_MERCHANT_JSON_KEY === "string"
-          ? JSON.parse(env.GOOGLE_MERCHANT_JSON_KEY)
-          : env.GOOGLE_MERCHANT_JSON_KEY;
+        const credentials = this._parseCredentials(jsonKey);
         this.auth = new GoogleAuth(credentials);
       } catch (e) {
-        console.warn("Failed to parse GOOGLE_MERCHANT_JSON_KEY", e);
+        console.warn("Failed to parse GOOGLE_MERCHANT_SA_SECRET", e);
+        Sentry.captureException(e);
       }
     } else {
       // Fallback to local file for dev
@@ -24,7 +29,26 @@ export default class GoogleMerchantService {
     }
   }
 
+  _parseCredentials(keyContent) {
+    if (typeof keyContent !== "string") {
+      return keyContent;
+    }
+
+    let parsed = keyContent;
+    if (!parsed.trim().startsWith("{")) {
+      try {
+        parsed = atob(parsed);
+      } catch (e) {
+        Sentry.captureException(e);
+        return;
+      }
+    }
+
+    return JSON.parse(parsed);
+  }
+
   async _getHeaders() {
+    await this._ensureAuth();
     if (!this.auth) {
       throw new Error("Google Merchant authentication not configured");
     }
