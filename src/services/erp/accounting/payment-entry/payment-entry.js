@@ -217,6 +217,19 @@ export default class PaymentEntryService {
         where: { payment_entry_name: paymentEntry.name }
       });
       manualPaymentUuid = existingPayment?.uuid;
+
+      if (existingPayment) {
+        this.frappeClient.upsert({
+          doctype: this.doctype,
+          name: paymentEntry.name,
+          custom_transaction_id: existingPayment.uuid,
+          custom_transfer_note: existingPayment.transfer_note,
+          custom_transfer_status: PaymentEntryStatus.PENDING,
+          paid_amount: existingPayment.transfer_amount
+        }, "name").catch(() => {});
+
+        paymentEntry.paid_amount = existingPayment.transfer_amount;
+      }
     }
 
     if (!existingPayment) return;
@@ -314,19 +327,34 @@ export default class PaymentEntryService {
     const salesOrderReferences = references.filter((ref) => ref.reference_doctype === "Sales Order");
 
     const primaryOrder = salesOrderReferences[0] ? rawToReference(salesOrderReferences[0]) : null;
-    const qrPaymentId = paymentEntry.custom_transaction_id;
-    if (!qrPaymentId) return;
+    let qrPaymentId = paymentEntry?.custom_transaction_id;
 
-    const qrPayment = await this.db.qrPaymentTransaction.findUnique({
-      where: { id: qrPaymentId, is_deleted: false }
-    });
+    let qrPayment;
+    if (qrPaymentId) {
+      qrPayment = await this.db.qrPaymentTransaction.findUnique({
+        where: { id: qrPaymentId, is_deleted: false }
+      });
+    }
 
     if (!qrPayment) {
-      throw new Error(JSON.stringify({
-        error_msg: `QR with id ${qrPaymentId} not found`,
-        error_code: LinkQRWithRealOrderService.NOT_FOUND
-      }));
+      qrPayment = await this.db.qrPaymentTransaction.findFirst({
+        where: { payment_entry_name: paymentEntry.name, is_deleted: false }
+      });
+      qrPaymentId = qrPayment?.id;
+
+      if (qrPayment) {
+        this.frappeClient.upsert({
+          doctype: this.doctype,
+          name: paymentEntry.name,
+          qr_url: `${this.env.PAYMENT_QR_BASE_URL}/${qrPayment.id}`,
+          custom_transaction_id: qrPayment.id,
+          custom_transfer_note: qrPayment.transfer_note,
+          custom_transfer_status: qrPayment.transfer_status
+        }, "name").catch(() => {});
+      }
     }
+
+    if (!qrPayment) return;
 
     if (qrPayment.payment_entry_name !== paymentEntry.name) return;
 
