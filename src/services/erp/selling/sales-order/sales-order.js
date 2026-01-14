@@ -905,7 +905,7 @@ export default class SalesOrderService {
   }
 
   async syncHaravanFinancialStatus(salesOrderData) {
-    if (salesOrderData.grand_total === salesOrderData.paid_amount) {
+    if (Math.abs(salesOrderData.grand_total - salesOrderData.paid_amount) <= 1000) {
       const HRV_API_KEY = await this.env.HARAVAN_TOKEN_SECRET.get();
       if (!HRV_API_KEY) {
         return;
