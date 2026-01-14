@@ -83,17 +83,23 @@ export default class GoogleMerchantProductSyncService {
 
       const availability = variant.qty_available > 0 ? "in_stock" : "out_of_stock";
 
-      const priceValue = parseInt(variant.price || 0);
+      let priceValue = parseInt(variant.price || 0);
 
-      // Title: Max 150 chars
-      let title = `${product.title} - ${variant.material_color} ${variant.fineness}`;
-      if (title.length > 150) {
-        title = title.substring(0, 147) + "...";
+      if (product.product_type && (product.product_type.toLowerCase().includes("bông tai"))) {
+        priceValue *= 2;
       }
 
-      // Description: Max 200 chars
+      const suffix = `${product.design_code ? ` - ${product.design_code}` : ""}`;
+      let titlePrefix = product.title;
+
+      const maxPrefixLength = 150 - suffix.length;
+      if (titlePrefix.length > maxPrefixLength) {
+        titlePrefix = titlePrefix.substring(0, maxPrefixLength - 3) + "...";
+      }
+
+      const title = `${titlePrefix}${suffix}`;
+
       let description = product.description || product.title || "";
-      // Strip HTML tags
       description = description.replace(/<[^>]*>?/gm, "");
       if (description.length > 200) {
         description = description.substring(0, 197) + "...";
