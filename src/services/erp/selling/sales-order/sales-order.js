@@ -11,7 +11,7 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/constant";
 
-import { fetchSalesOrdersFromERP, saveSalesOrdersToDatabase, calculateGroupOrderPaymentRecordsTotal, calculateOrderPaymentRecordsTotal } from "src/services/erp/selling/sales-order/utils/sales-order-helpers";
+import { fetchSalesOrdersFromERP, saveSalesOrdersToDatabase, calculateGroupOrderPaymentRecordsTotal, calculateOrderPaymentRecordsTotal, ensureSelfReference } from "src/services/erp/selling/sales-order/utils/sales-order-helpers";
 import { getRefOrderChain } from "services/ecommerce/order-tracking/queries/get-initial-order";
 import Larksuite from "services/larksuite";
 import { ERPR2StorageService } from "services/r2-object/erp/erp-r2-storage-service";
@@ -130,6 +130,9 @@ export default class SalesOrderService {
       ref_sales_orders: await this.mapRefSalesOrder(haravanOrderData.id)
     };
     const order = await this.frappeClient.upsert(mappedOrderData, "haravan_order_id", ["items"]);
+
+    await ensureSelfReference(this.frappeClient, order, this.doctype);
+
     return order;
   }
 
@@ -179,16 +182,13 @@ export default class SalesOrderService {
         return [];
       };
 
-      const erpRefOrders = await this.db.erpnextSalesOrders.findMany({
-        where: {
-          haravan_order_id: {
-            in: refOrders?.map(order => String(order.id))
-          }
-        }
+      const erpRefOrders = await this.frappeClient.getList("Sales Order", {
+        filters: [["haravan_order_id", "in", refOrders.map(order => String(order.id))]],
+        fields: ["name", "haravan_order_id"]
       });
 
       return refOrders.map((o) => {
-        const refOrder = erpRefOrders.find(order => order.haravan_order_id === String(o.id));
+        const refOrder = erpRefOrders.find(order => String(order.haravan_order_id) === String(o.id));
 
         if (!refOrder) {
           return null;
@@ -306,12 +306,12 @@ export default class SalesOrderService {
     }
 
     // Calculate Payment Entries Total
-    const allPaymentEntries = await this.getAllRelatedPaymentEntries(allOrderNames);
-    const paymentEntriesTotal = await this.calculateGroupPaymentTotal(allOrderNames, allPaymentEntries);
+    const paymentEntriesTotal = await this.calculateGroupPaymentTotal(allOrderNames);
+    const paymentRecordsTotal = calculateGroupOrderPaymentRecordsTotal([salesOrderData, ...childOrders]);
 
     // Set Paid Amount
-    salesOrderData.paid_amount = paymentEntriesTotal;
-    salesOrderData.deposit_amount = paymentEntriesTotal;
+    salesOrderData.paid_amount = paymentEntriesTotal + paymentRecordsTotal;
+    salesOrderData.deposit_amount = paymentEntriesTotal + paymentRecordsTotal;
 
     const customer = await this.frappeClient.getDoc("Customer", salesOrderData.customer);
 
@@ -396,7 +396,8 @@ export default class SalesOrderService {
               data: {
                 order_data: {
                   items: salesOrderData.items,
-                  attachments: salesOrderData.attachments
+                  attachments: salesOrderData.attachments,
+                  paid_amount: salesOrderData.paid_amount
                 }
               }
             });
@@ -409,7 +410,8 @@ export default class SalesOrderService {
               haravan_order_id: salesOrderData.haravan_order_id,
               order_data: {
                 items: salesOrderData.items,
-                attachments: salesOrderData.attachments
+                attachments: salesOrderData.attachments,
+                paid_amount: salesOrderData.paid_amount
               }
             }
           });
@@ -467,7 +469,8 @@ export default class SalesOrderService {
           data: {
             order_data: {
               items: salesOrderData.items,
-              attachments: salesOrderData.attachments
+              attachments: salesOrderData.attachments,
+              paid_amount: salesOrderData.paid_amount
             }
           }
         });
@@ -514,7 +517,8 @@ export default class SalesOrderService {
         haravan_order_id: salesOrderData.haravan_order_id,
         order_data: {
           items: salesOrderData.items,
-          attachments: salesOrderData.attachments
+          attachments: salesOrderData.attachments,
+          paid_amount: salesOrderData.paid_amount
         }
       }
     });
@@ -906,7 +910,7 @@ export default class SalesOrderService {
   }
 
   async syncHaravanFinancialStatus(salesOrderData) {
-    if (salesOrderData.grand_total === salesOrderData.paid_amount) {
+    if (Math.abs(salesOrderData.grand_total - salesOrderData.paid_amount) <= 1000) {
       const HRV_API_KEY = await this.env.HARAVAN_TOKEN_SECRET.get();
       if (!HRV_API_KEY) {
         return;
