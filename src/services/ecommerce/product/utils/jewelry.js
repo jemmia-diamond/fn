@@ -115,7 +115,7 @@ export function buildQuery(jsonParams) {
         'price', ${priceField},
         'price_compare_at', CAST(v.price_compare_at AS DECIMAL),
         'qty_available', v.qty_available,
-        'qty_onhand', v.qty_onhand,
+        'qty_onhand', v.qty_onhand${extraFieldsClause ? "," : ""}
         ${extraFieldsClause.slice(0, -1)}
       )
     `;
@@ -247,7 +247,7 @@ export function buildQuerySingle({ matchedDiamonds, extraFields }) {
       'applique_material', v.applique_material,
       'estimated_gold_weight', v.estimated_gold_weight,
       'qty_available', v.qty_available,
-      'qty_onhand', v.qty_onhand,
+      'qty_onhand', v.qty_onhand${extraFieldsClause ? "," : ""}
       ${extraFieldsClause.slice(0, -1)}
     ) \n
   `;
