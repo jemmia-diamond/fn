@@ -736,21 +736,18 @@ export default class SalesOrderService {
       const linkedPaymentEntries = [];
       for (const entry of paymentEntries) {
         if (entry && entry.references) {
-          const relevantRefs = entry.references.filter(r =>
-            r.reference_doctype === "Sales Order" &&
-            refSalesOrderNames.includes(r.reference_name)
-          );
+          const refs = entry.references.filter(r => r.reference_doctype === "Sales Order" && refSalesOrderNames.includes(r.reference_name));
 
-          for (const ref of relevantRefs) {
-            const amount = parseFloat(ref.allocated_amount || 0);
+          for (const ref of refs) {
+            const allocated = parseFloat(ref.allocated_amount || 0);
             if (entry.payment_type === "Pay") {
-              paymentEntriesTotal -= amount;
+              paymentEntriesTotal -= allocated;
             } else {
-              paymentEntriesTotal += amount;
+              paymentEntriesTotal += allocated;
             }
           }
 
-          const ref = relevantRefs.find(r => r.reference_name === salesOrderName);
+          const ref = refs.find(r => r.reference_name === salesOrderName);
 
           if (ref) {
             // Build linked payment entry row
