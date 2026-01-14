@@ -11,7 +11,7 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/constant";
 
-import { fetchSalesOrdersFromERP, saveSalesOrdersToDatabase, calculateGroupOrderPaymentRecordsTotal, calculateOrderPaymentRecordsTotal } from "src/services/erp/selling/sales-order/utils/sales-order-helpers";
+import { fetchSalesOrdersFromERP, saveSalesOrdersToDatabase, calculateGroupOrderPaymentRecordsTotal, calculateOrderPaymentRecordsTotal, ensureSelfReference } from "src/services/erp/selling/sales-order/utils/sales-order-helpers";
 import { getRefOrderChain } from "services/ecommerce/order-tracking/queries/get-initial-order";
 import Larksuite from "services/larksuite";
 import { ERPR2StorageService } from "services/r2-object/erp/erp-r2-storage-service";
@@ -130,6 +130,9 @@ export default class SalesOrderService {
       ref_sales_orders: await this.mapRefSalesOrder(haravanOrderData.id)
     };
     const order = await this.frappeClient.upsert(mappedOrderData, "haravan_order_id", ["items"]);
+
+    await ensureSelfReference(this.frappeClient, order, this.doctype);
+
     return order;
   }
 
@@ -179,16 +182,13 @@ export default class SalesOrderService {
         return [];
       };
 
-      const erpRefOrders = await this.db.erpnextSalesOrders.findMany({
-        where: {
-          haravan_order_id: {
-            in: refOrders?.map(order => String(order.id))
-          }
-        }
+      const erpRefOrders = await this.frappeClient.getList("Sales Order", {
+        filters: [["haravan_order_id", "in", refOrders.map(order => String(order.id))]],
+        fields: ["name", "haravan_order_id"]
       });
 
       return refOrders.map((o) => {
-        const refOrder = erpRefOrders.find(order => order.haravan_order_id === String(o.id));
+        const refOrder = erpRefOrders.find(order => String(order.haravan_order_id) === String(o.id));
 
         if (!refOrder) {
           return null;
