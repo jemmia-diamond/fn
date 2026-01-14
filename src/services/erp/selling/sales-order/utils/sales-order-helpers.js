@@ -152,3 +152,25 @@ export function calculateGroupOrderPaymentRecordsTotal(orderDocs) {
     return total + calculateOrderPaymentRecordsTotal(order);
   }, 0);
 }
+
+export async function ensureSelfReference(frappeClient, order, doctype = "Sales Order") {
+  // Update self-reference if missing (e.g. new order)
+  if (order && order.name) {
+    const hasSelfRef = order.ref_sales_orders?.some(r => r.sales_order === order.name);
+    if (!hasSelfRef) {
+      const updatedRefs = [
+        ...(order.ref_sales_orders || []),
+        { doctype: "Sales Order Reference", sales_order: order.name }
+      ];
+
+      await frappeClient.update({
+        doctype: doctype,
+        name: order.name,
+        ref_sales_orders: updatedRefs
+      });
+
+      order.ref_sales_orders = updatedRefs;
+    }
+  }
+  return order;
+}
