@@ -1,11 +1,16 @@
 import GoogleAuth from "services/google/auth.js";
 import * as Sentry from "@sentry/cloudflare";
+import { createAxiosClient } from "services/utils/http-client";
 
 export default class GoogleMerchantService {
   constructor(env) {
     this.env = env;
     this.merchantId = env.GOOGLE_MERCHANT_ID;
     this.auth = null;
+    this.client = createAxiosClient({
+      baseURL: "https://shoppingcontent.googleapis.com/content/v2.1",
+      timeout: 10000
+    });
   }
 
   async _ensureAuth() {
@@ -56,21 +61,11 @@ export default class GoogleMerchantService {
   async insertProduct(productData) {
     try {
       const headers = await this._getHeaders();
-      const url = `https://shoppingcontent.googleapis.com/content/v2.1/${this.merchantId}/products`;
+      const url = `/${this.merchantId}/products`;
 
-      const response = await fetch(url, {
-        method: "POST",
-        headers: headers,
-        body: JSON.stringify(productData)
-      });
+      const response = await this.client.post(url, productData, { headers });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Google Merchant API Error: ${response.status} ${errorText}`);
-      }
-
-      const responseData = await response.json();
-      return responseData;
+      return response.data;
     } catch (error) {
       Sentry.captureException(error);
       throw error;
@@ -80,24 +75,16 @@ export default class GoogleMerchantService {
   async deleteProduct(productId) {
     try {
       const headers = await this._getHeaders();
-      const url = `https://shoppingcontent.googleapis.com/content/v2.1/${this.merchantId}/products/${productId}`;
+      const url = `/${this.merchantId}/products/${productId}`;
 
-      const response = await fetch(url, {
-        method: "DELETE",
-        headers: headers
-      });
-
-      if (!response.ok) {
-        // 404 is fine to ignore for delete
-        if (response.status === 404) {
-          return true;
-        }
-        const errorText = await response.text();
-        throw new Error(`Google Merchant API Error: ${response.status} ${errorText}`);
-      }
+      await this.client.delete(url, { headers });
 
       return true;
     } catch (error) {
+      // 404 is fine to ignore for delete
+      if (error.response?.status === 404) {
+        return true;
+      }
       Sentry.captureException(error);
       throw error;
     }
