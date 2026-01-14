@@ -111,8 +111,7 @@ export default class GoogleMerchantService {
   }
 
   async insertProducts(products) {
-    // Re-using the same batch logic but now calling the REST-based insertProduct
-    const BATCH_SIZE = 50; // Reduced batch size for fetch concurrency control
+    const BATCH_SIZE = 5;
     const batches = this._chunkArray(products, BATCH_SIZE);
 
     console.warn(`Starting sync for ${products.length} products in ${batches.length} batches...`);
@@ -127,6 +126,10 @@ export default class GoogleMerchantService {
         const failCount = results.filter(r => r.status === "rejected").length;
 
         console.warn(`Batch processed: ${successCount} success, ${failCount} failed.`);
+
+        if (batches.length > 1) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
       } catch (error) {
         console.warn("Batch failed:", error);
       }

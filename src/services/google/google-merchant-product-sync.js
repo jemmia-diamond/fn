@@ -43,11 +43,14 @@ export default class GoogleMerchantProductSyncService {
         console.warn(`fetched ${products.length} products from DB.`);
 
         for (const product of products) {
-          for (const variant of product.variants) {
-            const merchantProduct = this._mapToMerchantProduct(product, variant);
-            if (merchantProduct) {
-              allMerchantProducts.push(merchantProduct);
-              syncedCount++;
+          if (product.variants && product.variants.length > 0) {
+            for (const variant of product.variants) {
+              const merchantProduct = this._mapToMerchantProduct(product, variant);
+              if (merchantProduct) {
+                allMerchantProducts.push(merchantProduct);
+                syncedCount++;
+                break;
+              }
             }
           }
         }
@@ -116,6 +119,9 @@ export default class GoogleMerchantProductSyncService {
       const mpn = product.id ? product.id.toString() : "";
       const itemGroupId = product.code || product.handle || `${product.id}`;
 
+      const allFinenesses = [...new Set(product.variants.map(v => v.fineness).filter(Boolean))].join(", ");
+      const allMaterials = [...new Set(product.variants.map(v => v.material_color).filter(Boolean))].join(", ");
+
       return {
         channel: "ONLINE",
         offerId: offerId.toLowerCase(),
@@ -132,12 +138,12 @@ export default class GoogleMerchantProductSyncService {
         },
         availability: availability,
         condition: "new",
-        brand: "Jemmia",
+        brand: "Jemmia Diamond",
         identifierExists: mpn ? "yes" : "no",
         mpn: mpn || undefined,
         itemGroupId: itemGroupId,
-        color: variant.material_color,
-        material: variant.fineness,
+        color: allMaterials,
+        material: allFinenesses,
         adult: "no"
       };
     } catch (err) {
