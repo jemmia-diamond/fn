@@ -13,6 +13,10 @@ export default class MisaInventoryItemSyncService {
   constructor(env) {
     this.env = env;
     this.db = Database.instance(env);
+    this.dbConnection = {
+      timeout: 15000,
+      maxWait: 10000
+    };
   }
 
   async syncInventoryItems() {
@@ -169,10 +173,10 @@ export default class MisaInventoryItemSyncService {
           sku: variant.sku
         },
         update: {
-          database_updated_at: new Date()
+          database_updated_at: dayjs().utc().toDate()
         }
       })
     );
-    await this.db.$transaction(upsertOperations);
+    await this.db.$transaction(upsertOperations, this.dbConnection);
   }
 }
