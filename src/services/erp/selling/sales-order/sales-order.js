@@ -307,10 +307,11 @@ export default class SalesOrderService {
 
     // Calculate Payment Entries Total
     const paymentEntriesTotal = await this.calculateGroupPaymentTotal(allOrderNames);
+    const paymentRecordsTotal = calculateGroupOrderPaymentRecordsTotal([salesOrderData, ...childOrders]);
 
     // Set Paid Amount
-    salesOrderData.paid_amount = paymentEntriesTotal;
-    salesOrderData.deposit_amount = paymentEntriesTotal;
+    salesOrderData.paid_amount = paymentEntriesTotal + paymentRecordsTotal;
+    salesOrderData.deposit_amount = paymentEntriesTotal + paymentRecordsTotal;
 
     const customer = await this.frappeClient.getDoc("Customer", salesOrderData.customer);
 
@@ -395,7 +396,8 @@ export default class SalesOrderService {
               data: {
                 order_data: {
                   items: salesOrderData.items,
-                  attachments: salesOrderData.attachments
+                  attachments: salesOrderData.attachments,
+                  paid_amount: salesOrderData.paid_amount
                 }
               }
             });
@@ -408,7 +410,8 @@ export default class SalesOrderService {
               haravan_order_id: salesOrderData.haravan_order_id,
               order_data: {
                 items: salesOrderData.items,
-                attachments: salesOrderData.attachments
+                attachments: salesOrderData.attachments,
+                paid_amount: salesOrderData.paid_amount
               }
             }
           });
@@ -466,7 +469,8 @@ export default class SalesOrderService {
           data: {
             order_data: {
               items: salesOrderData.items,
-              attachments: salesOrderData.attachments
+              attachments: salesOrderData.attachments,
+              paid_amount: salesOrderData.paid_amount
             }
           }
         });
@@ -513,7 +517,8 @@ export default class SalesOrderService {
         haravan_order_id: salesOrderData.haravan_order_id,
         order_data: {
           items: salesOrderData.items,
-          attachments: salesOrderData.attachments
+          attachments: salesOrderData.attachments,
+          paid_amount: salesOrderData.paid_amount
         }
       }
     });
