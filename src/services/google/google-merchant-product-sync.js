@@ -1,5 +1,6 @@
 import ProductService from "services/ecommerce/product/product.js";
 import GoogleMerchantService from "services/google/google-merchant-service.js";
+import * as Sentry from "@sentry/cloudflare";
 
 const LIMIT = 50;
 
@@ -11,7 +12,6 @@ export default class GoogleMerchantProductSyncService {
   }
 
   async sync() {
-    console.warn("Starting Product Sync...");
     let syncedCount = 0;
     let page = 1;
     let hasMore = true;
@@ -20,8 +20,6 @@ export default class GoogleMerchantProductSyncService {
 
     try {
       while (hasMore) {
-        console.warn(`Fetching page ${page}...`);
-
         const jsonParams = {
           pagination: {
             from: page,
@@ -39,8 +37,6 @@ export default class GoogleMerchantProductSyncService {
           hasMore = false;
           break;
         }
-
-        console.warn(`fetched ${products.length} products from DB.`);
 
         for (const product of products) {
           if (product.variants && product.variants.length > 0) {
@@ -63,19 +59,14 @@ export default class GoogleMerchantProductSyncService {
         }
       }
 
-      console.warn(`Total variants prepared for sync: ${allMerchantProducts.length}`);
-
       if (allMerchantProducts.length > 0) {
         await this.merchantService.insertProducts(allMerchantProducts);
-      } else {
-        console.warn("No products to sync.");
       }
 
-      console.warn("Sync completed successfully.");
       return { success: true, syncedCount, errors };
 
     } catch (error) {
-      console.warn("Error during sync:", error);
+      Sentry.captureException(error);
       return { success: false, syncedCount, errors: [error] };
     }
   }
@@ -112,7 +103,6 @@ export default class GoogleMerchantProductSyncService {
 
       const offerId = variant.sku;
       if (!offerId) {
-        console.warn(`Product ${product.id} Variant ${variant.id} has no SKU. Skipping.`);
         return null;
       }
 
@@ -147,7 +137,7 @@ export default class GoogleMerchantProductSyncService {
         adult: "no"
       };
     } catch (err) {
-      console.warn(`Error mapping product ${product.id} variant ${variant?.id}:`, err);
+      Sentry.captureException(err);
       return null;
     }
   }
