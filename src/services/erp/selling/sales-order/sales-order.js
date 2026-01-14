@@ -11,7 +11,7 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/constant";
 
-import { fetchSalesOrdersFromERP, saveSalesOrdersToDatabase, calculateGroupOrderPaymentRecordsTotal, calculateOrderPaymentRecordsTotal, ensureSelfReference } from "src/services/erp/selling/sales-order/utils/sales-order-helpers";
+import { fetchSalesOrdersFromERP, saveSalesOrdersToDatabase, calculateGroupOrderPaymentRecordsTotal, calculateOrderPaymentRecordsTotal, ensureSelfReference, getAllRelatedPaymentEntries } from "src/services/erp/selling/sales-order/utils/sales-order-helpers";
 import { getRefOrderChain } from "services/ecommerce/order-tracking/queries/get-initial-order";
 import Larksuite from "services/larksuite";
 import { ERPR2StorageService } from "services/r2-object/erp/erp-r2-storage-service";
@@ -306,7 +306,8 @@ export default class SalesOrderService {
     }
 
     // Calculate Payment Entries Total
-    const paymentEntriesTotal = await this.calculateGroupPaymentTotal(allOrderNames);
+    const relatedPaymentEntries = await getAllRelatedPaymentEntries(this.frappeClient, allOrderNames);
+    const paymentEntriesTotal = await this.calculateGroupPaymentTotal(allOrderNames, relatedPaymentEntries);
     const paymentRecordsTotal = calculateGroupOrderPaymentRecordsTotal([salesOrderData, ...childOrders]);
 
     // Set Paid Amount
@@ -709,14 +710,13 @@ export default class SalesOrderService {
       const currentSalesOrder = await this.frappeClient.getDoc("Sales Order", salesOrderName);
       if (!currentSalesOrder) return null;
 
-      // Standard Payment Logic
-      const paymentEntryNames = await this.getAllRelatedPaymentEntries(
-        Array.from(
-          new Set([
-            currentSalesOrder.name,
-            ...currentSalesOrder.ref_sales_orders.map(r => r.sales_order)
-          ])
-        )
+      const refSalesOrderNames = [
+        currentSalesOrder.name,
+        ...(currentSalesOrder.ref_sales_orders || []).map(r => r.sales_order)
+      ];
+      const paymentEntryNames = await getAllRelatedPaymentEntries(
+        this.frappeClient,
+        refSalesOrderNames
       );
 
       // Unique payment entries
@@ -736,15 +736,23 @@ export default class SalesOrderService {
       const linkedPaymentEntries = [];
       for (const entry of paymentEntries) {
         if (entry && entry.references) {
-          const ref = entry.references.find(r => r.reference_doctype === "Sales Order" && r.reference_name === salesOrderName);
-          if (ref) {
-            const allocated = parseFloat(ref.allocated_amount || 0);
-            if (entry.payment_type === "Pay") {
-              paymentEntriesTotal -= allocated;
-            } else {
-              paymentEntriesTotal += allocated;
-            }
+          const relevantRefs = entry.references.filter(r =>
+            r.reference_doctype === "Sales Order" &&
+            refSalesOrderNames.includes(r.reference_name)
+          );
 
+          for (const ref of relevantRefs) {
+            const amount = parseFloat(ref.allocated_amount || 0);
+            if (entry.payment_type === "Pay") {
+              paymentEntriesTotal -= amount;
+            } else {
+              paymentEntriesTotal += amount;
+            }
+          }
+
+          const ref = relevantRefs.find(r => r.reference_name === salesOrderName);
+
+          if (ref) {
             // Build linked payment entry row
             const row = {
               doctype: "Payment Entry Reference",
@@ -783,7 +791,7 @@ export default class SalesOrderService {
       const groupPaymentRecordsTotal = calculateGroupOrderPaymentRecordsTotal(splitOrderDocs);
 
       // Combined Payment Total = (ERP Payment Entries linked to any order in group) + (Haravan Payment Records on each split order)
-      const relatedPaymentEntries = await this.getAllRelatedPaymentEntries(relatedOrderNames);
+      const relatedPaymentEntries = await getAllRelatedPaymentEntries(this.frappeClient, relatedOrderNames);
       const groupPaymentEntryTotal = await this.calculateGroupPaymentTotal(relatedOrderNames, relatedPaymentEntries);
       const groupPaymentTotal = groupPaymentEntryTotal + groupPaymentRecordsTotal;
 
@@ -1068,21 +1076,5 @@ export default class SalesOrderService {
     }
 
     return totalAllocated;
-  }
-
-  async getAllRelatedPaymentEntries(relatedOrderNames) {
-    if (!relatedOrderNames || relatedOrderNames.length === 0) {
-      return [];
-    }
-    const paymentEntries = await this.frappeClient.getList("Payment Entry", {
-      filters: [
-        ["Payment Entry Reference", "reference_doctype", "=", "Sales Order"],
-        ["Payment Entry Reference", "reference_name", "in", relatedOrderNames],
-        ["docstatus", "<", 2],
-        ["payment_order_status", "=", "Success"]
-      ],
-      fields: ["name", "payment_type"]
-    });
-    return paymentEntries;
   }
 }
