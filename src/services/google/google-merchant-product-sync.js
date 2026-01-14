@@ -16,7 +16,6 @@ export default class GoogleMerchantProductSyncService {
     let page = 1;
     let hasMore = true;
     let allMerchantProducts = [];
-    const errors = [];
 
     try {
       while (hasMore) {
@@ -63,7 +62,7 @@ export default class GoogleMerchantProductSyncService {
         await this.merchantService.insertProducts(allMerchantProducts);
       }
 
-      return { success: true, syncedCount, errors };
+      return { success: true, syncedCount };
 
     } catch (error) {
       Sentry.captureException(error);
