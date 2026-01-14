@@ -203,23 +203,36 @@ export default class PaymentEntryService {
 
   async updateManualPayment(rawPaymentEntry) {
     const paymentEntry = rawToPaymentEntry(rawPaymentEntry);
-    let manualPaymentUuid = paymentEntry.custom_transaction_id;
+    let manualPaymentUuid = paymentEntry?.custom_transaction_id;
 
-    let existingPayment;
-    if (manualPaymentUuid) {
-      existingPayment = await this.db.manualPaymentTransaction.findUnique({
-        where: { uuid: manualPaymentUuid }
-      });
-    }
+    const whereConditions = [];
+    manualPaymentUuid ? whereConditions.push({ uuid: manualPaymentUuid }) :
+      whereConditions.push({ payment_entry_name: paymentEntry.name });
 
-    if (!existingPayment && paymentEntry.name) {
-      existingPayment = await this.db.manualPaymentTransaction.findFirst({
-        where: { payment_entry_name: paymentEntry.name }
-      });
-      manualPaymentUuid = existingPayment?.uuid;
-    }
+    let existingPayment = await this.db.manualPaymentTransaction.findFirst({
+      where: { OR: whereConditions }
+    });
 
     if (!existingPayment) return;
+
+    if (existingPayment && !manualPaymentUuid) {
+      manualPaymentUuid = existingPayment.uuid;
+    }
+
+    if (existingPayment && !paymentEntry?.custom_transaction_id) {
+      this.frappeClient.upsert({
+        doctype: this.doctype,
+        name: paymentEntry.name,
+        custom_transaction_id: existingPayment.uuid,
+        custom_transfer_note: existingPayment.transfer_note,
+        custom_transfer_status: PaymentEntryStatus.PENDING,
+        paid_amount: parseFloat(existingPayment.transfer_amount)
+      }, "name").catch((error) => {
+        Sentry.captureException(error);
+      });
+
+      paymentEntry.paid_amount = existingPayment.transfer_amount;
+    }
 
     if (paymentEntry.payment_order_status == PaymentOrderStatus.CANCEL) {
       await this.db.manualPaymentTransaction.update({
@@ -243,7 +256,6 @@ export default class PaymentEntryService {
     const data = {
       payment_type: this._mapPaymentMethod(paymentEntry.payment_code),
       branch: this._mapBranch(paymentEntry.bank_account_branch),
-      receive_date,
       bank_account: paymentEntry.bank_account_no || null,
       bank_name: paymentEntry.bank || null,
       transfer_amount: paymentEntry.paid_amount || paymentEntry.received_amount || null,
@@ -255,6 +267,13 @@ export default class PaymentEntryService {
       payment_entry_name: paymentEntry.name
     };
 
+    const existingReceiveDateStr = existingPayment.receive_date ? dayjs(existingPayment.receive_date).format("YYYY-MM-DD") : null;
+    const newReceiveDateStr = receive_date ? dayjs(receive_date).format("YYYY-MM-DD") : null;
+
+    if (!existingReceiveDateStr || (newReceiveDateStr && existingReceiveDateStr !== newReceiveDateStr)) {
+      data.receive_date = receive_date || (paymentEntry.verified_by ? dayjs().utc().toDate() : existingPayment.receive_date);
+    }
+
     const result = await this.manualPaymentService.updateManualPayment(manualPaymentUuid, data);
 
     if (result && result.payment_entry_name) {
@@ -262,13 +281,18 @@ export default class PaymentEntryService {
       const custom_transfer_status = isConfirmed ? PaymentEntryStatus.SUCCESS : PaymentEntryStatus.PENDING;
       const payment_order_status = isConfirmed ? PaymentOrderStatus.SUCCESS : PaymentOrderStatus.PENDING;
 
-      await this.frappeClient.upsert({
+      const updateData = {
         doctype: this.doctype,
         name: result.payment_entry_name,
         custom_transfer_note: result.transfer_note,
         custom_transfer_status,
-        payment_order_status
-      }, "name");
+        payment_order_status,
+        ...(!paymentEntry.payment_date && result?.receive_date && {
+          payment_date: dayjs(result.receive_date).format("YYYY-MM-DD HH:mm:ss")
+        })
+      };
+
+      await this.frappeClient.upsert(updateData, "name");
 
       if (isConfirmed && isOrderLinking && paymentEntry.verified_by && haravan_order_id) {
         const jobType = Misa.Constants.JOB_TYPE.CREATE_MANUAL_VOUCHER;
@@ -303,18 +327,36 @@ export default class PaymentEntryService {
     const salesOrderReferences = references.filter((ref) => ref.reference_doctype === "Sales Order");
 
     const primaryOrder = salesOrderReferences[0] ? rawToReference(salesOrderReferences[0]) : null;
-    const qrPaymentId = paymentEntry.custom_transaction_id;
-    if (!qrPaymentId) return;
+    let qrPaymentId = paymentEntry?.custom_transaction_id;
 
-    const qrPayment = await this.db.qrPaymentTransaction.findUnique({
-      where: { id: qrPaymentId, is_deleted: false }
+    const whereConditions = [];
+    qrPaymentId ? whereConditions.push({ id: qrPaymentId }) :
+      whereConditions.push({ payment_entry_name: paymentEntry.name });
+
+    let qrPayment = await this.db.qrPaymentTransaction.findFirst({
+      where: {
+        OR: whereConditions,
+        is_deleted: false
+      }
     });
 
-    if (!qrPayment) {
-      throw new Error(JSON.stringify({
-        error_msg: `QR with id ${qrPaymentId} not found`,
-        error_code: LinkQRWithRealOrderService.NOT_FOUND
-      }));
+    if (!qrPayment) return;
+
+    if (qrPayment && !qrPaymentId) {
+      qrPaymentId = qrPayment.id;
+    }
+
+    if (qrPayment && !paymentEntry?.custom_transaction_id) {
+      this.frappeClient.upsert({
+        doctype: this.doctype,
+        name: paymentEntry.name,
+        qr_url: `${this.env.PAYMENT_QR_BASE_URL}/${qrPayment.id}`,
+        custom_transaction_id: qrPayment.id,
+        custom_transfer_note: qrPayment.transfer_note,
+        custom_transfer_status: qrPayment.transfer_status
+      }, "name").catch((error) => {
+        Sentry.captureException(error);
+      });
     }
 
     if (qrPayment.payment_entry_name !== paymentEntry.name) return;
@@ -358,6 +400,19 @@ export default class PaymentEntryService {
           error_code: LinkQRWithRealOrderService.UPDATE_QR_FAILED
         }));
       }
+    }
+
+    if (parseFloat(paymentEntry.paid_amount) !== parseFloat(updateQr.transfer_amount)) {
+      updateQr = await this._updateQRAmount(qrPaymentId, paymentEntry, updateQr);
+    }
+
+    const existingUpdatedAtStr = updateQr.updated_at ? dayjs(updateQr.updated_at).format("YYYY-MM-DD") : null;
+    const newPaymentDateStr = dayjs(paymentEntry.payment_date).format("YYYY-MM-DD");
+    if (existingUpdatedAtStr !== newPaymentDateStr) {
+      updateQr = await this.db.qrPaymentTransaction.update({
+        where: { id: qrPaymentId },
+        data: { updated_at: dayjs(paymentEntry.payment_date).utc().toDate() }
+      });
     }
 
     const isSuccess = paymentEntry.bank_transactions?.length >= 1 && updateQr.haravan_order_id;
@@ -426,6 +481,24 @@ export default class PaymentEntryService {
     return await this.db.qrPaymentTransaction.update({
       where: { id: id },
       data: dataToUpdate
+    });
+  }
+
+  async _updateQRAmount(qrPaymentId, paymentEntry, currentQrPayment) {
+    const newAmount = parseFloat(paymentEntry.paid_amount);
+    const qrUrl = PaymentService.CreateQRService.formatQuickQrUrl({
+      bankAccountNumber: currentQrPayment.bank_account_number,
+      bankBin: paymentEntry.bank_details?.bank_bin,
+      transferAmount: newAmount,
+      transferNote: currentQrPayment.transfer_note
+    });
+
+    return await this.db.qrPaymentTransaction.update({
+      where: { id: qrPaymentId },
+      data: {
+        transfer_amount: newAmount,
+        qr_url: qrUrl
+      }
     });
   }
 
