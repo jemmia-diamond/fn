@@ -4,6 +4,7 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import { APPROVALS } from "services/larksuite/approval/constant";
 import * as Sentry from "@sentry/cloudflare";
+import * as crypto from "crypto";
 
 dayjs.extend(utc);
 
@@ -59,11 +60,10 @@ export default class InstanceService {
 
     for (const instance of transformedInstances) {
       try {
-        const whereClause = { serial_number: instance.serial_number };
         const uuid = instance.uuid || crypto.randomUUID();
 
         await db.larksuitInstances.upsert({
-          where: whereClause,
+          where: { serial_number: instance.serial_number },
           update: {
             instance_code: instance.instance_code,
             approval_code: instance.approval_code,
