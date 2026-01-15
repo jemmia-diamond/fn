@@ -33,6 +33,18 @@ export function buildQuery(jsonParams) {
   let lateralJoinClause = "";
   let variantJsonBuildObject = "";
 
+  const extraFields = jsonParams.extraFields || [];
+  const allowedExtraFields = {
+    sku: "v.sku"
+  };
+
+  const extraFieldsSql = extraFields
+    .filter(field => allowedExtraFields[field])
+    .map(field => `'${field}', ${allowedExtraFields[field]}`)
+    .join(",\n");
+
+  const extraFieldsClause = extraFieldsSql ? `${extraFieldsSql},` : "";
+
   if (jsonParams.matched_diamonds) {
 
     diamondJoinsForCount = "";
@@ -48,6 +60,7 @@ export function buildQuery(jsonParams) {
         'price_compare_at', CAST(v.price_compare_at AS DECIMAL),
         'qty_available', v.qty_available,
         'qty_onhand', v.qty_onhand,
+        ${extraFieldsClause}
         'diamonds', COALESCE(v.diamonds, '[]'::json)
       )
     `;
@@ -102,7 +115,8 @@ export function buildQuery(jsonParams) {
         'price', ${priceField},
         'price_compare_at', CAST(v.price_compare_at AS DECIMAL),
         'qty_available', v.qty_available,
-        'qty_onhand', v.qty_onhand
+        'qty_onhand', v.qty_onhand${extraFieldsClause ? "," : ""}
+        ${extraFieldsClause.slice(0, -1)}
       )
     `;
 
@@ -192,7 +206,19 @@ export function buildQuery(jsonParams) {
   };
 }
 
-export function buildQuerySingle({ matchedDiamonds }) {
+export function buildQuerySingle({ matchedDiamonds, extraFields }) {
+  const fields = extraFields || [];
+  const allowedExtraFields = {
+    sku: "v.sku"
+  };
+
+  const extraFieldsSql = fields
+    .filter(field => allowedExtraFields[field])
+    .map(field => `'${field}', ${allowedExtraFields[field]}`)
+    .join(",\n");
+
+  const extraFieldsClause = extraFieldsSql ? `${extraFieldsSql},` : "";
+
   const priceField = `
     CASE
       WHEN EXISTS (
@@ -221,7 +247,8 @@ export function buildQuerySingle({ matchedDiamonds }) {
       'applique_material', v.applique_material,
       'estimated_gold_weight', v.estimated_gold_weight,
       'qty_available', v.qty_available,
-      'qty_onhand', v.qty_onhand
+      'qty_onhand', v.qty_onhand${extraFieldsClause ? "," : ""}
+      ${extraFieldsClause.slice(0, -1)}
     ) \n
   `;
 
@@ -250,6 +277,7 @@ export function buildQuerySingle({ matchedDiamonds }) {
         'estimated_gold_weight', v.estimated_gold_weight,
         'qty_available', v.qty_available,
         'qty_onhand', v.qty_onhand,
+        ${extraFieldsClause}
         'diamonds', COALESCE(v.diamonds, '[]'::json)
       )
       \n
