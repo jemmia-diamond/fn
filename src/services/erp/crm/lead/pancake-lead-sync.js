@@ -67,11 +67,14 @@ export default class PancakeLeadSyncService {
 
           if (insertResponse && Array.isArray(insertResponse)) {
             const toInsertLeads = [];
-            insertResponse.forEach((name, index) => {
-              if (name && insertLeads[index]) {
+            insertResponse.forEach((result) => {
+              const conversationId = result?.conversation_id;
+              const frappeNameId = result?.name;
+
+              if (conversationId && frappeNameId) {
                 toInsertLeads.push({
-                  conversation_id: insertLeads[index].conversation_id,
-                  frappe_name_id: name
+                  conversation_id: conversationId,
+                  frappe_name_id: frappeNameId
                 });
               }
             });
