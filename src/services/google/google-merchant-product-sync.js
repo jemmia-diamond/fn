@@ -115,25 +115,26 @@ export default class GoogleMerchantProductSyncService {
         channel: "ONLINE",
         offerId: offerId.toLowerCase(),
         contentLanguage: "vi",
-        targetCountry: "VN",
         feedLabel: "VN",
-        title: title,
-        description: description,
-        link: link,
-        imageLink: imageLink,
-        price: {
-          value: priceValue.toString(),
-          currency: "VND"
-        },
-        availability: availability,
-        condition: "new",
-        brand: "Jemmia Diamond",
-        identifierExists: mpn ? "yes" : "no",
-        mpn: mpn || undefined,
-        itemGroupId: itemGroupId,
-        color: allMaterials,
-        material: allFinenesses,
-        adult: "no"
+        attributes: {
+          title: title,
+          description: description,
+          link: link,
+          imageLink: imageLink,
+          price: {
+            amountMicros: (priceValue * 1000000).toString(),
+            currencyCode: "VND"
+          },
+          availability: availability,
+          condition: "new",
+          brand: "Jemmia Diamond",
+          identifierExists: mpn ? "yes" : "no",
+          mpn: mpn || undefined,
+          itemGroupId: itemGroupId,
+          color: allMaterials,
+          material: allFinenesses,
+          adult: "no"
+        }
       };
     } catch (err) {
       Sentry.captureException(err);

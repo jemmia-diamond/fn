@@ -8,7 +8,7 @@ export default class GoogleMerchantService {
     this.merchantId = env.GOOGLE_MERCHANT_ID;
     this.auth = null;
     this.client = createAxiosClient({
-      baseURL: "https://shoppingcontent.googleapis.com/content/v2.1",
+      baseURL: "https://merchantapi.googleapis.com",
       timeout: 10000
     });
   }
@@ -25,6 +25,28 @@ export default class GoogleMerchantService {
       } catch (e) {
         Sentry.captureException(e);
       }
+    }
+  }
+
+  async _getDataSourceId() {
+    if (this.dataSourceId) return this.dataSourceId;
+
+    try {
+      const headers = await this._getHeaders();
+      const url = `/datasources/v1beta/accounts/${this.merchantId}/dataSources`;
+      const response = await this.client.get(url, { headers });
+
+      const contentApiSource = response.data.dataSources?.find(ds => ds.displayName === "Content API");
+
+      if (contentApiSource) {
+        this.dataSourceId = contentApiSource.dataSourceId;
+        return this.dataSourceId;
+      }
+
+      throw new Error("Could not find 'Content API' data source");
+    } catch (error) {
+      Sentry.captureException(error);
+      throw error;
     }
   }
 
@@ -61,7 +83,8 @@ export default class GoogleMerchantService {
   async insertProduct(productData) {
     try {
       const headers = await this._getHeaders();
-      const url = `/${this.merchantId}/products`;
+      const dataSourceId = await this._getDataSourceId();
+      const url = `/products/v1beta/accounts/${this.merchantId}/productInputs:insert?dataSource=accounts/${this.merchantId}/dataSources/${dataSourceId}`;
 
       const response = await this.client.post(url, productData, { headers });
 
@@ -75,7 +98,7 @@ export default class GoogleMerchantService {
   async deleteProduct(productId) {
     try {
       const headers = await this._getHeaders();
-      const url = `/${this.merchantId}/products/${productId}`;
+      const url = `/products/v1beta/accounts/${this.merchantId}/productInputs/${productId}`;
 
       await this.client.delete(url, { headers });
 
