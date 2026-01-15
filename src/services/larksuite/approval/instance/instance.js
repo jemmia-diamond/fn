@@ -3,6 +3,7 @@ import Database from "services/database";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import { APPROVALS } from "services/larksuite/approval/constant";
+import * as Sentry from "@sentry/cloudflare";
 
 dayjs.extend(utc);
 
@@ -57,39 +58,48 @@ export default class InstanceService {
     }
 
     for (const instance of transformedInstances) {
-      await db.larksuitInstances.upsert({
-        where: {
-          instance_code: instance.instance_code
-        },
-        update: {
-          approval_code: instance.approval_code,
-          approval_name: instance.approval_name,
-          status: instance.status,
-          form: instance.form,
-          start_time: new Date(instance.start_time),
-          end_time: new Date(instance.end_time),
-          serial_number: instance.serial_number,
-          user_id: instance.user_id,
-          uuid: instance.uuid,
-          department_id: instance.department_id,
-          form_data: instance.form_data
-        },
-        create: {
-          instance_code: instance.instance_code,
-          approval_code: instance.approval_code,
-          approval_name: instance.approval_name,
-          status: instance.status,
-          form: instance.form,
-          start_time: new Date(instance.start_time),
-          end_time: new Date(instance.end_time),
-          serial_number: instance.serial_number,
-          user_id: instance.user_id,
-          uuid: instance.uuid,
-          department_id: instance.department_id,
-          form_data: instance.form_data
-        }
-      });
-      await instanceService.createOrUpdateUser(instance.user_id, db, env);
+      try {
+        const whereClause = { serial_number: instance.serial_number };
+        const uuid = instance.uuid || crypto.randomUUID();
+
+        await db.larksuitInstances.upsert({
+          where: whereClause,
+          update: {
+            instance_code: instance.instance_code,
+            approval_code: instance.approval_code,
+            approval_name: instance.approval_name,
+            status: instance.status,
+            form: instance.form,
+            start_time: instance.start_time,
+            end_time: instance.end_time,
+            serial_number: instance.serial_number,
+            user_id: instance.user_id,
+            department_id: instance.department_id,
+            form_data: instance.form_data
+          },
+          create: {
+            instance_code: instance.instance_code,
+            approval_code: instance.approval_code,
+            approval_name: instance.approval_name,
+            status: instance.status,
+            form: instance.form,
+            start_time: instance.start_time,
+            end_time: instance.end_time,
+            serial_number: instance.serial_number,
+            user_id: instance.user_id,
+            uuid,
+            department_id: instance.department_id,
+            form_data: instance.form_data
+          }
+        });
+      } catch (error) {
+        Sentry.captureException(error);
+        continue;
+      }
+    }
+    const uniqueUserIds = [...new Set(transformedInstances.map(i => i.user_id).filter(Boolean))];
+    for (const userId of uniqueUserIds) {
+      await instanceService.createOrUpdateUser(userId, db, env);
     }
   }
 
