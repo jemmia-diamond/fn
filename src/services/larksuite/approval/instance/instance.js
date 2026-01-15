@@ -3,7 +3,6 @@ import Database from "services/database";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import { APPROVALS } from "services/larksuite/approval/constant";
-import * as Sentry from "@sentry/cloudflare";
 import * as crypto from "crypto";
 
 dayjs.extend(utc);
@@ -59,43 +58,13 @@ export default class InstanceService {
     }
 
     for (const instance of transformedInstances) {
-      try {
-        const uuid = instance.uuid || crypto.randomUUID();
+      const { uuid: _, ...updateData } = instance;
 
-        await db.larksuitInstances.upsert({
-          where: { serial_number: instance.serial_number },
-          update: {
-            instance_code: instance.instance_code,
-            approval_code: instance.approval_code,
-            approval_name: instance.approval_name,
-            status: instance.status,
-            form: instance.form,
-            start_time: instance.start_time,
-            end_time: instance.end_time,
-            serial_number: instance.serial_number,
-            user_id: instance.user_id,
-            department_id: instance.department_id,
-            form_data: instance.form_data
-          },
-          create: {
-            instance_code: instance.instance_code,
-            approval_code: instance.approval_code,
-            approval_name: instance.approval_name,
-            status: instance.status,
-            form: instance.form,
-            start_time: instance.start_time,
-            end_time: instance.end_time,
-            serial_number: instance.serial_number,
-            user_id: instance.user_id,
-            uuid,
-            department_id: instance.department_id,
-            form_data: instance.form_data
-          }
-        });
-      } catch (error) {
-        Sentry.captureException(error);
-        continue;
-      }
+      await db.larksuitInstances.upsert({
+        where: { serial_number: instance.serial_number },
+        update: updateData,
+        create: instance
+      });
     }
     const uniqueUserIds = [...new Set(transformedInstances.map(i => i.user_id).filter(Boolean))];
     for (const userId of uniqueUserIds) {
@@ -155,11 +124,11 @@ export default class InstanceService {
       approval_name: instance.approval_name,
       status: instance.status,
       form: instance.form,
-      start_time: dayjs(Number(instance.start_time)).utc().format("YYYY-MM-DD HH:mm:ss"),
-      end_time: dayjs(Number(instance.end_time)).utc().format("YYYY-MM-DD HH:mm:ss"),
+      start_time: dayjs(Number(instance.start_time)).utc().toDate(),
+      end_time: dayjs(Number(instance.end_time)).utc().toDate(),
       serial_number: instance.serial_number,
       user_id: instance.user_id,
-      uuid: instance.uuid,
+      uuid: instance.uuid || crypto.randomUUID(),
       department_id: instance.department_id
     };
   };
