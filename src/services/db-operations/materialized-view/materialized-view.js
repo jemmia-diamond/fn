@@ -62,4 +62,21 @@ export default class MaterializedViewService {
       }
     }
   }
+
+  // Refresh each 6 hours
+  static async refresh6Hours(env) {
+    const db = Database.instance(env);
+    const views = [
+      "reporting.mv_fin_account_receivable_orders",
+      "reporting.mv_fin_ar_order_report",
+      "reporting.mv_fin_payment_breakdown"
+    ];
+    for (const view of views) {
+      try {
+        await db.$queryRaw`${Prisma.raw(`REFRESH MATERIALIZED VIEW ${view};`)}`;
+      } catch (error) {
+        Sentry.captureException(error);
+      }
+    }
+  }
 }
