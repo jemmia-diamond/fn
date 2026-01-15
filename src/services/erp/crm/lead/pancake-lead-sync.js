@@ -68,8 +68,8 @@ export default class PancakeLeadSyncService {
           if (insertResponse && Array.isArray(insertResponse)) {
             const toInsertLeads = [];
             insertResponse.forEach((result) => {
-              const conversationId = result.conversation_id || result?.pancake_data?.conversation_id;
-              const frappeNameId = result.name;
+              const conversationId = result?.conversation_id;
+              const frappeNameId = result?.name;
 
               if (conversationId && frappeNameId) {
                 toInsertLeads.push({
