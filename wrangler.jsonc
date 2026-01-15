@@ -130,6 +130,21 @@
       "secret_name": "NOCODB_API_TOKEN"
     },
     {
+      "binding": "GOOGLE_MERCHANT_PRIVATE_KEY_PART1_SECRET",
+      "store_id": "dff6fef7003446178302a7874af64fde",
+      "secret_name": "GOOGLE_MERCHANT_PRIVATE_KEY_PART1"
+    },
+    {
+      "binding": "GOOGLE_MERCHANT_PRIVATE_KEY_PART2_SECRET",
+      "store_id": "dff6fef7003446178302a7874af64fde",
+      "secret_name": "GOOGLE_MERCHANT_PRIVATE_KEY_PART2"
+    },
+    {
+      "binding": "GOOGLE_MERCHANT_PRIVATE_KEY_PART3_SECRET",
+      "store_id": "dff6fef7003446178302a7874af64fde",
+      "secret_name": "GOOGLE_MERCHANT_PRIVATE_KEY_PART3"
+    },
+    {
       "binding": "GOOGLE_MERCHANT_SA_SECRET",
       "store_id": "dff6fef7003446178302a7874af64fde",
       "secret_name": "GOOGLE_MERCHANT_SA"
