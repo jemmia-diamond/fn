@@ -6,7 +6,8 @@ import Database from "src/services/database";
 import AddressService from "src/services/erp/contacts/address/address";
 import ContactService from "src/services/erp/contacts/contact/contact";
 import CustomerService from "src/services/erp/selling/customer/customer";
-import { composeOrderUpdateMessage, composeSalesOrderNotification, extractPromotions, findMainOrder, validateOrderInfo } from "services/erp/selling/sales-order/utils/sales-order-notification";
+import { composeOrderUpdateMessage, composeSalesOrderNotification, extractPromotions, findMainOrder } from "services/erp/selling/sales-order/utils/sales-order-notification";
+import { validateSalesOrder } from "services/erp/selling/sales-order/utils/sales-order-validator";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/constant";
@@ -316,7 +317,17 @@ export default class SalesOrderService {
 
     const customer = await this.frappeClient.getDoc("Customer", salesOrderData.customer);
 
-    const { isValid, message } = validateOrderInfo(salesOrderData, customer);
+    // Fetch promotions for validation
+    const promotionNames = extractPromotions(salesOrderData);
+    let promotionData = [];
+    if (promotionNames.length > 0) {
+      promotionData = await this.frappeClient.getList("Promotion", {
+        filters: [["name", "in", promotionNames]],
+        fields: ["*"]
+      });
+    }
+
+    const { isValid, message } = validateSalesOrder(salesOrderData, customer, promotionData);
     if (!isValid) {
       return { success: false, message: message };
     }
