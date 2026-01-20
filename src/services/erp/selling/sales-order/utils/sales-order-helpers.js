@@ -202,3 +202,8 @@ export async function getAllRelatedPaymentEntries(frappeClient, relatedOrderName
   });
   return paymentEntries;
 }
+
+export function shouldSkipSharedPayment(referenceName, currentOrderName, isSplitOrder, isFirstSplitOrder) {
+  const isShared = referenceName !== currentOrderName;
+  return isShared && isSplitOrder && !isFirstSplitOrder;
+}
