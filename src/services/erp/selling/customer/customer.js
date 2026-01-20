@@ -65,7 +65,28 @@ export default class CustomerService {
     if (customerGender) {
       mappedCustomerData.gender = customerGender;
     }
-    const customer = await this.frappeClient.upsert(mappedCustomerData, "haravan_id");
+    let customer;
+    try {
+      customer = await this.frappeClient.upsert(mappedCustomerData, "haravan_id");
+    } catch (error) {
+      if (error.exc_type === "LinkValidationError" && error.message.includes("From Lead")) {
+        const rawPhone = customerData.phone || customerData.mobile_no;
+        if (rawPhone) {
+          const lead = await this.findLeadByPhone(rawPhone);
+
+          if (lead) {
+            mappedCustomerData.lead_name = lead.name;
+            customer = await this.frappeClient.upsert(mappedCustomerData, "haravan_id");
+          } else {
+            throw error;
+          }
+        } else {
+          throw error;
+        }
+      } else {
+        throw error;
+      }
+    }
     return customer;
   }
 
@@ -191,6 +212,20 @@ export default class CustomerService {
 
       throw error;
     }
+  }
+
+  async findLeadByPhone(phone) {
+    if (!phone) return null;
+    const leads = await this.frappeClient.getList("Lead", {
+      or_filters: [
+        ["mobile_no", "like", `%${phone.replace(/^0/, "")}%`],
+        ["phone", "like", `%${phone.replace(/^0/, "")}%`]
+      ],
+      fields: ["name"],
+      limit: 1
+    });
+
+    return leads && leads.length > 0 ? leads[0] : null;
   }
 
   async fetchCustomerByHrvID(hrvID) {
