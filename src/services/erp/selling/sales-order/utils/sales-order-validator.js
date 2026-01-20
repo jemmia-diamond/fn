@@ -1,7 +1,9 @@
+import dayjs from "dayjs";
 import { SKU_LENGTH, SKU_PREFIX } from "services/haravan/products/product-variant/constant";
 import { numberToCurrency } from "services/utils/number-helper";
 
 const TOLERANCE = 5000;
+const VALIDATION_START_DATE = "2026-01-20 16:59:59.999";
 
 const PROMOTION_SCOPE = {
   LINE_ITEM: "Line Item",
@@ -111,6 +113,11 @@ export const validateOrderCompleteness = (salesOrderData, customer) => {
  * Validates both item-level and order-level promotions.
  */
 export const validatePromotions = (salesOrderData, promotionData = []) => {
+  const orderDate = salesOrderData.real_order_date || salesOrderData.transaction_date;
+  if (orderDate && dayjs(orderDate).isBefore(dayjs(VALIDATION_START_DATE))) {
+    return { isValid: true, message: null };
+  }
+
   const lineItems = salesOrderData.items;
 
   const promotionMap = new Map();
