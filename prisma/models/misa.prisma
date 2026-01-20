@@ -357,3 +357,28 @@ model misaIncomeStatementMonthlyFact {
   @@map("income_statement_monthly_fact")
   @@schema("misa")
 }
+
+model misaCashFlowMonthlyFact {
+  time_id           Int
+  item_code         String    @db.VarChar
+  item_name         String    @db.VarChar
+  item_index        Int?
+  description       String?
+  category          Int?
+  formula_type      Int?
+  formula_front_end String?
+  formula           String?
+  amount            Decimal?  @db.Decimal
+  prev_amount       Decimal?  @db.Decimal
+  hidden            Boolean?
+  is_bold           Boolean?
+  is_italic         Boolean?
+  sort_order        Int?
+  from_date         DateTime? @db.Timestamptz(6)
+  to_date           DateTime? @db.Timestamptz(6)
+  sync_at           DateTime? @db.Timestamptz(6)
+
+  @@id([time_id, item_name])
+  @@map("cash_flow_monthly_fact")
+  @@schema("misa")
+}
