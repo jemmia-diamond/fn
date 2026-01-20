@@ -69,23 +69,23 @@ export default class CustomerService {
     try {
       customer = await this.frappeClient.upsert(mappedCustomerData, "haravan_id");
     } catch (error) {
-      if (error.exc_type === "LinkValidationError" && error.message.includes("From Lead")) {
-        const rawPhone = customerData.phone || customerData.mobile_no;
-        if (rawPhone) {
-          const lead = await this.findLeadByPhone(rawPhone);
-
-          if (lead) {
-            mappedCustomerData.lead_name = lead.name;
-            customer = await this.frappeClient.upsert(mappedCustomerData, "haravan_id");
-          } else {
-            throw error;
-          }
-        } else {
-          throw error;
-        }
-      } else {
+      const isLinkError = (error.exc_type === "LinkValidationError" || error.status === 417 || (error.message && error.message.includes("Status: 417"))) && error.message.includes("From Lead");
+      if (!isLinkError) {
         throw error;
       }
+
+      const rawPhone = customerData.phone || customerData.mobile_no;
+      if (!rawPhone) {
+        throw error;
+      }
+
+      const lead = await this.findLeadByPhone(rawPhone);
+      if (!lead) {
+        throw error;
+      }
+
+      mappedCustomerData.lead_name = lead.name;
+      customer = await this.frappeClient.upsert(mappedCustomerData, "haravan_id");
     }
     return customer;
   }
