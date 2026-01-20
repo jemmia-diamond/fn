@@ -1,4 +1,5 @@
 import Database from "services/database";
+import { retryQuery } from "services/utils/retry-utils";
 import { Prisma } from "@prisma-cli";
 import { buildQuerySingle, buildQuery } from "services/ecommerce/product/utils/jewelry";
 import { buildQueryV2, buildQuerySingleV2 } from "services/ecommerce/product/utils/jewelry-v2";
@@ -15,8 +16,8 @@ export default class ProductService {
     try {
       const { dataSql, countSql } = buildQuery(jsonParams);
 
-      const data = await this.db.$queryRaw`${Prisma.raw(dataSql)}`;
-      const count = await this.db.$queryRaw`${Prisma.raw(countSql)}`;
+      const data = await retryQuery(() => this.db.$queryRaw`${Prisma.raw(dataSql)}`);
+      const count = await retryQuery(() => this.db.$queryRaw`${Prisma.raw(countSql)}`);
 
       return {
         data,
@@ -112,8 +113,8 @@ export default class ProductService {
   async getWeddingRingsData(jsonParams) {
     const { dataSql, countSql } = buildWeddingRingsQuery(jsonParams);
 
-    const data = await this.db.$queryRaw`${Prisma.raw(dataSql)}`;
-    const count = await this.db.$queryRaw`${Prisma.raw(countSql)}`;
+    const data = await retryQuery(() => this.db.$queryRaw`${Prisma.raw(dataSql)}`);
+    const count = await retryQuery(() => this.db.$queryRaw`${Prisma.raw(countSql)}`);
 
     return {
       data,
@@ -225,8 +226,8 @@ export default class ProductService {
   async getJewelryDataV2(jsonParams) {
     const { dataSql, countSql } = buildQueryV2(jsonParams);
 
-    const data = await this.db.$queryRaw`${Prisma.raw(dataSql)}`;
-    const count = await this.db.$queryRaw`${Prisma.raw(countSql)}`;
+    const data = await retryQuery(() => this.db.$queryRaw`${Prisma.raw(dataSql)}`);
+    const count = await retryQuery(() => this.db.$queryRaw`${Prisma.raw(countSql)}`);
 
     return {
       data,
