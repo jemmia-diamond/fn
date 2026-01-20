@@ -121,6 +121,10 @@ export default class CreateQRService {
       transactionBody.payment_entry_name = body.payment_entry_name;
     }
 
+    if (body.payment_references) {
+      transactionBody.payment_references = body.payment_references;
+    }
+
     const qrUrl = CreateQRService.formatQuickQrUrl({
       bankAccountNumber: transactionBody.bank_account_number,
       bankBin: body.bank_bin,
