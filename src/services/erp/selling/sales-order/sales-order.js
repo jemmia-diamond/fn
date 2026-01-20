@@ -368,10 +368,11 @@ export default class SalesOrderService {
         if (isOrderTracked) {
           ({ content, diffAttachments } = await this.composeUpdateOrderContent(
             currentOrderTracking.order_data,
-            salesOrderData
+            salesOrderData,
+            promotionData
           ));
         } else {
-          content = await this.composeNewOrderContent(salesOrderData, customer);
+          content = await this.composeNewOrderContent(salesOrderData, customer, promotionData);
         }
 
         if (!content && !diffAttachments) {
@@ -444,7 +445,7 @@ export default class SalesOrderService {
     });
 
     if (notificationTracking) {
-      const { content, diffAttachments } = await this.composeUpdateOrderContent(notificationTracking.order_data || {}, salesOrderData);
+      const { content, diffAttachments } = await this.composeUpdateOrderContent(notificationTracking.order_data || {}, salesOrderData, promotionData);
 
       if (!content && !diffAttachments) {
         return { success: false, message: "Đơn hàng này đã được gửi thông báo từ trước đó!" };
@@ -496,7 +497,7 @@ export default class SalesOrderService {
       return { success: true, message: "Ok" };
     }
 
-    const content = await this.composeNewOrderContent(salesOrderData, customer);
+    const content = await this.composeNewOrderContent(salesOrderData, customer, promotionData);
 
     const _response = await larkClient.im.message.create({
       params: {
@@ -616,15 +617,11 @@ export default class SalesOrderService {
     }
   }
 
-  async composeUpdateOrderContent(oldSalesOrderData, salesOrderData) {
-    const promotionNames = extractPromotions(salesOrderData);
-    const promotionData = await this.frappeClient.getList("Promotion", {
-      filters: [["name", "in", promotionNames]]
-    });
+  async composeUpdateOrderContent(oldSalesOrderData, salesOrderData, promotionData) {
     return composeOrderUpdateMessage(oldSalesOrderData, salesOrderData, promotionData);
   }
 
-  async composeNewOrderContent(salesOrderData, orderCustomer) {
+  async composeNewOrderContent(salesOrderData, orderCustomer, promotionData) {
     const customer = orderCustomer ?? (await this.frappeClient.getDoc("Customer", salesOrderData.customer));
 
     const leadSource = await this.frappeClient.getDoc("Lead Source", customer.first_source);
@@ -637,11 +634,6 @@ export default class SalesOrderService {
     const productCategoryNames = salesOrderData.product_categories.map(productCategory => productCategory.product_category);
     const productCategoryData = await this.frappeClient.getList("Product Category", {
       filters: [["name", "in", productCategoryNames]]
-    });
-
-    const promotionNames = extractPromotions(salesOrderData);
-    const promotionData = await this.frappeClient.getList("Promotion", {
-      filters: [["name", "in", promotionNames]]
     });
 
     const primarySalesPersonName = salesOrderData.primary_sales_person;
