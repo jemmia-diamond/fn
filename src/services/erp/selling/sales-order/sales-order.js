@@ -11,7 +11,7 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/constant";
 
-import { fetchSalesOrdersFromERP, saveSalesOrdersToDatabase, calculateGroupOrderPaymentRecordsTotal, calculateOrderPaymentRecordsTotal, ensureSelfReference, getAllRelatedPaymentEntries } from "src/services/erp/selling/sales-order/utils/sales-order-helpers";
+import { fetchSalesOrdersFromERP, saveSalesOrdersToDatabase, calculateGroupOrderPaymentRecordsTotal, calculateOrderPaymentRecordsTotal, ensureSelfReference, getAllRelatedPaymentEntries, shouldSkipSharedPayment } from "src/services/erp/selling/sales-order/utils/sales-order-helpers";
 import { getRefOrderChain } from "services/ecommerce/order-tracking/queries/get-initial-order";
 import Larksuite from "services/larksuite";
 import { ERPR2StorageService } from "services/r2-object/erp/erp-r2-storage-service";
@@ -710,6 +710,16 @@ export default class SalesOrderService {
       const currentSalesOrder = await this.frappeClient.getDoc("Sales Order", salesOrderName);
       if (!currentSalesOrder) return null;
 
+      const { allRelatedOrders, allSplitOrders } = await this.getAllRelatedSalesOrders(salesOrderName, currentSalesOrder);
+      const relatedOrderNames = allRelatedOrders.map(o => o.name);
+
+      const splitOrders = allSplitOrders.filter(o => o.cancelled_status === "Uncancelled");
+      splitOrders.sort((a, b) => a.name.localeCompare(b.name));
+
+      const isSplitOrder = !!(currentSalesOrder.is_split_order);
+      const firstSplitOrderName = splitOrders.length > 0 ? splitOrders[0].name : null;
+      const isFirstSplitOrder = !isSplitOrder || (firstSplitOrderName === currentSalesOrder.name);
+
       const refSalesOrderNames = [
         currentSalesOrder.name,
         ...(currentSalesOrder.ref_sales_orders || []).map(r => r.sales_order)
@@ -739,6 +749,10 @@ export default class SalesOrderService {
           const refs = entry.references.filter(r => r.reference_doctype === "Sales Order" && refSalesOrderNames.includes(r.reference_name));
 
           for (const ref of refs) {
+            if (shouldSkipSharedPayment(ref.reference_name, salesOrderName, isSplitOrder, isFirstSplitOrder)) {
+              continue;
+            }
+
             const allocated = parseFloat(ref.allocated_amount || 0);
             if (entry.payment_type === "Pay") {
               paymentEntriesTotal -= allocated;
@@ -777,11 +791,6 @@ export default class SalesOrderService {
       const isPaymentEntriesChanged = currentLinkedPaymentEntries.length !== linkedPaymentEntries.length ||
         !linkedPaymentEntries.every(l => currentLinkedPaymentEntries.some(c => c.reference_name === l.reference_name));
       // Calculate group grand total
-      const { allRelatedOrders, allSplitOrders } = await this.getAllRelatedSalesOrders(salesOrderName, currentSalesOrder);
-      const relatedOrderNames = allRelatedOrders.map(o => o.name);
-
-      const splitOrders = allSplitOrders.filter(o => o.cancelled_status === "Uncancelled");
-
       const splitOrderDocs = splitOrders.map(order => allRelatedOrders.find(r => r.name === order.name) || order);
 
       const groupGrandTotal = splitOrderDocs.reduce((sum, order) => sum + parseFloat(order.grand_total || 0), 0);
