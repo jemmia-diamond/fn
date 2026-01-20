@@ -12,6 +12,14 @@ import Misa from "services/misa";
 
 dayjs.extend(utc);
 
+const REFERENCE_SCHEMA = {
+  haravan_order_id: (ref) => parseInt(ref.sales_order_details.haravan_order_id, 10),
+  order_number: (ref) => ref.order_number,
+  balance: (ref) => ref.balance,
+  allocated_amount: (ref) => ref.allocated_amount,
+  outstanding_amount: (ref) => ref.outstanding_amount
+};
+
 export default class PaymentEntryService {
   constructor(env) {
     this.env = env;
@@ -57,6 +65,7 @@ export default class PaymentEntryService {
     const haravan_order_id = primaryOrder?.sales_order_details?.haravan_order_id
       ? parseInt(primaryOrder.sales_order_details.haravan_order_id, 10) : null;
 
+    const payment_references = this._transformReferences(salesOrderReferences);
     const receive_date = paymentEntry.payment_date ? dayjs(paymentEntry.payment_date).utc().toDate() : null;
     const created_date = paymentEntry.creation ? dayjs(paymentEntry.creation).utc().toDate() : null;
 
@@ -90,7 +99,8 @@ export default class PaymentEntryService {
       haravan_order_id,
       haravan_order_name: primaryOrder?.order_number || "Đơn hàng cọc",
       transfer_status: Constants.TRANSFER_STATUS.PENDING,
-      gateway: paymentEntry.gateway
+      gateway: paymentEntry.gateway,
+      payment_references
     };
 
     const result = await this.manualPaymentService.createManualPayment(data);
@@ -117,14 +127,7 @@ export default class PaymentEntryService {
     const references = paymentEntry.references || [];
     const salesOrderReferences = references.filter((ref) => ref.reference_doctype === "Sales Order");
 
-    const payment_references = salesOrderReferences.length > 0
-      ? salesOrderReferences.map(ref => ({
-        haravan_order_id: parseInt(ref.sales_order_details.haravan_order_id, 10),
-        order_number: ref.order_number,
-        allocated_amount: ref.allocated_amount,
-        outstanding_amount: ref.outstanding_amount
-      })) : [];
-
+    const payment_references = this._transformReferences(references);
     const primaryOrder = salesOrderReferences[0] ? rawToReference(salesOrderReferences[0]) : null;
     const customer_name = paymentEntry?.customer_details?.name;
     const customer_phone_number = paymentEntry?.customer_details?.phone || paymentEntry?.customer_details?.mobile_no;
@@ -249,6 +252,7 @@ export default class PaymentEntryService {
     const haravan_order_id = primaryOrder?.sales_order_details?.haravan_order_id
       ? parseInt(primaryOrder.sales_order_details.haravan_order_id, 10) : null;
 
+    const payment_references = this._transformReferences(salesOrderReferences);
     const receive_date = paymentEntry.payment_date ? dayjs(paymentEntry.payment_date).utc().toDate() : null;
     const isOrderLinking = primaryOrder && haravan_order_id;
     const transfer_status = paymentEntry.verified_by ? Constants.TRANSFER_STATUS.CONFIRMED : Constants.TRANSFER_STATUS.PENDING;
@@ -266,6 +270,12 @@ export default class PaymentEntryService {
       gateway: paymentEntry.gateway,
       payment_entry_name: paymentEntry.name
     };
+
+    const existingRefs = this._normalizeReferences(existingPayment.payment_references);
+    const newRefs = this._normalizeReferences(payment_references);
+    if (existingRefs !== newRefs) {
+      data.payment_references = payment_references;
+    }
 
     const existingReceiveDateStr = existingPayment.receive_date ? dayjs(existingPayment.receive_date).format("YYYY-MM-DD") : null;
     const newReceiveDateStr = receive_date ? dayjs(receive_date).format("YYYY-MM-DD") : null;
@@ -346,6 +356,7 @@ export default class PaymentEntryService {
       qrPaymentId = qrPayment.id;
     }
 
+    const payment_references = this._transformReferences(salesOrderReferences);
     if (qrPayment && !paymentEntry?.custom_transaction_id) {
       this.frappeClient.upsert({
         doctype: this.doctype,
@@ -391,7 +402,8 @@ export default class PaymentEntryService {
           haravan_order_status: primaryOrder?.sales_order_details?.haravan_financial_status || null,
           haravan_order_total_price: primaryOrder?.total_amount || null,
           customer_name: paymentEntry.customer_details.name,
-          customer_phone_number: paymentEntry.customer_details.phone || paymentEntry.customer_details.mobile_no
+          customer_phone_number: paymentEntry.customer_details.phone || paymentEntry.customer_details.mobile_no,
+          payment_references
         }
       );
       if (!updateQr) {
@@ -404,6 +416,16 @@ export default class PaymentEntryService {
 
     if (parseFloat(paymentEntry.paid_amount) !== parseFloat(updateQr.transfer_amount)) {
       updateQr = await this._updateQRAmount(qrPaymentId, paymentEntry, updateQr);
+    }
+
+    const existingRefs = this._normalizeReferences(updateQr.payment_references);
+    const newRefs = this._normalizeReferences(payment_references);
+
+    if (existingRefs !== newRefs) {
+      updateQr = await this.db.qrPaymentTransaction.update({
+        where: { id: qrPaymentId },
+        data: { payment_references }
+      });
     }
 
     const existingUpdatedAtStr = updateQr.updated_at ? dayjs(updateQr.updated_at).format("YYYY-MM-DD") : null;
@@ -478,6 +500,10 @@ export default class PaymentEntryService {
       dataToUpdate.customer_phone_number = body.customer_phone_number;
     }
 
+    if (body.payment_references) {
+      dataToUpdate.payment_references = body.payment_references;
+    }
+
     return await this.db.qrPaymentTransaction.update({
       where: { id: id },
       data: dataToUpdate
@@ -505,5 +531,24 @@ export default class PaymentEntryService {
   async _enqueueMisaBackgroundJob(job_type, data) {
     const payload = { job_type, data };
     await this.env["MISA_QUEUE"].send(payload, { delaySeconds: Misa.Constants.DELAYS.ONE_MINUTE });
+  }
+
+  _transformReferences(references) {
+    return references.length > 0
+      ? references.map(ref => {
+        const result = {};
+        for (const [key, getter] of Object.entries(REFERENCE_SCHEMA)) {
+          result[key] = getter(ref);
+        }
+        return result;
+      }) : [];
+  }
+
+  _normalizeReferences(refs) {
+    const keys = Object.keys(REFERENCE_SCHEMA);
+    return (refs || [])
+      .filter(ref => ref?.haravan_order_id && ref?.order_number)
+      .map(ref => keys.map(key => ref[key]).join(":"))
+      .join("|");
   }
 }
