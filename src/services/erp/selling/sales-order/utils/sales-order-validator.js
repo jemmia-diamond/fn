@@ -24,6 +24,10 @@ const PRIORITY_LEVELS = {
   G7: 7
 };
 
+/**
+ * Validates the completeness of the sales order data.
+ * Checks for missing required fields like sales team, customer info, etc.
+ */
 export const validateOrderCompleteness = (salesOrderData, customer) => {
   let message = null;
 
@@ -103,10 +107,12 @@ export const validateOrderCompleteness = (salesOrderData, customer) => {
   return { isValid: true, message: null };
 };
 
+/**
+ * Validates both item-level and order-level promotions.
+ */
 export const validatePromotions = (salesOrderData, promotionData = []) => {
   const lineItems = salesOrderData.items;
 
-  // Create lookup map for promotions
   const promotionMap = new Map();
   promotionData.forEach(p => promotionMap.set(p.name, p));
 
@@ -118,6 +124,9 @@ export const validatePromotions = (salesOrderData, promotionData = []) => {
   return _validateOrderLevelPromotions(salesOrderData, lineItems, promotionMap);
 };
 
+/**
+ * Checks if line items adhere to their applied promotions within a tolerance.
+ */
 const _validateItemLevelPromotions = (lineItems, promotionMap) => {
   const errors = [];
 
@@ -133,7 +142,6 @@ const _validateItemLevelPromotions = (lineItems, promotionMap) => {
       expectedRate = _applyPromotionToPrice(expectedRate, promo, PROMOTION_SCOPE.LINE_ITEM);
     }
 
-    // Actual item amount vs Expected item amount (per unit check or total check? usually total logic is safer for rounding, but existing logic was per item diff * qty. Let's do total for the item line)
     const expectedLineAmount = Math.floor(expectedRate) * item.qty;
     const actualLineAmount = item.rate * item.qty;
 
@@ -154,8 +162,10 @@ const _validateItemLevelPromotions = (lineItems, promotionMap) => {
   return { isValid: true };
 };
 
+/**
+ * Checks if the order total adheres to its applied promotions within a tolerance.
+ */
 const _validateOrderLevelPromotions = (salesOrderData, lineItems, promotionMap) => {
-  // Recalculate Pre-Discount Total based on actual item rates (since they passed validation)
   const totalPreDiscountPrice = lineItems.reduce((sum, item) => sum + (item.rate * item.qty), 0);
 
   const orderPromoList = salesOrderData.promotions || [];
@@ -184,6 +194,9 @@ const _validateOrderLevelPromotions = (salesOrderData, lineItems, promotionMap) 
   return { isValid: true, message: null };
 };
 
+/**
+ * Sorts promotions by their priority level (G0 to G7).
+ */
 const _sortPromotions = (promotions) => {
   return promotions.sort((a, b) => {
     const pA = PRIORITY_LEVELS[a.priority] || 99;
@@ -192,19 +205,18 @@ const _sortPromotions = (promotions) => {
   });
 };
 
+/**
+ * Calculates the new price after applying a promotion based on scope and type.
+ */
 const _applyPromotionToPrice = (price, promotion, scope) => {
   if (scope === PROMOTION_SCOPE.LINE_ITEM) {
-    // G0: No Discount
     if (promotion.priority === "G0") return price;
-    // G1: % Product
     if (promotion.priority === "G1") {
       return price * (1 - (promotion.discount_percent || 0) / 100);
     }
-    // G2: Fixed Product
     if (promotion.priority === "G2") {
       return price - (promotion.discount_amount || 0);
     }
-    // G3: Gift or Discount
     if (promotion.priority === "G3") {
       if (promotion.discount_type === DISCOUNT_TYPE.PERCENTAGE) {
         return price * (1 - (promotion.discount_percent || 0) / 100);
@@ -214,7 +226,6 @@ const _applyPromotionToPrice = (price, promotion, scope) => {
       }
       return price;
     }
-    // G7: Order Gift or Discount (Line Item scope)
     if (promotion.priority === "G7") {
       if (promotion.discount_type === DISCOUNT_TYPE.PERCENTAGE) {
         return price * (1 - (promotion.discount_percent || 0) / 100);
@@ -227,17 +238,13 @@ const _applyPromotionToPrice = (price, promotion, scope) => {
   }
 
   if (scope === PROMOTION_SCOPE.ORDER) {
-    // G4: Fixed Order
     if (promotion.priority === "G4") {
       return price - (promotion.discount_amount || 0);
     }
-    // G5: % Order
     if (promotion.priority === "G5") {
       return price * (1 - (promotion.discount_percent || 0) / 100);
     }
-    // G6: Rounding (handled by tolerance, no calc change)
     if (promotion.priority === "G6") return price;
-    // G7: Order Gift or Discount
     if (promotion.priority === "G7") {
       if (promotion.discount_type === DISCOUNT_TYPE.PERCENTAGE) {
         return price * (1 - (promotion.discount_percent || 0) / 100);
