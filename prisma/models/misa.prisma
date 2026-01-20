@@ -360,7 +360,7 @@ model misaIncomeStatementMonthlyFact {
 
 model misaCashFlowMonthlyFact {
   time_id           Int
-  item_code         String    @db.VarChar
+  item_code         String?   @db.VarChar
   item_name         String    @db.VarChar
   item_index        Int?
   description       String?

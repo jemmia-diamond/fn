@@ -1,7 +1,7 @@
 -- CreateTable
 CREATE TABLE "misa"."cash_flow_monthly_fact" (
     "time_id" INTEGER NOT NULL,
-    "item_code" VARCHAR NOT NULL,
+    "item_code" VARCHAR,
     "item_name" VARCHAR NOT NULL,
     "item_index" INTEGER,
     "description" TEXT,
