@@ -3,6 +3,7 @@ import { Prisma } from "@prisma-cli";
 import { buildGetDiamondsQuery } from "services/ecommerce/diamond/utils/diamond";
 import { dataSql, formatData } from "services/ecommerce/diamond/utils/diamond-prices";
 import * as Sentry from "@sentry/cloudflare";
+import { retryQuery } from "services/utils/retry-utils";
 
 export default class DiamondService {
   constructor(env) {
@@ -14,8 +15,8 @@ export default class DiamondService {
     try {
       const { dataSql, countSql } = buildGetDiamondsQuery(jsonParams);
 
-      const data = await this.db.$queryRaw`${Prisma.raw(dataSql)}`;
-      const count = await this.db.$queryRaw`${Prisma.raw(countSql)}`;
+      const data = await retryQuery(() => this.db.$queryRaw`${Prisma.raw(dataSql)}`);
+      const count = await retryQuery(() => this.db.$queryRaw`${Prisma.raw(countSql)}`);
 
       return {
         data,
