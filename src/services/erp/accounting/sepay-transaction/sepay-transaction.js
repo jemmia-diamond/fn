@@ -182,11 +182,12 @@ export default class SepayTransactionService {
   }
 
   mapRawSepayTransactionToPrisma(rawSepayTransaction) {
+    const transaction_date = dayjs(rawSepayTransaction.transactionDate, "YYYY-MM-DD HH:mm:ss").subtract(7, "hour").format("YYYY-MM-DD HH:mm:ss");
     return {
       id: String(rawSepayTransaction.id),
       bank_brand_name: rawSepayTransaction.gateway,
       account_number: rawSepayTransaction.accountNumber,
-      transaction_date: rawSepayTransaction.transactionDate,
+      transaction_date,
       amount_out: String(rawSepayTransaction.amountOut ?? 0.0),
       amount_in: String(rawSepayTransaction.transferAmount ?? 0.0),
       accumulated: String(rawSepayTransaction.accumulated),
@@ -242,7 +243,7 @@ export default class SepayTransactionService {
             sepay_bank_account_id: sepayTransaction.bank_account_id,
             deposit: sepayTransaction.amount_in,
             reference_number: sepayTransaction.reference_number,
-            date: dayjs(sepayTransaction.transaction_date, "YYYY-MM-DD HH:mm:ss").format("YYYY-MM-DD"),
+            date: dayjs(rawSepayTransaction.transactionDate, "YYYY-MM-DD HH:mm:ss").format("YYYY-MM-DD"),
             bank_account: bankAccount && bankAccount[0] ? bankAccount[0].name : null
           },
           "name"
