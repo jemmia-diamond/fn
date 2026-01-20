@@ -1,6 +1,29 @@
 import { SKU_LENGTH, SKU_PREFIX } from "services/haravan/products/product-variant/constant";
 import { numberToCurrency } from "services/utils/number-helper";
 
+const TOLERANCE = 5000;
+
+const PROMOTION_SCOPE = {
+  LINE_ITEM: "Line Item",
+  ORDER: "Order"
+};
+
+const DISCOUNT_TYPE = {
+  PERCENTAGE: "Percentage",
+  FIX_AMOUNT: "Fix Amount"
+};
+
+const PRIORITY_LEVELS = {
+  G0: 0,
+  G1: 1,
+  G2: 2,
+  G3: 3,
+  G4: 4,
+  G5: 5,
+  G6: 6,
+  G7: 7
+};
+
 export const validateOrderCompleteness = (salesOrderData, customer) => {
   let message = null;
 
@@ -80,17 +103,6 @@ export const validateOrderCompleteness = (salesOrderData, customer) => {
   return { isValid: true, message: null };
 };
 
-const PRIORITY_LEVELS = {
-  G0: 0,
-  G1: 1,
-  G2: 2,
-  G3: 3,
-  G4: 4,
-  G5: 5,
-  G6: 6,
-  G7: 7
-};
-
 export const validatePromotions = (salesOrderData, promotionData = []) => {
   const lineItems = salesOrderData.items;
 
@@ -107,7 +119,6 @@ export const validatePromotions = (salesOrderData, promotionData = []) => {
 };
 
 const _validateItemLevelPromotions = (lineItems, promotionMap) => {
-  const TOLERANCE = 10000;
   const errors = [];
 
   for (let i = 0; i < lineItems.length; i++) {
@@ -119,7 +130,7 @@ const _validateItemLevelPromotions = (lineItems, promotionMap) => {
     let expectedRate = item.price_list_rate;
 
     for (const promo of sortedPromotions) {
-      expectedRate = _applyPromotionToPrice(expectedRate, promo, "Line Item");
+      expectedRate = _applyPromotionToPrice(expectedRate, promo, PROMOTION_SCOPE.LINE_ITEM);
     }
 
     // Actual item amount vs Expected item amount (per unit check or total check? usually total logic is safer for rounding, but existing logic was per item diff * qty. Let's do total for the item line)
@@ -144,8 +155,6 @@ const _validateItemLevelPromotions = (lineItems, promotionMap) => {
 };
 
 const _validateOrderLevelPromotions = (salesOrderData, lineItems, promotionMap) => {
-  const TOLERANCE = 10000;
-
   // Recalculate Pre-Discount Total based on actual item rates (since they passed validation)
   const totalPreDiscountPrice = lineItems.reduce((sum, item) => sum + (item.rate * item.qty), 0);
 
@@ -156,7 +165,7 @@ const _validateOrderLevelPromotions = (salesOrderData, lineItems, promotionMap) 
   let expectedGrandTotal = totalPreDiscountPrice;
 
   for (const promo of sortedPromotions) {
-    expectedGrandTotal = _applyPromotionToPrice(expectedGrandTotal, promo, "Order");
+    expectedGrandTotal = _applyPromotionToPrice(expectedGrandTotal, promo, PROMOTION_SCOPE.ORDER);
   }
 
   const tradeInAmount = salesOrderData.custom_trade_in_amount || 0;
@@ -184,7 +193,7 @@ const _sortPromotions = (promotions) => {
 };
 
 const _applyPromotionToPrice = (price, promotion, scope) => {
-  if (scope === "Line Item") {
+  if (scope === PROMOTION_SCOPE.LINE_ITEM) {
     // G0: No Discount
     if (promotion.priority === "G0") return price;
     // G1: % Product
@@ -197,17 +206,27 @@ const _applyPromotionToPrice = (price, promotion, scope) => {
     }
     // G3: Gift or Discount
     if (promotion.priority === "G3") {
-      if (promotion.discount_type === "Percentage") {
+      if (promotion.discount_type === DISCOUNT_TYPE.PERCENTAGE) {
         return price * (1 - (promotion.discount_percent || 0) / 100);
       }
-      if (promotion.discount_type === "Fix Amount") {
+      if (promotion.discount_type === DISCOUNT_TYPE.FIX_AMOUNT) {
+        return price - (promotion.discount_amount || 0);
+      }
+      return price;
+    }
+    // G7: Order Gift or Discount (Line Item scope)
+    if (promotion.priority === "G7") {
+      if (promotion.discount_type === DISCOUNT_TYPE.PERCENTAGE) {
+        return price * (1 - (promotion.discount_percent || 0) / 100);
+      }
+      if (promotion.discount_type === DISCOUNT_TYPE.FIX_AMOUNT) {
         return price - (promotion.discount_amount || 0);
       }
       return price;
     }
   }
 
-  if (scope === "Order") {
+  if (scope === PROMOTION_SCOPE.ORDER) {
     // G4: Fixed Order
     if (promotion.priority === "G4") {
       return price - (promotion.discount_amount || 0);
@@ -220,10 +239,10 @@ const _applyPromotionToPrice = (price, promotion, scope) => {
     if (promotion.priority === "G6") return price;
     // G7: Order Gift or Discount
     if (promotion.priority === "G7") {
-      if (promotion.discount_type === "Percentage") {
+      if (promotion.discount_type === DISCOUNT_TYPE.PERCENTAGE) {
         return price * (1 - (promotion.discount_percent || 0) / 100);
       }
-      if (promotion.discount_type === "Fix Amount") {
+      if (promotion.discount_type === DISCOUNT_TYPE.FIX_AMOUNT) {
         return price - (promotion.discount_amount || 0);
       }
       return price;
