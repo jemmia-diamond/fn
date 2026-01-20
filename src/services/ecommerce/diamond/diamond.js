@@ -33,7 +33,7 @@ export default class DiamondService {
 
   async getDiamondByVariantId(variantId) {
     try {
-      const result = await this.db.$queryRaw`
+      const result = await retryQuery(() => this.db.$queryRaw`
         SELECT
           CAST(d.product_id AS INT) AS product_id,
           CAST(d.variant_id AS INT) AS variant_id,
@@ -93,7 +93,7 @@ export default class DiamondService {
         ) discount_info ON discount_info.diamond_id = d.id
         WHERE d.variant_id = ${variantId}
         LIMIT 1;
-      `;
+      `);
       return result?.[0] ? {
         ...result[0],
         gia_url: result[0].simple_encrypted_report_no ? `${this.env.R2_JEMMIA_WEBSITE_PUBLIC_URL}/website/gia-reports/${result[0].simple_encrypted_report_no}.png` : null
@@ -105,7 +105,7 @@ export default class DiamondService {
   }
 
   async getDiamondPriceList() {
-    const rows = await this.db.$queryRaw`${Prisma.raw(dataSql)}`;
+    const rows = await retryQuery(() => this.db.$queryRaw`${Prisma.raw(dataSql)}`);
     const result = formatData(rows);
     return result;
   }
