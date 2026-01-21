@@ -134,7 +134,10 @@ export default class RecallMessageService {
 
   static async detectWithLlm(env: any, text: string) {
     try {
-      const OPENROUTER_API_KEY = await env.OPENROUTER_API_KEY_SECRET.get();
+      let OPENROUTER_API_KEY = env.OPENROUTER_API_KEY;
+      if (typeof OPENROUTER_API_KEY !== "string") {
+        OPENROUTER_API_KEY = await OPENROUTER_API_KEY.get();
+      }
       if (!OPENROUTER_API_KEY) {
         console.warn("OpenRouter API Key not found, skipping LLM detection");
         return false;

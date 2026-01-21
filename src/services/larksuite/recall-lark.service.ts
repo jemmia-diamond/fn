@@ -7,7 +7,11 @@ export default class RecallLarkService {
   static async getAppAccessToken(env: any): Promise<string> {
     try {
       const LARK_APP_ID = env.LARK_APP_ID;
-      const LARK_APP_SECRET = await env.LARK_APP_SECRET_SECRET.get();
+      let LARK_APP_SECRET = env.LARK_APP_SECRET;
+      console.log("SECRETTT", LARK_APP_SECRET);
+      if (typeof LARK_APP_SECRET !== "string") {
+        LARK_APP_SECRET = await LARK_APP_SECRET.get();
+      }
 
       const response = await axios.post(
         `${this.API_BASE}/auth/v3/app_access_token/internal`,
