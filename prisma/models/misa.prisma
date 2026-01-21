@@ -382,3 +382,19 @@ model misaCashFlowMonthlyFact {
   @@map("cash_flow_monthly_fact")
   @@schema("misa")
 }
+
+model misaJournalEntry {
+  id                 Int       @id @default(autoincrement())
+  refno              String    @unique @db.VarChar(50)
+  posted_date        DateTime? @db.Timestamp(6)
+  refdate            DateTime? @db.Timestamp(6)
+  branch_name        String?
+  total_debit_amount Decimal?  @db.Decimal(18, 2)
+  data_details       Json
+  created_at         DateTime? @default(now()) @db.Timestamp(6)
+
+  @@index([data_details], type: Gin)
+  @@map("journal_entries")
+  @@schema("misa")
+}
+
