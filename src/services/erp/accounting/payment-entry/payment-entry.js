@@ -11,10 +11,13 @@ import BankTransactionVerificationService from "services/erp/accounting/payment-
 import Misa from "services/misa";
 
 dayjs.extend(utc);
-
+const ZERO = 0;
 const REFERENCE_SCHEMA = {
   haravan_order_id: (ref) => parseInt(ref.sales_order_details.haravan_order_id, 10),
-  haravan_ref_order_id: (ref) => parseInt(ref.sales_order_details?.haravan_ref_order_id, 10),
+  haravan_ref_order_id: (ref) => {
+    const value = parseInt(ref.sales_order_details?.haravan_ref_order_id, 10);
+    return value == ZERO ? null : value;
+  },
   order_number: (ref) => ref.order_number,
   balance: (ref) => ref.balance,
   allocated_amount: (ref) => ref.allocated_amount,
