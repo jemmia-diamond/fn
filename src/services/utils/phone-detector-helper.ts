@@ -1,6 +1,6 @@
 export class PhoneDetectorHelper {
   private static readonly PHONE_REGEX =
-    /(?:(?:\+|\bplus)(?:[\s\.-]*)\d{1,4}|\b(?:0|o|không|khong))(?:(?:[\s\._@\-]*)(?:[0-9oi]|một|mot|hai|ba|bốn|bon|năm|nam|sáu|sau|bảy|bay|tám|tam|chín|chin)){7,14}\b/gi;
+    /(?:(?:\+|\bplus)(?:[\s\.-]*)\d{1,4}|\b(?:0|o|không|khong))(?:(?:[\s\._@\-]*)(?:[0-9oi]|một|mot|hai|ba|bốn|bon|tư|tu|năm|nam|sáu|sau|bảy|bay|tám|tam|chín|chin)){7,14}\b/gi;
 
   private static readonly ALLOWED_COUNTRY_CODES = ["+84"];
 
@@ -19,12 +19,14 @@ export class PhoneDetectorHelper {
     không: "0",
     khong: "0",
     i: "1",
+    l: "1",
     một: "1",
     mot: "1",
     hai: "2",
     ba: "3",
     bốn: "4",
     bon: "4",
+    tu: "4",
     năm: "5",
     nam: "5",
     sáu: "6",

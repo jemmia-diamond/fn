@@ -6,11 +6,14 @@ export default class RecallLarkService {
 
   static async getAppAccessToken(env: any): Promise<string> {
     try {
+      const LARK_APP_ID = env.LARK_APP_ID;
+      const LARK_APP_SECRET = await env.LARK_APP_SECRET_SECRET.get();
+
       const response = await axios.post(
         `${this.API_BASE}/auth/v3/app_access_token/internal`,
         {
-          app_id: env.LARK_APP_ID,
-          app_secret: env.LARK_APP_SECRET,
+          app_id: LARK_APP_ID,
+          app_secret: LARK_APP_SECRET,
         },
       );
 
@@ -100,10 +103,11 @@ export default class RecallLarkService {
     userAccessToken: string,
   ): Promise<void> {
     try {
+      const LARK_APP_ID = env.LARK_APP_ID;
       const response = await axios.post(
         `${this.API_BASE}/im/v1/chats/${chatId}/managers/add_managers`,
         {
-          manager_ids: [env.LARK_APP_ID],
+          manager_ids: [LARK_APP_ID],
         },
         {
           headers: {
@@ -161,10 +165,11 @@ export default class RecallLarkService {
     userAccessToken: string,
   ): Promise<void> {
     try {
+      const LARK_APP_ID = env.LARK_APP_ID;
       const response = await axios.post(
         `${this.API_BASE}/im/v1/chats/${chatId}/members`,
         {
-          id_list: [env.LARK_APP_ID],
+          id_list: [LARK_APP_ID],
         },
         {
           headers: {
@@ -197,12 +202,19 @@ export default class RecallLarkService {
     }
   }
 
-  static getAuthUrl(env: any, state: string = "random_state"): string {
+  static async getAuthUrl(
+    env: any,
+    state: string = "random_state",
+  ): Promise<string> {
+    const LARK_APP_ID = env.LARK_APP_ID;
+    const LARK_REDIRECT_URI = env.LARK_REDIRECT_URI;
+    const LARK_RECALL_REDIRECT_URI = env.LARK_RECALL_REDIRECT_URI;
+
     const scope =
       "contact:user.id:readonly im:chat im:chat.managers:write_only im:chat.members:write_only";
     // Assuming LARK_REDIRECT_URI is in env or constructed
-    const redirectUri = env.LARK_RECALL_REDIRECT_URI || env.LARK_REDIRECT_URI;
-    return `${this.API_BASE}/authen/v1/authorize?app_id=${env.LARK_APP_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scope}&state=${state}`;
+    const redirectUri = LARK_RECALL_REDIRECT_URI || LARK_REDIRECT_URI;
+    return `${this.API_BASE}/authen/v1/authorize?app_id=${LARK_APP_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scope}&state=${state}`;
   }
 
   static async decryptEvent(env: any, encrypted: string): Promise<string> {

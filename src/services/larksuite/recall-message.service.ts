@@ -4,6 +4,7 @@ import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { generateObject } from "ai";
 import { z } from "zod";
 import { PhoneDetectorHelper } from "services/utils/phone-detector-helper";
+import * as Sentry from "@sentry/cloudflare";
 
 export default class RecallMessageService {
   static async detectSensitiveInfoAndMask(env: any, event: any) {
@@ -23,10 +24,7 @@ export default class RecallMessageService {
         );
         text = await this.ocrImage(imageBuffer);
       } catch (error) {
-        console.error(
-          `Failed to process image ${event.message.message_id}:`,
-          error,
-        );
+        Sentry.captureException(error);
         return;
       }
     } else if (event.message.message_type === "post") {
@@ -53,10 +51,7 @@ export default class RecallMessageService {
           }
         }
       } catch (error) {
-        console.error(
-          `Failed to process post message ${event.message.message_id}:`,
-          error,
-        );
+        Sentry.captureException(error);
         return;
       }
     } else {
@@ -128,13 +123,14 @@ export default class RecallMessageService {
 
   static async detectWithLlm(env: any, text: string) {
     try {
-      if (!env.OPENROUTER_API_KEY) {
+      const OPENROUTER_API_KEY = await env.OPENROUTER_API_KEY_SECRET.get();
+      if (!OPENROUTER_API_KEY) {
         console.warn("OpenRouter API Key not found, skipping LLM detection");
         return false;
       }
 
       const openrouter = createOpenRouter({
-        apiKey: env.OPENROUTER_API_KEY,
+        apiKey: OPENROUTER_API_KEY,
       });
 
       const { object } = await generateObject({
@@ -165,7 +161,7 @@ ${text}
       }
       return false;
     } catch (error) {
-      console.error("LLM detection failed:", error);
+      Sentry.captureException(error);
       return false;
     }
   }
@@ -178,7 +174,7 @@ ${text}
 
       return text || "";
     } catch (error) {
-      console.error("OCR Error:", error);
+      Sentry.captureException(error);
       return "";
     }
   }

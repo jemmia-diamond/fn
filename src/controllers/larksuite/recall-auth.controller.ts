@@ -27,8 +27,8 @@ export default class RecallAuthController {
     return c.html(html);
   }
 
-  static redirectToLark(c: any) {
-    const authUrl = RecallLarkService.getAuthUrl(c.env);
+  static async redirectToLark(c: any) {
+    const authUrl = await RecallLarkService.getAuthUrl(c.env);
     console.log("Generated Lark Auth URL:", authUrl);
     return c.redirect(authUrl);
   }
