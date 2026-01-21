@@ -6,15 +6,26 @@ import { z } from "zod";
 import { PhoneDetectorHelper } from "services/utils/phone-detector-helper";
 import * as Sentry from "@sentry/cloudflare";
 
+const MESSAGE_TYPE = {
+  TEXT: "text",
+  IMAGE: "image",
+  POST: "post",
+} as const;
+
+const CONTENT_TAG = {
+  TEXT: "text",
+  IMG: "img",
+} as const;
+
 export default class RecallMessageService {
   static async detectSensitiveInfoAndMask(env: any, event: any) {
     const content = JSON.parse(event.message.content);
     let text = "";
     let postText = "";
 
-    if (event.message.message_type === "text") {
+    if (event.message.message_type === MESSAGE_TYPE.TEXT) {
       text = content.text;
-    } else if (event.message.message_type === "image") {
+    } else if (event.message.message_type === MESSAGE_TYPE.IMAGE) {
       try {
         const imageKey = content.image_key;
         const imageBuffer = await RecallLarkService.getImage(
@@ -27,7 +38,7 @@ export default class RecallMessageService {
         Sentry.captureException(error);
         return;
       }
-    } else if (event.message.message_type === "post") {
+    } else if (event.message.message_type === MESSAGE_TYPE.POST) {
       try {
         if (content.title) {
           text += content.title + " ";
@@ -35,10 +46,10 @@ export default class RecallMessageService {
         }
         for (const line of content.content) {
           for (const item of line) {
-            if (item.tag === "text") {
+            if (item.tag === CONTENT_TAG.TEXT) {
               text += item.text + " ";
               postText += item.text + " ";
-            } else if (item.tag === "img") {
+            } else if (item.tag === CONTENT_TAG.IMG) {
               const imageKey = item.image_key;
               const imageBuffer = await RecallLarkService.getImage(
                 env,
@@ -69,9 +80,9 @@ export default class RecallMessageService {
       const chatId = event.message.chat_id;
       let responseText = "";
 
-      if (event.message.message_type === "image") {
+      if (event.message.message_type === MESSAGE_TYPE.IMAGE) {
         responseText = `<at user_id="${senderId}"></at> Ảnh đã bị thu hồi vì chứa thông tin của khách hàng`;
-      } else if (event.message.message_type === "post") {
+      } else if (event.message.message_type === MESSAGE_TYPE.POST) {
         const maskedText = this.maskSensitiveInfo(postText);
         responseText = `<at user_id="${senderId}"></at> Ảnh đã bị thu hồi vì chứa thông tin của khách hàng, ${maskedText}`;
       } else {
@@ -88,14 +99,14 @@ export default class RecallMessageService {
           env,
           event.message.root_id,
           maskedContent,
-          "text",
+          MESSAGE_TYPE.TEXT,
         );
       } else {
         await RecallLarkService.sendMessage(
           env,
           chatId,
           "chat_id",
-          "text",
+          MESSAGE_TYPE.TEXT,
           maskedContent,
         );
       }
