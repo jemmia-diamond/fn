@@ -30,22 +30,32 @@ export default class RecallLarkService {
     }
   }
 
+  static async client(env: any) {
+    const appAccessToken = await this.getAppAccessToken(env);
+    return axios.create({
+      baseURL: this.API_BASE,
+      headers: {
+        Authorization: `Bearer ${appAccessToken}`,
+      },
+    });
+  }
+
+  static userClient(userAccessToken: string) {
+    return axios.create({
+      baseURL: this.API_BASE,
+      headers: {
+        Authorization: `Bearer ${userAccessToken}`,
+      },
+    });
+  }
+
   static async getUserAccessToken(env: any, code: string): Promise<any> {
     try {
-      const appAccessToken = await this.getAppAccessToken(env);
-
-      const response = await axios.post(
-        `${this.API_BASE}/authen/v1/oidc/access_token`,
-        {
-          grant_type: "authorization_code",
-          code: code,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${appAccessToken}`,
-          },
-        },
-      );
+      const client = await this.client(env);
+      const response = await client.post(`/authen/v1/oidc/access_token`, {
+        grant_type: "authorization_code",
+        code: code,
+      });
 
       if (response.data.code !== 0) {
         throw new Error(`Lark OAuth Error: ${response.data.msg}`);
@@ -68,15 +78,15 @@ export default class RecallLarkService {
       let hasMore = true;
 
       while (hasMore) {
-        const response: any = await axios.get(`${this.API_BASE}/im/v1/chats`, {
-          params: {
-            page_token: pageToken,
-            page_size: 100,
+        const response: any = await this.userClient(userAccessToken).get(
+          `/im/v1/chats`,
+          {
+            params: {
+              page_token: pageToken,
+              page_size: 100,
+            },
           },
-          headers: {
-            Authorization: `Bearer ${userAccessToken}`,
-          },
-        });
+        );
 
         if (response.data.code !== 0) {
           throw new Error(`Failed to fetch user groups: ${response.data.msg}`);
@@ -104,15 +114,12 @@ export default class RecallLarkService {
   ): Promise<void> {
     try {
       const LARK_APP_ID = env.LARK_APP_ID;
-      const response = await axios.post(
-        `${this.API_BASE}/im/v1/chats/${chatId}/managers/add_managers`,
+      const response = await this.userClient(userAccessToken).post(
+        `/im/v1/chats/${chatId}/managers/add_managers`,
         {
           manager_ids: [LARK_APP_ID],
         },
         {
-          headers: {
-            Authorization: `Bearer ${userAccessToken}`,
-          },
           params: {
             member_id_type: "app_id",
           },
@@ -141,11 +148,8 @@ export default class RecallLarkService {
 
   static async getUserInfo(env: any, userAccessToken: string): Promise<any> {
     try {
-      const response = await axios.get(`${this.API_BASE}/authen/v1/user_info`, {
-        headers: {
-          Authorization: `Bearer ${userAccessToken}`,
-        },
-      });
+      const response =
+        await this.userClient(userAccessToken).get(`/authen/v1/user_info`);
 
       if (response.data.code !== 0) {
         throw new Error(`Failed to get user info: ${response.data.msg}`);
@@ -166,15 +170,12 @@ export default class RecallLarkService {
   ): Promise<void> {
     try {
       const LARK_APP_ID = env.LARK_APP_ID;
-      const response = await axios.post(
-        `${this.API_BASE}/im/v1/chats/${chatId}/members`,
+      const response = await this.userClient(userAccessToken).post(
+        `/im/v1/chats/${chatId}/members`,
         {
           id_list: [LARK_APP_ID],
         },
         {
-          headers: {
-            Authorization: `Bearer ${userAccessToken}`,
-          },
           params: {
             member_id_type: "app_id",
           },
@@ -240,13 +241,10 @@ export default class RecallLarkService {
     imageKey: string,
   ): Promise<Buffer> {
     try {
-      const appAccessToken = await this.getAppAccessToken(env);
-      const response = await axios.get(
-        `${this.API_BASE}/im/v1/messages/${messageId}/resources/${imageKey}`,
+      const client = await this.client(env);
+      const response = await client.get(
+        `/im/v1/messages/${messageId}/resources/${imageKey}`,
         {
-          headers: {
-            Authorization: `Bearer ${appAccessToken}`,
-          },
           params: {
             type: "image",
           },
@@ -269,18 +267,15 @@ export default class RecallLarkService {
     content: string,
   ): Promise<void> {
     try {
-      const appAccessToken = await this.getAppAccessToken(env);
-      const response = await axios.post(
-        `${this.API_BASE}/im/v1/messages`,
+      const client = await this.client(env);
+      const response = await client.post(
+        `/im/v1/messages`,
         {
           receive_id: receiveId,
           msg_type: msgType,
           content: content,
         },
         {
-          headers: {
-            Authorization: `Bearer ${appAccessToken}`,
-          },
           params: {
             receive_id_type: receiveIdType,
           },
@@ -303,19 +298,11 @@ export default class RecallLarkService {
     msgType: string,
   ): Promise<void> {
     try {
-      const appAccessToken = await this.getAppAccessToken(env);
-      const response = await axios.post(
-        `${this.API_BASE}/im/v1/messages/${messageId}/reply`,
-        {
-          content: content,
-          msg_type: msgType,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${appAccessToken}`,
-          },
-        },
-      );
+      const client = await this.client(env);
+      const response = await client.post(`/im/v1/messages/${messageId}/reply`, {
+        content: content,
+        msg_type: msgType,
+      });
 
       if (response.data.code !== 0) {
         throw new Error(`Failed to reply message: ${response.data.msg}`);
@@ -328,15 +315,8 @@ export default class RecallLarkService {
 
   static async recallMessage(env: any, messageId: string): Promise<void> {
     try {
-      const appAccessToken = await this.getAppAccessToken(env);
-      const response = await axios.delete(
-        `${this.API_BASE}/im/v1/messages/${messageId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${appAccessToken}`,
-          },
-        },
-      );
+      const client = await this.client(env);
+      const response = await client.delete(`/im/v1/messages/${messageId}`);
 
       if (response.data.code !== 0) {
         throw new Error(`Failed to recall message: ${response.data.msg}`);
@@ -349,15 +329,8 @@ export default class RecallLarkService {
 
   static async getMessage(env: any, messageId: string): Promise<any> {
     try {
-      const appAccessToken = await this.getAppAccessToken(env);
-      const response = await axios.get(
-        `${this.API_BASE}/im/v1/messages/${messageId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${appAccessToken}`,
-          },
-        },
-      );
+      const client = await this.client(env);
+      const response = await client.get(`/im/v1/messages/${messageId}`);
 
       if (response.data.code !== 0) {
         throw new Error(`Failed to get message: ${response.data.msg}`);
