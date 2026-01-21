@@ -1,6 +1,6 @@
 export class PhoneDetectorHelper {
   private static readonly PHONE_REGEX =
-    /(?:(?:\+|\bplus)(?:[\s\.-]*)\d{1,4}|\b(?:0|o|không|khong))(?:(?:[\s\._@\-]*)(?:[0-9oi]|một|mot|hai|ba|bốn|bon|tư|tu|năm|nam|sáu|sau|bảy|bay|tám|tam|chín|chin)){7,14}\b/gi;
+    /(?:(?:\+|\bplus)(?:[\s\.-]*)\d{1,4}|\b(?:0|o|khong))(?:(?:[\s\._@\-]*)(?:[0-9oi]|mot|hai|ba|bon|tu|nam|sau|bay|tam|chin)){7,14}\b/gi;
 
   private static readonly ALLOWED_COUNTRY_CODES = ["+84"];
 
@@ -9,38 +9,31 @@ export class PhoneDetectorHelper {
     "05",
     "07",
     "08",
-    "09", // Di động
-    "02", // Máy bàn
+    "09",
+    "02",
   ];
 
   private static readonly REPLACEMENT_MAP: { [key: string]: string } = {
     plus: "+",
     o: "0",
-    không: "0",
     khong: "0",
     i: "1",
     l: "1",
-    một: "1",
     mot: "1",
     hai: "2",
     ba: "3",
-    bốn: "4",
     bon: "4",
     tu: "4",
-    năm: "5",
     nam: "5",
-    sáu: "6",
     sau: "6",
-    bảy: "7",
     bay: "7",
-    tám: "8",
     tam: "8",
-    chín: "9",
     chin: "9",
   };
 
   static detect(text: string): string[] {
-    const matches = text.match(this.PHONE_REGEX);
+    const cleanText = this.stripAccents(text);
+    const matches = cleanText.match(this.PHONE_REGEX);
     if (!matches) return [];
 
     const validPhones: string[] = [];
@@ -54,22 +47,30 @@ export class PhoneDetectorHelper {
   }
 
   static maskText(text: string): string {
-    return text.replace(this.PHONE_REGEX, (match) => {
-      const normalized = this.normalize(match);
+    const nfcText = text.normalize("NFC");
+    const cleanText = this.stripAccents(nfcText);
+    const matches = Array.from(cleanText.matchAll(this.PHONE_REGEX));
+
+    let result = nfcText;
+    for (let i = matches.length - 1; i >= 0; i--) {
+      const match = matches[i];
+      const normalized = this.normalize(match[0]);
 
       if (this.isValid(normalized)) {
+        const start = match.index!;
+        const end = start + match[0].length;
         const firstPart = normalized.substring(0, 3);
         const lastPart = normalized.substring(normalized.length - 2);
 
-        return `${firstPart}*****${lastPart}`;
+        const masked = `${firstPart}*****${lastPart}`;
+        result = result.substring(0, start) + masked + result.substring(end);
       }
-
-      return match;
-    });
+    }
+    return result;
   }
 
   private static normalize(rawPhone: string): string {
-    let processed = rawPhone.toLowerCase();
+    let processed = this.stripAccents(rawPhone.toLowerCase());
 
     const sortedKeys = Object.keys(this.REPLACEMENT_MAP).sort(
       (a, b) => b.length - a.length,
@@ -96,5 +97,13 @@ export class PhoneDetectorHelper {
       phone.startsWith(prefix),
     );
     return isAllowedLocal && phone.length >= 10 && phone.length <= 11;
+  }
+
+  private static stripAccents(str: string): string {
+    return str
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/đ/g, "d")
+      .replace(/Đ/g, "D");
   }
 }
