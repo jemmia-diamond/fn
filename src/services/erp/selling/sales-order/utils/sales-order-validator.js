@@ -186,7 +186,9 @@ const _validateOrderLevelPromotions = (salesOrderData, lineItems, promotionMap) 
   }
 
   const tradeInAmount = salesOrderData.custom_trade_in_amount || 0;
-  expectedGrandTotal = expectedGrandTotal - tradeInAmount;
+  const returnAmount = salesOrderData.return_amount || 0;
+
+  expectedGrandTotal = expectedGrandTotal - tradeInAmount - returnAmount;
 
   const actualGrandTotal = salesOrderData.grand_total;
   const diff = Math.abs(expectedGrandTotal - actualGrandTotal);
