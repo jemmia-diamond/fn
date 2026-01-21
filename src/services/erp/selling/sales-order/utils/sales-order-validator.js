@@ -235,6 +235,15 @@ const _applyPromotionToPrice = (price, promotion, scope) => {
       }
       return price;
     }
+    if (promotion.priority === "G6") {
+      if (promotion.discount_type === DISCOUNT_TYPE.PERCENTAGE) {
+        return price * (1 - (promotion.discount_percent || 0) / 100);
+      }
+      if (promotion.discount_type === DISCOUNT_TYPE.FIX_AMOUNT) {
+        return price - (promotion.discount_amount || 0);
+      }
+      return price;
+    }
     if (promotion.priority === "G7") {
       if (promotion.discount_type === DISCOUNT_TYPE.PERCENTAGE) {
         return price * (1 - (promotion.discount_percent || 0) / 100);
@@ -253,7 +262,15 @@ const _applyPromotionToPrice = (price, promotion, scope) => {
     if (promotion.priority === "G5") {
       return price * (1 - (promotion.discount_percent || 0) / 100);
     }
-    if (promotion.priority === "G6") return price;
+    if (promotion.priority === "G6") {
+      if (promotion.discount_type === DISCOUNT_TYPE.PERCENTAGE) {
+        return price * (1 - (promotion.discount_percent || 0) / 100);
+      }
+      if (promotion.discount_type === DISCOUNT_TYPE.FIX_AMOUNT) {
+        return price - (promotion.discount_amount || 0);
+      }
+      return price;
+    }
     if (promotion.priority === "G7") {
       if (promotion.discount_type === DISCOUNT_TYPE.PERCENTAGE) {
         return price * (1 - (promotion.discount_percent || 0) / 100);
