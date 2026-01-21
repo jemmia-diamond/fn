@@ -16,6 +16,7 @@ import { getRefOrderChain } from "services/ecommerce/order-tracking/queries/get-
 import Larksuite from "services/larksuite";
 import { ERPR2StorageService } from "services/r2-object/erp/erp-r2-storage-service";
 import HaravanAPI from "services/clients/haravan-client";
+import { retryQuery } from "src/services/utils/retry-utils";
 
 dayjs.extend(utc);
 
@@ -390,7 +391,7 @@ export default class SalesOrderService {
 
         if ((content && replyResponse.msg === "success") || (isSendImagesSuccess.every(Boolean))) {
           if (isOrderTracked) {
-            await this.db.erpnextSalesOrderNotificationTracking.updateMany({
+            await retryQuery(() => this.db.erpnextSalesOrderNotificationTracking.updateMany({
               where: {
                 uuid: currentOrderTracking.uuid
               },
@@ -401,10 +402,10 @@ export default class SalesOrderService {
                   paid_amount: salesOrderData.paid_amount
                 }
               }
-            });
+            }));
             return { success: true, message: "Cập nhật đơn thành công!" };
           }
-          await this.db.erpnextSalesOrderNotificationTracking.create({
+          await retryQuery(() => this.db.erpnextSalesOrderNotificationTracking.create({
             data: {
               lark_message_id: replyResponse.data.message_id,
               order_name: salesOrderData.name,
@@ -415,7 +416,7 @@ export default class SalesOrderService {
                 paid_amount: salesOrderData.paid_amount
               }
             }
-          });
+          }));
           return { success: true, message: "Thông báo đơn đặt lại thành công!" };
         }
 
@@ -463,7 +464,7 @@ export default class SalesOrderService {
 
       if ((content && replyResponse.msg === "success") || (isSendImagesSuccess.every(Boolean))) {
         // Update
-        await this.db.erpnextSalesOrderNotificationTracking.updateMany({
+        await retryQuery(() => this.db.erpnextSalesOrderNotificationTracking.updateMany({
           where: {
             uuid: notificationTracking.uuid
           },
@@ -474,7 +475,7 @@ export default class SalesOrderService {
               paid_amount: salesOrderData.paid_amount
             }
           }
-        });
+        }));
         return { success: true, message: "Gửi cập nhật đơn thành công!" };
       }
 
@@ -511,7 +512,7 @@ export default class SalesOrderService {
       );
     }
 
-    await this.db.erpnextSalesOrderNotificationTracking.create({
+    await retryQuery(() => this.db.erpnextSalesOrderNotificationTracking.create({
       data: {
         lark_message_id: messageId,
         order_name: salesOrderData.name,
@@ -522,7 +523,7 @@ export default class SalesOrderService {
           paid_amount: salesOrderData.paid_amount
         }
       }
-    });
+    }));
 
     return { success: true, message: "Đã gửi thông báo thành công!" };
   }
