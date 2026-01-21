@@ -1,4 +1,5 @@
 import Ecommerce from "controllers/ecommerce";
+import RecallEventController from "controllers/larksuite/recall-event.controller";
 
 export default class PublicAPIRoutes {
   static register(publicApi) {
@@ -29,6 +30,9 @@ export default class PublicAPIRoutes {
     ecommerceNamespaceApi.get("/search", Ecommerce.SearchController.index);
 
     // Web form
+    // Web form
     ecommerceNamespaceApi.post("/website-forms", Ecommerce.WebsiteFormController.create);
+
+    publicApi.post("/lark/recall/event", RecallEventController.create);
   };
 };

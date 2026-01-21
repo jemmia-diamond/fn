@@ -54,7 +54,7 @@ api.use("*",
 );
 
 // Routes registration
-Routes.RecallAppRoutes.register(app);
+
 Routes.AppRoutes.register(app);
 Routes.APIRoutes.register(api);
 Routes.PublicAPIRoutes.register(publicApi);
