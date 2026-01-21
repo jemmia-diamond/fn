@@ -14,6 +14,7 @@ dayjs.extend(utc);
 
 const REFERENCE_SCHEMA = {
   haravan_order_id: (ref) => parseInt(ref.sales_order_details.haravan_order_id, 10),
+  haravan_ref_order_id: (ref) => parseInt(ref.sales_order_details?.haravan_ref_order_id, 10),
   order_number: (ref) => ref.order_number,
   balance: (ref) => ref.balance,
   allocated_amount: (ref) => ref.allocated_amount,
