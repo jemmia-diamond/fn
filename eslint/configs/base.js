@@ -7,7 +7,7 @@ import unicorn from "eslint-plugin-unicorn";
 
 export default function getBaseConfig() {
   return {
-    files: ["**/*.{js,mjs,cjs}"],
+    files: ["**/*.{js,mjs,cjs,ts}"],
     languageOptions: { globals: globals.browser },
     plugins: {
       "unused-imports": unusedImports,
