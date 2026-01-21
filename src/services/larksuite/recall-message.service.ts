@@ -70,10 +70,6 @@ export default class RecallMessageService {
     }
 
     if (await this.detectSensitiveInfo(env, text)) {
-      console.log(
-        `Sensitive info detected in message ${event.message.message_id}. Recalling and resending masked version...`,
-      );
-
       await RecallLarkService.recallMessage(env, event.message.message_id);
 
       const senderId = event.sender.sender_id.open_id;
@@ -128,7 +124,6 @@ export default class RecallMessageService {
 
   static detectWithRegex(text: string) {
     const phones = PhoneDetectorHelper.detect(text);
-    console.log(phones);
     return phones.length > 0;
   }
 
@@ -170,7 +165,6 @@ ${text}
       });
 
       if (object.phone_numbers && object.phone_numbers.length > 0) {
-        console.log("LLM detected phone numbers:", object.phone_numbers);
         return true;
       }
       return false;

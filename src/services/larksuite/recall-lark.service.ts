@@ -8,7 +8,6 @@ export default class RecallLarkService {
     try {
       const LARK_APP_ID = env.LARK_APP_ID;
       let LARK_APP_SECRET = env.LARK_APP_SECRET;
-      console.log("SECRETTT", LARK_APP_SECRET);
       if (typeof LARK_APP_SECRET !== "string") {
         LARK_APP_SECRET = await LARK_APP_SECRET.get();
       }
@@ -325,7 +324,6 @@ export default class RecallLarkService {
       if (response.data.code !== 0) {
         throw new Error(`Failed to recall message: ${response.data.msg}`);
       }
-      console.log(`Message ${messageId} recalled successfully.`);
     } catch (error: any) {
       console.error("Lark Service Error (recallMessage):", error.message);
     }
