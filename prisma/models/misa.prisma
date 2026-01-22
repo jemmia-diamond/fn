@@ -382,3 +382,36 @@ model misaCashFlowMonthlyFact {
   @@map("cash_flow_monthly_fact")
   @@schema("misa")
 }
+
+model misaJournalEntry {
+  id                 Int       @id @default(autoincrement())
+  refno              String    @unique @db.VarChar(50)
+  posted_date        DateTime? @db.Timestamp(6)
+  refdate            DateTime? @db.Timestamp(6)
+  branch_name        String?
+  total_debit_amount Decimal?  @db.Decimal(18, 2)
+  data_details       Json
+  created_at         DateTime? @default(now()) @db.Timestamp(6)
+
+  @@index([data_details], type: Gin)
+  @@map("journal_entries")
+  @@schema("misa")
+}
+
+model misaInventoryDetailLog {
+  id                  Int       @id @default(autoincrement())
+  stock_id            String    @db.Uuid
+  stock_code          String?   @db.VarChar(100)
+  inventory_item_id   String    @db.Uuid
+  inventory_item_code String?   @db.VarChar(100)
+  inventory_item_name String?
+  history_details     Json
+  updated_at          DateTime? @default(now()) @db.Timestamp(6)
+
+  @@unique([stock_id, inventory_item_id], map: "unique_stock_item_log")
+  @@index([inventory_item_code], map: "idx_inv_log_item")
+  @@index([stock_code], map: "idx_inv_log_stock")
+  @@map("inventory_detail_log")
+  @@schema("misa")
+}
+
