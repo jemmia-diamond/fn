@@ -1,7 +1,6 @@
 import GoogleAuth from "services/google/auth.js";
 import * as Sentry from "@sentry/cloudflare";
 import { createAxiosClient } from "services/utils/http-client";
-import credentials from "services/google/credentials";
 
 export default class GoogleMerchantService {
   constructor(env) {
@@ -17,19 +16,11 @@ export default class GoogleMerchantService {
   async _ensureAuth() {
     if (this.auth) return;
 
-    // Get private key from secret parts (handle split key)
-    const p1 = await this.env.GOOGLE_MERCHANT_PRIVATE_KEY_PART1_SECRET?.get() || "";
-    const p2 = await this.env.GOOGLE_MERCHANT_PRIVATE_KEY_PART2_SECRET?.get() || "";
-    const p3 = await this.env.GOOGLE_MERCHANT_PRIVATE_KEY_PART3_SECRET?.get() || "";
-    let privateKey = p1 + p2 + p3;
+    const jsonKey = this.env.GOOGLE_MERCHANT_SA;
 
-    if (privateKey && credentials) {
+    if (jsonKey) {
       try {
-        if (!privateKey.includes("BEGIN PRIVATE KEY")) {
-          privateKey = atob(privateKey);
-        }
-
-        credentials.private_key = privateKey;
+        const credentials = this._parseCredentials(jsonKey);
         this.auth = new GoogleAuth(credentials);
       } catch (e) {
         Sentry.captureException(e);
