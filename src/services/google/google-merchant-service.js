@@ -109,7 +109,7 @@ export default class GoogleMerchantService {
   }
 
   async insertProducts(products) {
-    const BATCH_SIZE = 5;
+    const BATCH_SIZE = 20;
     const batches = this._chunkArray(products, BATCH_SIZE);
 
     for (const batch of batches) {
