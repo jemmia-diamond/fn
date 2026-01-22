@@ -1,8 +1,5 @@
 import RecallLarkService from "./recall-lark.service";
 import Tesseract from "tesseract.js";
-import { createOpenRouter } from "@openrouter/ai-sdk-provider";
-import { generateObject } from "ai";
-import { z } from "zod";
 import { PhoneDetectorHelper } from "services/utils/phone-detector-helper";
 import * as Sentry from "@sentry/cloudflare";
 
