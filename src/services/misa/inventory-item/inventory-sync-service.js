@@ -165,18 +165,20 @@ export default class MisaInventoryItemSyncService {
   }
 
   async _trackSyncedItems(variants) {
-    const upsertOperations = variants.map(variant =>
-      this.db.misaInventoryItem.upsert({
-        where: { sku: variant.sku },
-        create: {
-          uuid: crypto.randomUUID(),
-          sku: variant.sku
-        },
-        update: {
-          database_updated_at: dayjs().utc().toDate()
-        }
-      })
-    );
-    await this.db.$transaction(upsertOperations, this.dbConnection);
+    await this.db.$transaction(async (tx) => {
+      const operations = variants.map(variant =>
+        tx.misaInventoryItem.upsert({
+          where: { sku: variant.sku },
+          create: {
+            uuid: crypto.randomUUID(),
+            sku: variant.sku
+          },
+          update: {
+            database_updated_at: dayjs().utc().toDate()
+          }
+        })
+      );
+      await Promise.all(operations);
+    }, this.dbConnection);
   }
 }
