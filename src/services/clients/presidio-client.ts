@@ -15,9 +15,9 @@ export default class PresidioClient {
     return createAxiosClient({
       baseURL: BASE_URL,
       headers: {
-        "Content-Type": "application/json",
+        "Content-Type": "application/json"
       },
-      timeout: 0,
+      timeout: 0
     });
   }
 

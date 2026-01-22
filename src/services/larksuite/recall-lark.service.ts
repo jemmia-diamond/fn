@@ -1,3 +1,4 @@
+
 import axios from "axios";
 import * as crypto from "crypto";
 
@@ -16,19 +17,19 @@ export default class RecallLarkService {
         `${this.API_BASE}/auth/v3/app_access_token/internal`,
         {
           app_id: LARK_APP_ID,
-          app_secret: LARK_APP_SECRET,
-        },
+          app_secret: LARK_APP_SECRET
+        }
       );
 
       if (!response.data.app_access_token) {
         throw new Error(
-          `Failed to get app token: ${JSON.stringify(response.data)}`,
+          `Failed to get app token: ${JSON.stringify(response.data)}`
         );
       }
 
       return response.data.app_access_token;
     } catch (error: any) {
-      console.error("Lark Service Error (getAppAccessToken):", error.message);
+      console.warn("Lark Service Error (getAppAccessToken):", error.message);
       throw error;
     }
   }
@@ -38,8 +39,8 @@ export default class RecallLarkService {
     return axios.create({
       baseURL: this.API_BASE,
       headers: {
-        Authorization: `Bearer ${appAccessToken}`,
-      },
+        Authorization: `Bearer ${appAccessToken}`
+      }
     });
   }
 
@@ -47,17 +48,17 @@ export default class RecallLarkService {
     return axios.create({
       baseURL: this.API_BASE,
       headers: {
-        Authorization: `Bearer ${userAccessToken}`,
-      },
+        Authorization: `Bearer ${userAccessToken}`
+      }
     });
   }
 
   static async getUserAccessToken(env: any, code: string): Promise<any> {
     try {
       const client = await this.client(env);
-      const response = await client.post(`/authen/v1/oidc/access_token`, {
+      const response = await client.post("/authen/v1/oidc/access_token", {
         grant_type: "authorization_code",
-        code: code,
+        code: code
       });
 
       if (response.data.code !== 0) {
@@ -66,14 +67,14 @@ export default class RecallLarkService {
 
       return response.data.data;
     } catch (error: any) {
-      console.error("Lark Service Error (getUserAccessToken):", error.message);
+      console.warn("Lark Service Error (getUserAccessToken):", error.message);
       throw error;
     }
   }
 
   static async getUserGroups(
     env: any,
-    userAccessToken: string,
+    userAccessToken: string
   ): Promise<any[]> {
     try {
       let allGroups: any[] = [];
@@ -82,13 +83,13 @@ export default class RecallLarkService {
 
       while (hasMore) {
         const response: any = await this.userClient(userAccessToken).get(
-          `/im/v1/chats`,
+          "/im/v1/chats",
           {
             params: {
               page_token: pageToken,
-              page_size: 100,
-            },
-          },
+              page_size: 100
+            }
+          }
         );
 
         if (response.data.code !== 0) {
@@ -105,7 +106,7 @@ export default class RecallLarkService {
 
       return allGroups;
     } catch (error: any) {
-      console.error("Lark Service Error (getUserGroups):", error.message);
+      console.warn("Lark Service Error (getUserGroups):", error.message);
       throw error;
     }
   }
@@ -113,37 +114,37 @@ export default class RecallLarkService {
   static async addBotAsManager(
     env: any,
     chatId: string,
-    userAccessToken: string,
+    userAccessToken: string
   ): Promise<void> {
     try {
       const LARK_APP_ID = env.LARK_APP_ID;
       const response = await this.userClient(userAccessToken).post(
         `/im/v1/chats/${chatId}/managers/add_managers`,
         {
-          manager_ids: [LARK_APP_ID],
+          manager_ids: [LARK_APP_ID]
         },
         {
           params: {
-            member_id_type: "app_id",
-          },
-        },
+            member_id_type: "app_id"
+          }
+        }
       );
 
       if (response.data.code !== 0) {
         throw new Error(
-          `Failed to add bot as manager to group ${chatId}: ${response.data.msg}`,
+          `Failed to add bot as manager to group ${chatId}: ${response.data.msg}`
         );
       }
     } catch (error: any) {
       if (error.response) {
-        console.error(
+        console.warn(
           `Lark API Error Data for chat ${chatId}:`,
-          JSON.stringify(error.response.data, null, 2),
+          JSON.stringify(error.response.data, null, 2)
         );
       }
-      console.error(
+      console.warn(
         `Lark Service Error (addBotAsManager) for chat ${chatId}:`,
-        error.message,
+        error.message
       );
       throw error;
     }
@@ -151,8 +152,9 @@ export default class RecallLarkService {
 
   static async getUserInfo(env: any, userAccessToken: string): Promise<any> {
     try {
-      const response =
-        await this.userClient(userAccessToken).get(`/authen/v1/user_info`);
+      const response = await this.userClient(userAccessToken).get(
+        "/authen/v1/user_info"
+      );
 
       if (response.data.code !== 0) {
         throw new Error(`Failed to get user info: ${response.data.msg}`);
@@ -160,8 +162,8 @@ export default class RecallLarkService {
 
       return response.data.data;
     } catch (error: any) {
-      console.error(error);
-      console.error("Lark Service Error (getUserInfo):", error.message);
+      console.warn(error);
+      console.warn("Lark Service Error (getUserInfo):", error.message);
       throw error;
     }
   }
@@ -169,38 +171,38 @@ export default class RecallLarkService {
   static async addBotToGroup(
     env: any,
     chatId: string,
-    userAccessToken: string,
+    userAccessToken: string
   ): Promise<void> {
     try {
       const LARK_APP_ID = env.LARK_APP_ID;
       const response = await this.userClient(userAccessToken).post(
         `/im/v1/chats/${chatId}/members`,
         {
-          id_list: [LARK_APP_ID],
+          id_list: [LARK_APP_ID]
         },
         {
           params: {
-            member_id_type: "app_id",
-          },
-        },
+            member_id_type: "app_id"
+          }
+        }
       );
 
       if (response.data.code !== 0) {
         // Ignore if already in group (code might vary, but for now log and throw to be handled)
         throw new Error(
-          `Failed to add bot to group ${chatId}: ${response.data.msg}`,
+          `Failed to add bot to group ${chatId}: ${response.data.msg}`
         );
       }
     } catch (error: any) {
       if (error.response) {
-        console.error(
+        console.warn(
           `Lark API Error Data (addBotToGroup) for chat ${chatId}:`,
-          JSON.stringify(error.response.data, null, 2),
+          JSON.stringify(error.response.data, null, 2)
         );
       }
-      console.error(
+      console.warn(
         `Lark Service Error (addBotToGroup) for chat ${chatId}:`,
-        error.message,
+        error.message
       );
       throw error;
     }
@@ -208,7 +210,7 @@ export default class RecallLarkService {
 
   static async getAuthUrl(
     env: any,
-    state: string = "random_state",
+    state: string = "random_state"
   ): Promise<string> {
     const LARK_APP_ID = env.LARK_APP_ID;
     const LARK_REDIRECT_URI = env.LARK_REDIRECT_URI;
@@ -241,7 +243,7 @@ export default class RecallLarkService {
   static async getImage(
     env: any,
     messageId: string,
-    imageKey: string,
+    imageKey: string
   ): Promise<Buffer> {
     try {
       const client = await this.client(env);
@@ -249,15 +251,15 @@ export default class RecallLarkService {
         `/im/v1/messages/${messageId}/resources/${imageKey}`,
         {
           params: {
-            type: "image",
+            type: "image"
           },
-          responseType: "arraybuffer",
-        },
+          responseType: "arraybuffer"
+        }
       );
 
       return Buffer.from(response.data);
     } catch (error: any) {
-      console.error("Lark Service Error (getImage):", error.message);
+      console.warn("Lark Service Error (getImage):", error.message);
       throw error;
     }
   }
@@ -267,29 +269,29 @@ export default class RecallLarkService {
     receiveId: string,
     receiveIdType: string,
     msgType: string,
-    content: string,
+    content: string
   ): Promise<void> {
     try {
       const client = await this.client(env);
       const response = await client.post(
-        `/im/v1/messages`,
+        "/im/v1/messages",
         {
           receive_id: receiveId,
           msg_type: msgType,
-          content: content,
+          content: content
         },
         {
           params: {
-            receive_id_type: receiveIdType,
-          },
-        },
+            receive_id_type: receiveIdType
+          }
+        }
       );
 
       if (response.data.code !== 0) {
         throw new Error(`Failed to send message: ${response.data.msg}`);
       }
     } catch (error: any) {
-      console.error("Lark Service Error (sendMessage):", error.message);
+      console.warn("Lark Service Error (sendMessage):", error.message);
       throw error;
     }
   }
@@ -298,20 +300,20 @@ export default class RecallLarkService {
     env: any,
     messageId: string,
     content: string,
-    msgType: string,
+    msgType: string
   ): Promise<void> {
     try {
       const client = await this.client(env);
       const response = await client.post(`/im/v1/messages/${messageId}/reply`, {
         content: content,
-        msg_type: msgType,
+        msg_type: msgType
       });
 
       if (response.data.code !== 0) {
         throw new Error(`Failed to reply message: ${response.data.msg}`);
       }
     } catch (error: any) {
-      console.error("Lark Service Error (replyMessage):", error.message);
+      console.warn("Lark Service Error (replyMessage):", error.message);
       throw error;
     }
   }
@@ -325,7 +327,7 @@ export default class RecallLarkService {
         throw new Error(`Failed to recall message: ${response.data.msg}`);
       }
     } catch (error: any) {
-      console.error("Lark Service Error (recallMessage):", error.message);
+      console.warn("Lark Service Error (recallMessage):", error.message);
     }
   }
 
@@ -340,7 +342,7 @@ export default class RecallLarkService {
 
       return response.data.data;
     } catch (error: any) {
-      console.error("Lark Service Error (getMessage):", error.message);
+      console.warn("Lark Service Error (getMessage):", error.message);
       throw error;
     }
   }

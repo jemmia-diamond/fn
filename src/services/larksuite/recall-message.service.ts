@@ -1,4 +1,4 @@
-import RecallLarkService from "./recall-lark.service";
+import RecallLarkService from "services/larksuite/recall-lark.service";
 import Tesseract from "tesseract.js";
 import * as Sentry from "@sentry/cloudflare";
 import PresidioClient from "services/clients/presidio-client";
@@ -6,12 +6,12 @@ import PresidioClient from "services/clients/presidio-client";
 const MESSAGE_TYPE = {
   TEXT: "text",
   IMAGE: "image",
-  POST: "post",
+  POST: "post"
 } as const;
 
 const CONTENT_TAG = {
   TEXT: "text",
-  IMG: "img",
+  IMG: "img"
 } as const;
 
 export default class RecallMessageService {
@@ -28,7 +28,7 @@ export default class RecallMessageService {
         const imageBuffer = await RecallLarkService.getImage(
           env,
           event.message.message_id,
-          imageKey,
+          imageKey
         );
         text = await this.ocrImage(imageBuffer);
       } catch (error) {
@@ -51,7 +51,7 @@ export default class RecallMessageService {
               const imageBuffer = await RecallLarkService.getImage(
                 env,
                 event.message.message_id,
-                imageKey,
+                imageKey
               );
               const ocrText = await this.ocrImage(imageBuffer);
               text += ocrText + " ";
@@ -84,7 +84,7 @@ export default class RecallMessageService {
       }
 
       const maskedContent = JSON.stringify({
-        text: responseText,
+        text: responseText
       });
 
       if (event.message.root_id) {
@@ -92,7 +92,7 @@ export default class RecallMessageService {
           env,
           event.message.root_id,
           maskedContent,
-          MESSAGE_TYPE.TEXT,
+          MESSAGE_TYPE.TEXT
         );
       } else {
         await RecallLarkService.sendMessage(
@@ -100,7 +100,7 @@ export default class RecallMessageService {
           chatId,
           "chat_id",
           MESSAGE_TYPE.TEXT,
-          maskedContent,
+          maskedContent
         );
       }
     }
@@ -121,7 +121,7 @@ export default class RecallMessageService {
   static async ocrImage(imageBuffer: Buffer): Promise<string> {
     try {
       const {
-        data: { text },
+        data: { text }
       } = await Tesseract.recognize(imageBuffer, "vie+eng");
 
       return text || "";

@@ -1,5 +1,5 @@
-import RecallLarkService from "../../services/larksuite/recall-lark.service";
-import RecallMessageService from "../../services/larksuite/recall-message.service";
+import RecallLarkService from "services/larksuite/recall-lark.service";
+import RecallMessageService from "services/larksuite/recall-message.service";
 
 export default class RecallEventController {
   // Using a simple in-memory set for deduplication (might be reset if worker restarts frequently)
@@ -19,7 +19,7 @@ export default class RecallEventController {
       if (body.encrypt) {
         const decryptedData = await RecallLarkService.decryptEvent(
           c.env,
-          body.encrypt,
+          body.encrypt
         );
         eventBody = JSON.parse(decryptedData);
       }
@@ -33,7 +33,7 @@ export default class RecallEventController {
       if (eventBody.header?.event_type === "im.message.receive_v1") {
         const eventId = eventBody.header.event_id;
         if (eventId && RecallEventController.processedEvents.has(eventId)) {
-          console.log(`Skipping duplicate event: ${eventId}`);
+          console.warn(`Skipping duplicate event: ${eventId}`);
           return c.text("OK", 200);
         }
 
@@ -44,7 +44,7 @@ export default class RecallEventController {
             () => {
               RecallEventController.processedEvents.delete(eventId);
             },
-            5 * 60 * 1000,
+            5 * 60 * 1000
           );
         }
 
@@ -55,18 +55,18 @@ export default class RecallEventController {
             try {
               await RecallMessageService.detectSensitiveInfoAndMask(
                 c.env,
-                eventBody.event,
+                eventBody.event
               );
             } catch (err) {
-              console.error("Error processing message event:", err);
+              console.warn("Error processing message event:", err);
             }
-          })(),
+          })()
         );
       }
 
       return c.text("OK", 200);
     } catch (error: any) {
-      console.error("Lark Event Error:", error.message);
+      console.warn("Lark Event Error:", error.message);
       return c.text("Internal Server Error", 500);
     }
   }
