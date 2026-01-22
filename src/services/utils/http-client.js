@@ -1,7 +1,7 @@
 import axios from "axios";
 import axiosRetry from "axios-retry";
 
-const DEFAULT_RETRY_CONFIG = {
+export const DEFAULT_RETRY_CONFIG = {
   retries: 2,
   retryDelay: axiosRetry.exponentialDelay,
   shouldResetTimeout: true,
