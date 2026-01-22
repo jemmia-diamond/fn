@@ -52,7 +52,9 @@ export default class ManualTransactionService {
       const orgUnitDictionary = await misaClient.getDictionary(6, 0, MisaClient.RETRIEVABLE_LIMIT, null);
       const orgUnitMap = buildOrgUnitMap(orgUnitDictionary);
 
-      const journalNote = await Misa.Utils.getJournalNote(this.db, manualPayment);
+      const journalNote = manualPayment.payment_references.length > 1
+        ? this._multiOrderName(manualPayment.payment_references)
+        : await Misa.Utils.getJournalNote(this.db, manualPayment);
       const isCash = manualPayment.payment_type === "Tiền Mặt";
       const voucherType = isCash ? VOUCHER_TYPES.MANUAL_PAYMENT : VOUCHER_TYPES.OTHER_MANUAL_PAYMENT;
       const refType = isCash ? VOUCHER_REF_TYPES.MANUAL_PAYMENT : VOUCHER_REF_TYPES.OTHER_MANUAL_PAYMENT;
@@ -65,7 +67,8 @@ export default class ManualTransactionService {
         refType,
         journalNote,
         this.env,
-        generatedGuid
+        generatedGuid,
+        this.db
       );
 
       const payload = {
@@ -123,5 +126,9 @@ export default class ManualTransactionService {
       },
       select: fetchService.misaRequiredFields()
     });
+  }
+
+  _multiOrderName(references) {
+    return references.map(item => item?.order_number).join(", ");
   }
 }
