@@ -415,3 +415,69 @@ model misaInventoryDetailLog {
   @@schema("misa")
 }
 
+model misaLoanAgreement {
+  refid String @id @db.Uuid
+  refno                  String? @db.VarChar(50)
+  credit_agreement_refid String? @db.Uuid
+  credit_agreement_refno String? @db.VarChar(100)
+  reftype                Int?
+  account_object_id   String? @db.Uuid
+  account_object_code String? @db.VarChar(50)
+  account_object_name String?
+  branch_id           String? @db.Uuid
+  branch_name         String?
+  disbursement_date              DateTime? @db.Timestamptz(6)
+  due_date                       DateTime? @db.Timestamptz(6)
+  next_interest_payment_date     DateTime? @db.Timestamptz(6)
+  next_principal_payment_date    DateTime? @db.Timestamptz(6)
+  created_date                   DateTime? @db.Timestamptz(6)
+  modified_date                  DateTime? @db.Timestamptz(6)
+  currency_id             String?  @db.VarChar(10)
+  exchange_rate           Decimal? @default(1.0) @db.Decimal(18, 4)
+  loan_value              Decimal? @default(0) @db.Decimal(18, 4)
+  loan_value_exchange     Decimal? @default(0) @db.Decimal(18, 4)
+  disbursed_value         Decimal? @default(0) @db.Decimal(18, 4)
+  disbursed_value_exchange Decimal? @default(0) @db.Decimal(18, 4)
+  paid_principal                 Decimal? @default(0) @db.Decimal(18, 4)
+  paid_principal_exchange        Decimal? @default(0) @db.Decimal(18, 4)
+  payable_interest               Decimal? @default(0) @db.Decimal(18, 4)
+  paid_interest                  Decimal? @default(0) @db.Decimal(18, 4)
+  paid_interest_exchange         Decimal? @default(0) @db.Decimal(18, 4)
+  current_credit_limit           Decimal? @default(0) @db.Decimal(18, 4)
+  current_credit_limit_exchange  Decimal? @default(0) @db.Decimal(18, 4)
+  principal_account      String? @db.VarChar(20)
+  interest_account       String? @db.VarChar(20)
+  beneficiary_account_id String? @db.Uuid
+  beneficiary_account    String? @db.VarChar(100)
+  beneficiary_bank_name  String?
+  interest_rate_now          Decimal? @default(0) @db.Decimal(10, 4)
+  daily_interest_rate        Decimal? @default(0) @db.Decimal(10, 6)
+  payment_period             Int?
+  payment_period_unit        Int?
+  payment_period_by_month    Int?
+  payment_period_text        String?  @db.VarChar(100)
+  interest_rate_type         Int?
+  adjusting_method           Int?
+  principal_payment_period   Int?
+  interest_payment_period    Int?
+  payment_method             Int?
+  disbursement_method        Int?
+  loan_status            Int?
+  is_facility_contract   Boolean? @default(false)
+  facility_contract_type Int?
+  is_parent              Boolean? @default(false)
+  is_bold                Boolean? @default(false)
+  is_old                 Boolean? @default(false)
+  is_valid               Boolean? @default(false)
+  state                  Int?
+  created_by               String?
+  modified_by              String?
+  edit_version             BigInt?
+  auto_refno               Boolean?
+  force_update             Boolean?
+  is_created_from_old_db   Boolean?
+
+  @@index([refno], map: "idx_loan_refno")
+  @@map("loan_agreements")
+  @@schema("misa")
+}
