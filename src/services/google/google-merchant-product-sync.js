@@ -74,7 +74,7 @@ export default class GoogleMerchantProductSyncService {
     try {
       let imageLink = product.images && product.images.length > 0 ? product.images[0] : "";
 
-      const availability = variant.qty_available > 0 ? "in_stock" : "out_of_stock";
+      const availability = variant.qty_available > 0 ? "in_stock" : "preorder";
 
       let priceValue = parseInt(variant.price || 0);
 
