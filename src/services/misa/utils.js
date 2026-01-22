@@ -7,18 +7,21 @@ import { getRefOrderChain } from "services/ecommerce/order-tracking/queries/get-
  * @param {Object} db - Database instance
  * @param {Object} payment - Payment transaction record (QR or Manual)
  * @param {Array} orderChain - Pre-fetched order chain
+ * @param {Number} haravanOrderId - Haravan order ID to use if payment is null
+ * @param {String} haravanOrderNumber - Haravan order name to use if payment is null
  * @returns {Promise<string>} Journal note for MISA voucher
  */
-async function getJournalNote(db, payment, orderChain = null) {
-  const defaultNote = payment.haravan_order?.order_number || payment.haravan_order_name;
+async function getJournalNote(db, payment = null, orderChain = null, haravanOrderId = null, haravanOrderNumber = null, haravanRefOrderId = null) {
+  const defaultNote = payment?.haravan_order?.order_number || payment?.haravan_order_name || haravanOrderNumber;
+  const orderId = payment?.haravan_order_id || haravanOrderId;
 
-  if (!payment.haravan_order?.ref_order_id) {
+  if (!payment?.haravan_order?.ref_order_id || !haravanRefOrderId) {
     return defaultNote;
   }
 
   let chain = orderChain;
   if (!chain) {
-    chain = await getRefOrderChain(db, payment.haravan_order_id, true);
+    chain = await getRefOrderChain(db, orderId, true);
   }
 
   if (!chain || chain.length === 0) {

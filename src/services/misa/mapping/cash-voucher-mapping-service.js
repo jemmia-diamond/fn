@@ -131,9 +131,7 @@ export default class CashVoucherMappingService {
     const dbInstance = db || Database.instance(env);
     const details = await Promise.all(
       references.map(async (ref, idx) => {
-        const orderNumber = await Misa.Utils.getJournalNote(dbInstance, null, null, ref?.haravan_order_id, ref?.order_number);
-        console.warn(orderNumber);
-
+        const orderNumber = await Misa.Utils.getJournalNote(dbInstance, null, null, ref?.haravan_order_id, ref?.order_number, ref?.haravan_ref_order_id);
         return createDetailItem(orderNumber, ref?.allocated_amount, idx);
       })
     );
