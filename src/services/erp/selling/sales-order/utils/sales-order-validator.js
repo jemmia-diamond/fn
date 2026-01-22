@@ -244,7 +244,8 @@ const _applyPromotionToPrice = (price, promotion, scope) => {
       }
       return price;
     }
-    if (promotion.priority === "G7") {
+    // TODO: finalize G4 on ERP
+    if (promotion.priority === "G7" || promotion.priority === "G4") {
       if (promotion.discount_type === DISCOUNT_TYPE.PERCENTAGE) {
         return price * (1 - (promotion.discount_percent || 0) / 100);
       }
