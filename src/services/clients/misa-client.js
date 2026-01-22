@@ -1,4 +1,4 @@
-import { createAxiosClient } from "services/utils/http-client";
+import { createAxiosClient, DEFAULT_RETRY_CONFIG } from "services/utils/http-client";
 
 export default class MisaClient {
   static RETRIEVABLE_LIMIT = 1000;
@@ -9,7 +9,7 @@ export default class MisaClient {
     this.env = env;
     this.baseUrl = "https://actapp.misa.vn";
     this.accessToken = null;
-    this.timeout = 30000;
+    this.timeout = 15000;
     this.client = null;
   }
 
@@ -18,7 +18,7 @@ export default class MisaClient {
       baseURL: this.baseUrl,
       timeout: this.timeout,
       headers: this._getAuthHeaders()
-    });
+    }, { ...DEFAULT_RETRY_CONFIG, retries: 6 });
   }
 
   /**
@@ -39,8 +39,7 @@ export default class MisaClient {
       baseURL: this.baseUrl,
       timeout: this.timeout,
       headers: { "Content-Type": "application/json" }
-    });
-
+    }, { ...DEFAULT_RETRY_CONFIG, retries: 6 });
     const payload = {
       app_id: this.env.MISA_APP_ID,
       access_code: this.env.MISA_ACCESS_CODE,
