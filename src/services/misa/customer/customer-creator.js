@@ -2,6 +2,10 @@ import MisaClient from "services/clients/misa-client";
 import FrappeClient from "frappe/frappe-client";
 import Database from "services/database";
 import * as Constants from "services/misa/constant";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc.js";
+
+dayjs.extend(utc);
 
 const DEFAULT_BRANCH_ID = "01ea2abc-81da-4386-9f2b-673796bd520d";
 const TECH_TEAM = "tech@jemmia.vn";
@@ -17,6 +21,10 @@ export default class CustomerCreator {
       apiSecret: env.JEMMIA_ERP_API_SECRET
     });
     this.doctype = "Customer";
+    this.dbConnection = {
+      timeout: 15000,
+      maxWait: 10000
+    };
   }
 
   async fetchCustomerByHaravanId(haravanId) {
@@ -48,21 +56,27 @@ export default class CustomerCreator {
     const accountObjectId = crypto.randomUUID();
     const fullName = customerData.last_name + " " + customerData.first_name;
 
-    await this.db.misaCustomer.upsert({
-      where: { haravan_id: haravanId },
-      update: {},
-      create: {
-        uuid: accountObjectId,
-        haravan_id: haravanId,
-        full_name: fullName,
-        first_name: customerData.first_name,
-        last_name: customerData.last_name,
-        phone: customerData.phone,
-        email: customerData?.email,
-        haravan_created_at: customerData.created_at ? new Date(customerData.created_at) : null,
-        last_synced_at: null
-      }
-    });
+    await this.db.$transaction(
+      async (tx) => {
+        await tx.misaCustomer.upsert({
+          where: { haravan_id: haravanId },
+          update: {
+            database_updated_at: dayjs().utc().toDate()
+          },
+          create: {
+            uuid: accountObjectId,
+            haravan_id: haravanId,
+            full_name: fullName,
+            first_name: customerData.first_name,
+            last_name: customerData.last_name,
+            phone: customerData.phone,
+            email: customerData?.email,
+            haravan_created_at: customerData.created_at ? dayjs(customerData.created_at).utc().toDate() : null,
+            last_synced_at: null
+          }
+        });
+      }, this.dbConnection
+    );
 
     await this.misaClient.getAccessToken();
     const address = customerData?.default_address?.address1 || customerData?.addresses[0]?.address1 || "Không có dữ liệu";

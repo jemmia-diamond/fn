@@ -132,15 +132,27 @@ export async function saveSalesOrdersToDatabase(db, salesOrders) {
 }
 
 const PAYMENT_GATEWAY_ERP = "Thanh toán qua ERP";
+const PAYMENT_GATEWAY_QR_MB = "Chuyển khoản qua QR - MBBank";
+const PAYMENT_BEFORE_RELEASE_DATE = "2025-12-14 16:59:59.999";
 
 export function calculateOrderPaymentRecordsTotal(orderDoc) {
   if (!orderDoc) return 0;
 
-  const paymentRecords = (orderDoc.payment_records || []).filter(r =>
-    typeof r.kind === "string" &&
-    ["capture", "authorization"].includes(r.kind.toLowerCase()) &&
-    r.gateway !== PAYMENT_GATEWAY_ERP
-  );
+  const paymentRecords = (orderDoc.payment_records || []).filter(r => {
+    if (typeof r.kind !== "string" || !["capture", "authorization"].includes(r.kind.toLowerCase())) {
+      return false;
+    }
+
+    if (r.gateway === PAYMENT_GATEWAY_ERP) return false;
+
+    if (r.gateway === PAYMENT_GATEWAY_QR_MB) {
+      if (dayjs(r.date).isAfter(dayjs(PAYMENT_BEFORE_RELEASE_DATE))) {
+        return false;
+      }
+    }
+
+    return true;
+  });
   const paymentRecordsTotal = paymentRecords.reduce((sum, r) => sum + parseFloat(r.amount || 0), 0);
   return paymentRecordsTotal;
 }
@@ -173,4 +185,25 @@ export async function ensureSelfReference(frappeClient, order, doctype = "Sales 
     }
   }
   return order;
+}
+
+export async function getAllRelatedPaymentEntries(frappeClient, relatedOrderNames) {
+  if (!relatedOrderNames || relatedOrderNames.length === 0) {
+    return [];
+  }
+  const paymentEntries = await frappeClient.getList("Payment Entry", {
+    filters: [
+      ["Payment Entry Reference", "reference_doctype", "=", "Sales Order"],
+      ["Payment Entry Reference", "reference_name", "in", relatedOrderNames],
+      ["docstatus", "<", 2],
+      ["payment_order_status", "=", "Success"]
+    ],
+    fields: ["name", "payment_type"]
+  });
+  return paymentEntries;
+}
+
+export function shouldSkipSharedPayment(referenceName, currentOrderName, isSplitOrder, isFirstSplitOrder) {
+  const isShared = referenceName !== currentOrderName;
+  return isShared && isSplitOrder && !isFirstSplitOrder;
 }

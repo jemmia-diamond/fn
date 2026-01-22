@@ -55,6 +55,9 @@ export default {
       await WorkshopOrderServices.WorkshopOrderServices.cronJobSyncLarkToNocoDB(env);
       await DatabaseOperations.MaterializedViewService.refresh3Hours(env);
       break;
+    case "0 */6 * * *": // At every 6th hour
+      await DatabaseOperations.MaterializedViewService.refresh6Hours(env);
+      break;
     case "0 17 * * *": // 00:00
       await new Reporting.UptimeReportSyncService(env).dailySync();
       await Larksuite.Contact.UserService.syncUsersToDatabase(env);

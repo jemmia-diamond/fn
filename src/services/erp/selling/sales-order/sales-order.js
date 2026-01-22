@@ -11,11 +11,12 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/constant";
 
-import { fetchSalesOrdersFromERP, saveSalesOrdersToDatabase, calculateGroupOrderPaymentRecordsTotal, calculateOrderPaymentRecordsTotal, ensureSelfReference } from "src/services/erp/selling/sales-order/utils/sales-order-helpers";
+import { fetchSalesOrdersFromERP, saveSalesOrdersToDatabase, calculateGroupOrderPaymentRecordsTotal, calculateOrderPaymentRecordsTotal, ensureSelfReference, getAllRelatedPaymentEntries, shouldSkipSharedPayment } from "src/services/erp/selling/sales-order/utils/sales-order-helpers";
 import { getRefOrderChain } from "services/ecommerce/order-tracking/queries/get-initial-order";
 import Larksuite from "services/larksuite";
 import { ERPR2StorageService } from "services/r2-object/erp/erp-r2-storage-service";
 import HaravanAPI from "services/clients/haravan-client";
+import { retryQuery } from "src/services/utils/retry-utils";
 
 dayjs.extend(utc);
 
@@ -306,11 +307,13 @@ export default class SalesOrderService {
     }
 
     // Calculate Payment Entries Total
-    const paymentEntriesTotal = await this.calculateGroupPaymentTotal(allOrderNames);
+    const relatedPaymentEntries = await getAllRelatedPaymentEntries(this.frappeClient, allOrderNames);
+    const paymentEntriesTotal = await this.calculateGroupPaymentTotal(allOrderNames, relatedPaymentEntries);
+    const paymentRecordsTotal = calculateGroupOrderPaymentRecordsTotal([salesOrderData, ...childOrders]);
 
     // Set Paid Amount
-    salesOrderData.paid_amount = paymentEntriesTotal;
-    salesOrderData.deposit_amount = paymentEntriesTotal;
+    salesOrderData.paid_amount = paymentEntriesTotal + paymentRecordsTotal;
+    salesOrderData.deposit_amount = paymentEntriesTotal + paymentRecordsTotal;
 
     const customer = await this.frappeClient.getDoc("Customer", salesOrderData.customer);
 
@@ -388,30 +391,32 @@ export default class SalesOrderService {
 
         if ((content && replyResponse.msg === "success") || (isSendImagesSuccess.every(Boolean))) {
           if (isOrderTracked) {
-            await this.db.erpnextSalesOrderNotificationTracking.updateMany({
+            await retryQuery(() => this.db.erpnextSalesOrderNotificationTracking.updateMany({
               where: {
                 uuid: currentOrderTracking.uuid
               },
               data: {
                 order_data: {
                   items: salesOrderData.items,
-                  attachments: salesOrderData.attachments
+                  attachments: salesOrderData.attachments,
+                  paid_amount: salesOrderData.paid_amount
                 }
               }
-            });
+            }));
             return { success: true, message: "Cập nhật đơn thành công!" };
           }
-          await this.db.erpnextSalesOrderNotificationTracking.create({
+          await retryQuery(() => this.db.erpnextSalesOrderNotificationTracking.create({
             data: {
               lark_message_id: replyResponse.data.message_id,
               order_name: salesOrderData.name,
               haravan_order_id: salesOrderData.haravan_order_id,
               order_data: {
                 items: salesOrderData.items,
-                attachments: salesOrderData.attachments
+                attachments: salesOrderData.attachments,
+                paid_amount: salesOrderData.paid_amount
               }
             }
-          });
+          }));
           return { success: true, message: "Thông báo đơn đặt lại thành công!" };
         }
 
@@ -459,17 +464,18 @@ export default class SalesOrderService {
 
       if ((content && replyResponse.msg === "success") || (isSendImagesSuccess.every(Boolean))) {
         // Update
-        await this.db.erpnextSalesOrderNotificationTracking.updateMany({
+        await retryQuery(() => this.db.erpnextSalesOrderNotificationTracking.updateMany({
           where: {
             uuid: notificationTracking.uuid
           },
           data: {
             order_data: {
               items: salesOrderData.items,
-              attachments: salesOrderData.attachments
+              attachments: salesOrderData.attachments,
+              paid_amount: salesOrderData.paid_amount
             }
           }
-        });
+        }));
         return { success: true, message: "Gửi cập nhật đơn thành công!" };
       }
 
@@ -506,17 +512,18 @@ export default class SalesOrderService {
       );
     }
 
-    await this.db.erpnextSalesOrderNotificationTracking.create({
+    await retryQuery(() => this.db.erpnextSalesOrderNotificationTracking.create({
       data: {
         lark_message_id: messageId,
         order_name: salesOrderData.name,
         haravan_order_id: salesOrderData.haravan_order_id,
         order_data: {
           items: salesOrderData.items,
-          attachments: salesOrderData.attachments
+          attachments: salesOrderData.attachments,
+          paid_amount: salesOrderData.paid_amount
         }
       }
-    });
+    }));
 
     return { success: true, message: "Đã gửi thông báo thành công!" };
   }
@@ -704,16 +711,24 @@ export default class SalesOrderService {
       const currentSalesOrder = await this.frappeClient.getDoc("Sales Order", salesOrderName);
       if (!currentSalesOrder) return null;
 
-      // Standard Payment Logic
-      const paymentEntryNames = await this.frappeClient.getList("Payment Entry", {
-        fields: ["name"],
-        filters: [
-          ["Payment Entry Reference", "reference_doctype", "=", "Sales Order"],
-          ["Payment Entry Reference", "reference_name", "=", salesOrderName],
-          ["docstatus", "<", 2],
-          ["payment_order_status", "=", "Success"]
-        ]
-      });
+      const { allRelatedOrders, allSplitOrders } = await this.getAllRelatedSalesOrders(salesOrderName, currentSalesOrder);
+      const relatedOrderNames = allRelatedOrders.map(o => o.name);
+
+      const splitOrders = allSplitOrders.filter(o => o.cancelled_status === "Uncancelled");
+      splitOrders.sort((a, b) => a.name.localeCompare(b.name));
+
+      const isSplitOrder = !!(currentSalesOrder.is_split_order);
+      const firstSplitOrderName = splitOrders.length > 0 ? splitOrders[0].name : null;
+      const isFirstSplitOrder = !isSplitOrder || (firstSplitOrderName === currentSalesOrder.name);
+
+      const refSalesOrderNames = [
+        currentSalesOrder.name,
+        ...(currentSalesOrder.ref_sales_orders || []).map(r => r.sales_order)
+      ];
+      const paymentEntryNames = await getAllRelatedPaymentEntries(
+        this.frappeClient,
+        refSalesOrderNames
+      );
 
       // Unique payment entries
       const uniquePaymentEntryNames = [...new Set(paymentEntryNames.map(pe => pe.name))];
@@ -732,15 +747,24 @@ export default class SalesOrderService {
       const linkedPaymentEntries = [];
       for (const entry of paymentEntries) {
         if (entry && entry.references) {
-          const ref = entry.references.find(r => r.reference_doctype === "Sales Order" && r.reference_name === salesOrderName);
-          if (ref) {
+          const refs = entry.references.filter(r => r.reference_doctype === "Sales Order" && refSalesOrderNames.includes(r.reference_name));
+
+          for (const ref of refs) {
+            if (shouldSkipSharedPayment(ref.reference_name, salesOrderName, isSplitOrder, isFirstSplitOrder)) {
+              continue;
+            }
+
             const allocated = parseFloat(ref.allocated_amount || 0);
             if (entry.payment_type === "Pay") {
               paymentEntriesTotal -= allocated;
             } else {
               paymentEntriesTotal += allocated;
             }
+          }
 
+          const ref = refs.find(r => r.reference_name === salesOrderName);
+
+          if (ref) {
             // Build linked payment entry row
             const row = {
               doctype: "Payment Entry Reference",
@@ -768,18 +792,14 @@ export default class SalesOrderService {
       const isPaymentEntriesChanged = currentLinkedPaymentEntries.length !== linkedPaymentEntries.length ||
         !linkedPaymentEntries.every(l => currentLinkedPaymentEntries.some(c => c.reference_name === l.reference_name));
       // Calculate group grand total
-      const { allRelatedOrders, allSplitOrders } = await this.getAllRelatedSalesOrders(salesOrderName, currentSalesOrder);
-      const relatedOrderNames = allRelatedOrders.map(o => o.name);
-
-      const splitOrders = allSplitOrders.filter(o => o.cancelled_status === "Uncancelled");
-
       const splitOrderDocs = splitOrders.map(order => allRelatedOrders.find(r => r.name === order.name) || order);
 
       const groupGrandTotal = splitOrderDocs.reduce((sum, order) => sum + parseFloat(order.grand_total || 0), 0);
       const groupPaymentRecordsTotal = calculateGroupOrderPaymentRecordsTotal(splitOrderDocs);
 
       // Combined Payment Total = (ERP Payment Entries linked to any order in group) + (Haravan Payment Records on each split order)
-      const groupPaymentEntryTotal = await this.calculateGroupPaymentTotal(relatedOrderNames);
+      const relatedPaymentEntries = await getAllRelatedPaymentEntries(this.frappeClient, relatedOrderNames);
+      const groupPaymentEntryTotal = await this.calculateGroupPaymentTotal(relatedOrderNames, relatedPaymentEntries);
       const groupPaymentTotal = groupPaymentEntryTotal + groupPaymentRecordsTotal;
 
       if (groupPaymentTotal >= groupGrandTotal) {
@@ -905,7 +925,7 @@ export default class SalesOrderService {
   }
 
   async syncHaravanFinancialStatus(salesOrderData) {
-    if (salesOrderData.grand_total === salesOrderData.paid_amount) {
+    if (Math.abs(salesOrderData.grand_total - salesOrderData.paid_amount) <= 1000) {
       const HRV_API_KEY = await this.env.HARAVAN_TOKEN_SECRET.get();
       if (!HRV_API_KEY) {
         return;
@@ -1030,19 +1050,7 @@ export default class SalesOrderService {
     };
   }
 
-  async calculateGroupPaymentTotal(relatedOrderNames) {
-    if (!relatedOrderNames || relatedOrderNames.length === 0) return 0;
-
-    const paymentEntries = await this.frappeClient.getList("Payment Entry", {
-      filters: [
-        ["Payment Entry Reference", "reference_doctype", "=", "Sales Order"],
-        ["Payment Entry Reference", "reference_name", "in", relatedOrderNames],
-        ["docstatus", "<", 2],
-        ["payment_order_status", "=", "Success"]
-      ],
-      fields: ["name", "payment_type"]
-    });
-
+  async calculateGroupPaymentTotal(relatedOrderNames, paymentEntries) {
     if (!paymentEntries || paymentEntries.length === 0) return 0;
 
     let totalAllocated = 0;

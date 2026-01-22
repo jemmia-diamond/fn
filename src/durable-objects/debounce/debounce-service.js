@@ -1,4 +1,5 @@
-// Debounce Service
+import * as Sentry from "@sentry/cloudflare";
+
 export class DebounceService {
   /**
    * Debounce data and execute a predefined action

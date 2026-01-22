@@ -224,6 +224,14 @@ export const composeOrderUpdateMessage = (prevOrder, salesOrder, promotionData) 
     content += `${lineItemMessage}\n`;
   }
 
+  const oldPaidAmount = prevOrder.paid_amount || 0;
+  const newPaidAmount = salesOrder.paid_amount || 0;
+  if (oldPaidAmount !== newPaidAmount) {
+    content += "* <b>Cập nhật thanh toán:</b>\n";
+    content += `- Số tiền đã cọc: ${numberToCurrency(oldPaidAmount)} → ${numberToCurrency(newPaidAmount)}\n`;
+    content += `- Số tiền còn lại: ${numberToCurrency(salesOrder.grand_total - oldPaidAmount)} → ${numberToCurrency(salesOrder.grand_total - newPaidAmount)}\n\n`;
+  }
+
   return { content, diffAttachments };
 };
 
