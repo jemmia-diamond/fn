@@ -122,7 +122,7 @@ export default class VoucherMappingService {
       account_object_name: customerName
     });
 
-    if (!references || references.length <= 1) {
+    if (references.length == 1) {
       return [createDetailItem(orderNumbers, v.transfer_amount, SORT_ORDER)];
     }
 
