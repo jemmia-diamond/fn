@@ -116,8 +116,6 @@ export default class RecallMessageService {
   static async detectSensitiveInfo(env: any, text: string) {
     if (this.detectWithRegex(text)) {
       return true;
-    } else if (await this.detectWithLlm(env, text)) {
-      return true;
     }
     return false;
   }
@@ -125,53 +123,6 @@ export default class RecallMessageService {
   static detectWithRegex(text: string) {
     const phones = PhoneDetectorHelper.detect(text);
     return phones.length > 0;
-  }
-
-  static async detectWithLlm(env: any, text: string) {
-    try {
-      let OPENROUTER_API_KEY = env.OPENROUTER_API_KEY;
-      if (typeof OPENROUTER_API_KEY !== "string") {
-        OPENROUTER_API_KEY = await OPENROUTER_API_KEY.get();
-      }
-      if (!OPENROUTER_API_KEY) {
-        console.warn("OpenRouter API Key not found, skipping LLM detection");
-        return false;
-      }
-
-      const openrouter = createOpenRouter({
-        apiKey: OPENROUTER_API_KEY,
-      });
-
-      const { object } = await generateObject({
-        model: openrouter("x-ai/grok-4.1-fast"),
-        schema: z.object({
-          phone_numbers: z.array(z.string()),
-        }),
-        prompt: `
-Hãy đóng vai trò là một công cụ trích xuất dữ liệu thông minh chuyên nhận diện số điện thoại Việt Nam. Nhiệm vụ của bạn là tìm và trích xuất tất cả các số điện thoại có trong văn bản, kể cả khi chúng bị viết sai hoặc cố tình viết chèn chữ để tránh bị quét.
-
-Hãy thực hiện theo quy trình tư duy sau:
-1. Quét văn bản để tìm các chuỗi ký tự có khả năng là số điện thoại.
-2. Chuẩn hóa dữ liệu theo các quy tắc:
-   - Chuyển đổi số viết bằng chữ sang số (ví dụ: "không" -> 0, "năm" -> 5, "tam" -> 8, "chin" -> 9).
-   - Xử lý các ký tự trông giống số (Homoglyphs): Chuyển 'o', 'O' -> 0; chuyển 'l', 'I', 'i' -> 1; chuyển 'b' -> 6 (nếu ngữ cảnh phù hợp).
-   - Loại bỏ các ký tự đặc biệt như dấu chấm, dấu cách, dấu gạch ngang xen giữa các số.
-3. Kiểm tra tính hợp lệ: Một số điện thoại Việt Nam hợp lệ sau khi chuẩn hóa phải bắt đầu bằng số 0 (hoặc 84) và thường có 10 chữ số.
-4. Output: Chỉ trả về danh sách các số điện thoại đã được chuẩn hóa (dạng 0xxxxxxxxx), mỗi số một dòng. Nếu không tìm thấy, trả về "Không tìm thấy".
-
-Văn bản đầu vào:
-${text}
-`,
-      });
-
-      if (object.phone_numbers && object.phone_numbers.length > 0) {
-        return true;
-      }
-      return false;
-    } catch (error) {
-      Sentry.captureException(error);
-      return false;
-    }
   }
 
   static async ocrImage(imageBuffer: Buffer): Promise<string> {
