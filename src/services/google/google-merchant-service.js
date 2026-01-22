@@ -55,17 +55,12 @@ export default class GoogleMerchantService {
       return keyContent;
     }
 
-    let parsed = keyContent;
-    if (!parsed.trim().startsWith("{")) {
-      try {
-        parsed = atob(parsed);
-      } catch (e) {
-        Sentry.captureException(e);
-        return;
-      }
+    try {
+      return JSON.parse(keyContent);
+    } catch (e) {
+      Sentry.captureException(e);
+      return;
     }
-
-    return JSON.parse(parsed);
   }
 
   async _getHeaders() {
