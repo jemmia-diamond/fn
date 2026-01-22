@@ -52,7 +52,9 @@ export default class QrTransactionService {
       const orgUnitDictionary = await misaClient.getDictionary(6, 0, MisaClient.RETRIEVABLE_LIMIT, null);
       const orgUnitMap = buildOrgUnitMap(orgUnitDictionary);
 
-      const journalNote = await Misa.Utils.getJournalNote(this.db, qrTransaction);
+      const journalNote = qrTransaction.payment_references.length > 1
+        ? this._multiOrderName(qrTransaction.payment_references)
+        : await Misa.Utils.getJournalNote(this.db, qrTransaction);
 
       const { misaVoucher, originalId } = await VoucherMappingService.transformQrToVoucher(
         qrTransaction,
@@ -62,7 +64,8 @@ export default class QrTransactionService {
         VOUCHER_REF_TYPES.QR_PAYMENT,
         journalNote,
         this.env,
-        generatedGuid
+        generatedGuid,
+        this.db
       );
 
       const payload = {
@@ -121,5 +124,9 @@ export default class QrTransactionService {
       },
       select: fetchService.misaRequiredFields()
     });
+  }
+
+  _multiOrderName(references) {
+    return references.map(item => item?.order_number).join(", ");
   }
 }
