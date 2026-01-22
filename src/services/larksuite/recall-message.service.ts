@@ -1,7 +1,7 @@
 import RecallLarkService from "./recall-lark.service";
 import Tesseract from "tesseract.js";
-import { PhoneDetectorHelper } from "services/utils/phone-detector-helper";
 import * as Sentry from "@sentry/cloudflare";
+import PresidioClient from "services/clients/presidio-client";
 
 const MESSAGE_TYPE = {
   TEXT: "text",
@@ -76,10 +76,10 @@ export default class RecallMessageService {
       if (event.message.message_type === MESSAGE_TYPE.IMAGE) {
         responseText = `<at user_id="${senderId}"></at> Ảnh đã bị thu hồi vì chứa thông tin của khách hàng`;
       } else if (event.message.message_type === MESSAGE_TYPE.POST) {
-        const maskedText = this.maskSensitiveInfo(postText);
+        const maskedText = await this.maskSensitiveInfo(env, postText);
         responseText = `<at user_id="${senderId}"></at> Ảnh đã bị thu hồi vì chứa thông tin của khách hàng, ${maskedText}`;
       } else {
-        const maskedText = this.maskSensitiveInfo(text);
+        const maskedText = await this.maskSensitiveInfo(env, text);
         responseText = `<at user_id="${senderId}"></at>: ${maskedText}`;
       }
 
@@ -106,20 +106,16 @@ export default class RecallMessageService {
     }
   }
 
-  static maskSensitiveInfo(text: string): string {
-    return PhoneDetectorHelper.maskText(text);
-  }
-
   static async detectSensitiveInfo(env: any, text: string) {
-    if (this.detectWithRegex(text)) {
-      return true;
-    }
-    return false;
+    const presidioClient = new PresidioClient(env);
+    const result = await presidioClient.analyze({ text });
+    return result.some((item) => item.score > 0.5);
   }
 
-  static detectWithRegex(text: string) {
-    const phones = PhoneDetectorHelper.detect(text);
-    return phones.length > 0;
+  static async maskSensitiveInfo(env: any, text: string): Promise<string> {
+    const presidioClient = new PresidioClient(env);
+    const result = await presidioClient.anonymize({ text });
+    return result.text;
   }
 
   static async ocrImage(imageBuffer: Buffer): Promise<string> {
