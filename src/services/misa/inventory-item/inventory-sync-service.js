@@ -52,7 +52,7 @@ export default class MisaInventoryItemSyncService {
     let page = 1;
     let hasMore = true;
     let skipNextSleep = false;
-    const limit = 25;
+    const limit = 50;
 
     while (hasMore) {
       if (page > 1 && !skipNextSleep) {
