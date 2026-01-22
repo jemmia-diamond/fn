@@ -21,7 +21,7 @@ export default class GoogleMerchantProductSyncService {
       while (hasMore) {
         const jsonParams = {
           pagination: {
-            from: page,
+            from: (page - 1) * LIMIT + 1,
             limit: LIMIT
           },
           sort: { by: "price", order: "desc" },
