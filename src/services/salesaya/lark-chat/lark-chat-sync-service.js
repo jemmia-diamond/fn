@@ -3,8 +3,18 @@ import LarkChatResourceFetcher from "services/salesaya/lark-chat/lark-chat-resou
 import LarkChatMediaUploader from "services/salesaya/lark-chat/lark-chat-media-uploader";
 import LarkChatParser from "services/salesaya/lark-chat/lark-chat-parser";
 import { TABLES } from "services/larksuite/docs/constant";
+import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/constant";
 import { getFilename } from "services/salesaya/lark-chat/lark-chat-helper";
 import { WorkplaceClient } from "services/clients/workplace-client";
+import { retry } from "services/utils/retry-utils";
+import LarksuiteService from "services/larksuite/lark";
+import { TIMEZONE_VIETNAM } from "src/constants";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc.js";
+import timezone from "dayjs/plugin/timezone.js";
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 export default class LarkChatSyncService {
   constructor(env, larkAxiosClient, larkSdkClient) {
@@ -39,20 +49,25 @@ export default class LarkChatSyncService {
     const workplaceClient = await WorkplaceClient.initialize(this.env, this.workplaceBaseId);
     let pageToken = "";
     let hasMore = true;
-    if (!startTime || !endTime) {
-      throw new Error("Missing start time or end time");
-    }
     while (hasMore) {
+      const params = {
+        container_id_type: "chat",
+        container_id: chatId,
+        page_size: 50,
+        page_token: pageToken || undefined,
+        sort_type: "ByCreateTimeAsc"
+      };
+
+      if (startTime) {
+        params.start_time = startTime;
+      }
+
+      if (endTime) {
+        params.end_time = endTime;
+      }
+
       const res = await this.larkSdkClient.im.message.list({
-        params: {
-          container_id_type: "chat",
-          container_id: chatId,
-          page_size: 50,
-          page_token: pageToken || undefined,
-          sort_type: "ByCreateTimeDesc",
-          start_time: startTime,
-          end_time: endTime
-        }
+        params
       });
 
       const items = res?.data?.items || [];
@@ -73,11 +88,11 @@ export default class LarkChatSyncService {
           const key = `${img.message_id}_${img.key}`;
 
           if (!buffersCache[key]) {
-            buffersCache[key] = await this.fetcher.getBufferByKey(
+            buffersCache[key] = await retry(async () => await this.fetcher.getBufferByKey(
               img.message_id,
               img.key,
               "image"
-            );
+            ));
           }
 
           const filename = getFilename(parsed.codes[0], i + 1, "jpg");
@@ -90,11 +105,11 @@ export default class LarkChatSyncService {
           const key = `${f.message_id}_${f.key}`;
 
           if (!buffersCache[key]) {
-            buffersCache[key] = await this.fetcher.getBufferByKey(
+            buffersCache[key] = await retry(async () => await this.fetcher.getBufferByKey(
               f.message_id,
               f.key,
               "file"
-            );
+            ));
           }
 
           const filename = getFilename(parsed.codes[0], i + 1, "mp4");
@@ -104,17 +119,17 @@ export default class LarkChatSyncService {
 
         const links = [...imageLinks, ...fileLinks].join(", ");
         if (uniqueCodes.length === 1) {
-          const updated = await workplaceClient.designImages.updateMediaByDesignCode(uniqueCodes[0], fileLinks, imageLinks);
+          const updated = await retry(async () => await workplaceClient.designImages.updateMediaByDesignCode(uniqueCodes[0], fileLinks, imageLinks));
           if (!updated) {
-            let existDesign = await workplaceClient.designs.getByDesignCode(uniqueCodes[0]);
+            let existDesign = await retry(async () => await workplaceClient.designs.getByDesignCode(uniqueCodes[0]));
             if (existDesign === null) {
-              existDesign = await workplaceClient.designs.getByErpCode(uniqueCodes[0]);
+              existDesign = await retry(async () => await workplaceClient.designs.getByErpCode(uniqueCodes[0]));
             }
             if (existDesign === null) {
-              existDesign = await workplaceClient.designs.getByCode(uniqueCodes[0]);
+              existDesign = await retry(async () => await workplaceClient.designs.getByCode(uniqueCodes[0]));
             }
             if (existDesign !== null) {
-              await workplaceClient.designImages.createByDesignCode(existDesign, fileLinks, imageLinks);
+              await retry(async () => await workplaceClient.designImages.createByDesignCode(existDesign, fileLinks, imageLinks));
             } else {
               await this.writeRecord(uniqueCodes[0], links, "Thất bại", "Không thể get thông tin sản phẩm từ nocodb", msg.message_id);
               continue;
@@ -130,4 +145,12 @@ export default class LarkChatSyncService {
       hasMore = !!pageToken;
     }
   }
+  static async syncDaily(env) {
+    const larkAxiosClient = await LarksuiteService.createAxiosClient(env);
+    const larkSdkClient = await LarksuiteService.createClientV2(env);
+    const service = new LarkChatSyncService(env, larkAxiosClient, larkSdkClient);
+    const startTime = dayjs().tz(TIMEZONE_VIETNAM).subtract(1, "day").startOf("day").unix();
+    await service.syncChat(CHAT_GROUPS.MEDIA_GROUP.chat_id, startTime);
+  }
 }
+
