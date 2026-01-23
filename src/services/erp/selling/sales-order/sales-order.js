@@ -6,7 +6,8 @@ import Database from "src/services/database";
 import AddressService from "src/services/erp/contacts/address/address";
 import ContactService from "src/services/erp/contacts/contact/contact";
 import CustomerService from "src/services/erp/selling/customer/customer";
-import { composeOrderUpdateMessage, composeSalesOrderNotification, extractPromotions, findMainOrder, validateOrderInfo } from "services/erp/selling/sales-order/utils/sales-order-notification";
+import { composeOrderUpdateMessage, composeSalesOrderNotification, extractPromotions, findMainOrder } from "services/erp/selling/sales-order/utils/sales-order-notification";
+import { validateSalesOrder } from "services/erp/selling/sales-order/utils/sales-order-validator";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/constant";
@@ -16,6 +17,7 @@ import { getRefOrderChain } from "services/ecommerce/order-tracking/queries/get-
 import Larksuite from "services/larksuite";
 import { ERPR2StorageService } from "services/r2-object/erp/erp-r2-storage-service";
 import HaravanAPI from "services/clients/haravan-client";
+import { retryQuery } from "src/services/utils/retry-utils";
 
 dayjs.extend(utc);
 
@@ -316,7 +318,17 @@ export default class SalesOrderService {
 
     const customer = await this.frappeClient.getDoc("Customer", salesOrderData.customer);
 
-    const { isValid, message } = validateOrderInfo(salesOrderData, customer);
+    // Fetch promotions for validation
+    const promotionNames = extractPromotions(salesOrderData);
+    let promotionData = [];
+    if (promotionNames.length > 0) {
+      promotionData = await this.frappeClient.getList("Promotion", {
+        filters: [["name", "in", promotionNames]],
+        fields: ["*"]
+      });
+    }
+
+    const { isValid, message } = validateSalesOrder(salesOrderData, customer, promotionData);
     if (!isValid) {
       return { success: false, message: message };
     }
@@ -357,10 +369,11 @@ export default class SalesOrderService {
         if (isOrderTracked) {
           ({ content, diffAttachments } = await this.composeUpdateOrderContent(
             currentOrderTracking.order_data,
-            salesOrderData
+            salesOrderData,
+            promotionData
           ));
         } else {
-          content = await this.composeNewOrderContent(salesOrderData, customer);
+          content = await this.composeNewOrderContent(salesOrderData, customer, promotionData);
         }
 
         if (!content && !diffAttachments) {
@@ -390,7 +403,7 @@ export default class SalesOrderService {
 
         if ((content && replyResponse.msg === "success") || (isSendImagesSuccess.every(Boolean))) {
           if (isOrderTracked) {
-            await this.db.erpnextSalesOrderNotificationTracking.updateMany({
+            await retryQuery(() => this.db.erpnextSalesOrderNotificationTracking.updateMany({
               where: {
                 uuid: currentOrderTracking.uuid
               },
@@ -401,10 +414,10 @@ export default class SalesOrderService {
                   paid_amount: salesOrderData.paid_amount
                 }
               }
-            });
+            }));
             return { success: true, message: "Cập nhật đơn thành công!" };
           }
-          await this.db.erpnextSalesOrderNotificationTracking.create({
+          await retryQuery(() => this.db.erpnextSalesOrderNotificationTracking.create({
             data: {
               lark_message_id: replyResponse.data.message_id,
               order_name: salesOrderData.name,
@@ -415,7 +428,7 @@ export default class SalesOrderService {
                 paid_amount: salesOrderData.paid_amount
               }
             }
-          });
+          }));
           return { success: true, message: "Thông báo đơn đặt lại thành công!" };
         }
 
@@ -433,7 +446,7 @@ export default class SalesOrderService {
     });
 
     if (notificationTracking) {
-      const { content, diffAttachments } = await this.composeUpdateOrderContent(notificationTracking.order_data || {}, salesOrderData);
+      const { content, diffAttachments } = await this.composeUpdateOrderContent(notificationTracking.order_data || {}, salesOrderData, promotionData);
 
       if (!content && !diffAttachments) {
         return { success: false, message: "Đơn hàng này đã được gửi thông báo từ trước đó!" };
@@ -463,7 +476,7 @@ export default class SalesOrderService {
 
       if ((content && replyResponse.msg === "success") || (isSendImagesSuccess.every(Boolean))) {
         // Update
-        await this.db.erpnextSalesOrderNotificationTracking.updateMany({
+        await retryQuery(() => this.db.erpnextSalesOrderNotificationTracking.updateMany({
           where: {
             uuid: notificationTracking.uuid
           },
@@ -474,7 +487,7 @@ export default class SalesOrderService {
               paid_amount: salesOrderData.paid_amount
             }
           }
-        });
+        }));
         return { success: true, message: "Gửi cập nhật đơn thành công!" };
       }
 
@@ -485,7 +498,7 @@ export default class SalesOrderService {
       return { success: true, message: "Ok" };
     }
 
-    const content = await this.composeNewOrderContent(salesOrderData, customer);
+    const content = await this.composeNewOrderContent(salesOrderData, customer, promotionData);
 
     const _response = await larkClient.im.message.create({
       params: {
@@ -511,7 +524,7 @@ export default class SalesOrderService {
       );
     }
 
-    await this.db.erpnextSalesOrderNotificationTracking.create({
+    await retryQuery(() => this.db.erpnextSalesOrderNotificationTracking.create({
       data: {
         lark_message_id: messageId,
         order_name: salesOrderData.name,
@@ -522,7 +535,7 @@ export default class SalesOrderService {
           paid_amount: salesOrderData.paid_amount
         }
       }
-    });
+    }));
 
     return { success: true, message: "Đã gửi thông báo thành công!" };
   }
@@ -605,15 +618,11 @@ export default class SalesOrderService {
     }
   }
 
-  async composeUpdateOrderContent(oldSalesOrderData, salesOrderData) {
-    const promotionNames = extractPromotions(salesOrderData);
-    const promotionData = await this.frappeClient.getList("Promotion", {
-      filters: [["name", "in", promotionNames]]
-    });
+  async composeUpdateOrderContent(oldSalesOrderData, salesOrderData, promotionData) {
     return composeOrderUpdateMessage(oldSalesOrderData, salesOrderData, promotionData);
   }
 
-  async composeNewOrderContent(salesOrderData, orderCustomer) {
+  async composeNewOrderContent(salesOrderData, orderCustomer, promotionData) {
     const customer = orderCustomer ?? (await this.frappeClient.getDoc("Customer", salesOrderData.customer));
 
     const leadSource = await this.frappeClient.getDoc("Lead Source", customer.first_source);
@@ -626,11 +635,6 @@ export default class SalesOrderService {
     const productCategoryNames = salesOrderData.product_categories.map(productCategory => productCategory.product_category);
     const productCategoryData = await this.frappeClient.getList("Product Category", {
       filters: [["name", "in", productCategoryNames]]
-    });
-
-    const promotionNames = extractPromotions(salesOrderData);
-    const promotionData = await this.frappeClient.getList("Promotion", {
-      filters: [["name", "in", promotionNames]]
     });
 
     const primarySalesPersonName = salesOrderData.primary_sales_person;
@@ -855,10 +859,6 @@ export default class SalesOrderService {
         totalPaid = parseFloat(paymentRecordsTotal);
       } else {
         totalPaid = parseFloat(paymentEntriesTotal) + parseFloat(paymentRecordsTotal);
-      }
-
-      if (totalPaid >= parseFloat(salesOrderGrandTotal)) {
-        totalPaid = parseFloat(salesOrderGrandTotal);
       }
 
       const balance = parseFloat(salesOrderGrandTotal) - parseFloat(totalPaid);

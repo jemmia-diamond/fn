@@ -11,6 +11,7 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import timezone from "dayjs/plugin/timezone.js";
 import { TIMEZONE_VIETNAM } from "src/constants";
+import Google from "services/google";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -107,6 +108,7 @@ export default {
         toDate: dayjs().tz(TIMEZONE_VIETNAM).hour(9).minute(0).second(0).toISOString()
       });
       await Larksuite.Ticket.TechTicketService.syncTechTickets(env, { mode: "daily" });
+      await new Google.GoogleMerchantProductSyncService(env).sync();
       break;
     case "0 14 * * *": // 21:00
       await ERP.Automation.AssignmentRuleService.enableAssignmentRuleOffHour(env);

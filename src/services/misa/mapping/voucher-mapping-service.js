@@ -1,6 +1,8 @@
 import * as crypto from "crypto";
 import HaravanAPI from "services/clients/haravan-client";
 import { DEBIT_ACCOUNT_MAP, EXCHANGE_RATE, REASON_TYPES, SORT_ORDER, VOUCHER_REF_TYPES, VOUCHER_TYPES, getCreditInfo } from "services/misa/constant";
+import Misa from "services/misa";
+import Database from "services/database";
 
 export default class VoucherMappingService {
   /**
@@ -12,7 +14,7 @@ export default class VoucherMappingService {
    * @param {Number} ref_type reference type - check here https://actdocs.misa.vn/g2/graph/ACTOpenAPIHelp/index.html#3-9
    * @returns
    */
-  static async transformQrToVoucher(v, bankMap, orgUnitMap, voucher_type = VOUCHER_TYPES.QR_PAYMENT, ref_type = VOUCHER_REF_TYPES.QR_PAYMENT, order_chain = null, env, preGeneratedGuid = null) {
+  static async transformQrToVoucher(v, bankMap, orgUnitMap, voucher_type = VOUCHER_TYPES.QR_PAYMENT, ref_type = VOUCHER_REF_TYPES.QR_PAYMENT, order_chain = null, env, preGeneratedGuid = null, db = null) {
     const creditInfo = getCreditInfo(orgUnitMap, v.haravan_order?.source);
     const debitAccount = DEBIT_ACCOUNT_MAP[v.bank_code] || null;
 
@@ -41,6 +43,18 @@ export default class VoucherMappingService {
     const generatedGuid = preGeneratedGuid || crypto.randomUUID();
     const orderNumbers = order_chain || v.haravan_order_number;
 
+    const detail = await VoucherMappingService._craftingDetail(
+      v.payment_references,
+      v,
+      orderNumbers,
+      debitAccount,
+      creditInfo,
+      customerCode,
+      customerName,
+      db,
+      env
+    );
+
     const misaVoucher = {
       voucher_type,
       org_refid: generatedGuid,
@@ -61,25 +75,11 @@ export default class VoucherMappingService {
       account_object_address: customerAddress,
       account_object_code: customerCode,
       journal_memo: `Thu tiền đơn hàng ${orderNumbers}`,
-      employee_code,
-      employee_name,
+      employee_code: v.payment_references?.length > 1 ? null : employee_code,
+      employee_name: v.payment_references?.length > 1 ? null : employee_name,
       created_by: "Tự động hóa",
       modified_by: "Tự động hóa",
-      detail: [
-        {
-          sort_order: SORT_ORDER,
-          amount_oc: Number(v.transfer_amount),
-          amount: Number(v.transfer_amount),
-          description: `Thu tiền đơn hàng ${orderNumbers}`,
-          debit_account: debitAccount,
-          credit_account: creditInfo.credit_account || null,
-          organization_unit_name: creditInfo.unit_name || null,
-          organization_unit_code: creditInfo.unit_code || null,
-          organization_unit_id: creditInfo.unit_id || null,
-          account_object_code: customerCode,
-          account_object_name: customerName
-        }
-      ]
+      detail
     };
 
     return { misaVoucher, originalId: v.id, generatedGuid };
@@ -105,5 +105,35 @@ export default class VoucherMappingService {
       customer_default_address_district: customerData.default_address?.district,
       customer_default_address_province: customerData.default_address?.province
     };
+  }
+
+  static async _craftingDetail(references, v, orderNumbers, debitAccount, creditInfo, customerCode, customerName, db, env) {
+    const createDetailItem = (orderNumber, amount, index) => ({
+      sort_order: index,
+      amount_oc: Number(amount),
+      amount: Number(amount),
+      description: `Thu tiền đơn hàng ${orderNumber}`,
+      debit_account: debitAccount,
+      credit_account: creditInfo.credit_account || null,
+      organization_unit_name: creditInfo.unit_name || null,
+      organization_unit_code: creditInfo.unit_code || null,
+      organization_unit_id: creditInfo.unit_id || null,
+      account_object_code: customerCode,
+      account_object_name: customerName
+    });
+
+    if (references.length == 1) {
+      return [createDetailItem(orderNumbers, v.transfer_amount, SORT_ORDER)];
+    }
+
+    const dbInstance = db || Database.instance(env);
+    const details = await Promise.all(
+      references.map(async (ref, idx) => {
+        const orderNumber = await Misa.Utils.getJournalNote(dbInstance, null, null, ref?.haravan_order_id, ref?.order_number, ref?.haravan_ref_order_id);
+        return createDetailItem(orderNumber, ref?.allocated_amount, idx);
+      })
+    );
+
+    return details;
   }
 }
