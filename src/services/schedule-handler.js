@@ -12,6 +12,7 @@ import utc from "dayjs/plugin/utc.js";
 import timezone from "dayjs/plugin/timezone.js";
 import { TIMEZONE_VIETNAM } from "src/constants";
 import Google from "services/google";
+import Pancake from "services/pancake";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -37,6 +38,7 @@ export default {
     case "*/15 * * * *": // At every 15th minute
       await ERP.Contacts.ContactService.cronSyncContactsToDatabase(env);
       await ERP.CRM.LeadService.syncWebsiteLeads(env);
+      await new Pancake.PancakeConversationSyncService(env).syncMissingInsertedAt();
       break;
     case "*/20 * * * *": // At every 20th minute
       await ERP.Selling.SalesOrderService.cronSyncSalesOrdersToDatabase(env);
