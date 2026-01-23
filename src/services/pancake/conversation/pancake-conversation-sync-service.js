@@ -117,4 +117,94 @@ export default class PancakeConversationSyncService {
       console.warn("Error in PancakeConversationSyncService:", error);
     }
   }
+
+  async backfillLeadZalo() {
+    let totalSynced = 0;
+    let hasMore = true;
+
+    try {
+      while (hasMore) {
+        const leads = await this.frappeClient.getList("Lead", {
+          fields: ["name"],
+          filters: [
+            ["qualified_on", "between", ["2026-01-01", "2026-01-23"]],
+            ["lead_source_platform", "=", "Zalo"]
+          ],
+          limit_page_length: 50,
+          limit_start: 0,
+          order_by: "qualified_on desc"
+        });
+
+        if (!leads || leads.length === 0) {
+          hasMore = false;
+          break;
+        }
+
+        for (const lead of leads) {
+          try {
+            const contacts = await this.getLinkedContacts(lead.name);
+            if (!contacts || contacts.length === 0) continue;
+
+            const earliestContact = this.findEarliestContact(contacts);
+
+            if (earliestContact && earliestContact.source) {
+              await this.frappeClient.update({
+                doctype: "Lead",
+                name: lead.name,
+                source: earliestContact.source
+              });
+              totalSynced++;
+            }
+            // 1s delay between leads
+            await new Promise(resolve => setTimeout(resolve, 1000));
+          } catch (error) {
+            console.warn(`Error processing lead ${lead.name}:`, error);
+          }
+        }
+
+        // Avoid rate limit
+        await new Promise(resolve => setTimeout(resolve, 5000));
+      }
+
+      return totalSynced;
+    } catch (error) {
+      Sentry.captureException(error);
+      console.warn("Error in backfillLeadZalo:", error);
+    }
+  }
+
+  async getLinkedContacts(leadName) {
+    try {
+      return await this.frappeClient.getList("Contact", {
+        fields: ["name", "inserted_at", "source"],
+        filters: [
+          ["Dynamic Link", "link_doctype", "=", "Lead"],
+          ["Dynamic Link", "link_name", "=", leadName],
+          ["Dynamic Link", "parenttype", "=", "Contact"],
+          ["inserted_at", "is", "set"]
+        ],
+        limit_page_length: 100
+      });
+    } catch (error) {
+      console.warn(`Error fetching contacts for lead ${leadName}:`, error);
+      return [];
+    }
+  }
+
+  findEarliestContact(contacts) {
+    let earliestContact = null;
+    let earliestDate = null;
+
+    for (const contact of contacts) {
+      if (contact.inserted_at) {
+        const date = dayjs(contact.inserted_at);
+        if (!earliestDate || date.isBefore(earliestDate)) {
+          earliestDate = date;
+          earliestContact = contact;
+        }
+      }
+    }
+
+    return earliestContact;
+  }
 }

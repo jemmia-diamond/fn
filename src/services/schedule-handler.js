@@ -36,9 +36,10 @@ export default {
       await new ProductQuote.DesignCodeService(env).syncDesignCodeToLark();
       break;
     case "*/15 * * * *": // At every 15th minute
-      await ERP.Contacts.ContactService.cronSyncContactsToDatabase(env);
-      await ERP.CRM.LeadService.syncWebsiteLeads(env);
-      await new Pancake.PancakeConversationSyncService(env).syncMissingInsertedAt();
+      // await ERP.Contacts.ContactService.cronSyncContactsToDatabase(env);
+      // await ERP.CRM.LeadService.syncWebsiteLeads(env);
+      await new Pancake.PancakeConversationSyncService(env).backfillLeadZalo();
+      // await new Pancake.PancakeConversationSyncService(env).syncMissingInsertedAt();
       break;
     case "*/20 * * * *": // At every 20th minute
       await ERP.Selling.SalesOrderService.cronSyncSalesOrdersToDatabase(env);
