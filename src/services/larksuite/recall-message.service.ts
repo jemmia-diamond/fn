@@ -1,5 +1,4 @@
 import RecallLarkService from "services/larksuite/recall-lark.service";
-import Tesseract from "tesseract.js";
 import * as Sentry from "@sentry/cloudflare";
 import PresidioClient from "services/clients/presidio-client";
 
@@ -30,7 +29,7 @@ export default class RecallMessageService {
           event.message.message_id,
           imageKey
         );
-        text = await this.ocrImage(imageBuffer);
+        text = await this.ocrImage(env, imageBuffer);
       } catch (error) {
         Sentry.captureException(error);
         return;
@@ -53,7 +52,7 @@ export default class RecallMessageService {
                 event.message.message_id,
                 imageKey
               );
-              const ocrText = await this.ocrImage(imageBuffer);
+              const ocrText = await this.ocrImage(env, imageBuffer);
               text += ocrText + " ";
             }
           }
@@ -118,11 +117,10 @@ export default class RecallMessageService {
     return result.text;
   }
 
-  static async ocrImage(imageBuffer: Buffer): Promise<string> {
+  static async ocrImage(env: any, imageBuffer: Buffer): Promise<string> {
     try {
-      const {
-        data: { text }
-      } = await Tesseract.recognize(imageBuffer, "vie+eng");
+      const presidioClient = new PresidioClient(env);
+      const { text } = await presidioClient.ocr(imageBuffer);
 
       return text || "";
     } catch (error) {

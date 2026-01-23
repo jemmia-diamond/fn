@@ -75,4 +75,29 @@ export default class PresidioClient {
     const response = await this.client.post("/analyze", payload);
     return response.data;
   }
+
+  /**
+   * OCR image
+   * @param {File | Blob | Buffer} file - The image file, blob or buffer
+   * @returns {Promise<{ text: string }>} The OCR result
+   */
+  async ocr(file: any): Promise<{ text: string }> {
+    const formData = new FormData();
+    let blob = file;
+
+    if (typeof Buffer !== "undefined" && file instanceof Buffer) {
+      blob = new Blob([file]);
+      // formData.append expects a Blob (or File).
+    }
+
+    formData.append("file", blob, file.name || "image.jpg");
+
+    const response = await this.client.post("/ocr", formData, {
+      headers: {
+        "Content-Type": undefined
+      }
+    });
+
+    return response.data;
+  }
 }
