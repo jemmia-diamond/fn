@@ -3,8 +3,17 @@ import LarkChatResourceFetcher from "services/salesaya/lark-chat/lark-chat-resou
 import LarkChatMediaUploader from "services/salesaya/lark-chat/lark-chat-media-uploader";
 import LarkChatParser from "services/salesaya/lark-chat/lark-chat-parser";
 import { TABLES } from "services/larksuite/docs/constant";
+import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/constant";
 import { getFilename } from "services/salesaya/lark-chat/lark-chat-helper";
 import { WorkplaceClient } from "services/clients/workplace-client";
+import LarksuiteService from "services/larksuite/lark";
+import { TIMEZONE_VIETNAM } from "src/constants";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc.js";
+import timezone from "dayjs/plugin/timezone.js";
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 export default class LarkChatSyncService {
   constructor(env, larkAxiosClient, larkSdkClient) {
@@ -39,20 +48,25 @@ export default class LarkChatSyncService {
     const workplaceClient = await WorkplaceClient.initialize(this.env, this.workplaceBaseId);
     let pageToken = "";
     let hasMore = true;
-    if (!startTime || !endTime) {
-      throw new Error("Missing start time or end time");
-    }
     while (hasMore) {
+      const params = {
+        container_id_type: "chat",
+        container_id: chatId,
+        page_size: 50,
+        page_token: pageToken || undefined,
+        sort_type: "ByCreateTimeAsc"
+      };
+
+      if (startTime) {
+        params.start_time = startTime;
+      }
+
+      if (endTime) {
+        params.end_time = endTime;
+      }
+
       const res = await this.larkSdkClient.im.message.list({
-        params: {
-          container_id_type: "chat",
-          container_id: chatId,
-          page_size: 50,
-          page_token: pageToken || undefined,
-          sort_type: "ByCreateTimeDesc",
-          start_time: startTime,
-          end_time: endTime
-        }
+        params
       });
 
       const items = res?.data?.items || [];
@@ -130,4 +144,12 @@ export default class LarkChatSyncService {
       hasMore = !!pageToken;
     }
   }
+  static async syncDaily(env) {
+    const larkAxiosClient = await LarksuiteService.createAxiosClient(env);
+    const larkSdkClient = await LarksuiteService.createClientV2(env);
+    const service = new LarkChatSyncService(env, larkAxiosClient, larkSdkClient);
+    const startTime = dayjs().tz(TIMEZONE_VIETNAM).subtract(1, "day").startOf("day").unix();
+    await service.syncChat(CHAT_GROUPS.MEDIA_GROUP.chat_id, startTime);
+  }
 }
+

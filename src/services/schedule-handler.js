@@ -12,6 +12,7 @@ import utc from "dayjs/plugin/utc.js";
 import timezone from "dayjs/plugin/timezone.js";
 import { TIMEZONE_VIETNAM } from "src/constants";
 import Google from "services/google";
+import Salesaya from "services/salesaya";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -66,6 +67,7 @@ export default {
       await ERP.Selling.SalesPersonService.syncSalesPersonToDatabase(env);
       await Larksuite.Docs.Base.RecordService.syncRecordsToDatabase(env);
       await new Ecommerce.DiamondCollectService(env).syncDiamondsToCollects();
+      await Salesaya.LarkChatSyncService.syncDaily(env);
       break;
     case "30 0 * * *": // 07:30
       await ERP.CRM.LeadDemandService.syncLeadDemandToDatabase(env);
