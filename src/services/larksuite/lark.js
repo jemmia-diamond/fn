@@ -1,9 +1,10 @@
 import * as lark from "@larksuiteoapi/node-sdk";
 import { createFetchAdapter } from "@haverstack/axios-fetch-adapter";
-import axios from "axios";
+import { createAxiosClient, DEFAULT_RETRY_CONFIG } from "services/utils/http-client";
 const fetchAdapter = createFetchAdapter();
 
 export default class LarksuiteService {
+
   static createClient(env) {
     const client = new lark.Client({
       appId: env.LARKSUITE_APP_ID,
@@ -27,14 +28,15 @@ export default class LarksuiteService {
     return client;
   }
 
-  static async createAxiosClient(env) {
+  static async createLarkAxiosClient(env) {
     const token = await this.getTenantAccessToken(env);
-    const client = axios.create({
+    const client = createAxiosClient({
       baseURL: env.LARK_API_ENDPOINT,
+      timeout: 15000,
       headers: {
         Authorization: `Bearer ${token}`
       }
-    });
+    }, { ...DEFAULT_RETRY_CONFIG, retries: 6 });
     return client;
   }
 
