@@ -1,3 +1,5 @@
+import { retry } from "services/utils/retry-utils";
+
 export default class LarkChatMediaUploader {
   constructor(uploadUrl) {
     this.uploadUrl = uploadUrl;
@@ -7,7 +9,7 @@ export default class LarkChatMediaUploader {
     const form = new FormData();
     form.append("file", new Blob([buffer]), filename);
 
-    const res = await fetch(this.uploadUrl, { method: "POST", body: form });
+    const res = await retry(async () => await fetch(this.uploadUrl, { method: "POST", body: form }));
     if (!res.ok) return null;
 
     const data = await res.json();

@@ -15,7 +15,7 @@ import timezone from "dayjs/plugin/timezone.js";
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
-export default class LarkChatSyncService {
+export default class LarkChatSyncMediaService {
   constructor(env, larkAxiosClient, larkSdkClient) {
     this.env = env;
     this.larkAxiosClient = larkAxiosClient;
@@ -28,6 +28,7 @@ export default class LarkChatSyncService {
     this.uploader = new LarkChatMediaUploader(`${this.env.SALESAYA_API_BASE_URL}/files/upload`);
     this.parser = new LarkChatParser(larkSdkClient);
   }
+
   async writeRecord(code, links, status, reason = "", messageId = "") {
     await RecordService.createLarksuiteRecords({
       env: this.env,
@@ -44,6 +45,7 @@ export default class LarkChatSyncService {
       ]
     });
   };
+
   async syncChat(chatId, startTime, endTime) {
     const workplaceClient = await WorkplaceClient.initialize(this.env, this.workplaceBaseId);
     let pageToken = "";
@@ -144,10 +146,11 @@ export default class LarkChatSyncService {
       hasMore = !!pageToken;
     }
   }
-  static async syncDaily(env) {
-    const larkAxiosClient = await LarksuiteService.createAxiosClient(env);
+
+  static async syncMedia(env) {
+    const larkAxiosClient = await LarksuiteService.createLarkAxiosClient(env);
     const larkSdkClient = await LarksuiteService.createClientV2(env);
-    const service = new LarkChatSyncService(env, larkAxiosClient, larkSdkClient);
+    const service = new LarkChatSyncMediaService(env, larkAxiosClient, larkSdkClient);
     const startTime = dayjs().tz(TIMEZONE_VIETNAM).subtract(1, "day").startOf("day").unix();
     await service.syncChat(CHAT_GROUPS.MEDIA_GROUP.chat_id, startTime);
   }

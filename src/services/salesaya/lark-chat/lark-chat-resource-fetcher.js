@@ -1,5 +1,6 @@
 import path from "path";
 import { URL } from "url";
+import { retry } from "services/utils/retry-utils";
 
 export default class LarkChatResourceFetcher {
   constructor(env, client) {
@@ -8,7 +9,7 @@ export default class LarkChatResourceFetcher {
   }
 
   async download(url) {
-    const res = await this.client.get(url, { responseType: "arraybuffer" });
+    const res = await retry(async () => await this.client.get(url, { responseType: "arraybuffer" }));
     const contentType = res.headers["content-type"];
     let filename = "unknown";
 
