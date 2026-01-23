@@ -1,7 +1,7 @@
 import RedirectController from "controllers/redirect-controller";
-import RecallAuthController from "controllers/larksuite/recall-auth.controller";
-import RecallRedirectController from "controllers/larksuite/recall-redirect.controller";
-import RecallCallbackController from "controllers/larksuite/recall-callback.controller";
+import RecallAuthController from "controllers/larksuite/recall-auth-controller";
+import RecallRedirectController from "controllers/larksuite/recall-redirect-controller";
+import RecallCallbackController from "controllers/larksuite/recall-callback-controller";
 
 export default class AppRoutes {
   static register(app) {

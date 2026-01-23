@@ -1,4 +1,4 @@
-import RecallEventController from "controllers/larksuite/recall-event.controller";
+import RecallEventController from "controllers/larksuite/recall-event-controller";
 
 export default class LarkWebhook {
   static async register(webhook: any) {

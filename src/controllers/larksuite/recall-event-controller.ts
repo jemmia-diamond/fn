@@ -1,5 +1,5 @@
-import RecallLarkService from "services/larksuite/recall-lark.service";
-import RecallMessageService from "services/larksuite/recall-message.service";
+import RecallLarkService from "services/larksuite/recall-lark-service";
+import RecallMessageService from "services/larksuite/recall-message-service";
 
 export default class RecallEventController {
   // Using a simple in-memory set for deduplication (might be reset if worker restarts frequently)

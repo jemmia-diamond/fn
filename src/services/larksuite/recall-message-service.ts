@@ -1,4 +1,4 @@
-import RecallLarkService from "services/larksuite/recall-lark.service";
+import RecallLarkService from "services/larksuite/recall-lark-service";
 import * as Sentry from "@sentry/cloudflare";
 import PresidioClient from "services/clients/presidio-client";
 

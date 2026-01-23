@@ -6,8 +6,8 @@ import Docs from "services/larksuite/docs";
 import Messaging from "services/larksuite/messaging";
 import BuybackExchangeService from "services/larksuite/buyback-exchange-service";
 import Ticket from "services/larksuite/tech-ticket";
-import RecallMessageService from "services/larksuite/recall-message.service";
-import RecallLarkService from "services/larksuite/recall-lark.service";
+import RecallMessageService from "services/larksuite/recall-message-service";
+import RecallLarkService from "services/larksuite/recall-lark-service";
 
 export default {
   Contact: Contact,
