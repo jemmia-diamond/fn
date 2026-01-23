@@ -18,3 +18,14 @@ export const retryQuery = async (queryFn, retries = 3, delay = 1000) => {
     throw error;
   }
 };
+
+export const retry = async (operation, retries = 3, delay = 1500) => {
+  for (let i = 0; i < retries; i++) {
+    try {
+      return await operation();
+    } catch (error) {
+      if (i === retries - 1) throw error;
+      await new Promise(res => setTimeout(res, delay));
+    }
+  }
+};
