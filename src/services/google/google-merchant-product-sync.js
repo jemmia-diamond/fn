@@ -1,4 +1,5 @@
 import ProductService from "services/ecommerce/product/product.js";
+import DiamondService from "services/ecommerce/diamond/diamond.js";
 import GoogleMerchantService from "services/google/google-merchant-service.js";
 import * as Sentry from "@sentry/cloudflare";
 
@@ -8,6 +9,7 @@ export default class GoogleMerchantProductSyncService {
   constructor(env) {
     this.env = env;
     this.productService = new ProductService(env);
+    this.diamondService = new DiamondService(env);
     this.merchantService = new GoogleMerchantService(env);
   }
 
@@ -57,6 +59,10 @@ export default class GoogleMerchantProductSyncService {
           page++;
         }
       }
+
+      const diamondProducts = await this._getDiamondProducts();
+      allMerchantProducts.push(...diamondProducts);
+      syncedCount += diamondProducts.length;
 
       if (allMerchantProducts.length > 0) {
         await this.merchantService.insertProducts(allMerchantProducts);
@@ -149,5 +155,97 @@ export default class GoogleMerchantProductSyncService {
       Sentry.captureException(err);
       return null;
     }
+  }
+
+  _mapDiamondToMerchantProduct(diamond) {
+    try {
+      let imageLink = diamond.images && diamond.images.length > 0 ? diamond.images[0] : "";
+
+      let availability = "in_stock";
+
+      let priceValue = parseInt(diamond.price || 0);
+
+      const title = diamond.title;
+
+      let description = diamond.title;
+
+      const link = `https://jemmia.vn/products/${diamond.handle}`;
+
+      const offerId = diamond.sku;
+      if (!offerId) {
+        return null;
+      }
+
+      const itemGroupId = diamond.product_id ? diamond.product_id.toString() : `${diamond.variant_id}`;
+
+      return {
+        channel: "ONLINE",
+        offerId: offerId.toLowerCase(),
+        contentLanguage: "vi",
+        feedLabel: "VN",
+        attributes: {
+          title: title,
+          description: description,
+          link: link,
+          imageLink: imageLink,
+          price: {
+            amountMicros: (priceValue * 1000000).toString(),
+            currencyCode: "VND"
+          },
+          availability: availability,
+          condition: "new",
+          brand: "Jemmia Diamond",
+          identifierExists: "yes",
+          mpn: offerId,
+          itemGroupId: itemGroupId,
+          color: diamond.color,
+          material: "Diamond",
+          adult: "no"
+        }
+      };
+    } catch (err) {
+      Sentry.captureException(err);
+      return null;
+    }
+  }
+
+  async _getDiamondProducts() {
+    let page = 1;
+    let hasMore = true;
+    const merchantProducts = [];
+
+    while (hasMore) {
+      const jsonParams = {
+        pagination: {
+          from: (page - 1) * LIMIT + 1,
+          limit: LIMIT
+        },
+        sort: { by: "price", order: "desc" }
+      };
+
+      const result = await this.diamondService.getDiamonds(jsonParams);
+      const diamonds = result.data;
+      const count = result.metadata.total;
+
+      if (!diamonds || diamonds.length === 0) {
+        hasMore = false;
+        break;
+      }
+
+      for (const diamond of diamonds) {
+        const merchantProduct = this._mapDiamondToMerchantProduct(diamond);
+        if (merchantProduct) {
+          merchantProducts.push(merchantProduct);
+        }
+      }
+
+      const totalFetched = (page - 1) * LIMIT + diamonds.length;
+      if (totalFetched >= count) {
+        hasMore = false;
+      } else {
+        page++;
+      }
+    }
+    return merchantProducts;
   }
 }
