@@ -483,58 +483,165 @@ model misaLoanAgreement {
 }
 
 model misaSalesDetailReport {
-  ref_detail_id String @id @db.Uuid
+  ref_detail_id   String  @id @db.Uuid
   session_id      String? @db.Uuid
   detail_id       Int?
   refid           String? @db.Uuid
   sync_session_id String  @db.Uuid
+
   posted_date  DateTime? @db.Timestamptz(6)
   refdate      DateTime? @db.Timestamptz(6)
   inv_date     DateTime? @db.Timestamptz(6)
+  expiry_date  DateTime? @db.Timestamptz(6)
   refno        String?
   inv_no       String?
+  inv_series   String?
   journal_memo String?
   description  String?
-  account_object_id       String? @db.Uuid
-  account_object_code     String?
-  account_object_name     String?
-  account_object_address  String?
-  account_object_tax_code String?
-  tel                     String?
-  contact_name            String?
-  inventory_item_id            String? @db.Uuid
-  inventory_item_code          String?
-  inventory_item_name          String?
+
+  account_object_id              String? @db.Uuid
+  account_object_code            String?
+  account_object_name            String?
+  account_object_address         String?
+  account_object_tax_code        String?
+  account_object_group_list_code String?
+  account_object_group_list_name String?
+  tel                            String?
+  contact_name                   String?
+  contact_title                  String?
+  contact_mobile                 String?
+  contact_email                  String?
+  buyer                          String?
+  shipping_address               String?
+
+  inventory_item_id          String? @db.Uuid
+  inventory_item_code        String?
+  inventory_item_name        String?
   inventory_item_category_code String?
   inventory_item_category_name String?
-  stock_code                   String?
-  stock_name                   String?
-  unit_name                    String?
-  sale_quantity     Decimal? @db.Decimal(19, 4)
-  sale_amount       Decimal? @db.Decimal(19, 4)
-  unit_price        Decimal? @db.Decimal(19, 4)
-  cost_amount       Decimal? @db.Decimal(19, 4)
-  cost_unit_price   Decimal? @db.Decimal(19, 4)
-  discount_amount   Decimal? @db.Decimal(19, 4)
-  vat_amount        Decimal? @db.Decimal(19, 4)
-  receipt_amount    Decimal? @db.Decimal(19, 4)
-  debit_account  String?
-  credit_account String?
-  cost_account   String?
-  stock_account  String?
-  master_custom_field1 String?
-  master_custom_field2 String?
-  master_custom_field3 String?
-  master_custom_field4 String?
-  custom_field1        String?
+  inventory_item_source      String?
+  inventory_item_description String?
+  is_promotion               Boolean?
+  stock_code                 String?
+  stock_name                 String?
+  unit_name                  String?
+  main_unit_name             String?
+  main_convert_rate          Decimal? @db.Decimal(19, 4)
+
+  sale_quantity                       Decimal? @db.Decimal(19, 4)
+  main_quantity                       Decimal? @db.Decimal(19, 4)
+  promotion_sale_quantity             Decimal? @db.Decimal(19, 4)
+  promotion_sale_main_quantity        Decimal? @db.Decimal(19, 4)
+  promotion_return_quantity           Decimal? @db.Decimal(19, 4)
+  promotion_return_main_quantity      Decimal? @db.Decimal(19, 4)
+  not_promotion_sale_quantity         Decimal? @db.Decimal(19, 4)
+  not_promotion_sale_main_quantity    Decimal? @db.Decimal(19, 4)
+  not_promotion_return_quantity       Decimal? @db.Decimal(19, 4)
+  not_promotion_return_main_quantity  Decimal? @db.Decimal(19, 4)
+  return_quantity                     Decimal? @db.Decimal(19, 4)
+  return_main_quantity                Decimal? @db.Decimal(19, 4)
+  panel_length_quantity               Decimal? @db.Decimal(19, 4)
+  panel_height_quantity               Decimal? @db.Decimal(19, 4)
+  panel_width_quantity                Decimal? @db.Decimal(19, 4)
+  panel_radius_quantity               Decimal? @db.Decimal(19, 4)
+  panel_quantity                      Decimal? @db.Decimal(19, 4)
+  exchange_rate          Decimal? @db.Decimal(19, 4)
+  currency_id            String?
+  unit_price_oc          Decimal? @db.Decimal(19, 4)
+  unit_price             Decimal? @db.Decimal(19, 4)
+  fixed_sale_unit_price  Decimal? @db.Decimal(19, 4)
+  main_unit_price        Decimal? @db.Decimal(19, 4)
+  cost_unit_price        Decimal? @db.Decimal(19, 4)
+  sale_amount_oc              Decimal? @db.Decimal(19, 4)
+  return_amount_oc            Decimal? @db.Decimal(19, 4)
+  reduce_amount_oc            Decimal? @db.Decimal(19, 4)
+  discount_amount_oc          Decimal? @db.Decimal(19, 4)
+  item_discount_amount_oc     Decimal? @db.Decimal(19, 4)
+  invoice_discount_amount_oc  Decimal? @db.Decimal(19, 4)
+  vat_amount_oc               Decimal? @db.Decimal(19, 4)
+  receipt_amount_oc           Decimal? @db.Decimal(19, 4)
+  sale_amount             Decimal? @db.Decimal(19, 4)
+  return_amount           Decimal? @db.Decimal(19, 4)
+  reduce_amount           Decimal? @db.Decimal(19, 4)
+  discount_amount         Decimal? @db.Decimal(19, 4)
+  item_discount_amount    Decimal? @db.Decimal(19, 4)
+  invoice_discount_amount Decimal? @db.Decimal(19, 4)
+  vat_amount              Decimal? @db.Decimal(19, 4)
+  receipt_amount          Decimal? @db.Decimal(19, 4)
+  cost_amount             Decimal? @db.Decimal(19, 4)
+  export_tax_amount       Decimal? @db.Decimal(19, 4)
+  item_discount_rate    Decimal? @db.Decimal(19, 4)
+  invoice_discount_rate Decimal? @db.Decimal(19, 4)
+  debit_account      String?
+  credit_account     String?
+  cost_account       String?
+  stock_account      String?
+  discount_account   String?
+  vat_account        String?
+  export_tax_account String?
+  employee_code          String?
+  employee_name          String?
+  organization_unit_code String?
+  department_name        String?
+  province_or_city String?
+  district         String?
+  ward_or_commune  String?
+  order_refno           String?
+  contract_code         String?
+  in_out_refno          String?
+  other_sys_order_code  String?
   reftype      Int?
   reftype_name String?
-  branch_id    String? @db.Uuid
-  branch_name  String?
-  currency_id  String?
-  updated_at   DateTime? @default(now()) @db.Timestamptz(6)
+  branch_id   String? @db.Uuid
+  branch_name String?
+  list_item_code String?
+  list_item_name String?
+  master_custom_field1  String?
+  master_custom_field2  String?
+  master_custom_field3  String?
+  master_custom_field4  String?
+  master_custom_field5  String?
+  master_custom_field6  String?
+  master_custom_field7  String?
+  master_custom_field8  String?
+  master_custom_field9  String?
+  master_custom_field10 String?
+  custom_field1  String?
+  custom_field2  String?
+  custom_field3  String?
+  custom_field4  String?
+  custom_field5  String?
+  custom_field6  String?
+  custom_field7  String?
+  custom_field8  String?
+  custom_field9  String?
+  custom_field10 String?
+  expand_field_customer1 String?
+  expand_field_customer2 String?
+  expand_field_customer3 String?
+  expand_field_customer4 String?
+  expand_field_customer5 String?
+  expand_field1 String?
+  expand_field2 String?
+  expand_field3 String?
+  expand_field4 String?
+  expand_field5 String?
+  channel    String?
+  shop_name  String?
+  shop_id    String?
+  store_code String?
+  store_name String?
+  project_work_code String?
+  project_work_name String?
+  lot_no        String?
+  license_plate String?
+  updated_at DateTime? @default(now()) @db.Timestamptz(6)
 
   @@index([posted_date], map: "idx_sales_posted_date")
+  @@index([refdate], map: "idx_sales_refdate")
+  @@index([employee_code], map: "idx_sales_employee_code")
+  @@index([inventory_item_code], map: "idx_sales_inventory_item_code")
+  @@index([account_object_code], map: "idx_sales_account_object_code")
   @@map("sales_detail_report")
   @@schema("misa")
 }
