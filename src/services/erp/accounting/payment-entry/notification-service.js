@@ -68,6 +68,9 @@ export default class PaymentEntryNotificationService {
 
       const entriesWithoutReferences = [];
       for (const entry of paymentEntries) {
+        const partyName = entry.party_name;
+        if (partyName.toLowerCase().includes("test")) continue;
+
         const fullEntry = await this.frappeClient.getDoc("Payment Entry", entry.name);
         const hasReferences = fullEntry?.references?.length > ZERO;
         if (!hasReferences) entriesWithoutReferences.push(entry);
