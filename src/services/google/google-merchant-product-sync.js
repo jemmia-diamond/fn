@@ -74,7 +74,15 @@ export default class GoogleMerchantProductSyncService {
     try {
       let imageLink = product.images && product.images.length > 0 ? product.images[0] : "";
 
-      const availability = variant.qty_available > 0 ? "in_stock" : "preorder";
+      let availability = "in_stock";
+      let availabilityDate = undefined;
+
+      if (variant.qty_available <= 0) {
+        availability = "preorder";
+        const date = new Date();
+        date.setFullYear(date.getFullYear() + 1);
+        availabilityDate = date.toISOString();
+      }
 
       let priceValue = parseInt(variant.price || 0);
 
@@ -126,6 +134,7 @@ export default class GoogleMerchantProductSyncService {
             currencyCode: "VND"
           },
           availability: availability,
+          availabilityDate: availabilityDate,
           condition: "new",
           brand: "Jemmia Diamond",
           identifierExists: mpn ? "yes" : "no",
