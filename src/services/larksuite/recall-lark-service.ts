@@ -1,4 +1,3 @@
-
 import axios from "axios";
 import * as crypto from "crypto";
 
@@ -318,6 +317,31 @@ export default class RecallLarkService {
     }
   }
 
+  static async sendMessageToThread(
+    env: any,
+    messageId: string,
+    msgType: string,
+    content: string
+  ): Promise<void> {
+    try {
+      const client = await this.client(env);
+      const response = await client.post(`/im/v1/messages/${messageId}/reply`, {
+        content: content,
+        msg_type: msgType,
+        reply_in_thread: true
+      });
+
+      if (response.data.code !== 0) {
+        throw new Error(
+          `Failed to send message to thread: ${response.data.msg}`
+        );
+      }
+    } catch (error: any) {
+      console.warn("Lark Service Error (sendMessageToThread):", error.message);
+      throw error;
+    }
+  }
+
   static async recallMessage(env: any, messageId: string): Promise<void> {
     try {
       const client = await this.client(env);
@@ -343,6 +367,37 @@ export default class RecallLarkService {
       return response.data.data;
     } catch (error: any) {
       console.warn("Lark Service Error (getMessage):", error.message);
+      throw error;
+    }
+  }
+
+  static async uploadImage(env: any, imageBuffer: Buffer): Promise<string> {
+    try {
+      const appAccessToken = await this.getAppAccessToken(env);
+      const formData = new FormData();
+      const blob = new Blob([imageBuffer]);
+      formData.append("image", blob, "image.jpg");
+      formData.append("image_type", "message");
+
+      // Use native fetch to avoid axios multipart issues
+      const response = await fetch(`${this.API_BASE}/im/v1/images`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${appAccessToken}`
+          // Content-Type is intentionally omitted to let fetch set the boundary
+        },
+        body: formData
+      });
+
+      const responseData: any = await response.json();
+
+      if (responseData.code !== 0) {
+        throw new Error(`Failed to upload image: ${responseData.msg}`);
+      }
+
+      return responseData.data.image_key;
+    } catch (error: any) {
+      console.warn("Lark Service Error (uploadImage):", error.message);
       throw error;
     }
   }

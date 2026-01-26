@@ -21,21 +21,117 @@ export default class RecallMessageService {
 
     if (event.message.message_type === MESSAGE_TYPE.TEXT) {
       text = content.text;
+
+      if (await this.detectSensitiveInfo(env, text)) {
+        // await RecallLarkService.recallMessage(env, event.message.message_id);
+
+        const senderId = event.sender.sender_id.open_id;
+        let responseText = "";
+
+        if (event.message.message_type === MESSAGE_TYPE.IMAGE) {
+          responseText = `<at user_id="${senderId}"></at> Ảnh đã bị thu hồi vì chứa thông tin của khách hàng`;
+        } else if (event.message.message_type === MESSAGE_TYPE.POST) {
+          const maskedText = await this.maskSensitiveInfo(env, postText);
+          responseText = `<at user_id="${senderId}"></at> Ảnh đã bị thu hồi vì chứa thông tin của khách hàng, ${maskedText}`;
+        } else {
+          const maskedText = await this.maskSensitiveInfo(env, text);
+          responseText = `<at user_id="${senderId}"></at>: ${maskedText}`;
+        }
+
+        const maskedContent = JSON.stringify({
+          text: responseText
+        });
+
+        await RecallLarkService.sendMessageToThread(
+          env,
+          event.message.root_id ?? event.message.message_id,
+          MESSAGE_TYPE.TEXT,
+          maskedContent
+        );
+
+        await RecallLarkService.recallMessage(
+          env,
+          event.message.root_id ?? event.message.message_id
+        );
+      }
     } else if (event.message.message_type === MESSAGE_TYPE.IMAGE) {
       try {
+        await RecallLarkService.sendMessageToThread(
+          env,
+          event.message.root_id ?? event.message.message_id,
+          MESSAGE_TYPE.TEXT,
+          JSON.stringify({
+            text: "Phát hiện dữ liệu nhạy cảm trong hình ảnh. Xin vui lòng đợi..."
+          })
+        );
+
         const imageKey = content.image_key;
         const imageBuffer = await RecallLarkService.getImage(
           env,
           event.message.message_id,
           imageKey
         );
-        text = await this.ocrImage(env, imageBuffer);
+
+        await RecallLarkService.recallMessage(
+          env,
+          event.message.root_id ?? event.message.message_id
+        );
+
+        // Check for sensitive info in image
+        const presidioClient = new PresidioClient(env);
+        const anonymizeResult =
+          await presidioClient.anonymizeImage(imageBuffer);
+
+        // Upload anonymized image
+        const base64Data = anonymizeResult.image.split(",")[1];
+        const anonymizedBuffer = Buffer.from(base64Data, "base64");
+        const newImageKey = await RecallLarkService.uploadImage(
+          env,
+          anonymizedBuffer
+        );
+
+        // Recall original message
+        // await RecallLarkService.recallMessage(env, event.message.message_id);
+
+        const senderId = event.sender.sender_id.open_id;
+        const responseText = `<at user_id="${senderId}"></at> Ảnh đã bị thu hồi vì chứa thông tin của khách hàng`;
+
+        await RecallLarkService.sendMessageToThread(
+          env,
+          event.message.root_id ?? event.message.message_id,
+          MESSAGE_TYPE.TEXT,
+          JSON.stringify({ text: responseText })
+        );
+
+        // 2. Send anonymized image
+        const imageContent = JSON.stringify({ image_key: newImageKey });
+        await RecallLarkService.sendMessageToThread(
+          env,
+          event.message.root_id ?? event.message.message_id,
+          MESSAGE_TYPE.IMAGE,
+          imageContent
+        );
+
+        await RecallLarkService.recallMessage(
+          env,
+          event.message.root_id ?? event.message.message_id
+        );
+        return;
       } catch (error) {
         Sentry.captureException(error);
         return;
       }
     } else if (event.message.message_type === MESSAGE_TYPE.POST) {
       try {
+        await RecallLarkService.sendMessageToThread(
+          env,
+          event.message.root_id ?? event.message.message_id,
+          MESSAGE_TYPE.TEXT,
+          JSON.stringify({
+            text: "Tin nhắn đang được kiểm tra, vui lòng đợi..."
+          })
+        );
+
         if (content.title) {
           text += content.title + " ";
           postText += content.title + " ";
@@ -52,56 +148,98 @@ export default class RecallMessageService {
                 event.message.message_id,
                 imageKey
               );
-              const ocrText = await this.ocrImage(env, imageBuffer);
-              text += ocrText + " ";
+
+              // Check for sensitive info in image
+              const presidioClient = new PresidioClient(env);
+              const anonymizeResult =
+                await presidioClient.anonymizeImage(imageBuffer);
+
+              if (anonymizeResult.has_sensitive_info) {
+                // Upload anonymized image
+                const base64Data = anonymizeResult.image.split(",")[1];
+                const anonymizedBuffer = Buffer.from(base64Data, "base64");
+                const newImageKey = await RecallLarkService.uploadImage(
+                  env,
+                  anonymizedBuffer
+                );
+
+                // Recall original message
+                // await RecallLarkService.recallMessage(
+                //   env,
+                //   event.message.message_id
+                // );
+
+                const senderId = event.sender.sender_id.open_id;
+                const responseText = `<at user_id="${senderId}"></at> Ảnh đã bị thu hồi vì chứa thông tin của khách hàng`;
+
+                // 1. Send notification text
+                if (event.message.root_id) {
+                  await RecallLarkService.replyMessage(
+                    env,
+                    event.message.root_id,
+                    JSON.stringify({ text: responseText }),
+                    MESSAGE_TYPE.TEXT
+                  );
+                } else {
+                  await RecallLarkService.sendMessage(
+                    env,
+                    event.message.chat_id,
+                    "chat_id",
+                    MESSAGE_TYPE.TEXT,
+                    JSON.stringify({ text: responseText })
+                  );
+                }
+
+                // 2. Send anonymized image
+                const imageContent = JSON.stringify({ image_key: newImageKey });
+                if (event.message.root_id) {
+                  await RecallLarkService.replyMessage(
+                    env,
+                    event.message.root_id,
+                    imageContent,
+                    MESSAGE_TYPE.IMAGE
+                  );
+                } else {
+                  await RecallLarkService.sendMessage(
+                    env,
+                    event.message.chat_id,
+                    "chat_id",
+                    MESSAGE_TYPE.IMAGE,
+                    imageContent
+                  );
+                }
+
+                return; // Stop processing after recalling
+              }
             }
           }
         }
+
+        if (text && (await this.detectSensitiveInfo(env, text))) {
+          const maskedText = await this.maskSensitiveInfo(env, text);
+
+          const maskedContent = JSON.stringify({
+            text: maskedText
+          });
+
+          await RecallLarkService.sendMessageToThread(
+            env,
+            event.message.root_id ?? event.message.message_id,
+            MESSAGE_TYPE.TEXT,
+            maskedContent
+          );
+        }
+
+        await RecallLarkService.recallMessage(
+          env,
+          event.message.root_id ?? event.message.message_id
+        );
       } catch (error) {
         Sentry.captureException(error);
         return;
       }
     } else {
       return;
-    }
-
-    if (await this.detectSensitiveInfo(env, text)) {
-      await RecallLarkService.recallMessage(env, event.message.message_id);
-
-      const senderId = event.sender.sender_id.open_id;
-      const chatId = event.message.chat_id;
-      let responseText = "";
-
-      if (event.message.message_type === MESSAGE_TYPE.IMAGE) {
-        responseText = `<at user_id="${senderId}"></at> Ảnh đã bị thu hồi vì chứa thông tin của khách hàng`;
-      } else if (event.message.message_type === MESSAGE_TYPE.POST) {
-        const maskedText = await this.maskSensitiveInfo(env, postText);
-        responseText = `<at user_id="${senderId}"></at> Ảnh đã bị thu hồi vì chứa thông tin của khách hàng, ${maskedText}`;
-      } else {
-        const maskedText = await this.maskSensitiveInfo(env, text);
-        responseText = `<at user_id="${senderId}"></at>: ${maskedText}`;
-      }
-
-      const maskedContent = JSON.stringify({
-        text: responseText
-      });
-
-      if (event.message.root_id) {
-        await RecallLarkService.replyMessage(
-          env,
-          event.message.root_id,
-          maskedContent,
-          MESSAGE_TYPE.TEXT
-        );
-      } else {
-        await RecallLarkService.sendMessage(
-          env,
-          chatId,
-          "chat_id",
-          MESSAGE_TYPE.TEXT,
-          maskedContent
-        );
-      }
     }
   }
 
@@ -115,17 +253,5 @@ export default class RecallMessageService {
     const presidioClient = new PresidioClient(env);
     const result = await presidioClient.anonymize({ text });
     return result.text;
-  }
-
-  static async ocrImage(env: any, imageBuffer: Buffer): Promise<string> {
-    try {
-      const presidioClient = new PresidioClient(env);
-      const { text } = await presidioClient.ocr(imageBuffer);
-
-      return text || "";
-    } catch (error) {
-      Sentry.captureException(error);
-      return "";
-    }
   }
 }
