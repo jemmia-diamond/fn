@@ -641,3 +641,17 @@ model misaSalesDetailReport {
   @@map("sales_detail_report")
   @@schema("misa")
 }
+
+model misaAccountsPayableDetails {
+  id                  Int       @id @default(autoincrement())
+  account_object_code String    @db.VarChar(50)
+  page_index          Int
+  session_id          String    @db.Uuid
+  data_details        Json
+  updated_at          DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@unique([account_object_code, page_index], map: "unique_payable_account_page")
+  @@index([data_details], type: Gin)
+  @@map("accounts_payable_details")
+  @@schema("misa")
+}
