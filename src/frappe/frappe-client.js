@@ -1,5 +1,6 @@
 // FrappeClient.js
 import * as Sentry from "@sentry/cloudflare";
+import { createAxiosClient } from "services/utils/http-client";
 
 const DEFAULT_HEADERS = { Accept: "application/json" };
 
@@ -14,6 +15,12 @@ export default class FrappeClient {
       const token = btoa(`${apiKey}:${apiSecret}`);
       this.headers["Authorization"] = `Basic ${token}`;
     }
+
+    this.axiosClient = createAxiosClient({
+      baseURL: url,
+      headers: this.headers,
+      timeout: 30000
+    });
 
     if (username && password) {
       this.login(username, password);
@@ -49,31 +56,21 @@ export default class FrappeClient {
       ...(order_by && { order_by })
     };
 
-    const url = `${this.url}/api/resource/${encodeURIComponent(doctype)}`;
-    const res = await fetch(`${url}?${new URLSearchParams(params)}`, {
-      method: "GET",
-      headers: this.headers
-    });
-    return this.postProcess({ url }, res);
+    const url = `/api/resource/${encodeURIComponent(doctype)}`;
+    const res = await this.axiosClient.get(url, { params });
+    return this.postProcess(res);
   }
 
   async getDoc(doctype, name) {
-    const url = `${this.url}/api/resource/${encodeURIComponent(doctype)}/${encodeURIComponent(name)}`;
-    const res = await fetch(url, {
-      method: "GET",
-      headers: this.headers
-    });
-    return this.postProcess({ url }, res);
+    const url = `/api/resource/${encodeURIComponent(doctype)}/${encodeURIComponent(name)}`;
+    const res = await this.axiosClient.get(url);
+    return this.postProcess(res);
   }
 
   async insert(doc) {
-    const url = `${this.url}/api/resource/${encodeURIComponent(doc.doctype)}`;
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { ...this.headers, "Content-Type": "application/json" },
-      body: JSON.stringify({ data: JSON.stringify(doc) })
-    });
-    return this.postProcess({ url }, res);
+    const url = `/api/resource/${encodeURIComponent(doc.doctype)}`;
+    const res = await this.axiosClient.post(url, { data: JSON.stringify(doc) });
+    return this.postProcess(res);
   }
 
   async insertMany(docs) {
@@ -84,13 +81,9 @@ export default class FrappeClient {
   }
 
   async update(doc) {
-    const url = `${this.url}/api/resource/${encodeURIComponent(doc.doctype)}/${encodeURIComponent(doc.name)}`;
-    const res = await fetch(url, {
-      method: "PUT",
-      headers: { ...this.headers, "Content-Type": "application/json" },
-      body: JSON.stringify({ data: JSON.stringify(doc) })
-    });
-    return this.postProcess({ url }, res);
+    const url = `/api/resource/${encodeURIComponent(doc.doctype)}/${encodeURIComponent(doc.name)}`;
+    const res = await this.axiosClient.put(url, { data: JSON.stringify(doc) });
+    return this.postProcess(res);
   }
 
   async upsert(doc, key, ignoredFields = []) {
@@ -133,19 +126,15 @@ export default class FrappeClient {
   // --- Utility methods ---
 
   async postRequest(path = "", data = {}) {
-    const url = `${this.url}${path}`;
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { ...this.headers, "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams(data)
+    const res = await this.axiosClient.post(path, new URLSearchParams(data), {
+      headers: { "Content-Type": "application/x-www-form-urlencoded" }
     });
-    return this.postProcess({ url }, res);
+    return this.postProcess(res);
   }
 
   async getRequest(path = "", params = {}) {
-    const url = `${this.url}${path}?${new URLSearchParams(params)}`;
-    const res = await fetch(url, { headers: this.headers });
-    return this.postProcess({ url }, res);
+    const res = await this.axiosClient.get(path, { params });
+    return this.postProcess(res);
   }
 
   chunk(arr, size) {
@@ -191,30 +180,18 @@ export default class FrappeClient {
     return null;
   }
 
-  async _safeReadResponseText(response) {
+  postProcess(res) {
     try {
-      if (response.bodyUsed) return null;
-      return await response.text();
-    } catch {
-      return null;
-    }
-  }
-
-  async postProcess({ url } = req, res) {
-    if (!res.ok) {
-      const errorText = await this._safeReadResponseText(res);
-      throw new Error(`Frappe API Error \n URL: ${url} \n Status: ${res.status} \n Text: ${res.statusText} \n Error Text: ${errorText}`);
-    }
-
-    const text = await res.text();
-    try {
-      const data = JSON.parse(text);
-      if (data.exc) throw new Error(`Frappe Exception: ${data.exc}`);
+      const data = res.data;
+      if (data?.exc) throw new Error(`Frappe Exception: ${data?.exc}`);
       return data.message || data.data || null;
     } catch (e) {
-      throw this.parseErrorMessage(e);
+      const parsedError = this.parseErrorMessage(e);
+      if (parsedError) throw new Error(parsedError);
+      throw e;
     }
   }
+
   async executeSQL(sql) {
     try {
       const res = await this.postRequest("", {
