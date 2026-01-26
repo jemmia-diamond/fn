@@ -1,3 +1,4 @@
+
 -- DropIndex
 DROP INDEX "misa"."idx_inv_log_item";
 
@@ -6,6 +7,9 @@ DROP INDEX "misa"."idx_inv_log_stock";
 
 -- DropIndex
 DROP INDEX "misa"."unique_stock_item_log";
+
+-- DropIndex
+DROP INDEX "misa"."journal_entries_refno_key";
 
 -- AlterTable
 ALTER TABLE "misa"."inventory_detail_log" DROP COLUMN "inventory_item_code",
