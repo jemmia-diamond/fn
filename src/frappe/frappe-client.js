@@ -10,6 +10,7 @@ export default class FrappeClient {
     this.verify = verify;
     this.headers = { ...DEFAULT_HEADERS };
     this.canDownload = [];
+    this.timeout = 30000;
 
     if (apiKey && apiSecret) {
       const token = btoa(`${apiKey}:${apiSecret}`);
@@ -19,7 +20,7 @@ export default class FrappeClient {
     this.axiosClient = createAxiosClient({
       baseURL: url,
       headers: this.headers,
-      timeout: 30000
+      timeout: this.timeout
     });
 
     if (username && password) {
