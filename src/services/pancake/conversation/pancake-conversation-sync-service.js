@@ -127,7 +127,7 @@ export default class PancakeConversationSyncService {
         const leads = await this.frappeClient.getList("Lead", {
           fields: ["name"],
           filters: [
-            ["qualified_on", "between", ["2026-01-01", "2026-01-23"]],
+            ["qualified_on", "between", ["2026-01-01", "2026-01-26"]],
             ["lead_source_platform", "=", "Zalo"]
           ],
           limit_page_length: 50,
