@@ -60,16 +60,9 @@ export default class PaymentEntryNotificationService {
 
       const paymentEntries = await this.frappeClient.getList("Payment Entry", {
         fields: [
-          "name",
-          "payment_date",
-          "paid_amount",
-          "party_name",
-          "mode_of_payment",
-          "payment_code",
-          "bank_account_branch",
-          "custom_transfer_status",
-          "payment_order_status",
-          "gateway"
+          "name", "payment_date", "paid_amount", "party_name",
+          "mode_of_payment", "payment_code", "bank_account_branch",
+          "custom_transfer_status", "payment_order_status", "gateway"
         ], filters, limit_page_length: PAGE_LIMIT
       });
 
@@ -95,10 +88,7 @@ export default class PaymentEntryNotificationService {
         gateway: entry.gateway
       }));
 
-      if (pendingEntries.length > ZERO) {
-        await this.sendNotification(pendingEntries, end.tz(TIMEZONE_VIETNAM).format("YYYY-MM-DD"));
-      }
-
+      await this.sendNotification(pendingEntries, end.tz(TIMEZONE_VIETNAM).format("YYYY-MM-DD"));
       return pendingEntries;
     } catch (error) {
       Sentry.captureException(error);
