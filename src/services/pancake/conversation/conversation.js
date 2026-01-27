@@ -207,7 +207,6 @@ export default class ConversationService {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body)
       }).catch(err => {
-        console.warn(`Failed to forward webhook to ${url}:`, err);
         Sentry.captureException(err);
       })
     );

@@ -66,7 +66,10 @@
     "DEFAULT_HARAVAN_DIAMOND_DISCOUNT_COLLECTION_ID": 32,
     "DEFAULT_HARAVAN_JEWELRY_DISCOUNT_COLLECTION_ID": 31,
     "UPTIMEROBOT_API_KEY": "ur3236830-be8be169403c7dd3a91daeca",
-    "GOOGLE_MERCHANT_ID": "183425778"
+    "GOOGLE_MERCHANT_ID": "183425778",
+    "LARK_RECALL_REDIRECT_URI":"https://fn.jemmia.vn/auth/recall/callback",
+    "LARK_APP_SHIELD_ID":"cli_a9fd9bc9f7b9ded0",
+    "OAUTH_REDIRECT_ENDPOINT":"https://fn.jemmia.vn"
   },
   "secrets_store_secrets": [
     {
