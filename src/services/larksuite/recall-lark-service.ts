@@ -6,8 +6,8 @@ export default class RecallLarkService {
 
   static async getAppAccessToken(env: any): Promise<string> {
     try {
-      const LARK_APP_ID = env.LARK_APP_ID;
-      const LARK_APP_SECRET = await env.LARK_APP_SECRET.get();
+      const LARK_APP_ID = env.LARK_APP_SHIELD_ID;
+      const LARK_APP_SECRET = await env.LARK_APP_SHIELD_SECRET.get();
 
       const response = await axios.post(
         `${this.API_BASE}/auth/v3/app_access_token/internal`,
@@ -113,7 +113,7 @@ export default class RecallLarkService {
     userAccessToken: string
   ): Promise<void> {
     try {
-      const LARK_APP_ID = env.LARK_APP_ID;
+      const LARK_APP_ID = env.LARK_APP_SHIELD_ID;
       const response = await this.userClient(userAccessToken).post(
         `/im/v1/chats/${chatId}/managers/add_managers`,
         {
@@ -170,7 +170,7 @@ export default class RecallLarkService {
     userAccessToken: string
   ): Promise<void> {
     try {
-      const LARK_APP_ID = env.LARK_APP_ID;
+      const LARK_APP_ID = env.LARK_APP_SHIELD_ID;
       const response = await this.userClient(userAccessToken).post(
         `/im/v1/chats/${chatId}/members`,
         {
@@ -208,7 +208,7 @@ export default class RecallLarkService {
     env: any,
     state: string = "random_state"
   ): Promise<string> {
-    const LARK_APP_ID = env.LARK_APP_ID;
+    const LARK_APP_ID = env.LARK_APP_SHIELD_ID;
     const LARK_REDIRECT_URI = env.LARK_REDIRECT_URI;
     const LARK_RECALL_REDIRECT_URI = env.LARK_RECALL_REDIRECT_URI;
 
@@ -220,7 +220,7 @@ export default class RecallLarkService {
   }
 
   static async decryptEvent(env: any, encrypted: string): Promise<string> {
-    const encryptKey = env.LARK_ENCRYPT_KEY;
+    const encryptKey = env.LARK_SHIELD_ENCRYPT_KEY;
     if (!encryptKey) {
       throw new Error("LARK_ENCRYPT_KEY is not set");
     }
