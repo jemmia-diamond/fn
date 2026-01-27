@@ -131,6 +131,16 @@
       "binding": "NOCODB_API_TOKEN_SECRET",
       "store_id": "dff6fef7003446178302a7874af64fde",
       "secret_name": "NOCODB_API_TOKEN"
+    },
+    {
+      "binding": "LARK_APP_SHIELD_SECRET_SECRET",
+      "store_id": "dff6fef7003446178302a7874af64fde",
+      "secret_name": "LARK_APP_SHIELD_SECRET"
+    },
+    {
+      "binding": "LARK_SHIELD_ENCRYPT_KEY_SECRET",
+      "store_id": "dff6fef7003446178302a7874af64fde",
+      "secret_name": "LARK_SHIELD_ENCRYPT_KEY"
     }
   ],
   "kv_namespaces": [

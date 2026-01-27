@@ -220,7 +220,7 @@ export default class RecallLarkService {
   }
 
   static async decryptEvent(env: any, encrypted: string): Promise<string> {
-    const encryptKey = env.LARK_SHIELD_ENCRYPT_KEY;
+    const encryptKey = await env.LARK_SHIELD_ENCRYPT_KEY.get();
     if (!encryptKey) {
       throw new Error("LARK_ENCRYPT_KEY is not set");
     }
