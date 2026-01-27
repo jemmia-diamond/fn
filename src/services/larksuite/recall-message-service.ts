@@ -28,11 +28,9 @@ export default class RecallMessageService {
         const senderId = event.sender.sender_id.open_id;
         let responseText = "";
 
-        if (event.message.message_type === MESSAGE_TYPE.IMAGE) {
-          responseText = `<at user_id="${senderId}"></at> Ảnh đã bị thu hồi vì chứa thông tin của khách hàng`;
-        } else if (event.message.message_type === MESSAGE_TYPE.POST) {
+        if (event.message.message_type === MESSAGE_TYPE.POST) {
           const maskedText = await this.maskSensitiveInfo(env, postText);
-          responseText = `<at user_id="${senderId}"></at> Ảnh đã bị thu hồi vì chứa thông tin của khách hàng, ${maskedText}`;
+          responseText = `<at user_id="${senderId}"></at>: ${maskedText}`;
         } else {
           const maskedText = await this.maskSensitiveInfo(env, text);
           responseText = `<at user_id="${senderId}"></at>: ${maskedText}`;
@@ -93,16 +91,6 @@ export default class RecallMessageService {
         // Recall original message
         // await RecallLarkService.recallMessage(env, event.message.message_id);
 
-        const senderId = event.sender.sender_id.open_id;
-        const responseText = `<at user_id="${senderId}"></at> Ảnh đã bị thu hồi vì chứa thông tin của khách hàng`;
-
-        await RecallLarkService.sendMessageToThread(
-          env,
-          event.message.root_id ?? event.message.message_id,
-          MESSAGE_TYPE.TEXT,
-          JSON.stringify({ text: responseText })
-        );
-
         // 2. Send anonymized image
         const imageContent = JSON.stringify({ image_key: newImageKey });
         await RecallLarkService.sendMessageToThread(
@@ -123,6 +111,8 @@ export default class RecallMessageService {
       }
     } else if (event.message.message_type === MESSAGE_TYPE.POST) {
       try {
+        const content = JSON.parse(event.message.content);
+
         await RecallLarkService.sendMessageToThread(
           env,
           event.message.root_id ?? event.message.message_id,
@@ -169,27 +159,6 @@ export default class RecallMessageService {
                 //   event.message.message_id
                 // );
 
-                const senderId = event.sender.sender_id.open_id;
-                const responseText = `<at user_id="${senderId}"></at> Ảnh đã bị thu hồi vì chứa thông tin của khách hàng`;
-
-                // 1. Send notification text
-                if (event.message.root_id) {
-                  await RecallLarkService.replyMessage(
-                    env,
-                    event.message.root_id,
-                    JSON.stringify({ text: responseText }),
-                    MESSAGE_TYPE.TEXT
-                  );
-                } else {
-                  await RecallLarkService.sendMessage(
-                    env,
-                    event.message.chat_id,
-                    "chat_id",
-                    MESSAGE_TYPE.TEXT,
-                    JSON.stringify({ text: responseText })
-                  );
-                }
-
                 // 2. Send anonymized image
                 const imageContent = JSON.stringify({ image_key: newImageKey });
                 if (event.message.root_id) {
@@ -216,17 +185,47 @@ export default class RecallMessageService {
         }
 
         if (text && (await this.detectSensitiveInfo(env, text))) {
-          const maskedText = await this.maskSensitiveInfo(env, text);
+          const newContent = JSON.parse(event.message.content);
+          const senderId = event.sender.sender_id.open_id;
 
-          const maskedContent = JSON.stringify({
-            text: maskedText
+          const maskPromises: Promise<void>[] = [];
+
+          if (newContent.title) {
+            maskPromises.push(
+              (async () => {
+                newContent.title = await this.maskSensitiveInfo(
+                  env,
+                  newContent.title
+                );
+              })()
+            );
+          }
+
+          for (const line of newContent.content) {
+            for (const item of line) {
+              if (item.tag === CONTENT_TAG.TEXT) {
+                maskPromises.push(
+                  (async () => {
+                    item.text = await this.maskSensitiveInfo(env, item.text);
+                  })()
+                );
+              }
+            }
+          }
+
+          await Promise.all(maskPromises);
+
+          newContent.content.unshift([{ tag: "at", user_id: senderId }]);
+
+          const postMessageContent = JSON.stringify({
+            zh_cn: newContent
           });
 
           await RecallLarkService.sendMessageToThread(
             env,
             event.message.root_id ?? event.message.message_id,
-            MESSAGE_TYPE.TEXT,
-            maskedContent
+            MESSAGE_TYPE.POST,
+            postMessageContent
           );
         }
 
