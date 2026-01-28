@@ -99,6 +99,7 @@ export default {
         fromDate: dayjs().tz(TIMEZONE_VIETNAM).hour(9).minute(0).second(0).toISOString(),
         toDate: dayjs().tz(TIMEZONE_VIETNAM).hour(17).minute(0).second(0).toISOString()
       });
+      await new ERP.Accounting.PaymentEntryNotificationService(env).runAfternoonBatch();
       break;
     case "0 11 * * *": // 18:00
       break;
@@ -109,6 +110,7 @@ export default {
       });
       await Larksuite.Ticket.TechTicketService.syncTechTickets(env, { mode: "daily" });
       await new Google.GoogleMerchantProductSyncService(env).sync();
+      await new ERP.Accounting.PaymentEntryNotificationService(env).runMorningBatch();
       break;
     case "0 14 * * *": // 21:00
       await ERP.Automation.AssignmentRuleService.enableAssignmentRuleOffHour(env);
