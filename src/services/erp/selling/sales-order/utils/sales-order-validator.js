@@ -3,7 +3,8 @@ import { SKU_LENGTH, SKU_PREFIX } from "services/haravan/products/product-varian
 import { numberToCurrency } from "services/utils/number-helper";
 
 const TOLERANCE = 5000;
-const VALIDATION_START_DATE = "2026-01-20 16:59:59.999";
+const VALIDATION_START_DATE = "2026-01-20 16:59:59.999Z";
+const RETURN_AMOUNT_VALIDATION_CUTOFF_DATE = "2026-01-28 16:59:59.999Z";
 
 const PROMOTION_SCOPE = {
   LINE_ITEM: "Line Item",
@@ -185,10 +186,14 @@ const _validateOrderLevelPromotions = (salesOrderData, lineItems, promotionMap) 
     expectedGrandTotal = _applyPromotionToPrice(expectedGrandTotal, promo, PROMOTION_SCOPE.ORDER);
   }
 
-  const tradeInAmount = salesOrderData.custom_trade_in_amount || 0;
   const returnAmount = salesOrderData.return_amount || 0;
 
-  expectedGrandTotal = expectedGrandTotal - tradeInAmount - returnAmount;
+  const orderDate = salesOrderData.real_order_date || salesOrderData.transaction_date;
+  const isAfterReturnAmountCutoff = orderDate && dayjs(orderDate).isAfter(dayjs(RETURN_AMOUNT_VALIDATION_CUTOFF_DATE));
+
+  if (!isAfterReturnAmountCutoff) {
+    expectedGrandTotal = expectedGrandTotal - returnAmount;
+  }
 
   const actualGrandTotal = salesOrderData.grand_total;
   const diff = Math.abs(expectedGrandTotal - actualGrandTotal);
