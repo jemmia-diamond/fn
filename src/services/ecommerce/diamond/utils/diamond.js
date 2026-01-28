@@ -201,7 +201,7 @@ export function buildGetDiamondsQuery(jsonParams) {
               SELECT (jsonb_array_elements_text(i.variant_ids::jsonb))::INT
             )
           )
-      ) AS images
+      ) AS images${jsonParams.extraFields?.includes("sku") ? ",\n      hv.sku" : ""}
     FROM workplace.diamonds d
     JOIN haravan.products p ON p.id = d.product_id AND p.published_scope IN ('web', 'global')
     ${availabilityJoin}
