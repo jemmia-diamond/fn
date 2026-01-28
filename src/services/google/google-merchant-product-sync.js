@@ -52,8 +52,12 @@ export default class GoogleMerchantProductSyncService {
         }
 
         if (batchMerchantProducts.length > 0) {
-          await this.merchantService.insertProducts(batchMerchantProducts);
-          syncedCount += batchMerchantProducts.length;
+          try {
+            await this.merchantService.insertProducts(batchMerchantProducts);
+            syncedCount += batchMerchantProducts.length;
+          } catch (error) {
+            Sentry.captureException(error);
+          }
         }
 
         const totalFetched = (page - 1) * LIMIT + products.length;
@@ -208,6 +212,11 @@ export default class GoogleMerchantProductSyncService {
     }
   }
 
+  /**
+   * Syncs diamond products to Google Merchant.
+   * Fetches diamonds in pages, maps them to merchant products, and inserts them in batches.
+   * @returns {Promise<number>} The number of successfully synced diamond products.
+   */
   async _syncDiamondProducts() {
     let page = 1;
     let hasMore = true;
@@ -241,8 +250,12 @@ export default class GoogleMerchantProductSyncService {
       }
 
       if (batchMerchantProducts.length > 0) {
-        await this.merchantService.insertProducts(batchMerchantProducts);
-        syncedCount += batchMerchantProducts.length;
+        try {
+          await this.merchantService.insertProducts(batchMerchantProducts);
+          syncedCount += batchMerchantProducts.length;
+        } catch (error) {
+          Sentry.captureException(error);
+        }
       }
 
       const totalFetched = (page - 1) * LIMIT + diamonds.length;
