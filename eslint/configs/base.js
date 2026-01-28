@@ -25,6 +25,14 @@ export default function getBaseConfig() {
       semi: ["error", "always"],
       "comma-dangle": ["error", "never"],
       "no-unused-vars": "off",
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          "argsIgnorePattern": "^_",
+          "varsIgnorePattern": "^_",
+          "caughtErrorsIgnorePattern": "^_"
+        }
+      ],
       "unused-imports/no-unused-imports": "error",
       "unused-imports/no-unused-vars": [
         "error",
@@ -40,6 +48,7 @@ export default function getBaseConfig() {
       "eol-last": ["error", "always"],
       "no-console": ["error", { "allow": ["warn"] }],
       "indent": ["error", 2],
+      "@typescript-eslint/no-explicit-any": "off",
       "@stylistic/array-bracket-spacing": ["error", "never"],
       "@stylistic/object-curly-spacing": ["error", "always"],
       "unicorn/template-indent": ["error", {

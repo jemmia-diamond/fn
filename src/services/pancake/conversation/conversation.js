@@ -130,11 +130,14 @@ export default class ConversationService {
       let frappeNameId;
       if (existingDocName !== null) {
         frappeNameId = existingDocName.frappe_name_id;
-        await this.leadService.updateLead({
+        const leads = await this.leadService.updateLead({
           leadName: existingDocName.frappe_name_id,
           phone: body?.data?.message?.phone_info?.[0].phone_number ?? "",
           firstName: body?.data?.conversation?.from?.name ?? ""
         });
+        if (leads?.results && Array.isArray(leads.results) && leads.results.length > 0) {
+          frappeNameId = leads.results[0]?.name;
+        }
       } else {
         const pancakePage = await this.findPageInfo({
           pageId: pageId
@@ -157,8 +160,8 @@ export default class ConversationService {
           pancakeAvatarUrl: ""
         });
 
-        if (newLead !== undefined && newLead !== null && newLead.length > 0) {
-          frappeNameId = newLead[0];
+        if (newLead !== undefined && newLead !== null && Array.isArray(newLead) && newLead.length > 0) {
+          frappeNameId = newLead[0]?.name;
         }
       }
 
@@ -204,7 +207,6 @@ export default class ConversationService {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body)
       }).catch(err => {
-        console.warn(`Failed to forward webhook to ${url}:`, err);
         Sentry.captureException(err);
       })
     );

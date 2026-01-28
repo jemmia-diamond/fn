@@ -213,8 +213,11 @@ export default class PaymentEntryService {
     let manualPaymentUuid = paymentEntry?.custom_transaction_id;
 
     const whereConditions = [];
-    manualPaymentUuid ? whereConditions.push({ uuid: manualPaymentUuid }) :
+    if (manualPaymentUuid) {
+      whereConditions.push({ uuid: manualPaymentUuid });
+    } else {
       whereConditions.push({ payment_entry_name: paymentEntry.name });
+    }
 
     let existingPayment = await this.db.manualPaymentTransaction.findFirst({
       where: { OR: whereConditions }
@@ -344,8 +347,11 @@ export default class PaymentEntryService {
     let qrPaymentId = paymentEntry?.custom_transaction_id;
 
     const whereConditions = [];
-    qrPaymentId ? whereConditions.push({ id: qrPaymentId }) :
+    if (qrPaymentId) {
+      whereConditions.push({ id: qrPaymentId });
+    } else {
       whereConditions.push({ payment_entry_name: paymentEntry.name });
+    }
 
     let qrPayment = await this.db.qrPaymentTransaction.findFirst({
       where: {

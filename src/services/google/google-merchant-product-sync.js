@@ -219,7 +219,8 @@ export default class GoogleMerchantProductSyncService {
           from: (page - 1) * LIMIT + 1,
           limit: LIMIT
         },
-        sort: { by: "price", order: "desc" }
+        sort: { by: "price", order: "desc" },
+        extraFields: ["sku"]
       };
 
       const result = await this.diamondService.getDiamonds(jsonParams);

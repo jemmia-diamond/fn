@@ -9,6 +9,7 @@ import MisaWebhook from "controllers/webhook/misa";
 import SepayWebhook from "controllers/webhook/sepay";
 import NocoWebhook from "controllers/webhook/nocodb";
 import ZalopayTransactionWebhook from "controllers/webhook/zalopay-transaction";
+import LarkWebhook from "controllers/webhook/lark";
 
 export default class WebhookRoutes {
   static register(webhook) {
@@ -26,5 +27,6 @@ export default class WebhookRoutes {
     SepayWebhook.register(webhook);
     NocoWebhook.register(webhook);
     ZalopayTransactionWebhook.register(webhook);
+    LarkWebhook.register(webhook);
   };
 };

@@ -66,7 +66,10 @@
     "DEFAULT_HARAVAN_DIAMOND_DISCOUNT_COLLECTION_ID": 32,
     "DEFAULT_HARAVAN_JEWELRY_DISCOUNT_COLLECTION_ID": 31,
     "UPTIMEROBOT_API_KEY": "ur3236830-be8be169403c7dd3a91daeca",
-    "GOOGLE_MERCHANT_ID": "183425778"
+    "GOOGLE_MERCHANT_ID": "183425778",
+    "LARK_RECALL_REDIRECT_URI":"https://fn.jemmia.vn/auth/recall/callback",
+    "LARK_APP_SHIELD_ID":"cli_a9fd9bc9f7b9ded0",
+    "OAUTH_REDIRECT_ENDPOINT":"https://fn.jemmia.vn"
   },
   "secrets_store_secrets": [
     {
@@ -128,6 +131,16 @@
       "binding": "NOCODB_API_TOKEN_SECRET",
       "store_id": "dff6fef7003446178302a7874af64fde",
       "secret_name": "NOCODB_API_TOKEN"
+    },
+    {
+      "binding": "LARK_APP_SHIELD_SECRET_SECRET",
+      "store_id": "dff6fef7003446178302a7874af64fde",
+      "secret_name": "LARK_APP_SHIELD_SECRET"
+    },
+    {
+      "binding": "LARK_SHIELD_ENCRYPT_KEY_SECRET",
+      "store_id": "dff6fef7003446178302a7874af64fde",
+      "secret_name": "LARK_SHIELD_ENCRYPT_KEY"
     }
   ],
   "kv_namespaces": [
