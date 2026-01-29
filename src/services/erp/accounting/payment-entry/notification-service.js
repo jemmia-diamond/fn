@@ -53,8 +53,8 @@ export default class PaymentEntryNotificationService {
       const filters = [
         ["creation", ">=", start],
         ["creation", "<=", end],
-        ["custom_transfer_status", "in", ["pending", "success"]],
-        ["payment_order_status", "in", ["Pending", "Success"]],
+        ["payment_code", "=", "banking"],
+        ["custom_transfer_status", "=", "success"],
         ["docstatus", "=", DRAFT_RECORD]
       ];
 
@@ -62,7 +62,7 @@ export default class PaymentEntryNotificationService {
         fields: [
           "name", "payment_date", "paid_amount", "party_name",
           "mode_of_payment", "payment_code", "bank_account_branch",
-          "custom_transfer_status", "payment_order_status", "gateway"
+          "custom_transfer_status", "payment_order_status", "gateway", "created_by_display"
         ], filters, limit_page_length: PAGE_LIMIT
       });
 
@@ -88,7 +88,8 @@ export default class PaymentEntryNotificationService {
         branch: entry.bank_account_branch,
         custom_transfer_status: entry.custom_transfer_status,
         payment_order_status: entry.payment_order_status,
-        gateway: entry.gateway
+        gateway: entry.gateway,
+        created_by_display: entry.created_by_display
       }));
 
       await this.sendNotification(pendingEntries, end.tz(TIMEZONE_VIETNAM).format("YYYY-MM-DD"));
@@ -99,13 +100,26 @@ export default class PaymentEntryNotificationService {
     }
   }
 
-  async getUserIdByEmail(email) {
-    const user = await this.db.larksuite_users.findFirst({
-      where: { OR: [{ email }, { enterprise_email: email }] },
-      select: { user_id: true }
+  async getUserIdsByEmails(emails) {
+    if (!emails || emails.length === 0) return {};
+
+    const users = await this.db.larksuite_users.findMany({
+      where: {
+        OR: [
+          { email: { in: emails } },
+          { enterprise_email: { in: emails } }
+        ]
+      },
+      select: { user_id: true, email: true, enterprise_email: true }
     });
 
-    return user?.user_id || null;
+    const emailToUserIdMap = {};
+    for (const user of users) {
+      if (user.email) emailToUserIdMap[user.email] = user.user_id;
+      if (user.enterprise_email) emailToUserIdMap[user.enterprise_email] = user.user_id;
+    }
+
+    return emailToUserIdMap;
   }
 
   async sendNotification(entries, date) {
@@ -116,11 +130,10 @@ export default class PaymentEntryNotificationService {
       const groupEntries = remainingEntries.filter(e => e.branch && e.branch.includes(rule.pattern));
 
       if (groupEntries.length > ZERO) {
-        const userId = await this.getUserIdByEmail(rule.email);
         groupedEntries.push({
           label: rule.label,
           entries: groupEntries,
-          userId
+          userId: null
         });
 
         remainingEntries = remainingEntries.filter(e => !groupEntries.includes(e));
@@ -133,6 +146,15 @@ export default class PaymentEntryNotificationService {
         entries: remainingEntries,
         userId: null
       });
+    }
+
+    const uniqueEmails = [...new Set(entries.map(e => e.created_by_display).filter(Boolean))];
+    const emailToUserIdMap = await this.getUserIdsByEmails(uniqueEmails);
+
+    for (const group of groupedEntries) {
+      for (const entry of group.entries) {
+        entry.userId = emailToUserIdMap[entry.created_by_display] || null;
+      }
     }
 
     const message = this.formatNotificationMessage(groupedEntries, entries.length, date);
@@ -151,7 +173,7 @@ export default class PaymentEntryNotificationService {
   formatNotificationMessage(groupedEntries, totalCount, date) {
     const formattedHeaderDate = dayjs(date).format("DD-MM-YYYY");
     let message = `[${formattedHeaderDate}] Có ${totalCount} phiếu thanh toán đang chờ xử lý:\n` +
-      "Lý do: <b> Phiếu thanh toán chưa được map đơn</b>. Vui lòng kiểm tra và xử lý\n";
+      "Lý do: <b>Phiếu thanh toán chưa được map đơn</b>. Vui lòng kiểm tra và xử lý\n";
     let globalIndex = ZERO;
     for (const group of groupedEntries) {
       message += "\n";
@@ -162,20 +184,22 @@ export default class PaymentEntryNotificationService {
         const link = `${this.erpPEUrl}/${entry.name}`;
         const formattedAmount = new Intl.NumberFormat("vi-VN").format(entry.amount || ZERO);
 
-        return `\n${globalIndex}. Phiếu ${entry.name}\n` +
+        let entryMessage = `\n${globalIndex}. Phiếu ${entry.name}\n` +
                `- Số tiền: ${formattedAmount}\n` +
                `- Loại thanh toán: ${entry.mode_of_payment}\n` +
               (entry.payment_code !== "banking" ? `- Kênh thanh toán: ${entry.gateway}\n` : "") +
                `- Khách hàng: ${entry?.party_name}\n` +
                `- Link: <b>${link}</b>`;
+
+        if (entry.userId) {
+          entryMessage += `\n<at user_id="${entry.userId}"></at>`;
+        }
+
+        return entryMessage;
       }).join("\n");
 
       message += groupList;
-      if (group.userId) {
-        message += `\n\n<at user_id="${group.userId}"></at>\n`;
-      } else {
-        message += "\n";
-      }
+      message += "\n";
     }
     return message;
   }
