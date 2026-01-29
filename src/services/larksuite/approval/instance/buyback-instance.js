@@ -3,6 +3,7 @@ import Database from "services/database";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import { APPROVALS } from "services/larksuite/approval/constant";
+import FrappeClient from "src/frappe/frappe-client";
 
 dayjs.extend(utc);
 
@@ -99,4 +100,93 @@ export default class BuyBackInstanceService {
       new_order_code: instance.new_order_code
     };
   };
+
+  static async handleApprovalWebhook(env, event) {
+    if (event.approval_code !== APPROVALS.BUYBACK_EXCHANGE.code) {
+      return;
+    }
+
+    const instanceService = new BuyBackInstanceService(env);
+    const db = Database.instance(env);
+
+    try {
+      const instance = event;
+
+      const transformedInstance = instanceService.transformBuybackInstance(instance);
+      const formData = APPROVALS.BUYBACK_EXCHANGE.formTransformFunction(instance.form);
+      const finalInstance = { ...transformedInstance, ...formData };
+      const prepareDbData = (instance) => ({
+        instance_code: instance.instance_code,
+        serial_number: instance.serial_number,
+        instance_type: instance.instance_type,
+        order_code: instance.order_code,
+        new_order_code: instance.new_order_code,
+        status: instance.status,
+        customer_name: instance.customer_name,
+        phone_number: instance.phone_number,
+        national_id: instance.national_id,
+        products_info: instance.products_info,
+        reason: instance.reason,
+        refund_amount: instance.refund_amount ? parseFloat(instance.refund_amount) : null,
+        submitted_date: instance.submitted_date,
+        updated_at: new Date()
+      });
+
+      const dbData = prepareDbData(finalInstance);
+
+      // Upsert to DB
+      await db.buyback_exchange_approval_instances.upsert({
+        where: {
+          instance_code: finalInstance.instance_code
+        },
+        update: dbData,
+        create: {
+          ...dbData,
+          is_synced_to_crm: false,
+          created_at: new Date()
+        }
+      });
+
+      // Upsert to ERP
+      await instanceService.upsertToErp(finalInstance);
+
+      // Update sync status
+      await db.buyback_exchange_approval_instances.update({
+        where: { instance_code: finalInstance.instance_code },
+        data: { is_synced_to_crm: true }
+      });
+
+    } catch (error) {
+      console.warn("Error processing buyback webhook:", error);
+      // Sentry could be used here if imported
+    }
+  }
+
+  async upsertToErp(data) {
+    const frappeClient = new FrappeClient({
+      url: this.env.JEMMIA_ERP_BASE_URL,
+      apiKey: this.env.JEMMIA_ERP_API_KEY,
+      apiSecret: this.env.JEMMIA_ERP_API_SECRET
+    });
+
+    const erpData = {
+      doctype: "Buyback Exchange",
+      lark_instance_id: data.instance_code,
+      instance_type: data.instance_type,
+      status: data.status,
+      customer_name: data.customer_name,
+      phone_number: data.phone_number,
+      national_id: data.national_id,
+      reason: data.reason,
+      refund_amount: data.refund_amount,
+      order_code: data.order_code,
+      new_order_code: data.new_order_code,
+      submitted_date: data.submitted_date ? dayjs(data.submitted_date).format("YYYY-MM-DD HH:mm:ss") : null,
+      // Mapping products_info if it's a JSON field in ERP or a child table
+      products_info: data.products_info ? JSON.stringify(data.products_info) : null
+    };
+
+    // Assuming 'lark_instance_id' is the unique field to identify the record
+    await frappeClient.upsert(erpData, "lark_instance_id");
+  }
 }
