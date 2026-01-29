@@ -136,23 +136,17 @@ export default class InstanceService {
   static async subscribe(env, approvalCode) {
     try {
       const client = await LarksuiteService.createClientV2(env);
-      const accessToken = await LarksuiteService.getTenantAccessTokenFromClient({ larkClient: client, env });
-
-      const response = await fetch(`${env.LARK_API_ENDPOINT}/open-apis/approval/v4/approvals/${approvalCode}/subscribe`, {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${accessToken}`,
-          "Content-Type": "application/json"
+      const response = await client.approval.v4.approval.subscribe({
+        path: {
+          approval_code: approvalCode
         }
       });
-
-      if (!response.ok) {
-        throw new Error(`Subscription failed: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data;
+      return response;
     } catch (error) {
+      // If subscription already exists
+      if (error.response?.data?.code === 1390007) {
+        return error.response.data;
+      }
       throw error;
     }
   }

@@ -10,7 +10,7 @@
     "format": "eslint --fix",
     "sentry:sourcemaps": "_SENTRY_RELEASE=$(sentry-cli releases propose-version) && sentry-cli releases new $_SENTRY_RELEASE --org=jemmia --project=jemmia-fn && sentry-cli sourcemaps upload --org=jemmia --project=jemmia-fn --release=$_SENTRY_RELEASE --strip-prefix 'dist/..' dist",
     "postdeploy": "pnpm sentry:sourcemaps",
-    "subscribe:approval": "curl -H \"Authorization: Bearer ***\" \"http://localhost:8787/api/larksuites/subscriptions?code=EA70553F-D8C6-447F-AD9F-36BA1542B5A9\""
+    "subscribe:approval": "curl -H 'Authorization: Bearer ***' 'http://localhost:8787/api/larksuites/subscriptions?code=EA70553F-D8C6-447F-AD9F-36BA1542B5A9'"
   },
   "dependencies": {
     "@directus/sdk": "^20.0.2",
