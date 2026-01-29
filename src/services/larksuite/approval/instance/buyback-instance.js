@@ -109,57 +109,58 @@ export default class BuyBackInstanceService {
     const instanceService = new BuyBackInstanceService(env);
     const db = Database.instance(env);
 
-    try {
-      const instance = event;
+    const larkClient = LarksuiteService.createClient(env);
+    const instanceResponse = await larkClient.approval.v4.instance.get({
+      path: {
+        instance_id: event.instance_code
+      }
+    });
 
-      const transformedInstance = instanceService.transformBuybackInstance(instance);
-      const formData = APPROVALS.BUYBACK_EXCHANGE.formTransformFunction(instance.form);
-      const finalInstance = { ...transformedInstance, ...formData };
-      const prepareDbData = (instance) => ({
-        instance_code: instance.instance_code,
-        serial_number: instance.serial_number,
-        instance_type: instance.instance_type,
-        order_code: instance.order_code,
-        new_order_code: instance.new_order_code,
-        status: instance.status,
-        customer_name: instance.customer_name,
-        phone_number: instance.phone_number,
-        national_id: instance.national_id,
-        products_info: instance.products_info,
-        reason: instance.reason,
-        refund_amount: instance.refund_amount ? parseFloat(instance.refund_amount) : null,
-        submitted_date: instance.submitted_date,
-        updated_at: new Date()
-      });
+    const instance = instanceResponse.data;
 
-      const dbData = prepareDbData(finalInstance);
+    const transformedInstance = instanceService.transformBuybackInstance(instance);
+    const formData = APPROVALS.BUYBACK_EXCHANGE.formTransformFunction(instance.form);
+    const finalInstance = { ...transformedInstance, ...formData };
+    const prepareDbData = (instance) => ({
+      instance_code: instance.instance_code,
+      serial_number: instance.serial_number,
+      instance_type: instance.instance_type,
+      order_code: instance.order_code,
+      new_order_code: instance.new_order_code,
+      status: instance.status,
+      customer_name: instance.customer_name,
+      phone_number: instance.phone_number,
+      national_id: instance.national_id,
+      products_info: instance.products_info,
+      reason: instance.reason,
+      refund_amount: instance.refund_amount ? parseFloat(instance.refund_amount) : null,
+      submitted_date: instance.submitted_date,
+      updated_at: new Date()
+    });
 
-      // Upsert to DB
-      await db.buyback_exchange_approval_instances.upsert({
-        where: {
-          instance_code: finalInstance.instance_code
-        },
-        update: dbData,
-        create: {
-          ...dbData,
-          is_synced_to_crm: false,
-          created_at: new Date()
-        }
-      });
+    const dbData = prepareDbData(finalInstance);
 
-      // Upsert to ERP
-      await instanceService.upsertToErp(finalInstance);
+    // Upsert to DB
+    await db.buyback_exchange_approval_instances.upsert({
+      where: {
+        instance_code: finalInstance.instance_code
+      },
+      update: dbData,
+      create: {
+        ...dbData,
+        is_synced_to_crm: false,
+        created_at: new Date()
+      }
+    });
 
-      // Update sync status
-      await db.buyback_exchange_approval_instances.update({
-        where: { instance_code: finalInstance.instance_code },
-        data: { is_synced_to_crm: true }
-      });
+    // Upsert to ERP
+    await instanceService.upsertToErp(finalInstance);
 
-    } catch (error) {
-      console.warn("Error processing buyback webhook:", error);
-      // Sentry could be used here if imported
-    }
+    // Update sync status
+    await db.buyback_exchange_approval_instances.update({
+      where: { instance_code: finalInstance.instance_code },
+      data: { is_synced_to_crm: true }
+    });
   }
 
   async upsertToErp(data) {
@@ -182,11 +183,9 @@ export default class BuyBackInstanceService {
       order_code: data.order_code,
       new_order_code: data.new_order_code,
       submitted_date: data.submitted_date ? dayjs(data.submitted_date).format("YYYY-MM-DD HH:mm:ss") : null,
-      // Mapping products_info if it's a JSON field in ERP or a child table
       products_info: data.products_info ? JSON.stringify(data.products_info) : null
     };
 
-    // Assuming 'lark_instance_id' is the unique field to identify the record
     await frappeClient.upsert(erpData, "lark_instance_id");
   }
 }

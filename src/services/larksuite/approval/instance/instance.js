@@ -132,4 +132,25 @@ export default class InstanceService {
       department_id: instance.department_id
     };
   };
+
+  static async subscribe(env, approvalCode) {
+    try {
+      const client = await LarksuiteService.createClientV2(env);
+      const accessToken = await LarksuiteService.getTenantAccessTokenFromClient({ larkClient: client, env });
+
+      const response = await fetch(`${env.LARK_API_ENDPOINT}/open-apis/approval/v4/approvals/${approvalCode}/subscribe`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${accessToken}`,
+          "Content-Type": "application/json"
+        }
+      });
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.warn(`Failed to subscribe to approval code ${approvalCode}:`, error);
+      throw error;
+    }
+  }
 }

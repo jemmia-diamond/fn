@@ -1,24 +1,45 @@
+import LarkCipher from "services/larksuite/lark-cipher";
 import BuyBackInstanceService from "services/larksuite/approval/instance/buyback-instance";
+import * as Sentry from "@sentry/cloudflare";
 
 export default class ApprovalEventController {
   static async create(c: any) {
     try {
       const body = await c.req.json();
+      let eventBody = body;
 
-      if (body.type === "url_verification") {
-        return c.json({ challenge: body.challenge });
+      if (body.encrypt) {
+        const decryptedData = await LarkCipher.decryptEvent(
+          c.env,
+          body.encrypt
+        );
+        eventBody = JSON.parse(decryptedData);
       }
 
-      if (body.header?.event_type === "approval.instance.status_changed") {
+      if (eventBody.type === "url_verification") {
+        return c.json({ challenge: eventBody.challenge });
+      }
+
+      let eventPayload = null;
+
+      if (eventBody.type === "event_callback" && eventBody.event?.type === "approval_instance") {
+        eventPayload = eventBody.event;
+      }
+
+      if (eventPayload) {
         c.executionCtx.waitUntil(
-          BuyBackInstanceService.handleApprovalWebhook(c.env, body.event)
-            .catch((err: any) => console.warn("Error processing approval event:", err))
+          BuyBackInstanceService.handleApprovalWebhook(c.env, eventPayload)
+            .catch((err: any) => {
+              console.warn("Error processing approval event:", err);
+              Sentry.captureException(err);
+            })
         );
       }
 
       return c.text("OK", 200);
     } catch (error: any) {
       console.warn("Lark Approval Event Error:", error.message);
+      Sentry.captureException(error);
       return c.text("Internal Server Error", 500);
     }
   }
