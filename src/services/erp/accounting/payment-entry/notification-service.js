@@ -173,7 +173,7 @@ export default class PaymentEntryNotificationService {
   formatNotificationMessage(groupedEntries, totalCount, date) {
     const formattedHeaderDate = dayjs(date).format("DD-MM-YYYY");
     let message = `[${formattedHeaderDate}] Có ${totalCount} phiếu thanh toán đang chờ xử lý:\n` +
-      "Lý do: <b> Phiếu thanh toán chưa được map đơn</b>. Vui lòng kiểm tra và xử lý\n";
+      "Lý do: <b>Phiếu thanh toán chưa được map đơn</b>. Vui lòng kiểm tra và xử lý\n";
     let globalIndex = ZERO;
     for (const group of groupedEntries) {
       message += "\n";
