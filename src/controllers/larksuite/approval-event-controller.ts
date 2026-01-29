@@ -9,9 +9,10 @@ export default class ApprovalEventController {
       let eventBody = body;
 
       if (body.encrypt) {
+        const secret = await c.env.JEMMIA_BOT_LARK_ENCRYPT_KEY_SECRET.get();
         const decryptedData = await LarkCipher.decryptEvent(
-          c.env,
-          body.encrypt
+          body.encrypt,
+          secret
         );
         eventBody = JSON.parse(decryptedData);
       }

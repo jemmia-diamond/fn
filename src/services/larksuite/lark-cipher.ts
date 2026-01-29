@@ -1,13 +1,12 @@
 import * as crypto from "crypto";
 
 export default class LarkCipher {
-  static async decryptEvent(env: any, encrypted: string): Promise<string> {
-    const encryptKey = await env.JEMMIA_BOT_LARK_ENCRYPT_KEY_SECRET.get();
-    if (!encryptKey) {
-      throw new Error("JEMMIA_BOT_LARK_ENCRYPT_KEY is not set");
+  static async decryptEvent(encrypted: string, cipherSecret: string): Promise<string> {
+    if (!cipherSecret) {
+      throw new Error("Cipher secret is missing");
     }
 
-    const key = crypto.createHash("sha256").update(encryptKey).digest();
+    const key = crypto.createHash("sha256").update(cipherSecret).digest();
     const iv = Buffer.from(encrypted, "base64").subarray(0, 16);
     const encryptedData = Buffer.from(encrypted, "base64").subarray(16);
 
