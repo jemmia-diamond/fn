@@ -1,0 +1,31 @@
+// Facebook Ads Campaign data
+model FacebookAdsCampaign {
+  uuid                        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id                          String   @unique @map("campaign_id")
+  account_id                  String
+  bid_strategy                String?
+  name                        String
+  objective                   String?
+  pacing_type                 Json?    @db.JsonB
+  is_message_campaign         Boolean  @default(false)
+  is_direct_send_campaign     Boolean  @default(false)
+  is_budget_schedule_enabled  Boolean  @default(false)
+  budget_rebalance_flag       Boolean  @default(false)
+  budget_remaining            String?
+  buying_type                 String?
+  campaign_group_active_time  String?
+  created_time                DateTime?
+  source_campaign              Json?    @db.JsonB
+  source_campaign_id          String?
+  special_ad_category         String?
+  start_time                  DateTime?
+  status                      String?
+  topline_id                  String?
+  
+  // Metadata
+  synced_at                   DateTime @default(now())
+  updated_at                  DateTime @updatedAt
+
+  @@map("facebook_ads_campaigns")
+  @@schema("marketing")
+}
