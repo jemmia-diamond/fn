@@ -182,13 +182,25 @@ export default class BuyBackInstanceService {
       apiSecret: this.env.JEMMIA_ERP_API_SECRET
     });
 
+    let phoneNumber = data.phone_number;
+    try {
+      if (phoneNumber) {
+        const phoneObj = JSON.parse(phoneNumber);
+        if (phoneObj && phoneObj.national_number) {
+          phoneNumber = phoneObj.national_number;
+        }
+      }
+    } catch {
+      // Ignore parse error, use original string
+    }
+
     const erpData = {
       doctype: "Buyback Exchange",
       lark_instance_id: data.instance_code,
       instance_type: data.instance_type,
       status: data.status,
       customer_name: data.customer_name,
-      phone_number: data.phone_number,
+      phone_number: phoneNumber,
       national_id: data.national_id,
       reason: data.reason,
       refund_amount: data.refund_amount,
