@@ -4,6 +4,7 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import { APPROVALS } from "services/larksuite/approval/constant";
 import FrappeClient from "src/frappe/frappe-client";
+import * as Sentry from "@sentry/cloudflare";
 
 dayjs.extend(utc);
 
@@ -15,7 +16,7 @@ export default class BuyBackInstanceService {
   static async syncInstancesToDatabase(env) {
     const instanceService = new BuyBackInstanceService(env);
     const db = Database.instance(env);
-    const larkClient = LarksuiteService.createClient(env);
+    const larkClient = await LarksuiteService.createClientV2(env);
     const timeThreshold = dayjs().utc();
     const start_time = timeThreshold.subtract(1, "day").subtract(1, "hour").unix() * 1000;
     const end_time = timeThreshold.add(12, "hour").unix() * 1000;
@@ -109,17 +110,27 @@ export default class BuyBackInstanceService {
     const instanceService = new BuyBackInstanceService(env);
     const db = Database.instance(env);
 
-    const larkClient = LarksuiteService.createClient(env);
-    const instanceResponse = await larkClient.approval.v4.instance.get({
-      path: {
-        instance_id: event.instance_code
-      }
-    });
+    const larkClient = await LarksuiteService.createClientV2(env);
+    let instanceResponse;
+    try {
+      instanceResponse = await larkClient.approval.v4.instance.get({
+        path: {
+          instance_id: event.instance_code
+        }
+      });
+    } catch (err) {
+      throw err;
+    }
+
+    if (!instanceResponse || !instanceResponse.data) {
+      console.warn("No instance data returned from Lark", { instance_code: event.instance_code });
+      return;
+    }
 
     const instance = instanceResponse.data;
 
     const transformedInstance = instanceService.transformBuybackInstance(instance);
-    const formData = APPROVALS.BUYBACK_EXCHANGE.formTransformFunction(instance.form);
+    const formData = APPROVALS.BUYBACK_EXCHANGE.formTransformFunction(instance.form || []);
     const finalInstance = { ...transformedInstance, ...formData };
     const prepareDbData = (instance) => ({
       instance_code: instance.instance_code,
@@ -140,7 +151,6 @@ export default class BuyBackInstanceService {
 
     const dbData = prepareDbData(finalInstance);
 
-    // Upsert to DB
     await db.buyback_exchange_approval_instances.upsert({
       where: {
         instance_code: finalInstance.instance_code
@@ -153,10 +163,12 @@ export default class BuyBackInstanceService {
       }
     });
 
-    // Upsert to ERP
-    await instanceService.upsertToErp(finalInstance);
+    try {
+      await instanceService.upsertToErp(finalInstance);
+    } catch (erpError) {
+      Sentry.captureException(erpError);
+    }
 
-    // Update sync status
     await db.buyback_exchange_approval_instances.update({
       where: { instance_code: finalInstance.instance_code },
       data: { is_synced_to_crm: true }

@@ -1,15 +1,20 @@
 import InstanceService from "services/larksuite/approval/instance/instance";
-import { APPROVALS } from "services/larksuite/approval/constant";
+
+import * as Sentry from "@sentry/cloudflare";
 
 export default class ApprovalSubscriptionController {
   static async index(c: any) {
     try {
-      const approvalCode = c.req.query("code") || APPROVALS.BUYBACK_EXCHANGE.code;
+      const approvalCode = c.req.query("code");
+      if (!approvalCode) {
+        return c.json({ error: "Missing approval code" }, 400);
+      }
+
       const response = await InstanceService.subscribe(c.env, approvalCode);
       return c.json({ message: "Subscribed successfully", data: response });
     } catch (error: any) {
-      console.warn("Subscription Error:", error);
-      return c.json({ error: error.message }, 500);
+      Sentry.captureException(error);
+      return c.json({ error: "Subscription failed" }, 500);
     }
   }
 }

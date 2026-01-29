@@ -7,8 +7,12 @@ export default class LarkCipher {
     }
 
     const key = crypto.createHash("sha256").update(cipherSecret).digest();
-    const iv = Buffer.from(encrypted, "base64").subarray(0, 16);
-    const encryptedData = Buffer.from(encrypted, "base64").subarray(16);
+    const raw = Buffer.from(encrypted, "base64");
+    if (raw.length <= 16) {
+      throw new Error("Invalid encrypted payload length");
+    }
+    const iv = raw.subarray(0, 16);
+    const encryptedData = raw.subarray(16);
 
     const decipher = crypto.createDecipheriv("aes-256-cbc", key as any, iv as any);
     let decrypted = decipher.update(encryptedData as any);

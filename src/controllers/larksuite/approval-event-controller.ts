@@ -6,6 +6,10 @@ export default class ApprovalEventController {
   static async create(c: any) {
     try {
       const body = await c.req.json();
+      if (!body) {
+        console.warn("Lark approval event missing body");
+        return c.text("Bad Request", 400);
+      }
       let eventBody = body;
 
       if (body.encrypt) {
@@ -31,7 +35,6 @@ export default class ApprovalEventController {
         c.executionCtx.waitUntil(
           BuyBackInstanceService.handleApprovalWebhook(c.env, eventPayload)
             .catch((err: any) => {
-              console.warn("Error processing approval event:", err);
               Sentry.captureException(err);
             })
         );
@@ -39,9 +42,8 @@ export default class ApprovalEventController {
 
       return c.text("OK", 200);
     } catch (error: any) {
-      console.warn("Lark Approval Event Error:", error.message);
       Sentry.captureException(error);
-      return c.text("Internal Server Error", 500);
+      return c.text("OK", 200);
     }
   }
 }
