@@ -24,7 +24,7 @@ model FacebookAdsCampaign {
   
   // Metadata
   synced_at                   DateTime @default(now())
-  updated_at                  DateTime @updatedAt
+  updated_at                  DateTime @default(now()) @updatedAt
 
   @@map("facebook_ads_campaigns")
   @@schema("marketing")
