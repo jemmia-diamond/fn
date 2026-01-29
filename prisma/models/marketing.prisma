@@ -1,7 +1,7 @@
 // Facebook Ads Campaign data
 model FacebookAdsCampaign {
   uuid                        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  id                          String   @unique @map("campaign_id")
+  id                          String   @unique
   account_id                  String
   bid_strategy                String?
   name                        String
