@@ -97,3 +97,38 @@ model FacebookAdsAdSet {
   @@map("facebook_ads_adsets")
   @@schema("marketing")
 }
+
+// Facebook Ads Ad data
+model FacebookAdsAd {
+  uuid                        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id                          String    @unique
+  account_id                  String
+  campaign_id                 String
+  adset_id                    String
+  name                        String
+  status                      String?   // ACTIVE, PAUSED, DELETED, ARCHIVED
+  configured_status           String?
+  effective_status            String?   // ACTIVE, PAUSED, PENDING_REVIEW, DISAPPROVED, CAMPAIGN_PAUSED, ADSET_PAUSED, etc.
+  creative                    Json?     @db.JsonB
+  creative_asset_groups_spec  Json?     @db.JsonB
+  conversion_domain           String?
+  tracking_specs              Json?     @db.JsonB  // Array of tracking objects
+  ad_schedule_start_time      DateTime?
+  ad_schedule_end_time        DateTime?
+  ad_active_time              String?   // Numeric string
+  adlabels                    Json?     @db.JsonB
+  ad_review_feedback          Json?     @db.JsonB  // Object with feedback
+  issues_info                 Json?     @db.JsonB  // Array of issue objects
+  source_ad_id                String?
+  preview_shareable_link      String?
+  display_sequence            Int?
+  recommendations             Json?     @db.JsonB
+  created_time                DateTime?
+  updated_time                DateTime?
+  last_updated_by_app_id      String?
+  synced_at                   DateTime  @default(now())
+  updated_at                  DateTime  @default(now()) @updatedAt
+
+  @@map("facebook_ads_ads")
+  @@schema("marketing")
+}
