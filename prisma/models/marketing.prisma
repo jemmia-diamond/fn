@@ -1,30 +1,37 @@
 // Facebook Ads Campaign data
 model FacebookAdsCampaign {
-  uuid                        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  id                          String   @unique
-  account_id                  String
-  bid_strategy                String?
-  name                        String
-  objective                   String?
-  pacing_type                 Json?    @db.JsonB
-  is_message_campaign         Boolean  @default(false)
-  is_direct_send_campaign     Boolean  @default(false)
-  is_budget_schedule_enabled  Boolean  @default(false)
-  budget_rebalance_flag       Boolean  @default(false)
-  budget_remaining            String?
-  buying_type                 String?
-  campaign_group_active_time  String?
-  created_time                DateTime?
-  source_campaign              Json?    @db.JsonB
-  source_campaign_id          String?
-  special_ad_category         String?
-  start_time                  DateTime?
-  status                      String?
-  topline_id                  String?
-  
-  // Metadata
-  synced_at                   DateTime @default(now())
-  updated_at                  DateTime @default(now()) @updatedAt
+  uuid                             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id                               String    @unique
+  account_id                       String
+  name                             String
+  objective                        String?
+  status                           String?
+  bid_strategy                     String?
+  buying_type                      String?
+  budget_remaining                 String?
+  budget_rebalance_flag            Boolean   @default(false)
+  lifetime_budget                  String?
+  spend_cap                        String?
+  last_budget_toggling_time        DateTime?
+  pacing_type                      Json?     @db.JsonB
+  is_budget_schedule_enabled       Boolean   @default(false)
+  campaign_group_active_time       String?
+  start_time                       DateTime?
+  stop_time                        DateTime?
+  is_message_campaign              Boolean   @default(false)
+  is_direct_send_campaign          Boolean   @default(false)
+  is_ska                           Boolean?
+  special_ad_category              String?
+  special_ad_category_country      Json?     @db.JsonB
+  adlabels                         Json?     @db.JsonB
+  source_campaign                  Json?     @db.JsonB
+  source_campaign_id               String?
+  topline_id                       String?
+  issues_info                      Json?     @db.JsonB
+  brand_lift_studies               Json?     @db.JsonB
+  created_time                     DateTime?
+  synced_at                        DateTime  @default(now())
+  updated_at                       DateTime  @default(now()) @updatedAt
 
   @@map("facebook_ads_campaigns")
   @@schema("marketing")
