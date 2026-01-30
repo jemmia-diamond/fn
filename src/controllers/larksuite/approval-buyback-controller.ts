@@ -1,7 +1,7 @@
 import LarkCipher from "services/larksuite/lark-cipher";
 import BuyBackInstanceService from "services/larksuite/approval/instance/buyback-instance";
 
-export default class ApprovalEventController {
+export default class ApprovalBuybackController {
   static async create(c: any) {
     const body = await c.req.json();
     if (!body) {
