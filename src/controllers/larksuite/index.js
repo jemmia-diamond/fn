@@ -4,6 +4,7 @@ import RecallAuthController from "controllers/larksuite/recall-auth-controller";
 import RecallEventController from "controllers/larksuite/recall-event-controller";
 import RecallRedirectController from "controllers/larksuite/recall-redirect-controller";
 import RecallCallbackController from "controllers/larksuite/recall-callback-controller";
+import ApprovalSubscriptionController from "controllers/larksuite/approval-subscription-controller";
 
 export default {
   BuybackExchangeController,
@@ -11,5 +12,6 @@ export default {
   RecallAuthController,
   RecallEventController,
   RecallRedirectController,
-  RecallCallbackController
+  RecallCallbackController,
+  ApprovalSubscriptionController
 };

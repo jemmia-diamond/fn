@@ -229,9 +229,9 @@ export default class RecallLarkService {
     const iv = Buffer.from(encrypted, "base64").subarray(0, 16);
     const encryptedData = Buffer.from(encrypted, "base64").subarray(16);
 
-    const decipher = crypto.createDecipheriv("aes-256-cbc", key, iv);
-    let decrypted = decipher.update(encryptedData);
-    decrypted = Buffer.concat([decrypted, decipher.final()]);
+    const decipher = crypto.createDecipheriv("aes-256-cbc", key as any, iv as any);
+    let decrypted = decipher.update(encryptedData as any);
+    decrypted = Buffer.concat([decrypted, decipher.final()] as any);
 
     return decrypted.toString("utf8");
   }
@@ -372,7 +372,7 @@ export default class RecallLarkService {
     try {
       const appAccessToken = await this.getAppAccessToken(env);
       const formData = new FormData();
-      const blob = new Blob([imageBuffer]);
+      const blob = new Blob([imageBuffer as any]);
       formData.append("image", blob, "image.jpg");
       formData.append("image_type", "message");
 

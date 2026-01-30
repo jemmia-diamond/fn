@@ -132,4 +132,22 @@ export default class InstanceService {
       department_id: instance.department_id
     };
   };
+
+  static async subscribe(env, approvalCode) {
+    try {
+      const client = await LarksuiteService.createClientV2(env);
+      const response = await client.approval.v4.approval.subscribe({
+        path: {
+          approval_code: approvalCode
+        }
+      });
+      return response;
+    } catch (error) {
+      // If subscription already exists
+      if (error.response?.data?.code === 1390007) {
+        return error.response.data;
+      }
+      throw error;
+    }
+  }
 }
