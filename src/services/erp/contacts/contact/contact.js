@@ -65,12 +65,13 @@ export default class ContactService {
         }
       ];
 
-      // Check by phone number first
       const existingContact = await this.findContactByPrimaryPhone(customerData["phone"]);
       if (existingContact) {
-        mappedContactData.name = existingContact.name;
-        // Update existing contact with haravan_customer_id
-        await this.frappeClient.update(mappedContactData);
+        await this.frappeClient.update({
+          doctype: this.doctype,
+          name: existingContact.name,
+          haravan_customer_id: String(customerData.id)
+        });
         if (customer) {
           return await this.frappeClient.reference(existingContact, "Contact", customer, "Customer");
         }
