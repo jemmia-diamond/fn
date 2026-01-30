@@ -187,7 +187,7 @@ export default class BuyBackInstanceService {
       if (phoneNumber) {
         const phoneObj = JSON.parse(phoneNumber);
         if (phoneObj && phoneObj.national_number) {
-          phoneNumber = phoneObj.national_number;
+          phoneNumber = phoneObj.national_number.trim();
         }
       }
     } catch {
