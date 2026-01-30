@@ -207,7 +207,7 @@ export default class BuyBackInstanceService {
       order_code: data.order_code,
       new_order_code: data.new_order_code,
       submitted_date: data.submitted_date ? dayjs(data.submitted_date).format("YYYY-MM-DD HH:mm:ss") : null,
-      products_info: data.products_info ? JSON.stringify(data.products_info) : null
+      products_info: typeof data.products_info === "string" ? data.products_info : JSON.stringify(data.products_info || [])
     };
 
     await frappeClient.upsert(erpData, "lark_instance_id");
