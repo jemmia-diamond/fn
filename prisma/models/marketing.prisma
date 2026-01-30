@@ -30,9 +30,70 @@ model FacebookAdsCampaign {
   issues_info                      Json?     @db.JsonB
   brand_lift_studies               Json?     @db.JsonB
   created_time                     DateTime?
+  updated_time                     DateTime?
   synced_at                        DateTime  @default(now())
   updated_at                       DateTime  @default(now()) @updatedAt
 
   @@map("facebook_ads_campaigns")
+  @@schema("marketing")
+}
+
+// Facebook Ads Ad Set data
+model FacebookAdsAdSet {
+  uuid                             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id                               String    @unique
+  campaign_id                      String
+  account_id                       String
+  name                             String
+  status                           String?   // ACTIVE, PAUSED, DELETED, ARCHIVED
+  configured_status                String?
+  effective_status                 String?   // ACTIVE, PAUSED, CAMPAIGN_PAUSED, WITH_ISSUES, etc.
+  daily_budget                     String?
+  lifetime_budget                  String?
+  budget_remaining                 String?
+  daily_min_spend_target           String?
+  daily_spend_cap                  String?
+  lifetime_min_spend_target        String?
+  lifetime_spend_cap               String?
+  bid_amount                       String?
+  bid_strategy                     String?   // LOWEST_COST_WITHOUT_CAP, LOWEST_COST_WITH_BID_CAP, COST_CAP
+  bid_constraints                  Json?     @db.JsonB
+  bid_info                         Json?     @db.JsonB
+  billing_event                    String?   // IMPRESSIONS, LINK_CLICKS, APP_INSTALLS, etc.
+  optimization_goal                String?   // CONVERSIONS, LINK_CLICKS, REACH, IMPRESSIONS, etc.
+  optimization_sub_event           String?   // VIDEO_SOUND_ON, TRIP_CONSIDERATION, etc.
+  targeting                        Json?     @db.JsonB
+  targeting_optimization_types     Json?     @db.JsonB
+  promoted_object                  Json?     @db.JsonB
+  destination_type                 String?   // WEBSITE, APP, MESSENGER, INSTAGRAM_DIRECT, etc.
+  start_time                       DateTime?
+  end_time                         DateTime?
+  adset_schedule                   Json?     @db.JsonB
+  pacing_type                      Json?     @db.JsonB
+  recurring_budget_semantics       Boolean?
+  learning_stage_info              Json?     @db.JsonB
+  issues_info                      Json?     @db.JsonB
+  is_dynamic_creative              Boolean?
+  creative_sequence                Json?     @db.JsonB  // Array of ad IDs
+  attribution_spec                 Json?     @db.JsonB
+  campaign_attribution             String?
+  frequency_control_specs          Json?     @db.JsonB
+  adlabels                         Json?     @db.JsonB
+  source_adset_id                  String?
+  dsa_beneficiary                  String?
+  dsa_payor                        String?
+  regional_regulated_categories    Json?     @db.JsonB
+  regional_regulation_identities   Json?     @db.JsonB
+  asset_feed_id                    String?
+  rf_prediction_id                 String?
+  review_feedback                  String?
+  use_new_app_click                Boolean?
+  created_time                     DateTime?
+  updated_time                     DateTime?
+  campaign_active_time             String?   // Numeric string
+  synced_at                        DateTime  @default(now())
+  updated_at                       DateTime  @default(now()) @updatedAt
+
+  @@map("facebook_ads_adsets")
   @@schema("marketing")
 }
