@@ -64,7 +64,21 @@ export default class ContactService {
           "is_primary_phone": 1
         }
       ];
+
+      const existingContact = await this.findContactByPrimaryPhone(customerData["phone"]);
+      if (existingContact) {
+        await this.frappeClient.update({
+          doctype: this.doctype,
+          name: existingContact.name,
+          haravan_customer_id: String(customerData.id)
+        });
+        if (customer) {
+          return await this.frappeClient.reference(existingContact, "Contact", customer, "Customer");
+        }
+        return existingContact;
+      }
     }
+
     const contact = await this.frappeClient.upsert(mappedContactData, "haravan_customer_id");
     if (customer) {
       return await this.frappeClient.reference(contact, "Contact", customer, "Customer");
