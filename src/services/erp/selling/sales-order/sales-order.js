@@ -945,7 +945,7 @@ export default class SalesOrderService {
           .filter(t => ["capture", "authorization"].includes(t.kind?.toLowerCase()))
           .reduce((total, t) => total + parseFloat(t.amount || 0), 0);
 
-        const remainingAmount = grandTotal - paidAmount;
+        const remainingAmount = salesOrderData.grand_total - paidAmount;
 
         if (remainingAmount > 0) {
           await haravanClient.orderTransaction.createTransaction(salesOrderData.haravan_order_id, {
