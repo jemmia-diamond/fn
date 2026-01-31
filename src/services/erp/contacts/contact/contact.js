@@ -30,7 +30,8 @@ export default class ContactService {
     const contacts = await this.frappeClient.getList(this.doctype, {
       filters: [
         ["Contact Phone", "phone", "=", phone],
-        ["Contact Phone", "is_primary_phone", "=", true]
+        ["Contact Phone", "is_primary_phone", "=", true],
+        ["haravan_customer_id", "is", "set"]
       ]
     });
     if (contacts.length) {
