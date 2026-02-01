@@ -142,11 +142,10 @@ const _validateItemLevelPromotions = (lineItems, promotionMap) => {
     const item = lineItems[i];
     const promoNames = [item.promotion_1, item.promotion_2, item.promotion_3, item.promotion_4].filter(Boolean);
     const promotions = promoNames.map(name => promotionMap.get(name)).filter(Boolean);
-    const sortedPromotions = _sortPromotions(promotions);
 
     let expectedRate = item.price_list_rate;
 
-    for (const promo of sortedPromotions) {
+    for (const promo of promotions) {
       expectedRate = _applyPromotionToPrice(expectedRate, promo, PROMOTION_SCOPE.LINE_ITEM);
     }
 
