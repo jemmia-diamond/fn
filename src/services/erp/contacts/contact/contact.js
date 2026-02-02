@@ -68,11 +68,6 @@ export default class ContactService {
 
       const existingContact = await this.findContactByPrimaryPhone(customerData["phone"]);
       if (existingContact) {
-        await this.frappeClient.update({
-          doctype: this.doctype,
-          name: existingContact.name,
-          haravan_customer_id: String(customerData.id)
-        });
         if (customer) {
           return await this.frappeClient.reference(existingContact, "Contact", customer, "Customer");
         }
