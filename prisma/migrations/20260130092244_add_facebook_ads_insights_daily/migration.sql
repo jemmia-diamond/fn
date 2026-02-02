@@ -1,0 +1,90 @@
+/*
+  Warnings:
+
+  - You are about to drop the `exchange_rate` table. If the table is not empty, all the data it contains will be lost.
+  - You are about to drop the `gold_pricing` table. If the table is not empty, all the data it contains will be lost.
+
+*/
+-- DropTable
+DROP TABLE "market_data"."exchange_rate";
+
+-- DropTable
+DROP TABLE "market_data"."gold_pricing";
+
+-- CreateTable
+CREATE TABLE "market_data"."marketDataExchangeRate" (
+    "time" TIMESTAMP(6) NOT NULL,
+    "code" VARCHAR,
+    "bank" VARCHAR,
+    "buy" DECIMAL,
+    "sell" DECIMAL,
+    "transfer" DECIMAL,
+    "created_at" TIMESTAMP(6)
+);
+
+-- CreateTable
+CREATE TABLE "market_data"."marketDataGoldPricing" (
+    "time" TIMESTAMPTZ(6) NOT NULL,
+    "location" VARCHAR,
+    "gold_type" VARCHAR,
+    "buy" DECIMAL,
+    "sell" DECIMAL,
+    "created_at" TIMESTAMPTZ(6) DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ(6)
+);
+
+-- CreateTable
+CREATE TABLE "marketing"."facebook_ads_insights_daily" (
+    "uuid" UUID NOT NULL DEFAULT gen_random_uuid(),
+    "campaign_id" TEXT NOT NULL,
+    "date" DATE NOT NULL,
+    "spend" DECIMAL(18,2),
+    "impressions" BIGINT,
+    "clicks" BIGINT,
+    "reach" BIGINT,
+    "frequency" DECIMAL(10,4),
+    "inline_link_clicks" BIGINT,
+    "inline_link_click_ctr" DECIMAL(10,4),
+    "cpc" DECIMAL(18,6),
+    "cpm" DECIMAL(18,6),
+    "cpp" DECIMAL(18,6),
+    "ctr" DECIMAL(10,4),
+    "cost_per_inline_link_click" DECIMAL(18,6),
+    "conversions" BIGINT,
+    "conversion_values" DECIMAL(18,2),
+    "cost_per_conversion" DECIMAL(18,6),
+    "video_30_sec_watched_actions" BIGINT,
+    "video_p25_watched_actions" BIGINT,
+    "video_p50_watched_actions" BIGINT,
+    "video_p75_watched_actions" BIGINT,
+    "video_p100_watched_actions" BIGINT,
+    "video_avg_time_watched_actions" DECIMAL(10,2),
+    "post_engagements" BIGINT,
+    "post_reactions" BIGINT,
+    "post_comments" BIGINT,
+    "post_shares" BIGINT,
+    "page_likes" BIGINT,
+    "actions" JSONB,
+    "action_values" JSONB,
+    "conversions_by_type" JSONB,
+    "purchase" BIGINT,
+    "purchase_roas" DECIMAL(10,4),
+    "date_start" DATE,
+    "date_stop" DATE,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "synced_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "facebook_ads_insights_daily_pkey" PRIMARY KEY ("uuid")
+);
+
+-- CreateIndex
+CREATE INDEX "marketDataExchangeRate_time_idx" ON "market_data"."marketDataExchangeRate"("time" DESC);
+
+-- CreateIndex
+CREATE INDEX "marketDataGoldPricing_time_idx" ON "market_data"."marketDataGoldPricing"("time" DESC);
+
+-- CreateIndex
+CREATE UNIQUE INDEX "marketDataGoldPricing_location_gold_type_time_key" ON "market_data"."marketDataGoldPricing"("location", "gold_type", "time");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "facebook_ads_insights_daily_campaign_id_date_key" ON "marketing"."facebook_ads_insights_daily"("campaign_id", "date");

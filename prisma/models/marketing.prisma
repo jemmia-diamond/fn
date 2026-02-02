@@ -132,3 +132,49 @@ model FacebookAdsAd {
   @@map("facebook_ads_ads")
   @@schema("marketing")
 }
+
+// Campaign Daily Insights (No breakdown)
+model FacebookAdsInsightsDaily {
+  uuid                        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  campaign_id                 String
+  date                 DateTime  @db.Date 
+  spend                       Decimal?  @db.Decimal(18, 2)
+  impressions                 BigInt?
+  clicks                      BigInt?
+  reach                       BigInt?
+  frequency                   Decimal?  @db.Decimal(10, 4)
+  inline_link_clicks          BigInt?
+  inline_link_click_ctr       Decimal?  @db.Decimal(10, 4)
+  cpc                         Decimal?  @db.Decimal(18, 6)
+  cpm                         Decimal?  @db.Decimal(18, 6)
+  cpp                         Decimal?  @db.Decimal(18, 6)
+  ctr                         Decimal?  @db.Decimal(10, 4)
+  cost_per_inline_link_click  Decimal?  @db.Decimal(18, 6)
+  conversions                 BigInt?
+  conversion_values           Decimal?  @db.Decimal(18, 2)
+  cost_per_conversion         Decimal?  @db.Decimal(18, 6)
+  video_30_sec_watched_actions BigInt?
+  video_p25_watched_actions   BigInt?
+  video_p50_watched_actions   BigInt?
+  video_p75_watched_actions   BigInt?
+  video_p100_watched_actions  BigInt?
+  video_avg_time_watched_actions Decimal? @db.Decimal(10, 2)
+  post_engagements            BigInt?
+  post_reactions              BigInt?
+  post_comments               BigInt?
+  post_shares                 BigInt?
+  page_likes                  BigInt?
+  actions                     Json?     @db.JsonB
+  action_values               Json?     @db.JsonB
+  conversions_by_type         Json?     @db.JsonB
+  purchase                    BigInt?
+  purchase_roas               Decimal?  @db.Decimal(10, 4)
+  date_start                  DateTime? @db.Date
+  date_stop                   DateTime? @db.Date
+  updated_at                  DateTime  @default(now()) @updatedAt
+  synced_at                   DateTime  @default(now())
+
+  @@unique([campaign_id, date], name: "unique_campaign_report_date")
+  @@map("facebook_ads_insights_daily")
+  @@schema("marketing")
+}
