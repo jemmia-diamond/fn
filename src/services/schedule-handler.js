@@ -101,6 +101,7 @@ export default {
       await new ERP.Accounting.PaymentEntryNotificationService(env).runAfternoonBatch();
       break;
     case "0 11 * * *": // 18:00
+      await ERP.CRM.LeadService.findUnmatchedLeadContactPairs(env);
       break;
     case "0 2 * * *": // 09:00
       await ERP.Accounting.BankTransactionService.notifyUnlinkedBankTransactions(env, {

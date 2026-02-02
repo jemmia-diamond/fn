@@ -313,4 +313,53 @@ export default class LeadService {
       isSyncType: LeadService.SYNC_TYPE_AUTO
     });
   }
+  static async findUnmatchedLeadContactPairs(env) {
+    const leadService = new LeadService(env);
+    const BATCH_SIZE = 100;
+    let offset = 0;
+    let hasMore = true;
+
+    try {
+      while (hasMore) {
+        const sql = `
+          SELECT 
+            l.name as lead_name, 
+            l.phone as lead_phone, 
+            c.name as contact_name, 
+            cp.phone as contact_phone 
+          FROM \`tabContact\` c 
+          JOIN \`tabDynamic Link\` dl ON dl.parent = c.name 
+          JOIN \`tabContact Phone\` cp ON cp.parent = c.name 
+          JOIN \`tabLead\` l ON dl.link_name = l.name 
+          WHERE 
+            dl.link_doctype = 'Lead' 
+            AND l.phone IS NOT NULL AND l.phone != '' 
+            AND cp.phone IS NOT NULL AND cp.phone != '' 
+            AND l.phone != cp.phone
+          ORDER BY l.name ASC
+          LIMIT ${BATCH_SIZE} OFFSET ${offset}
+        `;
+
+        const results = await leadService.frappeClient.executeSQL(sql);
+
+        if (results && results.length > 0) {
+          console.warn(`Found ${results.length} unmatched Lead-Contact pairs (Offset: ${offset}):`, JSON.stringify(results, null, 2));
+
+          if (results.length < BATCH_SIZE) {
+            hasMore = false;
+          } else {
+            offset += BATCH_SIZE;
+          }
+        } else {
+          if (offset === 0) {
+            console.warn("No unmatched Lead-Contact pairs found.");
+          }
+          hasMore = false;
+        }
+      }
+    } catch (error) {
+      console.warn("Error checking for unmatched Lead-Contact pairs:", error);
+      Sentry.captureException(error);
+    }
+  }
 }
