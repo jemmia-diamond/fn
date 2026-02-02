@@ -14,7 +14,7 @@ export default class PancakeLeadSyncService {
     this.db = Database.instance(env);
     this.leadService = new LeadService(env);
     this.DEFAULT_TIME_MARK = "2020-05-31 17:00:00";
-    this.BATCH_SIZE = 50;
+    this.BATCH_SIZE = 20;
     this.KV_KEY = "pancake_lead_sync_last_time";
   }
 
@@ -42,80 +42,48 @@ export default class PancakeLeadSyncService {
         break;
       }
 
-      const insertLeads = [];
-      const updateLeads = [];
-
-      for (const lead of leadsData) {
-        if (!lead.frappe_name_id) {
-          insertLeads.push(lead);
-        } else {
-          updateLeads.push(lead);
-        }
-      }
-
-      const batchCount = leadsData.length;
-      console.warn(`Total: ${batchCount}, Insert leads: ${insertLeads.length}, Update leads: ${updateLeads.length}`);
-
-      offset += this.BATCH_SIZE;
-      totalProcessed += batchCount;
-
-      // Process Inserts
-      if (insertLeads.length > 0) {
+      const processLead = async (lead) => {
         try {
-          const insertBatch = insertLeads.map(lead => createInsertLeadPayload(lead));
-          const insertResponse = await this.leadService.syncLeadByBatchInsertion(insertBatch);
+          if (!lead.frappe_name_id) {
+            const payload = createInsertLeadPayload(lead);
+            const insertResponse = await this.leadService.syncLeadByBatchInsertion([payload]);
 
-          if (insertResponse && Array.isArray(insertResponse)) {
-            const toInsertLeads = [];
-            insertResponse.forEach((result) => {
+            if (insertResponse && Array.isArray(insertResponse) && insertResponse.length > 0) {
+              const result = insertResponse[0];
               const conversationId = result?.conversation_id;
               const frappeNameId = result?.name;
 
               if (conversationId && frappeNameId) {
-                toInsertLeads.push({
+                await this.saveSyncedLeadsBatch([{
                   conversation_id: conversationId,
                   frappe_name_id: frappeNameId
-                });
+                }]);
               }
-            });
-            if (toInsertLeads.length > 0) {
-              await this.saveSyncedLeadsBatch(toInsertLeads);
             }
           } else {
-            console.warn("Invalid response from insert_many_leads", insertResponse);
-          }
-        } catch (error) {
-          console.warn("Error inserting leads batch:", error);
-          Sentry.captureException(error);
-        }
-      }
+            const payload = createUpdateLeadPayload(lead);
+            const updateResponse = await this.leadService.syncLeadByBatchUpdate([payload]);
 
-      // Process Updates
-      if (updateLeads.length > 0) {
-        try {
-          const updateBatch = updateLeads.map(lead => createUpdateLeadPayload(lead));
-          const updateResponse = await this.leadService.syncLeadByBatchUpdate(updateBatch);
-
-          if (updateResponse && updateResponse.results && Array.isArray(updateResponse.results)) {
-            const toUpsertLeads = [];
-            updateResponse.results.forEach(result => {
+            if (updateResponse && updateResponse.results && Array.isArray(updateResponse.results) && updateResponse.results.length > 0) {
+              const result = updateResponse.results[0];
               if (result.name && result.conversation_id) {
-                toUpsertLeads.push({
+                await this.saveSyncedLeadsBatch([{
                   conversation_id: result.conversation_id,
                   frappe_name_id: result.name
-                });
+                }]);
               }
-            });
-
-            if (toUpsertLeads.length > 0) {
-              await this.saveSyncedLeadsBatch(toUpsertLeads);
             }
           }
         } catch (error) {
-          console.warn("Error updating leads batch:", error);
           Sentry.captureException(error);
         }
-      }
+      };
+
+      await Promise.allSettled(leadsData.map(lead => processLead(lead)));
+
+      console.warn(`Processed batch of ${leadsData.length} leads.`);
+      offset += this.BATCH_SIZE;
+      totalProcessed += leadsData.length;
     }
 
     // Save new checkpoint
