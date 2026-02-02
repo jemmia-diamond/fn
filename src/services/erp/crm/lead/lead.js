@@ -186,50 +186,60 @@ export default class LeadService {
 
     try {
       const contactService = new ContactService(this.env);
-      const location = data.raw_data.location;
-      const provinces = await this.frappeClient.getList("Province", {
-        filters: [["province_name", "LIKE", `%${location}%`]]
+      const phone = data.raw_data.phone;
+      const source = data.source === "Partner" ? this.PartnerLeadSource : this.WebsiteFormLeadSource;
+
+      const leads = await this.frappeClient.getList("Lead", {
+        filters: [["phone", "=", phone]]
       });
 
-      const leadData = {
-        doctype: this.doctype,
-        source: data.source === "Partner" ? this.PartnerLeadSource : this.WebsiteFormLeadSource,
-        first_name: data.raw_data.name,
-        phone: data.raw_data.phone,
-        lead_owner: this.defaultLeadOwner,
-        province: provinces.length ? provinces[0].name : null,
-        first_reach_at: dayjs(data.database_created_at).utc().format("YYYY-MM-DD HH:mm:ss")
-      };
+      let lead;
 
-      const notes = [];
-      if (data.raw_data.join_date) {
-        notes.push({
-          note: "Join Date: " + data.raw_data.join_date
+      if (leads && leads.length > 0) {
+        lead = { ...leads[0], doctype: this.doctype };
+      } else {
+        const location = data.raw_data.location;
+        const provinces = await this.frappeClient.getList("Province", {
+          filters: [["province_name", "LIKE", `%${location}%`]]
         });
+
+        const leadData = {
+          doctype: this.doctype,
+          source: source,
+          first_name: data.raw_data.name || "Chưa rõ",
+          phone: phone,
+          lead_owner: this.defaultLeadOwner,
+          province: provinces.length ? provinces[0].name : null,
+          first_reach_at: dayjs(data.database_created_at).utc().format("YYYY-MM-DD HH:mm:ss")
+        };
+
+        const notes = [];
+        if (data.raw_data.join_date) {
+          notes.push({
+            note: "Join Date: " + data.raw_data.join_date
+          });
+        }
+
+        if (data.raw_data.demand) {
+          notes.push({
+            note: "Demand: " + data.raw_data.demand
+          });
+        }
+
+        if (data.raw_data.diamond_note) {
+          notes.push({
+            note: "Diamond: " + data.raw_data.diamond_note
+          });
+        }
+
+        if (notes.length) {
+          leadData.notes = notes;
+        }
+
+        lead = await this.frappeClient.insert(leadData);
       }
 
-      if (data.raw_data.demand) {
-        notes.push({
-          note: "Demand: " + data.raw_data.demand
-        });
-      }
-
-      if (data.raw_data.diamond_note) {
-        notes.push({
-          note: "Diamond: " + data.raw_data.diamond_note
-        });
-      }
-
-      if (notes.length) {
-        leadData.notes = notes;
-      }
-
-      const ignoredFields = [
-        "first_reach_at", "source"
-      ];
-
-      const lead = await this.frappeClient.upsert(leadData, "phone", ignoredFields);
-      await contactService.processWebsiteContact(data, lead, leadData.source);
+      await contactService.processWebsiteContact(data, lead, source);
     } catch (e) {
       Sentry.captureException(e);
       return;
@@ -250,15 +260,25 @@ export default class LeadService {
   async processCallLogLead(data) {
     const contactService = new ContactService(this.env);
     const phone = data.type === "Incoming" ? data.from : data.to;
-    const leadData = {
-      doctype: this.doctype,
-      source: this.CallLogLeadSource,
-      first_name: phone,
-      phone: phone,
-      lead_owner: this.defaultLeadOwner,
-      first_reach_at: dayjs(data.creation).utc().format("YYYY-MM-DD HH:mm:ss")
-    };
-    const lead = await this.frappeClient.upsert(leadData, "phone", ["first_name"]);
+
+    const leads = await this.frappeClient.getList("Lead", {
+      filters: [["phone", "=", phone]]
+    });
+
+    let lead;
+    if (leads && leads.length > 0) {
+      lead = { ...leads[0], doctype: this.doctype };
+    } else {
+      const leadData = {
+        doctype: this.doctype,
+        source: this.CallLogLeadSource,
+        first_name: phone,
+        phone: phone,
+        lead_owner: this.defaultLeadOwner,
+        first_reach_at: dayjs(data.creation).utc().format("YYYY-MM-DD HH:mm:ss")
+      };
+      lead = await this.frappeClient.insert(leadData);
+    }
     await contactService.processCallLogContact(data, lead);
   }
 
