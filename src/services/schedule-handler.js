@@ -81,7 +81,6 @@ export default {
     case "0 1 * * *": // 08:00
       await Larksuite.Attendance.ScheduleService.syncScheduleToDatabase(env);
       await Larksuite.Approval.InstanceService.syncInstancesToDatabase(env);
-      await Larksuite.Approval.BuyBackInstanceService.syncInstancesToDatabase(env);
       break;
     case "30 1 * * *": // 08:30
       await ERP.Automation.AssignmentRuleService.disableAssignmentRuleOffHour(env);
