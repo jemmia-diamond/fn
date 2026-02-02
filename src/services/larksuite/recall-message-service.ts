@@ -17,7 +17,6 @@ export default class RecallMessageService {
   static async detectSensitiveInfoAndMask(env: any, event: any) {
     const content = JSON.parse(event.message.content);
     let text = "";
-    let postText = "";
 
     if (event.message.message_type === MESSAGE_TYPE.TEXT) {
       text = content.text;
@@ -28,13 +27,8 @@ export default class RecallMessageService {
         const senderId = event.sender.sender_id.open_id;
         let responseText = "";
 
-        if (event.message.message_type === MESSAGE_TYPE.POST) {
-          const maskedText = await this.maskSensitiveInfo(env, postText);
-          responseText = `<at user_id="${senderId}"></at>: ${maskedText}`;
-        } else {
-          const maskedText = await this.maskSensitiveInfo(env, text);
-          responseText = `<at user_id="${senderId}"></at>: ${maskedText}`;
-        }
+        const maskedText = await this.maskSensitiveInfo(env, text);
+        responseText = `<at user_id="${senderId}"></at>: ${maskedText}`;
 
         const maskedContent = JSON.stringify({
           text: responseText
@@ -122,103 +116,78 @@ export default class RecallMessageService {
           })
         );
 
-        if (content.title) {
-          text += content.title + " ";
-          postText += content.title + " ";
+        let hasImages = false;
+        if (content.content) {
+          for (const line of content.content) {
+            for (const item of line) {
+              if (item.tag === CONTENT_TAG.IMG) {
+                hasImages = true;
+                break;
+              }
+            }
+            if (hasImages) break;
+          }
         }
-        for (const line of content.content) {
-          for (const item of line) {
-            if (item.tag === CONTENT_TAG.TEXT) {
-              text += item.text + " ";
-              postText += item.text + " ";
-            } else if (item.tag === CONTENT_TAG.IMG) {
-              const imageKey = item.image_key;
-              const imageBuffer = await RecallLarkService.getImage(
-                env,
-                event.message.message_id,
-                imageKey
-              );
 
-              // Check for sensitive info in image
-              const presidioClient = new PresidioClient(env);
-              const anonymizeResult =
-                await presidioClient.anonymizeImage(imageBuffer);
+        if (hasImages) {
+          const senderId = event.sender.sender_id.open_id;
+          const imageMap = new Map<string, Buffer>();
 
-              if (anonymizeResult.has_sensitive_info) {
-                // Upload anonymized image
-                const base64Data = anonymizeResult.image.split(",")[1];
-                const anonymizedBuffer = Buffer.from(base64Data, "base64");
-                const newImageKey = await RecallLarkService.uploadImage(
-                  env,
-                  anonymizedBuffer
-                );
-
-                // Recall original message
-                // await RecallLarkService.recallMessage(
-                //   env,
-                //   event.message.message_id
-                // );
-
-                // 2. Send anonymized image
-                const imageContent = JSON.stringify({ image_key: newImageKey });
-                if (event.message.root_id) {
-                  await RecallLarkService.replyMessage(
+          for (const line of content.content) {
+            for (const item of line) {
+              if (item.tag === CONTENT_TAG.IMG) {
+                try {
+                  const buffer = await RecallLarkService.getImage(
                     env,
-                    event.message.root_id,
-                    imageContent,
-                    MESSAGE_TYPE.IMAGE
+                    event.message.message_id,
+                    item.image_key
                   );
-                } else {
-                  await RecallLarkService.sendMessage(
-                    env,
-                    event.message.chat_id,
-                    "chat_id",
-                    MESSAGE_TYPE.IMAGE,
-                    imageContent
-                  );
+                  imageMap.set(item.image_key, buffer);
+                } catch (error) {
+                  Sentry.captureException(error);
                 }
-
-                return; // Stop processing after recalling
               }
             }
           }
-        }
 
-        if (text && (await this.detectSensitiveInfo(env, text))) {
-          const newContent = JSON.parse(event.message.content);
-          const senderId = event.sender.sender_id.open_id;
+          await RecallLarkService.recallMessage(
+            env,
+            event.message.root_id ?? event.message.message_id
+          );
 
-          const maskPromises: Promise<void>[] = [];
-
-          if (newContent.title) {
-            maskPromises.push(
-              (async () => {
-                newContent.title = await this.maskSensitiveInfo(
-                  env,
-                  newContent.title
-                );
-              })()
-            );
+          if (content.title) {
+            content.title = await this.maskSensitiveInfo(env, content.title);
           }
 
-          for (const line of newContent.content) {
+          const presidioClient = new PresidioClient(env);
+
+          for (const line of content.content) {
             for (const item of line) {
               if (item.tag === CONTENT_TAG.TEXT) {
-                maskPromises.push(
-                  (async () => {
-                    item.text = await this.maskSensitiveInfo(env, item.text);
-                  })()
-                );
+                item.text = await this.maskSensitiveInfo(env, item.text);
+              } else if (item.tag === CONTENT_TAG.IMG) {
+                const buffer = imageMap.get(item.image_key);
+                if (buffer) {
+                  const result = await presidioClient.anonymizeImage(buffer);
+                  let bufferToUpload = buffer;
+                  if (result.has_sensitive_info) {
+                    const base64Data = result.image.split(",")[1];
+                    bufferToUpload = Buffer.from(base64Data, "base64");
+                  }
+                  const newKey = await RecallLarkService.uploadImage(
+                    env,
+                    bufferToUpload
+                  );
+                  item.image_key = newKey;
+                }
               }
             }
           }
 
-          await Promise.all(maskPromises);
-
-          newContent.content.unshift([{ tag: "at", user_id: senderId }]);
+          content.content.unshift([{ tag: "at", user_id: senderId }]);
 
           const postMessageContent = JSON.stringify({
-            zh_cn: newContent
+            zh_cn: content
           });
 
           await RecallLarkService.sendMessageToThread(
@@ -227,12 +196,53 @@ export default class RecallMessageService {
             MESSAGE_TYPE.POST,
             postMessageContent
           );
-        }
+        } else {
+          let text = "";
+          if (content.title) {
+            text += content.title + " ";
+          }
+          for (const line of content.content) {
+            for (const item of line) {
+              if (item.tag === CONTENT_TAG.TEXT) {
+                text += item.text + " ";
+              }
+            }
+          }
 
-        await RecallLarkService.recallMessage(
-          env,
-          event.message.root_id ?? event.message.message_id
-        );
+          if (text && (await this.detectSensitiveInfo(env, text))) {
+            const senderId = event.sender.sender_id.open_id;
+
+            if (content.title) {
+              content.title = await this.maskSensitiveInfo(env, content.title);
+            }
+
+            for (const line of content.content) {
+              for (const item of line) {
+                if (item.tag === CONTENT_TAG.TEXT) {
+                  item.text = await this.maskSensitiveInfo(env, item.text);
+                }
+              }
+            }
+
+            content.content.unshift([{ tag: "at", user_id: senderId }]);
+
+            const postMessageContent = JSON.stringify({
+              zh_cn: content
+            });
+
+            await RecallLarkService.sendMessageToThread(
+              env,
+              event.message.root_id ?? event.message.message_id,
+              MESSAGE_TYPE.POST,
+              postMessageContent
+            );
+
+            await RecallLarkService.recallMessage(
+              env,
+              event.message.root_id ?? event.message.message_id
+            );
+          }
+        }
       } catch (error) {
         Sentry.captureException(error);
         return;
@@ -245,7 +255,7 @@ export default class RecallMessageService {
   static async detectSensitiveInfo(env: any, text: string) {
     const presidioClient = new PresidioClient(env);
     const result = await presidioClient.analyze({ text });
-    return result.some((item) => item.score > 0.5);
+    return result.some((item) => item.score > 0.3);
   }
 
   static async maskSensitiveInfo(env: any, text: string): Promise<string> {
