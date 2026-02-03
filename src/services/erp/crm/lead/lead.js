@@ -169,6 +169,21 @@ export default class LeadService {
     });
   }
 
+  async getOrCreateLead(phone, dataBuilder) {
+    if (!phone) return null;
+
+    const leads = await this.frappeClient.getList("Lead", {
+      filters: [["phone", "=", phone]]
+    });
+
+    if (leads && leads.length > 0) {
+      return { ...leads[0], doctype: this.doctype };
+    }
+
+    const leadData = await dataBuilder();
+    return await this.frappeClient.insert(leadData);
+  }
+
   async getWebsiteLeads(timeThreshold) {
     const result = await this.db.$queryRaw`
       SELECT * FROM ecom.leads l
@@ -189,15 +204,7 @@ export default class LeadService {
       const phone = data.raw_data.phone;
       const source = data.source === "Partner" ? this.PartnerLeadSource : this.WebsiteFormLeadSource;
 
-      const leads = await this.frappeClient.getList("Lead", {
-        filters: [["phone", "=", phone]]
-      });
-
-      let lead;
-
-      if (leads && leads.length > 0) {
-        lead = { ...leads[0], doctype: this.doctype };
-      } else {
+      const dataBuilder = async () => {
         const location = data.raw_data.location;
         const provinces = await this.frappeClient.getList("Province", {
           filters: [["province_name", "LIKE", `%${location}%`]]
@@ -205,6 +212,8 @@ export default class LeadService {
 
         const leadData = {
           doctype: this.doctype,
+          status: "Lead",
+          naming_series: "CRM-LEAD-.YYYY.-",
           source: source,
           first_name: data.raw_data.name || "Chưa rõ",
           phone: phone,
@@ -235,11 +244,13 @@ export default class LeadService {
         if (notes.length) {
           leadData.notes = notes;
         }
+        return leadData;
+      };
 
-        lead = await this.frappeClient.insert(leadData);
+      const lead = await this.getOrCreateLead(phone, dataBuilder);
+      if (lead) {
+        await contactService.processWebsiteContact(data, lead, source);
       }
-
-      await contactService.processWebsiteContact(data, lead, source);
     } catch (e) {
       Sentry.captureException(e);
       return;
@@ -261,25 +272,26 @@ export default class LeadService {
     const contactService = new ContactService(this.env);
     const phone = data.type === "Incoming" ? data.from : data.to;
 
-    const leads = await this.frappeClient.getList("Lead", {
-      filters: [["phone", "=", phone]]
-    });
+    if (!phone) return;
 
-    let lead;
-    if (leads && leads.length > 0) {
-      lead = { ...leads[0], doctype: this.doctype };
-    } else {
+    const dataBuilder = async () => {
       const leadData = {
         doctype: this.doctype,
+        status: "Lead",
+        naming_series: "CRM-LEAD-.YYYY.-",
         source: this.CallLogLeadSource,
         first_name: phone,
         phone: phone,
         lead_owner: this.defaultLeadOwner,
         first_reach_at: dayjs(data.creation).utc().format("YYYY-MM-DD HH:mm:ss")
       };
-      lead = await this.frappeClient.insert(leadData);
+      return leadData;
+    };
+
+    const lead = await this.getOrCreateLead(phone, dataBuilder);
+    if (lead) {
+      await contactService.processCallLogContact(data, lead);
     }
-    await contactService.processCallLogContact(data, lead);
   }
 
   static async syncCallLogLead(env) {
