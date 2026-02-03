@@ -41,10 +41,7 @@ export default class RecallMessageService {
           maskedContent
         );
 
-        await RecallLarkService.recallMessage(
-          env,
-          event.message.root_id ?? event.message.message_id
-        );
+        await RecallLarkService.recallMessage(env, event.message.message_id);
       }
     } else if (event.message.message_type === MESSAGE_TYPE.IMAGE) {
       try {
@@ -64,10 +61,7 @@ export default class RecallMessageService {
           imageKey
         );
 
-        await RecallLarkService.recallMessage(
-          env,
-          event.message.root_id ?? event.message.message_id
-        );
+        await RecallLarkService.recallMessage(env, event.message.message_id);
 
         // Check for sensitive info in image
         const presidioClient = new PresidioClient(env);
@@ -94,10 +88,7 @@ export default class RecallMessageService {
           imageContent
         );
 
-        await RecallLarkService.recallMessage(
-          env,
-          event.message.root_id ?? event.message.message_id
-        );
+        await RecallLarkService.recallMessage(env, event.message.message_id);
         return;
       } catch (error) {
         Sentry.captureException(error);
@@ -106,15 +97,6 @@ export default class RecallMessageService {
     } else if (event.message.message_type === MESSAGE_TYPE.POST) {
       try {
         const content = JSON.parse(event.message.content);
-
-        await RecallLarkService.sendMessageToThread(
-          env,
-          event.message.root_id ?? event.message.message_id,
-          MESSAGE_TYPE.TEXT,
-          JSON.stringify({
-            text: "Tin nhắn đang được kiểm tra, vui lòng đợi..."
-          })
-        );
 
         let hasImages = false;
         if (content.content) {
@@ -150,10 +132,15 @@ export default class RecallMessageService {
             }
           }
 
-          await RecallLarkService.recallMessage(
+          await RecallLarkService.sendMessageToThread(
             env,
-            event.message.root_id ?? event.message.message_id
+            event.message.root_id ?? event.message.message_id,
+            MESSAGE_TYPE.TEXT,
+            JSON.stringify({
+              text: "Tin nhắn đang được kiểm tra, vui lòng đợi..."
+            })
           );
+          await RecallLarkService.recallMessage(env, event.message.message_id);
 
           if (content.title) {
             content.title = await this.maskSensitiveInfo(env, content.title);
@@ -239,7 +226,7 @@ export default class RecallMessageService {
 
             await RecallLarkService.recallMessage(
               env,
-              event.message.root_id ?? event.message.message_id
+              event.message.message_id
             );
           }
         }

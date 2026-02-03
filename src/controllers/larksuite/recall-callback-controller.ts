@@ -86,7 +86,7 @@ export default class RecallCallbackController {
         <body>
             <div class="card">
                 <h1>Successful!</h1>
-                <div class="success">✓ Jemmia Bot added to your groups</div>
+                <div class="success">✓ Jemmia Shield added to your groups</div>
                 <p><strong>User Name:</strong> ${userName}</p>
 
                 <h3>Processed Groups (${results.length})</h3>
