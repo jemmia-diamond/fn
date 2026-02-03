@@ -37,8 +37,13 @@ export default class MisaWebhookHandler {
     }
 
     const dataPayload = JSON.parse(body.data);
+    const outerPayload = {
+      success: body.success,
+      error_code: body?.error_code,
+      error_message: body?.error_message
+    };
     if (body.data_type === CALLBACK_TYPE.SAVE_FUNCTION && dataPayload[0]?.voucher_type) {
-      await this.voucherHandler.process(dataPayload);
+      await this.voucherHandler.process(dataPayload, outerPayload);
     }
   }
 
