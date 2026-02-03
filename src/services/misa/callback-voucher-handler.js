@@ -16,7 +16,7 @@ export default class MisaCallbackVoucherHandler {
       }
     );
     this.doctype = "Payment Entry";
-    this.featureOwnerInChare = "binh.le@jemmia.vn";
+    this.featureOwnerInCharge = "binh.le@jemmia.vn";
   }
 
   /**
@@ -37,9 +37,9 @@ export default class MisaCallbackVoucherHandler {
 
       try {
         const actualSuccess = outerFailed ? false : success;
-        const actualErrorCode = outerFailed ? (outerPayload?.error_code || error_code || "No error code") : error_code;
+        const actualErrorCode = outerFailed ? (outerPayload?.error_code || "No error code") : error_code;
         const actualErrorMessage = outerFailed
-          ? (outerPayload?.error_message || error_message || "No failed message") : error_message;
+          ? (outerPayload?.error_message || "No failed message") : error_message;
         const formattedError = actualErrorCode && actualErrorMessage
           ? `[${actualErrorCode}] ${actualErrorMessage}` : actualErrorMessage;
 
@@ -85,9 +85,9 @@ export default class MisaCallbackVoucherHandler {
             referenceDoctype: this.doctype,
             referenceName: error.payment_entry_name,
             content: `MISA trả kết quả: [${error?.error_code}] ${error?.error_message}`,
-            mentionPerson: this.featureOwnerInChare
+            mentionPerson: this.featureOwnerInCharge
           }).catch(() => {});
-          if (error?.error_code == "Exception") {
+          if (error?.error_code === "Exception") {
             await this.db[error.modelName].updateMany({
               where: { misa_sync_guid: error.org_refid },
               data: {

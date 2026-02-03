@@ -141,7 +141,7 @@ export default class FrappeClient {
   async createComment({ referenceDoctype, referenceName, content, commentType = "Comment", mentionPerson = "" }) {
     let commentContent = mentionPerson === "" ? content :
       `
-        ${content}<br><br>cc: <a class="mention" href="/app/user/${mentionPerson}"
+        ${content}<br><br>cc: <a class="mention" href="/app/user/${encodeURIComponent(mentionPerson)}"
               data-id="${mentionPerson}"
               data-value="${mentionPerson}"
               data-denotation-char="@">@${mentionPerson}</a>
