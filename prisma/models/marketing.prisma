@@ -1,5 +1,5 @@
 // Facebook Ads Campaign data
-model FacebookAdsCampaign {
+model marketingFacebookAdsCampaign {
   uuid                             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   id                               String    @unique
   account_id                       String
@@ -39,7 +39,7 @@ model FacebookAdsCampaign {
 }
 
 // Facebook Ads Ad Set data
-model FacebookAdsAdSet {
+model marketingFacebookAdsAdSet {
   uuid                             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   id                               String    @unique
   campaign_id                      String
@@ -99,7 +99,7 @@ model FacebookAdsAdSet {
 }
 
 // Facebook Ads Ad data
-model FacebookAdsAd {
+model marketingFacebookAdsAd {
   uuid                        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   id                          String    @unique
   account_id                  String
@@ -134,7 +134,7 @@ model FacebookAdsAd {
 }
 
 // Campaign Daily Insights (No breakdown)
-model FacebookAdsInsightsDaily {
+model marketingFacebookAdsInsightsDaily {
   uuid                        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   campaign_id                 String
   campaign_name               String
@@ -181,7 +181,7 @@ model FacebookAdsInsightsDaily {
 }
 
 // Ad Level Daily Insights (level=ad, time_increment=1)
-model FacebookAdsInsightsAdLevelDaily {
+model marketingFacebookAdsInsightsAdLevelDaily {
   uuid                         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   campaign_id                  String
   campaign_name                String
