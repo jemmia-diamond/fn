@@ -137,6 +137,7 @@ model FacebookAdsAd {
 model FacebookAdsInsightsDaily {
   uuid                        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   campaign_id                 String
+  campaign_name               String
   date                 DateTime  @db.Date 
   spend                       Decimal?  @db.Decimal(18, 2)
   impressions                 BigInt?
@@ -168,7 +169,7 @@ model FacebookAdsInsightsDaily {
   action_values               Json?     @db.JsonB
   conversions_by_type         Json?     @db.JsonB
   purchase                    BigInt?
-  purchase_roas               Decimal?  @db.Decimal(10, 4)
+  purchase_roas               Json?     @db.JsonB
   date_start                  DateTime? @db.Date
   date_stop                   DateTime? @db.Date
   updated_at                  DateTime  @default(now()) @updatedAt

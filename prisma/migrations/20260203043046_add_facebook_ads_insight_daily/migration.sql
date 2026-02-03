@@ -37,6 +37,7 @@ CREATE TABLE "market_data"."marketDataGoldPricing" (
 CREATE TABLE "marketing"."facebook_ads_insights_daily" (
     "uuid" UUID NOT NULL DEFAULT gen_random_uuid(),
     "campaign_id" TEXT NOT NULL,
+    "campaign_name" TEXT NOT NULL,
     "date" DATE NOT NULL,
     "spend" DECIMAL(18,2),
     "impressions" BIGINT,
@@ -68,7 +69,7 @@ CREATE TABLE "marketing"."facebook_ads_insights_daily" (
     "action_values" JSONB,
     "conversions_by_type" JSONB,
     "purchase" BIGINT,
-    "purchase_roas" DECIMAL(10,4),
+    "purchase_roas" JSONB,
     "date_start" DATE,
     "date_stop" DATE,
     "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
