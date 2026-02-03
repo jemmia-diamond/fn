@@ -74,11 +74,9 @@ export default class RecallMessageService {
         imageKey
       );
 
-      // Check for sensitive info in image
       const presidioClient = new PresidioClient(env);
       const anonymizeResult = await presidioClient.anonymizeImage(imageBuffer);
 
-      // Upload anonymized image
       const base64Data = anonymizeResult.image.split(",")[1];
       const anonymizedBuffer = Buffer.from(base64Data, "base64");
       const newImageKey = await RecallLarkService.uploadImage(
@@ -86,7 +84,6 @@ export default class RecallMessageService {
         anonymizedBuffer
       );
 
-      // 2. Send anonymized image
       const imageContent = JSON.stringify({ image_key: newImageKey });
       await RecallLarkService.sendMessageToThread(
         env,
