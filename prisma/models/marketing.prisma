@@ -232,3 +232,4 @@ model FacebookAdsInsightsAdLevelDaily {
   @@map("facebook_ads_insights_ad_level_daily")
   @@schema("marketing")
 }
+
