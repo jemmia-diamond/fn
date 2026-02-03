@@ -169,6 +169,21 @@ export default class LeadService {
     });
   }
 
+  async getOrCreateLead(phone, dataBuilder) {
+    if (!phone) return null;
+
+    const leads = await this.frappeClient.getList("Lead", {
+      filters: [["phone", "=", phone]]
+    });
+
+    if (leads && leads.length > 0) {
+      return { ...leads[0], doctype: this.doctype };
+    }
+
+    const leadData = await dataBuilder();
+    return await this.frappeClient.insert(leadData);
+  }
+
   async getWebsiteLeads(timeThreshold) {
     const result = await this.db.$queryRaw`
       SELECT * FROM ecom.leads l
@@ -186,50 +201,56 @@ export default class LeadService {
 
     try {
       const contactService = new ContactService(this.env);
-      const location = data.raw_data.location;
-      const provinces = await this.frappeClient.getList("Province", {
-        filters: [["province_name", "LIKE", `%${location}%`]]
-      });
+      const phone = data.raw_data.phone;
+      const source = data.source === "Partner" ? this.PartnerLeadSource : this.WebsiteFormLeadSource;
 
-      const leadData = {
-        doctype: this.doctype,
-        source: data.source === "Partner" ? this.PartnerLeadSource : this.WebsiteFormLeadSource,
-        first_name: data.raw_data.name,
-        phone: data.raw_data.phone,
-        lead_owner: this.defaultLeadOwner,
-        province: provinces.length ? provinces[0].name : null,
-        first_reach_at: dayjs(data.database_created_at).utc().format("YYYY-MM-DD HH:mm:ss")
+      const dataBuilder = async () => {
+        const location = data.raw_data.location;
+        const provinces = await this.frappeClient.getList("Province", {
+          filters: [["province_name", "LIKE", `%${location}%`]]
+        });
+
+        const leadData = {
+          doctype: this.doctype,
+          status: "Lead",
+          naming_series: "CRM-LEAD-.YYYY.-",
+          source: source,
+          first_name: data.raw_data.name || "Chưa rõ",
+          phone: phone,
+          lead_owner: this.defaultLeadOwner,
+          province: provinces.length ? provinces[0].name : null,
+          first_reach_at: dayjs(data.database_created_at).utc().format("YYYY-MM-DD HH:mm:ss")
+        };
+
+        const notes = [];
+        if (data.raw_data.join_date) {
+          notes.push({
+            note: "Join Date: " + data.raw_data.join_date
+          });
+        }
+
+        if (data.raw_data.demand) {
+          notes.push({
+            note: "Demand: " + data.raw_data.demand
+          });
+        }
+
+        if (data.raw_data.diamond_note) {
+          notes.push({
+            note: "Diamond: " + data.raw_data.diamond_note
+          });
+        }
+
+        if (notes.length) {
+          leadData.notes = notes;
+        }
+        return leadData;
       };
 
-      const notes = [];
-      if (data.raw_data.join_date) {
-        notes.push({
-          note: "Join Date: " + data.raw_data.join_date
-        });
+      const lead = await this.getOrCreateLead(phone, dataBuilder);
+      if (lead) {
+        await contactService.processWebsiteContact(data, lead, source);
       }
-
-      if (data.raw_data.demand) {
-        notes.push({
-          note: "Demand: " + data.raw_data.demand
-        });
-      }
-
-      if (data.raw_data.diamond_note) {
-        notes.push({
-          note: "Diamond: " + data.raw_data.diamond_note
-        });
-      }
-
-      if (notes.length) {
-        leadData.notes = notes;
-      }
-
-      const ignoredFields = [
-        "first_reach_at", "source"
-      ];
-
-      const lead = await this.frappeClient.upsert(leadData, "phone", ignoredFields);
-      await contactService.processWebsiteContact(data, lead, leadData.source);
     } catch (e) {
       Sentry.captureException(e);
       return;
@@ -250,16 +271,27 @@ export default class LeadService {
   async processCallLogLead(data) {
     const contactService = new ContactService(this.env);
     const phone = data.type === "Incoming" ? data.from : data.to;
-    const leadData = {
-      doctype: this.doctype,
-      source: this.CallLogLeadSource,
-      first_name: phone,
-      phone: phone,
-      lead_owner: this.defaultLeadOwner,
-      first_reach_at: dayjs(data.creation).utc().format("YYYY-MM-DD HH:mm:ss")
+
+    if (!phone) return;
+
+    const dataBuilder = async () => {
+      const leadData = {
+        doctype: this.doctype,
+        status: "Lead",
+        naming_series: "CRM-LEAD-.YYYY.-",
+        source: this.CallLogLeadSource,
+        first_name: phone,
+        phone: phone,
+        lead_owner: this.defaultLeadOwner,
+        first_reach_at: dayjs(data.creation).utc().format("YYYY-MM-DD HH:mm:ss")
+      };
+      return leadData;
     };
-    const lead = await this.frappeClient.upsert(leadData, "phone", ["first_name"]);
-    await contactService.processCallLogContact(data, lead);
+
+    const lead = await this.getOrCreateLead(phone, dataBuilder);
+    if (lead) {
+      await contactService.processCallLogContact(data, lead);
+    }
   }
 
   static async syncCallLogLead(env) {
