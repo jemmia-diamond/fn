@@ -10,7 +10,8 @@ const MESSAGE_TYPE = {
 
 const CONTENT_TAG = {
   TEXT: "text",
-  IMG: "img"
+  IMG: "img",
+  HREF: "a"
 } as const;
 
 export default class RecallMessageService {
@@ -134,16 +135,16 @@ export default class RecallMessageService {
     const senderId = event.sender.sender_id.open_id;
     const imageMap = await this.downloadPostImages(env, event, content);
 
-    await RecallLarkService.recallMessage(env, event.message.message_id);
-
     await RecallLarkService.sendMessageToThread(
       env,
       event.message.root_id ?? event.message.message_id,
       MESSAGE_TYPE.TEXT,
       JSON.stringify({
-        text: "Tin nhắn đang được kiểm tra, vui lòng đợi..."
+        text: "Phát hiện dữ liệu nhạy cảm trong hình ảnh. Xin vui lòng đợi..."
       })
     );
+
+    await RecallLarkService.recallMessage(env, event.message.message_id);
 
     if (content.title) {
       content.title = await this.maskSensitiveInfo(env, content.title);
@@ -169,6 +170,12 @@ export default class RecallMessageService {
               bufferToUpload
             );
             item.image_key = newKey;
+          }
+        } else if (item.tag === CONTENT_TAG.HREF) {
+          if (await this.detectSensitiveInfo(env, item.text)) {
+            item.text = await this.maskSensitiveInfo(env, item.text);
+            item.tag = CONTENT_TAG.TEXT;
+            delete item.href;
           }
         }
       }
@@ -201,6 +208,8 @@ export default class RecallMessageService {
       for (const item of line) {
         if (item.tag === CONTENT_TAG.TEXT) {
           text += item.text + " ";
+        } else if (item.tag === CONTENT_TAG.HREF) {
+          text += item.text + " ";
         }
       }
     }
@@ -216,6 +225,12 @@ export default class RecallMessageService {
         for (const item of line) {
           if (item.tag === CONTENT_TAG.TEXT) {
             item.text = await this.maskSensitiveInfo(env, item.text);
+          } else if (item.tag === CONTENT_TAG.HREF) {
+            if (await this.detectSensitiveInfo(env, item.text)) {
+              item.text = await this.maskSensitiveInfo(env, item.text);
+              item.tag = CONTENT_TAG.TEXT;
+              delete item.href;
+            }
           }
         }
       }
