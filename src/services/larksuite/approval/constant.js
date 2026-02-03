@@ -71,5 +71,8 @@ export const APPROVALS = {
       order_code: ["widget17022700856220001"],
       new_order_code: ["widget17218060319530001"]
     }
+  },
+  AFFILIATE_PAYOUT_APPROVAL: {
+    code: "6346B3E2-825C-4BBA-ACE7-E92BDF0E2225"
   }
 };
