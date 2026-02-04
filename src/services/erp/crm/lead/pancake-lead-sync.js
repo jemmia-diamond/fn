@@ -93,9 +93,9 @@ export default class PancakeLeadSyncService {
         try {
           const updateResponse = await this.leadService.updateLeads(updateLeads);
 
-          if (updateResponse && updateResponse.results && Array.isArray(updateResponse.results)) {
+          if (updateResponse && Array.isArray(updateResponse)) {
             const toUpsertLeads = [];
-            updateResponse.results.forEach(result => {
+            updateResponse.forEach(result => {
               if (result.name && result.conversation_id) {
                 toUpsertLeads.push({
                   conversation_id: result.conversation_id,

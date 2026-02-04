@@ -105,14 +105,14 @@ export default class LeadService {
     customerPhone,
     customerName
   }) {
-    const response = await this.updateLeads([{
+    const leads = await this.updateLeads([{
       frappe_name_id: frappeNameId,
       customer_phone: customerPhone,
       customer_name: customerName
     }]);
 
-    if (response && response.results && Array.isArray(response.results) && response.results.length > 0) {
-      return response.results[0];
+    if (leads && Array.isArray(leads) && leads.length > 0) {
+      return leads[0];
     }
     return null;
   }
@@ -157,13 +157,15 @@ export default class LeadService {
   async insertLeads(leadsData) {
     if (!Array.isArray(leadsData) || leadsData.length === 0) return [];
     const docs = leadsData.map(lead => createInsertLeadPayload(lead));
-    return await this.syncLeadByBatchInsertion(docs);
+    const response = await this.syncLeadByBatchInsertion(docs);
+    return response || [];
   }
 
   async updateLeads(leadsData) {
     if (!Array.isArray(leadsData) || leadsData.length === 0) return [];
     const docs = leadsData.map(lead => createUpdateLeadPayload(lead));
-    return await this.syncLeadByBatchUpdate(docs);
+    const response = await this.syncLeadByBatchUpdate(docs);
+    return response?.results || [];
   }
 
   async syncLeadByBatchInsertion(docs) {
