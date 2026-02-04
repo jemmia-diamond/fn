@@ -209,7 +209,7 @@ export default class BuyBackInstanceService {
       submitted_date: data.submitted_date ? dayjs(data.submitted_date).format("YYYY-MM-DD HH:mm:ss") : null,
       products_info: typeof data.products_info === "string" ? data.products_info : JSON.stringify(data.products_info || [])
     };
-
-    await frappeClient.upsert(erpData, "lark_instance_id");
+    const ignoredFields = Object.keys(erpData).filter(key => key !== "status" && key !== "doctype");
+    await frappeClient.upsert(erpData, "lark_instance_id", ignoredFields);
   }
 }
