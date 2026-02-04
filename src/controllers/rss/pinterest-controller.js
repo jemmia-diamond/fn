@@ -49,7 +49,7 @@ export default class PinterestController {
                 ${rssItems}
             </channel>
           </rss>
-    `;
+    `.trim();
   }
 
   // Processes a single Atom entry and returns an RSS item string.
