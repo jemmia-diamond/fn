@@ -40,15 +40,15 @@ export default class PinterestController {
 
     return `
       <?xml version="1.0" encoding="UTF-8"?>
-                          <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
-                          <channel>
-                              <title>${feedTitle}</title>
-                              <link>${feedLink}</link>
-                              <description>${feedDescription}</description>
-                              <atom:link href="${feedUrl}" rel="self" type="application/rss+xml" />
-                              ${rssItems}
-                          </channel>
-                      </rss>
+          <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+            <channel>
+                <title>${feedTitle}</title>
+                <link>${feedLink}</link>
+                <description>${feedDescription}</description>
+                <atom:link href="${feedUrl}" rel="self" type="application/rss+xml" />
+                ${rssItems}
+            </channel>
+          </rss>
     `;
   }
 
