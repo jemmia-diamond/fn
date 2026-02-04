@@ -127,23 +127,30 @@ export default class ConversationService {
       });
       if (existingDocName === undefined) return;
 
+      const pancakePage = await this.findPageInfo({
+        pageId: pageId
+      });
+      if (pancakePage === undefined || pancakePage === null) return;
+
       let frappeNameId;
       if (existingDocName !== null) {
         frappeNameId = existingDocName.frappe_name_id;
+
         const lead = await this.leadService.updateLead({
           frappeNameId: existingDocName.frappe_name_id,
           customerPhone: body?.data?.message?.phone_info?.[0]?.phone_number ?? "",
-          customerName: body?.data?.conversation?.from?.name ?? ""
+          customerName: body?.data?.conversation?.from?.name ?? "",
+          platform: pancakePage.platform ?? "",
+          conversationId: conversationId ?? "",
+          pageId: pageId,
+          pageName: pancakePage.name ?? "",
+          type: body?.data?.conversation?.type ?? "",
+          pancakeUserId: body?.data?.conversation?.assignee_ids?.[0] ?? ""
         });
         if (lead) {
           frappeNameId = lead.name;
         }
       } else {
-        const pancakePage = await this.findPageInfo({
-          pageId: pageId
-        });
-        if (pancakePage === undefined || pancakePage === null) return;
-
         const newLead = await this.leadService.insertLead({
           customerName: body?.data?.conversation?.from?.name ?? "",
           customerPhone: body?.data?.message?.phone_info?.[0].phone_number ?? "",
