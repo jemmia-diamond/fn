@@ -4,6 +4,9 @@ import FrappeClient from "src/frappe/frappe-client";
 import { VOUCHER_TYPES } from "services/misa/constant";
 import dayjs from "dayjs";
 
+const QR_RECORD = "qrPaymentTransaction";
+const MANUAL_RECORD = "manualPaymentTransaction";
+
 export default class MisaCallbackVoucherHandler {
   constructor(env) {
     this.env = env;
@@ -91,11 +94,11 @@ export default class MisaCallbackVoucherHandler {
             });
 
             if (error.recordId) {
-              const jobType = error.modelName === "qrPaymentTransaction"
+              const jobType = error.modelName === QR_RECORD
                 ? Misa.Constants.JOB_TYPE.CREATE_QR_VOUCHER
                 : Misa.Constants.JOB_TYPE.CREATE_MANUAL_VOUCHER;
 
-              const data = error.modelName === "qrPaymentTransaction"
+              const data = error.modelName === QR_RECORD
                 ? { qr_transaction_id: error.recordId }
                 : { manual_payment_uuid: error.recordId };
 
@@ -118,7 +121,7 @@ export default class MisaCallbackVoucherHandler {
     const { voucher_type, org_refid } = firstResult;
 
     if (voucher_type === VOUCHER_TYPES.MANUAL_PAYMENT) {
-      return "manualPaymentTransaction";
+      return MANUAL_RECORD;
     }
 
     if (voucher_type === VOUCHER_TYPES.QR_PAYMENT) {
@@ -129,7 +132,7 @@ export default class MisaCallbackVoucherHandler {
         select: { id: true }
       });
 
-      return qrRecord ? "qrPaymentTransaction" : "manualPaymentTransaction";
+      return qrRecord ? QR_RECORD : MANUAL_RECORD;
     }
 
     return null;
