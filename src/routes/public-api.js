@@ -34,6 +34,6 @@ export default class PublicAPIRoutes {
 
     // RSS Proxy
     const rssNamespaceApi = publicApi.basePath("/rss");
-    rssNamespaceApi.get("/pinterest", RSS.PinterestController.index);
+    rssNamespaceApi.get("/pinterest/:slug", RSS.PinterestController.index);
   };
 };
