@@ -24,6 +24,7 @@ export default class ContactService {
     this.db = Database.instance(env);
     this.defaultContactName = "DEFAULT CONTACT";
     this.defaultWebsiteContactSourceGroup = "Website Form";
+    this.defaultCallLogSourceGroup = "Call Center";
   };
 
   async findContactByPrimaryPhone(phone) {
@@ -122,13 +123,15 @@ export default class ContactService {
     }
   }
 
-  async processCallLogContact(data, lead) {
+  async processCallLogContact(data, lead, source) {
     const phone = data.type === "Incoming" ? data.from : data.to;
     const contactData = {
       doctype: this.doctype,
       stringee_id: data.id,
       first_name: phone,
       inserted_at: data.start_time,
+      source: source,
+      source_group: this.defaultCallLogSourceGroup,
       phone_nos: [
         {
           "phone": phone,

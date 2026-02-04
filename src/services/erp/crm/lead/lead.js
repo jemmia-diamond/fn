@@ -290,7 +290,7 @@ export default class LeadService {
 
     const lead = await this.getOrCreateLead(phone, dataBuilder);
     if (lead) {
-      await contactService.processCallLogContact(data, lead);
+      await contactService.processCallLogContact(data, lead, this.CallLogLeadSource);
     }
   }
 
