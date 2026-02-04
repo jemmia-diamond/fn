@@ -161,7 +161,7 @@ export default class LeadService {
   }
 
   async updateLeads(leadsData) {
-    if (!leadsData || leadsData.length === 0) return [];
+    if (!Array.isArray(leadsData) || leadsData.length === 0) return [];
     const docs = leadsData.map(lead => createUpdateLeadPayload(lead));
     return await this.syncLeadByBatchUpdate(docs);
   }
