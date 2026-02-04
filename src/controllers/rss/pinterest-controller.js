@@ -1,8 +1,6 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
 
-const PINTEREST_USER_AGENT = "Mozilla/5.0 (compatible; PinterestBot/1.0; +http://www.pinterest.com/bot.html)";
-
 export default class PinterestController {
   static async index(ctx) {
     const url = ctx.req.query("url");
@@ -21,11 +19,7 @@ export default class PinterestController {
 
   // Fetches the feed content from the URL.
   static async _fetchFeed(url) {
-    const response = await axios.get(url, {
-      headers: {
-        "User-Agent": PINTEREST_USER_AGENT
-      }
-    });
+    const response = await axios.get(url);
     return response.data;
   }
 
