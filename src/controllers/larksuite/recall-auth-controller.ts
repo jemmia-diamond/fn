@@ -15,8 +15,8 @@ export default class RecallAuthController {
       </head>
       <body>
           <div class="card">
-              <h1>Add JEMMIA BOT to your groups</h1>
-              <p style="margin-bottom: 30px; color: #646a73;">Please sign in to continue</p>
+              <h1>Add JEMMIA SHIELD to your groups</h1>
+              <p style="margin-bottom: 30px; color: #646a73;">Please login to continue</p>
               <a href="/auth/recall/login/lark" class="btn">Login with Lark</a>
           </div>
       </body>
