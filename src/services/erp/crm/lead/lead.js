@@ -5,6 +5,7 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import ContactService from "services/erp/contacts/contact/contact";
 import { areAllFieldsEmpty, fetchLeadsFromERP, saveLeadsToDatabase } from "services/erp/crm/lead/utils/lead-helppers";
+import { createInsertLeadPayload, createUpdateLeadPayload } from "services/erp/crm/lead/utils/pancake-utils";
 
 dayjs.extend(utc);
 
@@ -99,60 +100,16 @@ export default class LeadService {
     }
   }
 
-  async updateLead({
-    leadName,
-    phone,
-    firstName
-  }) {
-    const lead = await this.syncLeadByBatchUpdate([
-      {
-        "doctype": "Lead",
-        "docname": leadName,
-        "phone": phone,
-        "first_name": firstName
-      }
-    ]);
-    return lead;
+  async insertLeads(leadsData) {
+    if (!leadsData || leadsData.length === 0) return [];
+    const docs = leadsData.map(lead => createInsertLeadPayload(lead));
+    return await this.syncLeadByBatchInsertion(docs);
   }
 
-  async insertLead({
-    firstName,
-    phone,
-    platform,
-    conversationId,
-    customerId,
-    pageId,
-    pageName,
-    insertedAt,
-    updatedAt,
-    type,
-    lastestMessageAt,
-    pancakeUserId,
-    pancakeAvatarUrl
-  }) {
-    const lead = await this.syncLeadByBatchInsertion([
-      {
-        "doctype": "Lead",
-        "status": "Lead",
-        "naming_series": "CRM-LEAD-.YYYY.-",
-        "first_name": firstName,
-        "phone": phone,
-        "pancake_data": {
-          "platform": platform,
-          "conversation_id": conversationId,
-          "customer_id": customerId,
-          "page_id": pageId,
-          "page_name": pageName,
-          "inserted_at": insertedAt,
-          "updated_at": updatedAt,
-          "can_inbox": type === "INBOX" ? 1 : 0,
-          "latest_message_at": lastestMessageAt,
-          "pancake_user_id": pancakeUserId, // sale
-          "pancake_avatar_url": pancakeAvatarUrl
-        }
-      }
-    ]);
-    return lead;
+  async updateLeads(leadsData) {
+    if (!leadsData || leadsData.length === 0) return [];
+    const docs = leadsData.map(lead => createUpdateLeadPayload(lead));
+    return await this.syncLeadByBatchUpdate(docs);
   }
 
   async syncLeadByBatchInsertion(docs) {

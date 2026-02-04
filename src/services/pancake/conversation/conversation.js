@@ -130,11 +130,11 @@ export default class ConversationService {
       let frappeNameId;
       if (existingDocName !== null) {
         frappeNameId = existingDocName.frappe_name_id;
-        const leads = await this.leadService.updateLead({
-          leadName: existingDocName.frappe_name_id,
-          phone: body?.data?.message?.phone_info?.[0].phone_number ?? "",
-          firstName: body?.data?.conversation?.from?.name ?? ""
-        });
+        const leads = await this.leadService.updateLeads([{
+          frappe_name_id: existingDocName.frappe_name_id,
+          customer_phone: body?.data?.message?.phone_info?.[0].phone_number ?? "",
+          customer_name: body?.data?.conversation?.from?.name ?? ""
+        }]);
         if (leads?.results && Array.isArray(leads.results) && leads.results.length > 0) {
           frappeNameId = leads.results[0]?.name;
         }
@@ -144,21 +144,17 @@ export default class ConversationService {
         });
         if (pancakePage === undefined || pancakePage === null) return;
 
-        const newLead = await this.leadService.insertLead({
-          firstName: body?.data?.conversation?.from?.name ?? "",
-          phone: body?.data?.message?.phone_info?.[0].phone_number ?? "",
+        const newLead = await this.leadService.insertLeads([{
+          customer_name: body?.data?.conversation?.from?.name ?? "",
+          customer_phone: body?.data?.message?.phone_info?.[0].phone_number ?? "",
           platform: pancakePage.platform ?? "",
-          conversationId: conversationId ?? "",
-          customerId: "",
-          pageId: pageId,
-          pageName: pancakePage.name ?? "",
-          insertedAt: "",
-          updatedAt: "",
+          conversation_id: conversationId ?? "",
+          page_id: pageId,
+          page_name: pancakePage.name ?? "",
           type: body?.data?.conversation?.type ?? "",
-          lastestMessageAt: "",
-          pancakeUserId: body?.data?.conversation?.assignee_ids?.[0] ?? "",
-          pancakeAvatarUrl: ""
-        });
+          can_inbox: body?.data?.conversation?.type === "INBOX",
+          pancake_user_id: body?.data?.conversation?.assignee_ids?.[0] ?? ""
+        }]);
 
         if (newLead !== undefined && newLead !== null && Array.isArray(newLead) && newLead.length > 0) {
           frappeNameId = newLead[0]?.name;
