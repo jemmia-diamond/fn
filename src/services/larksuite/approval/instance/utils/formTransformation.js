@@ -108,7 +108,7 @@ export const transformExchangeBuybackdData = (form) => {
       });
       return product;
     });
-    productsInfo = JSON.stringify(products);
+    productsInfo = products;
   }
 
   const mainOrderCode = accessNestedKey(widgetsObj, widgetFieldMapper.order_code);
