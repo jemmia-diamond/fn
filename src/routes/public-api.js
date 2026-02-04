@@ -1,4 +1,5 @@
 import Ecommerce from "controllers/ecommerce";
+import RSS from "controllers/rss";
 
 export default class PublicAPIRoutes {
   static register(publicApi) {
@@ -30,5 +31,9 @@ export default class PublicAPIRoutes {
 
     // Web form
     ecommerceNamespaceApi.post("/website-forms", Ecommerce.WebsiteFormController.create);
+
+    // RSS Proxy
+    const rssNamespaceApi = publicApi.basePath("/rss");
+    rssNamespaceApi.get("/pinterest", RSS.PinterestController.index);
   };
 };
