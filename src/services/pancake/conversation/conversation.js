@@ -152,7 +152,7 @@ export default class ConversationService {
           page_id: pageId,
           page_name: pancakePage.name ?? "",
           type: body?.data?.conversation?.type ?? "",
-          can_inbox: body?.data?.conversation?.type === "INBOX",
+          can_inbox: body?.data?.conversation?.type === "INBOX" ? 1 : 0,
           pancake_user_id: body?.data?.conversation?.assignee_ids?.[0] ?? ""
         }]);
 
