@@ -1,5 +1,7 @@
-import axios from "axios";
+import { createAxiosClient } from "services/utils/http-client";
 import * as cheerio from "cheerio";
+
+const httpClient = createAxiosClient();
 
 export default class PinterestController {
   static async index(ctx) {
@@ -19,7 +21,7 @@ export default class PinterestController {
 
   // Fetches the feed content from the URL.
   static async _fetchFeed(url) {
-    const response = await axios.get(url);
+    const response = await httpClient.get(url);
     return response.data;
   }
 
@@ -88,16 +90,13 @@ export default class PinterestController {
 
   // Extracts the best suitable image for the entry.
   static _extractImage($, entry, content) {
-    // 1. Try explicit image link in Atom feed
     let imageLink = entry.find("link[rel=\"alternate\"][type^=\"image/\"]").attr("href");
 
-    // 2. Fallback to first image in content
     if (!imageLink && content) {
       const content$ = cheerio.load(content, { xmlMode: false });
       imageLink = content$("img").first().attr("src");
     }
 
-    // 3. Fix protocol-relative URLs
     if (imageLink && imageLink.startsWith("//")) {
       imageLink = "https:" + imageLink;
     }
