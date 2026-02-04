@@ -1,4 +1,6 @@
-import { retry } from "services/utils/retry-utils";
+import { createAxiosClient } from "services/utils/http-client";
+
+const httpClient = createAxiosClient();
 
 export default class LarkChatMediaUploader {
   constructor(uploadUrl) {
@@ -9,10 +11,7 @@ export default class LarkChatMediaUploader {
     const form = new FormData();
     form.append("file", new Blob([buffer]), filename);
 
-    const res = await retry(async () => await fetch(this.uploadUrl, { method: "POST", body: form }));
-    if (!res.ok) return null;
-
-    const data = await res.json();
+    const { data } = await httpClient.post(this.uploadUrl, form);
     return data?.url || data?.link || null;
   }
 }
