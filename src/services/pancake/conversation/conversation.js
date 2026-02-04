@@ -132,7 +132,7 @@ export default class ConversationService {
         frappeNameId = existingDocName.frappe_name_id;
         const lead = await this.leadService.updateLead({
           frappeNameId: existingDocName.frappe_name_id,
-          customerPhone: body?.data?.message?.phone_info?.[0].phone_number ?? "",
+          customerPhone: body?.data?.message?.phone_info?.[0]?.phone_number ?? "",
           customerName: body?.data?.conversation?.from?.name ?? ""
         });
         if (lead) {
