@@ -100,6 +100,60 @@ export default class LeadService {
     }
   }
 
+  async updateLead({
+    frappeNameId,
+    customerPhone,
+    customerName
+  }) {
+    const response = await this.updateLeads([{
+      frappe_name_id: frappeNameId,
+      customer_phone: customerPhone,
+      customer_name: customerName
+    }]);
+
+    if (response && response.results && Array.isArray(response.results) && response.results.length > 0) {
+      return response.results[0];
+    }
+    return null;
+  }
+
+  async insertLead({
+    customerName,
+    customerPhone,
+    platform,
+    conversationId,
+    customerId,
+    pageId,
+    pageName,
+    insertedAt,
+    updatedAt,
+    type,
+    lastestMessageAt,
+    pancakeUserId,
+    pancakeAvatarUrl
+  }) {
+    const leads = await this.insertLeads([{
+      customer_name: customerName,
+      customer_phone: customerPhone,
+      platform: platform,
+      conversation_id: conversationId,
+      customer_id: customerId,
+      page_id: pageId,
+      page_name: pageName,
+      inserted_at: insertedAt,
+      updated_at: updatedAt,
+      can_inbox: type === "INBOX",
+      latest_message_at: lastestMessageAt,
+      pancake_user_id: pancakeUserId,
+      pancake_avatar_url: pancakeAvatarUrl
+    }]);
+
+    if (leads && Array.isArray(leads) && leads.length > 0) {
+      return leads[0];
+    }
+    return null;
+  }
+
   async insertLeads(leadsData) {
     if (!Array.isArray(leadsData) || leadsData.length === 0) return [];
     const docs = leadsData.map(lead => createInsertLeadPayload(lead));
