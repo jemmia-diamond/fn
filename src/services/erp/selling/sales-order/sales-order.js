@@ -780,7 +780,11 @@ export default class SalesOrderService {
               gateway: entry.gateway,
               paid_amount: entry.paid_amount,
               payment_date: entry.payment_date,
-              payment_order_status: entry.payment_order_status
+              payment_order_status: entry.payment_order_status,
+              bank_account: entry.bank_account,
+              bank: entry.bank,
+              bank_account_no: entry.bank_account_no,
+              bank_account_branch: entry.bank_account_branch
             };
 
             if (currentPaymentEntriesMap.has(entry.name)) {
