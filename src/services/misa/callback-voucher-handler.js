@@ -16,7 +16,6 @@ export default class MisaCallbackVoucherHandler {
       }
     );
     this.doctype = "Payment Entry";
-    this.featureOwnerInCharge = "binh.le@jemmia.vn";
   }
 
   /**
@@ -65,6 +64,7 @@ export default class MisaCallbackVoucherHandler {
           error.error_message = actualErrorMessage;
           error.payment_entry_name = record?.payment_entry_name;
           error.modelName = modelName;
+          error.recordId = record?.id || record?.uuid;
           throw error;
         }
 
@@ -80,13 +80,7 @@ export default class MisaCallbackVoucherHandler {
         }
 
       } catch (error) {
-        if (error?.isMisaError && error?.payment_entry_name) {
-          await this.frappeClient.createComment({
-            referenceDoctype: this.doctype,
-            referenceName: error.payment_entry_name,
-            content: `MISA trả kết quả: [${error?.error_code}] ${error?.error_message}`,
-            mentionPerson: this.featureOwnerInCharge
-          }).catch(() => {});
+        if (error?.isMisaError) {
           if (error?.error_code === "Exception") {
             await this.db[error.modelName].updateMany({
               where: { misa_sync_guid: error.org_refid },
@@ -95,6 +89,19 @@ export default class MisaCallbackVoucherHandler {
                 misa_synced_at: null
               }
             });
+
+            if (error.recordId) {
+              const jobType = error.modelName === "qrPaymentTransaction"
+                ? Misa.Constants.JOB_TYPE.CREATE_QR_VOUCHER
+                : Misa.Constants.JOB_TYPE.CREATE_MANUAL_VOUCHER;
+
+              const data = error.modelName === "qrPaymentTransaction"
+                ? { qr_transaction_id: error.recordId }
+                : { manual_payment_uuid: error.recordId };
+
+              const payload = { job_type: jobType, data };
+              await this.env["MISA_QUEUE"].send(payload);
+            }
           }
         }
 
