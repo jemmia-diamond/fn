@@ -351,6 +351,16 @@ export default class LeadService {
     let offset = 0;
     let hasMore = true;
 
+    const excludedContactNames = [
+      "CRM-CONTACT-2025-0139176",
+      "CRM-CONTACT-2025-0127832",
+      "CRM-CONTACT-2025-0164270",
+      "CRM-CONTACT-2025-0026564",
+      "CRM-CONTACT-2025-0186304",
+      "CRM-CONTACT-2025-0201962",
+      "CRM-CONTACT-2025-0222914"
+    ];
+
     try {
       while (hasMore) {
         const sql = `
@@ -368,6 +378,7 @@ export default class LeadService {
             AND l.phone IS NOT NULL AND l.phone != '' 
             AND cp.phone IS NOT NULL AND cp.phone != '' 
             AND l.phone != cp.phone
+            AND c.name NOT IN ('${excludedContactNames.join("','")}')
           ORDER BY l.name ASC
           LIMIT ${BATCH_SIZE} OFFSET ${offset}
         `;
