@@ -5,6 +5,7 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import ContactService from "services/erp/contacts/contact/contact";
 import { areAllFieldsEmpty, fetchLeadsFromERP, saveLeadsToDatabase } from "services/erp/crm/lead/utils/lead-helppers";
+import { createInsertLeadPayload, createUpdateLeadPayload } from "services/erp/crm/lead/utils/pancake-utils";
 
 dayjs.extend(utc);
 
@@ -100,24 +101,9 @@ export default class LeadService {
   }
 
   async updateLead({
-    leadName,
-    phone,
-    firstName
-  }) {
-    const lead = await this.syncLeadByBatchUpdate([
-      {
-        "doctype": "Lead",
-        "docname": leadName,
-        "phone": phone,
-        "first_name": firstName
-      }
-    ]);
-    return lead;
-  }
-
-  async insertLead({
-    firstName,
-    phone,
+    frappeNameId,
+    customerPhone,
+    customerName,
     platform,
     conversationId,
     customerId,
@@ -130,29 +116,78 @@ export default class LeadService {
     pancakeUserId,
     pancakeAvatarUrl
   }) {
-    const lead = await this.syncLeadByBatchInsertion([
-      {
-        "doctype": "Lead",
-        "status": "Lead",
-        "naming_series": "CRM-LEAD-.YYYY.-",
-        "first_name": firstName,
-        "phone": phone,
-        "pancake_data": {
-          "platform": platform,
-          "conversation_id": conversationId,
-          "customer_id": customerId,
-          "page_id": pageId,
-          "page_name": pageName,
-          "inserted_at": insertedAt,
-          "updated_at": updatedAt,
-          "can_inbox": type === "INBOX" ? 1 : 0,
-          "latest_message_at": lastestMessageAt,
-          "pancake_user_id": pancakeUserId, // sale
-          "pancake_avatar_url": pancakeAvatarUrl
-        }
-      }
-    ]);
-    return lead;
+    const leads = await this.updateLeads([{
+      frappe_name_id: frappeNameId,
+      customer_phone: customerPhone,
+      customer_name: customerName,
+      platform: platform,
+      conversation_id: conversationId,
+      customer_id: customerId,
+      page_id: pageId,
+      page_name: pageName,
+      inserted_at: insertedAt,
+      updated_at: updatedAt,
+      can_inbox: type === "INBOX",
+      latest_message_at: lastestMessageAt,
+      pancake_user_id: pancakeUserId,
+      pancake_avatar_url: pancakeAvatarUrl
+    }]);
+
+    if (leads && Array.isArray(leads) && leads.length > 0) {
+      return leads[0];
+    }
+    return null;
+  }
+
+  async insertLead({
+    customerName,
+    customerPhone,
+    platform,
+    conversationId,
+    customerId,
+    pageId,
+    pageName,
+    insertedAt,
+    updatedAt,
+    type,
+    lastestMessageAt,
+    pancakeUserId,
+    pancakeAvatarUrl
+  }) {
+    const leads = await this.insertLeads([{
+      customer_name: customerName,
+      customer_phone: customerPhone,
+      platform: platform,
+      conversation_id: conversationId,
+      customer_id: customerId,
+      page_id: pageId,
+      page_name: pageName,
+      inserted_at: insertedAt,
+      updated_at: updatedAt,
+      can_inbox: type === "INBOX",
+      latest_message_at: lastestMessageAt,
+      pancake_user_id: pancakeUserId,
+      pancake_avatar_url: pancakeAvatarUrl
+    }]);
+
+    if (leads && Array.isArray(leads) && leads.length > 0) {
+      return leads[0];
+    }
+    return null;
+  }
+
+  async insertLeads(leadsData) {
+    if (!Array.isArray(leadsData) || leadsData.length === 0) return [];
+    const docs = leadsData.map(lead => createInsertLeadPayload(lead));
+    const response = await this.syncLeadByBatchInsertion(docs);
+    return response || [];
+  }
+
+  async updateLeads(leadsData) {
+    if (!Array.isArray(leadsData) || leadsData.length === 0) return [];
+    const docs = leadsData.map(lead => createUpdateLeadPayload(lead));
+    const response = await this.syncLeadByBatchUpdate(docs);
+    return response?.results || [];
   }
 
   async syncLeadByBatchInsertion(docs) {
