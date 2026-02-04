@@ -101,7 +101,7 @@ export default class LeadService {
   }
 
   async insertLeads(leadsData) {
-    if (!leadsData || leadsData.length === 0) return [];
+    if (!Array.isArray(leadsData) || leadsData.length === 0) return [];
     const docs = leadsData.map(lead => createInsertLeadPayload(lead));
     return await this.syncLeadByBatchInsertion(docs);
   }
