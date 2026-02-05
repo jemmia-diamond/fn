@@ -69,7 +69,7 @@ export const APPROVALS = {
       department: ["widget17022701340280001"],
       other_info: ["widget17022705582580001"],
       order_code: ["widget17022700856220001"],
-      new_order_code: ["widget17218060319530001"]
+      new_order_code: ["widget17702009127030001"]
     }
   },
   AFFILIATE_PAYOUT_APPROVAL: {

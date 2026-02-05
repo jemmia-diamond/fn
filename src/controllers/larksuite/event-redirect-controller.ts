@@ -23,7 +23,7 @@ export default class EventRedirectController {
     }
 
     let eventPayload = null;
-    if (eventBody.type === "event_callback" && eventBody.event?.type === "approval_instance") {
+    if (eventBody.type === "event_callback" && (eventBody.event?.type === "approval_instance" || eventBody.event?.type === "approval_cc")) {
       eventPayload = eventBody.event;
     }
 
