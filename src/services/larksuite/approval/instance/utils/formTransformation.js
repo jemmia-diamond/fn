@@ -9,7 +9,7 @@ const widgetsArrayToObject = (form) => {
 };
 
 const accessNestedKey = (data, keys) => {
-  return keys.reduce((a, key) => a[key], data);
+  return keys.reduce((a, key) => a?.[key], data);
 };
 
 export const transformOffboardData = (form) => {
