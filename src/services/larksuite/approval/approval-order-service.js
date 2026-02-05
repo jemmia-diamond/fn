@@ -1,4 +1,5 @@
 import Database from "services/database";
+import { TIMEZONE_VIETNAM } from "src/constants";
 
 export default class ApprovalOrderService {
   constructor(env) {
@@ -55,12 +56,14 @@ export default class ApprovalOrderService {
         label += ` - ${customerName}`;
       }
 
-      if (order.financial_status) {
-        label += ` - ${order.financial_status}`;
-      }
-
       if (order.created_at) {
-        const dateStr = new Date(order.created_at).toISOString().split("T")[0];
+        const date = new Date(order.created_at);
+        const dateStr = new Intl.DateTimeFormat("en-GB", {
+          timeZone: TIMEZONE_VIETNAM,
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric"
+        }).format(date).replace(/\//g, "-");
         label += ` (${dateStr})`;
       }
 
