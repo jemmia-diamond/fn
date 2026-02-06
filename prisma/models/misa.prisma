@@ -542,7 +542,6 @@ model misaPendingLoanAgreement {
   @@schema("misa")
 }
 
-
 model misaSalesDetailReport {
   ref_detail_id   String  @id @db.Uuid
   session_id      String? @db.Uuid
