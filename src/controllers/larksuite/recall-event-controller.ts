@@ -29,28 +29,6 @@ export default class RecallEventController {
         return c.json({ challenge: eventBody.challenge });
       }
 
-      // 3. Handle Card Action Event
-      if (eventBody.header?.event_type === "card.action.trigger") {
-        const action = eventBody.event.action;
-        if (action.value && action.value.action === "view_sensitive_message") {
-          // Process in background
-          c.executionCtx.waitUntil(
-            RecallMessageService.handleViewSensitiveMessage(
-              c.env,
-              eventBody.event
-            )
-          );
-
-          // Return Toast immediately
-          return c.json({
-            toast: {
-              type: "success",
-              content: "Tin nhắn gốc đã được gửi."
-            }
-          });
-        }
-      }
-
       // 4. Handle Message Event
       if (eventBody.header?.event_type === "im.message.receive_v1") {
         const eventId = eventBody.header.event_id;

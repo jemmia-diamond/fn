@@ -1,5 +1,6 @@
 import axios from "axios";
 import * as crypto from "crypto";
+import LarkCipher from "services/larksuite/lark-cipher";
 
 export default class RecallLarkService {
   static API_BASE = "https://open.larksuite.com/open-apis";
@@ -443,5 +444,35 @@ export default class RecallLarkService {
       console.warn("Lark Service Error (sendEphemeralMessage):", error.message);
       throw error;
     }
+  }
+
+  static async generateViewMessageUrl(
+    env: any,
+    content: any,
+    msgType: string
+  ): Promise<string> {
+    const redirectUri = env.LARK_RECALL_VIEW_URL;
+
+    const encryptKey = await env.LARK_SHIELD_ENCRYPT_KEY_SECRET.get();
+
+    // Prepare payload for ViewMessageController
+    let payload: any = content;
+    if (msgType === "text") {
+      payload = { text: content };
+    } else if (msgType === "image") {
+      payload = { image_key: content };
+    }
+    // Post uses raw content object
+
+    const encryptedData = LarkCipher.encrypt(
+      JSON.stringify(payload),
+      encryptKey
+    );
+    const encodedData = encodeURIComponent(encryptedData);
+
+    // Construct View URL
+    const viewUrl = `${redirectUri}?data=${encodedData}&type=${msgType}`;
+
+    return `https://applink.larksuite.com/client/web_url/open?url=${encodeURIComponent(viewUrl)}&mode=window`;
   }
 }

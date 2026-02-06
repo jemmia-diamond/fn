@@ -49,7 +49,7 @@ export default class RecallMessageService {
         }
       ];
 
-      this.appendViewButton(elements, text, MESSAGE_TYPE.TEXT);
+      await this.appendViewButton(env, elements, text, MESSAGE_TYPE.TEXT);
       const cardContent = JSON.stringify({ elements });
 
       await RecallLarkService.sendMessageToThread(
@@ -104,7 +104,8 @@ export default class RecallMessageService {
         }
       ];
 
-      this.appendViewButton(
+      await this.appendViewButton(
+        env,
         elements,
         imageKey,
         MESSAGE_TYPE.IMAGE,
@@ -207,7 +208,12 @@ export default class RecallMessageService {
     this.prependSenderToContent(content, senderId);
 
     const elements = this.mapPostToCardElements(content);
-    this.appendViewButton(elements, originalContent, MESSAGE_TYPE.POST);
+    await this.appendViewButton(
+      env,
+      elements,
+      originalContent,
+      MESSAGE_TYPE.POST
+    );
     const cardContent = JSON.stringify({ elements });
 
     await RecallLarkService.sendMessageToThread(
@@ -262,7 +268,12 @@ export default class RecallMessageService {
       this.prependSenderToContent(content, senderId);
 
       const elements = this.mapPostToCardElements(content);
-      this.appendViewButton(elements, originalContent, MESSAGE_TYPE.POST);
+      await this.appendViewButton(
+        env,
+        elements,
+        originalContent,
+        MESSAGE_TYPE.POST
+      );
       const cardContent = JSON.stringify({ elements });
 
       await RecallLarkService.sendMessageToThread(
@@ -299,101 +310,6 @@ export default class RecallMessageService {
       }
     }
     return imageMap;
-  }
-
-  static async handleViewSensitiveMessage(env: any, event: any) {
-    try {
-      const action = event.action;
-      const chatId = event.context.open_chat_id;
-      const userId = event.operator.open_id;
-      const originalContent = action.value.content;
-      const msgType = action.value.msg_type || "text";
-
-      let cardContent = "";
-
-      if (msgType === "text") {
-        // Wrap text in a card
-        cardContent = JSON.stringify({
-          header: {
-            title: {
-              tag: "plain_text",
-              content: "Tin nhắn gốc"
-            },
-            template: "blue"
-          },
-          elements: [
-            {
-              tag: "div",
-              text: {
-                tag: "plain_text",
-                content: originalContent
-              }
-            }
-          ]
-        });
-      } else if (msgType === "image") {
-        // Wrap image in a card
-        cardContent = JSON.stringify({
-          header: {
-            title: {
-              tag: "plain_text",
-              content: "Ảnh gốc"
-            },
-            template: "blue"
-          },
-          elements: [
-            {
-              tag: "img",
-              img_key: originalContent,
-              alt: {
-                tag: "plain_text",
-                content: ""
-              }
-            }
-          ]
-        });
-      } else {
-        // For Post or other types, we map elements to card
-        // Assuming originalContent for Post is the full post object
-        let elements: any[] = [];
-        if (msgType === MESSAGE_TYPE.POST) {
-          elements = this.mapPostToCardElements(originalContent);
-        } else {
-          // Fallback for object content if not explicitly handled
-          elements = [
-            {
-              tag: "div",
-              text: {
-                tag: "plain_text",
-                content: JSON.stringify(originalContent)
-              }
-            }
-          ];
-        }
-
-        cardContent = JSON.stringify({
-          header: {
-            title: {
-              tag: "plain_text",
-              content: "Tin nhắn gốc"
-            },
-            template: "blue"
-          },
-          elements: elements
-        });
-      }
-
-      await RecallLarkService.sendEphemeralMessage(
-        env,
-        chatId,
-        userId,
-        MESSAGE_TYPE.INTERACTIVE, // Must be interactive
-        cardContent
-      );
-    } catch (error) {
-      Sentry.captureException(error);
-      console.warn("Error processing view sensitive message:", error);
-    }
   }
 
   private static prependSenderToContent(content: any, senderId: string) {
@@ -458,12 +374,19 @@ export default class RecallMessageService {
     return result.text;
   }
 
-  private static appendViewButton(
+  private static async appendViewButton(
+    env: any,
     elements: any[],
     content: any,
     msgType: string,
     buttonText: string = "Xem tin nhắn"
   ) {
+    const appLink = await RecallLarkService.generateViewMessageUrl(
+      env,
+      content,
+      msgType
+    );
+
     elements.push({
       tag: "action",
       actions: [
@@ -473,12 +396,8 @@ export default class RecallMessageService {
             tag: "plain_text",
             content: buttonText
           },
-          type: "primary",
-          value: {
-            action: "view_sensitive_message",
-            content: content,
-            msg_type: msgType
-          }
+          type: "default",
+          url: appLink
         }
       ]
     });
