@@ -2,6 +2,7 @@
 model marketingFacebookAdsCampaign {
   uuid                             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   id                               String    @unique
+  account_name                     String
   account_id                       String
   name                             String
   objective                        String?
@@ -43,6 +44,8 @@ model marketingFacebookAdsAdSet {
   uuid                             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   id                               String    @unique
   campaign_id                      String
+  campaign_name                    String
+  account_name                     String
   account_id                       String
   name                             String
   status                           String?   // ACTIVE, PAUSED, DELETED, ARCHIVED
@@ -102,8 +105,11 @@ model marketingFacebookAdsAdSet {
 model marketingFacebookAdsAd {
   uuid                        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   id                          String    @unique
+  account_name                String
   account_id                  String
+  campaign_name               String
   campaign_id                 String
+  adset_name                  String
   adset_id                    String
   name                        String
   status                      String?   // ACTIVE, PAUSED, DELETED, ARCHIVED
@@ -136,6 +142,8 @@ model marketingFacebookAdsAd {
 // Campaign Daily Insights (No breakdown)
 model marketingFacebookAdsInsightsDaily {
   uuid                        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  account_id                  String
+  account_name                String
   campaign_id                 String
   campaign_name               String
   date                 DateTime  @db.Date 
@@ -151,8 +159,8 @@ model marketingFacebookAdsInsightsDaily {
   cpp                         Decimal?  @db.Decimal(18, 6)
   ctr                         Decimal?  @db.Decimal(10, 4)
   cost_per_inline_link_click  Decimal?  @db.Decimal(18, 6)
-  conversions                 BigInt?
-  conversion_values           Decimal?  @db.Decimal(18, 2)
+  conversions                 Json?     @db.JsonB
+  conversion_values           Json?     @db.JsonB
   cost_per_conversion         Decimal?  @db.Decimal(18, 6)
   video_30_sec_watched_actions BigInt?
   video_p25_watched_actions   BigInt?
@@ -183,6 +191,8 @@ model marketingFacebookAdsInsightsDaily {
 // Ad Level Daily Insights (level=ad, time_increment=1)
 model marketingFacebookAdsInsightsAdLevelDaily {
   uuid                         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  account_id                   String
+  account_name                 String
   campaign_id                  String
   campaign_name                String
   adset_id                     String
@@ -202,8 +212,8 @@ model marketingFacebookAdsInsightsAdLevelDaily {
   cpm                          Decimal?  @db.Decimal(18, 6)
   cpp                          Decimal?  @db.Decimal(18, 6)
   ctr                          Decimal?  @db.Decimal(10, 4)
-  conversions                  BigInt?
-  conversion_values            Decimal?  @db.Decimal(18, 2)
+  conversions                  Json?     @db.JsonB
+  conversion_values            Json?     @db.JsonB
   cost_per_conversion          Decimal?  @db.Decimal(18, 6)
   purchase                     BigInt?
   video_30_sec_watched_actions BigInt?
@@ -230,6 +240,151 @@ model marketingFacebookAdsInsightsAdLevelDaily {
   @@index([campaign_id, date])
   @@index([adset_id, date])
   @@map("facebook_ads_insights_ad_level_daily")
+  @@schema("marketing")
+}
+
+// Breakdown by Age & Gender (level=ad, breakdowns=age,gender)
+model marketingFacebookAdsInsightsDemographic {
+  uuid                        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  account_id                  String
+  account_name                String
+  ad_id                       String
+  ad_name                     String?
+  adset_id                    String
+  adset_name                  String?
+  campaign_id                 String
+  campaign_name               String?
+  date                        DateTime  @db.Date
+  age                         String    // "18-24", "25-34", "35-44", "45-54", "55-64", "65+"
+  gender                      String    // "male", "female", "unknown"
+  spend                       Decimal?  @db.Decimal(18, 2)
+  impressions                 BigInt?
+  clicks                      BigInt?
+  reach                       BigInt?
+  frequency                   Decimal?  @db.Decimal(10, 4)
+  inline_link_clicks          BigInt?
+  inline_link_click_ctr       Decimal?  @db.Decimal(10, 4)
+  cpc                         Decimal?  @db.Decimal(18, 6)
+  cpm                         Decimal?  @db.Decimal(18, 6)
+  cpp                         Decimal?  @db.Decimal(18, 6)
+  ctr                         Decimal?  @db.Decimal(10, 4)
+  cost_per_inline_link_click  Decimal?  @db.Decimal(18, 6)
+  conversions                 Json?     @db.JsonB
+  conversion_values           Json?     @db.JsonB
+  cost_per_conversion         Decimal?  @db.Decimal(18, 6)
+  purchase                    BigInt?
+  purchase_roas               Json?     @db.JsonB
+  actions                     Json?     @db.JsonB
+  action_values               Json?     @db.JsonB
+  conversions_by_type         Json?     @db.JsonB
+  date_start                   DateTime? @db.Date
+  date_stop                    DateTime? @db.Date
+  updated_at                  DateTime  @default(now()) @updatedAt
+  synced_at                   DateTime  @default(now())
+
+  @@unique([ad_id, date, age, gender], name: "unique_ad_demographic")
+  @@index([date])
+  @@index([ad_id])
+  @@index([campaign_id])
+  @@map("facebook_ads_insights_demographic")
+  @@schema("marketing")
+}
+
+// Breakdown by Device & Platform (level=ad, breakdowns=publisher_platform,platform_position,device_platform)
+model marketingFacebookAdsInsightsDevice {
+  uuid                        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  account_id                  String
+  account_name                String
+  ad_id                       String
+  ad_name                     String?
+  adset_id                    String
+  adset_name                  String?
+  campaign_id                 String
+  campaign_name               String?
+  date                        DateTime  @db.Date
+  publisher_platform          String    // "facebook", "instagram", "audience_network", "messenger"
+  platform_position           String    // "feed", "instant_article", "instream_video", "right_hand_column", "story", "reels"
+  device_platform             String    // "mobile", "desktop", "unknown"
+  
+  spend                       Decimal?  @db.Decimal(18, 2)
+  impressions                 BigInt?
+  clicks                      BigInt?
+  reach                       BigInt?
+  frequency                   Decimal?  @db.Decimal(10, 4)
+  inline_link_clicks          BigInt?
+  inline_link_click_ctr       Decimal?  @db.Decimal(10, 4)
+  cpc                         Decimal?  @db.Decimal(18, 6)
+  cpm                         Decimal?  @db.Decimal(18, 6)
+  cpp                         Decimal?  @db.Decimal(18, 6)
+  ctr                         Decimal?  @db.Decimal(10, 4)
+  cost_per_inline_link_click  Decimal?  @db.Decimal(18, 6)
+  conversions                 Json?     @db.JsonB
+  conversion_values           Json?     @db.JsonB
+  cost_per_conversion         Decimal?  @db.Decimal(18, 6)
+  purchase                    BigInt?
+  purchase_roas               Json?     @db.JsonB
+  actions                     Json?     @db.JsonB
+  action_values               Json?     @db.JsonB
+  conversions_by_type         Json?     @db.JsonB
+  date_start                   DateTime? @db.Date
+  date_stop                    DateTime? @db.Date
+  updated_at                  DateTime  @default(now()) @updatedAt
+  synced_at                   DateTime  @default(now())
+
+  @@unique([ad_id, date, publisher_platform, platform_position, device_platform], name: "unique_ad_device")
+  @@index([date])
+  @@index([ad_id])
+  @@index([campaign_id])
+  @@map("facebook_ads_insights_device")
+  @@schema("marketing")
+}
+
+// Breakdown by Geography (level=ad, breakdowns=country,region)
+model marketingFacebookAdsInsightsGeo {
+  uuid                        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  account_id                  String
+  account_name                String
+  ad_id                       String
+  ad_name                     String?
+  adset_id                    String
+  adset_name                  String?
+  campaign_id                 String
+  campaign_name               String?
+  date                        DateTime  @db.Date
+  country                     String?   // "VN", "US", "SG" 
+  region                      String?   // Province/State
+  
+  spend                       Decimal?  @db.Decimal(18, 2)
+  impressions                 BigInt?
+  clicks                      BigInt?
+  reach                       BigInt?
+  frequency                   Decimal?  @db.Decimal(10, 4)
+  inline_link_clicks          BigInt?
+  inline_link_click_ctr       Decimal?  @db.Decimal(10, 4)
+  cpc                         Decimal?  @db.Decimal(18, 6)
+  cpm                         Decimal?  @db.Decimal(18, 6)
+  cpp                         Decimal?  @db.Decimal(18, 6)
+  ctr                         Decimal?  @db.Decimal(10, 4)
+  cost_per_inline_link_click  Decimal?  @db.Decimal(18, 6)
+  conversions                 Json?     @db.JsonB
+  conversion_values           Json?     @db.JsonB
+  cost_per_conversion         Decimal?  @db.Decimal(18, 6)
+  purchase                    BigInt?
+  purchase_roas               Json?     @db.JsonB
+  actions                     Json?     @db.JsonB
+  action_values               Json?     @db.JsonB
+  conversions_by_type         Json?     @db.JsonB
+  date_start                   DateTime? @db.Date
+  date_stop                    DateTime? @db.Date
+  updated_at                  DateTime  @default(now()) @updatedAt
+  synced_at                   DateTime  @default(now())
+
+  @@unique([ad_id, date, country, region], name: "unique_ad_geo")
+  @@index([date])
+  @@index([ad_id])
+  @@index([campaign_id])
+  @@index([country])
+  @@map("facebook_ads_insights_geo")
   @@schema("marketing")
 }
 

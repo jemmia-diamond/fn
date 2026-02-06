@@ -14,26 +14,28 @@ export default class QrTransactionService {
     this.db = Database.instance(env);
   }
 
-  async processTransaction(qrTransaction) {
-    if (qrTransaction.misa_sync_guid && qrTransaction.misa_synced_at) {
+  async processTransaction(qrTransaction, is_retry = false) {
+    if (qrTransaction.misa_sync_guid && qrTransaction.misa_synced_at && !is_retry) {
       return true;
     }
 
     const currentTime = dayjs().utc().toDate();
-    const generatedGuid = crypto.randomUUID();
+    const generatedGuid = is_retry ? qrTransaction.misa_sync_guid : crypto.randomUUID();
 
-    const claimed = await this.db.qrPaymentTransaction.updateMany({
-      where: {
-        id: qrTransaction.id,
-        misa_sync_guid: null
-      },
-      data: {
-        misa_sync_guid: generatedGuid
+    if (!is_retry){
+      const claimed = await this.db.qrPaymentTransaction.updateMany({
+        where: {
+          id: qrTransaction.id,
+          misa_sync_guid: null
+        },
+        data: {
+          misa_sync_guid: generatedGuid
+        }
+      });
+
+      if (claimed.count === 0) {
+        return true;
       }
-    });
-
-    if (claimed.count === 0) {
-      return true;
     }
 
     try {
@@ -86,12 +88,14 @@ export default class QrTransactionService {
 
         return true;
       } else {
-        await this.db.qrPaymentTransaction.update({
-          where: { id: originalId },
-          data: {
-            misa_sync_guid: null
-          }
-        });
+        if (!is_retry) {
+          await this.db.qrPaymentTransaction.update({
+            where: { id: originalId },
+            data: {
+              misa_sync_guid: null
+            }
+          });
+        }
 
         const errorMsg = {
           order_number: qrTransaction.haravan_order_number,
@@ -105,12 +109,14 @@ export default class QrTransactionService {
         );
       }
     } catch (error) {
-      await this.db.qrPaymentTransaction.update({
-        where: { id: qrTransaction.id },
-        data: {
-          misa_sync_guid: null
-        }
-      }).catch(() => {});
+      if (!is_retry) {
+        await this.db.qrPaymentTransaction.update({
+          where: { id: qrTransaction.id },
+          data: {
+            misa_sync_guid: null
+          }
+        }).catch(() => {});
+      }
       throw error;
     }
   }

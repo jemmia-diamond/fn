@@ -7,6 +7,17 @@ import dayjs from "dayjs";
 const QR_RECORD = "qrPaymentTransaction";
 const MANUAL_RECORD = "manualPaymentTransaction";
 
+const RETRYABLE_ERROR_CODES = [
+  "Exception",
+  "InvalidToken",
+  "ExpiredToken",
+  "DBAmisNotConnectDBACT"
+];
+
+const SUCCESS_ERROR_CODES = [
+  "IsCreatedVoucher"
+];
+
 export default class MisaCallbackVoucherHandler {
   constructor(env) {
     this.env = env;
@@ -37,6 +48,11 @@ export default class MisaCallbackVoucherHandler {
     for (const result of results) {
       const { org_refid, success, error_message, error_code = "" } = result;
 
+      if (SUCCESS_ERROR_CODES.includes(outerPayload?.error_code) || SUCCESS_ERROR_CODES.includes(error_code)){
+        Sentry.captureMessage("MISA Callback: Voucher already created", result);
+        continue;
+      }
+
       try {
         const actualSuccess = outerFailed ? false : success;
         const actualErrorCode = outerFailed ? (outerPayload?.error_code || "No error code") : error_code;
@@ -59,7 +75,7 @@ export default class MisaCallbackVoucherHandler {
           where: { misa_sync_guid: org_refid }
         });
 
-        if (outerFailed) {
+        if (!actualSuccess) {
           const error = new Error(`MISA sync failed: [${actualErrorCode}] ${actualErrorMessage}`);
           error.isMisaError = true;
           error.org_refid = org_refid;
@@ -84,15 +100,7 @@ export default class MisaCallbackVoucherHandler {
 
       } catch (error) {
         if (error?.isMisaError) {
-          if (error?.error_code === "Exception") {
-            await this.db[error.modelName].updateMany({
-              where: { misa_sync_guid: error.org_refid },
-              data: {
-                misa_sync_guid: null,
-                misa_synced_at: null
-              }
-            });
-
+          if (RETRYABLE_ERROR_CODES.includes(error?.error_code)) {
             if (error.recordId) {
               const jobType = error.modelName === QR_RECORD
                 ? Misa.Constants.JOB_TYPE.CREATE_QR_VOUCHER
@@ -102,7 +110,7 @@ export default class MisaCallbackVoucherHandler {
                 ? { qr_transaction_id: error.recordId }
                 : { manual_payment_uuid: error.recordId };
 
-              const payload = { job_type: jobType, data };
+              const payload = { job_type: jobType, data, is_retry: true };
               await this.env["MISA_QUEUE"].send(payload);
             }
           }
