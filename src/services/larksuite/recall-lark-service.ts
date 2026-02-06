@@ -402,4 +402,46 @@ export default class RecallLarkService {
       throw error;
     }
   }
+
+  static async sendEphemeralMessage(
+    env: any,
+    chatId: string,
+    openId: string,
+    msgType: string,
+    content: string
+  ): Promise<void> {
+    try {
+      const client = await this.client(env);
+
+      // Construct payload based on msgType
+      const payload: any = {
+        chat_id: chatId,
+        open_id: openId,
+        msg_type: msgType
+      };
+
+      if (msgType === "interactive") {
+        // Ephemeral API expects 'card' object for interactive messages, not stringified content
+        try {
+          payload.card = JSON.parse(content);
+        } catch (e) {
+          console.warn("Failed to parse card content, sending as is", e);
+          payload.card = content;
+        }
+      } else {
+        payload.content = content;
+      }
+
+      const response = await client.post("/ephemeral/v1/send", payload);
+
+      if (response.data.code !== 0) {
+        throw new Error(
+          `Failed to send ephemeral message: ${response.data.msg}`
+        );
+      }
+    } catch (error: any) {
+      console.warn("Lark Service Error (sendEphemeralMessage):", error.message);
+      throw error;
+    }
+  }
 }

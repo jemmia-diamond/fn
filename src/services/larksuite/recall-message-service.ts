@@ -5,6 +5,7 @@ import PresidioClient from "services/clients/presidio-client";
 const MESSAGE_TYPE = {
   TEXT: "text",
   IMAGE: "image",
+  INTERACTIVE: "interactive",
   POST: "post"
 } as const;
 
@@ -37,17 +38,25 @@ export default class RecallMessageService {
     if (await this.detectSensitiveInfo(env, text)) {
       const senderId = event.sender.sender_id.open_id;
       const maskedText = await this.maskSensitiveInfo(env, text);
-      const responseText = `<at user_id="${senderId}"></at>: ${maskedText}`;
 
-      const maskedContent = JSON.stringify({
-        text: responseText
-      });
+      const elements = [
+        {
+          tag: "div",
+          text: {
+            tag: "lark_md",
+            content: `<at user_id="${senderId}"></at>: ${maskedText}`
+          }
+        }
+      ];
+
+      this.appendViewButton(elements, text, MESSAGE_TYPE.TEXT);
+      const cardContent = JSON.stringify({ elements });
 
       await RecallLarkService.sendMessageToThread(
         env,
         event.message.root_id ?? event.message.message_id,
-        MESSAGE_TYPE.TEXT,
-        maskedContent
+        MESSAGE_TYPE.INTERACTIVE,
+        cardContent
       );
 
       await RecallLarkService.recallMessage(env, event.message.message_id);
@@ -65,14 +74,14 @@ export default class RecallMessageService {
         })
       );
 
-      await RecallLarkService.recallMessage(env, event.message.message_id);
-
       const imageKey = content.image_key;
       const imageBuffer = await RecallLarkService.getImage(
         env,
         event.message.message_id,
         imageKey
       );
+
+      await RecallLarkService.recallMessage(env, event.message.message_id);
 
       const presidioClient = new PresidioClient(env);
       const anonymizeResult = await presidioClient.anonymizeImage(imageBuffer);
@@ -84,15 +93,31 @@ export default class RecallMessageService {
         anonymizedBuffer
       );
 
-      const imageContent = JSON.stringify({ image_key: newImageKey });
+      const elements = [
+        {
+          tag: "img",
+          img_key: newImageKey,
+          alt: {
+            tag: "plain_text",
+            content: "Sensitive Image"
+          }
+        }
+      ];
+
+      this.appendViewButton(
+        elements,
+        imageKey,
+        MESSAGE_TYPE.IMAGE,
+        "Xem ảnh gốc"
+      );
+      const cardContent = JSON.stringify({ elements });
+
       await RecallLarkService.sendMessageToThread(
         env,
         event.message.root_id ?? event.message.message_id,
-        MESSAGE_TYPE.IMAGE,
-        imageContent
+        MESSAGE_TYPE.INTERACTIVE,
+        cardContent
       );
-
-      await RecallLarkService.recallMessage(env, event.message.message_id);
     } catch (error) {
       Sentry.captureException(error);
     }
@@ -129,6 +154,7 @@ export default class RecallMessageService {
     event: any,
     content: any
   ) {
+    const originalContent = JSON.parse(JSON.stringify(content));
     const senderId = event.sender.sender_id.open_id;
     const imageMap = await this.downloadPostImages(env, event, content);
 
@@ -180,15 +206,15 @@ export default class RecallMessageService {
 
     this.prependSenderToContent(content, senderId);
 
-    const postMessageContent = JSON.stringify({
-      zh_cn: content
-    });
+    const elements = this.mapPostToCardElements(content);
+    this.appendViewButton(elements, originalContent, MESSAGE_TYPE.POST);
+    const cardContent = JSON.stringify({ elements });
 
     await RecallLarkService.sendMessageToThread(
       env,
       event.message.root_id ?? event.message.message_id,
-      MESSAGE_TYPE.POST,
-      postMessageContent
+      MESSAGE_TYPE.INTERACTIVE,
+      cardContent
     );
   }
 
@@ -197,6 +223,7 @@ export default class RecallMessageService {
     event: any,
     content: any
   ) {
+    const originalContent = JSON.parse(JSON.stringify(content));
     let text = "";
     if (content.title) {
       text += content.title + " ";
@@ -234,15 +261,15 @@ export default class RecallMessageService {
 
       this.prependSenderToContent(content, senderId);
 
-      const postMessageContent = JSON.stringify({
-        zh_cn: content
-      });
+      const elements = this.mapPostToCardElements(content);
+      this.appendViewButton(elements, originalContent, MESSAGE_TYPE.POST);
+      const cardContent = JSON.stringify({ elements });
 
       await RecallLarkService.sendMessageToThread(
         env,
         event.message.root_id ?? event.message.message_id,
-        MESSAGE_TYPE.POST,
-        postMessageContent
+        MESSAGE_TYPE.INTERACTIVE,
+        cardContent
       );
 
       await RecallLarkService.recallMessage(env, event.message.message_id);
@@ -274,6 +301,101 @@ export default class RecallMessageService {
     return imageMap;
   }
 
+  static async handleViewSensitiveMessage(env: any, event: any) {
+    try {
+      const action = event.action;
+      const chatId = event.context.open_chat_id;
+      const userId = event.operator.open_id;
+      const originalContent = action.value.content;
+      const msgType = action.value.msg_type || "text";
+
+      let cardContent = "";
+
+      if (msgType === "text") {
+        // Wrap text in a card
+        cardContent = JSON.stringify({
+          header: {
+            title: {
+              tag: "plain_text",
+              content: "Tin nhắn gốc"
+            },
+            template: "blue"
+          },
+          elements: [
+            {
+              tag: "div",
+              text: {
+                tag: "plain_text",
+                content: originalContent
+              }
+            }
+          ]
+        });
+      } else if (msgType === "image") {
+        // Wrap image in a card
+        cardContent = JSON.stringify({
+          header: {
+            title: {
+              tag: "plain_text",
+              content: "Ảnh gốc"
+            },
+            template: "blue"
+          },
+          elements: [
+            {
+              tag: "img",
+              img_key: originalContent,
+              alt: {
+                tag: "plain_text",
+                content: ""
+              }
+            }
+          ]
+        });
+      } else {
+        // For Post or other types, we map elements to card
+        // Assuming originalContent for Post is the full post object
+        let elements: any[] = [];
+        if (msgType === MESSAGE_TYPE.POST) {
+          elements = this.mapPostToCardElements(originalContent);
+        } else {
+          // Fallback for object content if not explicitly handled
+          elements = [
+            {
+              tag: "div",
+              text: {
+                tag: "plain_text",
+                content: JSON.stringify(originalContent)
+              }
+            }
+          ];
+        }
+
+        cardContent = JSON.stringify({
+          header: {
+            title: {
+              tag: "plain_text",
+              content: "Tin nhắn gốc"
+            },
+            template: "blue"
+          },
+          elements: elements
+        });
+      }
+
+      await RecallLarkService.sendEphemeralMessage(
+        env,
+        chatId,
+        userId,
+        MESSAGE_TYPE.INTERACTIVE, // Must be interactive
+        cardContent
+      );
+    } catch (error) {
+      Sentry.captureException(error);
+      console.warn("Error processing view sensitive message:", error);
+    }
+  }
+
   private static prependSenderToContent(content: any, senderId: string) {
     if (!content.content) {
       content.content = [];
@@ -287,9 +409,78 @@ export default class RecallMessageService {
     return result.some((item) => item.score > 0.3);
   }
 
+  private static mapPostToCardElements(content: any): any[] {
+    const elements: any[] = [];
+    if (content.title) {
+      elements.push({
+        tag: "div",
+        text: { tag: "lark_md", content: `**${content.title}**` }
+      });
+    }
+
+    for (const line of content.content) {
+      let lineText = "";
+      for (const item of line) {
+        if (item.tag === CONTENT_TAG.TEXT) {
+          lineText += item.text;
+        } else if (item.tag === CONTENT_TAG.HREF) {
+          lineText += `[${item.text}](${item.href})`;
+        } else if (item.tag === "at") {
+          lineText += `<at user_id="${item.user_id}"></at>`;
+        } else if (item.tag === CONTENT_TAG.IMG) {
+          if (lineText) {
+            elements.push({
+              tag: "div",
+              text: { tag: "lark_md", content: lineText }
+            });
+            lineText = "";
+          }
+          elements.push({
+            tag: "img",
+            img_key: item.image_key,
+            alt: { tag: "plain_text", content: "" }
+          });
+        }
+      }
+      if (lineText) {
+        elements.push({
+          tag: "div",
+          text: { tag: "lark_md", content: lineText }
+        });
+      }
+    }
+    return elements;
+  }
+
   static async maskSensitiveInfo(env: any, text: string): Promise<string> {
     const presidioClient = new PresidioClient(env);
     const result = await presidioClient.anonymize({ text });
     return result.text;
+  }
+
+  private static appendViewButton(
+    elements: any[],
+    content: any,
+    msgType: string,
+    buttonText: string = "Xem tin nhắn"
+  ) {
+    elements.push({
+      tag: "action",
+      actions: [
+        {
+          tag: "button",
+          text: {
+            tag: "plain_text",
+            content: buttonText
+          },
+          type: "primary",
+          value: {
+            action: "view_sensitive_message",
+            content: content,
+            msg_type: msgType
+          }
+        }
+      ]
+    });
   }
 }

@@ -2,6 +2,7 @@ import { createAxiosClient } from "services/utils/http-client";
 import { Jimp } from "jimp";
 
 const BASE_URL = "https://presidio.jemmia.vn";
+// const BASE_URL = "http://localhost:8000";
 
 export default class PresidioClient {
   private env: any;
