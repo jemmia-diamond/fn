@@ -1,24 +1,4 @@
-/*
-  Warnings:
 
-  - The `conversions` column on the `facebook_ads_insights_ad_level_daily` table would be dropped and recreated. This will lead to data loss if there is data in the column.
-  - The `conversion_values` column on the `facebook_ads_insights_ad_level_daily` table would be dropped and recreated. This will lead to data loss if there is data in the column.
-  - The `conversions` column on the `facebook_ads_insights_daily` table would be dropped and recreated. This will lead to data loss if there is data in the column.
-  - The `conversion_values` column on the `facebook_ads_insights_daily` table would be dropped and recreated. This will lead to data loss if there is data in the column.
-  - You are about to drop the `exchange_rate` table. If the table is not empty, all the data it contains will be lost.
-  - You are about to drop the `gold_pricing` table. If the table is not empty, all the data it contains will be lost.
-  - Added the required column `account_name` to the `facebook_ads_ads` table without a default value. This is not possible if the table is not empty.
-  - Added the required column `adset_name` to the `facebook_ads_ads` table without a default value. This is not possible if the table is not empty.
-  - Added the required column `campaign_name` to the `facebook_ads_ads` table without a default value. This is not possible if the table is not empty.
-  - Added the required column `account_name` to the `facebook_ads_adsets` table without a default value. This is not possible if the table is not empty.
-  - Added the required column `campaign_name` to the `facebook_ads_adsets` table without a default value. This is not possible if the table is not empty.
-  - Added the required column `account_name` to the `facebook_ads_campaigns` table without a default value. This is not possible if the table is not empty.
-  - Added the required column `account_id` to the `facebook_ads_insights_ad_level_daily` table without a default value. This is not possible if the table is not empty.
-  - Added the required column `account_name` to the `facebook_ads_insights_ad_level_daily` table without a default value. This is not possible if the table is not empty.
-  - Added the required column `account_id` to the `facebook_ads_insights_daily` table without a default value. This is not possible if the table is not empty.
-  - Added the required column `account_name` to the `facebook_ads_insights_daily` table without a default value. This is not possible if the table is not empty.
-
-*/
 -- AlterTable
 ALTER TABLE "marketing"."facebook_ads_ads" ADD COLUMN     "account_name" TEXT NOT NULL,
 ADD COLUMN     "adset_name" TEXT NOT NULL,
@@ -46,34 +26,6 @@ DROP COLUMN "conversions",
 ADD COLUMN     "conversions" JSONB,
 DROP COLUMN "conversion_values",
 ADD COLUMN     "conversion_values" JSONB;
-
--- DropTable
-DROP TABLE "market_data"."exchange_rate";
-
--- DropTable
-DROP TABLE "market_data"."gold_pricing";
-
--- CreateTable
-CREATE TABLE "market_data"."marketDataExchangeRate" (
-    "time" TIMESTAMP(6) NOT NULL,
-    "code" VARCHAR,
-    "bank" VARCHAR,
-    "buy" DECIMAL,
-    "sell" DECIMAL,
-    "transfer" DECIMAL,
-    "created_at" TIMESTAMP(6)
-);
-
--- CreateTable
-CREATE TABLE "market_data"."marketDataGoldPricing" (
-    "time" TIMESTAMPTZ(6) NOT NULL,
-    "location" VARCHAR,
-    "gold_type" VARCHAR,
-    "buy" DECIMAL,
-    "sell" DECIMAL,
-    "created_at" TIMESTAMPTZ(6) DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMPTZ(6)
-);
 
 -- CreateTable
 CREATE TABLE "marketing"."facebook_ads_insights_demographic" (
@@ -201,15 +153,6 @@ CREATE TABLE "marketing"."facebook_ads_insights_geo" (
 
     CONSTRAINT "facebook_ads_insights_geo_pkey" PRIMARY KEY ("uuid")
 );
-
--- CreateIndex
-CREATE INDEX "marketDataExchangeRate_time_idx" ON "market_data"."marketDataExchangeRate"("time" DESC);
-
--- CreateIndex
-CREATE INDEX "marketDataGoldPricing_time_idx" ON "market_data"."marketDataGoldPricing"("time" DESC);
-
--- CreateIndex
-CREATE UNIQUE INDEX "marketDataGoldPricing_location_gold_type_time_key" ON "market_data"."marketDataGoldPricing"("location", "gold_type", "time");
 
 -- CreateIndex
 CREATE INDEX "facebook_ads_insights_demographic_date_idx" ON "marketing"."facebook_ads_insights_demographic"("date");
