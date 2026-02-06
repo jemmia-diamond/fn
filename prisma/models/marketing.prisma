@@ -351,8 +351,8 @@ model marketingFacebookAdsInsightsGeo {
   campaign_id                 String
   campaign_name               String?
   date                        DateTime  @db.Date
-  country                     String?   // "VN", "US", "SG" - có khi breakdown=['country'] hoặc ['country','region']
-  region                      String?   // Province/State - chỉ có khi breakdown=['country','region']
+  country                     String?   // "VN", "US", "SG" 
+  region                      String?   // Province/State
   
   spend                       Decimal?  @db.Decimal(18, 2)
   impressions                 BigInt?
