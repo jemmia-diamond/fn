@@ -18,7 +18,6 @@ const CONTENT_TAG = {
 export default class RecallMessageService {
   static async detectSensitiveInfoAndMask(env: any, event: any) {
     const content = JSON.parse(event.message.content);
-
     switch (event.message.message_type) {
     case MESSAGE_TYPE.TEXT:
       await this.handleTextMessage(env, event, content);
@@ -63,6 +62,19 @@ export default class RecallMessageService {
     }
   }
 
+  private static async reuploadImageForPersistence(
+    env: any,
+    imageBuffer: Buffer,
+    originalKey: string
+  ): Promise<string> {
+    try {
+      return await RecallLarkService.uploadImage(env, imageBuffer);
+    } catch (error) {
+      console.warn("Failed to re-upload image for persistence", error);
+      return originalKey;
+    }
+  }
+
   private static async handleImageMessage(env: any, event: any, content: any) {
     try {
       await RecallLarkService.sendMessageToThread(
@@ -78,6 +90,13 @@ export default class RecallMessageService {
       const imageBuffer = await RecallLarkService.getImage(
         env,
         event.message.message_id,
+        imageKey
+      );
+
+      // Re-upload original image to ensure persistence accessible by bot
+      const appOwnedImageKey = await this.reuploadImageForPersistence(
+        env,
+        imageBuffer,
         imageKey
       );
 
@@ -107,7 +126,7 @@ export default class RecallMessageService {
       await this.appendViewButton(
         env,
         elements,
-        imageKey,
+        appOwnedImageKey,
         MESSAGE_TYPE.IMAGE,
         "Xem ảnh gốc"
       );
@@ -159,6 +178,22 @@ export default class RecallMessageService {
     const senderId = event.sender.sender_id.open_id;
     const imageMap = await this.downloadPostImages(env, event, content);
 
+    // Re-upload images in originalContent to ensure they persist after recall and are accessible via downloadImage
+    for (const line of originalContent.content) {
+      for (const item of line) {
+        if (item.tag === CONTENT_TAG.IMG) {
+          const buffer = imageMap.get(item.image_key);
+          if (buffer) {
+            item.image_key = await this.reuploadImageForPersistence(
+              env,
+              buffer,
+              item.image_key
+            );
+          }
+        }
+      }
+    }
+
     await RecallLarkService.sendMessageToThread(
       env,
       event.message.root_id ?? event.message.message_id,
@@ -208,12 +243,13 @@ export default class RecallMessageService {
     this.prependSenderToContent(content, senderId);
 
     const elements = this.mapPostToCardElements(content);
-    await this.appendViewButton(
-      env,
-      elements,
-      originalContent,
-      MESSAGE_TYPE.POST
-    );
+    // Prepare payload with message_id for image fetching
+    const viewPayload = {
+      content: originalContent,
+      message_id: event.message.message_id
+    };
+
+    await this.appendViewButton(env, elements, viewPayload, MESSAGE_TYPE.POST);
     const cardContent = JSON.stringify({ elements });
 
     await RecallLarkService.sendMessageToThread(
@@ -268,10 +304,15 @@ export default class RecallMessageService {
       this.prependSenderToContent(content, senderId);
 
       const elements = this.mapPostToCardElements(content);
+      const viewPayload = {
+        content: originalContent,
+        message_id: event.message.message_id
+      };
+
       await this.appendViewButton(
         env,
         elements,
-        originalContent,
+        viewPayload,
         MESSAGE_TYPE.POST
       );
       const cardContent = JSON.stringify({ elements });

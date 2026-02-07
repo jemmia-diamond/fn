@@ -265,6 +265,26 @@ export default class RecallLarkService {
     }
   }
 
+  static async downloadImage(env: any, imageKey: string): Promise<Buffer> {
+    try {
+      const client = await this.client(env);
+      const response = await client.get(`/im/v1/images/${imageKey}`, {
+        responseType: "arraybuffer"
+      });
+
+      return Buffer.from(response.data);
+    } catch (error: any) {
+      if (error.response) {
+        console.warn(
+          "Lark API Error Data (downloadImage):",
+          JSON.stringify(error.response.data, null, 2)
+        );
+      }
+      console.warn("Lark Service Error (downloadImage):", error.message);
+      throw error;
+    }
+  }
+
   static async sendMessage(
     env: any,
     receiveId: string,
