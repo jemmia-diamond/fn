@@ -96,7 +96,31 @@ export default class ContactService {
         }
       ],
       source: source || lead.source,
-      source_group: this.defaultWebsiteContactSourceGroup
+      source_group: this.defaultWebsiteContactSourceGroup,
+      ip: data.raw_data.ip,
+      gtm_link: data.raw_data.link,
+      gtm_location: data.raw_data.location,
+      url_page: data.raw_data.url_page,
+      utm_term: data.raw_data.utm_term,
+      message_id: data.raw_data.message_id,
+      utm_medium: data.raw_data.utm_medium,
+      utm_source: data.raw_data.utm_source,
+      utm_content: data.raw_data.utm_content,
+      variant_url: data.raw_data.variant_url,
+      ladi_form_id: data.raw_data.ladi_form_id,
+      message_time: data.raw_data.message_time,
+      utm_campaign: data.raw_data.utm_campaign,
+      origin_url_page: data.raw_data.origin_url_page,
+      variant_content: data.raw_data.variant_content,
+      referrer: data.raw_data.referrer,
+      last_source: data.raw_data.last_source,
+      first_source: data.raw_data.first_source,
+      last_ad_param: data.raw_data.last_ad_param,
+      conversion_url: data.raw_data.conversion_url,
+      first_ad_param: data.raw_data.first_ad_param,
+      gclid: data.raw_data.gclid,
+      fbclid: data.raw_data.fbclid,
+      ttclid: data.raw_data.ttclid
     };
 
     const defaultContact = await this.frappeClient.getList(this.doctype, {
