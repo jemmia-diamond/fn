@@ -479,9 +479,13 @@ export default class RecallLarkService {
     // Prepare payload for ViewMessageController
     let payload: any = content;
     if (msgType === "text") {
-      payload = { text: content };
+      if (typeof content === "string") {
+        payload = { text: content };
+      }
     } else if (msgType === "image") {
-      payload = { image_key: content };
+      if (typeof content === "string") {
+        payload = { image_key: content };
+      }
     }
     // Post uses raw content object
 

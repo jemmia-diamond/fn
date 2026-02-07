@@ -1,6 +1,7 @@
 import { Context } from "hono";
 import LarkCipher from "services/larksuite/lark-cipher";
 import RecallLarkService from "services/larksuite/recall-lark-service";
+import { MESSAGE_TYPE } from "services/larksuite/recall-message-service";
 
 export default class RecallMessageViewController {
   static async show(c: Context) {
@@ -20,6 +21,23 @@ export default class RecallMessageViewController {
       const decrypted = await LarkCipher.decryptEvent(data, encryptKey);
       const payload = JSON.parse(decrypted);
 
+      // Handle new payload structure { original, masked }
+      // We want to show the ORIGINAL content to the user here
+      let renderContent = payload;
+      if (payload.original) {
+        renderContent = payload.original;
+        // Ensure thread_id is available on renderContent if it was on payload
+        // Only if renderContent is an object (post/image/etc), not string (text)
+        if (
+          typeof renderContent === "object" &&
+          renderContent !== null &&
+          payload.thread_id &&
+          !renderContent.thread_id
+        ) {
+          renderContent.thread_id = payload.thread_id;
+        }
+      }
+
       // Scenario 1: Logic with Auth Code (User identified)
       if (code) {
         try {
@@ -32,21 +50,85 @@ export default class RecallMessageViewController {
             userToken.access_token
           );
 
+          const openId = userToken.open_id || userInfo.open_id;
+
           if (payload.thread_id) {
             const time = new Date().toLocaleString("vi-VN", {
               timeZone: "Asia/Ho_Chi_Minh"
             });
-            const viewUrl = c.req.url.split("&code=")[0]; // Clean URL for the link in notification
+            // const viewUrl = c.req.url.split("&code=")[0]; // Clean URL for the link in notification
 
-            // Send notification to thread
-            await RecallLarkService.sendMessageToThread(
-              env,
-              payload.thread_id,
-              "text",
-              JSON.stringify({
-                text: `User ${userInfo.name} đã xem [tin nhắn](${viewUrl}) vào lúc ${time}`
-              }) // Content must be a JSON string for Lark API
-            );
+            // Generate link for MASKED content
+            let maskedContent = payload.masked;
+            // Fallback for old payloads or if structure doesn't match
+            if (!maskedContent && !payload.original) {
+              maskedContent = payload;
+            }
+
+            let maskedPayload = maskedContent;
+            if (typeof maskedContent === "string") {
+              if (type === "text") {
+                maskedPayload = { text: maskedContent };
+              } else if (type === "image") {
+                maskedPayload = { image_key: maskedContent };
+              }
+            }
+            // Ensure maskedPayload is an object to add the flag
+            if (typeof maskedPayload === "object" && maskedPayload !== null) {
+              maskedPayload.is_masked = true;
+              // Also ensure thread_id is passed if not present (though generateViewMessageUrl handles it,
+              // passing it in payload ensures it persists if generateViewMessageUrl logic changes slightly or for clarity)
+              if (!maskedPayload.thread_id && payload.thread_id) {
+                maskedPayload.thread_id = payload.thread_id;
+              }
+            }
+
+            const maskedViewLink =
+              await RecallLarkService.generateViewMessageUrl(
+                env,
+                maskedPayload, // Pass the object with is_masked flag
+                type,
+                payload.thread_id
+              );
+
+            const cardContent = {
+              config: {
+                wide_screen_mode: true
+              },
+              elements: [
+                {
+                  tag: "div",
+                  text: {
+                    tag: "lark_md",
+                    content: `<at id="${openId}"></at> đã xem tin nhắn vào lúc ${time}`
+                  }
+                },
+                {
+                  tag: "action",
+                  actions: [
+                    {
+                      tag: "button",
+                      text: {
+                        tag: "plain_text",
+                        content: "Xem tin nhắn"
+                      },
+                      type: "default",
+                      url: maskedViewLink
+                    }
+                  ]
+                }
+              ]
+            };
+
+            // Send notification to thread ONLY if not already masked view
+            if (!payload.is_masked) {
+              await RecallLarkService.sendMessageToThread(
+                env,
+                payload.thread_id,
+                MESSAGE_TYPE.INTERACTIVE,
+                JSON.stringify(cardContent)
+              );
+            }
           }
         } catch (error: any) {
           console.warn(
@@ -177,7 +259,9 @@ export default class RecallMessageViewController {
       if (type === "image") {
         try {
           // Payload might have image_key directly or nested, checking logic
-          const imageKey = payload.image_key;
+          const imageKey =
+            renderContent.image_key ||
+            (typeof renderContent === "string" ? renderContent : null);
           if (imageKey) {
             const imageBuffer = await RecallLarkService.downloadImage(
               c.env,
@@ -197,14 +281,14 @@ export default class RecallMessageViewController {
       } else if (type === "post") {
         contentHtml = await RecallMessageViewController.renderPost(
           c.env,
-          payload
+          renderContent
         );
       } else {
         const textContent =
-          payload.text ||
-          (typeof payload === "string"
-            ? payload
-            : JSON.stringify(payload, null, 2));
+          renderContent.text ||
+          (typeof renderContent === "string"
+            ? renderContent
+            : JSON.stringify(renderContent, null, 2));
         contentHtml = `<div style="white-space: pre-wrap; word-break: break-word; font-family: sans-serif; padding: 20px;">${textContent}</div>`;
       }
 
@@ -234,7 +318,7 @@ export default class RecallMessageViewController {
   }
 
   private static async renderPost(env: any, payload: any): Promise<string> {
-    const content = payload.content;
+    const content = payload;
     let html = "<div style=\"font-family: sans-serif; padding: 20px;\">";
 
     if (content.title) {

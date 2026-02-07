@@ -2,7 +2,7 @@ import RecallLarkService from "services/larksuite/recall-lark-service";
 import * as Sentry from "@sentry/cloudflare";
 import PresidioClient from "services/clients/presidio-client";
 
-const MESSAGE_TYPE = {
+export const MESSAGE_TYPE = {
   TEXT: "text",
   IMAGE: "image",
   INTERACTIVE: "interactive",
@@ -43,16 +43,20 @@ export default class RecallMessageService {
           tag: "div",
           text: {
             tag: "lark_md",
-            content: `<at user_id="${senderId}"></at>: ${maskedText}`
+            content: `<at id="${senderId}"></at>: ${maskedText}`
           }
         }
       ];
 
       const threadId = event.message.root_id ?? event.message.message_id;
+      const viewPayload = {
+        original: text,
+        masked: maskedText
+      };
       await this.appendViewButton(
         env,
         elements,
-        text,
+        viewPayload,
         MESSAGE_TYPE.TEXT,
         threadId
       );
@@ -132,10 +136,15 @@ export default class RecallMessageService {
 
       const threadId = event.message.root_id ?? event.message.message_id;
 
+      const viewPayload = {
+        original: { image_key: appOwnedImageKey },
+        masked: { image_key: newImageKey }
+      };
+
       await this.appendViewButton(
         env,
         elements,
-        appOwnedImageKey,
+        viewPayload,
         MESSAGE_TYPE.IMAGE,
         threadId,
         "Xem ảnh gốc"
@@ -254,12 +263,13 @@ export default class RecallMessageService {
 
     const elements = this.mapPostToCardElements(content);
     // Prepare payload with message_id for image fetching
+    const threadId = event.message.root_id ?? event.message.message_id;
     const viewPayload = {
-      content: originalContent,
+      original: originalContent,
+      masked: content,
       message_id: event.message.message_id
     };
 
-    const threadId = event.message.root_id ?? event.message.message_id;
     await this.appendViewButton(
       env,
       elements,
@@ -321,12 +331,12 @@ export default class RecallMessageService {
       this.prependSenderToContent(content, senderId);
 
       const elements = this.mapPostToCardElements(content);
+      const threadId = event.message.root_id ?? event.message.message_id;
       const viewPayload = {
-        content: originalContent,
+        original: originalContent,
+        masked: content,
         message_id: event.message.message_id
       };
-
-      const threadId = event.message.root_id ?? event.message.message_id;
 
       await this.appendViewButton(
         env,
@@ -403,7 +413,7 @@ export default class RecallMessageService {
         } else if (item.tag === CONTENT_TAG.HREF) {
           lineText += `[${item.text}](${item.href})`;
         } else if (item.tag === "at") {
-          lineText += `<at user_id="${item.user_id}"></at>`;
+          lineText += `<at id="${item.user_id}"></at>`;
         } else if (item.tag === CONTENT_TAG.IMG) {
           if (lineText) {
             elements.push({
@@ -435,7 +445,7 @@ export default class RecallMessageService {
     return result.text;
   }
 
-  private static async appendViewButton(
+  public static async appendViewButton(
     env: any,
     elements: any[],
     content: any,
