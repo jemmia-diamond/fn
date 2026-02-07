@@ -48,7 +48,14 @@ export default class RecallMessageService {
         }
       ];
 
-      await this.appendViewButton(env, elements, text, MESSAGE_TYPE.TEXT);
+      const threadId = event.message.root_id ?? event.message.message_id;
+      await this.appendViewButton(
+        env,
+        elements,
+        text,
+        MESSAGE_TYPE.TEXT,
+        threadId
+      );
       const cardContent = JSON.stringify({ elements });
 
       await RecallLarkService.sendMessageToThread(
@@ -123,11 +130,14 @@ export default class RecallMessageService {
         }
       ];
 
+      const threadId = event.message.root_id ?? event.message.message_id;
+
       await this.appendViewButton(
         env,
         elements,
         appOwnedImageKey,
         MESSAGE_TYPE.IMAGE,
+        threadId,
         "Xem ảnh gốc"
       );
       const cardContent = JSON.stringify({ elements });
@@ -249,7 +259,14 @@ export default class RecallMessageService {
       message_id: event.message.message_id
     };
 
-    await this.appendViewButton(env, elements, viewPayload, MESSAGE_TYPE.POST);
+    const threadId = event.message.root_id ?? event.message.message_id;
+    await this.appendViewButton(
+      env,
+      elements,
+      viewPayload,
+      MESSAGE_TYPE.POST,
+      threadId
+    );
     const cardContent = JSON.stringify({ elements });
 
     await RecallLarkService.sendMessageToThread(
@@ -309,11 +326,14 @@ export default class RecallMessageService {
         message_id: event.message.message_id
       };
 
+      const threadId = event.message.root_id ?? event.message.message_id;
+
       await this.appendViewButton(
         env,
         elements,
         viewPayload,
-        MESSAGE_TYPE.POST
+        MESSAGE_TYPE.POST,
+        threadId
       );
       const cardContent = JSON.stringify({ elements });
 
@@ -420,12 +440,14 @@ export default class RecallMessageService {
     elements: any[],
     content: any,
     msgType: string,
+    threadId: string,
     buttonText: string = "Xem tin nhắn"
   ) {
     const appLink = await RecallLarkService.generateViewMessageUrl(
       env,
       content,
-      msgType
+      msgType,
+      threadId
     );
 
     elements.push({

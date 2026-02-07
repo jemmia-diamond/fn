@@ -469,7 +469,8 @@ export default class RecallLarkService {
   static async generateViewMessageUrl(
     env: any,
     content: any,
-    msgType: string
+    msgType: string,
+    threadId: string
   ): Promise<string> {
     const redirectUri = env.LARK_RECALL_VIEW_URL;
 
@@ -483,6 +484,16 @@ export default class RecallLarkService {
       payload = { image_key: content };
     }
     // Post uses raw content object
+
+    // Add threadId to payload
+    if (threadId) {
+      if (typeof payload === "object") {
+        payload.thread_id = threadId;
+      } else {
+        // Should not happen based on above logic, but safety check
+        payload = { ...payload, thread_id: threadId };
+      }
+    }
 
     const encryptedData = LarkCipher.encrypt(
       JSON.stringify(payload),

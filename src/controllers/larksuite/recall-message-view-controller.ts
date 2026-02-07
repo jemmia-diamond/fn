@@ -7,39 +7,204 @@ export default class RecallMessageViewController {
     try {
       const data = c.req.query("data");
       const type = c.req.query("type") || "text";
+      const code = c.req.query("code");
 
       if (!data) {
         return c.text("Missing data", 400);
       }
 
-      const encryptKey = await c.env.LARK_SHIELD_ENCRYPT_KEY_SECRET.get();
-      const decrypted = await LarkCipher.decryptEvent(data, encryptKey);
-
       let contentHtml = "";
 
-      if (type === "image") {
-        const payload = JSON.parse(decrypted);
+      const env = c.env;
+      const encryptKey = await env.LARK_SHIELD_ENCRYPT_KEY_SECRET.get();
+      const decrypted = await LarkCipher.decryptEvent(data, encryptKey);
+      const payload = JSON.parse(decrypted);
+
+      // Scenario 1: Logic with Auth Code (User identified)
+      if (code) {
         try {
-          const imageBuffer = await RecallLarkService.downloadImage(
-            c.env,
-            payload.image_key
+          const userToken = await RecallLarkService.getUserAccessToken(
+            env,
+            code
           );
-          const base64 = imageBuffer.toString("base64");
-          contentHtml = `<div style="padding: 20px; text-align: center;"><img src="data:image/png;base64,${base64}" style="max-width: 100%; height: auto; border-radius: 4px;" /></div>`;
+          const userInfo = await RecallLarkService.getUserInfo(
+            env,
+            userToken.access_token
+          );
+
+          if (payload.thread_id) {
+            const time = new Date().toLocaleString("vi-VN", {
+              timeZone: "Asia/Ho_Chi_Minh"
+            });
+            const viewUrl = c.req.url.split("&code=")[0]; // Clean URL for the link in notification
+
+            // Send notification to thread
+            await RecallLarkService.sendMessageToThread(
+              env,
+              payload.thread_id,
+              "text",
+              JSON.stringify({
+                text: `User ${userInfo.name} đã xem [tin nhắn](${viewUrl}) vào lúc ${time}`
+              }) // Content must be a JSON string for Lark API
+            );
+          }
+        } catch (error: any) {
+          console.warn(
+            "Failed to process auth code or send notification:",
+            error
+          );
+          // Append error to contentHtml (or a separate variable) to see it in browser
+          contentHtml += `<div style="color: red; padding: 10px; background: #ffe6e6; border: 1px solid red; margin-bottom: 10px;">Debug Error: ${error.message}</div>`;
+        }
+      }
+      // Scenario 2: No Auth Code - Attempt Silent Auth via H5 SDK
+      else {
+        const appId = env.LARK_APP_SHIELD_ID;
+        return c.html(`
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>Loading...</title>
+            <style>
+              body { display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; font-family: sans-serif; flex-direction: column; }
+              .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+              @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+              .debug-info { margin-top: 20px; font-size: 12px; color: #666; word-break: break-all; padding: 10px; max-width: 90%; }
+            </style>
+          </head>
+          <body>
+            <div id="loader" class="loader"></div>
+            <div id="message" style="margin-top: 20px; display: none; text-align: center;"></div>
+            <div id="debug" class="debug-info" style="display: none;"></div>
+            <script>
+              const appId = "${appId}";
+    
+              function showMetaInfo(msg) {
+                  const debugEl = document.getElementById("debug");
+                  debugEl.style.display = "block";
+        
+                  let ttStatus = "undefined";
+                  let hasGetAuth = "no";
+                  let keys = "none";
+        
+                  if (window.tt) {
+                      ttStatus = "defined";
+                      hasGetAuth = typeof window.tt.getAuthCode;
+                      try { keys = Object.keys(window.tt).join(","); } catch(e) {}
+                  }
+
+                  debugEl.innerText = msg + "\\nUA: " + navigator.userAgent + "\\nTT: " + ttStatus + " | getAuthCode: " + hasGetAuth + "\\nKeys: " + keys;
+              }
+
+              function startAuth() {
+                console.log("SDK Loaded, starting auth...");
+      
+                if (!window.tt) {
+                   document.getElementById("loader").style.display = "none";
+                   document.getElementById("message").style.display = "block";
+                   document.getElementById("message").innerText = "Lỗi: window.tt không tìm thấy.";
+                   showMetaInfo("window.tt missing");
+                   return;
+                }
+
+                // Try getAuthCode, fallback to requestAuthCode
+                const authFn = window.tt.getAuthCode || window.tt.requestAuthCode;
+
+                if (authFn) {
+                   // Bind to window.tt to be safe
+                   authFn.call(window.tt, {
+                      appId: appId,
+                      success: (res) => {
+                         const currentUrl = new URL(window.location.href);
+                         // requestAuthCode might return res.code or just res as string in some versions, 
+                         // but usually object with code.
+                         const code = res.code || res; 
+                         currentUrl.searchParams.append("code", code);
+                         window.location.replace(currentUrl.toString());
+                      },
+                      fail: (err) => {
+                         console.error("Auth failed", err);
+                         document.getElementById("loader").style.display = "none";
+                         document.getElementById("message").style.display = "block";
+                         document.getElementById("message").innerText = "Lỗi xác thực (Auth Failed): " + JSON.stringify(err);
+                         showMetaInfo("Auth Call Failed");
+                      }
+                   });
+                } else {
+                   document.getElementById("loader").style.display = "none";
+                   document.getElementById("message").style.display = "block";
+                   document.getElementById("message").innerText = "Lỗi: Không tìm thấy hàm getAuthCode hoặc requestAuthCode.";
+                   showMetaInfo("Missing function after load");
+                }
+              }
+
+              function handleLoadError() {
+                 document.getElementById("loader").style.display = "none";
+                 document.getElementById("message").style.display = "block";
+                 document.getElementById("message").innerText = "Không thể tải Lark SDK (Network Error).";
+                 showMetaInfo("Script Load Error");
+              }
+
+              // Create script tag programmatically to handle events properly
+              const script = document.createElement("script");
+              script.src = "https://lf1-cdn-tos.bytegoofy.com/goofy/lark/op/h5-js-sdk-1.5.23.js";
+              script.onload = startAuth;
+              script.onerror = handleLoadError;
+              document.head.appendChild(script);
+
+              // Fallback timeout
+              setTimeout(() => {
+                 if (document.getElementById("loader").style.display !== "none") {
+                    console.warn("Timeout waiting for SDK");
+                    // DO NOT hide loader yet, maybe just slow. But log it.
+                    // If window.tt appeared by magic, try using it?
+                    if (window.tt && window.tt.getAuthCode) {
+                       startAuth();
+                    }
+                 }
+              }, 3000);
+            </script>
+          </body>
+          </html>
+        `);
+      }
+
+      // Render Content (Same logic as before, but payload is already parsed)
+      // contentHtml is already declared at the top
+
+      if (type === "image") {
+        try {
+          // Payload might have image_key directly or nested, checking logic
+          const imageKey = payload.image_key;
+          if (imageKey) {
+            const imageBuffer = await RecallLarkService.downloadImage(
+              c.env,
+              imageKey
+            );
+            const base64 = imageBuffer.toString("base64");
+            contentHtml = `<div style="padding: 20px; text-align: center;"><img src="data:image/png;base64,${base64}" style="max-width: 100%; height: auto; border-radius: 4px;" /></div>`;
+          } else {
+            contentHtml =
+              "<div style=\"padding: 20px; text-align: center;\">[Image key missing]</div>";
+          }
         } catch {
           console.warn("Failed to render single image");
           contentHtml =
             "<div style=\"padding: 20px; text-align: center;\">[Image failed to load]</div>";
         }
       } else if (type === "post") {
-        const payload = JSON.parse(decrypted);
         contentHtml = await RecallMessageViewController.renderPost(
           c.env,
           payload
         );
       } else {
-        const payload = JSON.parse(decrypted);
-        const textContent = payload.text || JSON.stringify(payload, null, 2);
+        const textContent =
+          payload.text ||
+          (typeof payload === "string"
+            ? payload
+            : JSON.stringify(payload, null, 2));
         contentHtml = `<div style="white-space: pre-wrap; word-break: break-word; font-family: sans-serif; padding: 20px;">${textContent}</div>`;
       }
 
@@ -64,7 +229,7 @@ export default class RecallMessageViewController {
       `);
     } catch (e: any) {
       console.warn("RecallMessageView Error:", e);
-      return c.text("Invalid or expired link", 400);
+      return c.text("Invalid or expired link: " + e.message, 400);
     }
   }
 
