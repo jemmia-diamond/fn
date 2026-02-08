@@ -222,7 +222,8 @@ export default class LeadService {
   async getWebsiteLeads(timeThreshold) {
     const result = await this.db.$queryRaw`
       SELECT * FROM ecom.leads l
-      WHERE l.database_created_at > ${timeThreshold};
+      WHERE l.database_created_at > ${timeThreshold}
+      ORDER BY l.database_created_at DESC;
     `;
     return result;
   }
