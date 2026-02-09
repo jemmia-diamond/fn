@@ -1,6 +1,7 @@
 import RecallLarkService from "services/larksuite/recall-lark-service";
 import * as Sentry from "@sentry/cloudflare";
 import PresidioClient from "services/clients/presidio-client";
+import ImageHelper from "services/utils/image-helper";
 
 export const MESSAGE_TYPE = {
   TEXT: "text",
@@ -12,7 +13,8 @@ export const MESSAGE_TYPE = {
 const CONTENT_TAG = {
   TEXT: "text",
   IMG: "img",
-  HREF: "a"
+  HREF: "a",
+  AT: "at"
 } as const;
 
 export default class RecallMessageService {
@@ -38,20 +40,34 @@ export default class RecallMessageService {
       const senderId = event.sender.sender_id.open_id;
       const maskedText = await this.maskSensitiveInfo(env, text);
 
+      // Resolve mentions for Card (using <at> tag)
+      const mentions = event.message.mentions || [];
+      const cardMaskedText = this.resolveMentionsForCard(maskedText, mentions);
+
+      // Resolve mentions for Web View (using @Name to be readable)
+      const viewOriginalText = this.resolveMentionsAndStyleForView(
+        text,
+        mentions
+      );
+      const viewMaskedText = this.resolveMentionsAndStyleForView(
+        maskedText,
+        mentions
+      );
+
       const elements = [
         {
           tag: "div",
           text: {
             tag: "lark_md",
-            content: `<at id="${senderId}"></at>: ${maskedText}`
+            content: `<at id="${senderId}"></at>: ${this.formatText(cardMaskedText)}`
           }
         }
       ];
 
       const threadId = event.message.root_id ?? event.message.message_id;
       const viewPayload = {
-        original: text,
-        masked: maskedText
+        original: viewOriginalText,
+        masked: viewMaskedText
       };
       await this.appendViewButton(
         env,
@@ -81,7 +97,17 @@ export default class RecallMessageService {
       "open_id",
       MESSAGE_TYPE.TEXT,
       JSON.stringify({
-        text: "Đang rà soát dữ liệu nhạy cảm giúp bạn. Vui lòng đợi!"
+        text: "Tin nhắn của bạn đang được rà soát dữ liệu nhạy cảm. Vui lòng đợi!"
+      })
+    );
+
+    const threadId = event.message.root_id ?? event.message.message_id;
+    await RecallLarkService.sendMessageToThread(
+      env,
+      threadId,
+      MESSAGE_TYPE.TEXT,
+      JSON.stringify({
+        text: "Đang rà soát dữ liệu nhạy cảm. Vui lòng đợi!"
       })
     );
   }
@@ -120,13 +146,22 @@ export default class RecallMessageService {
       await RecallLarkService.recallMessage(env, event.message.message_id);
 
       const presidioClient = new PresidioClient(env);
-      const anonymizeResult = await presidioClient.anonymizeImage(imageBuffer);
+      const analyzeResult = await presidioClient.analyzeImage(imageBuffer);
 
-      const base64Data = anonymizeResult.image.split(",")[1];
-      const anonymizedBuffer = Buffer.from(base64Data, "base64");
+      let bufferToUpload = imageBuffer;
+      if (
+        analyzeResult.has_handwriting ||
+        analyzeResult.ner_results.length > 0 ||
+        analyzeResult.ocr_results.length > 0
+      ) {
+        bufferToUpload = await ImageHelper.blurImage(imageBuffer, {
+          blurSize: 24
+        });
+      }
+
       const newImageKey = await RecallLarkService.uploadImage(
         env,
-        anonymizedBuffer
+        bufferToUpload
       );
 
       const elements = [
@@ -200,7 +235,12 @@ export default class RecallMessageService {
     content: any
   ) {
     const originalContent = JSON.parse(JSON.stringify(content));
-    const senderId = event.sender.sender_id.open_id;
+    // const senderId = event.sender.sender_id.open_id;
+    const mentions = event.message.mentions || [];
+
+    // Resolve mentions for both original and masked content
+    this.resolvePostMentions(originalContent, mentions);
+    this.resolvePostMentions(content, mentions);
     const imageMap = await this.downloadPostImages(env, event, content);
 
     // Re-upload images in originalContent to ensure they persist after recall and are accessible via downloadImage
@@ -233,14 +273,21 @@ export default class RecallMessageService {
       for (const item of line) {
         if (item.tag === CONTENT_TAG.TEXT) {
           item.text = await this.maskSensitiveInfo(env, item.text);
+          // Resolve mentions in text keys if present (e.g. @_user_1)
+          item.text = this.resolveMentionsForCard(item.text, mentions);
         } else if (item.tag === CONTENT_TAG.IMG) {
           const buffer = imageMap.get(item.image_key);
           if (buffer) {
-            const result = await presidioClient.anonymizeImage(buffer);
+            const result = await presidioClient.analyzeImage(buffer);
             let bufferToUpload = buffer;
-            if (result.has_sensitive_info) {
-              const base64Data = result.image.split(",")[1];
-              bufferToUpload = Buffer.from(base64Data, "base64");
+            if (
+              result.has_handwriting ||
+              result.ner_results.length > 0 ||
+              result.ocr_results.length > 0
+            ) {
+              bufferToUpload = await ImageHelper.blurImage(buffer, {
+                blurSize: 24
+              });
             }
             const newKey = await RecallLarkService.uploadImage(
               env,
@@ -254,11 +301,13 @@ export default class RecallMessageService {
             item.tag = CONTENT_TAG.TEXT;
             delete item.href;
           }
+        } else if (item.tag === CONTENT_TAG.AT) {
+          // Mentions are already resolved by resolvePostMentions
         }
       }
     }
 
-    this.prependSenderToContent(content, senderId);
+    // this.prependSenderToContent(content, senderId);
 
     const elements = this.mapPostToCardElements(content);
     // Prepare payload with message_id for image fetching
@@ -292,6 +341,11 @@ export default class RecallMessageService {
     content: any
   ) {
     const originalContent = JSON.parse(JSON.stringify(content));
+    const mentions = event.message.mentions || [];
+
+    // Resolve mentions for both original and masked content
+    this.resolvePostMentions(originalContent, mentions);
+    this.resolvePostMentions(content, mentions);
     let text = "";
     if (content.title) {
       text += content.title + " ";
@@ -307,7 +361,7 @@ export default class RecallMessageService {
     }
 
     if (text && (await this.detectSensitiveInfo(env, text))) {
-      const senderId = event.sender.sender_id.open_id;
+      // const senderId = event.sender.sender_id.open_id;
 
       if (content.title) {
         content.title = await this.maskSensitiveInfo(env, content.title);
@@ -317,17 +371,21 @@ export default class RecallMessageService {
         for (const item of line) {
           if (item.tag === CONTENT_TAG.TEXT) {
             item.text = await this.maskSensitiveInfo(env, item.text);
+            // Resolve mentions in text keys if present (e.g. @_user_1)
+            item.text = this.resolveMentionsForCard(item.text, mentions);
           } else if (item.tag === CONTENT_TAG.HREF) {
             if (await this.detectSensitiveInfo(env, item.text)) {
               item.text = await this.maskSensitiveInfo(env, item.text);
               item.tag = CONTENT_TAG.TEXT;
               delete item.href;
             }
+          } else if (item.tag === CONTENT_TAG.AT) {
+            // Mentions are already resolved by resolvePostMentions
           }
         }
       }
 
-      this.prependSenderToContent(content, senderId);
+      // this.prependSenderToContent(content, senderId);
 
       const elements = this.mapPostToCardElements(content);
       const threadId = event.message.root_id ?? event.message.message_id;
@@ -397,44 +455,54 @@ export default class RecallMessageService {
 
   private static mapPostToCardElements(content: any): any[] {
     const elements: any[] = [];
+    let currentTextBlock = "";
+
     if (content.title) {
-      elements.push({
-        tag: "div",
-        text: { tag: "lark_md", content: `**${content.title}**` }
-      });
+      currentTextBlock += `${this.escapeLarkMarkdown(content.title)}\n`;
     }
 
     for (const line of content.content) {
-      let lineText = "";
       for (const item of line) {
         if (item.tag === CONTENT_TAG.TEXT) {
-          lineText += item.text;
+          const text = item.text;
+          if (item.style) {
+            // text style handling removed to prevent conflicts with masked content
+          }
+          currentTextBlock += this.escapeLarkMarkdown(text);
         } else if (item.tag === CONTENT_TAG.HREF) {
-          lineText += `[${item.text}](${item.href})`;
-        } else if (item.tag === "at") {
-          lineText += `<at id="${item.user_id}"></at>`;
+          currentTextBlock += `[${this.escapeLarkMarkdown(item.text)}](${item.href})`;
+        } else if (item.tag === CONTENT_TAG.AT) {
+          currentTextBlock += `<at id="${item.user_id}"></at>`;
         } else if (item.tag === CONTENT_TAG.IMG) {
-          if (lineText) {
+          // Flush text block before image
+          if (currentTextBlock.trim()) {
             elements.push({
               tag: "div",
-              text: { tag: "lark_md", content: lineText }
+              text: { tag: "lark_md", content: currentTextBlock }
             });
-            lineText = "";
+            currentTextBlock = "";
           }
           elements.push({
             tag: "img",
             img_key: item.image_key,
             alt: { tag: "plain_text", content: "" }
           });
+        } else if (item.tag === "code_block") {
+          // Not standard Post tag, but handling just in case
         }
       }
-      if (lineText) {
-        elements.push({
-          tag: "div",
-          text: { tag: "lark_md", content: lineText }
-        });
-      }
+      // Add newline after each line to preserve paragraph structure within the block
+      currentTextBlock += "\n";
     }
+
+    // Flush remaining text
+    if (currentTextBlock.trim()) {
+      elements.push({
+        tag: "div",
+        text: { tag: "lark_md", content: currentTextBlock }
+      });
+    }
+
     return elements;
   }
 
@@ -473,5 +541,81 @@ export default class RecallMessageService {
         }
       ]
     });
+  }
+
+  private static escapeLarkMarkdown(text: string): string {
+    return text.replace(/[*]/g, "\\*");
+  }
+
+  private static formatText(text: string): string {
+    text = this.escapeLarkMarkdown(text);
+    // Auto-link URLs
+    text = text.replace(/(https?:\/\/[^\s]+)/g, (url) => {
+      const match = url.match(/^([^\s]+?)([.,;!?]+)$/);
+      if (match) {
+        return `[${match[1]}](${match[1]})${match[2]}`;
+      }
+      return `[${url}](${url})`;
+    });
+    // Auto-link Emails
+    text = text.replace(
+      /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/g,
+      (email) => `[${email}](mailto:${email})`
+    );
+    return text;
+  }
+
+  private static resolveMentionsForCard(text: string, mentions: any[]): string {
+    if (!mentions || mentions.length === 0) return text;
+    let resolved = text;
+    for (const mention of mentions) {
+      const id =
+        mention.id && typeof mention.id === "object"
+          ? mention.id.open_id
+          : mention.id;
+      if (mention.key && id) {
+        // Global replace of key
+        resolved = resolved.split(mention.key).join(`<at id="${id}"></at>`);
+      }
+    }
+    return resolved;
+  }
+
+  private static resolveMentionsAndStyleForView(
+    text: string,
+    mentions: any[]
+  ): string {
+    if (!mentions || mentions.length === 0) return text;
+    let resolved = text;
+    for (const mention of mentions) {
+      if (mention.key && mention.name) {
+        // Resolve to @Name
+        resolved = resolved.split(mention.key).join(`@${mention.name}`);
+      } else if (mention.key) {
+        resolved = resolved.split(mention.key).join("@Unknown");
+      }
+    }
+    return resolved;
+  }
+
+  private static resolvePostMentions(content: any, mentions: any[]) {
+    if (!content.content || !mentions.length) return;
+    for (const line of content.content) {
+      for (const item of line) {
+        if (item.tag === CONTENT_TAG.AT) {
+          const mention = mentions.find((m: any) => m.key === item.user_id);
+          if (mention) {
+            if (mention.id) {
+              item.user_id = mention.id.open_id || mention.id;
+            }
+            if (mention.name) {
+              item.text = mention.name;
+            } else if (!item.text) {
+              item.text = "Unknown";
+            }
+          }
+        }
+      }
+    }
   }
 }

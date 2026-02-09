@@ -4,6 +4,32 @@ import { Jimp } from "jimp";
 const BASE_URL = "https://presidio.jemmia.vn";
 // const BASE_URL = "http://localhost:8000";
 
+export interface AnalyzeImageResponse {
+  has_handwriting: boolean;
+  ner_results: {
+    entity_type: string;
+    text: string;
+    score: number;
+    box: {
+      left: number;
+      top: number;
+      width: number;
+      height: number;
+    };
+  }[];
+  ocr_results: {
+    text: string;
+    confidence: number;
+    box: {
+      left: number;
+      top: number;
+      width: number;
+      height: number;
+      points?: number[][];
+    };
+  }[];
+}
+
 export default class PresidioClient {
   private env: any;
   private client: any;
@@ -172,6 +198,75 @@ export default class PresidioClient {
       const errorText = await response.text();
       throw new Error(
         `Anonymize Image Failed: ${response.status} ${response.statusText} - ${errorText}`
+      );
+    }
+
+    return await response.json();
+  }
+
+  /**
+   * Analyze image
+   * @param {File | Blob | Buffer} file - The image file, blob or buffer
+   * @returns {Promise<AnalyzeImageResponse>} The analysis result
+   */
+  async analyzeImage(file: any): Promise<AnalyzeImageResponse> {
+    let inputBuffer: Buffer;
+
+    if (typeof Buffer !== "undefined" && file instanceof Buffer) {
+      inputBuffer = file;
+    } else {
+      // Fallback for non-buffer inputs (though primarily used with Buffer)
+      console.warn(
+        "PresidioClient: Input file is not a Buffer, skipping resize."
+      );
+      // If it's a blob, we can't easily resize with Jimp without conversion.
+      // Pass through.
+      const formData = new FormData();
+      formData.append("file", file, (file as any).name || "image.jpg");
+      const response = await fetch(`${BASE_URL}/analyze-image`, {
+        method: "POST",
+        body: formData
+      });
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(
+          `Analyze Image Failed: ${response.status} ${response.statusText} - ${errorText}`
+        );
+      }
+      return await response.json();
+    }
+
+    // Resize logic
+    try {
+      const image = await Jimp.read(inputBuffer);
+      if (image.width > 1024 || image.height > 1024) {
+        if (image.width > image.height) {
+          image.resize({ w: 1024 });
+        } else {
+          image.resize({ h: 1024 });
+        }
+        inputBuffer = await image.getBuffer("image/jpeg");
+      }
+    } catch (error) {
+      console.warn("PresidioClient: Failed to resize image:", error);
+      // Continue with original buffer
+    }
+
+    const formData = new FormData();
+    const blob = new Blob([inputBuffer], { type: "image/jpeg" });
+
+    formData.append("file", blob, (file as any).name || "image.jpg");
+
+    // Use native fetch to ensure correct FormData handling
+    const response = await fetch(`${BASE_URL}/analyze-image`, {
+      method: "POST",
+      body: formData
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(
+        `Analyze Image Failed: ${response.status} ${response.statusText} - ${errorText}`
       );
     }
 

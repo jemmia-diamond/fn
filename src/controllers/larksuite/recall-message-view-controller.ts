@@ -53,9 +53,23 @@ export default class RecallMessageViewController {
           const openId = userToken.open_id || userInfo.open_id;
 
           if (payload.thread_id) {
-            const time = new Date().toLocaleString("vi-VN", {
-              timeZone: "Asia/Ho_Chi_Minh"
-            });
+            const parts = new Intl.DateTimeFormat("en-US", {
+              timeZone: "Asia/Ho_Chi_Minh",
+              day: "numeric",
+              month: "numeric",
+              year: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+              second: "2-digit",
+              hour12: false
+            }).formatToParts(new Date());
+            const getPart = (t: string) =>
+              parts.find((p) => p.type === t)?.value;
+            const day = Number(getPart("day"));
+            const month = Number(getPart("month"));
+            const time = `${day} tháng ${month} , ${getPart(
+              "year"
+            )} ${getPart("hour")}:${getPart("minute")}:${getPart("second")}`;
             // const viewUrl = c.req.url.split("&code=")[0]; // Clean URL for the link in notification
 
             // Generate link for MASKED content
@@ -100,7 +114,7 @@ export default class RecallMessageViewController {
                   tag: "div",
                   text: {
                     tag: "lark_md",
-                    content: `<at id="${openId}"></at> đã xem tin nhắn vào lúc ${time}`
+                    content: `<at id="${openId}"></at> đã xem tin nhắn có chứa thông tin nhạy cảm vào lúc **${time}**`
                   }
                 },
                 {
@@ -289,7 +303,7 @@ export default class RecallMessageViewController {
           (typeof renderContent === "string"
             ? renderContent
             : JSON.stringify(renderContent, null, 2));
-        contentHtml = `<div style="white-space: pre-wrap; word-break: break-word; font-family: sans-serif; padding: 20px;">${textContent}</div>`;
+        contentHtml = `<div style="white-space: pre-wrap; word-break: break-word; font-family: sans-serif; padding: 20px;">${RecallMessageViewController.formatText(RecallMessageViewController.escapeHtml(textContent))}</div>`;
       }
 
       return c.html(`
@@ -331,13 +345,25 @@ export default class RecallMessageViewController {
         for (const item of line) {
           switch (item.tag) {
           case "text":
-            html += this.escapeHtml(item.text);
+            let text = this.escapeHtml(item.text);
+            if (item.style) {
+              if (item.style.includes("bold"))
+                text = `<strong>${text}</strong>`;
+              if (item.style.includes("italic")) text = `<em>${text}</em>`;
+              if (item.style.includes("strikethrough"))
+                text = `<del>${text}</del>`;
+              if (item.style.includes("underline")) text = `<u>${text}</u>`;
+            }
+            // Auto-link URLs and emails in text content of Post
+            text = RecallMessageViewController.formatText(text);
+            html += text;
             break;
           case "a":
-            html += `<a href="${item.href}" target="_blank">${this.escapeHtml(item.text)}</a>`;
+            html += `<a href="${item.href}" target="_blank">${RecallMessageViewController.escapeHtml(item.text)}</a>`;
             break;
           case "at":
-            html += `<span style="color: #3370ff;">@${this.escapeHtml(item.text)}</span>`;
+            const displayText = item.text || item.user_id || "Unknown";
+            html += `<span style="color: #3370ff;">@${RecallMessageViewController.escapeHtml(displayText)}</span>`;
             break;
           case "img":
             if (item.image_key) {
@@ -374,5 +400,27 @@ export default class RecallMessageViewController {
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#039;");
+  }
+
+  private static formatText(text: string): string {
+    // Auto-link URLs
+    text = text.replace(/(https?:\/\/[^\s]+)/g, (url) => {
+      const match = url.match(/^([^\s]+?)([.,;!?]+)$/);
+      if (match) {
+        return `<a href="${match[1]}" target="_blank">${match[1]}</a>${match[2]}`;
+      }
+      return `<a href="${url}" target="_blank">${url}</a>`;
+    });
+    // Auto-link Emails
+    text = text.replace(
+      /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/g,
+      (email) => `<a href="mailto:${email}">${email}</a>`
+    );
+    // Style Mentions (@Name)
+    text = text.replace(
+      /(@[^\s]+)/g,
+      (mention) => `<span style="color: #3370ff;">${mention}</span>`
+    );
+    return text;
   }
 }

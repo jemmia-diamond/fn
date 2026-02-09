@@ -26,6 +26,12 @@ export default class RecallLarkService {
 
       return response.data.app_access_token;
     } catch (error: any) {
+      if (error.response) {
+        console.warn(
+          "Lark API Error Data (getAppAccessToken):",
+          JSON.stringify(error.response.data, null, 2)
+        );
+      }
       console.warn("Lark Service Error (getAppAccessToken):", error.message);
       throw error;
     }
@@ -64,6 +70,12 @@ export default class RecallLarkService {
 
       return response.data.data;
     } catch (error: any) {
+      if (error.response) {
+        console.warn(
+          "Lark API Error Data (getUserAccessToken):",
+          JSON.stringify(error.response.data, null, 2)
+        );
+      }
       console.warn("Lark Service Error (getUserAccessToken):", error.message);
       throw error;
     }
@@ -103,7 +115,53 @@ export default class RecallLarkService {
 
       return allGroups;
     } catch (error: any) {
+      if (error.response) {
+        console.warn(
+          "Lark API Error Data (getUserGroups):",
+          JSON.stringify(error.response.data, null, 2)
+        );
+      }
       console.warn("Lark Service Error (getUserGroups):", error.message);
+      throw error;
+    }
+  }
+
+  static async getBotGroups(env: any): Promise<any[]> {
+    try {
+      const client = await this.client(env);
+      let allGroups: any[] = [];
+      let pageToken = "";
+      let hasMore = true;
+
+      while (hasMore) {
+        const response: any = await client.get("/im/v1/chats", {
+          params: {
+            page_token: pageToken,
+            page_size: 100
+          }
+        });
+
+        if (response.data.code !== 0) {
+          throw new Error(`Failed to fetch bot groups: ${response.data.msg}`);
+        }
+
+        if (response.data.data?.items) {
+          allGroups = allGroups.concat(response.data.data.items);
+        }
+
+        hasMore = response.data.data?.has_more;
+        pageToken = response.data.data?.page_token;
+      }
+
+      return allGroups;
+    } catch (error: any) {
+      if (error.response) {
+        console.warn(
+          "Lark API Error Data (getBotGroups):",
+          JSON.stringify(error.response.data, null, 2)
+        );
+      }
+      console.warn("Lark Service Error (getBotGroups):", error.message);
       throw error;
     }
   }
@@ -159,7 +217,12 @@ export default class RecallLarkService {
 
       return response.data.data;
     } catch (error: any) {
-      console.warn(error);
+      if (error.response) {
+        console.warn(
+          "Lark API Error Data (getUserInfo):",
+          JSON.stringify(error.response.data, null, 2)
+        );
+      }
       console.warn("Lark Service Error (getUserInfo):", error.message);
       throw error;
     }
@@ -260,6 +323,12 @@ export default class RecallLarkService {
 
       return Buffer.from(response.data);
     } catch (error: any) {
+      if (error.response) {
+        console.warn(
+          "Lark API Error Data (getImage):",
+          JSON.stringify(error.response.data, null, 2)
+        );
+      }
       console.warn("Lark Service Error (getImage):", error.message);
       throw error;
     }
@@ -312,6 +381,12 @@ export default class RecallLarkService {
         throw new Error(`Failed to send message: ${response.data.msg}`);
       }
     } catch (error: any) {
+      if (error.response) {
+        console.warn(
+          "Lark API Error Data (sendMessage):",
+          JSON.stringify(error.response.data, null, 2)
+        );
+      }
       console.warn("Lark Service Error (sendMessage):", error.message);
       throw error;
     }
@@ -334,6 +409,12 @@ export default class RecallLarkService {
         throw new Error(`Failed to reply message: ${response.data.msg}`);
       }
     } catch (error: any) {
+      if (error.response) {
+        console.warn(
+          "Lark API Error Data (replyMessage):",
+          JSON.stringify(error.response.data, null, 2)
+        );
+      }
       console.warn("Lark Service Error (replyMessage):", error.message);
       throw error;
     }
@@ -359,6 +440,12 @@ export default class RecallLarkService {
         );
       }
     } catch (error: any) {
+      if (error.response) {
+        console.warn(
+          "Lark API Error Data (sendMessageToThread):",
+          JSON.stringify(error.response.data, null, 2)
+        );
+      }
       console.warn("Lark Service Error (sendMessageToThread):", error.message);
       throw error;
     }
@@ -373,6 +460,12 @@ export default class RecallLarkService {
         throw new Error(`Failed to recall message: ${response.data.msg}`);
       }
     } catch (error: any) {
+      if (error.response) {
+        console.warn(
+          "Lark API Error Data (recallMessage):",
+          JSON.stringify(error.response.data, null, 2)
+        );
+      }
       console.warn("Lark Service Error (recallMessage):", error.message);
     }
   }
@@ -388,6 +481,12 @@ export default class RecallLarkService {
 
       return response.data.data;
     } catch (error: any) {
+      if (error.response) {
+        console.warn(
+          "Lark API Error Data (getMessage):",
+          JSON.stringify(error.response.data, null, 2)
+        );
+      }
       console.warn("Lark Service Error (getMessage):", error.message);
       throw error;
     }
@@ -414,6 +513,10 @@ export default class RecallLarkService {
       const responseData: any = await response.json();
 
       if (responseData.code !== 0) {
+        console.warn(
+          "Lark API Error Data (uploadImage):",
+          JSON.stringify(responseData, null, 2)
+        );
         throw new Error(`Failed to upload image: ${responseData.msg}`);
       }
 
@@ -461,6 +564,12 @@ export default class RecallLarkService {
         );
       }
     } catch (error: any) {
+      if (error.response) {
+        console.warn(
+          "Lark API Error Data (sendEphemeralMessage):",
+          JSON.stringify(error.response.data, null, 2)
+        );
+      }
       console.warn("Lark Service Error (sendEphemeralMessage):", error.message);
       throw error;
     }
