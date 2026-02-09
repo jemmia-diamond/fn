@@ -73,6 +73,19 @@ export default class RecallMessageService {
     }
   }
 
+  private static async notifyUserAboutSensitiveScan(env: any, event: any) {
+    const senderId = event.sender.sender_id.open_id;
+    await RecallLarkService.sendMessage(
+      env,
+      senderId,
+      "open_id",
+      MESSAGE_TYPE.TEXT,
+      JSON.stringify({
+        text: "Đang rà soát dữ liệu nhạy cảm giúp bạn. Vui lòng đợi!"
+      })
+    );
+  }
+
   private static async reuploadImageForPersistence(
     env: any,
     imageBuffer: Buffer,
@@ -88,14 +101,7 @@ export default class RecallMessageService {
 
   private static async handleImageMessage(env: any, event: any, content: any) {
     try {
-      await RecallLarkService.sendMessageToThread(
-        env,
-        event.message.root_id ?? event.message.message_id,
-        MESSAGE_TYPE.TEXT,
-        JSON.stringify({
-          text: "Phát hiện dữ liệu nhạy cảm trong hình ảnh. Xin vui lòng đợi..."
-        })
-      );
+      await this.notifyUserAboutSensitiveScan(env, event);
 
       const imageKey = content.image_key;
       const imageBuffer = await RecallLarkService.getImage(
@@ -213,14 +219,7 @@ export default class RecallMessageService {
       }
     }
 
-    await RecallLarkService.sendMessageToThread(
-      env,
-      event.message.root_id ?? event.message.message_id,
-      MESSAGE_TYPE.TEXT,
-      JSON.stringify({
-        text: "Phát hiện dữ liệu nhạy cảm trong hình ảnh. Xin vui lòng đợi..."
-      })
-    );
+    await this.notifyUserAboutSensitiveScan(env, event);
 
     await RecallLarkService.recallMessage(env, event.message.message_id);
 
