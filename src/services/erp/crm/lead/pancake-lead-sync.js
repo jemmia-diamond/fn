@@ -3,7 +3,6 @@ import Database from "services/database";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import * as Sentry from "@sentry/cloudflare";
-import { createInsertLeadPayload, createUpdateLeadPayload } from "services/erp/crm/lead/utils/pancake-utils";
 import { Prisma } from "@prisma-cli";
 
 dayjs.extend(utc);
@@ -62,8 +61,7 @@ export default class PancakeLeadSyncService {
       // Process Inserts
       if (insertLeads.length > 0) {
         try {
-          const insertBatch = insertLeads.map(lead => createInsertLeadPayload(lead));
-          const insertResponse = await this.leadService.syncLeadByBatchInsertion(insertBatch);
+          const insertResponse = await this.leadService.insertLeads(insertLeads);
 
           if (insertResponse && Array.isArray(insertResponse)) {
             const toInsertLeads = [];
@@ -93,12 +91,11 @@ export default class PancakeLeadSyncService {
       // Process Updates
       if (updateLeads.length > 0) {
         try {
-          const updateBatch = updateLeads.map(lead => createUpdateLeadPayload(lead));
-          const updateResponse = await this.leadService.syncLeadByBatchUpdate(updateBatch);
+          const updateResponse = await this.leadService.updateLeads(updateLeads);
 
-          if (updateResponse && updateResponse.results && Array.isArray(updateResponse.results)) {
+          if (updateResponse && Array.isArray(updateResponse)) {
             const toUpsertLeads = [];
-            updateResponse.results.forEach(result => {
+            updateResponse.forEach(result => {
               if (result.name && result.conversation_id) {
                 toUpsertLeads.push({
                   conversation_id: result.conversation_id,

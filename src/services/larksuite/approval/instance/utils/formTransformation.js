@@ -9,7 +9,7 @@ const widgetsArrayToObject = (form) => {
 };
 
 const accessNestedKey = (data, keys) => {
-  return keys.reduce((a, key) => a[key], data);
+  return keys.reduce((a, key) => a?.[key], data);
 };
 
 export const transformOffboardData = (form) => {
@@ -108,7 +108,7 @@ export const transformExchangeBuybackdData = (form) => {
       });
       return product;
     });
-    productsInfo = JSON.stringify(products);
+    productsInfo = products;
   }
 
   const mainOrderCode = accessNestedKey(widgetsObj, widgetFieldMapper.order_code);
