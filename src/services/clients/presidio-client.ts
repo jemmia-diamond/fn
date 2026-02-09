@@ -1,8 +1,8 @@
 import { createAxiosClient } from "services/utils/http-client";
 import { Jimp } from "jimp";
 
-const BASE_URL = "https://presidio.jemmia.vn";
-// const BASE_URL = "http://localhost:8000";
+// const BASE_URL = "https://presidio.jemmia.vn";
+const BASE_URL = "http://localhost:8000";
 
 export interface AnalyzeImageResponse {
   has_handwriting: boolean;

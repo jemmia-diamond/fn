@@ -54,12 +54,15 @@ export default class RecallMessageService {
         mentions
       );
 
+      const randomId = this.generateRandomId();
       const elements = [
         {
           tag: "div",
           text: {
             tag: "lark_md",
-            content: `<at id="${senderId}"></at>: ${this.formatText(cardMaskedText)}`
+            content: `**ID: ${randomId}**\n<at id="${senderId}"></at>: ${this.formatText(
+              cardMaskedText
+            )}`
           }
         }
       ];
@@ -67,7 +70,8 @@ export default class RecallMessageService {
       const threadId = event.message.root_id ?? event.message.message_id;
       const viewPayload = {
         original: viewOriginalText,
-        masked: viewMaskedText
+        masked: viewMaskedText,
+        random_id: randomId
       };
       await this.appendViewButton(
         env,
@@ -164,13 +168,14 @@ export default class RecallMessageService {
         bufferToUpload
       );
 
+      const randomId = this.generateRandomId();
       const elements = [
         {
           tag: "img",
           img_key: newImageKey,
           alt: {
             tag: "plain_text",
-            content: "Sensitive Image"
+            content: `**ID: ${randomId}** Sensitive Image`
           }
         }
       ];
@@ -179,7 +184,8 @@ export default class RecallMessageService {
 
       const viewPayload = {
         original: { image_key: appOwnedImageKey },
-        masked: { image_key: newImageKey }
+        masked: { image_key: newImageKey },
+        random_id: randomId
       };
 
       await this.appendViewButton(
@@ -309,13 +315,23 @@ export default class RecallMessageService {
 
     // this.prependSenderToContent(content, senderId);
 
+    const randomId = this.generateRandomId();
     const elements = this.mapPostToCardElements(content);
+    elements.unshift({
+      tag: "div",
+      text: {
+        tag: "lark_md",
+        content: `**ID: ${randomId}**`
+      }
+    });
+
     // Prepare payload with message_id for image fetching
     const threadId = event.message.root_id ?? event.message.message_id;
     const viewPayload = {
       original: originalContent,
       masked: content,
-      message_id: event.message.message_id
+      message_id: event.message.message_id,
+      random_id: randomId
     };
 
     await this.appendViewButton(
@@ -387,12 +403,22 @@ export default class RecallMessageService {
 
       // this.prependSenderToContent(content, senderId);
 
+      const randomId = this.generateRandomId();
       const elements = this.mapPostToCardElements(content);
+      elements.unshift({
+        tag: "div",
+        text: {
+          tag: "lark_md",
+          content: `**ID: ${randomId}**`
+        }
+      });
+
       const threadId = event.message.root_id ?? event.message.message_id;
       const viewPayload = {
         original: originalContent,
         masked: content,
-        message_id: event.message.message_id
+        message_id: event.message.message_id,
+        random_id: randomId
       };
 
       await this.appendViewButton(
@@ -617,5 +643,9 @@ export default class RecallMessageService {
         }
       }
     }
+  }
+
+  private static generateRandomId(): number {
+    return Math.floor(Math.random() * 900) + 100;
   }
 }

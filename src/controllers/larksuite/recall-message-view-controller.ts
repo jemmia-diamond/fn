@@ -97,14 +97,6 @@ export default class RecallMessageViewController {
               }
             }
 
-            const maskedViewLink =
-              await RecallLarkService.generateViewMessageUrl(
-                env,
-                maskedPayload, // Pass the object with is_masked flag
-                type,
-                payload.thread_id
-              );
-
             const cardContent = {
               config: {
                 wide_screen_mode: true
@@ -114,22 +106,10 @@ export default class RecallMessageViewController {
                   tag: "div",
                   text: {
                     tag: "lark_md",
-                    content: `<at id="${openId}"></at> đã xem tin nhắn có chứa thông tin nhạy cảm vào lúc **${time}**`
+                    content: `<at id="${openId}"></at> đã xem tin nhắn **${
+                      payload.random_id || "N/A"
+                    }** có chứa thông tin nhạy cảm vào lúc **${time}**`
                   }
-                },
-                {
-                  tag: "action",
-                  actions: [
-                    {
-                      tag: "button",
-                      text: {
-                        tag: "plain_text",
-                        content: "Xem tin nhắn"
-                      },
-                      type: "default",
-                      url: maskedViewLink
-                    }
-                  ]
                 }
               ]
             };
