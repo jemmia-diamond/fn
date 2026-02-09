@@ -101,7 +101,7 @@ export const validateOrderCompleteness = (salesOrderData, customer) => {
 
   const jewelryAndDiamondItems = lineItems.filter((item) => (item.sku?.length === SKU_LENGTH.JEWELRY || item.sku?.startsWith(SKU_PREFIX.DIAMOND)));
   for (const item of jewelryAndDiamondItems) {
-    if (!(item.promotion_1 || item.promotion_2 || item.promotion_3 || item.promotion_4)) {
+    if (!(item.promotion_1 || item.promotion_2 || item.promotion_3 || item.promotion_4 || item.promotion_5)) {
       message = "Chưa nhập chương trình khuyến mãi cho sản phẩm trang sức hoặc kim cương";
       return { isValid: false, message };
     }
@@ -140,7 +140,7 @@ const _validateItemLevelPromotions = (lineItems, promotionMap) => {
 
   for (let i = 0; i < lineItems.length; i++) {
     const item = lineItems[i];
-    const promoNames = [item.promotion_1, item.promotion_2, item.promotion_3, item.promotion_4].filter(Boolean);
+    const promoNames = [item.promotion_1, item.promotion_2, item.promotion_3, item.promotion_4, item.promotion_5].filter(Boolean);
     const promotions = promoNames.map(name => promotionMap.get(name)).filter(Boolean);
 
     let expectedRate = item.price_list_rate;
