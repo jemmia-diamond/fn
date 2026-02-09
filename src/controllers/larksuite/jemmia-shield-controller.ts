@@ -1,4 +1,4 @@
-export default class RecallAuthController {
+export default class JemmiaShieldAuthController {
   static index(c: any) {
     const html = `
       <!DOCTYPE html>
@@ -17,7 +17,7 @@ export default class RecallAuthController {
           <div class="card">
               <h1>Add JEMMIA SHIELD to your groups</h1>
               <p style="margin-bottom: 30px; color: #646a73;">Please login to continue</p>
-              <a href="/auth/recall/login/lark" class="btn">Login with Lark</a>
+              <a href="/jemmia-shield/login/lark" class="btn">Login with Lark</a>
           </div>
       </body>
       </html>

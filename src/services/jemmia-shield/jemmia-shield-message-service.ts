@@ -1,7 +1,8 @@
-import RecallLarkService from "services/larksuite/recall-lark-service";
+import JemmiaShieldLarkService from "services/jemmia-shield/jemmia-shield-lark-service";
 import * as Sentry from "@sentry/cloudflare";
 import PresidioClient from "services/clients/presidio-client";
 import ImageHelper from "services/utils/image-helper";
+import LarkCipher from "services/larksuite/lark-cipher";
 
 export const MESSAGE_TYPE = {
   TEXT: "text",
@@ -17,7 +18,7 @@ const CONTENT_TAG = {
   AT: "at"
 } as const;
 
-export default class RecallMessageService {
+export default class JemmiaShieldMessageService {
   static async detectSensitiveInfoAndMask(env: any, event: any) {
     const content = JSON.parse(event.message.content);
     switch (event.message.message_type) {
@@ -40,11 +41,9 @@ export default class RecallMessageService {
       const senderId = event.sender.sender_id.open_id;
       const maskedText = await this.maskSensitiveInfo(env, text);
 
-      // Resolve mentions for Card (using <at> tag)
       const mentions = event.message.mentions || [];
       const cardMaskedText = this.resolveMentionsForCard(maskedText, mentions);
 
-      // Resolve mentions for Web View (using @Name to be readable)
       const viewOriginalText = this.resolveMentionsAndStyleForView(
         text,
         mentions
@@ -82,20 +81,23 @@ export default class RecallMessageService {
       );
       const cardContent = JSON.stringify({ elements });
 
-      await RecallLarkService.sendMessageToThread(
+      await JemmiaShieldLarkService.sendMessageToThread(
         env,
         event.message.root_id ?? event.message.message_id,
         MESSAGE_TYPE.INTERACTIVE,
         cardContent
       );
 
-      await RecallLarkService.recallMessage(env, event.message.message_id);
+      await JemmiaShieldLarkService.recallMessage(
+        env,
+        event.message.message_id
+      );
     }
   }
 
   private static async notifyUserAboutSensitiveScan(env: any, event: any) {
     const senderId = event.sender.sender_id.open_id;
-    await RecallLarkService.sendMessage(
+    await JemmiaShieldLarkService.sendMessage(
       env,
       senderId,
       "open_id",
@@ -106,7 +108,7 @@ export default class RecallMessageService {
     );
 
     const threadId = event.message.root_id ?? event.message.message_id;
-    await RecallLarkService.sendMessageToThread(
+    await JemmiaShieldLarkService.sendMessageToThread(
       env,
       threadId,
       MESSAGE_TYPE.TEXT,
@@ -122,9 +124,9 @@ export default class RecallMessageService {
     originalKey: string
   ): Promise<string> {
     try {
-      return await RecallLarkService.uploadImage(env, imageBuffer);
+      return await JemmiaShieldLarkService.uploadImage(env, imageBuffer);
     } catch (error) {
-      console.warn("Failed to re-upload image for persistence", error);
+      Sentry.captureException(error);
       return originalKey;
     }
   }
@@ -134,20 +136,22 @@ export default class RecallMessageService {
       await this.notifyUserAboutSensitiveScan(env, event);
 
       const imageKey = content.image_key;
-      const imageBuffer = await RecallLarkService.getImage(
+      const imageBuffer = await JemmiaShieldLarkService.getImage(
         env,
         event.message.message_id,
         imageKey
       );
 
-      // Re-upload original image to ensure persistence accessible by bot
       const appOwnedImageKey = await this.reuploadImageForPersistence(
         env,
         imageBuffer,
         imageKey
       );
 
-      await RecallLarkService.recallMessage(env, event.message.message_id);
+      await JemmiaShieldLarkService.recallMessage(
+        env,
+        event.message.message_id
+      );
 
       const presidioClient = new PresidioClient(env);
       const analyzeResult = await presidioClient.analyzeImage(imageBuffer);
@@ -163,7 +167,7 @@ export default class RecallMessageService {
         });
       }
 
-      const newImageKey = await RecallLarkService.uploadImage(
+      const newImageKey = await JemmiaShieldLarkService.uploadImage(
         env,
         bufferToUpload
       );
@@ -198,7 +202,7 @@ export default class RecallMessageService {
       );
       const cardContent = JSON.stringify({ elements });
 
-      await RecallLarkService.sendMessageToThread(
+      await JemmiaShieldLarkService.sendMessageToThread(
         env,
         event.message.root_id ?? event.message.message_id,
         MESSAGE_TYPE.INTERACTIVE,
@@ -241,15 +245,12 @@ export default class RecallMessageService {
     content: any
   ) {
     const originalContent = JSON.parse(JSON.stringify(content));
-    // const senderId = event.sender.sender_id.open_id;
     const mentions = event.message.mentions || [];
 
-    // Resolve mentions for both original and masked content
     this.resolvePostMentions(originalContent, mentions);
     this.resolvePostMentions(content, mentions);
     const imageMap = await this.downloadPostImages(env, event, content);
 
-    // Re-upload images in originalContent to ensure they persist after recall and are accessible via downloadImage
     for (const line of originalContent.content) {
       for (const item of line) {
         if (item.tag === CONTENT_TAG.IMG) {
@@ -267,7 +268,7 @@ export default class RecallMessageService {
 
     await this.notifyUserAboutSensitiveScan(env, event);
 
-    await RecallLarkService.recallMessage(env, event.message.message_id);
+    await JemmiaShieldLarkService.recallMessage(env, event.message.message_id);
 
     if (content.title) {
       content.title = await this.maskSensitiveInfo(env, content.title);
@@ -279,7 +280,6 @@ export default class RecallMessageService {
       for (const item of line) {
         if (item.tag === CONTENT_TAG.TEXT) {
           item.text = await this.maskSensitiveInfo(env, item.text);
-          // Resolve mentions in text keys if present (e.g. @_user_1)
           item.text = this.resolveMentionsForCard(item.text, mentions);
         } else if (item.tag === CONTENT_TAG.IMG) {
           const buffer = imageMap.get(item.image_key);
@@ -295,7 +295,7 @@ export default class RecallMessageService {
                 blurSize: 24
               });
             }
-            const newKey = await RecallLarkService.uploadImage(
+            const newKey = await JemmiaShieldLarkService.uploadImage(
               env,
               bufferToUpload
             );
@@ -307,13 +307,9 @@ export default class RecallMessageService {
             item.tag = CONTENT_TAG.TEXT;
             delete item.href;
           }
-        } else if (item.tag === CONTENT_TAG.AT) {
-          // Mentions are already resolved by resolvePostMentions
         }
       }
     }
-
-    // this.prependSenderToContent(content, senderId);
 
     const randomId = this.generateRandomId();
     const elements = this.mapPostToCardElements(content);
@@ -325,7 +321,6 @@ export default class RecallMessageService {
       }
     });
 
-    // Prepare payload with message_id for image fetching
     const threadId = event.message.root_id ?? event.message.message_id;
     const viewPayload = {
       original: originalContent,
@@ -343,7 +338,7 @@ export default class RecallMessageService {
     );
     const cardContent = JSON.stringify({ elements });
 
-    await RecallLarkService.sendMessageToThread(
+    await JemmiaShieldLarkService.sendMessageToThread(
       env,
       event.message.root_id ?? event.message.message_id,
       MESSAGE_TYPE.INTERACTIVE,
@@ -359,7 +354,6 @@ export default class RecallMessageService {
     const originalContent = JSON.parse(JSON.stringify(content));
     const mentions = event.message.mentions || [];
 
-    // Resolve mentions for both original and masked content
     this.resolvePostMentions(originalContent, mentions);
     this.resolvePostMentions(content, mentions);
     let text = "";
@@ -377,8 +371,6 @@ export default class RecallMessageService {
     }
 
     if (text && (await this.detectSensitiveInfo(env, text))) {
-      // const senderId = event.sender.sender_id.open_id;
-
       if (content.title) {
         content.title = await this.maskSensitiveInfo(env, content.title);
       }
@@ -387,7 +379,6 @@ export default class RecallMessageService {
         for (const item of line) {
           if (item.tag === CONTENT_TAG.TEXT) {
             item.text = await this.maskSensitiveInfo(env, item.text);
-            // Resolve mentions in text keys if present (e.g. @_user_1)
             item.text = this.resolveMentionsForCard(item.text, mentions);
           } else if (item.tag === CONTENT_TAG.HREF) {
             if (await this.detectSensitiveInfo(env, item.text)) {
@@ -395,13 +386,9 @@ export default class RecallMessageService {
               item.tag = CONTENT_TAG.TEXT;
               delete item.href;
             }
-          } else if (item.tag === CONTENT_TAG.AT) {
-            // Mentions are already resolved by resolvePostMentions
           }
         }
       }
-
-      // this.prependSenderToContent(content, senderId);
 
       const randomId = this.generateRandomId();
       const elements = this.mapPostToCardElements(content);
@@ -430,14 +417,17 @@ export default class RecallMessageService {
       );
       const cardContent = JSON.stringify({ elements });
 
-      await RecallLarkService.sendMessageToThread(
+      await JemmiaShieldLarkService.sendMessageToThread(
         env,
         event.message.root_id ?? event.message.message_id,
         MESSAGE_TYPE.INTERACTIVE,
         cardContent
       );
 
-      await RecallLarkService.recallMessage(env, event.message.message_id);
+      await JemmiaShieldLarkService.recallMessage(
+        env,
+        event.message.message_id
+      );
     }
   }
 
@@ -451,7 +441,7 @@ export default class RecallMessageService {
       for (const item of line) {
         if (item.tag === CONTENT_TAG.IMG) {
           try {
-            const buffer = await RecallLarkService.getImage(
+            const buffer = await JemmiaShieldLarkService.getImage(
               env,
               event.message.message_id,
               item.image_key
@@ -491,16 +481,12 @@ export default class RecallMessageService {
       for (const item of line) {
         if (item.tag === CONTENT_TAG.TEXT) {
           const text = item.text;
-          if (item.style) {
-            // text style handling removed to prevent conflicts with masked content
-          }
           currentTextBlock += this.escapeLarkMarkdown(text);
         } else if (item.tag === CONTENT_TAG.HREF) {
           currentTextBlock += `[${this.escapeLarkMarkdown(item.text)}](${item.href})`;
         } else if (item.tag === CONTENT_TAG.AT) {
           currentTextBlock += `<at id="${item.user_id}"></at>`;
         } else if (item.tag === CONTENT_TAG.IMG) {
-          // Flush text block before image
           if (currentTextBlock.trim()) {
             elements.push({
               tag: "div",
@@ -513,15 +499,11 @@ export default class RecallMessageService {
             img_key: item.image_key,
             alt: { tag: "plain_text", content: "" }
           });
-        } else if (item.tag === "code_block") {
-          // Not standard Post tag, but handling just in case
         }
       }
-      // Add newline after each line to preserve paragraph structure within the block
       currentTextBlock += "\n";
     }
 
-    // Flush remaining text
     if (currentTextBlock.trim()) {
       elements.push({
         tag: "div",
@@ -546,7 +528,7 @@ export default class RecallMessageService {
     threadId: string,
     buttonText: string = "Xem tin nhắn"
   ) {
-    const appLink = await RecallLarkService.generateViewMessageUrl(
+    const appLink = await JemmiaShieldLarkService.generateViewMessageUrl(
       env,
       content,
       msgType,
@@ -575,7 +557,6 @@ export default class RecallMessageService {
 
   private static formatText(text: string): string {
     text = this.escapeLarkMarkdown(text);
-    // Auto-link URLs
     text = text.replace(/(https?:\/\/[^\s]+)/g, (url) => {
       const match = url.match(/^([^\s]+?)([.,;!?]+)$/);
       if (match) {
@@ -583,7 +564,6 @@ export default class RecallMessageService {
       }
       return `[${url}](${url})`;
     });
-    // Auto-link Emails
     text = text.replace(
       /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/g,
       (email) => `[${email}](mailto:${email})`
@@ -600,7 +580,6 @@ export default class RecallMessageService {
           ? mention.id.open_id
           : mention.id;
       if (mention.key && id) {
-        // Global replace of key
         resolved = resolved.split(mention.key).join(`<at id="${id}"></at>`);
       }
     }
@@ -615,7 +594,6 @@ export default class RecallMessageService {
     let resolved = text;
     for (const mention of mentions) {
       if (mention.key && mention.name) {
-        // Resolve to @Name
         resolved = resolved.split(mention.key).join(`@${mention.name}`);
       } else if (mention.key) {
         resolved = resolved.split(mention.key).join("@Unknown");
@@ -641,6 +619,95 @@ export default class RecallMessageService {
             }
           }
         }
+      }
+    }
+  }
+
+  static async decryptViewPayload(env: any, data: string): Promise<any> {
+    const encryptKey = await env.LARK_SHIELD_ENCRYPT_KEY_SECRET.get();
+    const decrypted = await LarkCipher.decryptEvent(data, encryptKey);
+    return JSON.parse(decrypted);
+  }
+
+  static async sendSensitiveViewNotification(
+    env: any,
+    code: string,
+    payload: any,
+    type: string
+  ): Promise<void> {
+    const userToken = await JemmiaShieldLarkService.getUserAccessToken(
+      env,
+      code
+    );
+    const userInfo = await JemmiaShieldLarkService.getUserInfo(
+      env,
+      userToken.access_token
+    );
+
+    const openId = userToken.open_id || userInfo.open_id;
+
+    if (payload.thread_id) {
+      const parts = new Intl.DateTimeFormat("en-US", {
+        timeZone: "Asia/Ho_Chi_Minh",
+        day: "numeric",
+        month: "numeric",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false
+      }).formatToParts(new Date());
+      const getPart = (t: string) => parts.find((p) => p.type === t)?.value;
+      const day = Number(getPart("day"));
+      const month = Number(getPart("month"));
+      const time = `${day} tháng ${month} , ${getPart("year")} ${getPart(
+        "hour"
+      )}:${getPart("minute")}:${getPart("second")}`;
+
+      let maskedContent = payload.masked;
+      if (!maskedContent && !payload.original) {
+        maskedContent = payload;
+      }
+
+      let maskedPayload = maskedContent;
+      if (typeof maskedContent === "string") {
+        if (type === "text") {
+          maskedPayload = { text: maskedContent };
+        } else if (type === "image") {
+          maskedPayload = { image_key: maskedContent };
+        }
+      }
+      if (typeof maskedPayload === "object" && maskedPayload !== null) {
+        maskedPayload.is_masked = true;
+        if (!maskedPayload.thread_id && payload.thread_id) {
+          maskedPayload.thread_id = payload.thread_id;
+        }
+      }
+
+      const cardContent = {
+        config: {
+          wide_screen_mode: true
+        },
+        elements: [
+          {
+            tag: "div",
+            text: {
+              tag: "lark_md",
+              content: `<at id="${openId}"></at> đã xem tin nhắn **${
+                payload.random_id || "N/A"
+              }** có chứa thông tin nhạy cảm vào lúc **${time}**`
+            }
+          }
+        ]
+      };
+
+      if (!payload.is_masked) {
+        await JemmiaShieldLarkService.sendMessageToThread(
+          env,
+          payload.thread_id,
+          MESSAGE_TYPE.INTERACTIVE,
+          JSON.stringify(cardContent)
+        );
       }
     }
   }

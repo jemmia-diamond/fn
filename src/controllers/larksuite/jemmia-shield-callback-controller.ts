@@ -1,6 +1,6 @@
-import RecallLarkService from "services/larksuite/recall-lark-service";
+import JemmiaShieldOnboardingService from "services/jemmia-shield/jemmia-shield-onboarding-service";
 
-export default class RecallCallbackController {
+export default class JemmiaShieldCallbackController {
   static async index(c: any) {
     const code = c.req.query("code");
 
@@ -9,28 +9,10 @@ export default class RecallCallbackController {
     }
 
     try {
-      const tokenData = await RecallLarkService.getUserAccessToken(c.env, code);
-      const accessToken = tokenData.access_token;
+      const { userInfo, ownedGroups, botGroupIds, accessToken } =
+        await JemmiaShieldOnboardingService.getGroupSelectionData(c.env, code);
 
-      const userInfo = await RecallLarkService.getUserInfo(c.env, accessToken);
-      const userId = userInfo.user_id || userInfo.open_id;
       const userName = userInfo.name || userInfo.en_name || "Unknown";
-      const openId = userInfo.open_id;
-
-      // 1. List all groups
-      const allGroups = await RecallLarkService.getUserGroups(
-        c.env,
-        accessToken
-      );
-
-      // 2. Filter groups where user is owner
-      const ownedGroups = allGroups.filter(
-        (group: any) => group.owner_id === userId || group.owner_id === openId
-      );
-
-      // 3. Get groups where bot is already a member
-      const botGroups = await RecallLarkService.getBotGroups(c.env);
-      const botGroupIds = new Set(botGroups.map((g: any) => g.chat_id));
 
       // 4. Prepare groups for display
       const html = `

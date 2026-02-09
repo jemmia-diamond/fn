@@ -1,9 +1,9 @@
 import { Context } from "hono";
-import LarkCipher from "services/larksuite/lark-cipher";
-import RecallLarkService from "services/larksuite/recall-lark-service";
-import { MESSAGE_TYPE } from "services/larksuite/recall-message-service";
+import JemmiaShieldLarkService from "services/jemmia-shield/jemmia-shield-lark-service";
+import JemmiaShieldMessageService from "services/jemmia-shield/jemmia-shield-message-service";
+import * as Sentry from "@sentry/cloudflare";
 
-export default class RecallMessageViewController {
+export default class JemmiaShieldMessageViewController {
   static async show(c: Context) {
     try {
       const data = c.req.query("data");
@@ -17,17 +17,14 @@ export default class RecallMessageViewController {
       let contentHtml = "";
 
       const env = c.env;
-      const encryptKey = await env.LARK_SHIELD_ENCRYPT_KEY_SECRET.get();
-      const decrypted = await LarkCipher.decryptEvent(data, encryptKey);
-      const payload = JSON.parse(decrypted);
+      const payload = await JemmiaShieldMessageService.decryptViewPayload(
+        env,
+        data
+      );
 
-      // Handle new payload structure { original, masked }
-      // We want to show the ORIGINAL content to the user here
       let renderContent = payload;
       if (payload.original) {
         renderContent = payload.original;
-        // Ensure thread_id is available on renderContent if it was on payload
-        // Only if renderContent is an object (post/image/etc), not string (text)
         if (
           typeof renderContent === "object" &&
           renderContent !== null &&
@@ -38,103 +35,19 @@ export default class RecallMessageViewController {
         }
       }
 
-      // Scenario 1: Logic with Auth Code (User identified)
       if (code) {
         try {
-          const userToken = await RecallLarkService.getUserAccessToken(
+          await JemmiaShieldMessageService.sendSensitiveViewNotification(
             env,
-            code
+            code,
+            payload,
+            type
           );
-          const userInfo = await RecallLarkService.getUserInfo(
-            env,
-            userToken.access_token
-          );
-
-          const openId = userToken.open_id || userInfo.open_id;
-
-          if (payload.thread_id) {
-            const parts = new Intl.DateTimeFormat("en-US", {
-              timeZone: "Asia/Ho_Chi_Minh",
-              day: "numeric",
-              month: "numeric",
-              year: "numeric",
-              hour: "2-digit",
-              minute: "2-digit",
-              second: "2-digit",
-              hour12: false
-            }).formatToParts(new Date());
-            const getPart = (t: string) =>
-              parts.find((p) => p.type === t)?.value;
-            const day = Number(getPart("day"));
-            const month = Number(getPart("month"));
-            const time = `${day} tháng ${month} , ${getPart(
-              "year"
-            )} ${getPart("hour")}:${getPart("minute")}:${getPart("second")}`;
-            // const viewUrl = c.req.url.split("&code=")[0]; // Clean URL for the link in notification
-
-            // Generate link for MASKED content
-            let maskedContent = payload.masked;
-            // Fallback for old payloads or if structure doesn't match
-            if (!maskedContent && !payload.original) {
-              maskedContent = payload;
-            }
-
-            let maskedPayload = maskedContent;
-            if (typeof maskedContent === "string") {
-              if (type === "text") {
-                maskedPayload = { text: maskedContent };
-              } else if (type === "image") {
-                maskedPayload = { image_key: maskedContent };
-              }
-            }
-            // Ensure maskedPayload is an object to add the flag
-            if (typeof maskedPayload === "object" && maskedPayload !== null) {
-              maskedPayload.is_masked = true;
-              // Also ensure thread_id is passed if not present (though generateViewMessageUrl handles it,
-              // passing it in payload ensures it persists if generateViewMessageUrl logic changes slightly or for clarity)
-              if (!maskedPayload.thread_id && payload.thread_id) {
-                maskedPayload.thread_id = payload.thread_id;
-              }
-            }
-
-            const cardContent = {
-              config: {
-                wide_screen_mode: true
-              },
-              elements: [
-                {
-                  tag: "div",
-                  text: {
-                    tag: "lark_md",
-                    content: `<at id="${openId}"></at> đã xem tin nhắn **${
-                      payload.random_id || "N/A"
-                    }** có chứa thông tin nhạy cảm vào lúc **${time}**`
-                  }
-                }
-              ]
-            };
-
-            // Send notification to thread ONLY if not already masked view
-            if (!payload.is_masked) {
-              await RecallLarkService.sendMessageToThread(
-                env,
-                payload.thread_id,
-                MESSAGE_TYPE.INTERACTIVE,
-                JSON.stringify(cardContent)
-              );
-            }
-          }
         } catch (error: any) {
-          console.warn(
-            "Failed to process auth code or send notification:",
-            error
-          );
-          // Append error to contentHtml (or a separate variable) to see it in browser
+          Sentry.captureException(error);
           contentHtml += `<div style="color: red; padding: 10px; background: #ffe6e6; border: 1px solid red; margin-bottom: 10px;">Debug Error: ${error.message}</div>`;
         }
-      }
-      // Scenario 2: No Auth Code - Attempt Silent Auth via H5 SDK
-      else {
+      } else {
         const appId = env.LARK_APP_SHIELD_ID;
         return c.html(`
           <!DOCTYPE html>
@@ -175,8 +88,6 @@ export default class RecallMessageViewController {
               }
 
               function startAuth() {
-                console.log("SDK Loaded, starting auth...");
-      
                 if (!window.tt) {
                    document.getElementById("loader").style.display = "none";
                    document.getElementById("message").style.display = "block";
@@ -185,23 +96,18 @@ export default class RecallMessageViewController {
                    return;
                 }
 
-                // Try getAuthCode, fallback to requestAuthCode
                 const authFn = window.tt.getAuthCode || window.tt.requestAuthCode;
 
                 if (authFn) {
-                   // Bind to window.tt to be safe
                    authFn.call(window.tt, {
                       appId: appId,
                       success: (res) => {
                          const currentUrl = new URL(window.location.href);
-                         // requestAuthCode might return res.code or just res as string in some versions, 
-                         // but usually object with code.
                          const code = res.code || res; 
                          currentUrl.searchParams.append("code", code);
                          window.location.replace(currentUrl.toString());
                       },
                       fail: (err) => {
-                         console.error("Auth failed", err);
                          document.getElementById("loader").style.display = "none";
                          document.getElementById("message").style.display = "block";
                          document.getElementById("message").innerText = "Lỗi xác thực (Auth Failed): " + JSON.stringify(err);
@@ -223,19 +129,14 @@ export default class RecallMessageViewController {
                  showMetaInfo("Script Load Error");
               }
 
-              // Create script tag programmatically to handle events properly
               const script = document.createElement("script");
               script.src = "https://lf1-cdn-tos.bytegoofy.com/goofy/lark/op/h5-js-sdk-1.5.23.js";
               script.onload = startAuth;
               script.onerror = handleLoadError;
               document.head.appendChild(script);
 
-              // Fallback timeout
               setTimeout(() => {
                  if (document.getElementById("loader").style.display !== "none") {
-                    console.warn("Timeout waiting for SDK");
-                    // DO NOT hide loader yet, maybe just slow. But log it.
-                    // If window.tt appeared by magic, try using it?
                     if (window.tt && window.tt.getAuthCode) {
                        startAuth();
                     }
@@ -247,17 +148,13 @@ export default class RecallMessageViewController {
         `);
       }
 
-      // Render Content (Same logic as before, but payload is already parsed)
-      // contentHtml is already declared at the top
-
       if (type === "image") {
         try {
-          // Payload might have image_key directly or nested, checking logic
           const imageKey =
             renderContent.image_key ||
             (typeof renderContent === "string" ? renderContent : null);
           if (imageKey) {
-            const imageBuffer = await RecallLarkService.downloadImage(
+            const imageBuffer = await JemmiaShieldLarkService.downloadImage(
               c.env,
               imageKey
             );
@@ -267,13 +164,13 @@ export default class RecallMessageViewController {
             contentHtml =
               "<div style=\"padding: 20px; text-align: center;\">[Image key missing]</div>";
           }
-        } catch {
-          console.warn("Failed to render single image");
+        } catch (error) {
+          Sentry.captureException(error);
           contentHtml =
             "<div style=\"padding: 20px; text-align: center;\">[Image failed to load]</div>";
         }
       } else if (type === "post") {
-        contentHtml = await RecallMessageViewController.renderPost(
+        contentHtml = await JemmiaShieldMessageViewController.renderPost(
           c.env,
           renderContent
         );
@@ -283,7 +180,7 @@ export default class RecallMessageViewController {
           (typeof renderContent === "string"
             ? renderContent
             : JSON.stringify(renderContent, null, 2));
-        contentHtml = `<div style="white-space: pre-wrap; word-break: break-word; font-family: sans-serif; padding: 20px;">${RecallMessageViewController.formatText(RecallMessageViewController.escapeHtml(textContent))}</div>`;
+        contentHtml = `<div style="white-space: pre-wrap; word-break: break-word; font-family: sans-serif; padding: 20px;">${JemmiaShieldMessageViewController.formatText(JemmiaShieldMessageViewController.escapeHtml(textContent))}</div>`;
       }
 
       return c.html(`
@@ -306,7 +203,7 @@ export default class RecallMessageViewController {
         </html>
       `);
     } catch (e: any) {
-      console.warn("RecallMessageView Error:", e);
+      Sentry.captureException(e);
       return c.text("Invalid or expired link: " + e.message, 400);
     }
   }
@@ -334,28 +231,28 @@ export default class RecallMessageViewController {
                 text = `<del>${text}</del>`;
               if (item.style.includes("underline")) text = `<u>${text}</u>`;
             }
-            // Auto-link URLs and emails in text content of Post
-            text = RecallMessageViewController.formatText(text);
+            text = JemmiaShieldMessageViewController.formatText(text);
             html += text;
             break;
           case "a":
-            html += `<a href="${item.href}" target="_blank">${RecallMessageViewController.escapeHtml(item.text)}</a>`;
+            html += `<a href="${item.href}" target="_blank">${JemmiaShieldMessageViewController.escapeHtml(item.text)}</a>`;
             break;
           case "at":
             const displayText = item.text || item.user_id || "Unknown";
-            html += `<span style="color: #3370ff;">@${RecallMessageViewController.escapeHtml(displayText)}</span>`;
+            html += `<span style="color: #3370ff;">@${JemmiaShieldMessageViewController.escapeHtml(displayText)}</span>`;
             break;
           case "img":
             if (item.image_key) {
               try {
-                const imageBuffer = await RecallLarkService.downloadImage(
-                  env,
-                  item.image_key
-                );
+                const imageBuffer =
+                    await JemmiaShieldLarkService.downloadImage(
+                      env,
+                      item.image_key
+                    );
                 const base64 = imageBuffer.toString("base64");
                 html += `<img src="data:image/png;base64,${base64}" style="max-width: 100%; height: auto; border-radius: 4px; margin: 5px 0;" />`;
-              } catch {
-                console.warn("Failed to render image");
+              } catch (error) {
+                Sentry.captureException(error);
                 html += "[Image failed to load]";
               }
             } else {
@@ -383,7 +280,6 @@ export default class RecallMessageViewController {
   }
 
   private static formatText(text: string): string {
-    // Auto-link URLs
     text = text.replace(/(https?:\/\/[^\s]+)/g, (url) => {
       const match = url.match(/^([^\s]+?)([.,;!?]+)$/);
       if (match) {
@@ -391,12 +287,10 @@ export default class RecallMessageViewController {
       }
       return `<a href="${url}" target="_blank">${url}</a>`;
     });
-    // Auto-link Emails
     text = text.replace(
       /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/g,
       (email) => `<a href="mailto:${email}">${email}</a>`
     );
-    // Style Mentions (@Name)
     text = text.replace(
       /(@[^\s]+)/g,
       (mention) => `<span style="color: #3370ff;">${mention}</span>`

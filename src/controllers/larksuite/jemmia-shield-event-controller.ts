@@ -1,13 +1,13 @@
-import RecallLarkService from "services/larksuite/recall-lark-service";
-import RecallMessageService from "services/larksuite/recall-message-service";
+import JemmiaShieldLarkService from "services/jemmia-shield/jemmia-shield-lark-service";
+import JemmiaShieldMessageService from "services/jemmia-shield/jemmia-shield-message-service";
 
-export default class RecallEventController {
+export default class JemmiaShieldEventController {
   // Using a simple in-memory set for deduplication (might be reset if worker restarts frequently)
   // For better durability in workers, Durable Objects or KV should be used, but keeping it simple for now as per original code.
   static processedEvents = new Set<string>();
 
   static register(webhook: any) {
-    webhook.post("/lark/recall/event", RecallEventController.create);
+    webhook.post("/lark/recall/event", JemmiaShieldEventController.create);
   }
 
   static async create(c: any) {
@@ -17,7 +17,7 @@ export default class RecallEventController {
 
       // 1. Decrypt if encrypted
       if (body.encrypt) {
-        const decryptedData = await RecallLarkService.decryptEvent(
+        const decryptedData = await JemmiaShieldLarkService.decryptEvent(
           c.env,
           body.encrypt
         );
@@ -32,17 +32,20 @@ export default class RecallEventController {
       // 4. Handle Message Event
       if (eventBody.header?.event_type === "im.message.receive_v1") {
         const eventId = eventBody.header.event_id;
-        if (eventId && RecallEventController.processedEvents.has(eventId)) {
+        if (
+          eventId &&
+          JemmiaShieldEventController.processedEvents.has(eventId)
+        ) {
           console.warn(`Skipping duplicate event: ${eventId}`);
           return c.text("OK", 200);
         }
 
         if (eventId) {
-          RecallEventController.processedEvents.add(eventId);
+          JemmiaShieldEventController.processedEvents.add(eventId);
           // Auto-cleanup after 5 minutes
           setTimeout(
             () => {
-              RecallEventController.processedEvents.delete(eventId);
+              JemmiaShieldEventController.processedEvents.delete(eventId);
             },
             5 * 60 * 1000
           );
@@ -53,7 +56,7 @@ export default class RecallEventController {
         c.executionCtx.waitUntil(
           (async () => {
             try {
-              await RecallMessageService.detectSensitiveInfoAndMask(
+              await JemmiaShieldMessageService.detectSensitiveInfoAndMask(
                 c.env,
                 eventBody.event
               );

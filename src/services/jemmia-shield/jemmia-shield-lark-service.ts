@@ -2,7 +2,7 @@ import axios from "axios";
 import * as crypto from "crypto";
 import LarkCipher from "services/larksuite/lark-cipher";
 
-export default class RecallLarkService {
+export default class JemmiaShieldLarkService {
   static API_BASE = "https://open.larksuite.com/open-apis";
 
   static async getAppAccessToken(env: any): Promise<string> {
