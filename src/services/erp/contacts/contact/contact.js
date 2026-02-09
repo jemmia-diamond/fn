@@ -94,6 +94,16 @@ export default class ContactService {
     }
   }
 
+  getParam(raw, key, ...sources) {
+    return (
+      raw[key] ||
+      sources.reduce(
+        (acc, params) => acc || params?.get(key),
+        null
+      )
+    );
+  }
+
   async processWebsiteContact(data, lead, source = null) {
     const referrerParams = this.parseUTMParameters(data.raw_data.referrer);
     const conversionUrlParams = this.parseUTMParameters(data.raw_data.conversion_url);
@@ -116,15 +126,15 @@ export default class ContactService {
       gtm_link: data.raw_data.link,
       gtm_location: data.raw_data.location,
       url_page: data.raw_data.url_page,
-      utm_term: data.raw_data.utm_term || referrerParams?.get("utm_term") || conversionUrlParams?.get("utm_term") || originalUrlPageParams?.get("utm_term"),
+      utm_term: this.getParam(data.raw_data, "utm_term", referrerParams, conversionUrlParams, originalUrlPageParams),
       message_id: data.raw_data.message_id,
-      utm_medium: data.raw_data.utm_medium || referrerParams?.get("utm_medium") || conversionUrlParams?.get("utm_medium") || originalUrlPageParams?.get("utm_medium"),
-      utm_source: data.raw_data.utm_source || referrerParams?.get("utm_source") || conversionUrlParams?.get("utm_source") || originalUrlPageParams?.get("utm_source"),
-      utm_content: data.raw_data.utm_content || referrerParams?.get("utm_content") || conversionUrlParams?.get("utm_content") || originalUrlPageParams?.get("utm_content"),
+      utm_medium: this.getParam(data.raw_data, "utm_medium", referrerParams, conversionUrlParams, originalUrlPageParams),
+      utm_source: this.getParam(data.raw_data, "utm_source", referrerParams, conversionUrlParams, originalUrlPageParams),
+      utm_content: this.getParam(data.raw_data, "utm_content", referrerParams, conversionUrlParams, originalUrlPageParams),
       variant_url: data.raw_data.variant_url,
       ladi_form_id: data.raw_data.ladi_form_id,
       message_time: data.raw_data.message_time ? dayjs(Number(data.raw_data.message_time)).utc().format("YYYY-MM-DD HH:mm:ss") : null,
-      utm_campaign: data.raw_data.utm_campaign || referrerParams?.get("utm_campaign") || conversionUrlParams?.get("utm_campaign") || originalUrlPageParams?.get("utm_campaign"),
+      utm_campaign: this.getParam(data.raw_data, "utm_campaign", referrerParams, conversionUrlParams, originalUrlPageParams),
       origin_url_page: data.raw_data.origin_url_page,
       variant_content: data.raw_data.variant_content,
       referrer: data.raw_data.referrer,
@@ -133,9 +143,9 @@ export default class ContactService {
       last_ad_param: data.raw_data.last_ad_param,
       conversion_url: data.raw_data.conversion_url,
       first_ad_param: data.raw_data.first_ad_param,
-      gclid: data.raw_data.gclid || referrerParams?.get("gclid") || conversionUrlParams?.get("gclid") || originalUrlPageParams?.get("gclid"),
-      fbclid: data.raw_data.fbclid || referrerParams?.get("fbclid") || conversionUrlParams?.get("fbclid") || originalUrlPageParams?.get("fbclid"),
-      ttclid: data.raw_data.ttclid || referrerParams?.get("ttclid") || conversionUrlParams?.get("ttclid") || originalUrlPageParams?.get("ttclid"),
+      gclid: this.getParam(data.raw_data, "gclid", referrerParams, conversionUrlParams, originalUrlPageParams),
+      fbclid: this.getParam(data.raw_data, "fbclid", referrerParams, conversionUrlParams, originalUrlPageParams),
+      ttclid: this.getParam(data.raw_data, "ttclid", referrerParams, conversionUrlParams, originalUrlPageParams),
       user_agent: data.raw_data.user_agent ? data.raw_data.user_agent.substring(0, 140) : null
     };
 
