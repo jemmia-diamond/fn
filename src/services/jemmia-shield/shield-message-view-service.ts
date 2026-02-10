@@ -66,93 +66,55 @@ export default class JemmiaShieldMessageViewService {
       <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Loading...</title>
+        <title>Đang xác thực...</title>
         <style>
-          body { display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; font-family: sans-serif; flex-direction: column; }
-          .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+          body { display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; font-family: -apple-system, sans-serif; flex-direction: column; background: #f5f6f7; color: #1f2329; }
+          .loader { border: 3px solid #dee0e3; border-top: 3px solid #3370ff; border-radius: 50%; width: 28px; height: 28px; animation: spin 1s linear infinite; }
           @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-          .debug-info { margin-top: 20px; font-size: 12px; color: #666; word-break: break-all; padding: 10px; max-width: 90%; }
+          .status { margin-top: 20px; font-size: 14px; color: #646a73; }
+          #debug { margin-top: 20px; font-size: 11px; color: #999; display: none; background: #fff; padding: 10px; border-radius: 4px; border: 1px solid #eee; max-width: 80%; word-break: break-all; }
         </style>
       </head>
       <body>
-        <div id="loader" class="loader"></div>
-        <div id="message" style="margin-top: 20px; display: none; text-align: center;"></div>
-        <div id="debug" class="debug-info" style="display: none;"></div>
+        <div class="loader"></div>
+        <div class="status">Đang kết nối danh tính Lark...</div>
+        <div id="debug"></div>
+
+        <script src="https://lf1-cdn-tos.bytegoofy.com/goofy/lark/op/h5-js-sdk-1.5.23.js"></script>
         <script>
           const appId = "${appId}";
+          let attempts = 0;
+          const maxAttempts = 50; // 5 seconds
 
-          function showMetaInfo(msg) {
-              const debugEl = document.getElementById("debug");
-              debugEl.style.display = "block";
-    
-              let ttStatus = "undefined";
-              let hasGetAuth = "no";
-              let keys = "none";
-    
-              if (window.tt) {
-                  ttStatus = "defined";
-                  hasGetAuth = typeof window.tt.getAuthCode;
-                  try { keys = Object.keys(window.tt).join(","); } catch(e) {}
-              }
-
-              debugEl.innerText = msg + "\\nUA: " + navigator.userAgent + "\\nTT: " + ttStatus + " | getAuthCode: " + hasGetAuth + "\\nKeys: " + keys;
-          }
-
-          function startAuth() {
-            if (!window.tt) {
-               document.getElementById("loader").style.display = "none";
-               document.getElementById("message").style.display = "block";
-               document.getElementById("message").innerText = "Lỗi: window.tt không tìm thấy.";
-               showMetaInfo("window.tt missing");
-               return;
-            }
-
-            const authFn = window.tt.getAuthCode || window.tt.requestAuthCode;
+          const checkTimer = setInterval(() => {
+            attempts++;
+            const tt = window.tt;
+            const authFn = tt ? (tt.getAuthCode || tt.requestAuthCode) : null;
 
             if (authFn) {
-               authFn.call(window.tt, {
-                  appId: appId,
-                  success: (res) => {
-                     const currentUrl = new URL(window.location.href);
-                     const code = res.code || res; 
-                     currentUrl.searchParams.append("code", code);
-                     window.location.replace(currentUrl.toString());
-                  },
-                  fail: (err) => {
-                     document.getElementById("loader").style.display = "none";
-                     document.getElementById("message").style.display = "block";
-                     document.getElementById("message").innerText = "Lỗi xác thực (Auth Failed): " + JSON.stringify(err);
-                     showMetaInfo("Auth Call Failed");
-                  }
-               });
-            } else {
-               document.getElementById("loader").style.display = "none";
-               document.getElementById("message").style.display = "block";
-               document.getElementById("message").innerText = "Lỗi: Không tìm thấy hàm getAuthCode hoặc requestAuthCode.";
-               showMetaInfo("Missing function after load");
-            }
-          }
-
-          function handleLoadError() {
-             document.getElementById("loader").style.display = "none";
-             document.getElementById("message").style.display = "block";
-             document.getElementById("message").innerText = "Không thể tải Lark SDK (Network Error).";
-             showMetaInfo("Script Load Error");
-          }
-
-          const script = document.createElement("script");
-          script.src = "https://lf1-cdn-tos.bytegoofy.com/goofy/lark/op/h5-js-sdk-1.5.23.js";
-          script.onload = startAuth;
-          script.onerror = handleLoadError;
-          document.head.appendChild(script);
-
-          setTimeout(() => {
-             if (document.getElementById("loader").style.display !== "none") {
-                if (window.tt && window.tt.getAuthCode) {
-                   startAuth();
+              clearInterval(checkTimer);
+              authFn.call(tt, {
+                appId: appId,
+                success: (res) => {
+                  const url = new URL(window.location.href);
+                  url.searchParams.append("code", res.code || res);
+                  window.location.replace(url.toString());
+                },
+                fail: (err) => {
+                  document.querySelector('.status').innerHTML = '<span style="color: #d32f2f">Xác thực thất bại</span>';
+                  const debugEl = document.getElementById('debug');
+                  debugEl.style.display = 'block';
+                  debugEl.innerText = "Lỗi Lark: " + JSON.stringify(err);
                 }
-             }
-          }, 3000);
+              });
+            } else if (attempts >= maxAttempts) {
+              clearInterval(checkTimer);
+              document.querySelector('.status').innerHTML = '<span style="color: #d32f2f">Lỗi: Không tìm thấy trình điều khiển Lark</span>';
+              const debugEl = document.getElementById('debug');
+              debugEl.style.display = 'block';
+              debugEl.innerText = "Môi trường: " + (window.tt ? "Có tt nhưng thiếu hàm Auth" : "Thiếu tt") + "\\nUA: " + navigator.userAgent;
+            }
+          }, 100);
         </script>
       </body>
       </html>
