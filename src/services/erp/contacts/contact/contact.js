@@ -4,6 +4,7 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import Database from "services/database";
 import { fetchContactsFromERP, saveContactsToDatabase, deleteContactFromDatabase } from "services/erp/contacts/contact/utils/contact-helppers";
+import { parseURLParameters, getParam } from "services/utils/url-helper";
 
 dayjs.extend(utc);
 
@@ -84,6 +85,10 @@ export default class ContactService {
   }
 
   async processWebsiteContact(data, lead, source = null) {
+    const referrerParams = parseURLParameters(data.raw_data.referrer);
+    const conversionUrlParams = parseURLParameters(data.raw_data.conversion_url);
+    const originalUrlPageParams = parseURLParameters(data.raw_data.origin_url_page);
+
     const contactData = {
       doctype: this.doctype,
       custom_uuid: data.custom_uuid,
@@ -96,7 +101,35 @@ export default class ContactService {
         }
       ],
       source: source || lead.source,
-      source_group: this.defaultWebsiteContactSourceGroup
+      source_group: this.defaultWebsiteContactSourceGroup,
+      ip: data.raw_data.ip,
+      gtm_link: data.raw_data.link,
+      gtm_location: data.raw_data.location,
+      url_page: data.raw_data.url_page,
+      utm_term: getParam(data.raw_data, "utm_term", referrerParams, conversionUrlParams, originalUrlPageParams),
+      message_id: data.raw_data.message_id,
+      utm_medium: getParam(data.raw_data, "utm_medium", referrerParams, conversionUrlParams, originalUrlPageParams),
+      utm_source: getParam(data.raw_data, "utm_source", referrerParams, conversionUrlParams, originalUrlPageParams),
+      utm_content: getParam(data.raw_data, "utm_content", referrerParams, conversionUrlParams, originalUrlPageParams),
+      variant_url: data.raw_data.variant_url,
+      ladi_form_id: data.raw_data.ladi_form_id,
+      message_time: data.raw_data.message_time ? dayjs(Number(data.raw_data.message_time)).utc().format("YYYY-MM-DD HH:mm:ss") : null,
+      utm_campaign: getParam(data.raw_data, "utm_campaign", referrerParams, conversionUrlParams, originalUrlPageParams),
+      origin_url_page: data.raw_data.origin_url_page,
+      variant_content: data.raw_data.variant_content,
+      referrer: data.raw_data.referrer,
+      last_source: data.raw_data.last_source,
+      first_source: data.raw_data.first_source,
+      last_ad_param: data.raw_data.last_ad_param,
+      conversion_url: data.raw_data.conversion_url,
+      first_ad_param: data.raw_data.first_ad_param,
+      gclid: getParam(data.raw_data, "gclid", referrerParams, conversionUrlParams, originalUrlPageParams),
+      fbclid: getParam(data.raw_data, "fbclid", referrerParams, conversionUrlParams, originalUrlPageParams),
+      ttclid: getParam(data.raw_data, "ttclid", referrerParams, conversionUrlParams, originalUrlPageParams),
+      user_agent: data.raw_data.user_agent ? data.raw_data.user_agent.substring(0, 140) : null,
+      gad_source: getParam(data.raw_data, "gad_source", referrerParams, conversionUrlParams, originalUrlPageParams),
+      gad_campaignid: getParam(data.raw_data, "gad_campaignid", referrerParams, conversionUrlParams, originalUrlPageParams),
+      gbraid: getParam(data.raw_data, "gbraid", referrerParams, conversionUrlParams, originalUrlPageParams)
     };
 
     const defaultContact = await this.frappeClient.getList(this.doctype, {

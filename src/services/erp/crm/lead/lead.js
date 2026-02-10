@@ -222,7 +222,8 @@ export default class LeadService {
   async getWebsiteLeads(timeThreshold) {
     const result = await this.db.$queryRaw`
       SELECT * FROM ecom.leads l
-      WHERE l.database_created_at > ${timeThreshold};
+      WHERE l.database_created_at > ${timeThreshold}
+      ORDER BY l.database_created_at DESC;
     `;
     return result;
   }
@@ -379,5 +380,34 @@ export default class LeadService {
       minutesBack: 10,
       isSyncType: LeadService.SYNC_TYPE_AUTO
     });
+  }
+
+  static async backfillWebsiteLead(env) {
+    const leadService = new LeadService(env);
+    const timeThreshold = dayjs().utc().subtract(30, "days").format("YYYY-MM-DD HH:mm:ss");
+    const pageSize = 100;
+    let offset = 0;
+
+    while (true) {
+      const leads = await leadService.db.$queryRaw`
+        SELECT * FROM ecom.leads l
+        WHERE l.database_created_at > ${timeThreshold}
+        ORDER BY l.database_created_at DESC
+        LIMIT ${pageSize} OFFSET ${offset}
+      `;
+
+      if (!leads || leads.length === 0) {
+        break;
+      }
+
+      for (const lead of leads) {
+        await leadService.processWebsiteLead(lead);
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      offset += pageSize;
+    }
   }
 }

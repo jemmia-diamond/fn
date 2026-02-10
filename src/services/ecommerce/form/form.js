@@ -1,7 +1,9 @@
 import Database from "services/database";
+import LeadService from "services/erp/crm/lead/lead";
 
 export default class FormService {
   constructor(env) {
+    this.env = env;
     this.db = Database.instance(env);
   }
 
@@ -18,6 +20,13 @@ export default class FormService {
       }
     });
 
+    await this.createWebsiteLead(result);
+
     return result;
+  }
+
+  async createWebsiteLead(data) {
+    const leadService = new LeadService(this.env);
+    await leadService.processWebsiteLead(data);
   }
 }
