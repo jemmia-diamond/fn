@@ -1,4 +1,3 @@
-import * as Sentry from "@sentry/cloudflare";
 
 export default class QueueHelper {
   /**
@@ -18,14 +17,9 @@ export default class QueueHelper {
 
     console.warn(`[QueueHelper] Re-queueing message to ${queueName} (Attempt ${body.retryCount}) in ${delaySeconds}s`);
 
-    try {
-      if (!env[queueName]) {
-        throw new Error(`Queue binding '${queueName}' not found in environment`);
-      }
-      await env[queueName].send(body, { delaySeconds });
-    } catch (e) {
-      console.warn(`[QueueHelper] Failed to re-queue message to ${queueName}`, e);
-      Sentry.captureException(e);
+    if (!env[queueName]) {
+      throw new Error(`Queue binding '${queueName}' not found in environment`);
     }
+    await env[queueName].send(body, { delaySeconds });
   }
 }
