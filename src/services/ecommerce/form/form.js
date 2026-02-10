@@ -1,6 +1,5 @@
 import Database from "services/database";
 import LeadService from "services/erp/crm/lead/lead";
-import * as Sentry from "@sentry/cloudflare";
 
 export default class FormService {
   constructor(env) {
@@ -21,13 +20,13 @@ export default class FormService {
       }
     });
 
-    try {
-      const leadService = new LeadService(this.env);
-      await leadService.processWebsiteLead(result);
-    } catch (error) {
-      Sentry.captureException(error);
-    }
+    await this.createWebsiteLead(result);
 
     return result;
+  }
+
+  async createWebsiteLead(data) {
+    const leadService = new LeadService(this.env);
+    await leadService.processWebsiteLead(data);
   }
 }
