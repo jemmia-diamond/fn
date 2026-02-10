@@ -1,4 +1,4 @@
-import JemmiaShieldEventController from "controllers/jemmia-shield/jemmia-shield-event-controller";
+import JemmiaShieldEventController from "controllers/jemmia-shield/shield-event-controller";
 import EventRedirectController from "controllers/larksuite/event-redirect-controller";
 import LarkApprovalOrdersController from "controllers/larksuite/lark-approval-orders-controller";
 
