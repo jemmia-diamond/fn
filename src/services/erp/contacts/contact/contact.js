@@ -126,7 +126,10 @@ export default class ContactService {
       gclid: getParam(data.raw_data, "gclid", referrerParams, conversionUrlParams, originalUrlPageParams),
       fbclid: getParam(data.raw_data, "fbclid", referrerParams, conversionUrlParams, originalUrlPageParams),
       ttclid: getParam(data.raw_data, "ttclid", referrerParams, conversionUrlParams, originalUrlPageParams),
-      user_agent: data.raw_data.user_agent ? data.raw_data.user_agent.substring(0, 140) : null
+      user_agent: data.raw_data.user_agent ? data.raw_data.user_agent.substring(0, 140) : null,
+      gad_source: getParam(data.raw_data, "gad_source", referrerParams, conversionUrlParams, originalUrlPageParams),
+      gad_campaignid: getParam(data.raw_data, "gad_campaignid", referrerParams, conversionUrlParams, originalUrlPageParams),
+      gbraid: getParam(data.raw_data, "gbraid", referrerParams, conversionUrlParams, originalUrlPageParams)
     };
 
     const defaultContact = await this.frappeClient.getList(this.doctype, {
