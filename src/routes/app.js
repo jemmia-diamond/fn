@@ -1,10 +1,10 @@
 import RedirectController from "controllers/redirect-controller";
-import JemmiaShieldAuthController from "controllers/larksuite/jemmia-shield-controller";
-import JemmiaShieldRedirectController from "controllers/larksuite/jemmia-shield-redirect-controller";
-import JemmiaShieldCallbackController from "controllers/larksuite/jemmia-shield-callback-controller";
-import JemmiaShieldBotController from "controllers/larksuite/jemmia-shield-bot-controller";
+import JemmiaShieldAuthController from "controllers/jemmia-shield/jemmia-shield-controller";
+import JemmiaShieldRedirectController from "controllers/jemmia-shield/jemmia-shield-redirect-controller";
+import JemmiaShieldCallbackController from "controllers/jemmia-shield/jemmia-shield-callback-controller";
+import JemmiaShieldBotController from "controllers/jemmia-shield/jemmia-shield-bot-controller";
 
-import JemmiaShieldMessageViewController from "controllers/larksuite/jemmia-shield-message-view-controller";
+import JemmiaShieldMessageViewController from "controllers/jemmia-shield/jemmia-shield-message-view-controller";
 
 export default class AppRoutes {
   static register(app) {

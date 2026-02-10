@@ -7,7 +7,7 @@ export default class JemmiaShieldEventController {
   static processedEvents = new Set<string>();
 
   static register(webhook: any) {
-    webhook.post("/lark/recall/event", JemmiaShieldEventController.create);
+    webhook.post("/jemmia-shield/event", JemmiaShieldEventController.create);
   }
 
   static async create(c: any) {
