@@ -9,6 +9,7 @@ import HaravanAPI from "services/clients/haravan-client";
 import Misa from "services/misa";
 import { BadRequestException } from "src/exception/exceptions";
 import { SEPAY_WEBHOOK_TOPICS } from "services/erp/accounting/sepay-transaction/constants";
+import QueueHelper from "src/services/utils/queue-helper";
 
 dayjs.extend(utc);
 
@@ -392,6 +393,7 @@ export default class SepayTransactionService {
         await service.processTransaction(body);
       } catch (error) {
         Sentry.captureException(error);
+        await QueueHelper.requeueWithDelay(message.body, env, "SEPAY_TRANSACTION_QUEUE");
       }
     }
   }
@@ -415,6 +417,7 @@ export default class SepayTransactionService {
         }
       } catch (error) {
         Sentry.captureException(error);
+        await QueueHelper.requeueWithDelay(message.body, env, "SEPAY_TRANSACTION_QUEUE");
       }
     }
   }
