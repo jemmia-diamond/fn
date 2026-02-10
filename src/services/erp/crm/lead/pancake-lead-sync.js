@@ -135,7 +135,8 @@ export default class PancakeLeadSyncService {
           pc.lives_in as customer_lives_in, 
           pc.can_inbox as can_inbox,
           c.added_user_id,
-          c.avatar_url 
+          c.avatar_url,
+          c.ad_ids 
         FROM pancake.conversation c 
         LEFT JOIN pancake.page_customer pc ON c.customer_id = pc.customer_id 
         WHERE c.type = 'INBOX' 
@@ -181,7 +182,8 @@ export default class PancakeLeadSyncService {
         array_remove(array_agg(vt.tag_label), NULL) as tags,
         c.last_sent_at as latest_message_at, 
         c.added_user_id as pancake_user_id,
-        c.avatar_url as pancake_avatar_url 
+        c.avatar_url as pancake_avatar_url,
+        c.ad_ids
       FROM base_conversations c
       LEFT JOIN pancake.conversation_page_customer cpc ON c.id = cpc.conversation_id
       LEFT JOIN pancake.page p ON p.id = c.page_id 
@@ -196,7 +198,7 @@ export default class PancakeLeadSyncService {
         customer_phone_numbers, 
         customer_lives_in, 
         can_inbox,
-        flc.frappe_name_id, p.platform, c.last_sent_at, p.name, c.added_user_id, c.avatar_url 
+        flc.frappe_name_id, p.platform, c.last_sent_at, p.name, c.added_user_id, c.avatar_url, c.ad_ids 
       ORDER BY c.updated_at DESC
     `;
 

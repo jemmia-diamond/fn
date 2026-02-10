@@ -114,7 +114,8 @@ export default class LeadService {
     type,
     lastestMessageAt,
     pancakeUserId,
-    pancakeAvatarUrl
+    pancakeAvatarUrl,
+    adIds
   }) {
     const leads = await this.updateLeads([{
       frappe_name_id: frappeNameId,
@@ -130,7 +131,8 @@ export default class LeadService {
       can_inbox: type === "INBOX",
       latest_message_at: lastestMessageAt,
       pancake_user_id: pancakeUserId,
-      pancake_avatar_url: pancakeAvatarUrl
+      pancake_avatar_url: pancakeAvatarUrl,
+      ad_ids: adIds
     }]);
 
     if (leads && Array.isArray(leads) && leads.length > 0) {
@@ -152,7 +154,8 @@ export default class LeadService {
     type,
     lastestMessageAt,
     pancakeUserId,
-    pancakeAvatarUrl
+    pancakeAvatarUrl,
+    adIds
   }) {
     const leads = await this.insertLeads([{
       customer_name: customerName,
@@ -167,7 +170,8 @@ export default class LeadService {
       can_inbox: type === "INBOX",
       latest_message_at: lastestMessageAt,
       pancake_user_id: pancakeUserId,
-      pancake_avatar_url: pancakeAvatarUrl
+      pancake_avatar_url: pancakeAvatarUrl,
+      ad_ids: adIds
     }]);
 
     if (leads && Array.isArray(leads) && leads.length > 0) {
