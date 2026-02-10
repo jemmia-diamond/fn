@@ -10,16 +10,21 @@ export default class QueueHelper {
    * @param {number} options.delaySeconds - Delay in seconds before retry (default: 600 seconds ~ 10 minutes).
    * @returns {Promise<void>}
    */
-  static async requeueWithDelay(body, env, queueName, delaySeconds = 600) {
+  static async requeueWithDelay(body, env, queueName, { delaySeconds = 600, maxRetries = 5 } = {}) {
     const retryCount = body.retryCount || 0;
 
-    body.retryCount = retryCount + 1;
+    if (retryCount >= maxRetries) {
+      console.warn(`[QueueHelper] Max retries (${maxRetries}) reached for message in queue ${queueName}. Dropping message.`, body);
+      return;
+    }
 
-    console.warn(`[QueueHelper] Re-queueing message to ${queueName} (Attempt ${body.retryCount}) in ${delaySeconds}s`);
+    const payload = { ...body, retryCount: retryCount + 1 };
+
+    console.warn(`[QueueHelper] Re-queueing message to ${queueName} (Attempt ${payload.retryCount}/${maxRetries}) in ${delaySeconds}s`);
 
     if (!env[queueName]) {
       throw new Error(`Queue binding '${queueName}' not found in environment`);
     }
-    await env[queueName].send(body, { delaySeconds });
+    await env[queueName].send(payload, { delaySeconds });
   }
 }
