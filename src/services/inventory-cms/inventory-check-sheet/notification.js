@@ -6,6 +6,7 @@ import InventoryCMSClient from "services/inventory-cms/inventory-cms-client/inve
 import { readItems } from "@directus/sdk";
 import LarksuiteService from "services/larksuite/lark";
 import * as Sentry from "@sentry/cloudflare";
+import { TIMEZONE_VIETNAM } from "src/constants";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -53,7 +54,7 @@ export default class CheckSheetNotificationService {
     } = payload;
 
     const timeToFormat = createdAt || new Date();
-    const dateStr = dayjs(timeToFormat).tz("Asia/Ho_Chi_Minh").format("DD/MM/YYYY HH:mm:ss");
+    const dateStr = dayjs(timeToFormat).tz(TIMEZONE_VIETNAM).format("DD/MM/YYYY HH:mm:ss");
 
     const gap = countForReal - countInBook;
     const gapText = gap > 0 ? `Dư ${gap}` : (gap < 0 ? `Thiếu ${-gap}` : "đủ hàng");
