@@ -5,6 +5,7 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import ContactService from "services/erp/contacts/contact/contact";
 import { areAllFieldsEmpty, fetchLeadsFromERP, saveLeadsToDatabase } from "services/erp/crm/lead/utils/lead-helppers";
+import { createInsertLeadPayload, createUpdateLeadPayload } from "services/erp/crm/lead/utils/pancake-utils";
 
 dayjs.extend(utc);
 
@@ -100,24 +101,9 @@ export default class LeadService {
   }
 
   async updateLead({
-    leadName,
-    phone,
-    firstName
-  }) {
-    const lead = await this.syncLeadByBatchUpdate([
-      {
-        "doctype": "Lead",
-        "docname": leadName,
-        "phone": phone,
-        "first_name": firstName
-      }
-    ]);
-    return lead;
-  }
-
-  async insertLead({
-    firstName,
-    phone,
+    frappeNameId,
+    customerPhone,
+    customerName,
     platform,
     conversationId,
     customerId,
@@ -128,31 +114,84 @@ export default class LeadService {
     type,
     lastestMessageAt,
     pancakeUserId,
-    pancakeAvatarUrl
+    pancakeAvatarUrl,
+    adIds
   }) {
-    const lead = await this.syncLeadByBatchInsertion([
-      {
-        "doctype": "Lead",
-        "status": "Lead",
-        "naming_series": "CRM-LEAD-.YYYY.-",
-        "first_name": firstName,
-        "phone": phone,
-        "pancake_data": {
-          "platform": platform,
-          "conversation_id": conversationId,
-          "customer_id": customerId,
-          "page_id": pageId,
-          "page_name": pageName,
-          "inserted_at": insertedAt,
-          "updated_at": updatedAt,
-          "can_inbox": type === "INBOX" ? 1 : 0,
-          "latest_message_at": lastestMessageAt,
-          "pancake_user_id": pancakeUserId, // sale
-          "pancake_avatar_url": pancakeAvatarUrl
-        }
-      }
-    ]);
-    return lead;
+    const leads = await this.updateLeads([{
+      frappe_name_id: frappeNameId,
+      customer_phone: customerPhone,
+      customer_name: customerName,
+      platform: platform,
+      conversation_id: conversationId,
+      customer_id: customerId,
+      page_id: pageId,
+      page_name: pageName,
+      inserted_at: insertedAt,
+      updated_at: updatedAt,
+      can_inbox: type === "INBOX",
+      latest_message_at: lastestMessageAt,
+      pancake_user_id: pancakeUserId,
+      pancake_avatar_url: pancakeAvatarUrl,
+      ad_ids: adIds
+    }]);
+
+    if (leads && Array.isArray(leads) && leads.length > 0) {
+      return leads[0];
+    }
+    return null;
+  }
+
+  async insertLead({
+    customerName,
+    customerPhone,
+    platform,
+    conversationId,
+    customerId,
+    pageId,
+    pageName,
+    insertedAt,
+    updatedAt,
+    type,
+    lastestMessageAt,
+    pancakeUserId,
+    pancakeAvatarUrl,
+    adIds
+  }) {
+    const leads = await this.insertLeads([{
+      customer_name: customerName,
+      customer_phone: customerPhone,
+      platform: platform,
+      conversation_id: conversationId,
+      customer_id: customerId,
+      page_id: pageId,
+      page_name: pageName,
+      inserted_at: insertedAt,
+      updated_at: updatedAt,
+      can_inbox: type === "INBOX",
+      latest_message_at: lastestMessageAt,
+      pancake_user_id: pancakeUserId,
+      pancake_avatar_url: pancakeAvatarUrl,
+      ad_ids: adIds
+    }]);
+
+    if (leads && Array.isArray(leads) && leads.length > 0) {
+      return leads[0];
+    }
+    return null;
+  }
+
+  async insertLeads(leadsData) {
+    if (!Array.isArray(leadsData) || leadsData.length === 0) return [];
+    const docs = leadsData.map(lead => createInsertLeadPayload(lead));
+    const response = await this.syncLeadByBatchInsertion(docs);
+    return response || [];
+  }
+
+  async updateLeads(leadsData) {
+    if (!Array.isArray(leadsData) || leadsData.length === 0) return [];
+    const docs = leadsData.map(lead => createUpdateLeadPayload(lead));
+    const response = await this.syncLeadByBatchUpdate(docs);
+    return response?.results || [];
   }
 
   async syncLeadByBatchInsertion(docs) {
@@ -169,10 +208,26 @@ export default class LeadService {
     });
   }
 
+  async getOrCreateLead(phone, dataBuilder) {
+    if (!phone) return null;
+
+    const leads = await this.frappeClient.getList("Lead", {
+      filters: [["phone", "=", phone]]
+    });
+
+    if (leads && leads.length > 0) {
+      return { ...leads[0], doctype: this.doctype };
+    }
+
+    const leadData = await dataBuilder();
+    return await this.frappeClient.insert(leadData);
+  }
+
   async getWebsiteLeads(timeThreshold) {
     const result = await this.db.$queryRaw`
       SELECT * FROM ecom.leads l
-      WHERE l.database_created_at > ${timeThreshold};
+      WHERE l.database_created_at > ${timeThreshold}
+      ORDER BY l.database_created_at DESC;
     `;
     return result;
   }
@@ -186,50 +241,56 @@ export default class LeadService {
 
     try {
       const contactService = new ContactService(this.env);
-      const location = data.raw_data.location;
-      const provinces = await this.frappeClient.getList("Province", {
-        filters: [["province_name", "LIKE", `%${location}%`]]
-      });
+      const phone = data.raw_data.phone;
+      const source = data.source === "Partner" ? this.PartnerLeadSource : this.WebsiteFormLeadSource;
 
-      const leadData = {
-        doctype: this.doctype,
-        source: data.source === "Partner" ? this.PartnerLeadSource : this.WebsiteFormLeadSource,
-        first_name: data.raw_data.name,
-        phone: data.raw_data.phone,
-        lead_owner: this.defaultLeadOwner,
-        province: provinces.length ? provinces[0].name : null,
-        first_reach_at: dayjs(data.database_created_at).utc().format("YYYY-MM-DD HH:mm:ss")
+      const dataBuilder = async () => {
+        const location = data.raw_data.location;
+        const provinces = await this.frappeClient.getList("Province", {
+          filters: [["province_name", "LIKE", `%${location}%`]]
+        });
+
+        const leadData = {
+          doctype: this.doctype,
+          status: "Lead",
+          naming_series: "CRM-LEAD-.YYYY.-",
+          source: source,
+          first_name: data.raw_data.name || "Chưa rõ",
+          phone: phone,
+          lead_owner: this.defaultLeadOwner,
+          province: provinces.length ? provinces[0].name : null,
+          first_reach_at: dayjs(data.database_created_at).utc().format("YYYY-MM-DD HH:mm:ss")
+        };
+
+        const notes = [];
+        if (data.raw_data.join_date) {
+          notes.push({
+            note: "Join Date: " + data.raw_data.join_date
+          });
+        }
+
+        if (data.raw_data.demand) {
+          notes.push({
+            note: "Demand: " + data.raw_data.demand
+          });
+        }
+
+        if (data.raw_data.diamond_note) {
+          notes.push({
+            note: "Diamond: " + data.raw_data.diamond_note
+          });
+        }
+
+        if (notes.length) {
+          leadData.notes = notes;
+        }
+        return leadData;
       };
 
-      const notes = [];
-      if (data.raw_data.join_date) {
-        notes.push({
-          note: "Join Date: " + data.raw_data.join_date
-        });
+      const lead = await this.getOrCreateLead(phone, dataBuilder);
+      if (lead) {
+        await contactService.processWebsiteContact(data, lead, source);
       }
-
-      if (data.raw_data.demand) {
-        notes.push({
-          note: "Demand: " + data.raw_data.demand
-        });
-      }
-
-      if (data.raw_data.diamond_note) {
-        notes.push({
-          note: "Diamond: " + data.raw_data.diamond_note
-        });
-      }
-
-      if (notes.length) {
-        leadData.notes = notes;
-      }
-
-      const ignoredFields = [
-        "first_reach_at", "source"
-      ];
-
-      const lead = await this.frappeClient.upsert(leadData, "phone", ignoredFields);
-      await contactService.processWebsiteContact(data, lead, leadData.source);
     } catch (e) {
       Sentry.captureException(e);
       return;
@@ -250,16 +311,27 @@ export default class LeadService {
   async processCallLogLead(data) {
     const contactService = new ContactService(this.env);
     const phone = data.type === "Incoming" ? data.from : data.to;
-    const leadData = {
-      doctype: this.doctype,
-      source: this.CallLogLeadSource,
-      first_name: phone,
-      phone: phone,
-      lead_owner: this.defaultLeadOwner,
-      first_reach_at: dayjs(data.creation).utc().format("YYYY-MM-DD HH:mm:ss")
+
+    if (!phone) return;
+
+    const dataBuilder = async () => {
+      const leadData = {
+        doctype: this.doctype,
+        status: "Lead",
+        naming_series: "CRM-LEAD-.YYYY.-",
+        source: this.CallLogLeadSource,
+        first_name: phone,
+        phone: phone,
+        lead_owner: this.defaultLeadOwner,
+        first_reach_at: dayjs(data.creation).utc().format("YYYY-MM-DD HH:mm:ss")
+      };
+      return leadData;
     };
-    const lead = await this.frappeClient.upsert(leadData, "phone", ["first_name"]);
-    await contactService.processCallLogContact(data, lead);
+
+    const lead = await this.getOrCreateLead(phone, dataBuilder);
+    if (lead) {
+      await contactService.processCallLogContact(data, lead, this.CallLogLeadSource);
+    }
   }
 
   static async syncCallLogLead(env) {
@@ -312,5 +384,34 @@ export default class LeadService {
       minutesBack: 10,
       isSyncType: LeadService.SYNC_TYPE_AUTO
     });
+  }
+
+  static async backfillWebsiteLead(env) {
+    const leadService = new LeadService(env);
+    const timeThreshold = dayjs().utc().subtract(30, "days").format("YYYY-MM-DD HH:mm:ss");
+    const pageSize = 100;
+    let offset = 0;
+
+    while (true) {
+      const leads = await leadService.db.$queryRaw`
+        SELECT * FROM ecom.leads l
+        WHERE l.database_created_at > ${timeThreshold}
+        ORDER BY l.database_created_at DESC
+        LIMIT ${pageSize} OFFSET ${offset}
+      `;
+
+      if (!leads || leads.length === 0) {
+        break;
+      }
+
+      for (const lead of leads) {
+        await leadService.processWebsiteLead(lead);
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      offset += pageSize;
+    }
   }
 }

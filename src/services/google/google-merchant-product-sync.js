@@ -1,4 +1,5 @@
 import ProductService from "services/ecommerce/product/product.js";
+import DiamondService from "services/ecommerce/diamond/diamond.js";
 import GoogleMerchantService from "services/google/google-merchant-service.js";
 import * as Sentry from "@sentry/cloudflare";
 
@@ -8,6 +9,7 @@ export default class GoogleMerchantProductSyncService {
   constructor(env) {
     this.env = env;
     this.productService = new ProductService(env);
+    this.diamondService = new DiamondService(env);
     this.merchantService = new GoogleMerchantService(env);
   }
 
@@ -15,7 +17,6 @@ export default class GoogleMerchantProductSyncService {
     let syncedCount = 0;
     let page = 1;
     let hasMore = true;
-    let allMerchantProducts = [];
 
     try {
       while (hasMore) {
@@ -37,16 +38,25 @@ export default class GoogleMerchantProductSyncService {
           break;
         }
 
+        const batchMerchantProducts = [];
         for (const product of products) {
           if (product.variants && product.variants.length > 0) {
             for (const variant of product.variants) {
               const merchantProduct = this._mapToMerchantProduct(product, variant);
               if (merchantProduct) {
-                allMerchantProducts.push(merchantProduct);
-                syncedCount++;
+                batchMerchantProducts.push(merchantProduct);
                 break;
               }
             }
+          }
+        }
+
+        if (batchMerchantProducts.length > 0) {
+          try {
+            await this.merchantService.insertProducts(batchMerchantProducts);
+            syncedCount += batchMerchantProducts.length;
+          } catch (error) {
+            Sentry.captureException(error);
           }
         }
 
@@ -58,9 +68,8 @@ export default class GoogleMerchantProductSyncService {
         }
       }
 
-      if (allMerchantProducts.length > 0) {
-        await this.merchantService.insertProducts(allMerchantProducts);
-      }
+      const diamondSyncedCount = await this._syncDiamondProducts();
+      syncedCount += diamondSyncedCount;
 
       return { success: true, syncedCount };
 
@@ -149,5 +158,113 @@ export default class GoogleMerchantProductSyncService {
       Sentry.captureException(err);
       return null;
     }
+  }
+
+  _mapDiamondToMerchantProduct(diamond) {
+    try {
+      let imageLink = diamond.images && diamond.images.length > 0 ? diamond.images[0] : "";
+
+      let availability = "in_stock";
+
+      let priceValue = parseInt(diamond.price || 0);
+
+      const title = diamond.title;
+
+      let description = diamond.title;
+
+      const link = `https://jemmia.vn/products/${diamond.handle}`;
+
+      const offerId = diamond.sku;
+      if (!offerId) {
+        return null;
+      }
+
+      const itemGroupId = diamond.product_id ? diamond.product_id.toString() : `${diamond.variant_id}`;
+
+      return {
+        channel: "ONLINE",
+        offerId: offerId.toLowerCase(),
+        contentLanguage: "vi",
+        feedLabel: "VN",
+        attributes: {
+          title: title,
+          description: description,
+          link: link,
+          imageLink: imageLink,
+          price: {
+            amountMicros: (priceValue * 1000000).toString(),
+            currencyCode: "VND"
+          },
+          availability: availability,
+          condition: "new",
+          brand: "Jemmia Diamond",
+          identifierExists: "yes",
+          mpn: offerId,
+          itemGroupId: itemGroupId,
+          color: diamond.color,
+          material: "Diamond",
+          adult: "no"
+        }
+      };
+    } catch (err) {
+      Sentry.captureException(err);
+      return null;
+    }
+  }
+
+  /**
+   * Syncs diamond products to Google Merchant.
+   * Fetches diamonds in pages, maps them to merchant products, and inserts them in batches.
+   * @returns {Promise<number>} The number of successfully synced diamond products.
+   */
+  async _syncDiamondProducts() {
+    let page = 1;
+    let hasMore = true;
+    let syncedCount = 0;
+
+    while (hasMore) {
+      const jsonParams = {
+        pagination: {
+          from: (page - 1) * LIMIT + 1,
+          limit: LIMIT
+        },
+        sort: { by: "price", order: "desc" },
+        extraFields: ["sku"]
+      };
+
+      const result = await this.diamondService.getDiamonds(jsonParams);
+      const diamonds = result.data;
+      const count = result.metadata.total;
+
+      if (!diamonds || diamonds.length === 0) {
+        hasMore = false;
+        break;
+      }
+
+      const batchMerchantProducts = [];
+      for (const diamond of diamonds) {
+        const merchantProduct = this._mapDiamondToMerchantProduct(diamond);
+        if (merchantProduct) {
+          batchMerchantProducts.push(merchantProduct);
+        }
+      }
+
+      if (batchMerchantProducts.length > 0) {
+        try {
+          await this.merchantService.insertProducts(batchMerchantProducts);
+          syncedCount += batchMerchantProducts.length;
+        } catch (error) {
+          Sentry.captureException(error);
+        }
+      }
+
+      const totalFetched = (page - 1) * LIMIT + diamonds.length;
+      if (totalFetched >= count) {
+        hasMore = false;
+      } else {
+        page++;
+      }
+    }
+    return syncedCount;
   }
 }

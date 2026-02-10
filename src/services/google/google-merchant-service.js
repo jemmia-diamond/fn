@@ -109,33 +109,18 @@ export default class GoogleMerchantService {
   }
 
   async insertProducts(products) {
-    const BATCH_SIZE = 20;
-    const batches = this._chunkArray(products, BATCH_SIZE);
+    try {
+      const results = await Promise.allSettled(
+        products.map(product => this.insertProduct(product))
+      );
 
-    for (const batch of batches) {
-      try {
-        const results = await Promise.allSettled(
-          batch.map(product => this.insertProduct(product))
-        );
-
-        const failCount = results.filter(r => r.status === "rejected").length;
-        if (failCount > 0) {
-          results.filter(r => r.status === "rejected").forEach(r => Sentry.captureException(r.reason));
-        }
-        if (batches.length > 1) {
-          await new Promise(resolve => setTimeout(resolve, 1000));
-        }
-      } catch (error) {
-        Sentry.captureException(error);
+      const failCount = results.filter(r => r.status === "rejected").length;
+      if (failCount > 0) {
+        results.filter(r => r.status === "rejected").forEach(r => Sentry.captureException(r.reason));
       }
+    } catch (error) {
+      Sentry.captureException(error);
     }
   }
 
-  _chunkArray(array, size) {
-    const chunks = [];
-    for (let i = 0; i < array.length; i += size) {
-      chunks.push(array.slice(i, i + size));
-    }
-    return chunks;
-  }
 }

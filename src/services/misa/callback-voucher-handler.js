@@ -4,6 +4,20 @@ import FrappeClient from "src/frappe/frappe-client";
 import { VOUCHER_TYPES } from "services/misa/constant";
 import dayjs from "dayjs";
 
+const QR_RECORD = "qrPaymentTransaction";
+const MANUAL_RECORD = "manualPaymentTransaction";
+
+const RETRYABLE_ERROR_CODES = [
+  "Exception",
+  "InvalidToken",
+  "ExpiredToken",
+  "DBAmisNotConnectDBACT"
+];
+
+const SUCCESS_ERROR_CODES = [
+  "IsCreatedVoucher"
+];
+
 export default class MisaCallbackVoucherHandler {
   constructor(env) {
     this.env = env;
@@ -20,8 +34,9 @@ export default class MisaCallbackVoucherHandler {
 
   /**
    * @param {Array} results - The parsed array of voucher result objects from the MISA webhook.
+   * @param {Object} outerPayload - The outer webhook payload containing top-level success/error info
    */
-  async process(results) {
+  async process(results, outerPayload = {}) {
     const modelName = await this._determineModelName(results[0]);
 
     if (!modelName) {
@@ -29,13 +44,26 @@ export default class MisaCallbackVoucherHandler {
       return;
     }
 
+    const outerFailed = outerPayload?.success === false;
     for (const result of results) {
-      const { org_refid, success, error_message } = result;
+      const { org_refid, success, error_message, error_code = "" } = result;
+
+      if (SUCCESS_ERROR_CODES.includes(outerPayload?.error_code) || SUCCESS_ERROR_CODES.includes(error_code)){
+        Sentry.captureMessage("MISA Callback: Voucher already created", result);
+        continue;
+      }
 
       try {
+        const actualSuccess = outerFailed ? false : success;
+        const actualErrorCode = outerFailed ? (outerPayload?.error_code || "No error code") : error_code;
+        const actualErrorMessage = outerFailed
+          ? (outerPayload?.error_message || "No failed message") : error_message;
+        const formattedError = actualErrorCode && actualErrorMessage
+          ? `[${actualErrorCode}] ${actualErrorMessage}` : actualErrorMessage;
+
         const dataToUpdate = {
-          misa_synced: success,
-          misa_sync_error_msg: success ? null : error_message
+          misa_synced: actualSuccess,
+          misa_sync_error_msg: actualSuccess ? null : formattedError || null
         };
 
         await this.db[modelName].updateMany({
@@ -46,6 +74,18 @@ export default class MisaCallbackVoucherHandler {
         const record = await this.db[modelName].findFirst({
           where: { misa_sync_guid: org_refid }
         });
+
+        if (!actualSuccess) {
+          const error = new Error(`MISA sync failed: [${actualErrorCode}] ${actualErrorMessage}`);
+          error.isMisaError = true;
+          error.org_refid = org_refid;
+          error.error_code = actualErrorCode;
+          error.error_message = actualErrorMessage;
+          error.payment_entry_name = record?.payment_entry_name;
+          error.modelName = modelName;
+          error.recordId = record?.id || record?.uuid;
+          throw error;
+        }
 
         if (record?.payment_entry_name) {
           await this.frappeClient.update({
@@ -59,6 +99,23 @@ export default class MisaCallbackVoucherHandler {
         }
 
       } catch (error) {
+        if (error?.isMisaError) {
+          if (RETRYABLE_ERROR_CODES.includes(error?.error_code)) {
+            if (error.recordId) {
+              const jobType = error.modelName === QR_RECORD
+                ? Misa.Constants.JOB_TYPE.CREATE_QR_VOUCHER
+                : Misa.Constants.JOB_TYPE.CREATE_MANUAL_VOUCHER;
+
+              const data = error.modelName === QR_RECORD
+                ? { qr_transaction_id: error.recordId }
+                : { manual_payment_uuid: error.recordId };
+
+              const payload = { job_type: jobType, data, is_retry: true };
+              await this.env["MISA_QUEUE"].send(payload);
+            }
+          }
+        }
+
         Sentry.captureException(error);
       }
     }
@@ -72,7 +129,7 @@ export default class MisaCallbackVoucherHandler {
     const { voucher_type, org_refid } = firstResult;
 
     if (voucher_type === VOUCHER_TYPES.MANUAL_PAYMENT) {
-      return "manualPaymentTransaction";
+      return MANUAL_RECORD;
     }
 
     if (voucher_type === VOUCHER_TYPES.QR_PAYMENT) {
@@ -83,7 +140,7 @@ export default class MisaCallbackVoucherHandler {
         select: { id: true }
       });
 
-      return qrRecord ? "qrPaymentTransaction" : "manualPaymentTransaction";
+      return qrRecord ? QR_RECORD : MANUAL_RECORD;
     }
 
     return null;

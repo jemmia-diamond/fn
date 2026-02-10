@@ -138,6 +138,25 @@ export default class FrappeClient {
     return this.postProcess(res);
   }
 
+  async createComment({ referenceDoctype, referenceName, content, commentType = "Comment", mentionPerson = "" }) {
+    let commentContent = mentionPerson === "" ? content :
+      `
+        ${content}<br><br>cc: <a class="mention" href="/app/user/${encodeURIComponent(mentionPerson)}"
+              data-id="${mentionPerson}"
+              data-value="${mentionPerson}"
+              data-denotation-char="@">@${mentionPerson}</a>
+      `;
+
+    const comment = {
+      doctype: "Comment",
+      comment_type: commentType,
+      reference_doctype: referenceDoctype,
+      reference_name: referenceName,
+      content: commentContent
+    };
+    return this.insert(comment);
+  }
+
   chunk(arr, size) {
     const chunks = [];
     for (let i = 0; i < arr.length; i += size) {

@@ -37,7 +37,6 @@ export default {
       break;
     case "*/15 * * * *": // At every 15th minute
       // await ERP.Contacts.ContactService.cronSyncContactsToDatabase(env);
-      // await ERP.CRM.LeadService.syncWebsiteLeads(env);
       await new Pancake.PancakeConversationSyncService(env).backfillLeadZalo();
       // await new Pancake.PancakeConversationSyncService(env).syncMissingInsertedAt();
       break;
@@ -84,7 +83,6 @@ export default {
     case "0 1 * * *": // 08:00
       await Larksuite.Attendance.ScheduleService.syncScheduleToDatabase(env);
       await Larksuite.Approval.InstanceService.syncInstancesToDatabase(env);
-      await Larksuite.Approval.BuyBackInstanceService.syncInstancesToDatabase(env);
       break;
     case "30 1 * * *": // 08:30
       await ERP.Automation.AssignmentRuleService.disableAssignmentRuleOffHour(env);
@@ -102,6 +100,7 @@ export default {
         fromDate: dayjs().tz(TIMEZONE_VIETNAM).hour(9).minute(0).second(0).toISOString(),
         toDate: dayjs().tz(TIMEZONE_VIETNAM).hour(17).minute(0).second(0).toISOString()
       });
+      await new ERP.Accounting.PaymentEntryNotificationService(env).runAfternoonBatch();
       break;
     case "0 11 * * *": // 18:00
       break;
@@ -112,6 +111,7 @@ export default {
       });
       await Larksuite.Ticket.TechTicketService.syncTechTickets(env, { mode: "daily" });
       await new Google.GoogleMerchantProductSyncService(env).sync();
+      await new ERP.Accounting.PaymentEntryNotificationService(env).runMorningBatch();
       break;
     case "0 14 * * *": // 21:00
       await ERP.Automation.AssignmentRuleService.enableAssignmentRuleOffHour(env);

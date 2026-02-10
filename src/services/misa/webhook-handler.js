@@ -37,8 +37,13 @@ export default class MisaWebhookHandler {
     }
 
     const dataPayload = JSON.parse(body.data);
+    const outerPayload = {
+      success: body.success,
+      error_code: body?.error_code,
+      error_message: body?.error_message
+    };
     if (body.data_type === CALLBACK_TYPE.SAVE_FUNCTION && dataPayload[0]?.voucher_type) {
-      await this.voucherHandler.process(dataPayload);
+      await this.voucherHandler.process(dataPayload, outerPayload);
     }
   }
 
@@ -47,14 +52,14 @@ export default class MisaWebhookHandler {
    * @private
    */
   async _handleInternalJob(body) {
-    const { job_type, data } = body;
+    const { job_type, data, is_retry = false } = body;
 
     switch (job_type) {
     case Misa.Constants.JOB_TYPE.CREATE_QR_VOUCHER:
-      await this._createQrVoucher(data.qr_transaction_id);
+      await this._createQrVoucher(data.qr_transaction_id, is_retry);
       break;
     case Misa.Constants.JOB_TYPE.CREATE_MANUAL_VOUCHER:
-      await this._createManualVoucher(data.manual_payment_uuid);
+      await this._createManualVoucher(data.manual_payment_uuid, is_retry);
       break;
     case Misa.Constants.JOB_TYPE.SYNC_CUSTOMER:
       await this._syncCustomerToMisa(data);
@@ -73,7 +78,7 @@ export default class MisaWebhookHandler {
    * Create MISA voucher Job for QR Payment
    * @private
    */
-  async _createQrVoucher(id) {
+  async _createQrVoucher(id, is_retry = false) {
     const service = new Misa.QrTransactionService(this.env);
     const qrTransaction = await service.findQrRecordByGuid(id);
     if (!qrTransaction) {
@@ -81,14 +86,14 @@ export default class MisaWebhookHandler {
       return;
     }
 
-    await service.processTransaction(qrTransaction);
+    await service.processTransaction(qrTransaction, is_retry);
   }
 
   /**
    * Create MISA voucher Job for Manual Payment ( Cash and Non-cash )
    * @private
    */
-  async _createManualVoucher(uuid) {
+  async _createManualVoucher(uuid, is_retry = false) {
     const service = new Misa.ManualTransactionService(this.env);
     const manualPayment = await service.findManualPaymentByUuid(uuid);
     if (!manualPayment) {
@@ -96,6 +101,6 @@ export default class MisaWebhookHandler {
       return;
     }
 
-    await service.processTransaction(manualPayment);
+    await service.processTransaction(manualPayment, is_retry);
   }
 }

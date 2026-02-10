@@ -61,7 +61,8 @@ export function createInsertLeadPayload(conversation) {
       "can_inbox": conversation.can_inbox === true ? 1 : 0,
       "latest_message_at": conversation.latest_message_at ? dayjs(conversation.latest_message_at).utc().format("YYYY-MM-DD HH:mm:ss") : null,
       "pancake_user_id": conversation.pancake_user_id || null,
-      "pancake_avatar_url": (conversation.pancake_avatar_url && conversation.pancake_avatar_url !== "https:") ? conversation.pancake_avatar_url : null
+      "pancake_avatar_url": (conversation.pancake_avatar_url && conversation.pancake_avatar_url !== "https:") ? conversation.pancake_avatar_url : null,
+      "ad_ids": conversation.ad_ids
     },
     "pancake_tags": conversation.tags,
     "address": conversation.customer_lives_in,
@@ -90,7 +91,8 @@ export function createUpdateLeadPayload(conversation) {
       "can_inbox": conversation.can_inbox === true ? 1 : 0,
       "latest_message_at": conversation.latest_message_at ? dayjs(conversation.latest_message_at).utc().format("YYYY-MM-DD HH:mm:ss") : null,
       "pancake_user_id": conversation.pancake_user_id || null,
-      "pancake_avatar_url": (conversation.pancake_avatar_url && conversation.pancake_avatar_url !== "https:") ? conversation.pancake_avatar_url : null
+      "pancake_avatar_url": (conversation.pancake_avatar_url && conversation.pancake_avatar_url !== "https:") ? conversation.pancake_avatar_url : null,
+      "ad_ids": conversation.ad_ids
     },
     "pancake_tags": conversation.tags,
     "address": conversation.customer_lives_in,

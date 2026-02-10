@@ -780,7 +780,11 @@ export default class SalesOrderService {
               gateway: entry.gateway,
               paid_amount: entry.paid_amount,
               payment_date: entry.payment_date,
-              payment_order_status: entry.payment_order_status
+              payment_order_status: entry.payment_order_status,
+              bank_account: entry.bank_account,
+              bank: entry.bank,
+              bank_account_no: entry.bank_account_no,
+              bank_account_branch: entry.bank_account_branch
             };
 
             if (currentPaymentEntriesMap.has(entry.name)) {
@@ -797,7 +801,7 @@ export default class SalesOrderService {
       // Calculate group grand total
       const splitOrderDocs = splitOrders.map(order => allRelatedOrders.find(r => r.name === order.name) || order);
 
-      const groupGrandTotal = splitOrderDocs.reduce((sum, order) => sum + parseFloat(order.grand_total || 0), 0);
+      const groupGrandTotal = splitOrderDocs.reduce((sum, order) => sum + parseFloat(order.grand_total || 0) - parseFloat(order.return_amount || 0), 0);
       const groupPaymentRecordsTotal = calculateGroupOrderPaymentRecordsTotal(splitOrderDocs);
 
       // Combined Payment Total = (ERP Payment Entries linked to any order in group) + (Haravan Payment Records on each split order)
@@ -847,7 +851,7 @@ export default class SalesOrderService {
       }
 
       // Standard Single Order Logic
-      const salesOrderGrandTotal = currentSalesOrder.grand_total;
+      const salesOrderGrandTotal = parseFloat(currentSalesOrder.grand_total) - parseFloat(currentSalesOrder.return_amount || 0);
       const currentPaidAmount = currentSalesOrder.paid_amount;
       const currentBalance = currentSalesOrder.balance;
 
@@ -924,7 +928,8 @@ export default class SalesOrderService {
   }
 
   async syncHaravanFinancialStatus(salesOrderData) {
-    if (Math.abs(salesOrderData.grand_total - salesOrderData.paid_amount) <= 1000) {
+    const grandTotal = parseFloat(salesOrderData.grand_total) - parseFloat(salesOrderData.return_amount || 0);
+    if (Math.abs(grandTotal - salesOrderData.paid_amount) <= 1000) {
       const HRV_API_KEY = await this.env.HARAVAN_TOKEN_SECRET.get();
       if (!HRV_API_KEY) {
         return;
