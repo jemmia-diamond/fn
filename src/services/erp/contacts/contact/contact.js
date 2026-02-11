@@ -129,7 +129,11 @@ export default class ContactService {
       user_agent: data.raw_data.user_agent ? data.raw_data.user_agent.substring(0, 140) : null,
       gad_source: getParam(data.raw_data, "gad_source", referrerParams, conversionUrlParams, originalUrlPageParams),
       gad_campaignid: getParam(data.raw_data, "gad_campaignid", referrerParams, conversionUrlParams, originalUrlPageParams),
-      gbraid: getParam(data.raw_data, "gbraid", referrerParams, conversionUrlParams, originalUrlPageParams)
+      gbraid: getParam(data.raw_data, "gbraid", referrerParams, conversionUrlParams, originalUrlPageParams),
+      ga_client_id: getParam(data.raw_data, "ga_client_id", referrerParams, conversionUrlParams, originalUrlPageParams),
+      fb_client_id: getParam(data.raw_data, "fb_client_id", referrerParams, conversionUrlParams, originalUrlPageParams),
+      ladi_client_id: getParam(data.raw_data, "ladi_client_id", referrerParams, conversionUrlParams, originalUrlPageParams),
+      gcl_au_id: getParam(data.raw_data, "gcl_au_id", referrerParams, conversionUrlParams, originalUrlPageParams)
     };
 
     const defaultContact = await this.frappeClient.getList(this.doctype, {
