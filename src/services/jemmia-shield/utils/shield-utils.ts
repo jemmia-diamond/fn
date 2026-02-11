@@ -2,7 +2,7 @@ import JemmiaShieldLarkService from "services/jemmia-shield/jemmia-shield-lark-s
 import * as Sentry from "@sentry/cloudflare";
 import LarkCipher from "services/larksuite/lark-cipher";
 
-export class JemmiaShieldUtils {
+export class ShieldUtils {
   public static async appendViewButton(
     env: any,
     elements: any[],

@@ -1,6 +1,6 @@
 import JemmiaShieldLarkService from "services/jemmia-shield/jemmia-shield-lark-service";
 
-export default class JemmiaShieldRedirectController {
+export default class ShieldRedirectController {
   static async index(c: any) {
     const authUrl = await JemmiaShieldLarkService.getAuthUrl(c.env);
     return c.redirect(authUrl);

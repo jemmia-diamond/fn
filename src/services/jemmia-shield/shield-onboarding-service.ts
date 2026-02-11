@@ -1,5 +1,5 @@
 import JemmiaShieldLarkService from "services/jemmia-shield/jemmia-shield-lark-service";
-export default class JemmiaShieldOnboardingService {
+export default class ShieldOnboardingService {
   static async getGroupSelectionData(env: any, code: string) {
     const tokenData = await JemmiaShieldLarkService.getUserAccessToken(
       env,

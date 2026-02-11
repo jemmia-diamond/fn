@@ -1,7 +1,7 @@
 import JemmiaShieldLarkService from "services/jemmia-shield/jemmia-shield-lark-service";
 import { JEMMIA_SHIELD_MESSAGE_TYPE } from "src/constants/jemmia-shield-constants";
 
-export default class JemmiaShieldNotificationService {
+export default class ShieldNotificationService {
   static async notifyUserAboutSensitiveScan(env: any, event: any) {
     const senderId = event.sender.sender_id.open_id;
     await JemmiaShieldLarkService.sendMessage(

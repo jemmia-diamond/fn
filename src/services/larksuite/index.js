@@ -6,7 +6,7 @@ import Docs from "services/larksuite/docs";
 import Messaging from "services/larksuite/messaging";
 import BuybackExchangeService from "services/larksuite/buyback-exchange-service";
 import Ticket from "services/larksuite/tech-ticket";
-import JemmiaShieldMessageService from "services/jemmia-shield/shield-message-service";
+import ShieldMessageService from "services/jemmia-shield/shield-message-service";
 import JemmiaShieldLarkService from "services/jemmia-shield/jemmia-shield-lark-service";
 
 export default {
@@ -18,6 +18,6 @@ export default {
   Messaging: Messaging,
   BuybackExchangeService,
   Ticket,
-  JemmiaShieldMessageService,
+  ShieldMessageService,
   JemmiaShieldLarkService
 };

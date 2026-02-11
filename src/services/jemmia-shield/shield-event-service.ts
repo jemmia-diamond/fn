@@ -1,7 +1,7 @@
 import JemmiaShieldLarkService from "services/jemmia-shield/jemmia-shield-lark-service";
-import JemmiaShieldMessageService from "services/jemmia-shield/shield-message-service";
+import ShieldMessageService from "services/jemmia-shield/shield-message-service";
 
-export default class JemmiaShieldEventService {
+export default class ShieldEventService {
   static processedEvents = new Set<string>();
 
   static async processEvent(env: any, body: any, executionCtx: any) {
@@ -37,7 +37,7 @@ export default class JemmiaShieldEventService {
 
       executionCtx.waitUntil(
         (async () => {
-          await JemmiaShieldMessageService.detectSensitiveInfoAndMask(
+          await ShieldMessageService.detectSensitiveInfoAndMask(
             env,
             eventBody.event
           );

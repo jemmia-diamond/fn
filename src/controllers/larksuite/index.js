@@ -1,8 +1,8 @@
 import BuybackExchangeController from "controllers/larksuite/buyback-exchange-controller.js";
 import LarkChatSyncController from "controllers/larksuite/lark-chat-sync-controller";
-import JemmiaShieldAuthController from "controllers/jemmia-shield/shield-controller";
-import JemmiaShieldEventController from "controllers/jemmia-shield/shield-event-controller";
-import JemmiaShieldRedirectController from "controllers/jemmia-shield/shield-redirect-controller";
+import ShieldAuthController from "controllers/jemmia-shield/shield-controller";
+import ShieldEventController from "controllers/jemmia-shield/shield-event-controller";
+import ShieldRedirectController from "controllers/jemmia-shield/shield-redirect-controller";
 import JemmiaShieldCallbackController from "controllers/callback/jemmia-shield-callback-controller";
 import ApprovalSubscriptionController from "controllers/larksuite/approval-subscription-controller";
 import LarkApprovalOrdersController from "controllers/larksuite/lark-approval-orders-controller";
@@ -10,9 +10,9 @@ import LarkApprovalOrdersController from "controllers/larksuite/lark-approval-or
 export default {
   BuybackExchangeController,
   LarkChatSyncController,
-  JemmiaShieldAuthController,
-  JemmiaShieldEventController,
-  JemmiaShieldRedirectController,
+  ShieldAuthController,
+  ShieldEventController,
+  ShieldRedirectController,
   JemmiaShieldCallbackController,
   ApprovalSubscriptionController,
   LarkApprovalOrdersController

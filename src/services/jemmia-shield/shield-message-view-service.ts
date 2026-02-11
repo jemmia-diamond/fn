@@ -1,9 +1,9 @@
 import JemmiaShieldLarkService from "services/jemmia-shield/jemmia-shield-lark-service";
-import JemmiaShieldNotificationService from "services/jemmia-shield/shield-notification-service";
-import { JemmiaShieldUtils } from "services/jemmia-shield/utils/shield-utils";
+import ShieldNotificationService from "services/jemmia-shield/shield-notification-service";
+import { ShieldUtils } from "services/jemmia-shield/utils/shield-utils";
 import * as Sentry from "@sentry/cloudflare";
 
-export default class JemmiaShieldMessageViewService {
+export default class ShieldMessageViewService {
   static async processAndRenderMessage(
     env: any,
     data: string,
@@ -15,11 +15,11 @@ export default class JemmiaShieldMessageViewService {
     }
 
     // Decryption might throw, caller should handle 400 error
-    const payload = await JemmiaShieldUtils.decryptViewPayload(env, data);
+    const payload = await ShieldUtils.decryptViewPayload(env, data);
 
     let contentHtml = "";
     try {
-      await JemmiaShieldNotificationService.sendSensitiveViewNotification(
+      await ShieldNotificationService.sendSensitiveViewNotification(
         env,
         code,
         payload,

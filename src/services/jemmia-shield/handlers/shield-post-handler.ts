@@ -1,14 +1,14 @@
 import JemmiaShieldLarkService from "services/jemmia-shield/jemmia-shield-lark-service";
-import JemmiaShieldPresidioService from "services/jemmia-shield/shield-presidio-service";
-import JemmiaShieldNotificationService from "services/jemmia-shield/shield-notification-service";
-import { JemmiaShieldUtils } from "services/jemmia-shield/utils/shield-utils";
+import ShieldPresidioService from "services/jemmia-shield/shield-presidio-service";
+import ShieldNotificationService from "services/jemmia-shield/shield-notification-service";
+import { ShieldUtils } from "services/jemmia-shield/utils/shield-utils";
 import {
   JEMMIA_SHIELD_MESSAGE_TYPE,
   JEMMIA_SHIELD_CONTENT_TAG
 } from "src/constants/jemmia-shield-constants";
 import ImageHelper from "services/utils/image-helper";
 
-export default class JemmiaShieldPostHandler {
+export default class ShieldPostHandler {
   static async handlePostMessage(env: any, event: any, content: any) {
     const hasImages = this.checkIfPostHasImages(content);
 
@@ -48,26 +48,22 @@ export default class JemmiaShieldPostHandler {
         if (item.tag === JEMMIA_SHIELD_CONTENT_TAG.IMG) {
           const buffer = imageMap.get(item.image_key);
           if (buffer) {
-            item.image_key =
-              await JemmiaShieldUtils.reuploadImageForPersistence(
-                env,
-                buffer,
-                item.image_key
-              );
+            item.image_key = await ShieldUtils.reuploadImageForPersistence(
+              env,
+              buffer,
+              item.image_key
+            );
           }
         }
       }
     }
 
-    await JemmiaShieldNotificationService.notifyUserAboutSensitiveScan(
-      env,
-      event
-    );
+    await ShieldNotificationService.notifyUserAboutSensitiveScan(env, event);
 
     await JemmiaShieldLarkService.recallMessage(env, event.message.message_id);
 
     if (content.title) {
-      content.title = await JemmiaShieldPresidioService.maskSensitiveInfo(
+      content.title = await ShieldPresidioService.maskSensitiveInfo(
         env,
         content.title
       );
@@ -76,18 +72,15 @@ export default class JemmiaShieldPostHandler {
     for (const line of content.content) {
       for (const item of line) {
         if (item.tag === JEMMIA_SHIELD_CONTENT_TAG.TEXT) {
-          item.text = await JemmiaShieldPresidioService.maskSensitiveInfo(
+          item.text = await ShieldPresidioService.maskSensitiveInfo(
             env,
             item.text
           );
-          item.text = JemmiaShieldUtils.resolveMentionsForCard(
-            item.text,
-            mentions
-          );
+          item.text = ShieldUtils.resolveMentionsForCard(item.text, mentions);
         } else if (item.tag === JEMMIA_SHIELD_CONTENT_TAG.IMG) {
           const buffer = imageMap.get(item.image_key);
           if (buffer) {
-            const result = await JemmiaShieldPresidioService.analyzeImage(
+            const result = await ShieldPresidioService.analyzeImage(
               env,
               buffer
             );
@@ -108,13 +101,8 @@ export default class JemmiaShieldPostHandler {
             item.image_key = newKey;
           }
         } else if (item.tag === JEMMIA_SHIELD_CONTENT_TAG.HREF) {
-          if (
-            await JemmiaShieldPresidioService.detectSensitiveInfo(
-              env,
-              item.text
-            )
-          ) {
-            item.text = await JemmiaShieldPresidioService.maskSensitiveInfo(
+          if (await ShieldPresidioService.detectSensitiveInfo(env, item.text)) {
+            item.text = await ShieldPresidioService.maskSensitiveInfo(
               env,
               item.text
             );
@@ -125,7 +113,7 @@ export default class JemmiaShieldPostHandler {
       }
     }
 
-    const randomId = JemmiaShieldUtils.generateRandomId();
+    const randomId = ShieldUtils.generateRandomId();
     const elements = this.mapPostToCardElements(content);
     elements.unshift({
       tag: "div",
@@ -143,7 +131,7 @@ export default class JemmiaShieldPostHandler {
       random_id: randomId
     };
 
-    await JemmiaShieldUtils.appendViewButton(
+    await ShieldUtils.appendViewButton(
       env,
       elements,
       viewPayload,
@@ -184,12 +172,9 @@ export default class JemmiaShieldPostHandler {
       }
     }
 
-    if (
-      text &&
-      (await JemmiaShieldPresidioService.detectSensitiveInfo(env, text))
-    ) {
+    if (text && (await ShieldPresidioService.detectSensitiveInfo(env, text))) {
       if (content.title) {
-        content.title = await JemmiaShieldPresidioService.maskSensitiveInfo(
+        content.title = await ShieldPresidioService.maskSensitiveInfo(
           env,
           content.title
         );
@@ -198,22 +183,16 @@ export default class JemmiaShieldPostHandler {
       for (const line of content.content) {
         for (const item of line) {
           if (item.tag === JEMMIA_SHIELD_CONTENT_TAG.TEXT) {
-            item.text = await JemmiaShieldPresidioService.maskSensitiveInfo(
+            item.text = await ShieldPresidioService.maskSensitiveInfo(
               env,
               item.text
             );
-            item.text = JemmiaShieldUtils.resolveMentionsForCard(
-              item.text,
-              mentions
-            );
+            item.text = ShieldUtils.resolveMentionsForCard(item.text, mentions);
           } else if (item.tag === JEMMIA_SHIELD_CONTENT_TAG.HREF) {
             if (
-              await JemmiaShieldPresidioService.detectSensitiveInfo(
-                env,
-                item.text
-              )
+              await ShieldPresidioService.detectSensitiveInfo(env, item.text)
             ) {
-              item.text = await JemmiaShieldPresidioService.maskSensitiveInfo(
+              item.text = await ShieldPresidioService.maskSensitiveInfo(
                 env,
                 item.text
               );
@@ -224,7 +203,7 @@ export default class JemmiaShieldPostHandler {
         }
       }
 
-      const randomId = JemmiaShieldUtils.generateRandomId();
+      const randomId = ShieldUtils.generateRandomId();
       const elements = this.mapPostToCardElements(content);
       elements.unshift({
         tag: "div",
@@ -242,7 +221,7 @@ export default class JemmiaShieldPostHandler {
         random_id: randomId
       };
 
-      await JemmiaShieldUtils.appendViewButton(
+      await ShieldUtils.appendViewButton(
         env,
         elements,
         viewPayload,
@@ -291,18 +270,16 @@ export default class JemmiaShieldPostHandler {
     let currentTextBlock = "";
 
     if (content.title) {
-      currentTextBlock += `${JemmiaShieldUtils.escapeLarkMarkdown(
-        content.title
-      )}\n`;
+      currentTextBlock += `${ShieldUtils.escapeLarkMarkdown(content.title)}\n`;
     }
 
     for (const line of content.content) {
       for (const item of line) {
         if (item.tag === JEMMIA_SHIELD_CONTENT_TAG.TEXT) {
           const text = item.text;
-          currentTextBlock += JemmiaShieldUtils.escapeLarkMarkdown(text);
+          currentTextBlock += ShieldUtils.escapeLarkMarkdown(text);
         } else if (item.tag === JEMMIA_SHIELD_CONTENT_TAG.HREF) {
-          currentTextBlock += `[${JemmiaShieldUtils.escapeLarkMarkdown(
+          currentTextBlock += `[${ShieldUtils.escapeLarkMarkdown(
             item.text
           )}](${item.href})`;
         } else if (item.tag === JEMMIA_SHIELD_CONTENT_TAG.AT) {

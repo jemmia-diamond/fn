@@ -1,37 +1,36 @@
 import JemmiaShieldLarkService from "services/jemmia-shield/jemmia-shield-lark-service";
-import JemmiaShieldPresidioService from "services/jemmia-shield/shield-presidio-service";
-import { JemmiaShieldUtils } from "services/jemmia-shield/utils/shield-utils";
+import ShieldPresidioService from "services/jemmia-shield/shield-presidio-service";
+import { ShieldUtils } from "services/jemmia-shield/utils/shield-utils";
 import { JEMMIA_SHIELD_MESSAGE_TYPE } from "src/constants/jemmia-shield-constants";
 
-export default class JemmiaShieldMessageHandler {
+export default class ShieldMessageHandler {
   static async handleTextMessage(env: any, event: any, content: any) {
     const text = content.text;
 
-    if (await JemmiaShieldPresidioService.detectSensitiveInfo(env, text)) {
+    if (await ShieldPresidioService.detectSensitiveInfo(env, text)) {
       const senderId = event.sender.sender_id.open_id;
-      const maskedText = await JemmiaShieldPresidioService.maskSensitiveInfo(
+      const maskedText = await ShieldPresidioService.maskSensitiveInfo(
         env,
         text
       );
 
       const mentions = event.message.mentions || [];
-      const cardMaskedText = JemmiaShieldUtils.resolveMentionsForCard(
+      const cardMaskedText = ShieldUtils.resolveMentionsForCard(
         maskedText,
         mentions
       );
 
-      const viewOriginalText = JemmiaShieldUtils.resolveMentionsAndStyleForView(
+      const viewOriginalText = ShieldUtils.resolveMentionsAndStyleForView(
         text,
         mentions
       );
-      const viewMaskedText = JemmiaShieldUtils.resolveMentionsAndStyleForView(
+      const viewMaskedText = ShieldUtils.resolveMentionsAndStyleForView(
         maskedText,
         mentions
       );
 
-      const randomId = JemmiaShieldUtils.generateRandomId();
-      const formattedText =
-        JemmiaShieldUtils.formatTextForLarkMd(cardMaskedText);
+      const randomId = ShieldUtils.generateRandomId();
+      const formattedText = ShieldUtils.formatTextForLarkMd(cardMaskedText);
       const elements = [
         {
           tag: "div",
@@ -48,7 +47,7 @@ export default class JemmiaShieldMessageHandler {
         masked: viewMaskedText,
         random_id: randomId
       };
-      await JemmiaShieldUtils.appendViewButton(
+      await ShieldUtils.appendViewButton(
         env,
         elements,
         viewPayload,

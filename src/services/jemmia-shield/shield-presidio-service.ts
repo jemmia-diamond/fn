@@ -1,6 +1,6 @@
 import PresidioClient from "services/clients/presidio-client";
 
-export default class JemmiaShieldPresidioService {
+export default class ShieldPresidioService {
   static async detectSensitiveInfo(env: any, text: string) {
     const presidioClient = new PresidioClient(env);
     const result = await presidioClient.analyze({ text });

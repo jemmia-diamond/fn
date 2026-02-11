@@ -1,4 +1,4 @@
-export default class JemmiaShieldAuthController {
+export default class ShieldAuthController {
   static index(c: any) {
     const html = `
       <!DOCTYPE html>

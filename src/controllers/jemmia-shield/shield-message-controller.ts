@@ -1,7 +1,7 @@
 import { Context } from "hono";
 import JemmiaShieldMessageService from "services/jemmia-shield/shield-message-view-service";
 
-export default class JemmiaShieldMessageController {
+export default class ShieldMessageController {
   static async show(c: Context) {
     const data = c.req.query("data");
     const type = c.req.query("type") || "text";

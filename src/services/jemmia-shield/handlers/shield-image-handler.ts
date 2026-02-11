@@ -1,16 +1,13 @@
 import JemmiaShieldLarkService from "services/jemmia-shield/jemmia-shield-lark-service";
-import JemmiaShieldPresidioService from "services/jemmia-shield/shield-presidio-service";
-import JemmiaShieldNotificationService from "services/jemmia-shield/shield-notification-service";
-import { JemmiaShieldUtils } from "services/jemmia-shield/utils/shield-utils";
+import ShieldPresidioService from "services/jemmia-shield/shield-presidio-service";
+import ShieldNotificationService from "services/jemmia-shield/shield-notification-service";
+import { ShieldUtils } from "services/jemmia-shield/utils/shield-utils";
 import { JEMMIA_SHIELD_MESSAGE_TYPE } from "src/constants/jemmia-shield-constants";
 import ImageHelper from "services/utils/image-helper";
 
-export default class JemmiaShieldImageHandler {
+export default class ShieldImageHandler {
   static async handleImageMessage(env: any, event: any, content: any) {
-    await JemmiaShieldNotificationService.notifyUserAboutSensitiveScan(
-      env,
-      event
-    );
+    await ShieldNotificationService.notifyUserAboutSensitiveScan(env, event);
 
     const imageKey = content.image_key;
     const imageBuffer = await JemmiaShieldLarkService.getImage(
@@ -19,16 +16,15 @@ export default class JemmiaShieldImageHandler {
       imageKey
     );
 
-    const appOwnedImageKey =
-      await JemmiaShieldUtils.reuploadImageForPersistence(
-        env,
-        imageBuffer,
-        imageKey
-      );
+    const appOwnedImageKey = await ShieldUtils.reuploadImageForPersistence(
+      env,
+      imageBuffer,
+      imageKey
+    );
 
     await JemmiaShieldLarkService.recallMessage(env, event.message.message_id);
 
-    const analyzeResult = await JemmiaShieldPresidioService.analyzeImage(
+    const analyzeResult = await ShieldPresidioService.analyzeImage(
       env,
       imageBuffer
     );
@@ -49,7 +45,7 @@ export default class JemmiaShieldImageHandler {
       bufferToUpload
     );
 
-    const randomId = JemmiaShieldUtils.generateRandomId();
+    const randomId = ShieldUtils.generateRandomId();
     const elements = [
       {
         tag: "img",
@@ -69,7 +65,7 @@ export default class JemmiaShieldImageHandler {
       random_id: randomId
     };
 
-    await JemmiaShieldUtils.appendViewButton(
+    await ShieldUtils.appendViewButton(
       env,
       elements,
       viewPayload,

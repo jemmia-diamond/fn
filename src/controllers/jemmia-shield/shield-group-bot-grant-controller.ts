@@ -1,6 +1,6 @@
 import JemmiaShieldLarkService from "services/jemmia-shield/jemmia-shield-lark-service";
 
-export default class JemmiaShieldGroupBotGrantController {
+export default class ShieldGroupBotGrantController {
   static async create(c: any) {
     const { chatId, accessToken } = await c.req.json();
 

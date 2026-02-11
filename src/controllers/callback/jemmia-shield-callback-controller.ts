@@ -1,4 +1,4 @@
-import JemmiaShieldOnboardingService from "services/jemmia-shield/shield-onboarding-service";
+import ShieldOnboardingService from "services/jemmia-shield/shield-onboarding-service";
 
 export default class JemmiaShieldCallbackController {
   static async index(c: any) {
@@ -9,7 +9,7 @@ export default class JemmiaShieldCallbackController {
     }
 
     try {
-      const html = await JemmiaShieldOnboardingService.renderOnboardingPage(
+      const html = await ShieldOnboardingService.renderOnboardingPage(
         c.env,
         code
       );
