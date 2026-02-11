@@ -386,12 +386,14 @@ model misaCashFlowMonthlyFact {
 model misaJournalEntry {
   id           Int       @id @default(autoincrement())
   refno        String    @db.VarChar(50)
+  year         Int
   page_index   Int
   session_id   String    @db.Uuid
   data_details Json
   updated_at   DateTime? @default(now()) @db.Timestamp(6)
 
-  @@unique([page_index, refno], map: "unique_journal_entry")
+  @@unique([year, page_index, refno], map: "unique_year_journal_entry")
+  @@index([year])
   @@index([data_details], type: Gin)
   @@map("journal_entries")
   @@schema("misa")
@@ -400,13 +402,16 @@ model misaJournalEntry {
 model misaInventoryDetailLog {
   id                  Int       @id @default(autoincrement())
   session_id          String    @db.Uuid
+  year                Int
   page_index          Int
   stock_id            String    @db.Uuid
   inventory_item_id   String    @db.Uuid
   history_details     Json
   updated_at DateTime? @default(now()) @db.Timestamp(6)
 
-  @@unique([page_index, stock_id, inventory_item_id], map: "unique_stock_item_log")
+  @@unique([year, page_index, stock_id, inventory_item_id], map: "unique_year_stock_item_log")
+  @@index([year, stock_id])
+  @@index([year, inventory_item_id])
   @@map("inventory_detail_log")
   @@schema("misa")
 }
@@ -709,12 +714,14 @@ model misaSalesDetailReport {
 model misaAccountsPayableDetails {
   id                  Int       @id @default(autoincrement())
   account_object_code String    @db.VarChar(50)
+  year                Int
   page_index          Int
   session_id          String    @db.Uuid
   data_details        Json
   updated_at          DateTime? @default(now()) @db.Timestamptz(6)
 
-  @@unique([account_object_code, page_index], map: "unique_payable_account_page")
+  @@unique([year, account_object_code, page_index], map: "unique_year_payable_account_page")
+  @@index([year])
   @@index([data_details], type: Gin)
   @@map("accounts_payable_details")
   @@schema("misa")
