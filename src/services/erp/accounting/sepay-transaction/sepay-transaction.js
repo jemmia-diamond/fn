@@ -392,7 +392,7 @@ export default class SepayTransactionService {
         await service.processTransaction(body);
       } catch (error) {
         Sentry.captureException(error);
-        throw error;
+        await env["SEPAY_TRANSACTION_QUEUE"].send(message.body);
       }
     }
   }
@@ -416,7 +416,7 @@ export default class SepayTransactionService {
         }
       } catch (error) {
         Sentry.captureException(error);
-        throw error;
+        await env["SEPAY_TRANSACTION_QUEUE"].send(message.body);
       }
     }
   }
