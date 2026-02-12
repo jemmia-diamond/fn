@@ -133,6 +133,7 @@ model erpnextContact {
   phone_numbers               Json?
   phone_nos                   Json?
   emails                      Json?
+  tracking_info               Json? @default("{}") @db.JsonB
   database_created_at         DateTime? @default(now()) @db.Timestamp(6)
   database_updated_at         DateTime? @db.Timestamp(6)
 

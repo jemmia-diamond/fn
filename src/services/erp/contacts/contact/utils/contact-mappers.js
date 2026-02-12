@@ -76,6 +76,7 @@ export const mapContactsToDatabase = (contacts) => {
     links: contact.links || null,
     phone_numbers: contact.phone_numbers || null,
     phone_nos: contact.phone_nos || null,
-    emails: contact.emails || null
+    emails: contact.emails || null,
+    tracking_info: contact.tracking_info || null
   }));
 };
