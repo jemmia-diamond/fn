@@ -249,9 +249,7 @@
         "queue": "misa"
       },
       {
-        "queue": "sepay-transaction",
-        "max_retries": 3,
-        "retry_delay": 600
+        "queue": "sepay-transaction"
       },
       {
         "queue": "haravan-product"
