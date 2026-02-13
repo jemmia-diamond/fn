@@ -12,6 +12,8 @@ import Misa from "services/misa";
 
 dayjs.extend(utc);
 const ZERO = 0;
+const HTTP_STATUS_CODE = [502, 503, 504];
+const TEN_MINUTE_DELAY = 600;
 const REFERENCE_SCHEMA = {
   haravan_order_id: (ref) => parseInt(ref.sales_order_details.haravan_order_id, 10),
   haravan_ref_order_id: (ref) => {
@@ -490,6 +492,11 @@ export default class PaymentEntryService {
           await paymentEntryService.verifyPaymentEntryBankTransaction(rawPaymentEntry);
         }
       } catch (error) {
+        if (error?.config?.url?.includes(this.env.JEMMIA_ERP_BASE_URL)) {
+          if (HTTP_STATUS_CODE.includes(error?.status || error?.response?.status)) {
+            await this.env["ERPNEXT_PAYMENT_ENTRY_QUEUE"].send(body, { delaySeconds: TEN_MINUTE_DELAY });
+          }
+        }
         Sentry.captureException(error);
       }
     }

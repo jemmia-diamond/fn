@@ -4,6 +4,9 @@ import { CALLBACK_TYPE } from "services/misa/constant";
 import Misa from "services/misa";
 import CustomerCreator from "services/misa/customer/customer-creator";
 
+const HTTP_STATUS_CODE = [502, 503, 504];
+const TEN_MINUTE_DELAY = 600;
+
 export default class MisaWebhookHandler {
   constructor(env) {
     this.env = env;
@@ -16,9 +19,14 @@ export default class MisaWebhookHandler {
     for (const message of messages) {
       const body = message.body;
 
-      await this.handleWebhook(body).catch(err =>
-        Sentry.captureException(err)
-      );
+      await this.handleWebhook(body).catch(async err => {
+        if (err?.config?.url?.includes(this.env.JEMMIA_ERP_BASE_URL)) {
+          if (HTTP_STATUS_CODE.includes(err?.status || err?.response?.status)) {
+            await this.env["MISA_QUEUE"].send(body, { delaySeconds: TEN_MINUTE_DELAY });
+          }
+        }
+        Sentry.captureException(err);
+      });
     }
   }
 
