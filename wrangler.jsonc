@@ -243,10 +243,14 @@
         "queue": "erpnext-sales-order"
       },
       {
-        "queue": "erpnext-payment-entry"
+        "queue": "erpnext-payment-entry",
+        "retry_delay": 600,
+        "max_retries": 6
       },
       {
-        "queue": "misa"
+        "queue": "misa",
+        "retry_delay": 600,
+        "max_retries": 6
       },
       {
         "queue": "sepay-transaction"
