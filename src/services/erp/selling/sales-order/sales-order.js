@@ -21,9 +21,6 @@ import { retryQuery } from "src/services/utils/retry-utils";
 
 dayjs.extend(utc);
 
-const HTTP_STATUS_CODE = [502, 503, 504];
-const TEN_MINUTE_DELAY = 600;
-
 export default class SalesOrderService {
   static ERPNEXT_PAGE_SIZE = 100;
   static SYNC_TYPE_AUTO = 1; // auto sync when deploy app
@@ -149,11 +146,6 @@ export default class SalesOrderService {
       try {
         await salesOrderService.processHaravanOrder(salesOrderData);
       } catch (error) {
-        if (error?.config?.url?.includes(this.env.JEMMIA_ERP_BASE_URL)) {
-          if (HTTP_STATUS_CODE.includes(error?.status || error?.response?.status)) {
-            await this.env["ORDER_QUEUE"].send(body, { delaySeconds: TEN_MINUTE_DELAY });
-          }
-        }
         Sentry.captureException(error);
       }
     }
@@ -168,11 +160,6 @@ export default class SalesOrderService {
         await salesOrderService.updateSalesOrderPaidAmount(orderData.name);
         await salesOrderService.syncHaravanFinancialStatus(orderData);
       } catch (error) {
-        if (error?.config?.url?.includes(this.env.JEMMIA_ERP_BASE_URL)) {
-          if (HTTP_STATUS_CODE.includes(error?.status || error?.response?.status)) {
-            await this.env["ERPNEXT_SALES_ORDER_QUEUE"].send(body, { delaySeconds: TEN_MINUTE_DELAY });
-          }
-        }
         Sentry.captureException(error);
       }
     }
