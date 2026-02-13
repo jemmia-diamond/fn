@@ -22,7 +22,7 @@ export default class MisaWebhookHandler {
       await this.handleWebhook(body).catch(async err => {
         if (err?.config?.url?.includes(this.env.JEMMIA_ERP_BASE_URL)) {
           if (HTTP_STATUS_CODE.includes(err?.status || err?.response?.status)) {
-            await this.env["MISA_QUEUE"].send(body, { delaySeconds: TEN_MINUTE_DELAY });
+            await this.env["MISA_QUEUE"].send(message.body, { delaySeconds: TEN_MINUTE_DELAY });
           }
         }
         Sentry.captureException(err);
