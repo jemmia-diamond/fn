@@ -494,7 +494,7 @@ export default class PaymentEntryService {
       } catch (error) {
         if (error?.config?.url?.includes(this.env.JEMMIA_ERP_BASE_URL)) {
           if (HTTP_STATUS_CODE.includes(error?.status || error?.response?.status)) {
-            await this.env["ERPNEXT_PAYMENT_ENTRY_QUEUE"].send(message.body, { delaySeconds: TEN_MINUTE_DELAY });
+            await this.env["ERPNEXT_PAYMENT_ENTRY_QUEUE"].send(body, { delaySeconds: TEN_MINUTE_DELAY });
           }
         }
         Sentry.captureException(error);
