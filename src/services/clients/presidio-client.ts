@@ -41,9 +41,7 @@ export default class PresidioClient {
   _initClient() {
     return createAxiosClient({
       baseURL: BASE_URL,
-      headers: {
-        "Content-Type": "application/json"
-      },
+      headers: {},
       timeout: 0
     });
   }
@@ -119,17 +117,8 @@ export default class PresidioClient {
 
     formData.append("file", blob, (file as any).name || "image.jpg");
 
-    // Use native fetch to ensure correct FormData handling
-    const response = await fetch(`${BASE_URL}/ocr`, {
-      method: "POST",
-      body: formData
-    });
-
-    if (!response.ok) {
-      throw new Error(`OCR Failed: ${response.status} ${response.statusText}`);
-    }
-
-    return await response.json();
+    const response = await this.client.post("/ocr", formData);
+    return response.data;
   }
 
   /**
@@ -153,17 +142,8 @@ export default class PresidioClient {
       // Pass through.
       const formData = new FormData();
       formData.append("file", file, (file as any).name || "image.jpg");
-      const response = await fetch(`${BASE_URL}/anonymize-image`, {
-        method: "POST",
-        body: formData
-      });
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(
-          `Anonymize Image Failed: ${response.status} ${response.statusText} - ${errorText}`
-        );
-      }
-      return await response.json();
+      const response = await this.client.post("/anonymize-image", formData);
+      return response.data;
     }
 
     // Resize logic
@@ -187,20 +167,8 @@ export default class PresidioClient {
 
     formData.append("file", blob, (file as any).name || "image.jpg");
 
-    // Use native fetch to ensure correct FormData handling
-    const response = await fetch(`${BASE_URL}/anonymize-image`, {
-      method: "POST",
-      body: formData
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(
-        `Anonymize Image Failed: ${response.status} ${response.statusText} - ${errorText}`
-      );
-    }
-
-    return await response.json();
+    const response = await this.client.post("/anonymize-image", formData);
+    return response.data;
   }
 
   /**
@@ -222,17 +190,8 @@ export default class PresidioClient {
       // Pass through.
       const formData = new FormData();
       formData.append("file", file, (file as any).name || "image.jpg");
-      const response = await fetch(`${BASE_URL}/analyze-image`, {
-        method: "POST",
-        body: formData
-      });
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(
-          `Analyze Image Failed: ${response.status} ${response.statusText} - ${errorText}`
-        );
-      }
-      return await response.json();
+      const response = await this.client.post("/analyze-image", formData);
+      return response.data;
     }
 
     // Resize logic
@@ -256,19 +215,7 @@ export default class PresidioClient {
 
     formData.append("file", blob, (file as any).name || "image.jpg");
 
-    // Use native fetch to ensure correct FormData handling
-    const response = await fetch(`${BASE_URL}/analyze-image`, {
-      method: "POST",
-      body: formData
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(
-        `Analyze Image Failed: ${response.status} ${response.statusText} - ${errorText}`
-      );
-    }
-
-    return await response.json();
+    const response = await this.client.post("/analyze-image", formData);
+    return response.data;
   }
 }
