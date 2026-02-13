@@ -18,10 +18,10 @@ import Larksuite from "services/larksuite";
 import { ERPR2StorageService } from "services/r2-object/erp/erp-r2-storage-service";
 import HaravanAPI from "services/clients/haravan-client";
 import { retryQuery } from "src/services/utils/retry-utils";
-import { ERP_UNREACHABLE_STATUS_CODES } from "constants";
 
 dayjs.extend(utc);
 
+const HTTP_STATUS_CODE = [502, 503, 504];
 const TEN_MINUTE_DELAY = 600;
 
 export default class SalesOrderService {
@@ -150,7 +150,7 @@ export default class SalesOrderService {
         await salesOrderService.processHaravanOrder(salesOrderData);
       } catch (error) {
         if (error?.config?.url?.includes(this.env.JEMMIA_ERP_BASE_URL)) {
-          if (ERP_UNREACHABLE_STATUS_CODES.includes(error?.status || error?.response?.status)) {
+          if (HTTP_STATUS_CODE.includes(error?.status || error?.response?.status)) {
             await this.env["ORDER_QUEUE"].send(message.body, { delaySeconds: TEN_MINUTE_DELAY });
           }
         }
@@ -169,7 +169,7 @@ export default class SalesOrderService {
         await salesOrderService.syncHaravanFinancialStatus(orderData);
       } catch (error) {
         if (error?.config?.url?.includes(this.env.JEMMIA_ERP_BASE_URL)) {
-          if (ERP_UNREACHABLE_STATUS_CODES.includes(error?.status || error?.response?.status)) {
+          if (HTTP_STATUS_CODE.includes(error?.status || error?.response?.status)) {
             await this.env["ERPNEXT_SALES_ORDER_QUEUE"].send(message.body, { delaySeconds: TEN_MINUTE_DELAY });
           }
         }

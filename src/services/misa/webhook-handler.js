@@ -4,8 +4,7 @@ import { CALLBACK_TYPE } from "services/misa/constant";
 import Misa from "services/misa";
 import CustomerCreator from "services/misa/customer/customer-creator";
 
-import { ERP_UNREACHABLE_STATUS_CODES } from "constants";
-
+const HTTP_STATUS_CODE = [502, 503, 504];
 const TEN_MINUTE_DELAY = 600;
 
 export default class MisaWebhookHandler {
@@ -22,7 +21,7 @@ export default class MisaWebhookHandler {
 
       await this.handleWebhook(body).catch(async err => {
         if (err?.config?.url?.includes(this.env.JEMMIA_ERP_BASE_URL)) {
-          if (ERP_UNREACHABLE_STATUS_CODES.includes(err?.status || err?.response?.status)) {
+          if (HTTP_STATUS_CODE.includes(err?.status || err?.response?.status)) {
             await this.env["MISA_QUEUE"].send(message.body, { delaySeconds: TEN_MINUTE_DELAY });
           }
         }
