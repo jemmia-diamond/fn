@@ -156,7 +156,7 @@ export default class ShieldOnboardingService {
                       statusCell.className = 'status-cell';
 
                       try {
-                          const response = await fetch('/auth/recall/add-bot', {
+                          const response = await fetch('/jemmia-shield/add-bot', {
                               method: 'POST',
                               headers: {
                                   'Content-Type': 'application/json'
