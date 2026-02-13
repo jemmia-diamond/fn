@@ -245,12 +245,14 @@
       {
         "queue": "erpnext-payment-entry",
         "retry_delay": 600,
-        "max_retries": 6
+        "max_retries": 6,
+        "max_batch_size": 1
       },
       {
         "queue": "misa",
         "retry_delay": 600,
-        "max_retries": 6
+        "max_retries": 6,
+        "max_batch_size": 1
       },
       {
         "queue": "sepay-transaction"
