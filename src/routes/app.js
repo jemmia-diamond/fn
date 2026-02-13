@@ -1,14 +1,19 @@
 import RedirectController from "controllers/redirect-controller";
-import RecallAuthController from "controllers/larksuite/recall-auth-controller";
-import RecallRedirectController from "controllers/larksuite/recall-redirect-controller";
-import RecallCallbackController from "controllers/larksuite/recall-callback-controller";
+import ShieldAuthController from "controllers/jemmia-shield/shield-auth-controller";
+import ShieldRedirectController from "controllers/jemmia-shield/shield-redirect-controller";
+import JemmiaShieldCallbackController from "controllers/callback/jemmia-shield-callback-controller";
+import ShieldGroupBotGrantController from "controllers/jemmia-shield/shield-group-bot-grant-controller";
+
+import ShieldMessageController from "controllers/jemmia-shield/shield-message-controller";
 
 export default class AppRoutes {
   static register(app) {
     app.get("/redirects/:name", RedirectController.show);
 
-    app.get("/auth/recall", RecallAuthController.index);
-    app.get("/auth/recall/login/lark", RecallRedirectController.index);
-    app.get("/auth/recall/callback", RecallCallbackController.index);
+    app.get("/jemmia-shield", ShieldAuthController.index);
+    app.get("/jemmia-shield/login/lark", ShieldRedirectController.show);
+    app.get("/jemmia-shield/callback", JemmiaShieldCallbackController.index);
+    app.post("/jemmia-shield/add-bot", ShieldGroupBotGrantController.create);
+    app.get("/jemmia-shield/message-recall/view", ShieldMessageController.show);
   };
 };

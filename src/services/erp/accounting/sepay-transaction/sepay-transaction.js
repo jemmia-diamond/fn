@@ -12,6 +12,8 @@ import { SEPAY_WEBHOOK_TOPICS } from "services/erp/accounting/sepay-transaction/
 
 dayjs.extend(utc);
 
+const TEN_MINUTES = 600;
+
 export default class SepayTransactionService {
   constructor(env) {
     this.env = env;
@@ -392,6 +394,7 @@ export default class SepayTransactionService {
         await service.processTransaction(body);
       } catch (error) {
         Sentry.captureException(error);
+        await env["SEPAY_TRANSACTION_QUEUE"].send(message.body, { delaySeconds: TEN_MINUTES });
       }
     }
   }
@@ -415,6 +418,7 @@ export default class SepayTransactionService {
         }
       } catch (error) {
         Sentry.captureException(error);
+        await env["SEPAY_TRANSACTION_QUEUE"].send(message.body, { delaySeconds: TEN_MINUTES });
       }
     }
   }
