@@ -24,7 +24,12 @@ const EXCLUDED_TRANSACTION_PATTERNS = [
   "Zalopay",
   "nop tien",
   "Payoo",
-  "Tra lai tien gui"
+  "Tra lai tien gui",
+  "Nhat Tin Thanh toan tien COD",
+  "Hoan tam ung",
+  "Chuyen tien noi bo",
+  "Hoan ung",
+  "Hoan tien tam ung"
 ];
 
 const LOCATION_CC_RULES = [

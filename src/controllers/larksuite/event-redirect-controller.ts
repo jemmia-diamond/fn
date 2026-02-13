@@ -11,10 +11,7 @@ export default class EventRedirectController {
 
     if (body.encrypt) {
       const secret = await c.env.JEMMIA_BOT_LARK_ENCRYPT_KEY_SECRET.get();
-      const decryptedData = await LarkCipher.decryptEvent(
-        body.encrypt,
-        secret
-      );
+      const decryptedData = await LarkCipher.decryptEvent(body.encrypt, secret);
       eventBody = JSON.parse(decryptedData);
     }
 
@@ -23,7 +20,11 @@ export default class EventRedirectController {
     }
 
     let eventPayload = null;
-    if (eventBody.type === "event_callback" && (eventBody.event?.type === "approval_instance" || eventBody.event?.type === "approval_cc")) {
+    if (
+      eventBody.type === "event_callback" &&
+      (eventBody.event?.type === "approval_instance" ||
+        eventBody.event?.type === "approval_cc")
+    ) {
       eventPayload = eventBody.event;
     }
 
@@ -35,7 +36,10 @@ export default class EventRedirectController {
         );
         break;
       case APPROVALS.AFFILIATE_PAYOUT_APPROVAL.code:
-        await axios.post("https://partners.jemmia.vn/lark/event", eventPayload);
+        await axios.post(
+          "https://partners.jemmia.vn/lark/event",
+          eventPayload
+        );
         break;
       default:
         Sentry.captureException(new Error("Unknown approval code"), {

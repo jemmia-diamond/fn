@@ -28,7 +28,7 @@ export const composeSalesOrderNotification = (salesOrder, promotionData, leadSou
   `;
 
   salesOrder.items.map((item, idx) => {
-    content += composeItemContent(item, idx + 1, promotionData.filter((promotion) => [item.promotion_1, item.promotion_2, item.promotion_3, item.promotion_4].includes(promotion.name)));
+    content += composeItemContent(item, idx + 1, promotionData.filter((promotion) => [item.promotion_1, item.promotion_2, item.promotion_3, item.promotion_4, item.promotion_5].includes(promotion.name)));
   });
 
   content += `
@@ -105,6 +105,7 @@ export const extractPromotions = (salesOrder) => {
     if (item.promotion_2) { promotionNames.push(item.promotion_2); };
     if (item.promotion_3) { promotionNames.push(item.promotion_3); };
     if (item.promotion_4) { promotionNames.push(item.promotion_4); };
+    if (item.promotion_5) { promotionNames.push(item.promotion_5); };
   }
 
   const promotions = salesOrder.promotions;
@@ -195,7 +196,7 @@ const composeLineItemsChangeMessage = (oldItems, newItems, promotionData) => {
       message += `Giá: ${numberToCurrency(item.price_list_rate)}\n`;
       message += `Giá khuyến mãi: ${numberToCurrency(item.rate)}\n`;
 
-      const itemPromotions = promotionData.filter((promotion) => [item.promotion_1, item.promotion_2, item.promotion_3, item.promotion_4].includes(promotion.name));
+      const itemPromotions = promotionData.filter((promotion) => [item.promotion_1, item.promotion_2, item.promotion_3, item.promotion_4, item.promotion_5].includes(promotion.name));
       if (itemPromotions && itemPromotions.length > 0) {
         message += "CTKM: \n";
         message += `${composeChildrenContent(itemPromotions, "title")}`;
@@ -241,8 +242,8 @@ const composeLineItemsChangeMessage = (oldItems, newItems, promotionData) => {
         }
 
         // Promotions
-        const oldPromotions = [oldItem.promotion_1, oldItem.promotion_2, oldItem.promotion_3, oldItem.promotion_4].filter(Boolean);
-        const newPromotions = [newItem.promotion_1, newItem.promotion_2, newItem.promotion_3, newItem.promotion_4].filter(Boolean);
+        const oldPromotions = [oldItem.promotion_1, oldItem.promotion_2, oldItem.promotion_3, oldItem.promotion_4, oldItem.promotion_5].filter(Boolean);
+        const newPromotions = [newItem.promotion_1, newItem.promotion_2, newItem.promotion_3, newItem.promotion_4, newItem.promotion_5].filter(Boolean);
 
         const addedPromotions = newPromotions.filter(promo => !oldPromotions.includes(promo));
         const removedPromotions = oldPromotions.filter(promo => !newPromotions.includes(promo));

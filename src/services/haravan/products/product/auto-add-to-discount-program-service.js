@@ -10,7 +10,9 @@ const EXCLUDED_COLLECTION_TITLES = [
   "Sen Quý Hiển",
   "Vũ Khúc Thiên Phượng",
   "BRILLIANCE GLORY",
-  "Ngũ Phúc"
+  "Ngũ Phúc",
+  "Mai - The Golden Bloom",
+  "Đào - Cultivated Grace"
 ];
 
 export default class AutoAddToDiscountProgramService {

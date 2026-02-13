@@ -3,6 +3,32 @@ import { Jimp } from "jimp";
 
 const BASE_URL = "https://presidio.jemmia.vn";
 
+export interface AnalyzeImageResponse {
+  has_handwriting: boolean;
+  ner_results: {
+    entity_type: string;
+    text: string;
+    score: number;
+    box: {
+      left: number;
+      top: number;
+      width: number;
+      height: number;
+    };
+  }[];
+  ocr_results: {
+    text: string;
+    confidence: number;
+    box: {
+      left: number;
+      top: number;
+      width: number;
+      height: number;
+      points?: number[][];
+    };
+  }[];
+}
+
 export default class PresidioClient {
   private env: any;
   private client: any;
@@ -15,9 +41,7 @@ export default class PresidioClient {
   _initClient() {
     return createAxiosClient({
       baseURL: BASE_URL,
-      headers: {
-        "Content-Type": "application/json"
-      },
+      headers: {},
       timeout: 0
     });
   }
@@ -86,24 +110,19 @@ export default class PresidioClient {
     const formData = new FormData();
     let blob = file;
 
-    if (typeof Buffer !== "undefined" && file instanceof Buffer) {
-      blob = new Blob([file], { type: "image/jpeg" });
+    if (
+      (typeof Buffer !== "undefined" && file instanceof Buffer) ||
+      (typeof Buffer !== "undefined" && file?.buffer instanceof Buffer)
+    ) {
+      const buf = file instanceof Buffer ? file : file.buffer;
+      blob = new Blob([buf], { type: "image/jpeg" });
       // formData.append expects a Blob (or File).
     }
 
     formData.append("file", blob, (file as any).name || "image.jpg");
 
-    // Use native fetch to ensure correct FormData handling
-    const response = await fetch(`${BASE_URL}/ocr`, {
-      method: "POST",
-      body: formData
-    });
-
-    if (!response.ok) {
-      throw new Error(`OCR Failed: ${response.status} ${response.statusText}`);
-    }
-
-    return await response.json();
+    const response = await this.client.post("/ocr", formData);
+    return response.data;
   }
 
   /**
@@ -116,8 +135,11 @@ export default class PresidioClient {
   ): Promise<{ has_sensitive_info: boolean; image: string }> {
     let inputBuffer: Buffer;
 
-    if (typeof Buffer !== "undefined" && file instanceof Buffer) {
-      inputBuffer = file;
+    if (
+      (typeof Buffer !== "undefined" && file instanceof Buffer) ||
+      (typeof Buffer !== "undefined" && file?.buffer instanceof Buffer)
+    ) {
+      inputBuffer = file instanceof Buffer ? file : file.buffer;
     } else {
       // Fallback for non-buffer inputs (though primarily used with Buffer)
       console.warn(
@@ -127,17 +149,8 @@ export default class PresidioClient {
       // Pass through.
       const formData = new FormData();
       formData.append("file", file, (file as any).name || "image.jpg");
-      const response = await fetch(`${BASE_URL}/anonymize-image`, {
-        method: "POST",
-        body: formData
-      });
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(
-          `Anonymize Image Failed: ${response.status} ${response.statusText} - ${errorText}`
-        );
-      }
-      return await response.json();
+      const response = await this.client.post("/anonymize-image", formData);
+      return response.data;
     }
 
     // Resize logic
@@ -161,19 +174,90 @@ export default class PresidioClient {
 
     formData.append("file", blob, (file as any).name || "image.jpg");
 
-    // Use native fetch to ensure correct FormData handling
-    const response = await fetch(`${BASE_URL}/anonymize-image`, {
-      method: "POST",
-      body: formData
-    });
+    const response = await this.client.post("/anonymize-image", formData);
+    return response.data;
+  }
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(
-        `Anonymize Image Failed: ${response.status} ${response.statusText} - ${errorText}`
+  /**
+   * Analyze image
+   * @param {File | Blob | Buffer} file - The image file, blob or buffer
+   * @returns {Promise<AnalyzeImageResponse>} The analysis result
+   */
+  async analyzeImage(file: any): Promise<AnalyzeImageResponse> {
+    let inputBuffer: Buffer;
+
+    if (
+      (typeof Buffer !== "undefined" && file instanceof Buffer) ||
+      (typeof Buffer !== "undefined" && file?.buffer instanceof Buffer)
+    ) {
+      inputBuffer = file instanceof Buffer ? file : file.buffer;
+    } else {
+      // Fallback for non-buffer inputs (though primarily used with Buffer)
+      console.warn(
+        "PresidioClient: Input file is not a Buffer, skipping resize."
       );
+      // If it's a blob, we can't easily resize with Jimp without conversion.
+      // Pass through.
+      const formData = new FormData();
+      formData.append("file", file, (file as any).name || "image.jpg");
+      const response = await this.client.post("/analyze-image", formData);
+      return response.data;
     }
 
-    return await response.json();
+    // Resize logic
+    try {
+      const image = await Jimp.read(inputBuffer);
+      if (image.width > 1024 || image.height > 1024) {
+        if (image.width > image.height) {
+          image.resize({ w: 1024 });
+        } else {
+          image.resize({ h: 1024 });
+        }
+        inputBuffer = await image.getBuffer("image/jpeg");
+      }
+    } catch (error) {
+      console.warn("PresidioClient: Failed to resize image:", error);
+      // Continue with original buffer
+    }
+
+    console.warn(
+      `PresidioClient: Sending image of size ${inputBuffer.length} bytes`
+    );
+
+    const formData = new FormData();
+    const fileName = (file as any).name || "image.jpg";
+
+    // Try using File constructor if available (safer for FormData)
+    if (typeof File !== "undefined") {
+      const fileObj = new File([inputBuffer], fileName, { type: "image/jpeg" });
+      formData.append("file", fileObj);
+    } else {
+      const blob = new Blob([inputBuffer], { type: "image/jpeg" });
+      formData.append("file", blob, fileName);
+    }
+
+    try {
+      // Use native fetch to bypass potential Axios/FormData issues in this environment
+      const response = await fetch(`${BASE_URL}/analyze-image`, {
+        method: "POST",
+        body: formData
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.warn(
+          `PresidioClient AnalyzeImage Failed (${response.status}):`,
+          errorText
+        );
+        throw new Error(
+          `PresidioClient AnalyzeImage failed with status ${response.status}: ${errorText}`
+        );
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.warn("PresidioClient AnalyzeImage Error:", error);
+      throw error;
+    }
   }
 }

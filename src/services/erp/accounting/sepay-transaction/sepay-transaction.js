@@ -12,6 +12,8 @@ import { SEPAY_WEBHOOK_TOPICS } from "services/erp/accounting/sepay-transaction/
 
 dayjs.extend(utc);
 
+const TEN_MINUTES = 600;
+
 export default class SepayTransactionService {
   constructor(env) {
     this.env = env;
@@ -52,13 +54,17 @@ export default class SepayTransactionService {
     if (qr.payment_entry_name) {
       const bankTransactions = await this.frappeClient.getList("Bank Transaction", {
         filters: [["sepay_id", "=", sepayTransaction.id]],
-        fields: ["name"]
+        fields: ["name", "sepay_account_number"]
       });
 
       const bankTransactionName = bankTransactions && bankTransactions.length > 0 ? bankTransactions[0].name : null;
 
       if (!bankTransactionName) {
         throw new Error("Bank Transaction not found in ERPNext");
+      }
+
+      if (String(qr.bank_account_number) !== String(bankTransactions[0].sepay_account_number)) {
+        throw new Error("Bank account number does not match");
       }
 
       const linkPaymentEntryToBankTransactionResult = await this.linkPaymentEntryToBankTransaction(qr, {
@@ -388,6 +394,7 @@ export default class SepayTransactionService {
         await service.processTransaction(body);
       } catch (error) {
         Sentry.captureException(error);
+        await env["SEPAY_TRANSACTION_QUEUE"].send(message.body, { delaySeconds: TEN_MINUTES });
       }
     }
   }
@@ -411,6 +418,7 @@ export default class SepayTransactionService {
         }
       } catch (error) {
         Sentry.captureException(error);
+        await env["SEPAY_TRANSACTION_QUEUE"].send(message.body, { delaySeconds: TEN_MINUTES });
       }
     }
   }

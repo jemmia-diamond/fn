@@ -114,7 +114,8 @@ export default class LeadService {
     type,
     lastestMessageAt,
     pancakeUserId,
-    pancakeAvatarUrl
+    pancakeAvatarUrl,
+    adIds
   }) {
     const leads = await this.updateLeads([{
       frappe_name_id: frappeNameId,
@@ -130,7 +131,8 @@ export default class LeadService {
       can_inbox: type === "INBOX",
       latest_message_at: lastestMessageAt,
       pancake_user_id: pancakeUserId,
-      pancake_avatar_url: pancakeAvatarUrl
+      pancake_avatar_url: pancakeAvatarUrl,
+      ad_ids: adIds
     }]);
 
     if (leads && Array.isArray(leads) && leads.length > 0) {
@@ -152,7 +154,8 @@ export default class LeadService {
     type,
     lastestMessageAt,
     pancakeUserId,
-    pancakeAvatarUrl
+    pancakeAvatarUrl,
+    adIds
   }) {
     const leads = await this.insertLeads([{
       customer_name: customerName,
@@ -167,7 +170,8 @@ export default class LeadService {
       can_inbox: type === "INBOX",
       latest_message_at: lastestMessageAt,
       pancake_user_id: pancakeUserId,
-      pancake_avatar_url: pancakeAvatarUrl
+      pancake_avatar_url: pancakeAvatarUrl,
+      ad_ids: adIds
     }]);
 
     if (leads && Array.isArray(leads) && leads.length > 0) {
@@ -222,7 +226,8 @@ export default class LeadService {
   async getWebsiteLeads(timeThreshold) {
     const result = await this.db.$queryRaw`
       SELECT * FROM ecom.leads l
-      WHERE l.database_created_at > ${timeThreshold};
+      WHERE l.database_created_at > ${timeThreshold}
+      ORDER BY l.database_created_at DESC;
     `;
     return result;
   }
@@ -438,6 +443,35 @@ export default class LeadService {
     } catch (error) {
       console.warn("Error checking for unmatched Lead-Contact pairs:", error);
       Sentry.captureException(error);
+    }
+  }
+
+  static async backfillWebsiteLead(env) {
+    const leadService = new LeadService(env);
+    const timeThreshold = dayjs().utc().subtract(30, "days").format("YYYY-MM-DD HH:mm:ss");
+    const pageSize = 100;
+    let offset = 0;
+
+    while (true) {
+      const leads = await leadService.db.$queryRaw`
+        SELECT * FROM ecom.leads l
+        WHERE l.database_created_at > ${timeThreshold}
+        ORDER BY l.database_created_at DESC
+        LIMIT ${pageSize} OFFSET ${offset}
+      `;
+
+      if (!leads || leads.length === 0) {
+        break;
+      }
+
+      for (const lead of leads) {
+        await leadService.processWebsiteLead(lead);
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      offset += pageSize;
     }
   }
 }
