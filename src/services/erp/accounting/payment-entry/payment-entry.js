@@ -9,10 +9,10 @@ import LinkQRWithRealOrderService from "services/payment/qr_payment/link-qr-with
 import { PaymentEntryStatus, PaymentOrderStatus, rawToPaymentEntry, rawToReference } from "services/erp/accounting/payment-entry/mapping";
 import BankTransactionVerificationService from "services/erp/accounting/payment-entry/verification-service";
 import Misa from "services/misa";
+import { ERP_UNREACHABLE_STATUS_CODES } from "constants";
 
 dayjs.extend(utc);
 const ZERO = 0;
-const HTTP_STATUS_CODE = [502, 503, 504];
 const TEN_MINUTE_DELAY = 600;
 const REFERENCE_SCHEMA = {
   haravan_order_id: (ref) => parseInt(ref.sales_order_details.haravan_order_id, 10),
@@ -493,7 +493,7 @@ export default class PaymentEntryService {
         }
       } catch (error) {
         if (error?.config?.url?.includes(this.env.JEMMIA_ERP_BASE_URL)) {
-          if (HTTP_STATUS_CODE.includes(error?.status || error?.response?.status)) {
+          if (ERP_UNREACHABLE_STATUS_CODES.includes(error?.status || error?.response?.status)) {
             await this.env["ERPNEXT_PAYMENT_ENTRY_QUEUE"].send(message.body, { delaySeconds: TEN_MINUTE_DELAY });
           }
         }
