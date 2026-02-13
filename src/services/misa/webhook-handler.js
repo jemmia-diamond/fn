@@ -15,10 +15,7 @@ export default class MisaWebhookHandler {
 
     for (const message of messages) {
       const body = message.body;
-
-      await this.handleWebhook(body).catch(err =>
-        Sentry.captureException(err)
-      );
+      await this.handleWebhook(body);
     }
   }
 
