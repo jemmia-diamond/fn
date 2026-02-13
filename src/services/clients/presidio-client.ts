@@ -110,8 +110,12 @@ export default class PresidioClient {
     const formData = new FormData();
     let blob = file;
 
-    if (typeof Buffer !== "undefined" && file instanceof Buffer) {
-      blob = new Blob([file], { type: "image/jpeg" });
+    if (
+      (typeof Buffer !== "undefined" && file instanceof Buffer) ||
+      (typeof Buffer !== "undefined" && file?.buffer instanceof Buffer)
+    ) {
+      const buf = file instanceof Buffer ? file : file.buffer;
+      blob = new Blob([buf], { type: "image/jpeg" });
       // formData.append expects a Blob (or File).
     }
 
@@ -131,8 +135,11 @@ export default class PresidioClient {
   ): Promise<{ has_sensitive_info: boolean; image: string }> {
     let inputBuffer: Buffer;
 
-    if (typeof Buffer !== "undefined" && file instanceof Buffer) {
-      inputBuffer = file;
+    if (
+      (typeof Buffer !== "undefined" && file instanceof Buffer) ||
+      (typeof Buffer !== "undefined" && file?.buffer instanceof Buffer)
+    ) {
+      inputBuffer = file instanceof Buffer ? file : file.buffer;
     } else {
       // Fallback for non-buffer inputs (though primarily used with Buffer)
       console.warn(
@@ -179,8 +186,11 @@ export default class PresidioClient {
   async analyzeImage(file: any): Promise<AnalyzeImageResponse> {
     let inputBuffer: Buffer;
 
-    if (typeof Buffer !== "undefined" && file instanceof Buffer) {
-      inputBuffer = file;
+    if (
+      (typeof Buffer !== "undefined" && file instanceof Buffer) ||
+      (typeof Buffer !== "undefined" && file?.buffer instanceof Buffer)
+    ) {
+      inputBuffer = file instanceof Buffer ? file : file.buffer;
     } else {
       // Fallback for non-buffer inputs (though primarily used with Buffer)
       console.warn(
@@ -210,12 +220,44 @@ export default class PresidioClient {
       // Continue with original buffer
     }
 
+    console.warn(
+      `PresidioClient: Sending image of size ${inputBuffer.length} bytes`
+    );
+
     const formData = new FormData();
-    const blob = new Blob([inputBuffer], { type: "image/jpeg" });
+    const fileName = (file as any).name || "image.jpg";
 
-    formData.append("file", blob, (file as any).name || "image.jpg");
+    // Try using File constructor if available (safer for FormData)
+    if (typeof File !== "undefined") {
+      const fileObj = new File([inputBuffer], fileName, { type: "image/jpeg" });
+      formData.append("file", fileObj);
+    } else {
+      const blob = new Blob([inputBuffer], { type: "image/jpeg" });
+      formData.append("file", blob, fileName);
+    }
 
-    const response = await this.client.post("/analyze-image", formData);
-    return response.data;
+    try {
+      // Use native fetch to bypass potential Axios/FormData issues in this environment
+      const response = await fetch(`${BASE_URL}/analyze-image`, {
+        method: "POST",
+        body: formData
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.warn(
+          `PresidioClient AnalyzeImage Failed (${response.status}):`,
+          errorText
+        );
+        throw new Error(
+          `PresidioClient AnalyzeImage failed with status ${response.status}: ${errorText}`
+        );
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.warn("PresidioClient AnalyzeImage Error:", error);
+      throw error;
+    }
   }
 }
