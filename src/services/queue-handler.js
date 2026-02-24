@@ -16,7 +16,6 @@ export default {
       await Ecommerce.OrderNotificationService.orderNotificationDequeue(batch, env);
       await Haravan.OrderModule.OrderService.dequeueOrderQueue(batch, env);
       await ProductQuote.ProductQuoteOrderService.dequeueOrderQueue(batch, env);
-      await ERP.Selling.SalesOrderService.dequeueOrderQueue(batch, env);
       break;
     case "message":
       await Pancake.ConversationService.dequeueMessageSyncCustomerToLeadCRM(batch, env);
@@ -62,6 +61,9 @@ export default {
       } else {
         await new ERP.Selling.CustomerService(env).dequeueCustomerQueue(batch);
       }
+      break;
+    case "erpnext-order-creation":
+      await ERP.Selling.SalesOrderService.dequeueOrderQueue(batch, env);
       break;
     default:
       break;
