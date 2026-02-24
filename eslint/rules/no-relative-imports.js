@@ -19,7 +19,7 @@ class NoRelativeImportsValidator {
         const importPath = node.source.value;
 
         if (NoRelativeImportsValidator.#isRelativeImport(importPath)) {
-          const currentFilePath = context.getFilename();
+          const currentFilePath = context.filename;
           const absolutePath = NoRelativeImportsValidator.#convertToAbsolute(
             importPath,
             currentFilePath
