@@ -274,7 +274,8 @@
       {
         "queue": "erpnext-order-creation",
         "retry_delay": 600,
-        "max_retries": 6
+        "max_retries": 6,
+        "max_batch_size": 1
       }
     ]
   },
