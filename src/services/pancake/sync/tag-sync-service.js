@@ -82,13 +82,13 @@ export default class TagSyncService {
             id: tagId,
             page_id: String(pageId),
             tag_label: item.text,
-            description: item.color,
+            description: item.description,
             database_created_at: dayjs().utc().toDate(),
             database_updated_at: dayjs().utc().toDate()
           },
           update: {
             tag_label: item.text,
-            description: item.color,
+            description: item.description,
             database_updated_at: dayjs().utc().toDate()
           }
         })

@@ -83,7 +83,7 @@ export default class CustomerSyncService {
             Sentry.captureException(error, {
               tags: { flow: "PancakeSync:customers", page_id: pageId }
             });
-            pageNumber++;
+            break;
           }
         }
       }

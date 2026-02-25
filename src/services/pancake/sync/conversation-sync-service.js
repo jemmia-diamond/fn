@@ -7,6 +7,14 @@ import { isInvalidTokenError } from "pancake/utils";
 
 dayjs.extend(utc);
 
+const EXCLUDED_PAGE_IDS = [
+  "zl_2838947343790196672",
+  "110263770893806",
+  "114459901519364",
+  "ttm_-000GnI37aFDBuqWw6N750AvvJXaodrxaoS6",
+  "104886481441594"
+];
+
 export default class ConversationSyncService {
   constructor(env) {
     this.env = env;
@@ -65,7 +73,7 @@ export default class ConversationSyncService {
             Sentry.captureException(error, {
               tags: { flow: "PancakeSync:conversations", page_id: pageId }
             });
-            pageNumber++;
+            break;
           }
         }
       }
@@ -79,8 +87,6 @@ export default class ConversationSyncService {
   }
 
   async upsertConversations(conversations, _pageId) {
-    const excPageIds = ["zl_2838947343790196672", "110263770893806", "114459901519364", "ttm_-000GnI37aFDBuqWw6N750AvvJXaodrxaoS6", "104886481441594"];
-
     const chunkSize = 50;
     for (let i = 0; i < conversations.length; i += chunkSize) {
       const chunk = conversations.slice(i, i + chunkSize);
@@ -103,7 +109,7 @@ export default class ConversationSyncService {
         }
 
         let lastSentAt = null;
-        if (item.page_id && !excPageIds.includes(item.page_id)) {
+        if (item.page_id && !EXCLUDED_PAGE_IDS.includes(item.page_id)) {
           lastSentAt = item.updated_at ? dayjs.utc(item.updated_at).toDate() : null;
         }
 

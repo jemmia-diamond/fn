@@ -29,10 +29,10 @@ export default class PageSyncService {
         return;
       }
 
-      const pageList = categorized.activated || [];
-      if (categorized.inactivated) {
-        pageList.push(...categorized.inactivated);
-      }
+      const pageList = [
+        ...(categorized.activated || []),
+        ...(categorized.inactivated || [])
+      ];
 
       if (pageList.length === 0) {
         console.warn("Page list is empty.");
