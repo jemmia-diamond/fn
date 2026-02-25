@@ -70,9 +70,6 @@ export default {
     case "erpnext-order-creation":
       await ERP.Selling.SalesOrderService.dequeueOrderQueue(batch, env);
       break;
-    case "pancake-extra-hooks":
-      await Pancake.ConversationService.dequeueExtraHooksQueue(batch, env);
-      break;
     default:
       break;
     }

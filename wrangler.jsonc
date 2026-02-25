@@ -228,10 +228,6 @@
       {
         "queue": "erpnext-order-creation",
         "binding": "ERPNEXT_ORDER_CREATION_QUEUE"
-      },
-      {
-        "queue": "pancake-extra-hooks",
-        "binding": "PANCAKE_EXTRA_HOOKS_QUEUE"
       }
     ],
     "consumers": [
@@ -241,25 +237,23 @@
         "max_batch_size": 1
       },
       {
+        "queue": "zalo-message"
+      },
+      {
         "queue": "message",
         "max_batch_size": 1,
-        "retry_delay": 600,
+        "retry_delay": 600
       },
       {
         "queue": "message-extra-hooks",
-        "max_batch_size": 1,
-        "retry_delay": 600,
-      },
-      {
-        "queue": "zalo-message",
+        "max_batch_size": 1
       },
       {
         "queue": "message-summary",
         "retry_delay": 600
       },
       {
-        "queue": "message-last-customer",
-        "retry_delay": 600
+        "queue": "message-last-customer"
       },
       {
         "queue": "erpnext-contacts"
@@ -299,10 +293,6 @@
         "retry_delay": 600,
         "max_retries": 6,
         "max_batch_size": 1
-      },
-      {
-        "queue": "pancake-extra-hooks",
-        "retry_delay": 600
       }
     ]
   },
