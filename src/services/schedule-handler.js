@@ -4,7 +4,6 @@ import Ecommerce from "services/ecommerce";
 import InventoryCMS from "services/inventory-cms";
 import DatabaseOperations from "services/db-operations";
 import Misa from "services/misa";
-import ProductQuote from "services/product_quote";
 import WorkshopOrderServices from "services/sync/lark-to-nocodb/workshop-orders";
 import Reporting from "services/reporting";
 import dayjs from "dayjs";
@@ -25,18 +24,19 @@ export default {
       await ERP.Telephony.CallLogService.syncStringeeCallLogs(env);
       await ERP.CRM.LeadService.syncCallLogLead(env);
       await ERP.Selling.SalesOrderService.fillSerialNumbersToTemporaryOrderItems(env);
+      await new Pancake.TagSyncService(env).syncTags();
       break;
     case "*/5 * * * *": // At every 5th minute
       await new Ecommerce.JewelryDiamondPairService(env).processOutOfStockDiamonds();
       await new Misa.InventoryItemSyncService(env).syncInventoryItems();
       await new ERP.CRM.PancakeLeadSyncService(env).syncPancakeLeads();
+      await new Pancake.ConversationSyncService(env).syncConversations();
+      await new Pancake.CustomerSyncService(env).syncCustomers();
       break;
     case "*/10 * * * *": // At every 10th minute
       await ERP.Selling.SerialService.syncSerialsToERP(env);
       await ERP.CRM.LeadService.cronSyncLeadsToDatabase(env);
       await new ProductQuote.DesignCodeService(env).syncDesignCodeToLark();
-      await new Pancake.ConversationSyncService(env).syncConversations();
-      await new Pancake.CustomerSyncService(env).syncCustomers();
       break;
     case "*/15 * * * *": // At every 15th minute
       await ERP.Contacts.ContactService.cronSyncContactsToDatabase(env);
@@ -50,8 +50,6 @@ export default {
       await ERP.Contacts.AddressService.cronSyncAddressesToDatabase(env);
       await Ecommerce.ProductService.refreshMaterializedViews(env);
       await DatabaseOperations.MaterializedViewService.refresh30Minutes(env);
-      await new Pancake.PageSyncService(env).syncPages();
-      await new Pancake.TagSyncService(env).syncTags();
       break;
     case "0 */3 * * *": // At every 3rd hour
       await InventoryCMS.InventoryCheckSheetService.syncInventoryCheckSheetToDatabase(env);
@@ -73,6 +71,7 @@ export default {
       await Larksuite.Docs.Base.RecordService.syncRecordsToDatabase(env);
       await new Ecommerce.DiamondCollectService(env).syncDiamondsToCollects();
       await Salesaya.LarkChatSyncMediaService.syncMedia(env);
+      await new Pancake.PageSyncService(env).syncPages();
       break;
     case "30 0 * * *": // 07:30
       await ERP.CRM.LeadDemandService.syncLeadDemandToDatabase(env);
