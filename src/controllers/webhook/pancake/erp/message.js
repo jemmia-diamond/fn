@@ -32,13 +32,6 @@ export default class PancakeERPMessageController {
         actionType: DebounceActions.SEND_TO_MESSAGE_LAST_CUSTOMER_QUEUE,
         delay: 30000
       });
-      await DebounceService.debounce({
-        env: ctx.env,
-        key: key,
-        data: data,
-        actionType: DebounceActions.SEND_TO_PANCAKE_EXTRA_HOOKS_QUEUE,
-        delay: 30000
-      });
     }
     return ctx.json({ message: "Message Received" });
   }
