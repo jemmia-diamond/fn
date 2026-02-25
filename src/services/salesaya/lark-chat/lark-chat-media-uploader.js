@@ -1,16 +1,28 @@
-import { createAxiosClient } from "services/utils/http-client";
-
 export default class LarkChatMediaUploader {
   constructor(uploadUrl) {
     this.uploadUrl = uploadUrl;
-    this.client = createAxiosClient();
   }
 
-  async upload(buffer, filename) {
-    const form = new FormData();
-    form.append("file", new Blob([buffer]), filename);
+  async upload(buffer, filename, maxRetries = 3) {
+    let attempt = 0;
+    while (attempt <= maxRetries) {
+      try {
+        const form = new FormData();
+        form.append("file", new Blob([buffer]), filename);
+        const response = await fetch(this.uploadUrl, {
+          method: "POST",
+          body: form
+        });
 
-    const { data } = await this.client.post(this.uploadUrl, form);
-    return data?.url || data?.link || null;
+        const data = await response.json();
+        return data?.url;
+      } catch {
+        attempt++;
+        if (attempt > maxRetries) {
+          return null;
+        }
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+      }
+    }
   }
 }
