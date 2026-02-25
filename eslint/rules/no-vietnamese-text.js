@@ -24,7 +24,7 @@ class NoVietnameseTextValidator {
 
     return {
       Program() {
-        const sourceCode = context.sourceCode;
+        const sourceCode = context.getSourceCode();
         const comments = sourceCode.getAllComments();
 
         comments.forEach(comment => {
