@@ -1,28 +1,23 @@
+import { createAxiosClient } from "services/utils/http-client";
+import fetchAdapter from "@haverstack/axios-fetch-adapter";
+
 export default class LarkChatMediaUploader {
   constructor(uploadUrl) {
     this.uploadUrl = uploadUrl;
+    this.client = createAxiosClient({
+      adapter: fetchAdapter
+    });
   }
 
-  async upload(buffer, filename, maxRetries = 3) {
-    let attempt = 0;
-    while (attempt <= maxRetries) {
-      try {
-        const form = new FormData();
-        form.append("file", new Blob([buffer]), filename);
-        const response = await fetch(this.uploadUrl, {
-          method: "POST",
-          body: form
-        });
+  async upload(buffer, filename) {
+    const form = new FormData();
+    form.append("file", new Blob([buffer]), filename);
 
-        const data = await response.json();
-        return data?.url;
-      } catch {
-        attempt++;
-        if (attempt > maxRetries) {
-          return null;
-        }
-        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+    const { data } = await this.client.post(this.uploadUrl, form, {
+      headers: {
+        "Content-Type": null
       }
-    }
+    });
+    return data?.url;
   }
 }
