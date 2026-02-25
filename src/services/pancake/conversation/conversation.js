@@ -76,103 +76,93 @@ export default class ConversationService {
   }
 
   async processLastCustomerMessage(body) {
-    try {
-      const receiveWebhook = shouldReceiveWebhook(body);
+    const receiveWebhook = shouldReceiveWebhook(body);
 
-      if (!receiveWebhook) {
-        return;
-      }
-
-      const message = body?.data?.message;
-      if (!message) {
-        console.warn(`No message found in data: ${JSON.stringify(body?.data)}`);
-        return;
-      }
-
-      const conversationId = message.conversation_id;
-      const pageId = message.page_id;
-      const insertedAt = message.inserted_at;
-
-      if (!insertedAt) {
-        throw new Error("Page ID: " + pageId + ", Conversation ID: " + conversationId + ", Inserted At: " + insertedAt);
-      }
-      // Store the time of the last customer message
-      const result = await this.updateConversation(conversationId, pageId, insertedAt);
-      return result;
-    } catch (err){
-      Sentry.captureException(err);
+    if (!receiveWebhook) {
       return;
     }
+
+    const message = body?.data?.message;
+    if (!message) {
+      console.warn(`No message found in data: ${JSON.stringify(body?.data)}`);
+      return;
+    }
+
+    const conversationId = message.conversation_id;
+    const pageId = message.page_id;
+    const insertedAt = message.inserted_at;
+
+    if (!insertedAt) {
+      throw new Error("Page ID: " + pageId + ", Conversation ID: " + conversationId + ", Inserted At: " + insertedAt);
+    }
+    // Store the time of the last customer message
+    const result = await this.updateConversation(conversationId, pageId, insertedAt);
+    return result;
   }
 
   async syncCustomerToLeadCrm(body) {
-    try {
-      const receiveWebhook = shouldReceiveWebhook(body);
+    const receiveWebhook = shouldReceiveWebhook(body);
 
-      if (!receiveWebhook) {
-        return;
-      }
-
-      const conversationId = body?.data?.conversation?.id;
-
-      const pageId = body?.page_id;
-
-      const hasPhone = body?.data?.message?.has_phone;
-      if (hasPhone === undefined || hasPhone === false) {
-        return;
-      }
-
-      const existingDocName = await this.findExistingLead({
-        conversationId: conversationId
-      });
-      if (existingDocName === undefined) return;
-
-      const pancakePage = await this.findPageInfo({
-        pageId: pageId
-      });
-      if (pancakePage === undefined || pancakePage === null) return;
-
-      let frappeNameId;
-      if (existingDocName !== null) {
-        frappeNameId = existingDocName.frappe_name_id;
-
-        const lead = await this.leadService.updateLead({
-          frappeNameId: existingDocName.frappe_name_id,
-          customerPhone: body?.data?.message?.phone_info?.[0]?.phone_number ?? "",
-          customerName: body?.data?.conversation?.from?.name ?? "",
-          platform: pancakePage.platform ?? "",
-          conversationId: conversationId ?? "",
-          pageId: pageId,
-          pageName: pancakePage.name ?? "",
-          type: body?.data?.conversation?.type ?? "",
-          pancakeUserId: body?.data?.conversation?.assignee_ids?.[0] ?? ""
-        });
-        if (lead) {
-          frappeNameId = lead.name;
-        }
-      } else {
-        const newLead = await this.leadService.insertLead({
-          customerName: body?.data?.conversation?.from?.name ?? "",
-          customerPhone: body?.data?.message?.phone_info?.[0].phone_number ?? "",
-          platform: pancakePage.platform ?? "",
-          conversationId: conversationId ?? "",
-          pageId: pageId,
-          pageName: pancakePage.name ?? "",
-          type: body?.data?.conversation?.type ?? "",
-          pancakeUserId: body?.data?.conversation?.assignee_ids?.[0] ?? ""
-        });
-
-        if (newLead) {
-          frappeNameId = newLead.name;
-        }
-      }
-
-      if (frappeNameId !== undefined && frappeNameId !== null) {
-        await this.upsertFrappeLeadConversation(conversationId, frappeNameId);
-      }
-    } catch (error) {
-      Sentry.captureException(error);
+    if (!receiveWebhook) {
       return;
+    }
+
+    const conversationId = body?.data?.conversation?.id;
+
+    const pageId = body?.page_id;
+
+    const hasPhone = body?.data?.message?.has_phone;
+    if (hasPhone === undefined || hasPhone === false) {
+      return;
+    }
+
+    const existingDocName = await this.findExistingLead({
+      conversationId: conversationId
+    });
+    if (existingDocName === undefined) return;
+
+    const pancakePage = await this.findPageInfo({
+      pageId: pageId
+    });
+    if (pancakePage === undefined || pancakePage === null) return;
+
+    let frappeNameId;
+    if (existingDocName !== null) {
+      frappeNameId = existingDocName.frappe_name_id;
+
+      const lead = await this.leadService.updateLead({
+        frappeNameId: existingDocName.frappe_name_id,
+        customerPhone: body?.data?.message?.phone_info?.[0]?.phone_number ?? "",
+        customerName: body?.data?.conversation?.from?.name ?? "",
+        platform: pancakePage.platform ?? "",
+        conversationId: conversationId ?? "",
+        pageId: pageId,
+        pageName: pancakePage.name ?? "",
+        type: body?.data?.conversation?.type ?? "",
+        pancakeUserId: body?.data?.conversation?.assignee_ids?.[0] ?? ""
+      });
+      if (lead) {
+        frappeNameId = lead.name;
+      }
+    } else {
+      const newLead = await this.leadService.insertLead({
+        customerName: body?.data?.conversation?.from?.name ?? "",
+        customerPhone: body?.data?.message?.phone_info?.[0].phone_number ?? "",
+        platform: pancakePage.platform ?? "",
+        conversationId: conversationId ?? "",
+        pageId: pageId,
+        pageName: pancakePage.name ?? "",
+        type: body?.data?.conversation?.type ?? "",
+        pancakeUserId: body?.data?.conversation?.assignee_ids?.[0] ?? ""
+      });
+
+      if (newLead) {
+        frappeNameId = newLead.name;
+      }
+    }
+
+    if (frappeNameId !== undefined && frappeNameId !== null) {
+      await this.upsertFrappeLeadConversation(conversationId, frappeNameId);
     }
   }
 
@@ -223,13 +213,11 @@ export default class ConversationService {
     for (const message of messages) {
       const body = message.body;
 
-      await conversationService.summarizeLead(env, body).catch(err =>
-        Sentry.captureException(err)
-      );
+      await conversationService.summarizeLead(env, body);
     }
   }
 
-  static async dequeueMessageQueue(batch, env) {
+  static async dequeueMessageLastCustomerQueue(batch, env) {
     const conversationService = new ConversationService(env);
     const messages = batch.messages;
     for (const message of messages) {
@@ -243,10 +231,16 @@ export default class ConversationService {
     const messages = batch.messages;
     for (const message of messages) {
       const body = message.body;
-      await Promise.all([
-        conversationService.syncCustomerToLeadCrm(body),
-        conversationService.triggerExtraHooks(body)
-      ]);
+      await conversationService.syncCustomerToLeadCrm(body);
+    }
+  }
+
+  static async dequeueExtraHooksQueue(batch, env) {
+    const conversationService = new ConversationService(env);
+    const messages = batch.messages;
+    for (const message of messages) {
+      const body = message.body;
+      await conversationService.triggerExtraHooks(body);
     }
   }
 }
