@@ -3,6 +3,7 @@ import PancakeClient from "pancake/pancake-client";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import * as Sentry from "@sentry/cloudflare";
+import { isInvalidTokenError } from "pancake/utils";
 
 dayjs.extend(utc);
 
@@ -23,6 +24,10 @@ export default class ConversationSyncService {
     let pageData;
     try {
       pageData = await this.pancakeClient.getPages();
+      if (isInvalidTokenError(pageData)) {
+        Sentry.captureException(new Error("Pancake API Error [102]: Invalid access_token during page query"));
+        return;
+      }
     } catch (e) {
       console.warn("Failed to fetch pancake pages", e);
       return;
@@ -47,6 +52,11 @@ export default class ConversationSyncService {
             untilUnix,
             pageNumber
           );
+
+          if (isInvalidTokenError(data)) {
+            Sentry.captureException(new Error(`Pancake API Error [102]: Invalid access_token for page ${pageId}`));
+            break;
+          }
 
           if (!data || !data.conversations || data.conversations.length === 0) {
             break;

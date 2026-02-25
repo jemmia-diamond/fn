@@ -1,6 +1,7 @@
 import Database from "services/database";
 import PancakeClient from "pancake/pancake-client";
 import * as Sentry from "@sentry/cloudflare";
+import { isInvalidTokenError } from "pancake/utils";
 
 export default class TagSyncService {
   constructor(env) {
@@ -15,6 +16,10 @@ export default class TagSyncService {
     let pageData;
     try {
       pageData = await this.pancakeClient.getPages();
+      if (isInvalidTokenError(pageData)) {
+        Sentry.captureException(new Error("Pancake API Error [102]: Invalid access_token during page query"));
+        return;
+      }
     } catch (e) {
       console.warn("Failed to fetch pancake pages", e);
       return;
@@ -32,6 +37,12 @@ export default class TagSyncService {
 
       try {
         const data = await this.pancakeClient.getPageTags(pageId);
+
+        if (isInvalidTokenError(data)) {
+          Sentry.captureException(new Error(`Pancake API Error [102]: Invalid access_token for tags in page ${pageId}`));
+          continue;
+        }
+
         if (data && data.tags && data.tags.length > 0) {
           await this.upsertTags(data.tags, pageId);
         }
