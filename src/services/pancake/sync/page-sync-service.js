@@ -1,7 +1,11 @@
 import Database from "services/database";
 import PancakeClient from "pancake/pancake-client";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc.js";
 import * as Sentry from "@sentry/cloudflare";
 import { isInvalidTokenError } from "pancake/utils";
+
+dayjs.extend(utc);
 
 export default class PageSyncService {
   constructor(env) {
@@ -11,57 +15,59 @@ export default class PageSyncService {
   }
 
   async syncPages() {
-    console.warn("Starting syncPages...");
-
-    let pageData;
     try {
-      pageData = await this.pancakeClient.getPages();
+      console.warn("Starting syncPages...");
+
+      const pageData = await this.pancakeClient.getPages();
       if (isInvalidTokenError(pageData)) {
-        Sentry.captureException(new Error("Pancake API Error [102]: Invalid access_token during page query"));
+        throw new Error("Pancake API Error [102]: Invalid access_token during page query");
+      }
+
+      const categorized = pageData?.categorized;
+      if (!categorized) {
+        console.warn("No pages data returned.");
         return;
       }
-    } catch (e) {
-      console.warn("Failed to fetch pancake pages", e);
-      return;
-    }
 
-    const categorized = pageData?.categorized;
-    if (!categorized) {
-      console.warn("No pages data returned.");
-      return;
-    }
-
-    const pageList = categorized.activated || [];
-    if (categorized.inactivated) {
-      pageList.push(...categorized.inactivated);
-    }
-
-    if (pageList.length === 0) {
-      console.warn("Page list is empty.");
-      return;
-    }
-
-    await this.upsertPages(pageList);
-
-    for (const page of pageList) {
-      if (!page?.id) continue;
-      try {
-        const userListData = await this.pancakeClient.getPageUsers(page.id);
-
-        if (isInvalidTokenError(userListData)) {
-          Sentry.captureException(new Error(`Pancake API Error [102]: Invalid access_token for users in page ${page.id}`));
-          continue;
-        }
-
-        const users = userListData?.users || [];
-        await this.upsertUsers(users);
-      } catch (error) {
-        console.warn(`Error syncing users for page ${page.id}: ${error.message}`);
-        Sentry.captureException(error);
+      const pageList = categorized.activated || [];
+      if (categorized.inactivated) {
+        pageList.push(...categorized.inactivated);
       }
-    }
 
-    console.warn("Finished syncPages.");
+      if (pageList.length === 0) {
+        console.warn("Page list is empty.");
+        return;
+      }
+
+      await this.upsertPages(pageList);
+
+      for (const page of pageList) {
+        if (!page?.id) continue;
+        try {
+          const userListData = await this.pancakeClient.getPageUsers(page.id);
+
+          if (isInvalidTokenError(userListData)) {
+            Sentry.captureException(new Error(`Pancake API Error [102]: Invalid access_token for users in page ${page.id}`), {
+              tags: { flow: "PancakeSync:pages", page_id: page.id }
+            });
+            continue;
+          }
+
+          const users = userListData?.users || [];
+          await this.upsertUsers(users);
+        } catch (error) {
+          Sentry.captureException(error, {
+            tags: { flow: "PancakeSync:pages", page_id: page.id }
+          });
+        }
+      }
+
+      console.warn("Finished syncPages.");
+    } catch (error) {
+      Sentry.captureException(error, {
+        tags: { flow: "PancakeSync:pages" }
+      });
+    }
   }
 
   async upsertPages(pages) {
@@ -73,12 +79,12 @@ export default class PageSyncService {
       const pageData = {
         uuid: crypto.randomUUID(),
         id: item.id,
-        inserted_at: item.inserted_at ? new Date(item.inserted_at) : null,
+        inserted_at: item.inserted_at ? dayjs.utc(item.inserted_at).toDate() : null,
         connected: item.connected ?? null,
         is_activated: item.is_activated ?? null,
         name: item.name || null,
         platform: item.platform || null,
-        timezone: item.timezone || null,
+        timezone: item.timezone != null ? String(item.timezone) : null,
         settings: item.settings || null,
         platform_extra_info: item.platform_extra_info || null
       };
@@ -90,7 +96,7 @@ export default class PageSyncService {
           update: {
             ...pageData,
             uuid: undefined,
-            database_updated_at: new Date()
+            database_updated_at: dayjs().utc().toDate()
           }
         })
       );
@@ -131,12 +137,12 @@ export default class PageSyncService {
           where: { id: user.id },
           create: {
             ...userData,
-            database_created_at: new Date(),
-            database_updated_at: new Date()
+            database_created_at: dayjs().utc().toDate(),
+            database_updated_at: dayjs().utc().toDate()
           },
           update: {
             ...userData,
-            database_updated_at: new Date()
+            database_updated_at: dayjs().utc().toDate()
           }
         })
       );

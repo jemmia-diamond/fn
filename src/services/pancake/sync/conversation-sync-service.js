@@ -15,64 +15,67 @@ export default class ConversationSyncService {
   }
 
   async syncConversations() {
-    console.warn("Starting syncConversations...");
-
-    const now = dayjs().utc();
-    const untilUnix = now.unix();
-    const sinceUnix = now.subtract(10, "minutes").unix();
-
-    let pageData;
     try {
-      pageData = await this.pancakeClient.getPages();
+      console.warn("Starting syncConversations...");
+
+      const now = dayjs().utc();
+      const untilUnix = now.unix();
+      const sinceUnix = now.subtract(10, "minutes").unix();
+
+      const pageData = await this.pancakeClient.getPages();
       if (isInvalidTokenError(pageData)) {
-        Sentry.captureException(new Error("Pancake API Error [102]: Invalid access_token during page query"));
+        throw new Error("Pancake API Error [102]: Invalid access_token during page query");
+      }
+
+      const pageList = pageData?.categorized?.activated || [];
+      if (pageList.length === 0) {
+        console.warn("No activated pages found.");
         return;
       }
-    } catch (e) {
-      console.warn("Failed to fetch pancake pages", e);
-      return;
-    }
 
-    const pageList = pageData?.categorized?.activated || [];
-    if (pageList.length === 0) {
-      console.warn("No activated pages found.");
-      return;
-    }
+      for (let i = pageList.length - 1; i >= 0; i--) {
+        const page = pageList[i];
+        const pageId = page.id;
+        if (!pageId) continue;
 
-    for (let i = pageList.length - 1; i >= 0; i--) {
-      const page = pageList[i];
-      const pageId = page.id;
-      let pageNumber = 1;
+        let pageNumber = 1;
+        while (true) {
+          try {
+            const data = await this.pancakeClient.getConversations(
+              pageId,
+              sinceUnix,
+              untilUnix,
+              pageNumber
+            );
 
-      while (true) {
-        try {
-          const data = await this.pancakeClient.getConversations(
-            pageId,
-            sinceUnix,
-            untilUnix,
-            pageNumber
-          );
+            if (isInvalidTokenError(data)) {
+              Sentry.captureException(new Error(`Pancake API Error [102]: Invalid access_token for page ${pageId}`), {
+                tags: { flow: "PancakeSync:conversations", page_id: pageId }
+              });
+              break;
+            }
 
-          if (isInvalidTokenError(data)) {
-            Sentry.captureException(new Error(`Pancake API Error [102]: Invalid access_token for page ${pageId}`));
-            break;
+            if (!data || !data.conversations || data.conversations.length === 0) {
+              break;
+            }
+
+            await this.upsertConversations(data.conversations, pageId);
+            pageNumber++;
+          } catch (error) {
+            Sentry.captureException(error, {
+              tags: { flow: "PancakeSync:conversations", page_id: pageId }
+            });
+            pageNumber++;
           }
-
-          if (!data || !data.conversations || data.conversations.length === 0) {
-            break;
-          }
-
-          await this.upsertConversations(data.conversations, pageId);
-          pageNumber++;
-        } catch (error) {
-          console.warn(`Error syncing conversation for page ${pageId}: ${error.message}`);
-          Sentry.captureException(error);
-          break;
         }
       }
-    }
 
-    console.warn("Finished syncConversations.");
+      console.warn("Finished syncConversations.");
+    } catch (error) {
+      Sentry.captureException(error, {
+        tags: { flow: "PancakeSync:conversations" }
+      });
+    }
   }
 
   async upsertConversations(conversations, _pageId) {
@@ -101,7 +104,7 @@ export default class ConversationSyncService {
 
         let lastSentAt = null;
         if (item.page_id && !excPageIds.includes(item.page_id)) {
-          lastSentAt = item.updated_at ? new Date(item.updated_at) : null;
+          lastSentAt = item.updated_at ? dayjs.utc(item.updated_at).toDate() : null;
         }
 
         const customers = item.customers || [];
@@ -112,7 +115,7 @@ export default class ConversationSyncService {
           id: item.id || null,
           customer_id: item.customer_id || null,
           type: item.type || null,
-          inserted_at: item.inserted_at ? new Date(item.inserted_at) : null,
+          inserted_at: item.inserted_at ? dayjs.utc(item.inserted_at).toDate() : null,
           page_id: item.page_id || null,
           has_phone: item.has_phone ?? null,
           post_id: item.post_id || null,
@@ -123,7 +126,7 @@ export default class ConversationSyncService {
           added_user_email: addedUsers?.email || null,
           added_user_fb_id: addedUsers?.fb_id || null,
           ad_ids: item.ad_ids || null,
-          updated_at: item.updated_at ? new Date(item.updated_at) : null,
+          updated_at: item.updated_at ? dayjs.utc(item.updated_at).toDate() : null,
           last_sent_at: lastSentAt,
           avatar_url: avatarUrl
         };
@@ -136,7 +139,7 @@ export default class ConversationSyncService {
               update: {
                 ...conversationData,
                 uuid: undefined,
-                database_updated_at: new Date()
+                database_updated_at: dayjs().utc().toDate()
               }
             })
           );
@@ -161,7 +164,7 @@ export default class ConversationSyncService {
                   conversation_id: convId
                 },
                 update: {
-                  database_updated_at: new Date()
+                  database_updated_at: dayjs().utc().toDate()
                 }
               })
             );
@@ -172,7 +175,7 @@ export default class ConversationSyncService {
         for (const th of tagHistories) {
           const payload = th.payload || {};
           const tag = payload.tag || {};
-          const tagPageId = tag.id;
+          const tagPageId = tag.id ? Number(tag.id) : null;
           const insertedAt = th.inserted_at;
           const action = payload.action;
 
@@ -186,7 +189,7 @@ export default class ConversationSyncService {
                 conversation_id: item.id,
                 page_id: item.page_id,
                 customer_id: item.customer_id,
-                inserted_at: new Date(insertedAt),
+                inserted_at: dayjs.utc(insertedAt).toDate(),
                 post_id: item.post_id,
                 has_phone: item.has_phone,
                 tag_page_id: tagPageId,
@@ -200,7 +203,7 @@ export default class ConversationSyncService {
                   where: {
                     conversation_id_inserted_at_tag_page_id_action: {
                       conversation_id: item.id,
-                      inserted_at: new Date(insertedAt),
+                      inserted_at: dayjs.utc(insertedAt).toDate(),
                       tag_page_id: tagPageId,
                       action: action
                     }
@@ -209,7 +212,7 @@ export default class ConversationSyncService {
                   update: {
                     ...tagData,
                     uuid: undefined,
-                    database_updated_at: new Date()
+                    database_updated_at: dayjs().utc().toDate()
                   }
                 })
               );
