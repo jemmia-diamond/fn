@@ -13,6 +13,7 @@ import timezone from "dayjs/plugin/timezone.js";
 import { TIMEZONE_VIETNAM } from "src/constants";
 import Google from "services/google";
 import Salesaya from "services/salesaya";
+import Pancake from "services/pancake";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -34,6 +35,8 @@ export default {
       await ERP.Selling.SerialService.syncSerialsToERP(env);
       await ERP.CRM.LeadService.cronSyncLeadsToDatabase(env);
       await new ProductQuote.DesignCodeService(env).syncDesignCodeToLark();
+      await new Pancake.ConversationSyncService(env).syncConversations();
+      await new Pancake.CustomerSyncService(env).syncCustomers();
       break;
     case "*/15 * * * *": // At every 15th minute
       await ERP.Contacts.ContactService.cronSyncContactsToDatabase(env);
@@ -47,6 +50,8 @@ export default {
       await ERP.Contacts.AddressService.cronSyncAddressesToDatabase(env);
       await Ecommerce.ProductService.refreshMaterializedViews(env);
       await DatabaseOperations.MaterializedViewService.refresh30Minutes(env);
+      await new Pancake.PageSyncService(env).syncPages();
+      await new Pancake.TagSyncService(env).syncTags();
       break;
     case "0 */3 * * *": // At every 3rd hour
       await InventoryCMS.InventoryCheckSheetService.syncInventoryCheckSheetToDatabase(env);
