@@ -13,6 +13,7 @@ import timezone from "dayjs/plugin/timezone.js";
 import { TIMEZONE_VIETNAM } from "src/constants";
 import Google from "services/google";
 import Salesaya from "services/salesaya";
+import Pancake from "services/pancake";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -24,11 +25,14 @@ export default {
       await ERP.Telephony.CallLogService.syncStringeeCallLogs(env);
       await ERP.CRM.LeadService.syncCallLogLead(env);
       await ERP.Selling.SalesOrderService.fillSerialNumbersToTemporaryOrderItems(env);
+      await new Pancake.TagSyncService(env).syncTags();
       break;
     case "*/5 * * * *": // At every 5th minute
       await new Ecommerce.JewelryDiamondPairService(env).processOutOfStockDiamonds();
       await new Misa.InventoryItemSyncService(env).syncInventoryItems();
       await new ERP.CRM.PancakeLeadSyncService(env).syncPancakeLeads();
+      await new Pancake.ConversationSyncService(env).syncConversations();
+      await new Pancake.CustomerSyncService(env).syncCustomers();
       break;
     case "*/10 * * * *": // At every 10th minute
       await ERP.Selling.SerialService.syncSerialsToERP(env);
@@ -68,6 +72,7 @@ export default {
       await Larksuite.Docs.Base.RecordService.syncRecordsToDatabase(env);
       await new Ecommerce.DiamondCollectService(env).syncDiamondsToCollects();
       await Salesaya.LarkChatSyncMediaService.syncMedia(env);
+      await new Pancake.PageSyncService(env).syncPages();
       break;
     case "30 0 * * *": // 07:30
       await ERP.CRM.LeadDemandService.syncLeadDemandToDatabase(env);
