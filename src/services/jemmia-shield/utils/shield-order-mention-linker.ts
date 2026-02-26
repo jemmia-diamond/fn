@@ -45,9 +45,9 @@ export class ShieldOrderMentionLinker {
     const texts: string[] = [];
     if (content.title) texts.push(content.title);
 
-    for (const line of content.content) {
-      if (!Array.isArray(line)) continue;
-      for (const item of line) {
+    for (const lines of content.content) {
+      if (!Array.isArray(lines)) continue;
+      for (const item of lines) {
         if (item.tag === JEMMIA_SHIELD_CONTENT_TAG.TEXT && item.text) {
           texts.push(item.text);
         }
@@ -104,11 +104,7 @@ export class ShieldOrderMentionLinker {
         erpName: order.name,
         haravanId: order.split_order_group || haravanIdOnly
       };
-    } catch (error) {
-      console.warn(
-        `[ShieldOrderMentionLinker] Error fetching order ${orderCode}:`,
-        error
-      );
+    } catch {
       return null;
     }
   }
