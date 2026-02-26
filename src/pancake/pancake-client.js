@@ -5,33 +5,55 @@ export default class PancakeClient {
     this.headers = { "Content-Type": "application/json" };
   }
 
+  async safeFetch(url, options = {}) {
+    const res = await fetch(url, options);
+    const text = await res.text();
+
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = text;
+    }
+
+    if (!res.ok) {
+      if (typeof data === "object" && data && data.error_code === 102) {
+        return data; // Allow 102 Invalid access_token to be handled by the services
+      }
+      throw new Error(`Pancake HTTP Error ${res.status}: ${typeof data === "object" ? JSON.stringify(data) : data}`);
+    }
+
+    return data;
+  }
+
   async getPageAccessToken(pageId) {
     const params = new URLSearchParams({
       access_token: this.accessToken
     });
     const path = `/v1/pages/${pageId}/generate_page_access_token?${params}`;
-    const res = await fetch(`${this.baseUrl}${path}`, {
+    const data = await this.safeFetch(`${this.baseUrl}${path}`, {
       method: "POST"
     });
-    const data = await res.json();
-    return data.page_access_token;
+    return data?.page_access_token;
   }
 
   async postRequest(pageId, path, data) {
     const pageAccessToken = await this.getPageAccessToken(pageId);
+    if (!pageAccessToken) return null;
+
     const params = new URLSearchParams({
       page_access_token: pageAccessToken
     });
-    const res = await fetch(`${this.baseUrl}${path}?${params}`, {
+    return await this.safeFetch(`${this.baseUrl}${path}?${params}`, {
       method: "POST",
       headers: this.headers,
       body: JSON.stringify(data)
     });
-    return res.json();
   }
 
   async getRequest(pageId, path, params = {}) {
     const pageAccessToken = await this.getPageAccessToken(pageId);
+    if (!pageAccessToken) return null;
 
     const cleanParams = {};
     for (const [k, v] of Object.entries(params)) {
@@ -44,10 +66,9 @@ export default class PancakeClient {
       ...cleanParams,
       page_access_token: pageAccessToken
     });
-    const res = await fetch(`${this.baseUrl}${path}?${_params}`, {
+    return await this.safeFetch(`${this.baseUrl}${path}?${_params}`, {
       method: "GET"
     });
-    return res.json();
   }
 
   async assignConversation(pageId, conversationId, assigneeIds) {
@@ -67,8 +88,7 @@ export default class PancakeClient {
     const params = new URLSearchParams({
       access_token: this.accessToken
     });
-    const res = await fetch(`${this.baseUrl}/v1/pages?${params}`);
-    return res.json();
+    return await this.safeFetch(`${this.baseUrl}/v1/pages?${params}`);
   }
 
   async getConversations(pageId, sinceUnix, untilUnix, pageNumber) {

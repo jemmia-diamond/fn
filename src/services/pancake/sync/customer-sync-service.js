@@ -3,7 +3,7 @@ import PancakeClient from "pancake/pancake-client";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import * as Sentry from "@sentry/cloudflare";
-import { isInvalidTokenError } from "pancake/utils";
+import { isInvalidTokenError, sleep } from "pancake/utils";
 
 dayjs.extend(utc);
 
@@ -36,6 +36,7 @@ export default class CustomerSyncService {
 
       for (let i = pages.length - 1; i >= 0; i--) {
         await this.syncPageCustomers(pages[i].id, sinceUnix, untilUnix);
+        await sleep(1000);
       }
 
       console.warn("Finished syncCustomers.");
@@ -64,6 +65,7 @@ export default class CustomerSyncService {
 
         if (customers.length < SYNC_PAGE_SIZE) break;
         pageNumber++;
+        await sleep(1000);
       } catch (error) {
         this.captureException(error, pageId);
         break;
