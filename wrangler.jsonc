@@ -70,7 +70,9 @@
     "LARK_RECALL_REDIRECT_URI":"https://fn.jemmia.vn/jemmia-shield/callback",
     "LARK_RECALL_VIEW_URL": "https://fn.jemmia.vn/jemmia-shield/message-recall/view",
     "LARK_APP_SHIELD_ID":"cli_a9fd9bc9f7b9ded0",
-    "OAUTH_REDIRECT_ENDPOINT":"https://fn.jemmia.vn"
+    "OAUTH_REDIRECT_ENDPOINT":"https://fn.jemmia.vn",
+    "ERP_APP_URL": "https://erp.jemmia.vn",
+    "HARAVAN_APP_URL": "https://jemmiavn.myharavan.com"
   },
   "secrets_store_secrets": [
     {
