@@ -2,6 +2,7 @@ import JemmiaShieldLarkService from "services/jemmia-shield/jemmia-shield-lark-s
 import ShieldPresidioService from "services/jemmia-shield/shield-presidio-service";
 import { ShieldUtils } from "services/jemmia-shield/utils/shield-utils";
 import { JEMMIA_SHIELD_MESSAGE_TYPE } from "src/constants/jemmia-shield-constants";
+import { ShieldPhoneHashLabeler } from "services/jemmia-shield/utils/shield-phone-hash-labeler";
 
 export default class ShieldMessageHandler {
   static async handleTextMessage(env: any, event: any, content: any) {
@@ -13,10 +14,12 @@ export default class ShieldMessageHandler {
         env,
         text
       );
+      const labeledMaskedText =
+        await ShieldPhoneHashLabeler.attachLabelsToMasked(text, maskedText);
 
       const mentions = event.message.mentions || [];
       const cardMaskedText = ShieldUtils.resolveMentionsForCard(
-        maskedText,
+        labeledMaskedText,
         mentions
       );
 
@@ -25,7 +28,7 @@ export default class ShieldMessageHandler {
         mentions
       );
       const viewMaskedText = ShieldUtils.resolveMentionsAndStyleForView(
-        maskedText,
+        labeledMaskedText,
         mentions
       );
 

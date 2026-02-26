@@ -7,6 +7,7 @@ import {
   JEMMIA_SHIELD_CONTENT_TAG
 } from "src/constants/jemmia-shield-constants";
 import ImageHelper from "services/utils/image-helper";
+import { ShieldPhoneHashLabeler } from "services/jemmia-shield/utils/shield-phone-hash-labeler";
 
 export default class ShieldPostHandler {
   static async handlePostMessage(env: any, event: any, content: any) {
@@ -63,8 +64,13 @@ export default class ShieldPostHandler {
     await JemmiaShieldLarkService.recallMessage(env, event.message.message_id);
 
     if (content.title) {
+      const originalTitle = content.title;
       content.title = await ShieldPresidioService.maskSensitiveInfo(
         env,
+        content.title
+      );
+      content.title = await ShieldPhoneHashLabeler.attachLabelsToMasked(
+        originalTitle,
         content.title
       );
     }
@@ -72,8 +78,13 @@ export default class ShieldPostHandler {
     for (const line of content.content) {
       for (const item of line) {
         if (item.tag === JEMMIA_SHIELD_CONTENT_TAG.TEXT) {
+          const originalText = item.text;
           item.text = await ShieldPresidioService.maskSensitiveInfo(
             env,
+            item.text
+          );
+          item.text = await ShieldPhoneHashLabeler.attachLabelsToMasked(
+            originalText,
             item.text
           );
           item.text = ShieldUtils.resolveMentionsForCard(item.text, mentions);
@@ -174,8 +185,13 @@ export default class ShieldPostHandler {
 
     if (text && (await ShieldPresidioService.detectSensitiveInfo(env, text))) {
       if (content.title) {
+        const originalTitle = content.title;
         content.title = await ShieldPresidioService.maskSensitiveInfo(
           env,
+          content.title
+        );
+        content.title = await ShieldPhoneHashLabeler.attachLabelsToMasked(
+          originalTitle,
           content.title
         );
       }
@@ -183,8 +199,13 @@ export default class ShieldPostHandler {
       for (const line of content.content) {
         for (const item of line) {
           if (item.tag === JEMMIA_SHIELD_CONTENT_TAG.TEXT) {
+            const originalText = item.text;
             item.text = await ShieldPresidioService.maskSensitiveInfo(
               env,
+              item.text
+            );
+            item.text = await ShieldPhoneHashLabeler.attachLabelsToMasked(
+              originalText,
               item.text
             );
             item.text = ShieldUtils.resolveMentionsForCard(item.text, mentions);
