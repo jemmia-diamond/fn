@@ -49,7 +49,7 @@ export default class SepayTransactionService {
 
     const qr = await this.findQrRecord({ orderDesc, transferAmount });
 
-    if (!qr) return;
+    if (!qr) throw new Error("QR code not found");
 
     if (qr.payment_entry_name) {
       const bankTransactions = await this.frappeClient.getList("Bank Transaction", {
@@ -394,7 +394,10 @@ export default class SepayTransactionService {
         await service.processTransaction(body);
       } catch (error) {
         Sentry.captureException(error);
-        await env["SEPAY_TRANSACTION_QUEUE"].send(message.body, { delaySeconds: TEN_MINUTES });
+        const status = error?.status || error?.response?.status;
+        if (status === 502 || status === 503 || status === 504) {
+          await env["SEPAY_TRANSACTION_QUEUE"].send(message.body, { delaySeconds: TEN_MINUTES });
+        }
       }
     }
   }
