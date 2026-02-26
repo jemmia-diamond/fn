@@ -49,7 +49,7 @@ export default class SepayTransactionService {
 
     const qr = await this.findQrRecord({ orderDesc, transferAmount });
 
-    if (!qr) throw new Error("QR code not found");
+    if (!qr) return;
 
     if (qr.payment_entry_name) {
       const bankTransactions = await this.frappeClient.getList("Bank Transaction", {
