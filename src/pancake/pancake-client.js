@@ -32,9 +32,17 @@ export default class PancakeClient {
 
   async getRequest(pageId, path, params = {}) {
     const pageAccessToken = await this.getPageAccessToken(pageId);
+
+    const cleanParams = {};
+    for (const [k, v] of Object.entries(params)) {
+      if (v !== undefined && v !== null) {
+        cleanParams[k] = v;
+      }
+    }
+
     const _params = new URLSearchParams({
-      page_access_token: pageAccessToken,
-      ...params
+      ...cleanParams,
+      page_access_token: pageAccessToken
     });
     const res = await fetch(`${this.baseUrl}${path}?${_params}`, {
       method: "GET"
@@ -53,5 +61,42 @@ export default class PancakeClient {
   async getMessages(pageId, conversationId, customer_id) {
     const path = `/public_api/v1/pages/${pageId}/conversations/${conversationId}/messages`;
     return await this.getRequest(pageId, path, { customer_id: customer_id });
+  }
+
+  async getPages() {
+    const params = new URLSearchParams({
+      access_token: this.accessToken
+    });
+    const res = await fetch(`${this.baseUrl}/v1/pages?${params}`);
+    return res.json();
+  }
+
+  async getConversations(pageId, sinceUnix, untilUnix, pageNumber) {
+    const params = {
+      since: sinceUnix,
+      until: untilUnix,
+      page_number: pageNumber,
+      order_by: "updated_at"
+    };
+    return await this.getRequest(pageId, `/public_api/v1/pages/${pageId}/conversations`, params);
+  }
+
+  async getPageCustomers(pageId, sinceUnix, untilUnix, pageNumber, pageSize) {
+    const params = {
+      since: sinceUnix,
+      until: untilUnix,
+      page_number: pageNumber,
+      page_size: pageSize,
+      order_by: "updated_at"
+    };
+    return await this.getRequest(pageId, `/public_api/v1/pages/${pageId}/page_customers`, params);
+  }
+
+  async getPageUsers(pageId) {
+    return await this.getRequest(pageId, `/public_api/v1/pages/${pageId}/users`);
+  }
+
+  async getPageTags(pageId) {
+    return await this.getRequest(pageId, `/public_api/v1/pages/${pageId}/tags`);
   }
 }
