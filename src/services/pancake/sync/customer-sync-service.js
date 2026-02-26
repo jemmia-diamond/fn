@@ -21,131 +21,67 @@ export default class CustomerSyncService {
   async syncCustomers() {
     try {
       console.warn("Starting syncCustomers...");
-
-      const now = dayjs().utc();
-      const untilUnix = now.unix();
-
-      const anyCustomer = await this.db.page_customer.findFirst({ select: { id: true } });
-      let sinceUnix;
-      if (!anyCustomer) {
-        sinceUnix = dayjs(INITIAL_SYNC_SINCE_DATE).unix();
-      } else {
-        sinceUnix = now.subtract(10, "minutes").unix();
-      }
+      const { sinceUnix, untilUnix } = await this.getSyncTimeframe();
 
       const pageData = await this.pancakeClient.getPages();
       if (isInvalidTokenError(pageData)) {
         throw new Error("Pancake API Error [102]: Invalid access_token during page query");
       }
 
-      const pageList = pageData?.categorized?.activated || [];
-      if (pageList.length === 0) {
+      const pages = pageData?.categorized?.activated || [];
+      if (pages.length === 0) {
         console.warn("No activated pages found.");
         return;
       }
 
-      for (let i = pageList.length - 1; i >= 0; i--) {
-        const page = pageList[i];
-        const pageId = page.id;
-        if (!pageId) continue;
-
-        let pageNumber = 1;
-        while (true) {
-          try {
-            const data = await this.pancakeClient.getPageCustomers(
-              pageId,
-              sinceUnix,
-              untilUnix,
-              pageNumber,
-              SYNC_PAGE_SIZE
-            );
-
-            if (isInvalidTokenError(data)) {
-              Sentry.captureException(new Error(`Pancake API Error [102]: Invalid access_token for page ${pageId}`), {
-                tags: { flow: "PancakeSync:customers", page_id: pageId }
-              });
-              break;
-            }
-
-            if (!data || !data.customers || data.customers.length === 0) {
-              break;
-            }
-
-            const customers = data.customers;
-            await this.upsertCustomers(customers, pageId);
-
-            if (customers.length < SYNC_PAGE_SIZE) {
-              break;
-            }
-
-            pageNumber++;
-          } catch (error) {
-            Sentry.captureException(error, {
-              tags: { flow: "PancakeSync:customers", page_id: pageId }
-            });
-            break;
-          }
-        }
+      for (let i = pages.length - 1; i >= 0; i--) {
+        await this.syncPageCustomers(pages[i].id, sinceUnix, untilUnix);
       }
 
       console.warn("Finished syncCustomers.");
     } catch (error) {
-      Sentry.captureException(error, {
-        tags: { flow: "PancakeSync:customers" }
-      });
+      this.captureException(error);
+    }
+  }
+
+  async syncPageCustomers(pageId, sinceUnix, untilUnix) {
+    if (!pageId) return;
+
+    let pageNumber = 1;
+    while (true) {
+      try {
+        const data = await this.pancakeClient.getPageCustomers(pageId, sinceUnix, untilUnix, pageNumber, SYNC_PAGE_SIZE);
+
+        if (isInvalidTokenError(data)) {
+          this.captureException(new Error(`Pancake API Error [102]: Invalid access_token for page ${pageId}`), pageId);
+          break;
+        }
+
+        const customers = data?.customers || [];
+        if (customers.length === 0) break;
+
+        await this.upsertCustomers(customers, pageId);
+
+        if (customers.length < SYNC_PAGE_SIZE) break;
+        pageNumber++;
+      } catch (error) {
+        this.captureException(error, pageId);
+        break;
+      }
     }
   }
 
   async upsertCustomers(customers, pageId) {
     const customerUpserts = [];
-
     for (const item of customers) {
       if (!item.id) continue;
+      const customerData = this.mapToCustomerModel(item, pageId);
 
-      let phoneNumbers = item.phone_numbers || [];
-      let phone = null;
-
-      if (!phoneNumbers || phoneNumbers.length === 0) {
-        const name = item.name;
-        if (name) {
-          const match = name.match(this.phoneRegex);
-          if (match) {
-            phone = match[0];
-            phoneNumbers = [phone];
-          }
-        }
-      } else {
-        phone = phoneNumbers[phoneNumbers.length - 1];
-      }
-
-      const customerData = {
-        uuid: crypto.randomUUID(),
-        id: item.id,
-        birthday: item.birthday || null,
-        phone_numbers: phoneNumbers,
-        phone: phone,
-        notes: item.notes || [],
-        can_inbox: item.can_inbox ?? null,
-        customer_id: item.customer_id || null,
-        gender: item.gender || null,
-        inserted_at: item.inserted_at ? dayjs.utc(item.inserted_at).toDate() : null,
-        lives_in: item.lives_in || null,
-        name: item.name || null,
-        updated_at: item.updated_at ? dayjs.utc(item.updated_at).toDate() : null,
-        page_id: pageId
-      };
-
-      customerUpserts.push(
-        this.db.page_customer.upsert({
-          where: { id: item.id },
-          create: customerData,
-          update: {
-            ...customerData,
-            uuid: undefined,
-            database_updated_at: dayjs().utc().toDate()
-          }
-        })
-      );
+      customerUpserts.push(this.db.page_customer.upsert({
+        where: { id: item.id },
+        create: customerData,
+        update: { ...customerData, uuid: undefined, database_updated_at: dayjs().utc().toDate() }
+      }));
     }
 
     const chunkSize = 50;
@@ -153,5 +89,61 @@ export default class CustomerSyncService {
       const chunk = customerUpserts.slice(i, i + chunkSize);
       await Promise.all(chunk);
     }
+  }
+
+  mapToCustomerModel(item, pageId) {
+    let phoneNumbers = item.phone_numbers || [];
+    let phone = null;
+
+    if (!phoneNumbers || phoneNumbers.length === 0) {
+      const name = item.name;
+      if (name) {
+        const match = name.match(this.phoneRegex);
+        if (match) {
+          phone = match[0];
+          phoneNumbers = [phone];
+        }
+      }
+    } else {
+      phone = phoneNumbers[phoneNumbers.length - 1];
+    }
+
+    return {
+      uuid: crypto.randomUUID(),
+      id: item.id,
+      birthday: item.birthday || null,
+      phone_numbers: phoneNumbers,
+      phone: phone,
+      notes: item.notes || [],
+      can_inbox: item.can_inbox ?? null,
+      customer_id: item.customer_id || null,
+      gender: item.gender || null,
+      inserted_at: item.inserted_at ? dayjs.utc(item.inserted_at).toDate() : null,
+      lives_in: item.lives_in || null,
+      name: item.name || null,
+      updated_at: item.updated_at ? dayjs.utc(item.updated_at).toDate() : null,
+      page_id: pageId
+    };
+  }
+
+  async getSyncTimeframe() {
+    const now = dayjs().utc();
+    const untilUnix = now.unix();
+
+    const anyCustomer = await this.db.page_customer.findFirst({ select: { id: true } });
+    let sinceUnix;
+    if (!anyCustomer) {
+      sinceUnix = dayjs(INITIAL_SYNC_SINCE_DATE).unix();
+    } else {
+      sinceUnix = now.subtract(10, "minutes").unix();
+    }
+
+    return { now, untilUnix, sinceUnix };
+  }
+
+  captureException(error, pageId = null) {
+    const tags = { flow: "PancakeSync:customers" };
+    if (pageId) tags.page_id = pageId;
+    Sentry.captureException(error, { tags });
   }
 }

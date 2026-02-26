@@ -23,41 +23,39 @@ export default class TagSyncService {
         throw new Error("Pancake API Error [102]: Invalid access_token during page query");
       }
 
-      const pageList = pageData?.categorized?.activated || [];
-      if (pageList.length === 0) {
+      const pages = pageData?.categorized?.activated || [];
+      if (pages.length === 0) {
         console.warn("No activated pages found.");
         return;
       }
 
-      for (const page of pageList) {
-        const pageId = page.id;
-        if (!pageId) continue;
-
-        try {
-          const data = await this.pancakeClient.getPageTags(pageId);
-
-          if (isInvalidTokenError(data)) {
-            Sentry.captureException(new Error(`Pancake API Error [102]: Invalid access_token for tags in page ${pageId}`), {
-              tags: { flow: "PancakeSync:tags", page_id: pageId }
-            });
-            continue;
-          }
-
-          if (data && data.tags && data.tags.length > 0) {
-            await this.upsertTags(data.tags, pageId);
-          }
-        } catch (error) {
-          Sentry.captureException(error, {
-            tags: { flow: "PancakeSync:tags", page_id: pageId }
-          });
-        }
+      for (const page of pages) {
+        await this.syncPageTags(page.id);
       }
 
       console.warn("Finished syncTags.");
     } catch (error) {
-      Sentry.captureException(error, {
-        tags: { flow: "PancakeSync:tags" }
-      });
+      this.captureException(error);
+    }
+  }
+
+  async syncPageTags(pageId) {
+    if (!pageId) return;
+
+    try {
+      const data = await this.pancakeClient.getPageTags(pageId);
+
+      if (isInvalidTokenError(data)) {
+        this.captureException(new Error(`Pancake API Error [102]: Invalid access_token for tags in page ${pageId}`), pageId);
+        return;
+      }
+
+      const tags = data?.tags || [];
+      if (tags.length > 0) {
+        await this.upsertTags(tags, pageId);
+      }
+    } catch (error) {
+      this.captureException(error, pageId);
     }
   }
 
@@ -70,29 +68,13 @@ export default class TagSyncService {
       if (!tagId || duplicatesKey.has(tagId)) continue;
       duplicatesKey.add(tagId);
 
-      tagUpserts.push(
-        this.db.tag_page.upsert({
-          where: {
-            page_id_id: {
-              page_id: String(pageId),
-              id: tagId
-            }
-          },
-          create: {
-            id: tagId,
-            page_id: String(pageId),
-            tag_label: item.text,
-            description: item.description,
-            database_created_at: dayjs().utc().toDate(),
-            database_updated_at: dayjs().utc().toDate()
-          },
-          update: {
-            tag_label: item.text,
-            description: item.description,
-            database_updated_at: dayjs().utc().toDate()
-          }
-        })
-      );
+      const tagData = this.mapToTagModel(item, pageId, tagId);
+
+      tagUpserts.push(this.db.tag_page.upsert({
+        where: { page_id_id: { page_id: String(pageId), id: tagId } },
+        create: { ...tagData, database_created_at: dayjs().utc().toDate() },
+        update: { ...tagData, database_updated_at: dayjs().utc().toDate() }
+      }));
 
       if (tagUpserts.length >= 50) {
         await Promise.all(tagUpserts);
@@ -103,5 +85,21 @@ export default class TagSyncService {
     if (tagUpserts.length > 0) {
       await Promise.all(tagUpserts);
     }
+  }
+
+  mapToTagModel(item, pageId, tagId) {
+    return {
+      id: tagId,
+      page_id: String(pageId),
+      tag_label: item.text,
+      description: item.description,
+      database_updated_at: dayjs().utc().toDate()
+    };
+  }
+
+  captureException(error, pageId = null) {
+    const tags = { flow: "PancakeSync:tags" };
+    if (pageId) tags.page_id = pageId;
+    Sentry.captureException(error, { tags });
   }
 }
