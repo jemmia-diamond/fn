@@ -207,3 +207,29 @@ export function shouldSkipSharedPayment(referenceName, currentOrderName, isSplit
   const isShared = referenceName !== currentOrderName;
   return isShared && isSplitOrder && !isFirstSplitOrder;
 }
+
+/**
+ * Fetch Sales Orders from ERP based on Haravan Order ID
+ * @param {FrappeClient} frappeClient - Frappe Client instance
+ * @param {string|number} haravanOrderId - The Haravan order ID
+ * @param {Array<string>} [fields=["name", "haravan_order_id", "split_order_group", "cancelled_status"]] - The fields to retrieve
+ * @returns {Promise<Array<Object>>} A list of matching Sales Orders
+ */
+export async function getSalesOrdersByHaravanOrderId(
+  frappeClient,
+  haravanOrderId,
+  fields = ["name", "haravan_order_id", "split_order_group", "cancelled_status"]
+) {
+  if (!haravanOrderId) {
+    return [];
+  }
+
+  const salesOrders = await frappeClient.getList("Sales Order", {
+    filters: [
+      ["order_number", "=", String(haravanOrderId)]
+    ],
+    fields: fields
+  });
+
+  return Array.isArray(salesOrders) ? salesOrders : [];
+}
