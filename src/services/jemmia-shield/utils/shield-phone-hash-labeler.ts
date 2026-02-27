@@ -58,7 +58,7 @@ export class ShieldPhoneHashLabeler {
       const before = result.substring(0, matchIndex + maskedStr.length);
       const after = result.substring(matchIndex + maskedStr.length);
 
-      result = `${before} \`#${label}\`${after}`;
+      result = `${before} #${label}${after}`;
     }
     return result;
   }
