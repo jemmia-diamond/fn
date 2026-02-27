@@ -1,4 +1,3 @@
-import * as Sentry from "@sentry/cloudflare";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import Database from "services/database";
@@ -7,10 +6,10 @@ import * as crypto from "crypto";
 
 dayjs.extend(utc);
 
-export default class HaravanVariantSyncService {
+export default class VariantSyncService {
   static RATE_LIMIT_DELAY_MS = 500;
   static MAX_RETRY_AFTER_SECONDS = 3;
-
+  static DEFAULT_VARIANT_SYNC_KV_KEY = "ecommerce_variant_sync:last_date";
   constructor(env) {
     this.env = env;
     this.db = Database.instance(env);
@@ -22,7 +21,7 @@ export default class HaravanVariantSyncService {
 
   async syncVariants() {
     const kv = this.env.FN_KV;
-    const KV_KEY = "haravan_variant_sync:last_date";
+    const KV_KEY = VariantSyncService.DEFAULT_VARIANT_SYNC_KV_KEY;
     const toDate = dayjs().utc().format("YYYY-MM-DDTHH:mm:ss[Z]");
     const lastSyncDate = await kv.get(KV_KEY);
 
@@ -38,11 +37,11 @@ export default class HaravanVariantSyncService {
 
       await this._fetchAndProcessVariants(haravanClient, updatedAtMin);
       await kv.put(KV_KEY, toDate);
-    } catch (error) {
+    } catch {
       if (lastSyncDate && dayjs(toDate).diff(dayjs(lastSyncDate), "hour") >= 1) {
         await kv.put(KV_KEY, toDate);
       }
-      Sentry.captureException(error);
+      return;
     }
   }
 
