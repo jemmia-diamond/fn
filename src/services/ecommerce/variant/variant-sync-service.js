@@ -94,58 +94,50 @@ export default class VariantSyncService {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
+  _mapVariant(variant, product) {
+    return {
+      id: variant.id ? BigInt(variant.id) : null,
+      product_id: variant.product_id ? BigInt(variant.product_id) : null,
+      published_scope: product.published_scope,
+      handle: product.handle,
+      product_type: product.product_type,
+      template_suffix: product.template_suffix,
+      product_title: product.title,
+      product_vendor: product.vendor,
+      barcode: variant.barcode,
+      compare_at_price: variant.compare_at_price ? parseFloat(variant.compare_at_price) : null,
+      created_at: variant.created_at ? dayjs(variant.created_at).toDate() : null,
+      fulfillment_service: variant.fulfillment_service,
+      grams: variant.grams,
+      inventory_management: variant.inventory_management,
+      inventory_policy: variant.inventory_policy,
+      inventory_quantity: variant.inventory_quantity,
+      position: variant.position,
+      price: variant.price ? parseFloat(variant.price) : null,
+      requires_shipping: variant.requires_shipping === true,
+      sku: variant.sku,
+      taxable: variant.taxable === true,
+      title: variant.title,
+      updated_at: variant.updated_at ? dayjs(variant.updated_at).toDate() : null,
+      image_id: variant.image_id ? BigInt(variant.image_id) : null,
+      option1: variant.option1,
+      option2: variant.option2,
+      option3: variant.option3,
+      qty_onhand: variant?.inventory_advance?.qty_onhand,
+      qty_commited: variant?.inventory_advance?.qty_commited,
+      qty_available: variant?.inventory_advance?.qty_available,
+      qty_incoming: variant?.inventory_advance?.qty_incoming
+    };
+  }
+
   async _processVariantBatch(products, updatedAtMin) {
     const variantsToUpsert = [];
     const minDate = dayjs(updatedAtMin);
 
     for (const product of products) {
-      const publishedScope = product.published_scope;
-      const handle = product.handle;
-      const productType = product.product_type;
-      const templateSuffix = product.template_suffix;
-      const productTitle = product.title;
-      const productVendor = product.vendor;
-      const variants = product?.variants;
-      for (const variant of variants) {
-        const qty_onhand = variant?.inventory_advance?.qty_onhand;
-        const qty_commited = variant?.inventory_advance?.qty_commited;
-        const qty_available = variant?.inventory_advance?.qty_available;
-        const qty_incoming = variant?.inventory_advance?.qty_incoming;
-        const variantUpdatedAt = dayjs(variant.updated_at);
-        if (variantUpdatedAt.isAfter(minDate)) {
-          variantsToUpsert.push({
-            id: variant.id ? BigInt(variant.id) : null,
-            product_id: variant.product_id ? BigInt(variant.product_id) : null,
-            published_scope: publishedScope,
-            handle: handle,
-            product_type: productType,
-            template_suffix: templateSuffix,
-            product_title: productTitle,
-            product_vendor: productVendor,
-            barcode: variant.barcode,
-            compare_at_price: variant.compare_at_price ? parseFloat(variant.compare_at_price) : null,
-            created_at: variant.created_at ? dayjs(variant.created_at).toDate() : null,
-            fulfillment_service: variant.fulfillment_service,
-            grams: variant.grams,
-            inventory_management: variant.inventory_management,
-            inventory_policy: variant.inventory_policy,
-            inventory_quantity: variant.inventory_quantity,
-            position: variant.position,
-            price: variant.price ? parseFloat(variant.price) : null,
-            requires_shipping: variant.requires_shipping === true,
-            sku: variant.sku,
-            taxable: variant.taxable === true,
-            title: variant.title,
-            updated_at: variant.updated_at ? dayjs(variant.updated_at).toDate() : null,
-            image_id: variant.image_id ? BigInt(variant.image_id) : null,
-            option1: variant.option1,
-            option2: variant.option2,
-            option3: variant.option3,
-            qty_onhand,
-            qty_commited,
-            qty_available,
-            qty_incoming
-          });
+      for (const variant of product?.variants || []) {
+        if (dayjs(variant.updated_at).isAfter(minDate)) {
+          variantsToUpsert.push(this._mapVariant(variant, product));
         }
       }
     }
