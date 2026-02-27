@@ -3,7 +3,7 @@ import PancakeClient from "pancake/pancake-client";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import * as Sentry from "@sentry/cloudflare";
-import { isInvalidTokenError } from "pancake/utils";
+import { isInvalidTokenError, sleep } from "pancake/utils";
 
 dayjs.extend(utc);
 
@@ -43,6 +43,7 @@ export default class PageSyncService {
 
       for (const page of pageList) {
         await this.syncPageUsers(page.id);
+        await sleep(1000);
       }
 
       console.warn("Finished syncPages.");

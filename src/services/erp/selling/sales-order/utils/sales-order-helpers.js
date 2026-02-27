@@ -38,7 +38,7 @@ export async function fetchSalesOrdersFromERP(frappeClient, doctype, fromDate, t
       const salesOrderPurposes = await fetchChildRecordsFromERP(frappeClient, orderNames, "tabSales Order Purpose");
       const salesOrderProductCategories = await fetchChildRecordsFromERP(frappeClient, orderNames, "tabSales Order Product Category");
       const debtHistory = await fetchChildRecordsFromERP(frappeClient, orderNames, "tabOrder and Debt Tracking");
-      const paymentEntries = await fetchChildRecordsFromERP(frappeClient, orderNames, "tabPayment Entry Reference", { parentfield: "payment_entries" });
+      const paymentEntries = await fetchChildRecordsFromERP(frappeClient, orderNames, "tabPayment Entry Reference");
 
       // group records by sales order name
       const groupByParent = arr => arr.reduce((acc, item) => {
