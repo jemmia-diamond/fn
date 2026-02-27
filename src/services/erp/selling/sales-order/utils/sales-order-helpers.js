@@ -9,6 +9,13 @@ import { fetchChildRecordsFromERP } from "src/services/utils/sql-helpers";
 
 dayjs.extend(utc);
 
+export const getItemPromotions = (item) => {
+  if (item.new_promotions && typeof item.new_promotions === "string" && item.new_promotions.startsWith("[")) {
+    try { return JSON.parse(item.new_promotions) || []; } catch { return []; }
+  }
+  return [item.promotion_1, item.promotion_2, item.promotion_3, item.promotion_4, item.promotion_5].filter(Boolean);
+};
+
 const CHUNK_SIZE = 30;
 
 export async function fetchSalesOrdersFromERP(frappeClient, doctype, fromDate, toDate, pageSize) {
