@@ -39,6 +39,7 @@ export default {
       await ERP.CRM.LeadService.cronSyncLeadsToDatabase(env);
       await new ProductQuote.DesignCodeService(env).syncDesignCodeToLark();
       await new Ecommerce.VariantSyncService(env).syncVariants();
+      await ERP.Selling.BuybackExchangeSyncService.cronSync(env);
       break;
     case "*/15 * * * *": // At every 15th minute
       await ERP.Contacts.ContactService.cronSyncContactsToDatabase(env);
