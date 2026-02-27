@@ -6,6 +6,7 @@ import PurchasePurposeService from "services/erp/selling/purchase_purpose/purcha
 import ProductCategoryService from "services/erp/selling/product-category/product-category";
 import PromotionService from "services/erp/selling/promotion/promotion";
 import SalesOrderItemService from "services/erp/selling/sales-order-item/sales-order-item";
+import BuybackExchangeSyncService from "services/erp/selling/buyback-exchange/buyback-exchange-sync-service";
 
 export default {
   SalesOrderService: SalesOrderService,
@@ -15,5 +16,6 @@ export default {
   PurchasePurposeService: PurchasePurposeService,
   ProductCategoryService: ProductCategoryService,
   PromotionService: PromotionService,
-  SalesOrderItemService: SalesOrderItemService
+  SalesOrderItemService: SalesOrderItemService,
+  BuybackExchangeSyncService: BuybackExchangeSyncService
 };
