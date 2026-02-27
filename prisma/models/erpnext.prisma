@@ -698,3 +698,65 @@ model erpnextAddress {
   @@map("addresses")
   @@schema("erpnext")
 }
+
+model erpnextBuybackExchange {
+  uuid             String    @id @default(uuid()) @db.Uuid
+  name             String    @unique @db.VarChar(255)
+  owner            String?   @db.VarChar(255)
+  creation         DateTime? @db.Timestamp(6)
+  modified         DateTime? @db.Timestamp(6)
+  modified_by      String?   @db.VarChar(255)
+  docstatus        Int?
+  idx              Int?
+  lark_instance_id String?   @db.VarChar(255)
+  instance_type    String?   @db.VarChar(255)
+  status           String?   @db.VarChar(50)
+  submitted_date   DateTime? @db.Timestamp(6)
+  customer_name    String?   @db.VarChar(255)
+  phone_number     String?   @db.VarChar(50)
+  national_id      String?   @db.VarChar(255)
+  order_code       String?   @db.VarChar(255)
+  new_order_code   String?   @db.VarChar(255)
+  refund_amount    Decimal?  @db.Decimal(18, 6)
+  reason           String?
+  products_info    Json?
+  database_created_at DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at DateTime? @db.Timestamp(6)
+
+  @@index([order_code])
+  @@index([new_order_code])
+  @@map("buyback_exchanges")
+  @@schema("erpnext")
+}
+
+model erpnextBuybackExchangeItem {
+  uuid                    String    @id @default(uuid()) @db.Uuid
+  name                    String    @unique @db.VarChar(255)
+  owner                   String?   @db.VarChar(255)
+  creation                DateTime? @db.Timestamp(6)
+  modified                DateTime? @db.Timestamp(6)
+  modified_by             String?   @db.VarChar(255)
+  docstatus               Int?
+  idx                     Int?
+  product_name            String?   @db.VarChar(255)
+  item_code               String?   @db.VarChar(255)
+  order_code              String?   @db.VarChar(255)
+  prev_sales_order        String?   @db.VarChar(255)
+  prev_sales_order_item   String?   @db.VarChar(255)
+  current_sales_order     String?   @db.VarChar(255)
+  sale_price              Decimal?  @db.Decimal(18, 6)
+  buyback_percentage      Decimal?  @db.Decimal(18, 6)
+  calculated_buyback_price Decimal? @db.Decimal(18, 6)
+  buyback_price           Decimal?  @db.Decimal(18, 6)
+  parent                  String?   @db.VarChar(255)
+  parentfield             String?   @db.VarChar(255)
+  parenttype              String?   @db.VarChar(255)
+  database_created_at     DateTime? @default(now()) @db.Timestamp(6)
+  database_updated_at     DateTime? @db.Timestamp(6)
+
+  @@index([parent])
+  @@index([order_code])
+  @@index([current_sales_order])
+  @@map("buyback_exchange_items")
+  @@schema("erpnext")
+}
