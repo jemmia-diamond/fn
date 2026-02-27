@@ -1,40 +1,59 @@
+import { createAxiosClient } from "services/utils/http-client";
+
 export default class PancakeClient {
   constructor(accessToken) {
     this.baseUrl = "https://pages.fm/api";
     this.accessToken = accessToken;
-    this.headers = { "Content-Type": "application/json" };
-  }
+    this.pageAccessTokensCache = new Map();
 
-  async safeFetch(url, options = {}) {
-    const res = await fetch(url, options);
-    const text = await res.text();
-
-    let data;
-    try {
-      data = JSON.parse(text);
-    } catch {
-      data = text;
-    }
-
-    if (!res.ok) {
-      if (typeof data === "object" && data && data.error_code === 102) {
-        return data; // Allow 102 Invalid access_token to be handled by the services
+    this.client = createAxiosClient({
+      baseURL: this.baseUrl,
+      headers: { "Content-Type": "application/json" },
+      timeout: 30000
+    }, {
+      retries: 3,
+      retryDelay: (retryCount) => retryCount * 1000,
+      retryCondition: (error) => {
+        return error.response?.status === 429 || error.response?.status >= 500 || error.code === "ECONNABORTED";
       }
-      throw new Error(`Pancake HTTP Error ${res.status}: ${typeof data === "object" ? JSON.stringify(data) : data}`);
-    }
+    });
 
-    return data;
+    this.client.interceptors.response.use(
+      (response) => {
+        const data = response.data;
+        if (data && data.success === false && data.error_code === 102) {
+          return response;
+        }
+        return response;
+      },
+      (error) => {
+        if (error.response && error.response.data) {
+          const data = error.response.data;
+          throw new Error(`Pancake API Error ${error.response.status}: ${typeof data === "object" ? JSON.stringify(data) : data}`);
+        }
+        throw error;
+      }
+    );
   }
 
   async getPageAccessToken(pageId) {
+    if (this.pageAccessTokensCache.has(pageId)) {
+      return this.pageAccessTokensCache.get(pageId);
+    }
+
     const params = new URLSearchParams({
       access_token: this.accessToken
     });
     const path = `/v1/pages/${pageId}/generate_page_access_token?${params}`;
-    const data = await this.safeFetch(`${this.baseUrl}${path}`, {
-      method: "POST"
-    });
-    return data?.page_access_token;
+
+    const response = await this.client.post(path);
+    const pageAccessToken = response.data?.page_access_token;
+
+    if (pageAccessToken) {
+      this.pageAccessTokensCache.set(pageId, pageAccessToken);
+    }
+
+    return pageAccessToken;
   }
 
   async postRequest(pageId, path, data) {
@@ -44,11 +63,9 @@ export default class PancakeClient {
     const params = new URLSearchParams({
       page_access_token: pageAccessToken
     });
-    return await this.safeFetch(`${this.baseUrl}${path}?${params}`, {
-      method: "POST",
-      headers: this.headers,
-      body: JSON.stringify(data)
-    });
+
+    const response = await this.client.post(`${path}?${params}`, data);
+    return response.data;
   }
 
   async getRequest(pageId, path, params = {}) {
@@ -66,9 +83,9 @@ export default class PancakeClient {
       ...cleanParams,
       page_access_token: pageAccessToken
     });
-    return await this.safeFetch(`${this.baseUrl}${path}?${_params}`, {
-      method: "GET"
-    });
+
+    const response = await this.client.get(`${path}?${_params}`);
+    return response.data;
   }
 
   async assignConversation(pageId, conversationId, assigneeIds) {
@@ -88,7 +105,8 @@ export default class PancakeClient {
     const params = new URLSearchParams({
       access_token: this.accessToken
     });
-    return await this.safeFetch(`${this.baseUrl}/v1/pages?${params}`);
+    const response = await this.client.get(`/v1/pages?${params}`);
+    return response.data;
   }
 
   async getConversations(pageId, sinceUnix, untilUnix, pageNumber) {

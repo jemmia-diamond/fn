@@ -206,8 +206,13 @@ export default class PancakeLeadSyncService {
       const result = await this.db.$queryRaw(query);
       return result;
     } catch (error) {
-      console.warn("Error fetching leads data:", error);
-      throw error;
+      Sentry.captureException(error, {
+        tags: {
+          service: "pancake-lead-sync",
+          flow: "getLeadData"
+        }
+      });
+      return [];
     }
   }
 
