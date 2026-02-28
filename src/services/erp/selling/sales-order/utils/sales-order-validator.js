@@ -154,7 +154,7 @@ const _validateItemLevelPromotions = (lineItems, promotionMap) => {
 
     const diff = Math.abs(expectedLineAmount - actualLineAmount);
 
-    if (false && diff > TOLERANCE) {
+    if (diff > TOLERANCE) {
       errors.push(`[Dòng ${i + 1}] Sản phẩm ${item.item_name} giá sai lệch ${numberToCurrency(diff)}. Giá mong đợi: ${numberToCurrency(expectedLineAmount)}, Giá thực tế: ${numberToCurrency(actualLineAmount)}.`);
     }
   }
@@ -197,7 +197,7 @@ const _validateOrderLevelPromotions = (salesOrderData, lineItems, promotionMap) 
   const actualGrandTotal = salesOrderData.grand_total;
   const diff = Math.abs(expectedGrandTotal - actualGrandTotal);
 
-  if (false && diff > TOLERANCE) {
+  if (diff > TOLERANCE) {
     return {
       isValid: false,
       message: `Tổng đơn hàng sai lệch ${numberToCurrency(diff)}. Giá mong đợi: ${numberToCurrency(expectedGrandTotal)}, Giá thực tế: ${numberToCurrency(actualGrandTotal)}.`
