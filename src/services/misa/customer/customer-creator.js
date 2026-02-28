@@ -9,6 +9,7 @@ dayjs.extend(utc);
 
 const DEFAULT_BRANCH_ID = "01ea2abc-81da-4386-9f2b-673796bd520d";
 const TECH_TEAM = "tech@jemmia.vn";
+const IGNORE_TAGS = ["nội bộ"];
 
 export default class CustomerCreator {
   constructor(env) {
@@ -41,6 +42,9 @@ export default class CustomerCreator {
   }
 
   async syncCustomer(customerData) {
+    const tags = customerData?.tags?.split(",") || [];
+    if (tags.some(tag => IGNORE_TAGS.includes(tag))) return;
+
     const haravanId = String(customerData.id);
 
     const existing = await this.db.misaCustomer.findUnique({
