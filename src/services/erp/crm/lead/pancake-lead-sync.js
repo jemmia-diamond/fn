@@ -27,12 +27,14 @@ export default class PancakeLeadSyncService {
     }
 
     const updatedTime = lastSyncTime;
+    const currentTime = dayjs().utc().subtract(1, "minute").format("YYYY-MM-DD HH:mm:ss");
     const defaultTimeMark = this.DEFAULT_TIME_MARK;
 
     console.warn(`Syncing leads updated since ${updatedTime}`);
 
     let offset = 0;
     let totalProcessed = 0;
+    let hasError = false;
 
     while (true) {
       const leadsData = await this.getLeadData(offset, this.BATCH_SIZE, updatedTime, defaultTimeMark);
@@ -74,6 +76,9 @@ export default class PancakeLeadSyncService {
                   conversation_id: conversationId,
                   frappe_name_id: frappeNameId
                 });
+              } else if (result && result.name === null) {
+                console.warn(`Lead insertion failed for conversation ${result.conversation_id} with error ${result.name}`);
+                hasError = true;
               }
             });
             if (toInsertLeads.length > 0) {
@@ -81,10 +86,12 @@ export default class PancakeLeadSyncService {
             }
           } else {
             console.warn("Invalid response from insert_many_leads", insertResponse);
+            hasError = true;
           }
         } catch (error) {
           console.warn("Error inserting leads batch:", error);
           Sentry.captureException(error);
+          hasError = true;
         }
       }
 
@@ -101,25 +108,32 @@ export default class PancakeLeadSyncService {
                   conversation_id: result.conversation_id,
                   frappe_name_id: result.name
                 });
+              } else if (result && result.name === null) {
+                console.warn(`Lead update failed for conversation ${result.conversation_id} with error ${result.name}`);
+                hasError = true;
               }
             });
 
             if (toUpsertLeads.length > 0) {
               await this.saveSyncedLeadsBatch(toUpsertLeads);
             }
+          } else if (updateResponse && updateResponse.failed_docs && updateResponse.failed_docs.length > 0) {
+            console.warn(`Lead batch update had ${updateResponse.failed_docs.length} failures.`);
+            hasError = true;
           }
         } catch (error) {
           console.warn("Error updating leads batch:", error);
           Sentry.captureException(error);
+          hasError = true;
         }
       }
     }
 
     // Save new checkpoint
-    const currentTime = dayjs().utc().format("YYYY-MM-DD HH:mm:ss");
-    await this.env.FN_KV.put(this.KV_KEY, currentTime);
-
-    console.warn(`Finished sync. Total processed: ${totalProcessed}. Checkpoint saved: ${currentTime}`);
+    if (!hasError) {
+      await this.env.FN_KV.put(this.KV_KEY, currentTime);
+      console.warn(`Finished sync. Total processed: ${totalProcessed}. Checkpoint saved: ${currentTime}`);
+    }
   }
 
   async getLeadData(offset, batchSize, updatedTime, defaultTimeMark) {
