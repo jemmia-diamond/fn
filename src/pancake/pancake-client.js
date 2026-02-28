@@ -9,10 +9,11 @@ export default class PancakeClient {
     this.client = createAxiosClient({
       baseURL: this.baseUrl,
       headers: { "Content-Type": "application/json" },
-      timeout: 30000
+      timeout: 60000
     }, {
       retries: 3,
       retryDelay: (retryCount) => retryCount * 1000,
+      shouldResetTimeout: true,
       retryCondition: (error) => {
         return error.response?.status === 429 || error.response?.status >= 500 || error.code === "ECONNABORTED";
       }

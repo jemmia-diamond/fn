@@ -1,6 +1,7 @@
 // FrappeClient.js
 import * as Sentry from "@sentry/cloudflare";
 import { createAxiosClient } from "services/utils/http-client";
+import axiosRetry from "axios-retry";
 
 const DEFAULT_HEADERS = { Accept: "application/json" };
 
@@ -10,18 +11,31 @@ export default class FrappeClient {
     this.verify = verify;
     this.headers = { ...DEFAULT_HEADERS };
     this.canDownload = [];
-    this.timeout = 30000;
+    this.timeout = 60000;
 
     if (apiKey && apiSecret) {
       const token = btoa(`${apiKey}:${apiSecret}`);
       this.headers["Authorization"] = `Basic ${token}`;
     }
 
-    this.axiosClient = createAxiosClient({
-      baseURL: url,
-      headers: this.headers,
-      timeout: this.timeout
-    });
+    this.axiosClient = createAxiosClient(
+      {
+        baseURL: url,
+        headers: this.headers,
+        timeout: this.timeout
+      },
+      {
+        retries: 3,
+        retryDelay: (retryCount) => retryCount * 1000,
+        shouldResetTimeout: true,
+        retryCondition: (error) => {
+          return axiosRetry.isNetworkOrIdempotentRequestError(error) ||
+            error.code === "ECONNABORTED" ||
+            (error.response && error.response.status === 429) ||
+            (error.response && error.response.status >= 500);
+        }
+      }
+    );
 
     if (username && password) {
       this.login(username, password);
