@@ -12,6 +12,9 @@ export class DebounceDurableObject extends DurableObject {
       [DebounceActions.SEND_TO_MESSAGE_SUMMARY_QUEUE]: async (data) => {
         await this.env["MESSAGE_SUMMARY_QUEUE"].send(data);
       },
+      [DebounceActions.SEND_TO_MESSAGE_LAST_CUSTOMER_QUEUE]: async (data) => {
+        await this.env["MESSAGE_LAST_CUSTOMER_QUEUE"].send(data);
+      },
       [DebounceActions.SEND_TO_HARAVAN_PRODUCT_QUEUE]: async (data) => {
         await this.env["HARAVAN_PRODUCT_QUEUE"].send(data);
       },
