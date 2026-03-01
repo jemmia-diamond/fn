@@ -216,6 +216,10 @@
       {
         "queue": "erpnext-selling",
         "binding": "ERPNEXT_SELLING_QUEUE"
+      },
+      {
+        "queue": "erpnext-order-creation",
+        "binding": "ERPNEXT_ORDER_CREATION_QUEUE"
       }
     ],
     "consumers": [
@@ -244,10 +248,16 @@
         "queue": "erpnext-sales-order"
       },
       {
-        "queue": "erpnext-payment-entry"
+        "queue": "erpnext-payment-entry",
+        "retry_delay": 600,
+        "max_retries": 6,
+        "max_batch_size": 1
       },
       {
-        "queue": "misa"
+        "queue": "misa",
+        "retry_delay": 600,
+        "max_retries": 6,
+        "max_batch_size": 1
       },
       {
         "queue": "sepay-transaction"
@@ -260,6 +270,12 @@
       },
       {
         "queue": "erpnext-selling"
+      },
+      {
+        "queue": "erpnext-order-creation",
+        "retry_delay": 600,
+        "max_retries": 6,
+        "max_batch_size": 1
       }
     ]
   },

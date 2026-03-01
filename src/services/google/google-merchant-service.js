@@ -33,7 +33,7 @@ export default class GoogleMerchantService {
 
     try {
       const headers = await this._getHeaders();
-      const url = `/datasources/v1beta/accounts/${this.merchantId}/dataSources`;
+      const url = `/datasources/v1/accounts/${this.merchantId}/dataSources`;
       const response = await this.client.get(url, { headers });
 
       const contentApiSource = response.data.dataSources?.find(ds => ds.displayName === "Content API");
@@ -79,7 +79,7 @@ export default class GoogleMerchantService {
     try {
       const headers = await this._getHeaders();
       const dataSourceId = await this._getDataSourceId();
-      const url = `/products/v1beta/accounts/${this.merchantId}/productInputs:insert?dataSource=accounts/${this.merchantId}/dataSources/${dataSourceId}`;
+      const url = `/products/v1/accounts/${this.merchantId}/productInputs:insert?dataSource=accounts/${this.merchantId}/dataSources/${dataSourceId}`;
 
       const response = await this.client.post(url, productData, { headers });
 
@@ -93,7 +93,7 @@ export default class GoogleMerchantService {
   async deleteProduct(productId) {
     try {
       const headers = await this._getHeaders();
-      const url = `/products/v1beta/accounts/${this.merchantId}/productInputs/${productId}`;
+      const url = `/products/v1/accounts/${this.merchantId}/productInputs/${productId}`;
 
       await this.client.delete(url, { headers });
 

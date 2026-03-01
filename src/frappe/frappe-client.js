@@ -10,7 +10,7 @@ export default class FrappeClient {
     this.verify = verify;
     this.headers = { ...DEFAULT_HEADERS };
     this.canDownload = [];
-    this.timeout = 30000;
+    this.timeout = 60000;
 
     if (apiKey && apiSecret) {
       const token = btoa(`${apiKey}:${apiSecret}`);

@@ -143,11 +143,7 @@ export default class SalesOrderService {
     const messages = batch.messages;
     for (const message of messages) {
       const salesOrderData = message.body;
-      try {
-        await salesOrderService.processHaravanOrder(salesOrderData);
-      } catch (error) {
-        Sentry.captureException(error);
-      }
+      await salesOrderService.processHaravanOrder(salesOrderData);
     }
   }
 

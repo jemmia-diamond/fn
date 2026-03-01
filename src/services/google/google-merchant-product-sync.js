@@ -129,7 +129,6 @@ export default class GoogleMerchantProductSyncService {
       const allMaterials = [...new Set(product.variants.map(v => v.material_color).filter(Boolean))].join(", ");
 
       return {
-        channel: "ONLINE",
         offerId: offerId.toLowerCase(),
         contentLanguage: "vi",
         feedLabel: "VN",
@@ -182,7 +181,6 @@ export default class GoogleMerchantProductSyncService {
       const itemGroupId = diamond.product_id ? diamond.product_id.toString() : `${diamond.variant_id}`;
 
       return {
-        channel: "ONLINE",
         offerId: offerId.toLowerCase(),
         contentLanguage: "vi",
         feedLabel: "VN",

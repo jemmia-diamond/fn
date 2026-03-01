@@ -50,7 +50,7 @@ export default class ProductService {
     const offset = (page - 1) * limit;
     const result = await this.db.$queryRaw`
       SELECT
-        CAST(p.haravan_product_id AS INT) AS id,
+        CAST(p.haravan_product_id AS DOUBLE PRECISION) AS id,
         p.title,
         d.design_code,
         p.handle,
@@ -82,12 +82,12 @@ export default class ProductService {
             v.haravan_product_id,
             JSON_AGG(
               JSON_BUILD_OBJECT(
-                'id', CAST(v.haravan_variant_id AS INT),
+                'id', CAST(v.haravan_variant_id AS DOUBLE PRECISION),
                 'fineness', v.fineness,
                 'material_color', v.material_color,
                 'ring_size', v.ring_size,
-                'price', CAST(v.price AS INT),
-                'price_compare_at', CAST(v.price_compare_at AS INT)
+                'price', CAST(v.price AS DOUBLE PRECISION),
+                'price_compare_at', CAST(v.price_compare_at AS DOUBLE PRECISION)
               )
             ) AS variants
           FROM ecom.materialized_variants v

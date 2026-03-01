@@ -2,7 +2,6 @@ import FrappeClient from "src/frappe/frappe-client";
 import Database from "src/services/database";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
-import * as Sentry from "@sentry/cloudflare";
 import PaymentService from "services/payment";
 import * as Constants from "services/erp/accounting/payment-entry/constants";
 import LinkQRWithRealOrderService from "services/payment/qr_payment/link-qr-with-real-order-service";
@@ -237,10 +236,7 @@ export default class PaymentEntryService {
         custom_transfer_note: existingPayment.transfer_note,
         custom_transfer_status: PaymentEntryStatus.PENDING,
         paid_amount: parseFloat(existingPayment.transfer_amount)
-      }, "name").catch((error) => {
-        Sentry.captureException(error);
-      });
-
+      }, "name");
       paymentEntry.paid_amount = existingPayment.transfer_amount;
     }
 
@@ -375,9 +371,7 @@ export default class PaymentEntryService {
         custom_transaction_id: qrPayment.id,
         custom_transfer_note: qrPayment.transfer_note,
         custom_transfer_status: qrPayment.transfer_status
-      }, "name").catch((error) => {
-        Sentry.captureException(error);
-      });
+      }, "name");
     }
 
     if (qrPayment.payment_entry_name !== paymentEntry.name) return;
@@ -481,16 +475,12 @@ export default class PaymentEntryService {
       const erpTopic = messageBody.erpTopic || "";
       const rawPaymentEntry = messageBody.data;
 
-      try {
-        if (erpTopic === Constants.PAYMENT_ENTRY_WEBHOOK_TOPIC.CREATE) {
-          await paymentEntryService.createPaymentEntry(rawPaymentEntry);
-        } else if (erpTopic === Constants.PAYMENT_ENTRY_WEBHOOK_TOPIC.UPDATE) {
-          await paymentEntryService.updatePaymentEntry(rawPaymentEntry);
-        } else if (erpTopic === Constants.PAYMENT_ENTRY_WEBHOOK_TOPIC.VERIFY) {
-          await paymentEntryService.verifyPaymentEntryBankTransaction(rawPaymentEntry);
-        }
-      } catch (error) {
-        Sentry.captureException(error);
+      if (erpTopic === Constants.PAYMENT_ENTRY_WEBHOOK_TOPIC.CREATE) {
+        await paymentEntryService.createPaymentEntry(rawPaymentEntry);
+      } else if (erpTopic === Constants.PAYMENT_ENTRY_WEBHOOK_TOPIC.UPDATE) {
+        await paymentEntryService.updatePaymentEntry(rawPaymentEntry);
+      } else if (erpTopic === Constants.PAYMENT_ENTRY_WEBHOOK_TOPIC.VERIFY) {
+        await paymentEntryService.verifyPaymentEntryBankTransaction(rawPaymentEntry);
       }
     }
   }

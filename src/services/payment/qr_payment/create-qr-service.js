@@ -119,6 +119,12 @@ export default class CreateQRService {
 
     if (body.payment_entry_name) {
       transactionBody.payment_entry_name = body.payment_entry_name;
+
+      const existingTransaction = await this.db.qrPaymentTransaction.findFirst({
+        where: { payment_entry_name: body.payment_entry_name }
+      });
+
+      if (existingTransaction) return existingTransaction;
     }
 
     if (body.payment_references) {
