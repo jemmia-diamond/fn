@@ -7,7 +7,6 @@ import { isInvalidTokenError, sleep } from "pancake/utils";
 
 dayjs.extend(utc);
 
-const INITIAL_SYNC_SINCE_DATE = "2024-10-31T17:00:00Z";
 const SYNC_PAGE_SIZE = 100;
 
 export default class CustomerSyncService {
@@ -39,7 +38,8 @@ export default class CustomerSyncService {
         await sleep(1000);
       }
 
-      console.warn("Finished syncCustomers.");
+      await this.env.FN_KV.put(KV_KEY, now.format("YYYY-MM-DD HH:mm:ss"));
+      console.warn(`Finished syncCustomers. Saved checkpoint: ${now.format("YYYY-MM-DD HH:mm:ss")}`);
     } catch (error) {
       this.captureException(error);
     }
@@ -129,18 +129,21 @@ export default class CustomerSyncService {
   }
 
   async getSyncTimeframe() {
+    const kv = this.env.FN_KV;
+    const KV_KEY = "pancake_customer_sync_last_time";
     const now = dayjs().utc();
     const untilUnix = now.unix();
 
-    const anyCustomer = await this.db.page_customer.findFirst({ select: { id: true } });
+    const lastSyncTimeStr = await kv.get(KV_KEY);
     let sinceUnix;
-    if (!anyCustomer) {
-      sinceUnix = dayjs(INITIAL_SYNC_SINCE_DATE).unix();
+
+    if (lastSyncTimeStr) {
+      sinceUnix = dayjs.utc(lastSyncTimeStr).unix();
     } else {
       sinceUnix = now.subtract(10, "minutes").unix();
     }
 
-    return { now, untilUnix, sinceUnix };
+    return { now, untilUnix, sinceUnix, KV_KEY };
   }
 
   captureException(error, pageId = null) {
