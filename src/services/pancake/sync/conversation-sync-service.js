@@ -25,7 +25,7 @@ export default class ConversationSyncService {
   async syncConversations() {
     try {
       console.warn("Starting syncConversations...");
-      const { sinceUnix, untilUnix } = this.getSyncTimeframe();
+      const { sinceUnix, untilUnix, now, KV_KEY } = await this.getSyncTimeframe();
 
       const pageData = await this.pancakeClient.getPages();
       if (isInvalidTokenError(pageData)) {
@@ -43,7 +43,8 @@ export default class ConversationSyncService {
         await sleep(1000);
       }
 
-      console.warn("Finished syncConversations.");
+      await this.env.FN_KV.put(KV_KEY, now.format("YYYY-MM-DD HH:mm:ss"));
+      console.warn(`Finished syncConversations. Saved checkpoint: ${now.format("YYYY-MM-DD HH:mm:ss")}`);
     } catch (error) {
       this.captureException(error);
     }
@@ -201,13 +202,22 @@ export default class ConversationSyncService {
     }
   }
 
-  getSyncTimeframe() {
+  async getSyncTimeframe() {
+    const kv = this.env.FN_KV;
+    const KV_KEY = "pancake_conversation_sync_last_time";
     const now = dayjs().utc();
-    return {
-      now,
-      untilUnix: now.unix(),
-      sinceUnix: now.subtract(10, "minutes").unix()
-    };
+    const untilUnix = now.unix();
+
+    const lastSyncTimeStr = await kv.get(KV_KEY);
+    let sinceUnix;
+
+    if (lastSyncTimeStr) {
+      sinceUnix = dayjs.utc(lastSyncTimeStr).unix();
+    } else {
+      sinceUnix = now.subtract(10, "minutes").unix();
+    }
+
+    return { now, untilUnix, sinceUnix, KV_KEY };
   }
 
   captureException(error, pageId = null) {
