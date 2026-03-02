@@ -17,7 +17,6 @@ export default class ProductG1PromotionSyncService {
       await this._syncDeleteCollects(haravanClient);
     } catch (error) {
       Sentry.captureException(error);
-      throw error;
     }
   }
 
