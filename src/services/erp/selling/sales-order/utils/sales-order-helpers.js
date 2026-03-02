@@ -9,6 +9,13 @@ import { fetchChildRecordsFromERP } from "src/services/utils/sql-helpers";
 
 dayjs.extend(utc);
 
+export const getItemPromotions = (item) => {
+  if (item.new_promotions && typeof item.new_promotions === "string" && item.new_promotions.startsWith("[")) {
+    try { return JSON.parse(item.new_promotions) || []; } catch { return []; }
+  }
+  return [item.promotion_1, item.promotion_2, item.promotion_3, item.promotion_4, item.promotion_5].filter(Boolean);
+};
+
 const CHUNK_SIZE = 30;
 
 export async function fetchSalesOrdersFromERP(frappeClient, doctype, fromDate, toDate, pageSize) {
@@ -38,7 +45,7 @@ export async function fetchSalesOrdersFromERP(frappeClient, doctype, fromDate, t
       const salesOrderPurposes = await fetchChildRecordsFromERP(frappeClient, orderNames, "tabSales Order Purpose");
       const salesOrderProductCategories = await fetchChildRecordsFromERP(frappeClient, orderNames, "tabSales Order Product Category");
       const debtHistory = await fetchChildRecordsFromERP(frappeClient, orderNames, "tabOrder and Debt Tracking");
-      const paymentEntries = await fetchChildRecordsFromERP(frappeClient, orderNames, "tabPayment Entry Reference", { parentfield: "payment_entries" });
+      const paymentEntries = await fetchChildRecordsFromERP(frappeClient, orderNames, "tabPayment Entry Reference");
 
       // group records by sales order name
       const groupByParent = arr => arr.reduce((acc, item) => {
@@ -206,4 +213,30 @@ export async function getAllRelatedPaymentEntries(frappeClient, relatedOrderName
 export function shouldSkipSharedPayment(referenceName, currentOrderName, isSplitOrder, isFirstSplitOrder) {
   const isShared = referenceName !== currentOrderName;
   return isShared && isSplitOrder && !isFirstSplitOrder;
+}
+
+/**
+ * Fetch Sales Orders from ERP based on Haravan Order ID
+ * @param {FrappeClient} frappeClient - Frappe Client instance
+ * @param {string|number} haravanOrderId - The Haravan order ID
+ * @param {Array<string>} [fields=["name", "haravan_order_id", "split_order_group", "cancelled_status"]] - The fields to retrieve
+ * @returns {Promise<Array<Object>>} A list of matching Sales Orders
+ */
+export async function getSalesOrdersByHaravanOrderId(
+  frappeClient,
+  haravanOrderId,
+  fields = ["name", "haravan_order_id", "split_order_group", "cancelled_status"]
+) {
+  if (!haravanOrderId) {
+    return [];
+  }
+
+  const salesOrders = await frappeClient.getList("Sales Order", {
+    filters: [
+      ["order_number", "=", String(haravanOrderId)]
+    ],
+    fields: fields
+  });
+
+  return Array.isArray(salesOrders) ? salesOrders : [];
 }

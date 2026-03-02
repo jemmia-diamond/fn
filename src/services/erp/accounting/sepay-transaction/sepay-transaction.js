@@ -394,7 +394,10 @@ export default class SepayTransactionService {
         await service.processTransaction(body);
       } catch (error) {
         Sentry.captureException(error);
-        await env["SEPAY_TRANSACTION_QUEUE"].send(message.body, { delaySeconds: TEN_MINUTES });
+        const status = error?.status || error?.response?.status;
+        if (status === 502 || status === 503 || status === 504) {
+          await env["SEPAY_TRANSACTION_QUEUE"].send(message.body, { delaySeconds: TEN_MINUTES });
+        }
       }
     }
   }

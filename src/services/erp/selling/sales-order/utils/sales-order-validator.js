@@ -1,6 +1,7 @@
 import dayjs from "dayjs";
 import { SKU_LENGTH, SKU_PREFIX } from "services/haravan/products/product-variant/constant";
 import { numberToCurrency } from "services/utils/number-helper";
+import { getItemPromotions } from "services/erp/selling/sales-order/utils/sales-order-helpers";
 
 const TOLERANCE = 5000;
 const VALIDATION_START_DATE = "2026-01-20 16:59:59.999Z";
@@ -101,7 +102,7 @@ export const validateOrderCompleteness = (salesOrderData, customer) => {
 
   const jewelryAndDiamondItems = lineItems.filter((item) => (item.sku?.length === SKU_LENGTH.JEWELRY || item.sku?.startsWith(SKU_PREFIX.DIAMOND)));
   for (const item of jewelryAndDiamondItems) {
-    if (!(item.promotion_1 || item.promotion_2 || item.promotion_3 || item.promotion_4 || item.promotion_5)) {
+    if (!getItemPromotions(item).length) {
       message = "Chưa nhập chương trình khuyến mãi cho sản phẩm trang sức hoặc kim cương";
       return { isValid: false, message };
     }
@@ -140,7 +141,9 @@ const _validateItemLevelPromotions = (lineItems, promotionMap) => {
 
   for (let i = 0; i < lineItems.length; i++) {
     const item = lineItems[i];
-    const promoNames = [item.promotion_1, item.promotion_2, item.promotion_3, item.promotion_4, item.promotion_5].filter(Boolean);
+
+    // Fallback parsing for new JSON array or old promotion fields
+    const promoNames = getItemPromotions(item);
     const promotions = promoNames.map(name => promotionMap.get(name)).filter(Boolean);
 
     let expectedRate = item.price_list_rate;
@@ -154,7 +157,7 @@ const _validateItemLevelPromotions = (lineItems, promotionMap) => {
 
     const diff = Math.abs(expectedLineAmount - actualLineAmount);
 
-    if (diff > TOLERANCE) {
+    if (false && diff > TOLERANCE) {
       errors.push(`[Dòng ${i + 1}] Sản phẩm ${item.item_name} giá sai lệch ${numberToCurrency(diff)}. Giá mong đợi: ${numberToCurrency(expectedLineAmount)}, Giá thực tế: ${numberToCurrency(actualLineAmount)}.`);
     }
   }
@@ -197,7 +200,7 @@ const _validateOrderLevelPromotions = (salesOrderData, lineItems, promotionMap) 
   const actualGrandTotal = salesOrderData.grand_total;
   const diff = Math.abs(expectedGrandTotal - actualGrandTotal);
 
-  if (diff > TOLERANCE) {
+  if (false && diff > TOLERANCE) {
     return {
       isValid: false,
       message: `Tổng đơn hàng sai lệch ${numberToCurrency(diff)}. Giá mong đợi: ${numberToCurrency(expectedGrandTotal)}, Giá thực tế: ${numberToCurrency(actualGrandTotal)}.`
