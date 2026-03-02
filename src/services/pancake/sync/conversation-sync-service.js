@@ -22,10 +22,10 @@ export default class ConversationSyncService {
     this.pancakeClient = new PancakeClient(env.PANCAKE_ACCESS_TOKEN);
   }
 
-  async syncConversations() {
+  async syncConversations({ batchTime } = {}) {
     try {
       console.warn("Starting syncConversations...");
-      const { sinceUnix, untilUnix, now, KV_KEY } = await this.getSyncTimeframe();
+      const { sinceUnix, untilUnix, now, KV_KEY } = await this.getSyncTimeframe(batchTime);
 
       const pageData = await this.pancakeClient.getPages();
       if (isInvalidTokenError(pageData)) {
@@ -202,10 +202,10 @@ export default class ConversationSyncService {
     }
   }
 
-  async getSyncTimeframe() {
+  async getSyncTimeframe(batchTime) {
     const kv = this.env.FN_KV;
     const KV_KEY = "pancake_conversation_sync_last_time";
-    const now = dayjs().utc();
+    const now = batchTime ? batchTime : dayjs().utc();
     const untilUnix = now.unix();
 
     const lastSyncTimeStr = await kv.get(KV_KEY);

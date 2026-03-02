@@ -17,17 +17,19 @@ export default class PancakeLeadSyncService {
     this.KV_KEY = "pancake_lead_sync_last_time";
   }
 
-  async syncPancakeLeads() {
+  async syncPancakeLeads({ batchTime } = {}) {
     console.warn("Starting syncPancakeLeads...");
+
+    const runTime = batchTime ? batchTime : dayjs().utc();
 
     // Get latest checkpoint
     let lastSyncTime = await this.env.FN_KV.get(this.KV_KEY);
     if (!lastSyncTime) {
-      lastSyncTime = dayjs().utc().subtract(5, "minutes").subtract(1, "minute").format("YYYY-MM-DD HH:mm:ss");
+      lastSyncTime = runTime.subtract(5, "minutes").subtract(1, "minute").format("YYYY-MM-DD HH:mm:ss");
     }
 
     const updatedTime = lastSyncTime;
-    const currentTime = dayjs().utc().subtract(1, "minute").format("YYYY-MM-DD HH:mm:ss");
+    const currentTime = runTime.subtract(1, "minute").format("YYYY-MM-DD HH:mm:ss");
     const defaultTimeMark = this.DEFAULT_TIME_MARK;
 
     console.warn(`Syncing leads updated since ${updatedTime}`);
