@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/cloudflare";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import Database from "services/database";
@@ -37,11 +38,11 @@ export default class VariantSyncService {
 
       await this._fetchAndProcessVariants(haravanClient, updatedAtMin);
       await kv.put(KV_KEY, toDate);
-    } catch {
+    } catch (error) {
       if (lastSyncDate && dayjs(toDate).diff(dayjs(lastSyncDate), "hour") >= 1) {
         await kv.put(KV_KEY, toDate);
       }
-      return;
+      Sentry.captureException(error);
     }
   }
 
