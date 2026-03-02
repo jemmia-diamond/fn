@@ -28,9 +28,10 @@ export default {
       await new Pancake.TagSyncService(env).syncTags();
       break;
     case "*/5 * * * *": // At every 5th minute
-      await new Pancake.ConversationSyncService(env).syncConversations();
-      await new Pancake.CustomerSyncService(env).syncCustomers();
-      await new ERP.CRM.PancakeLeadSyncService(env).syncPancakeLeads();
+      const batchTime = dayjs().utc();
+      await new Pancake.ConversationSyncService(env).syncConversations({ batchTime });
+      await new Pancake.CustomerSyncService(env).syncCustomers({ batchTime });
+      await new ERP.CRM.PancakeLeadSyncService(env).syncPancakeLeads({ batchTime });
       await new Ecommerce.JewelryDiamondPairService(env).processOutOfStockDiamonds();
       await new Misa.InventoryItemSyncService(env).syncInventoryItems();
       break;
