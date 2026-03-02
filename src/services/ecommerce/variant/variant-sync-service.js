@@ -54,7 +54,7 @@ export default class VariantSyncService {
 
     while (hasMore) {
       if (page > 1 && !skipNextSleep) {
-        await this._sleep(HaravanVariantSyncService.RATE_LIMIT_DELAY_MS);
+        await this._sleep(VariantSyncService.RATE_LIMIT_DELAY_MS);
       }
       skipNextSleep = false;
 
@@ -76,7 +76,7 @@ export default class VariantSyncService {
       } catch (error) {
         if (error.status === 429) {
           const retryAfter = parseFloat(error.retryAfter || 2);
-          const allowedRetrySeconds = HaravanVariantSyncService.MAX_RETRY_AFTER_SECONDS;
+          const allowedRetrySeconds = VariantSyncService.MAX_RETRY_AFTER_SECONDS;
 
           if (retryAfter > allowedRetrySeconds) {
             throw new Error(`Rate limited for ${retryAfter}s (exceeds ${allowedRetrySeconds}s threshold)`);
