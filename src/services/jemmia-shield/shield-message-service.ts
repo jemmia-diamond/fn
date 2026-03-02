@@ -3,10 +3,13 @@ import ShieldImageHandler from "services/jemmia-shield/handlers/shield-image-han
 import ShieldPostHandler from "services/jemmia-shield/handlers/shield-post-handler";
 import { JEMMIA_SHIELD_MESSAGE_TYPE } from "src/constants/jemmia-shield-constants";
 import { ShieldOrderMentionLinker } from "services/jemmia-shield/utils/shield-order-mention-linker";
+import * as Sentry from "@sentry/cloudflare";
 
 export default class ShieldMessageService {
   static async detectSensitiveInfoAndMask(env: any, event: any) {
     const content = JSON.parse(event.message.content);
+
+    await ShieldOrderMentionLinker.saveOrderMappingsIfMentioned(env, event).catch(Sentry.captureException);
     await ShieldOrderMentionLinker.replyOrderLinksIfMentioned(env, event);
 
     switch (event.message.message_type) {

@@ -1,3 +1,4 @@
+import Database from "src/services/database";
 import FrappeClient from "src/frappe/frappe-client";
 import { getSalesOrdersByHaravanOrderId } from "src/services/erp/selling/sales-order/utils/sales-order-helpers";
 import JemmiaShieldLarkService from "services/jemmia-shield/jemmia-shield-lark-service";
@@ -19,9 +20,43 @@ export class ShieldOrderMentionLinker {
 
     const frappeClient = this.createFrappeClient(env);
     const orderLinks = await this.fetchOrderLinks(frappeClient, orderCodes);
+
     if (orderLinks.length === 0) return;
 
     await this.sendOrderInfoCard(env, event, orderLinks);
+  }
+
+  static async saveOrderMappingsIfMentioned(env: any, event: any): Promise<void> {
+    const messageText = this.extractTextFromMessage(event);
+    const orderCodes = this.extractOrderCodes(messageText);
+    if (orderCodes.length === 0) return;
+
+    const frappeClient = this.createFrappeClient(env);
+    const orderLinks = await this.fetchOrderLinks(frappeClient, orderCodes);
+    if (orderLinks.length === 0) return;
+
+    const messageId = event.message.message_id;
+    await this.saveOrderMappings(env, messageId, orderLinks);
+  }
+
+  private static async saveOrderMappings(
+    env: any,
+    messageId: string,
+    orderLinks: ShieldOrderLinkInfo[]
+  ): Promise<void> {
+    const db = Database.instance(env);
+
+    const data = orderLinks.map((link) => ({
+      id: crypto.randomUUID(),
+      lark_message_id: messageId,
+      order_name: link.orderCode,
+      order_id: link.erpName ? BigInt(link.erpName.replace(/\D/g, "")) : null
+    }));
+
+    await (db as any).crm_lark_message.createMany({
+      data,
+      skipDuplicates: true
+    });
   }
 
   private static extractTextFromMessage(event: any): string {

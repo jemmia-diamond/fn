@@ -1,11 +1,28 @@
 export function getFinancialStatus(status) {
-  switch (status) {
-  case "open": return "Chờ xử lý";
-  case "paid": return "Đã thanh toán";
-  case "cancelled": return "Đã hủy";
-  case "refunded": return "Đã hoàn tiền";
-  case "pending": return "Chờ xác nhận";
-  case "partially_paid": return "Đã thanh toán một phần";
-  default: return "Unknown";
+  if (status === null || status === undefined || status === "") {
+    return "Không xác định";
+  }
+
+  switch (String(status).toLowerCase()) {
+  case "pending":
+    return "Chờ xác nhận";
+  case "authorized":
+    return "Đã ủy quyền";
+  case "partially_paid":
+    return "Đã thanh toán một phần";
+  case "paid":
+    return "Đã thanh toán";
+  case "partially_refunded":
+    return "Đã hoàn tiền một phần";
+  case "refunded":
+    return "Đã hoàn tiền";
+  case "voided":
+    return "Đã hủy thanh toán";
+  case "open":
+    return "Chờ xử lý";
+  case "cancelled":
+    return "Đã hủy";
+  default:
+    return "Không xác định";
   }
 }
