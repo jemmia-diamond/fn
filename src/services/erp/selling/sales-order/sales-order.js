@@ -104,6 +104,9 @@ export default class SalesOrderService {
     const discountCodes = haravanOrderData.discount_codes || [];
     const couponCode = discountCodes.map(item => item.code).join("\n");
 
+    const fulfillments = haravanOrderData?.fulfillments?.[haravanOrderData.fulfillments.length - 1] || {};
+    const trackingNumber = fulfillments?.tracking_number;
+
     const mappedOrderData = {
       doctype: this.doctype,
       customer: customer.name,
@@ -129,7 +132,8 @@ export default class SalesOrderService {
       total_amount: haravanOrderData.total_price,
       grand_total: haravanOrderData.total_price,
       real_order_date: await this.getRealOrderDate(haravanOrderData.id) || dayjs(haravanOrderData.created_at).add(7, "hour").format("YYYY-MM-DD"),
-      ref_sales_orders: await this.mapRefSalesOrder(haravanOrderData.id)
+      ref_sales_orders: await this.mapRefSalesOrder(haravanOrderData.id),
+      tracking_number: trackingNumber
     };
     const order = await this.frappeClient.upsert(mappedOrderData, "haravan_order_id", ["items"]);
 
