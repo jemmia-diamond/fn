@@ -54,10 +54,77 @@ export default class DiamondCollectService {
     }
 
     const where = `(discount_type,eq,percent)~and(discount_value,in,${uniquePercents.join(",")})`;
-    return await nocoClient.listRecords(DiamondCollectService.HARAVAN_COLLECTIONS_TABLE, {
+    let collections = await nocoClient.listRecords(DiamondCollectService.HARAVAN_COLLECTIONS_TABLE, {
       where: where,
       limit: 1000
     });
+
+    const existingPercents = new Set((collections.list || []).map(c => Number(c.discount_value)));
+    const missingPercents = uniquePercents.filter(p => !existingPercents.has(Number(p)));
+    if (missingPercents.length > 0) {
+      const newRecords = missingPercents.map(percent => ({
+        discount_type: "percent",
+        discount_value: percent,
+        title: `Chương trình nền KCV ${percent}%`,
+        auto_create: true
+      }));
+
+      try {
+        const createdCollections = await nocoClient.createRecords(DiamondCollectService.HARAVAN_COLLECTIONS_TABLE, newRecords);
+        const createdCollectionIds = (createdCollections || []).map(record => record.id);
+        const createdCollectionsList = await nocoClient.listRecords(DiamondCollectService.HARAVAN_COLLECTIONS_TABLE, {
+          where: `(id,in,${createdCollectionIds.join(",")})`
+        });
+        if (createdCollectionsList.list.length > 0) {
+          for (const col of createdCollectionsList.list) {
+            await this._triggerCollectionWebhook(col);
+          }
+        }
+        collections = await nocoClient.listRecords(DiamondCollectService.HARAVAN_COLLECTIONS_TABLE, {
+          where: where,
+          limit: 1000
+        });
+      } catch (error) {
+        Sentry.captureException(error, {
+          tags: {
+            tableId: DiamondCollectService.HARAVAN_COLLECTIONS_TABLE,
+            tableName: "haravan_collections"
+          }
+        });
+      }
+    }
+
+    return collections;
+  }
+
+  async _triggerCollectionWebhook(col) {
+    try {
+      await fetch(
+        "https://fagwjdzlfqwwyul2ij6ehvug3e0vhowc.lambda-url.ap-southeast-1.on.aws/",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            "type": "records.after.update",
+            "version": "v3",
+            "data": {
+              "table_id": DiamondCollectService.HARAVAN_COLLECTIONS_TABLE,
+              "table_name": "haravan_collections",
+              "rows": [col]
+            }
+          })
+        }
+      );
+    } catch (error) {
+      Sentry.captureException(error, {
+        tags: {
+          tableId: DiamondCollectService.HARAVAN_COLLECTIONS_TABLE,
+          tableName: "haravan_collections"
+        }
+      });
+    }
   }
 
   _buildRuleCollectionsMap(allCollections) {
