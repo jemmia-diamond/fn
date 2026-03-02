@@ -90,7 +90,7 @@ export default class PaymentEntryService {
       payment_entry_name: paymentEntry.name,
       payment_type: this._mapPaymentMethod(paymentEntry.payment_code),
       branch: this._mapBranch(paymentEntry.bank_account_branch),
-      shipping_code: null,
+      shipping_code: paymentEntry?.shipping_code,
       send_date: null,
       receive_date,
       created_date,
@@ -271,7 +271,8 @@ export default class PaymentEntryService {
       haravan_order_name: isOrderLinking ? primaryOrder.order_number : "Đơn hàng cọc",
       transfer_status,
       gateway: paymentEntry.gateway,
-      payment_entry_name: paymentEntry.name
+      payment_entry_name: paymentEntry.name,
+      shipping_code: paymentEntry?.shipping_code
     };
 
     const existingRefs = this._normalizeReferences(existingPayment.payment_references);
