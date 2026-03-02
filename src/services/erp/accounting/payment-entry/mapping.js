@@ -104,7 +104,8 @@ export function rawToPaymentEntry(body) {
     verified_by: body.verified_by,
     gateway: body.gateway,
     payment_code: body.payment_code,
-    admin_editing: body.admin_editing
+    admin_editing: body.admin_editing,
+    shipping_code: body.shipping_code
   };
 }
 
