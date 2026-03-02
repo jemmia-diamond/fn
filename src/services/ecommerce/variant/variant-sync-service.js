@@ -15,7 +15,7 @@ export default class VariantSyncService {
     this.env = env;
     this.db = Database.instance(env);
     this.dbConnection = {
-      timeout: 30000,
+      timeout: 60000,
       maxWait: 15000
     };
   }
