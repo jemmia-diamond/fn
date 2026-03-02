@@ -104,8 +104,9 @@ export default class SalesOrderService {
     const discountCodes = haravanOrderData.discount_codes || [];
     const couponCode = discountCodes.map(item => item.code).join("\n");
 
-    const fulfillments = haravanOrderData?.fulfillments?.[haravanOrderData.fulfillments.length - 1] || {};
-    const trackingNumber = fulfillments?.tracking_number;
+    const fulfillmentsList = haravanOrderData?.fulfillments || [];
+    const latestFulfillment = fulfillmentsList[fulfillmentsList.length - 1] || {};
+    const trackingNumber = latestFulfillment.tracking_number;
 
     const mappedOrderData = {
       doctype: this.doctype,
