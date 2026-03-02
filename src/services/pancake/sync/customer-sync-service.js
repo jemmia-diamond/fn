@@ -20,7 +20,7 @@ export default class CustomerSyncService {
   async syncCustomers() {
     try {
       console.warn("Starting syncCustomers...");
-      const { sinceUnix, untilUnix } = await this.getSyncTimeframe();
+      const { sinceUnix, untilUnix, now, KV_KEY } = await this.getSyncTimeframe();
 
       const pageData = await this.pancakeClient.getPages();
       if (isInvalidTokenError(pageData)) {

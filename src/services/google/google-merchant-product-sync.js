@@ -132,7 +132,7 @@ export default class GoogleMerchantProductSyncService {
         offerId: offerId.toLowerCase(),
         contentLanguage: "vi",
         feedLabel: "VN",
-        attributes: {
+        productAttributes: {
           title: title,
           description: description,
           link: link,
@@ -184,7 +184,7 @@ export default class GoogleMerchantProductSyncService {
         offerId: offerId.toLowerCase(),
         contentLanguage: "vi",
         feedLabel: "VN",
-        attributes: {
+        productAttributes: {
           title: title,
           description: description,
           link: link,
