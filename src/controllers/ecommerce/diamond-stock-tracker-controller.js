@@ -3,11 +3,11 @@ import { z } from "zod";
 
 const StockTrackerSchema = z.object({
   targets: z.array(z.object({
-    s1: z.number(),
-    s2: z.number(),
-    color: z.string(),
-    clarity: z.string(),
-    original_price: z.number()
+    s1: z.number().optional(),
+    s2: z.number().optional(),
+    color: z.string().optional(),
+    clarity: z.string().optional(),
+    original_price: z.number().optional()
   })).min(1),
   warehouses: z.array(z.string()).optional()
 });
