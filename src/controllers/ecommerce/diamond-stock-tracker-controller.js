@@ -17,24 +17,25 @@ const StockTrackerSchema = z.object({
  */
 export default class DiamondStockTrackerController {
   static async create(ctx) {
+    let body;
     try {
-      const body = await ctx.req.json();
-      const validated = StockTrackerSchema.safeParse(body);
-
-      if (!validated.success) {
-        return ctx.json({
-          message: "Invalid request body",
-          errors: validated.error.errors
-        }, 400);
-      }
-
-      const { targets, warehouses } = validated.data;
-      const diamondService = new DiamondService(ctx.env);
-      const result = await diamondService.getDiamondStockTracker(targets, warehouses);
-
-      return ctx.json({ data: result }, 200);
-    } catch (e) {
-      return ctx.json({ message: e.message || "Internal Server Error" }, 500);
+      body = await ctx.req.json();
+    } catch {
+      return ctx.json({ message: "Request body is missing or invalid JSON. Please send a POST request with a JSON body containing 'targets'." }, 400);
     }
+
+    const validated = StockTrackerSchema.safeParse(body);
+    if (!validated.success) {
+      return ctx.json({
+        message: "Invalid request body structure",
+        errors: validated.error.errors
+      }, 400);
+    }
+
+    const { targets, warehouses } = validated.data;
+    const diamondService = new DiamondService(ctx.env);
+    const result = await diamondService.getDiamondStockTracker(targets, warehouses);
+
+    return ctx.json({ data: result }, 200);
   }
 }
