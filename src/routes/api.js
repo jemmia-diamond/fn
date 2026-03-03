@@ -42,6 +42,8 @@ export default class APIRoutes {
     ecommerceNamespaceApi.delete("/ind-day-stats", Ecommerce.IndDayStatController.destroy);
     ecommerceNamespaceApi.post("/products/jewelries/diamond-replacements", Ecommerce.JewelryDiamondPairController.create);
 
+    ecommerceNamespaceApi.post("/diamonds/stock-tracker", Ecommerce.DiamondStockTrackerController.create);
+
     ecommerceNamespaceApi.get("/cards/:id", Ecommerce.CardController.show);
     ecommerceNamespaceApi.post("/cards", Ecommerce.CardController.create);
     ecommerceNamespaceApi.patch("/cards/:id", Ecommerce.CardController.update);

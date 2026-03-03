@@ -109,4 +109,104 @@ export default class DiamondService {
     const result = formatData(rows);
     return result;
   }
+
+  /**
+   * Fetches diamond status and prices for a specific campaign.
+   * @param {Array<{s1: number, s2: number, color: string, clarity: string, original_price: number}>} targets
+   * @param {Array<string>} warehouseNames
+   */
+  async getDiamondStockTracker(targets, warehouseNames) {
+    if (!targets || !Array.isArray(targets) || targets.length === 0) {
+      throw new Error("Targets are required and must be a non-empty array");
+    }
+
+    const defaultWarehouses = [
+      "[HCM] Cửa Hàng HCM",
+      "[HN] Cửa Hàng HN",
+      "[CT] Cửa Hàng Cần Thơ"
+    ];
+    const targetWarehouses = warehouseNames && Array.isArray(warehouseNames) && warehouseNames.length > 0
+      ? warehouseNames
+      : defaultWarehouses;
+
+    try {
+      const valuesClause = targets.map(t => {
+        const s1 = parseFloat(t.s1);
+        const s2 = parseFloat(t.s2);
+        const price = parseFloat(t.original_price);
+        if (isNaN(s1) || isNaN(s2) || isNaN(price)) {
+          throw new Error("Invalid numeric values in targets");
+        }
+        const color = t.color.replace(/'/g, "''");
+        const clarity = t.clarity.replace(/'/g, "''");
+        return `(${s1}::real, ${s2}::real, '${color}', '${clarity}', ${price}::numeric)`;
+      }).join(", ");
+
+      const warehouseNamesList = targetWarehouses.map(name => `'${name.replace(/'/g, "''")}'`).join(", ");
+
+      const sql = `
+        WITH TargetConditions AS (
+          SELECT DISTINCT * FROM (VALUES
+            ${valuesClause}
+          ) AS t(s1, s2, col, clar, orig_price)
+        ),
+        RetailInventoryStatus AS (
+          SELECT 
+            hwi.variant_id,
+            SUM(hwi.qty_available) as retail_stock
+          FROM haravan.warehouse_inventories hwi
+          JOIN haravan.warehouses hw ON hwi.loc_id = hw.id
+          WHERE hw.name IN (${warehouseNamesList})
+          GROUP BY hwi.variant_id
+        )
+        SELECT
+          d.id,
+          d.report_no,
+          d.edge_size_1 || ' x ' || d.edge_size_2 AS size,
+          d.color,
+          d.clarity,
+          d.price AS base_price,
+          CAST(
+            CASE
+              WHEN COALESCE(discount_data.max_discount, 0) > 0 
+              THEN ROUND(d.price * (100 - discount_data.max_discount) / 100, 2)
+              ELSE d.price
+            END
+          AS DOUBLE PRECISION) AS current_price,
+          COALESCE(inv.retail_stock, 0) AS status,
+          COALESCE(discount_data.max_discount, 0) AS active_discount,
+          collection_list.titles AS active_collections
+        FROM workplace.diamonds d
+        JOIN TargetConditions tc ON (
+          d.edge_size_1 = tc.s1 
+          AND d.edge_size_2 = tc.s2
+          AND d.color = tc.col
+          AND d.clarity = tc.clar
+          AND d.price = tc.orig_price
+        )
+        LEFT JOIN RetailInventoryStatus inv ON inv.variant_id = d.variant_id
+        LEFT JOIN (
+          SELECT m.diamond_id, MAX(CAST(hc.discount_value AS NUMERIC)) as max_discount
+          FROM workplace.diamonds_haravan_collection m
+          JOIN workplace.haravan_collections hc ON m.haravan_collection_id = hc.id
+          WHERE hc.discount_type = 'percent'
+          GROUP BY m.diamond_id
+        ) discount_data ON discount_data.diamond_id = d.id
+        LEFT JOIN (
+          SELECT m.diamond_id, STRING_AGG(hc.title, ', ') as titles
+          FROM workplace.diamonds_haravan_collection m
+          JOIN workplace.haravan_collections hc ON m.haravan_collection_id = hc.id
+          GROUP BY m.diamond_id
+        ) collection_list ON collection_list.diamond_id = d.id
+        WHERE d.auto_create_haravan_product = true
+        ORDER BY d.edge_size_1 DESC, d.color ASC, d.clarity ASC;
+      `;
+
+      const result = await retryQuery(() => this.db.$queryRaw`${Prisma.raw(sql)}`);
+      return result;
+    } catch (e) {
+      Sentry.captureException(e);
+      throw e;
+    }
+  }
 }
