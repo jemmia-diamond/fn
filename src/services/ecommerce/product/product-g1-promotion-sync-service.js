@@ -1,6 +1,7 @@
 import HaravanAPI from "services/clients/haravan-client";
 import Database from "services/database";
 import * as Sentry from "@sentry/cloudflare";
+import { sleep } from "services/utils/sleep";
 
 export default class ProductG1PromotionSyncService {
   constructor(env) {
@@ -46,7 +47,7 @@ export default class ProductG1PromotionSyncService {
         Sentry.captureException(error);
       }
 
-      await this._sleep(200);
+      await sleep(200);
     }
   }
 
@@ -71,11 +72,7 @@ export default class ProductG1PromotionSyncService {
         Sentry.captureException(error);
       }
 
-      await this._sleep(200);
+      await sleep(200);
     }
-  }
-
-  _sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
   }
 }
