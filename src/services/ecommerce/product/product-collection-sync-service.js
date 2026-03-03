@@ -6,7 +6,7 @@ import { sleep } from "services/utils/sleep";
 export default class ProductCollectionSyncService {
   constructor(env) {
     this.env = env;
-    this.db = new Database(env);
+    this.db = Database.instance(env);
   }
 
   async syncCollections() {
@@ -30,15 +30,19 @@ export default class ProductCollectionSyncService {
           hc.haravan_id AS collection_id, 
           p.haravan_product_id AS product_id
       FROM workplace.haravan_collections hc
-          CROSS JOIN LATERAL unnest(string_to_array(hc.auto_add_product_type, ',')) AS product_type
-          INNER JOIN workplace.products p ON product_type = p.haravan_product_type
-          LEFT JOIN haravan.collection_product cp ON hc.haravan_id = cp.collection_id AND p.haravan_product_id = cp.product_id
-      WHERE hc.auto_add_product_type IS NOT NULL AND cp.uuid IS NULL;
+      	CROSS JOIN LATERAL unnest(string_to_array(hc.auto_add_product_type, ',')) AS product_type
+      	INNER JOIN workplace.products p ON product_type = p.haravan_product_type
+      	LEFT JOIN haravan.collection_product cp ON hc.haravan_id = cp.collection_id AND p.haravan_product_id = cp.product_id
+      WHERE hc.auto_add_product_type IS NOT NULL AND cp.id IS NULL;
     `;
 
     for (const record of records) {
-      const collectionId = Number(record.collection_id);
-      const productId = Number(record.product_id);
+      if (!record.collection_id || !record.product_id) continue;
+
+      const collectionId = Number(record.collection_id.toString());
+      const productId = Number(record.product_id.toString());
+
+      if (collectionId === 0 || productId === 0) continue;
 
       try {
         await haravanClient.collect.createCollect({
@@ -49,7 +53,7 @@ export default class ProductCollectionSyncService {
         Sentry.captureException(error);
       }
 
-      await sleep(200);
+      await sleep(1000);
     }
   }
 }
