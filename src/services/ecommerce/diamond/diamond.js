@@ -4,6 +4,7 @@ import { buildGetDiamondsQuery } from "services/ecommerce/diamond/utils/diamond"
 import { dataSql, formatData } from "services/ecommerce/diamond/utils/diamond-prices";
 import * as Sentry from "@sentry/cloudflare";
 import { retryQuery } from "services/utils/retry-utils";
+import { buildStockTrackerQuery } from "services/ecommerce/diamond/utils/diamond-stock-tracker";
 
 export default class DiamondService {
   constructor(env) {
@@ -107,6 +108,26 @@ export default class DiamondService {
   async getDiamondPriceList() {
     const rows = await retryQuery(() => this.db.$queryRaw`${Prisma.raw(dataSql)}`);
     const result = formatData(rows);
+    return result;
+  }
+
+  /**
+   * Fetches diamond status and prices for a specific campaign.
+   * @param {Array<{s1: number, s2: number, color: string, clarity: string, original_price: number}>} targets
+   * @param {Array<string>} warehouseNames
+   */
+  async getDiamondStockTracker(targets, warehouseNames) {
+    if (!targets || !Array.isArray(targets) || targets.length === 0) {
+      throw new Error("Targets are required and must be a non-empty array");
+    }
+
+    const targetWarehouses = warehouseNames && Array.isArray(warehouseNames) && warehouseNames.length > 0
+      ? warehouseNames
+      : [];
+
+    const sql = buildStockTrackerQuery(targets, targetWarehouses);
+
+    const result = await retryQuery(() => this.db.$queryRaw`${Prisma.raw(sql)}`);
     return result;
   }
 }
