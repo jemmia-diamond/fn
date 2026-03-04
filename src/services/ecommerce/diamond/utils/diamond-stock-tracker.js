@@ -24,7 +24,7 @@ export function buildStockTrackerQuery(targets, warehouseNames) {
         SUM(hwi.qty_available) as retail_stock
       FROM haravan.warehouse_inventories hwi
       JOIN haravan.warehouses hw ON hwi.loc_id = hw.id
-      WHERE hw.name IN (${warehouseNamesList})
+      ${warehouseNamesList.length > 0 ? `WHERE hw.name IN (${warehouseNamesList})` : ""}
       GROUP BY hwi.variant_id
     )
     SELECT
@@ -47,6 +47,10 @@ export function buildStockTrackerQuery(targets, warehouseNames) {
         END
       AS DOUBLE PRECISION) AS current_price,
       CAST(COALESCE(inv.retail_stock, 0) AS INT) AS total_stock,
+      CASE 
+        WHEN COALESCE(inv.retail_stock, 0) > 0 THEN 'Chưa bán'
+        ELSE 'Đã bán'
+      END AS sale_status,
       discount_info.title AS active_collection
     FROM workplace.diamonds d
     JOIN haravan.variants hv ON hv.id = d.variant_id

@@ -121,14 +121,9 @@ export default class DiamondService {
       throw new Error("Targets are required and must be a non-empty array");
     }
 
-    const defaultWarehouses = [
-      "[HCM] Cửa Hàng HCM",
-      "[HN] Cửa Hàng HN",
-      "[CT] Cửa Hàng Cần Thơ"
-    ];
     const targetWarehouses = warehouseNames && Array.isArray(warehouseNames) && warehouseNames.length > 0
       ? warehouseNames
-      : defaultWarehouses;
+      : [];
 
     const sql = buildStockTrackerQuery(targets, targetWarehouses);
 
