@@ -228,7 +228,7 @@ export default class ConversationSyncService {
     Sentry.captureException(error, { tags });
   }
 
-  async pushWebhook(payload) {
+  async pushSalesayaWebhook(payload) {
     if (!payload?.conversationId || !payload?.pageId) return;
 
     return fetch("https://api.salesaya.com/scoring", {
@@ -257,7 +257,7 @@ export default class ConversationSyncService {
         }
       }
 
-      scoringPromises.push(this.pushWebhook(payload));
+      scoringPromises.push(this.pushSalesayaWebhook(payload));
     }
     await Promise.allSettled(scoringPromises);
   }
