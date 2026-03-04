@@ -113,6 +113,7 @@ export const transformExchangeBuybackdData = (form) => {
 
   const mainOrderCode = accessNestedKey(widgetsObj, widgetFieldMapper.order_code);
   const orderCode = mainOrderCode || orderCodeFromProducts;
+  const department = accessNestedKey(widgetsObj, widgetFieldMapper.department);
 
   return {
     instance_type: accessNestedKey(widgetsObj, widgetFieldMapper.instance_type),
@@ -129,7 +130,8 @@ export const transformExchangeBuybackdData = (form) => {
     products_info: productsInfo,
     bank_info: accessNestedKey(widgetsObj, widgetFieldMapper.bank_info),
     handover_date: accessNestedKey(widgetsObj, widgetFieldMapper.handover_date),
-    department: accessNestedKey(widgetsObj, widgetFieldMapper.department),
+    department_id: department[0]?.open_id,
+    department_name: department[0]?.name,
     other_info: accessNestedKey(widgetsObj, widgetFieldMapper.other_info)
   };
 };
