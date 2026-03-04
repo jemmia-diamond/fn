@@ -4,6 +4,7 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import * as Sentry from "@sentry/cloudflare";
 import { isInvalidTokenError, sleep } from "pancake/utils";
+import { createAxiosClient } from "services/utils/http-client";
 
 dayjs.extend(utc);
 
@@ -109,6 +110,8 @@ export default class ConversationSyncService {
       ...pageCustomerUpserts,
       ...conversationTagUpserts
     ]);
+
+    await this.processScoringWebhooks(chunk);
   }
 
   mapToConversationModel(item) {
@@ -224,5 +227,39 @@ export default class ConversationSyncService {
     const tags = { flow: "PancakeSync:conversations" };
     if (pageId) tags.page_id = pageId;
     Sentry.captureException(error, { tags });
+  }
+
+  async pushSalesayaWebhook(payload) {
+    if (!payload?.conversationId || !payload?.pageId) return;
+
+    const client = createAxiosClient({
+      baseURL: "https://api.salesaya.com",
+      headers: { "Content-Type": "application/json" },
+      timeout: 5000
+    });
+
+    return client.post("/scoring", payload).catch(() => {});
+  }
+
+  processScoringWebhooks(chunk) {
+    for (const item of chunk) {
+      if (!item.id || !item.page_id) continue;
+
+      const payload = {
+        conversationId: item.id,
+        pageId: item.page_id
+      };
+
+      const assigneeHistories = item.assignee_histories || [];
+      if (assigneeHistories.length > 0) {
+        const historyPayload = assigneeHistories[assigneeHistories.length - 1].payload || {};
+        const payloadAddedUsers = historyPayload.added_users || [];
+        if (payloadAddedUsers.length > 0 && payloadAddedUsers[0].id) {
+          payload.assigneeIds = [payloadAddedUsers[0].id];
+        }
+      }
+
+      this.pushSalesayaWebhook(payload); // Fire and forget
+    }
   }
 }
