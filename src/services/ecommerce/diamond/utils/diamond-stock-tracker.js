@@ -1,5 +1,5 @@
 export function buildStockTrackerQuery(targets, warehouseNames) {
-  const valuesClause = targets.map(t => {
+  const valuesClause = targets.map((t, index) => {
     const s1 = t.s1 != null ? parseFloat(t.s1) : null;
     const s2 = t.s2 != null ? parseFloat(t.s2) : null;
     const price = t.original_price != null ? parseFloat(t.original_price) : null;
@@ -7,7 +7,15 @@ export function buildStockTrackerQuery(targets, warehouseNames) {
     const color = t.color ? `'${t.color.replace(/'/g, "''")}'` : "NULL";
     const clarity = t.clarity ? `'${t.clarity.replace(/'/g, "''")}'` : "NULL";
 
-    return `(${s1 !== null ? `${s1}::real` : "NULL"}, ${s2 !== null ? `${s2}::real` : "NULL"}, ${color}, ${clarity}, ${price !== null ? `${price}::numeric` : "NULL"})`;
+    const s1Str = s1 !== null ? `${s1}` : "NULL";
+    const s2Str = s2 !== null ? `${s2}` : "NULL";
+    const priceStr = price !== null ? `${price}` : "NULL";
+
+    if (index === 0) {
+      return `(${s1Str}::real, ${s2Str}::real, ${color}::text, ${clarity}::text, ${priceStr}::numeric)`;
+    }
+
+    return `(${s1Str}, ${s2Str}, ${color}, ${clarity}, ${priceStr})`;
   }).join(", ");
 
   const warehouseNamesList = warehouseNames.map(name => `'${name.replace(/'/g, "''")}'`).join(", ");
