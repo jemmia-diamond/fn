@@ -26,6 +26,25 @@ export function buildStockTrackerQuery(targets, warehouseNames) {
       JOIN haravan.warehouses hw ON hwi.loc_id = hw.id
       ${warehouseNamesList.length > 0 ? `WHERE hw.name IN (${warehouseNamesList})` : ""}
       GROUP BY hwi.variant_id
+    ),
+    ActiveOrderItems AS (
+      SELECT DISTINCT ON (ln.variant_id) 
+        ln.variant_id, 
+        o.order_number
+      FROM haravan.line_items ln
+      JOIN haravan.orders o ON ln.order_id = o.id
+      WHERE o.cancelled_at IS NULL
+      ORDER BY ln.variant_id, o.created_at DESC
+    ),
+    ActiveTempOrderItems AS (
+      SELECT DISTINCT ON (tp.gia_report_no) 
+        tp.gia_report_no, 
+        o.order_number
+      FROM haravan.line_items ln
+      JOIN haravan.orders o ON ln.order_id = o.id
+      JOIN workplace.temporary_products tp ON ln.variant_id::text = tp.haravan_variant_id::text
+      WHERE o.cancelled_at IS NULL
+      ORDER BY tp.gia_report_no, o.created_at DESC
     )
     SELECT
       d.id,
@@ -49,8 +68,16 @@ export function buildStockTrackerQuery(targets, warehouseNames) {
       CAST(COALESCE(inv.retail_stock, 0) AS INT) AS total_stock,
       CASE 
         WHEN COALESCE(inv.retail_stock, 0) > 0 THEN 'Chưa bán'
-        ELSE 'Đã bán'
+        WHEN aoi.order_number IS NOT NULL THEN 'Đã bán'
+        WHEN atoi.order_number IS NOT NULL THEN 'Đặt trước'
+        ELSE 'Không có hàng'
       END AS sale_status,
+      CASE 
+        WHEN COALESCE(inv.retail_stock, 0) > 0 THEN NULL
+        WHEN aoi.order_number IS NOT NULL THEN aoi.order_number
+        WHEN atoi.order_number IS NOT NULL THEN atoi.order_number
+        ELSE NULL
+      END AS in_order,
       discount_info.title AS active_collection
     FROM workplace.diamonds d
     JOIN haravan.variants hv ON hv.id = d.variant_id
@@ -62,6 +89,8 @@ export function buildStockTrackerQuery(targets, warehouseNames) {
       AND (tc.orig_price IS NULL OR d.price = tc.orig_price)
     )
     LEFT JOIN RetailInventoryStatus inv ON inv.variant_id = d.variant_id
+    LEFT JOIN ActiveOrderItems aoi ON aoi.variant_id = d.variant_id
+    LEFT JOIN ActiveTempOrderItems atoi ON (atoi.gia_report_no::text = d.report_no::text OR atoi.gia_report_no::text = 'GIA' || d.report_no::text)
     LEFT JOIN (
       SELECT DISTINCT ON (m.diamond_id)
         m.diamond_id,
