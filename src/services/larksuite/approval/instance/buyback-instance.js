@@ -68,7 +68,11 @@ export default class BuyBackInstanceService {
           refund_amount: instance.refund_amount ? parseFloat(instance.refund_amount) : null,
           is_synced_to_crm: false,
           updated_at: new Date(),
-          submitted_date: instance.submitted_date
+          submitted_date: instance.submitted_date,
+          department_id: instance.department_id,
+          department_name: instance.department_name,
+          product_handed_over_at: instance.handover_date,
+          user_id: instance.user_id
         },
         create: {
           instance_code: instance.instance_code,
@@ -86,7 +90,11 @@ export default class BuyBackInstanceService {
           is_synced_to_crm: false,
           created_at: new Date(),
           updated_at: new Date(),
-          submitted_date: instance.submitted_date
+          submitted_date: instance.submitted_date,
+          department_id: instance.department_id,
+          department_name: instance.department_name,
+          product_handed_over_at: instance.handover_date,
+          user_id: instance.user_id
         }
       });
     }
@@ -98,7 +106,8 @@ export default class BuyBackInstanceService {
       serial_number: instance.serial_number,
       status: instance.status,
       submitted_date: instance.start_time ? new Date(Number(instance.start_time)) : null,
-      new_order_code: instance.new_order_code
+      new_order_code: instance.new_order_code,
+      user_id: instance.user_id
     };
   };
 
@@ -146,7 +155,11 @@ export default class BuyBackInstanceService {
       reason: instance.reason,
       refund_amount: instance.refund_amount ? parseFloat(instance.refund_amount) : null,
       submitted_date: instance.submitted_date,
-      updated_at: new Date()
+      updated_at: new Date(),
+      department_id: instance.department_id,
+      department_name: instance.department_name,
+      product_handed_over_at: instance.handover_date,
+      user_id: instance.user_id
     });
 
     const dbData = prepareDbData(finalInstance);
