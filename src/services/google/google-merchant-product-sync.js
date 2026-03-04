@@ -3,7 +3,7 @@ import DiamondService from "services/ecommerce/diamond/diamond.js";
 import GoogleMerchantService from "services/google/google-merchant-service.js";
 import * as Sentry from "@sentry/cloudflare";
 
-const LIMIT = 50;
+const LIMIT = 20;
 
 export default class GoogleMerchantProductSyncService {
   constructor(env) {
