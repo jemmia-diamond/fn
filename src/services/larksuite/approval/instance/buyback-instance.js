@@ -50,7 +50,7 @@ export default class BuyBackInstanceService {
     }
 
     for (const instance of transformedInstances) {
-      await db.buyback_exchange_approval_instances.upsert({
+      await db.larksuiteBuybackExchangeApprovalInstance.upsert({
         where: {
           instance_code: instance.instance_code
         },
@@ -151,7 +151,7 @@ export default class BuyBackInstanceService {
 
     const dbData = prepareDbData(finalInstance);
 
-    await db.buyback_exchange_approval_instances.upsert({
+    await db.larksuiteBuybackExchangeApprovalInstance.upsert({
       where: {
         instance_code: finalInstance.instance_code
       },
@@ -169,7 +169,7 @@ export default class BuyBackInstanceService {
       Sentry.captureException(erpError);
     }
 
-    await db.buyback_exchange_approval_instances.update({
+    await db.larksuiteBuybackExchangeApprovalInstance.update({
       where: { instance_code: finalInstance.instance_code },
       data: { is_synced_to_crm: true }
     });
