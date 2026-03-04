@@ -11,7 +11,7 @@ model larksuiteRecord {
   @@schema("larksuite")
 }
 
-model buyback_exchange_approval_instances {
+model larksuiteBuybackExchangeApprovalInstance {
   id               Int       @id @default(autoincrement())
   instance_code    String?   @unique @db.VarChar
   serial_number    String?   @db.VarChar
@@ -29,7 +29,12 @@ model buyback_exchange_approval_instances {
   created_at       DateTime? @db.Timestamp(6)
   updated_at       DateTime? @db.Timestamp(6)
   submitted_date   DateTime? @db.Timestamp(6)
+  user_id          String?   @db.VarChar
+  department_id    String?   @db.VarChar
+  department_name  String?   @db.VarChar
+  product_handed_over_at DateTime? @db.Timestamp(6)
 
+  @@map("buyback_exchange_approval_instances")
   @@schema("larksuite")
 }
 
