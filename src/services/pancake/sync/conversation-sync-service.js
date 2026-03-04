@@ -241,7 +241,8 @@ export default class ConversationSyncService {
     return client.post("/scoring", payload).catch(() => {});
   }
 
-  processScoringWebhooks(chunk) {
+  async processScoringWebhooks(chunk) {
+    const scoringPromises = [];
     for (const item of chunk) {
       if (!item.id || !item.page_id) continue;
 
@@ -259,7 +260,8 @@ export default class ConversationSyncService {
         }
       }
 
-      this.pushSalesayaWebhook(payload); // Fire and forget
+      scoringPromises.push(this.pushSalesayaWebhook(payload));
     }
+    await Promise.allSettled(scoringPromises);
   }
 }
