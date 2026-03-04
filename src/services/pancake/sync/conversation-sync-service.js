@@ -4,6 +4,7 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import * as Sentry from "@sentry/cloudflare";
 import { isInvalidTokenError, sleep } from "pancake/utils";
+import { createAxiosClient } from "services/utils/http-client";
 
 dayjs.extend(utc);
 
@@ -231,15 +232,16 @@ export default class ConversationSyncService {
   async pushSalesayaWebhook(payload) {
     if (!payload?.conversationId || !payload?.pageId) return;
 
-    return fetch("https://api.salesaya.com/scoring", {
-      method: "POST",
+    const client = createAxiosClient({
+      baseURL: "https://api.salesaya.com",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    }).catch(err => console.warn("Webhook scoring failed:", err));
+      timeout: 5000
+    });
+
+    return client.post("/scoring", payload).catch(() => {});
   }
 
-  async processScoringWebhooks(chunk) {
-    const scoringPromises = [];
+  processScoringWebhooks(chunk) {
     for (const item of chunk) {
       if (!item.id || !item.page_id) continue;
 
@@ -257,8 +259,7 @@ export default class ConversationSyncService {
         }
       }
 
-      scoringPromises.push(this.pushSalesayaWebhook(payload));
+      this.pushSalesayaWebhook(payload); // Fire and forget
     }
-    await Promise.allSettled(scoringPromises);
   }
 }
