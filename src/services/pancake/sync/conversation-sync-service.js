@@ -109,6 +109,8 @@ export default class ConversationSyncService {
       ...pageCustomerUpserts,
       ...conversationTagUpserts
     ]);
+
+    await this.processScoringWebhooks(chunk);
   }
 
   mapToConversationModel(item) {
@@ -224,5 +226,39 @@ export default class ConversationSyncService {
     const tags = { flow: "PancakeSync:conversations" };
     if (pageId) tags.page_id = pageId;
     Sentry.captureException(error, { tags });
+  }
+
+  async pushWebhook(payload) {
+    if (!payload?.conversationId || !payload?.pageId) return;
+
+    return fetch("https://api.salesaya.com/scoring", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    }).catch(err => console.warn("Webhook scoring failed:", err));
+  }
+
+  async processScoringWebhooks(chunk) {
+    const scoringPromises = [];
+    for (const item of chunk) {
+      if (!item.id || !item.page_id) continue;
+
+      const payload = {
+        conversationId: item.id,
+        pageId: item.page_id
+      };
+
+      const assigneeHistories = item.assignee_histories || [];
+      if (assigneeHistories.length > 0) {
+        const historyPayload = assigneeHistories[assigneeHistories.length - 1].payload || {};
+        const payloadAddedUsers = historyPayload.added_users || [];
+        if (payloadAddedUsers.length > 0 && payloadAddedUsers[0].id) {
+          payload.assigneeIds = [payloadAddedUsers[0].id];
+        }
+      }
+
+      scoringPromises.push(this.pushWebhook(payload));
+    }
+    await Promise.allSettled(scoringPromises);
   }
 }
