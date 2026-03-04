@@ -9,7 +9,7 @@ export default class GoogleMerchantService {
     this.auth = null;
     this.client = createAxiosClient({
       baseURL: "https://merchantapi.googleapis.com",
-      timeout: 10000
+      timeout: 30000
     });
   }
 
