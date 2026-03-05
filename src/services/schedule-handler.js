@@ -26,6 +26,7 @@ export default {
       await ERP.CRM.LeadService.syncCallLogLead(env);
       await ERP.Selling.SalesOrderService.fillSerialNumbersToTemporaryOrderItems(env);
       await new Pancake.TagSyncService(env).syncTags();
+      await new Ecommerce.CollectionProductSyncService(env).syncCollectionProducts();
       break;
     case "*/5 * * * *": // At every 5th minute
       const batchTime = dayjs().utc();
