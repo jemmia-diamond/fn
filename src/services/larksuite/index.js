@@ -8,7 +8,7 @@ import BuybackExchangeService from "services/larksuite/buyback-exchange-service"
 import Ticket from "services/larksuite/tech-ticket";
 import ShieldMessageService from "services/jemmia-shield/shield-message-service";
 import JemmiaShieldLarkService from "services/jemmia-shield/jemmia-shield-lark-service";
-import ERPNotificationService from "services/erp-notification-service";
+import DeploymentNotificationService from "services/deployment-notification-service";
 
 export default {
   Contact: Contact,
@@ -21,5 +21,5 @@ export default {
   Ticket,
   ShieldMessageService,
   JemmiaShieldLarkService,
-  ERPNotificationService
+  DeploymentNotificationService
 };

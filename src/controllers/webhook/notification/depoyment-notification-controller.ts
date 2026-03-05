@@ -1,9 +1,9 @@
-import NotificationService from "src/services/erp-notification-service";
+import DeploymentNotificationService from "services/deployment-notification-service";
 
-export default class ERPNotificationController {
+export default class DeploymentNotificationController {
   static async create(c: any) {
     const payload = await c.req.json();
-    const options = NotificationService.getQueueOptions(payload.event);
+    const options = DeploymentNotificationService.getQueueOptions(payload.event);
 
     if (options) {
       await c.env.NOTIFICATION_QUEUE.send({

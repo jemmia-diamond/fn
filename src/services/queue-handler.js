@@ -67,7 +67,7 @@ export default {
       await ERP.Selling.SalesOrderService.dequeueOrderQueue(batch, env);
       break;
     case "notification":
-      await Larksuite.ERPNotificationService.dequeue(batch, env);
+      await Larksuite.DeploymentNotificationService.dequeue(batch, env);
       break;
     default:
       break;

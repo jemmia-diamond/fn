@@ -16,7 +16,7 @@ const DEPLOYMENT_EVENTS = {
   FAILURE: "deploy_failure"
 };
 
-export default class ERPNotificationService {
+export default class DeploymentNotificationService {
   static async sendToLark(env: any, msg: string, event?: string, chatId?: string) {
     const client = await LarksuiteService.createClientV2(env);
 
