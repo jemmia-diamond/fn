@@ -85,7 +85,6 @@ export default class SalesPersonService {
         });
       }
     } catch (error) {
-      console.warn("Error in SalesPersonService.syncSalesPersonToDatabase:", error);
       Sentry.captureException(error);
     }
   }

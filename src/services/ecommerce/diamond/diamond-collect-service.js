@@ -31,7 +31,6 @@ export default class DiamondCollectService {
       });
 
     } catch (error) {
-      console.warn("Error in syncDiamondsToCollects:", error);
       Sentry.captureException(error);
     }
   }

@@ -63,7 +63,6 @@ export default class EmployeeService {
         });
       }
     } catch (error) {
-      console.warn("Error in EmployeeService.syncEmployeesToDatabase:", error);
       Sentry.captureException(error);
     }
   }

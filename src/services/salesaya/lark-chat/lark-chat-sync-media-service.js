@@ -156,7 +156,6 @@ export default class LarkChatSyncMediaService {
       const startTime = dayjs().tz(TIMEZONE_VIETNAM).subtract(1, "day").startOf("day").unix();
       await service.syncChat(CHAT_GROUPS.MEDIA_GROUP.chat_id, startTime);
     } catch (error) {
-      console.warn("Error in LarkChatSyncMediaService.syncMedia:", error);
       Sentry.captureException(error);
     }
   }

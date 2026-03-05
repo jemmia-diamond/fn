@@ -74,7 +74,6 @@ export default class UserService {
         });
       }
     } catch (error) {
-      console.warn("Error in Larksuite UserService.syncUsersToDatabase:", error);
       Sentry.captureException(error);
     }
   }

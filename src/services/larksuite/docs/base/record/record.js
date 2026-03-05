@@ -70,7 +70,6 @@ export default class RecordService {
         });
       }
     } catch (error) {
-      console.warn("Error in RecordService.syncRecordsToDatabase:", error);
       Sentry.captureException(error);
     }
   }

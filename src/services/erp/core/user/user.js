@@ -45,7 +45,6 @@ export default class UserService {
         }
       }
     } catch (error) {
-      console.warn("Error in ERP UserService.syncLarkIds:", error);
       Sentry.captureException(error);
     }
   }
@@ -98,7 +97,6 @@ export default class UserService {
         });
       }
     } catch (error) {
-      console.warn("Error in ERP UserService.syncUsersToDatabase:", error);
       Sentry.captureException(error);
     }
   }
