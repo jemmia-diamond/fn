@@ -10,6 +10,12 @@ dayjs.extend(timezone);
 
 const DEPLOY_SUCCESS_DELAY_SECONDS = 300;
 
+const DEPLOYMENT_EVENTS = {
+  START: "deploy_start",
+  SUCCESS: "deploy_success",
+  FAILURE: "deploy_failure"
+};
+
 export default class ERPNotificationService {
   static async sendToLark(env: any, msg: string, event?: string, chatId?: string) {
     const client = await LarksuiteService.createClientV2(env);
@@ -22,11 +28,11 @@ export default class ERPNotificationService {
     let finalMsg = msg;
     const now = dayjs().tz(TIMEZONE_VIETNAM).format("HH:mm:ss DD/MM/YYYY");
 
-    if (event === "deploy_start") {
+    if (event === DEPLOYMENT_EVENTS.START) {
       finalMsg = `[${now}] 🚀 Hệ thống bắt đầu cập nhật, vui lòng thử lại sau 10 phút`;
-    } else if (event === "deploy_success") {
+    } else if (event === DEPLOYMENT_EVENTS.SUCCESS) {
       finalMsg = `[${now}] ✅ Hệ thống hoàn thành cập nhật`;
-    } else if (event === "deploy_failure") {
+    } else if (event === DEPLOYMENT_EVENTS.FAILURE) {
       return true;
     }
 
@@ -56,12 +62,12 @@ export default class ERPNotificationService {
   }
 
   static getQueueOptions(event: string) {
-    if (event === "deploy_failure") {
+    if (event === DEPLOYMENT_EVENTS.FAILURE) {
       return null;
     }
 
     return {
-      delaySeconds: event === "deploy_success" ? DEPLOY_SUCCESS_DELAY_SECONDS : 0,
+      delaySeconds: event === DEPLOYMENT_EVENTS.SUCCESS ? DEPLOY_SUCCESS_DELAY_SECONDS : 0,
       chatId: CHAT_GROUPS.SUPPORT_ERP_SALES.chat_id
     };
   }

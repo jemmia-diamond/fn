@@ -1,4 +1,4 @@
-import NotificationService from "services/erp-notification-service";
+import NotificationService from "src/services/erp-notification-service";
 
 export default class ERPNotificationController {
   static async create(c: any) {
