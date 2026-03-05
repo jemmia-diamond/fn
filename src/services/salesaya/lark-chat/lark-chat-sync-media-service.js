@@ -11,6 +11,7 @@ import { TIMEZONE_VIETNAM } from "src/constants";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import timezone from "dayjs/plugin/timezone.js";
+import * as Sentry from "@sentry/cloudflare";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -148,11 +149,16 @@ export default class LarkChatSyncMediaService {
   }
 
   static async syncMedia(env) {
-    const larkAxiosClient = await LarksuiteService.createLarkAxiosClient(env);
-    const larkSdkClient = await LarksuiteService.createClientV2(env);
-    const service = new LarkChatSyncMediaService(env, larkAxiosClient, larkSdkClient);
-    const startTime = dayjs().tz(TIMEZONE_VIETNAM).subtract(1, "day").startOf("day").unix();
-    await service.syncChat(CHAT_GROUPS.MEDIA_GROUP.chat_id, startTime);
+    try {
+      const larkAxiosClient = await LarksuiteService.createLarkAxiosClient(env);
+      const larkSdkClient = await LarksuiteService.createClientV2(env);
+      const service = new LarkChatSyncMediaService(env, larkAxiosClient, larkSdkClient);
+      const startTime = dayjs().tz(TIMEZONE_VIETNAM).subtract(1, "day").startOf("day").unix();
+      await service.syncChat(CHAT_GROUPS.MEDIA_GROUP.chat_id, startTime);
+    } catch (error) {
+      console.warn("Error in LarkChatSyncMediaService.syncMedia:", error);
+      Sentry.captureException(error);
+    }
   }
 }
 
