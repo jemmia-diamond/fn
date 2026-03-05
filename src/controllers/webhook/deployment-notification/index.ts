@@ -1,4 +1,4 @@
-import DeploymentNotificationController from "controllers/webhook/notification/depoyment-notification-controller";
+import DeploymentNotificationController from "controllers/webhook/notification/deployment-notification-controller";
 
 export default class DeploymentNotificationWebhook {
   static async register(webhook: any) {

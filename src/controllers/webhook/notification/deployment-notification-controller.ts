@@ -3,11 +3,13 @@ import DeploymentNotificationService from "services/deployment-notification-serv
 export default class DeploymentNotificationController {
   static async create(c: any) {
     const payload = await c.req.json();
-    const options = DeploymentNotificationService.getQueueOptions(payload.event);
+    const source = payload.source;
+    const options = DeploymentNotificationService.getQueueOptions(payload.event, source);
 
     if (options) {
       await c.env.NOTIFICATION_QUEUE.send({
         ...payload,
+        source,
         chatId: options.chatId
       }, {
         delaySeconds: options.delaySeconds

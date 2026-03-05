@@ -8,16 +8,29 @@ import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/cons
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
-const DEPLOY_SUCCESS_DELAY_SECONDS = 300;
-
-const DEPLOYMENT_EVENTS = {
-  START: "deploy_start",
-  SUCCESS: "deploy_success",
-  FAILURE: "deploy_failure"
+const NOTIFICATION_SOURCES: Record<string, any> = {
+  ERP: {
+    name: "erp",
+    chatId: CHAT_GROUPS.SUPPORT_ERP_SALES.chat_id,
+    events: {
+      "deploy_start": {
+        message: (now: string) => `[${now}] 🚀 Hệ thống ERP bắt đầu cập nhật, vui lòng thử lại sau 10 phút`,
+        delaySeconds: 0
+      },
+      "deploy_success": {
+        message: (now: string) => `[${now}] ✅ Hệ thống ERP hoàn thành cập nhật`,
+        delaySeconds: 300
+      },
+      "deploy_failure": {
+        silent: true,
+        delaySeconds: 0
+      }
+    }
+  }
 };
 
 export default class DeploymentNotificationService {
-  static async sendToLark(env: any, msg: string, event?: string, chatId?: string) {
+  static async sendToLark(env: any, msg: string, event?: string, chatId?: string, source?: string) {
     const client = await LarksuiteService.createClientV2(env);
 
     const receiveId = chatId;
@@ -28,12 +41,14 @@ export default class DeploymentNotificationService {
     let finalMsg = msg;
     const now = dayjs().tz(TIMEZONE_VIETNAM).format("HH:mm:ss DD/MM/YYYY");
 
-    if (event === DEPLOYMENT_EVENTS.START) {
-      finalMsg = `[${now}] 🚀 Hệ thống bắt đầu cập nhật, vui lòng thử lại sau 10 phút`;
-    } else if (event === DEPLOYMENT_EVENTS.SUCCESS) {
-      finalMsg = `[${now}] ✅ Hệ thống hoàn thành cập nhật`;
-    } else if (event === DEPLOYMENT_EVENTS.FAILURE) {
-      return true;
+    const sourceConfig = Object.values(NOTIFICATION_SOURCES).find(s => s.name === source);
+    if (!sourceConfig) return;
+
+    const eventConfig = sourceConfig.events[event || ""];
+    if (!eventConfig || eventConfig.silent) return;
+
+    if (typeof eventConfig.message === "function") {
+      finalMsg = eventConfig.message(now);
     }
 
     const res = await client.im.message.create({
@@ -56,19 +71,21 @@ export default class DeploymentNotificationService {
 
   static async dequeue(batch: any, env: any) {
     for (const message of batch.messages) {
-      const { msg, event, chatId } = message.body as any;
-      await this.sendToLark(env, msg, event, chatId);
+      const { msg, event, chatId, source } = message.body as any;
+      await this.sendToLark(env, msg, event, chatId, source);
     }
   }
 
-  static getQueueOptions(event: string) {
-    if (event === DEPLOYMENT_EVENTS.FAILURE) {
-      return null;
-    }
+  static getQueueOptions(event: string, source?: string) {
+    const sourceConfig = Object.values(NOTIFICATION_SOURCES).find(s => s.name === source);
+    if (!sourceConfig) return null;
+
+    const eventConfig = sourceConfig.events[event];
+    if (!eventConfig || eventConfig.silent) return null;
 
     return {
-      delaySeconds: event === DEPLOYMENT_EVENTS.SUCCESS ? DEPLOY_SUCCESS_DELAY_SECONDS : 0,
-      chatId: CHAT_GROUPS.SUPPORT_ERP_SALES.chat_id
+      delaySeconds: eventConfig.delaySeconds || 0,
+      chatId: sourceConfig.chatId
     };
   }
 }
