@@ -6,6 +6,7 @@ import ProductQuote from "src/services/product_quote";
 import Ecommerce from "src/services/ecommerce";
 import Haravan from "src/services/haravan";
 import Misa from "src/services/misa";
+import Larksuite from "src/services/larksuite";
 
 export default {
   queue: async (batch, env) => {
@@ -64,6 +65,9 @@ export default {
       break;
     case "erpnext-order-creation":
       await ERP.Selling.SalesOrderService.dequeueOrderQueue(batch, env);
+      break;
+    case "notification":
+      await Larksuite.ERPNotificationService.dequeue(batch, env);
       break;
     default:
       break;

@@ -10,6 +10,7 @@ import SepayWebhook from "controllers/webhook/sepay";
 import NocoWebhook from "controllers/webhook/nocodb";
 import ZalopayTransactionWebhook from "controllers/webhook/zalopay-transaction";
 import LarkWebhook from "controllers/webhook/lark";
+import ERPNotificationWebhook from "controllers/webhook/deployment-notification";
 
 export default class WebhookRoutes {
   static register(webhook) {
@@ -28,5 +29,6 @@ export default class WebhookRoutes {
     NocoWebhook.register(webhook);
     ZalopayTransactionWebhook.register(webhook);
     LarkWebhook.register(webhook);
+    ERPNotificationWebhook.register(webhook);
   };
 };
