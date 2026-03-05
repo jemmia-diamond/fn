@@ -8,6 +8,8 @@ import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/cons
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
+const DEPLOY_SUCCESS_DELAY_SECONDS = 300;
+
 export default class ERPNotificationService {
   static async sendToLark(env: any, msg: string, event?: string, chatId?: string) {
     const client = await LarksuiteService.createClientV2(env);
@@ -59,7 +61,7 @@ export default class ERPNotificationService {
     }
 
     return {
-      delaySeconds: event === "deploy_success" ? 300 : 0,
+      delaySeconds: event === "deploy_success" ? DEPLOY_SUCCESS_DELAY_SECONDS : 0,
       chatId: CHAT_GROUPS.SUPPORT_ERP_SALES.chat_id
     };
   }
