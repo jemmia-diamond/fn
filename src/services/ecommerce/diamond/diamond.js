@@ -113,7 +113,7 @@ export default class DiamondService {
 
   /**
    * Fetches diamond status and prices for a specific campaign.
-   * @param {Array<{s1: number, s2: number, color: string, clarity: string, original_price: number}>} targets
+   * @param {Array<{s1: number, s2: number, carat: number | Object, color: string, clarity: string, original_price: number}>} targets
    * @param {Array<string>} warehouseNames
    */
   async getDiamondStockTracker(targets, warehouseNames) {
@@ -149,6 +149,7 @@ export default class DiamondService {
           size: sizeStr,
           color: target.color ?? null,
           clarity: target.clarity ?? null,
+          carat: target.carat ?? null,
           base_price: target.original_price ?? null,
           current_price: target.original_price ?? null,
           total_stock: 0,
