@@ -12,19 +12,23 @@ export function buildStockTrackerQuery(targets, warehouseNames) {
     const priceStr = price !== null ? `${price}` : "NULL";
 
     if (index === 0) {
-      return `(${s1Str}::real, ${s2Str}::real, ${color}::text, ${clarity}::text, ${priceStr}::numeric)`;
+      return `(${index + 1}::int, ${s1Str}::real, ${s2Str}::real, ${color}::text, ${clarity}::text, ${priceStr}::numeric)`;
     }
 
-    return `(${s1Str}, ${s2Str}, ${color}, ${clarity}, ${priceStr})`;
+    return `(${index + 1}, ${s1Str}, ${s2Str}, ${color}, ${clarity}, ${priceStr})`;
   }).join(", ");
 
   const warehouseNamesList = warehouseNames.map(name => `'${name.replace(/'/g, "''")}'`).join(", ");
 
   return `
     WITH TargetConditions AS (
-      SELECT DISTINCT * FROM (VALUES
+      SELECT 
+        MIN(target_index) as target_index,
+        s1, s2, col, clar, orig_price
+      FROM (VALUES
         ${valuesClause}
-      ) AS t(s1, s2, col, clar, orig_price)
+      ) AS t(target_index, s1, s2, col, clar, orig_price)
+      GROUP BY s1, s2, col, clar, orig_price
     ),
     RetailInventoryStatus AS (
       SELECT 
@@ -38,7 +42,8 @@ export function buildStockTrackerQuery(targets, warehouseNames) {
     ActiveOrderItems AS (
       SELECT DISTINCT ON (ln.variant_id) 
         ln.variant_id, 
-        o.order_number
+        o.order_number,
+        o.created_at AS order_date
       FROM haravan.line_items ln
       JOIN haravan.orders o ON ln.order_id = o.id
       WHERE o.cancelled_at IS NULL
@@ -47,16 +52,19 @@ export function buildStockTrackerQuery(targets, warehouseNames) {
     ActiveTempOrderItems AS (
       SELECT DISTINCT ON (tp.gia_report_no) 
         tp.gia_report_no, 
-        o.order_number
+        o.order_number,
+        o.created_at AS order_date
       FROM haravan.line_items ln
       JOIN haravan.orders o ON ln.order_id = o.id
       JOIN workplace.temporary_products tp ON ln.variant_id::text = tp.haravan_variant_id::text
       WHERE o.cancelled_at IS NULL
       ORDER BY tp.gia_report_no, o.created_at DESC
     )
-    SELECT
-      d.id,
-      CAST(d.product_id AS INT) AS product_id,
+    SELECT * FROM (
+      SELECT
+        tc.target_index,
+        d.id,
+        CAST(d.product_id AS INT) AS product_id,
       CAST(d.variant_id AS INT) AS variant_id,
       hv.sku,
       d.report_no,
@@ -86,6 +94,12 @@ export function buildStockTrackerQuery(targets, warehouseNames) {
         WHEN atoi.order_number IS NOT NULL THEN atoi.order_number
         ELSE NULL
       END AS in_order,
+      CASE 
+        WHEN COALESCE(inv.retail_stock, 0) > 0 THEN NULL
+        WHEN aoi.order_date IS NOT NULL THEN aoi.order_date
+        WHEN atoi.order_date IS NOT NULL THEN atoi.order_date
+        ELSE NULL
+      END AS order_date,
       discount_info.title AS active_collection
     FROM workplace.diamonds d
     JOIN haravan.variants hv ON hv.id = d.variant_id
@@ -109,7 +123,10 @@ export function buildStockTrackerQuery(targets, warehouseNames) {
       WHERE hc.discount_type = 'percent'
       ORDER BY m.diamond_id, CAST(hc.discount_value AS NUMERIC) DESC
     ) discount_info ON discount_info.diamond_id = d.id
-    WHERE d.auto_create_haravan_product = true
-    ORDER BY d.edge_size_1 DESC, d.color ASC, d.clarity ASC;
+      WHERE d.auto_create_haravan_product = true
+        AND hv.sku LIKE '%-GIA%'
+    ) AS results
+    WHERE order_date >= '2026-03-01' OR order_date IS NULL
+    ORDER BY target_index ASC, order_date DESC NULLS LAST, edge_size_1 DESC, color ASC, clarity ASC;
   `;
 }
