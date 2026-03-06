@@ -60,40 +60,48 @@ export default class DiamondCollectService {
 
     const existingPercents = new Set((collections.list || []).map(c => Number(c.discount_value)));
     const missingPercents = uniquePercents.filter(p => !existingPercents.has(Number(p)));
-    if (missingPercents.length > 0) {
-      const newRecords = missingPercents.map(percent => ({
-        discount_type: "percent",
-        discount_value: percent,
-        title: `Chương trình nền KCV ${percent}%`,
-        auto_create: true
-      }));
 
-      try {
-        const createdCollections = await nocoClient.createRecords(DiamondCollectService.HARAVAN_COLLECTIONS_TABLE, newRecords);
-        const createdCollectionIds = (createdCollections || []).map(record => record.id);
-        const createdCollectionsList = await nocoClient.listRecords(DiamondCollectService.HARAVAN_COLLECTIONS_TABLE, {
-          where: `(id,in,${createdCollectionIds.join(",")})`
-        });
-        if (createdCollectionsList.list.length > 0) {
-          for (const col of createdCollectionsList.list) {
-            await this._triggerCollectionWebhook(col);
-          }
-        }
-        collections = await nocoClient.listRecords(DiamondCollectService.HARAVAN_COLLECTIONS_TABLE, {
-          where: where,
-          limit: 1000
-        });
-      } catch (error) {
-        Sentry.captureException(error, {
-          tags: {
-            tableId: DiamondCollectService.HARAVAN_COLLECTIONS_TABLE,
-            tableName: "haravan_collections"
-          }
-        });
-      }
+    if (missingPercents.length > 0) {
+      await this._ensureMissingCollectionsExist(nocoClient, missingPercents);
+
+      collections = await nocoClient.listRecords(DiamondCollectService.HARAVAN_COLLECTIONS_TABLE, {
+        where: where,
+        limit: 1000
+      });
     }
 
     return collections;
+  }
+
+  async _ensureMissingCollectionsExist(nocoClient, missingPercents) {
+    const newRecords = missingPercents.map(percent => ({
+      discount_type: "percent",
+      discount_value: percent,
+      title: `Chương trình nền KCV ${percent}%`,
+      auto_create: true
+    }));
+
+    try {
+      const createdCollections = await nocoClient.createRecords(DiamondCollectService.HARAVAN_COLLECTIONS_TABLE, newRecords);
+      const createdCollectionIds = (createdCollections || []).map(record => record.id);
+
+      const createdCollectionsList = await nocoClient.listRecords(DiamondCollectService.HARAVAN_COLLECTIONS_TABLE, {
+        where: `(id,in,${createdCollectionIds.join(",")})`
+      });
+
+      if (createdCollectionsList.list.length > 0) {
+        for (const col of createdCollectionsList.list) {
+          await this._triggerCollectionWebhook(col);
+        }
+      }
+    } catch (error) {
+      Sentry.captureException(error, {
+        tags: {
+          tableId: DiamondCollectService.HARAVAN_COLLECTIONS_TABLE,
+          tableName: "haravan_collections"
+        }
+      });
+    }
   }
 
   async _triggerCollectionWebhook(col) {
