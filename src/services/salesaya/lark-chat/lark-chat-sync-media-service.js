@@ -86,37 +86,49 @@ export default class LarkChatSyncMediaService {
         const fileLinks = [];
 
         for (let i = 0; i < parsed.images.length; i++) {
-          const img = parsed.images[i];
-          const key = `${img.message_id}_${img.key}`;
+          try {
+            const img = parsed.images[i];
+            const key = `${img.message_id}_${img.key}`;
 
-          if (!buffersCache[key]) {
-            buffersCache[key] = await this.fetcher.getBufferByKey(
-              img.message_id,
-              img.key,
-              "image"
-            );
+            if (!buffersCache[key]) {
+              buffersCache[key] = await this.fetcher.getBufferByKey(
+                img.message_id,
+                img.key,
+                "image"
+              );
+            }
+
+            if (buffersCache[key]) {
+              const filename = getFilename(parsed.codes[0], i + 1, "jpg");
+              const link = await this.uploader.upload(buffersCache[key], filename);
+              if (link) imageLinks.push(link);
+            }
+          } catch (error) {
+            Sentry.captureException(error);
           }
-
-          const filename = getFilename(parsed.codes[0], i + 1, "jpg");
-          const link = await this.uploader.upload(buffersCache[key], filename);
-          if (link) imageLinks.push(link);
         }
 
         for (let i = 0; i < parsed.files.length; i++) {
-          const f = parsed.files[i];
-          const key = `${f.message_id}_${f.key}`;
+          try {
+            const f = parsed.files[i];
+            const key = `${f.message_id}_${f.key}`;
 
-          if (!buffersCache[key]) {
-            buffersCache[key] = await this.fetcher.getBufferByKey(
-              f.message_id,
-              f.key,
-              "file"
-            );
+            if (!buffersCache[key]) {
+              buffersCache[key] = await this.fetcher.getBufferByKey(
+                f.message_id,
+                f.key,
+                "file"
+              );
+            }
+
+            if (buffersCache[key]) {
+              const filename = getFilename(parsed.codes[0], i + 1, "mp4");
+              const link = await this.uploader.upload(buffersCache[key], filename);
+              if (link) fileLinks.push(link);
+            }
+          } catch (error) {
+            Sentry.captureException(error);
           }
-
-          const filename = getFilename(parsed.codes[0], i + 1, "mp4");
-          const link = await this.uploader.upload(buffersCache[key], filename);
-          if (link) fileLinks.push(link);
         }
 
         const links = [...imageLinks, ...fileLinks].join(", ");
