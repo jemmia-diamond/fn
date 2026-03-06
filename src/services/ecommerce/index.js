@@ -10,7 +10,6 @@ import DiamondService from "services/ecommerce/diamond/diamond";
 import FormService from "services/ecommerce/form/form";
 import DiamondCollectService from "services/ecommerce/diamond/diamond-collect-service";
 import VariantSyncService from "services/ecommerce/variant/variant-sync-service";
-import CollectionProductSyncService from "services/ecommerce/collection-product/collection-product-sync-service";
 
 export default {
   ProductService: ProductService,
@@ -24,6 +23,5 @@ export default {
   JewelryDiamondPairService: JewelryDiamondPairService,
   FormService: FormService,
   DiamondCollectService: DiamondCollectService,
-  VariantSyncService,
-  CollectionProductSyncService
+  VariantSyncService
 };

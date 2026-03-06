@@ -14,6 +14,7 @@ import { TIMEZONE_VIETNAM } from "src/constants";
 import Google from "services/google";
 import Salesaya from "services/salesaya";
 import Pancake from "services/pancake";
+import Haravan from "services/haravan";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -26,7 +27,7 @@ export default {
       await ERP.CRM.LeadService.syncCallLogLead(env);
       await ERP.Selling.SalesOrderService.fillSerialNumbersToTemporaryOrderItems(env);
       await new Pancake.TagSyncService(env).syncTags();
-      await new Ecommerce.CollectionProductSyncService(env).syncCollectionProducts();
+      await new Haravan.Collect.CollectionProductSyncService(env).syncCollectionProducts();
       break;
     case "*/5 * * * *": // At every 5th minute
       const batchTime = dayjs().utc();
