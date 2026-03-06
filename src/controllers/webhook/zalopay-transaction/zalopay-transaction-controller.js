@@ -5,6 +5,6 @@ export default class ZaloPayTransactionController {
     const data = await ctx.req.json();
     data.topic = SEPAY_WEBHOOK_TOPICS.ZALOPAY;
     await ctx.env["SEPAY_TRANSACTION_QUEUE"].send(data);
-    return ctx.json({ message: "ZaloPay Transaction Received" });
+    return ctx.json({ return_code: 1, return_message: "success" });
   }
 }
