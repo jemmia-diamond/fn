@@ -4,11 +4,11 @@ export default class LarkHelper {
    * @param {Array|String} field - Field value from LarkSuite
    * @returns {String|null} - Extracted text or null
    */
-  static extractText(field) {
+  static extractText(field, targetField = "text") {
     if (!field) return null;
     if (typeof field === "string") return field;
-    if (Array.isArray(field) && field.length > 0 && field[0].text) {
-      return field[0].text;
+    if (Array.isArray(field) && field.length > 0 && field[0][targetField]) {
+      return field[0][targetField];
     }
     return null;
   }
