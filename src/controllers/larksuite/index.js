@@ -5,7 +5,6 @@ import ShieldRedirectController from "controllers/jemmia-shield/shield-redirect-
 import JemmiaShieldCallbackController from "controllers/callback/jemmia-shield-callback-controller";
 import ApprovalSubscriptionController from "controllers/larksuite/approval-subscription-controller";
 import LarkApprovalOrdersController from "controllers/larksuite/lark-approval-orders-controller";
-import LarkChatSyncMediaController from "controllers/larksuite/lark-chat-sync-media-controller";
 
 export default {
   BuybackExchangeController,
@@ -14,6 +13,5 @@ export default {
   ShieldRedirectController,
   JemmiaShieldCallbackController,
   ApprovalSubscriptionController,
-  LarkApprovalOrdersController,
-  LarkChatSyncMediaController
+  LarkApprovalOrdersController
 };
