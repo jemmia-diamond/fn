@@ -146,7 +146,7 @@ model marketingFacebookAdsInsightsDaily {
   account_name                String
   campaign_id                 String
   campaign_name               String
-  date                 DateTime  @db.Date 
+  date                 DateTime  @db.Date
   spend                       Decimal?  @db.Decimal(18, 2)
   impressions                 BigInt?
   clicks                      BigInt?
@@ -305,7 +305,7 @@ model marketingFacebookAdsInsightsDevice {
   publisher_platform          String    // "facebook", "instagram", "audience_network", "messenger"
   platform_position           String    // "feed", "instant_article", "instream_video", "right_hand_column", "story", "reels"
   device_platform             String    // "mobile", "desktop", "unknown"
-  
+
   spend                       Decimal?  @db.Decimal(18, 2)
   impressions                 BigInt?
   clicks                      BigInt?
@@ -351,9 +351,9 @@ model marketingFacebookAdsInsightsGeo {
   campaign_id                 String
   campaign_name               String?
   date                        DateTime  @db.Date
-  country                     String?   // "VN", "US", "SG" 
+  country                     String?   // "VN", "US", "SG"
   region                      String?   // Province/State
-  
+
   spend                       Decimal?  @db.Decimal(18, 2)
   impressions                 BigInt?
   clicks                      BigInt?
@@ -388,3 +388,16 @@ model marketingFacebookAdsInsightsGeo {
   @@schema("marketing")
 }
 
+// Google Section
+model marketingGoogleAdsCampaign {
+  uuid             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id               String    @unique
+  name             String
+  status           String?
+  channel_type     String?
+  channel_sub_type String?
+  synced_at        DateTime  @default(now())
+
+  @@map("google_ads_campaigns")
+  @@schema("marketing")
+}
