@@ -27,11 +27,12 @@ export default {
       await ERP.CRM.LeadService.syncCallLogLead(env);
       await ERP.Selling.SalesOrderService.fillSerialNumbersToTemporaryOrderItems(env);
       await new Pancake.TagSyncService(env).syncTags();
+      await new Ecommerce.ProductG1PromotionSyncService(env).syncPromotions();
       await new Haravan.Collect.CollectionProductSyncService(env).syncCollectionProducts();
       break;
     case "*/5 * * * *": // At every 5th minute
       const batchTime = dayjs().utc();
-      await new Pancake.ConversationSyncService(env).syncConversations({ batchTime });
+      await new Pancake.ConversationSyncService(env, _ctx).syncConversations({ batchTime });
       await new Pancake.CustomerSyncService(env).syncCustomers({ batchTime });
       await new ERP.CRM.PancakeLeadSyncService(env).syncPancakeLeads({ batchTime });
       await new Ecommerce.JewelryDiamondPairService(env).processOutOfStockDiamonds();

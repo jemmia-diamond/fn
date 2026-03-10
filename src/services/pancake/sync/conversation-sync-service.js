@@ -3,7 +3,8 @@ import PancakeClient from "pancake/pancake-client";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import * as Sentry from "@sentry/cloudflare";
-import { isInvalidTokenError, sleep } from "pancake/utils";
+import { isInvalidTokenError } from "pancake/utils";
+import { sleep } from "services/utils/sleep";
 import { createAxiosClient } from "services/utils/http-client";
 
 dayjs.extend(utc);
@@ -17,8 +18,9 @@ const EXCLUDED_PAGE_IDS = [
 ];
 
 export default class ConversationSyncService {
-  constructor(env) {
+  constructor(env, ctx) {
     this.env = env;
+    this.ctx = ctx;
     this.db = Database.instance(env);
     this.pancakeClient = new PancakeClient(env.PANCAKE_ACCESS_TOKEN);
   }
@@ -111,7 +113,11 @@ export default class ConversationSyncService {
       ...conversationTagUpserts
     ]);
 
-    await this.processScoringWebhooks(chunk);
+    if (this.ctx) {
+      this.ctx.waitUntil(this.processScoringWebhooks(chunk));
+    } else {
+      await this.processScoringWebhooks(chunk);
+    }
   }
 
   mapToConversationModel(item) {
@@ -236,13 +242,18 @@ export default class ConversationSyncService {
       baseURL: "https://api.salesaya.com",
       headers: { "Content-Type": "application/json" },
       timeout: 5000
-    });
+    }, { retries: 0 });
 
-    return client.post("/scoring", payload).catch(() => {});
+    return client.post("/scoring", payload).catch((error) => {
+      console.warn("Salesaya:scoring-webhook error", error);
+      Sentry.captureException(error, {
+        tags: { flow: "Salesaya:scoring-webhook" },
+        extra: { conversationId: payload.conversationId, pageId: payload.pageId }
+      });
+    });
   }
 
   async processScoringWebhooks(chunk) {
-    const scoringPromises = [];
     for (const item of chunk) {
       if (!item.id || !item.page_id) continue;
 
@@ -260,8 +271,7 @@ export default class ConversationSyncService {
         }
       }
 
-      scoringPromises.push(this.pushSalesayaWebhook(payload));
+      await this.pushSalesayaWebhook(payload);
     }
-    await Promise.allSettled(scoringPromises);
   }
 }
