@@ -11,7 +11,7 @@ model larksuiteRecord {
   @@schema("larksuite")
 }
 
-model buyback_exchange_approval_instances {
+model larksuiteBuybackExchangeApprovalInstance {
   id               Int       @id @default(autoincrement())
   instance_code    String?   @unique @db.VarChar
   serial_number    String?   @db.VarChar
@@ -29,7 +29,12 @@ model buyback_exchange_approval_instances {
   created_at       DateTime? @db.Timestamp(6)
   updated_at       DateTime? @db.Timestamp(6)
   submitted_date   DateTime? @db.Timestamp(6)
+  user_id          String?   @db.VarChar
+  department_id    String?   @db.VarChar
+  department_name  String?   @db.VarChar
+  product_handed_over_at DateTime? @db.Timestamp(6)
 
+  @@map("buyback_exchange_approval_instances")
   @@schema("larksuite")
 }
 
@@ -233,7 +238,7 @@ model larksuite_users {
   @@schema("larksuite")
 }
 
-model larksuiteTechTickets {
+model larksuiteTechTicket {
   record_id                   String    @id @map("record_id")
   ticket_id                   String?   @map("ticket_id")
   ticket_name                 String?   @map("ticket_name")
@@ -249,6 +254,10 @@ model larksuiteTechTickets {
   expected_completion_time    DateTime? @map("expected_completion_time")
   ticket_no_in_month          String?   @map("ticket_no_in_month")
   current_number_in_month     Int?      @map("current_number_in_month")
+  new_deadline                DateTime? @map("new_deadline")
+  sla_50_percent              DateTime? @map("sla_50_percent")
+  reminder_time               DateTime? @map("reminder_time")
+  manager                     String?   @map("manager")
   synced_at                   DateTime  @default(now()) @map("synced_at")
 
   @@map("tech_tickets")

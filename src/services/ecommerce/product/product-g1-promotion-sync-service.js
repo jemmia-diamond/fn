@@ -3,6 +3,9 @@ import Database from "services/database";
 import * as Sentry from "@sentry/cloudflare";
 import { sleep } from "services/utils/sleep";
 
+const COLLECTION_ID = 1004297849;
+const TARGET_PROMOTION = "16%";
+
 export default class ProductG1PromotionSyncService {
   constructor(env) {
     this.env = env;
@@ -24,12 +27,12 @@ export default class ProductG1PromotionSyncService {
   async _syncCreateCollects(haravanClient) {
     const records = await this.db.$queryRaw`
       SELECT 
-        1004297849 AS collection_id,
+        ${COLLECTION_ID} AS collection_id,
         p.haravan_product_id AS product_id
       FROM workplace.products p 
         LEFT JOIN haravan.collection_product cp ON p.haravan_product_id = cp.product_id
-          AND cp.collection_id = 1004297849
-      WHERE p.g1_promotion = '16%' 
+          AND cp.collection_id = ${COLLECTION_ID}
+      WHERE p.g1_promotion = ${TARGET_PROMOTION} 
         AND cp.id IS NULL
         AND p.haravan_product_id IS NOT NULL 
     `;
@@ -60,7 +63,7 @@ export default class ProductG1PromotionSyncService {
       WHERE 1 = 1
         AND p.g1_promotion = 'None'
         AND p.haravan_product_id IS NOT NULL 
-        AND cp.collection_id = 1004297849
+        AND cp.collection_id = ${COLLECTION_ID}
     `;
 
     for (const record of records) {

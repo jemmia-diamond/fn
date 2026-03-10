@@ -11,6 +11,7 @@ import { TIMEZONE_VIETNAM } from "src/constants";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import timezone from "dayjs/plugin/timezone.js";
+import * as Sentry from "@sentry/cloudflare";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -85,37 +86,49 @@ export default class LarkChatSyncMediaService {
         const fileLinks = [];
 
         for (let i = 0; i < parsed.images.length; i++) {
-          const img = parsed.images[i];
-          const key = `${img.message_id}_${img.key}`;
+          try {
+            const img = parsed.images[i];
+            const key = `${img.message_id}_${img.key}`;
 
-          if (!buffersCache[key]) {
-            buffersCache[key] = await this.fetcher.getBufferByKey(
-              img.message_id,
-              img.key,
-              "image"
-            );
+            if (!buffersCache[key]) {
+              buffersCache[key] = await this.fetcher.getBufferByKey(
+                img.message_id,
+                img.key,
+                "image"
+              );
+            }
+
+            if (buffersCache[key]) {
+              const filename = getFilename(parsed.codes[0], i + 1, "jpg");
+              const link = await this.uploader.upload(buffersCache[key], filename);
+              if (link) imageLinks.push(link);
+            }
+          } catch (error) {
+            Sentry.captureException(error);
           }
-
-          const filename = getFilename(parsed.codes[0], i + 1, "jpg");
-          const link = await this.uploader.upload(buffersCache[key], filename);
-          if (link) imageLinks.push(link);
         }
 
         for (let i = 0; i < parsed.files.length; i++) {
-          const f = parsed.files[i];
-          const key = `${f.message_id}_${f.key}`;
+          try {
+            const f = parsed.files[i];
+            const key = `${f.message_id}_${f.key}`;
 
-          if (!buffersCache[key]) {
-            buffersCache[key] = await this.fetcher.getBufferByKey(
-              f.message_id,
-              f.key,
-              "file"
-            );
+            if (!buffersCache[key]) {
+              buffersCache[key] = await this.fetcher.getBufferByKey(
+                f.message_id,
+                f.key,
+                "file"
+              );
+            }
+
+            if (buffersCache[key]) {
+              const filename = getFilename(parsed.codes[0], i + 1, "mp4");
+              const link = await this.uploader.upload(buffersCache[key], filename);
+              if (link) fileLinks.push(link);
+            }
+          } catch (error) {
+            Sentry.captureException(error);
           }
-
-          const filename = getFilename(parsed.codes[0], i + 1, "mp4");
-          const link = await this.uploader.upload(buffersCache[key], filename);
-          if (link) fileLinks.push(link);
         }
 
         const links = [...imageLinks, ...fileLinks].join(", ");
@@ -148,11 +161,16 @@ export default class LarkChatSyncMediaService {
   }
 
   static async syncMedia(env) {
-    const larkAxiosClient = await LarksuiteService.createLarkAxiosClient(env);
-    const larkSdkClient = await LarksuiteService.createClientV2(env);
-    const service = new LarkChatSyncMediaService(env, larkAxiosClient, larkSdkClient);
-    const startTime = dayjs().tz(TIMEZONE_VIETNAM).subtract(1, "day").startOf("day").unix();
-    await service.syncChat(CHAT_GROUPS.MEDIA_GROUP.chat_id, startTime);
+    try {
+      const larkSdkClient = await LarksuiteService.createClientV2(env);
+      const token = await LarksuiteService.getTenantAccessTokenFromClient({ larkClient: larkSdkClient, env });
+      const larkAxiosClient = await LarksuiteService.createLarkAxiosClient(env, token);
+      const service = new LarkChatSyncMediaService(env, larkAxiosClient, larkSdkClient);
+      const startTime = dayjs().tz(TIMEZONE_VIETNAM).subtract(1, "day").startOf("day").unix();
+      await service.syncChat(CHAT_GROUPS.MEDIA_GROUP.chat_id, startTime);
+    } catch (error) {
+      Sentry.captureException(error);
+    }
   }
 }
 

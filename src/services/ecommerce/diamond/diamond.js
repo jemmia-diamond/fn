@@ -4,6 +4,7 @@ import { buildGetDiamondsQuery } from "services/ecommerce/diamond/utils/diamond"
 import { dataSql, formatData } from "services/ecommerce/diamond/utils/diamond-prices";
 import * as Sentry from "@sentry/cloudflare";
 import { retryQuery } from "services/utils/retry-utils";
+import { buildStockTrackerQuery } from "services/ecommerce/diamond/utils/diamond-stock-tracker";
 
 export default class DiamondService {
   constructor(env) {
@@ -108,5 +109,68 @@ export default class DiamondService {
     const rows = await retryQuery(() => this.db.$queryRaw`${Prisma.raw(dataSql)}`);
     const result = formatData(rows);
     return result;
+  }
+
+  /**
+   * Fetches diamond status and prices for a specific campaign.
+   * @param {Array<{s1: number, s2: number, carat: number | Object, color: string, clarity: string, original_price: number}>} targets
+   * @param {Array<string>} warehouseNames
+   */
+  async getDiamondStockTracker(targets, warehouseNames) {
+    if (!targets || !Array.isArray(targets) || targets.length === 0) {
+      throw new Error("Targets are required and must be a non-empty array");
+    }
+
+    const targetWarehouses = warehouseNames && Array.isArray(warehouseNames) && warehouseNames.length > 0
+      ? warehouseNames
+      : [];
+
+    const sql = buildStockTrackerQuery(targets, targetWarehouses);
+
+    const result = await retryQuery(() => this.db.$queryRaw`${Prisma.raw(sql)}`);
+
+    const groupedResults = targets.map((target, idx) => {
+      const matchingDiamonds = result.filter(row => row.target_index === idx + 1);
+
+      let diamondsList;
+      if (matchingDiamonds.length === 0 || (matchingDiamonds.length === 1 && matchingDiamonds[0].id === null)) {
+        const s1 = target.s1 ?? null;
+        const s2 = target.s2 ?? null;
+        const sizeStr = (s1 && s2) ? `${s1} x ${s2}` : (s1 || s2 || null);
+
+        diamondsList = [{
+          id: null,
+          product_id: null,
+          variant_id: null,
+          sku: null,
+          report_no: null,
+          edge_size_1: s1,
+          edge_size_2: s2,
+          size: sizeStr,
+          color: target.color ?? null,
+          clarity: target.clarity ?? null,
+          carat: target.carat ?? null,
+          base_price: target.original_price ?? null,
+          current_price: target.original_price ?? null,
+          total_stock: 0,
+          sale_status: "Không có hàng",
+          in_order: null,
+          order_date: null,
+          active_collection: null
+        }];
+      } else {
+        diamondsList = matchingDiamonds.map(d => {
+          const { target_index: _target_index, ...cleanDiamond } = d;
+          return cleanDiamond;
+        });
+      }
+
+      return {
+        combination: target,
+        diamonds: diamondsList
+      };
+    });
+
+    return groupedResults;
   }
 }

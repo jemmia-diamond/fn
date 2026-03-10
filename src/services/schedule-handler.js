@@ -33,7 +33,7 @@ export default {
       break;
     case "*/5 * * * *": // At every 5th minute
       const batchTime = dayjs().utc();
-      await new Pancake.ConversationSyncService(env).syncConversations({ batchTime });
+      await new Pancake.ConversationSyncService(env, _ctx).syncConversations({ batchTime });
       await new Pancake.CustomerSyncService(env).syncCustomers({ batchTime });
       await new ERP.CRM.PancakeLeadSyncService(env).syncPancakeLeads({ batchTime });
       await new Ecommerce.JewelryDiamondPairService(env).processOutOfStockDiamonds();
