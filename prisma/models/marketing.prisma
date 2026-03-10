@@ -401,3 +401,17 @@ model marketingGoogleAdsCampaign {
   @@map("google_ads_campaigns")
   @@schema("marketing")
 }
+
+model marketingGoogleAdsAdGroup {
+  uuid          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id            String   @unique
+  campaign_id   String
+  campaign_name String
+  name          String
+  status        String?
+  type          String?
+  synced_at     DateTime @default(now())
+
+  @@map("google_ads_adgroups")
+  @@schema("marketing")
+}
