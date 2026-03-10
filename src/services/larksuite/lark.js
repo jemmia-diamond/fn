@@ -28,8 +28,7 @@ export default class LarksuiteService {
     return client;
   }
 
-  static async createLarkAxiosClient(env) {
-    const token = await this.getTenantAccessToken(env);
+  static async createLarkAxiosClient(env, token) {
     const client = createAxiosClient({
       baseURL: env.LARK_API_ENDPOINT,
       timeout: 15000,
@@ -37,6 +36,7 @@ export default class LarksuiteService {
         Authorization: `Bearer ${token}`
       }
     }, { ...DEFAULT_RETRY_CONFIG, retries: 6 });
+    client.defaults.adapter = fetchAdapter;
     return client;
   }
 
