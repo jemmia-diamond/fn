@@ -71,6 +71,7 @@ export default class ProductG1PromotionSyncService {
 
       try {
         await haravanClient.collect.deleteCollect(collectId);
+        await this.db.$executeRaw`DELETE FROM haravan.collection_product WHERE id = ${collectId}`;
       } catch (error) {
         if (error.response?.status === 422) {
           await this.db.$executeRaw`DELETE FROM haravan.collection_product WHERE id = ${collectId}`;
