@@ -72,7 +72,11 @@ export default class ProductG1PromotionSyncService {
       try {
         await haravanClient.collect.deleteCollect(collectId);
       } catch (error) {
-        Sentry.captureException(error);
+        if (error.response?.status === 422) {
+          await this.db.$executeRaw`DELETE FROM haravan.collection_product WHERE id = ${collectId}`;
+        } else {
+          Sentry.captureException(error);
+        }
       }
 
       await sleep(200);
