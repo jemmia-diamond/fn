@@ -1,6 +1,6 @@
 import * as crypto from "crypto";
 import HaravanAPI from "services/clients/haravan-client";
-import { DEBIT_ACCOUNT_MAP, EXCHANGE_RATE, REASON_TYPES, SORT_ORDER, VOUCHER_REF_TYPES, VOUCHER_TYPES, getCreditInfo } from "services/misa/constant";
+import { EXCHANGE_RATE, REASON_TYPES, SORT_ORDER, VOUCHER_REF_TYPES, VOUCHER_TYPES, getCreditInfo, getDebitAccount } from "services/misa/constant";
 import Misa from "services/misa";
 import Database from "services/database";
 
@@ -16,7 +16,7 @@ export default class VoucherMappingService {
    */
   static async transformQrToVoucher(v, bankMap, orgUnitMap, voucher_type = VOUCHER_TYPES.QR_PAYMENT, ref_type = VOUCHER_REF_TYPES.QR_PAYMENT, order_chain = null, env, preGeneratedGuid = null, db = null) {
     const creditInfo = getCreditInfo(orgUnitMap, v.haravan_order?.source);
-    const debitAccount = DEBIT_ACCOUNT_MAP[v.bank_code] || null;
+    const debitAccount = getDebitAccount(v.bank_code, v.bank_account_number);
 
     // Employee code ( from Amis ) and name
     const employee_code = v.haravan_order?.user?.misa_user?.employee_code || v.haravan_order?.user?.misa_user?.email;

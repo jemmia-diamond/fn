@@ -2,11 +2,38 @@
  * This constant also relies on the mapping file below.
  */
 export const DEBIT_ACCOUNT_MAP = {
-  "CTG": "1121001",
-  "MB": "1121002",
-  "VCB": "1121003",
-  "TCB": "1121007"
+  "MB": {
+    "default": "1121002",
+    "2222602899999": "1121002",
+    "1121699999": "1121010"
+  },
+  "VCB": {
+    "default": "1121003",
+    "1054449999": "1121003",
+    "1063499999": "1121011",
+    "1054499999": "1121012"
+  },
+  "TCB": {
+    "default": "1121007",
+    "50503333": "1121007"
+  },
+  "ACB": {
+    "default": "1121009",
+    "33399968868": "1121009"
+  },
+  "CTG": { "default": "1121001" }
 };
+
+export function getDebitAccount(bankCode, accountNumber) {
+  const bankMapping = DEBIT_ACCOUNT_MAP[bankCode];
+  if (!bankMapping) return null;
+
+  if (accountNumber && bankMapping[accountNumber]) {
+    return bankMapping[accountNumber];
+  }
+
+  return bankMapping["default"] || null;
+}
 
 /**
  * `credit_account` comes from this [mapping](https://jemmiadiamond.sg.larksuite.com/wiki/Kix9wWlGDil2aXkVg5ElcxlogMo?from=from_copylink&sheet=dtQEyR).
