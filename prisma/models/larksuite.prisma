@@ -259,6 +259,9 @@ model larksuiteTechTicket {
   reminder_time               DateTime? @map("reminder_time")
   manager                     String?   @map("manager")
   synced_at                   DateTime  @default(now()) @map("synced_at")
+  responded_at                DateTime?
+  processed_at                DateTime?
+  completed_at                DateTime?
 
   @@map("tech_tickets")
   @@schema("larksuite")
