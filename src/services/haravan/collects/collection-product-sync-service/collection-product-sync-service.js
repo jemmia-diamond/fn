@@ -14,7 +14,7 @@ export default class CollectionProductSyncService {
     this.env = env;
     this.db = Database.instance(env);
     this.dbConnection = {
-      timeout: 60000,
+      timeout: 80000,
       maxWait: 15000
     };
   }
@@ -30,7 +30,12 @@ export default class CollectionProductSyncService {
     let hasMore = true;
     let skipNextSleep = false;
     const limit = 500;
-    const today = dayjs().utc().format("YYYY-MM-DD");
+
+    const latestRecord = await this.db.collection_product.findFirst({
+      orderBy: { updated_at: "desc" },
+      select: { updated_at: true }
+    });
+    const latestUpdatedAt = latestRecord?.updated_at ? dayjs(latestRecord.updated_at) : null;
 
     while (hasMore) {
       if (page > 1 && !skipNextSleep) {
@@ -43,14 +48,34 @@ export default class CollectionProductSyncService {
         const collects = response?.collects || [];
 
         if (collects.length > 0) {
-          await this._processCollectBatch(collects);
+          const buckets = [];
 
-          const lastCollect = collects[collects.length - 1];
-          const lastUpdatedAtDay = dayjs(lastCollect.updated_at).utc().format("YYYY-MM-DD");
-          if (lastUpdatedAtDay === today) {
-            page++;
+          if (latestUpdatedAt) {
+            for (const collect of collects) {
+              const collectUpdatedAt = dayjs(collect.updated_at);
+              if (collectUpdatedAt.isAfter(latestUpdatedAt) || collectUpdatedAt.isSame(latestUpdatedAt)) {
+                buckets.push(collect);
+              }
+            }
           } else {
+            buckets.push(...collects);
+          }
+
+          if (buckets.length > 0) {
+            await this._processCollectBatch(buckets);
+          }
+
+          if (collects.length < limit) {
             hasMore = false;
+          } else {
+            const lastCollect = collects[collects.length - 1];
+            const lastCollectUpdatedAt = dayjs(lastCollect.updated_at);
+
+            if (latestUpdatedAt && lastCollectUpdatedAt.isBefore(latestUpdatedAt)) {
+              hasMore = false;
+            } else {
+              page++;
+            }
           }
         } else {
           hasMore = false;
