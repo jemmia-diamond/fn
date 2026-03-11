@@ -71,7 +71,16 @@ export default class ProductG1PromotionSyncService {
 
       try {
         await haravanClient.collect.deleteCollect(collectId);
+        await this.db.collection_product.delete({
+          where: { id: BigInt(collectId) }
+        });
       } catch (error) {
+        if (error.response?.status === 422) {
+          await this.db.collection_product.delete({
+            where: { id: BigInt(collectId) }
+          });
+          return;
+        }
         Sentry.captureException(error);
       }
 
