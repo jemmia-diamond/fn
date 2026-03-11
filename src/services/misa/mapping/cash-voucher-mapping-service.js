@@ -1,6 +1,6 @@
 import * as crypto from "crypto";
 import HaravanAPI from "services/clients/haravan-client";
-import { DEBIT_ACCOUNT_MAP, EXCHANGE_RATE, MANUAL_PAYMENT_DEBIT_MAP, REASON_TYPES, SORT_ORDER, VOUCHER_REF_TYPES, VOUCHER_TYPES, getCreditInfo } from "services/misa/constant";
+import { EXCHANGE_RATE, MANUAL_PAYMENT_DEBIT_MAP, REASON_TYPES, SORT_ORDER, VOUCHER_REF_TYPES, VOUCHER_TYPES, getCreditInfo, getDebitAccount } from "services/misa/constant";
 import Misa from "services/misa";
 import Database from "services/database";
 
@@ -12,7 +12,7 @@ export default class CashVoucherMappingService {
 
     const debitAccount = isManual
       ? MANUAL_PAYMENT_DEBIT_MAP[v.branch] || null
-      : DEBIT_ACCOUNT_MAP[v.bank_name] || null;
+      : getDebitAccount(v.bank_name, v.bank_account);
 
     const creditInfo = getCreditInfo(orgUnitMap, v.haravan_order?.source, v.branch, isManual);
 
