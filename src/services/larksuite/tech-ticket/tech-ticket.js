@@ -39,7 +39,10 @@ export default class TechTicketService {
       reminder_time: toDate(LarkHelper.extractInt(fields["Giờ nhắc nhở"])),
       manager: LarkHelper.extractText(fields["Quản lý"], "name"),
       ticket_no_in_month: LarkHelper.extractText(fields["Ticket No. In Month"]),
-      current_number_in_month: LarkHelper.extractInt(fields["Current Number In Month"])
+      current_number_in_month: LarkHelper.extractInt(fields["Current Number In Month"]),
+      responded_at: toDate(LarkHelper.extractInt(fields["Thời gian phản hồi"])),
+      processed_at: toDate(LarkHelper.extractInt(fields["Thời gian xử lý"])),
+      completed_at: toDate(LarkHelper.extractInt(fields["Thời gian hoàn thành"]))
     };
   }
 
@@ -171,7 +174,7 @@ export default class TechTicketService {
         }
       } else {
         startSyncTime = dayjs.utc("2024-12-31T17:00:00").valueOf();
-        endSyncTime = dayjs.utc("2025-12-31T16:59:59").valueOf();
+        endSyncTime = dayjs.utc().valueOf();
       }
 
       const filter = {
