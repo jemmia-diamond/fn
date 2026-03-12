@@ -478,3 +478,32 @@ model marketingGoogleAdsMetricsDailyGeo {
   @@map("google_ads_metrics_daily_geo")
   @@schema("marketing")
 }
+
+model marketingGoogleAdsMetricsDailyAdgroup {
+  uuid            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  date            String
+  campaign_id     String
+  campaign_name   String
+  ad_group_id     String
+  ad_group_name   String
+  device          String
+  ad_network_type String
+  impressions              Int     @default(0)
+  active_view_impressions  Int     @default(0)
+  clicks                   Int     @default(0)
+  ctr                      Float   @default(0)
+  cost_micros              BigInt  @default(0)
+  average_cpc              BigInt  @default(0)
+  conversions              Float   @default(0)
+  all_conversions          Float   @default(0)
+  conversions_value        Float   @default(0)
+  search_impression_share  Float?
+  synced_at       DateTime @default(now())
+
+  @@unique([date, ad_group_id, device, ad_network_type])
+  @@index([date])
+  @@index([campaign_id])
+  @@index([ad_group_id])
+  @@map("google_ads_metrics_daily_adgroup")
+  @@schema("marketing")
+}
