@@ -182,6 +182,14 @@
         "binding": "MESSAGE_SUMMARY_QUEUE"
       },
       {
+        "queue": "message-last-customer",
+        "binding": "MESSAGE_LAST_CUSTOMER_QUEUE"
+      },
+      {
+        "queue": "message-extra-hooks",
+        "binding": "MESSAGE_EXTRA_HOOKS_QUEUE"
+      },
+      {
         "queue": "erpnext-contacts",
         "binding": "ERPNEXT_CONTACTS_QUEUE"
       },
@@ -229,14 +237,23 @@
         "max_batch_size": 1
       },
       {
+        "queue": "zalo-message"
+      },
+      {
         "queue": "message",
+        "max_batch_size": 1,
+        "retry_delay": 600
+      },
+      {
+        "queue": "message-extra-hooks",
         "max_batch_size": 1
       },
       {
-        "queue": "zalo-message",
+        "queue": "message-summary",
+        "retry_delay": 600
       },
       {
-        "queue": "message-summary"
+        "queue": "message-last-customer"
       },
       {
         "queue": "erpnext-contacts"
