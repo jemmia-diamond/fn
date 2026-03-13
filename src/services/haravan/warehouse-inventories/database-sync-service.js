@@ -6,7 +6,7 @@ import * as crypto from "crypto";
 
 dayjs.extend(utc);
 
-const VARIANT_CHUNK_SIZE = 50;
+const VARIANT_CHUNK_SIZE = 20;
 const LOCATION_CHUNK_SIZE = 5;
 
 export default class DatabaseSyncService {
