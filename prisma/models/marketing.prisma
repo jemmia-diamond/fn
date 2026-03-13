@@ -430,3 +430,20 @@ model marketingGoogleAdsAd {
   @@map("google_ads_ads")
   @@schema("marketing")
 }
+
+model marketingGoogleAdsGeoTarget {
+  uuid              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  criterion_id      String   @unique
+  name              String
+  canonical_name    String?
+  country_code      String?
+  target_type       String?
+  status            String?
+  parent_id         String?
+  synced_at         DateTime @default(now())
+
+  @@index([country_code])
+  @@index([target_type])
+  @@map("google_ads_geo_targets")
+  @@schema("marketing")
+}
