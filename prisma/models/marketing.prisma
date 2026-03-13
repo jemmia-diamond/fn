@@ -415,3 +415,18 @@ model marketingGoogleAdsAdGroup {
   @@map("google_ads_adgroups")
   @@schema("marketing")
 }
+
+model marketingGoogleAdsAd {
+  uuid          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id            String   @unique
+  ad_group_id   String
+  ad_group_name String
+  campaign_id   String
+  campaign_name String
+  status        String?
+  type          String?
+  synced_at     DateTime @default(now())
+
+  @@map("google_ads_ads")
+  @@schema("marketing")
+}
