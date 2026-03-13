@@ -47,7 +47,7 @@ export function createInsertLeadPayload(conversation) {
     "naming_series": "CRM-LEAD-.YYYY.-",
     "status": "Lead",
     "gender": getGender(conversation.customer_gender),
-    "first_name": conversation.customer_name || "Chưa rõ",
+    "first_name": conversation.customer_name?.trim() || "Chưa rõ",
     "phone": conversation.customer_phone,
     "image": (conversation.pancake_avatar_url && conversation.pancake_avatar_url !== "https:") ? conversation.pancake_avatar_url : null,
     "pancake_data": {
@@ -77,7 +77,7 @@ export function createUpdateLeadPayload(conversation) {
   const payload = {
     "doctype": "Lead",
     "gender": getGender(conversation.customer_gender),
-    "first_name": conversation.customer_name || "Chưa rõ",
+    "first_name": conversation.customer_name?.trim() || "Chưa rõ",
     "phone": conversation.customer_phone,
     "image": (conversation.pancake_avatar_url && conversation.pancake_avatar_url !== "https:") ? conversation.pancake_avatar_url : null,
     "pancake_data": {
