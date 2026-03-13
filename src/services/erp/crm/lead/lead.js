@@ -255,7 +255,7 @@ export default class LeadService {
           status: "Lead",
           naming_series: "CRM-LEAD-.YYYY.-",
           source: source,
-          first_name: data.raw_data.name || "Chưa rõ",
+          first_name: data.raw_data.name?.trim() || "Chưa rõ",
           phone: phone,
           lead_owner: this.defaultLeadOwner,
           province: provinces.length ? provinces[0].name : null,
