@@ -58,20 +58,32 @@ export default class FrappeClient {
     };
 
     const url = `/api/resource/${encodeURIComponent(doctype)}`;
-    const res = await this.axiosClient.get(url, { params });
-    return this.postProcess(res);
+    try {
+      const res = await this.axiosClient.get(url, { params });
+      return this.postProcess(res);
+    } catch (error) {
+      return this.praseError(error);
+    }
   }
 
   async getDoc(doctype, name) {
     const url = `/api/resource/${encodeURIComponent(doctype)}/${encodeURIComponent(name)}`;
-    const res = await this.axiosClient.get(url);
-    return this.postProcess(res);
+    try {
+      const res = await this.axiosClient.get(url);
+      return this.postProcess(res);
+    } catch (error) {
+      return this.praseError(error);
+    }
   }
 
   async insert(doc) {
     const url = `/api/resource/${encodeURIComponent(doc.doctype)}`;
-    const res = await this.axiosClient.post(url, { data: JSON.stringify(doc) });
-    return this.postProcess(res);
+    try {
+      const res = await this.axiosClient.post(url, { data: JSON.stringify(doc) });
+      return this.postProcess(res);
+    } catch (error) {
+      return this.praseError(error);
+    }
   }
 
   async insertMany(docs) {
@@ -83,8 +95,12 @@ export default class FrappeClient {
 
   async update(doc) {
     const url = `/api/resource/${encodeURIComponent(doc.doctype)}/${encodeURIComponent(doc.name)}`;
-    const res = await this.axiosClient.put(url, { data: JSON.stringify(doc) });
-    return this.postProcess(res);
+    try {
+      const res = await this.axiosClient.put(url, { data: JSON.stringify(doc) });
+      return this.postProcess(res);
+    } catch (error) {
+      return this.praseError(error);
+    }
   }
 
   async upsert(doc, key, ignoredFields = []) {
@@ -180,8 +196,7 @@ export default class FrappeClient {
     let arr;
     try {
       arr = JSON.parse(jsonPart);
-    } catch (e) {
-      Sentry.captureException(e);
+    } catch {
       return null;
     }
     const traceback = arr[0];
@@ -201,15 +216,40 @@ export default class FrappeClient {
   }
 
   postProcess(res) {
-    try {
-      const data = res.data;
-      if (data?.exc) throw new Error(`Frappe Exception: ${data?.exc}`);
-      return data.message || data.data || null;
-    } catch (e) {
-      const parsedError = this.parseErrorMessage(e);
-      if (parsedError) throw new Error(parsedError);
-      throw e;
+    const data = res.data;
+    if (data?.exc) throw new Error(`Frappe Exception: ${data?.exc}`);
+    return data.message || data.data || null;
+  }
+
+  praseError(e) {
+    let errorMessage = null;
+    if (e.response?.data?._server_messages) {
+      const serverMessages = JSON.parse(e.response.data._server_messages);
+      if (Array.isArray(serverMessages) && serverMessages.length > 0) {
+        const firstMessage = JSON.parse(serverMessages[0]);
+        errorMessage = firstMessage.message || firstMessage.title;
+        if (e.response?.data?.exception) {
+          errorMessage = `${errorMessage} - ${e.response.data.exception}`;
+        }
+      }
     }
+
+    if (!errorMessage && e.response?.data?.exception) {
+      errorMessage = e.response.data.exception;
+    }
+
+    if (!errorMessage) {
+      errorMessage = this.parseErrorMessage(e);
+    }
+
+    if (errorMessage) {
+      const error = new Error(errorMessage);
+      error.originalError = e;
+      error.frappeData = e.response?.data;
+      return Sentry.captureException(error);
+    }
+
+    Sentry.captureException(e);
   }
 
   async executeSQL(sql) {
