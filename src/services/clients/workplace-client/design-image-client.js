@@ -1,8 +1,8 @@
 import BaseWorkplaceClient from "services/clients/workplace-client/base-client";
 
 export default class DesignImageClient extends BaseWorkplaceClient {
-  constructor(api, baseId) {
-    super(api, baseId, "design_images");
+  constructor(nocodbClient, baseId, tableId) {
+    super(nocodbClient, baseId, tableId);
   }
 
   async findByDesignCode(designCode) {

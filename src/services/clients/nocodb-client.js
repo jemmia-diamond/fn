@@ -147,4 +147,8 @@ export default class NocoDBClient {
       headers
     });
   }
+
+  async getTables(baseId) {
+    return this.#request("GET", `/api/v1/db/meta/projects/${baseId}/tables`);
+  }
 }

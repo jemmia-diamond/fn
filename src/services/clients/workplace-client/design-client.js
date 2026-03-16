@@ -1,8 +1,8 @@
 import BaseWorkplaceClient from "services/clients/workplace-client/base-client";
 
 export default class DesignsClient extends BaseWorkplaceClient {
-  constructor(api, baseId) {
-    super(api, baseId, "designs");
+  constructor(nocodbClient, baseId, tableId) {
+    super(nocodbClient, baseId, tableId);
   }
 
   async getByDesignCode(designCode) {

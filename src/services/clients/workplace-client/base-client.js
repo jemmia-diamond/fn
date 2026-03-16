@@ -1,12 +1,12 @@
 export default class BaseWorkplaceClient {
-  constructor(api, baseId, tableName) {
-    this.api = api;
+  constructor(nocodbClient, baseId, tableId) {
+    this.nocodbClient = nocodbClient;
     this.baseId = baseId;
-    this.tableName = tableName;
+    this.tableId = tableId;
   }
 
   async list(params = {}) {
-    return await this.api.dbTableRow.list("noco", this.baseId, this.tableName, params);
+    return await this.nocodbClient.listRecords(this.tableId, params);
   }
 
   async findOne(params = {}) {
@@ -20,15 +20,15 @@ export default class BaseWorkplaceClient {
   }
 
   async create(data) {
-    return await this.api.dbTableRow.create("noco", this.baseId, this.tableName, data);
+    return await this.nocodbClient.createRecords(this.tableId, data);
   }
 
   async update(id, data) {
-    return await this.api.dbTableRow.update("noco", this.baseId, this.tableName, id, data);
+    return await this.nocodbClient.updateRecords(this.tableId, { id, ...data });
   }
 
   async bulkUpdate(records) {
-    return await this.api.dbTableRow.bulkUpdate("noco", this.baseId, this.tableName, records);
+    return await this.nocodbClient.updateRecords(this.tableId, records);
   }
 }
 
