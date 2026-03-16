@@ -17,10 +17,10 @@ export default class CustomerSyncService {
     this.phoneRegex = /(?:\+84|0)(?:3[2-9]|5[6|8|9]|7[0|6-9]|8[1-6|89]|9[0-4|6-9])(?:\d{7})/;
   }
 
-  async syncCustomers() {
+  async syncCustomers({ batchTime } = {}) {
     try {
       console.warn("Starting syncCustomers...");
-      const { sinceUnix, untilUnix, now, KV_KEY } = await this.getSyncTimeframe();
+      const { sinceUnix, untilUnix, now, KV_KEY } = await this.getSyncTimeframe(batchTime);
 
       const pageData = await this.pancakeClient.getPages();
       if (isInvalidTokenError(pageData)) {
@@ -128,10 +128,10 @@ export default class CustomerSyncService {
     };
   }
 
-  async getSyncTimeframe() {
+  async getSyncTimeframe(batchTime) {
     const kv = this.env.FN_KV;
     const KV_KEY = "pancake_customer_sync_last_time";
-    const now = dayjs().utc();
+    const now = batchTime ? batchTime : dayjs().utc();
     const untilUnix = now.unix();
 
     const lastSyncTimeStr = await kv.get(KV_KEY);

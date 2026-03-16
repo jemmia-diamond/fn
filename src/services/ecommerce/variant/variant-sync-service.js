@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/cloudflare";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import Database from "services/database";
@@ -14,7 +15,7 @@ export default class VariantSyncService {
     this.env = env;
     this.db = Database.instance(env);
     this.dbConnection = {
-      timeout: 30000,
+      timeout: 60000,
       maxWait: 15000
     };
   }
@@ -37,11 +38,11 @@ export default class VariantSyncService {
 
       await this._fetchAndProcessVariants(haravanClient, updatedAtMin);
       await kv.put(KV_KEY, toDate);
-    } catch {
+    } catch (error) {
       if (lastSyncDate && dayjs(toDate).diff(dayjs(lastSyncDate), "hour") >= 1) {
         await kv.put(KV_KEY, toDate);
       }
-      return;
+      Sentry.captureException(error);
     }
   }
 
@@ -53,7 +54,7 @@ export default class VariantSyncService {
 
     while (hasMore) {
       if (page > 1 && !skipNextSleep) {
-        await this._sleep(HaravanVariantSyncService.RATE_LIMIT_DELAY_MS);
+        await this._sleep(VariantSyncService.RATE_LIMIT_DELAY_MS);
       }
       skipNextSleep = false;
 
@@ -75,7 +76,7 @@ export default class VariantSyncService {
       } catch (error) {
         if (error.status === 429) {
           const retryAfter = parseFloat(error.retryAfter || 2);
-          const allowedRetrySeconds = HaravanVariantSyncService.MAX_RETRY_AFTER_SECONDS;
+          const allowedRetrySeconds = VariantSyncService.MAX_RETRY_AFTER_SECONDS;
 
           if (retryAfter > allowedRetrySeconds) {
             throw new Error(`Rate limited for ${retryAfter}s (exceeds ${allowedRetrySeconds}s threshold)`);
