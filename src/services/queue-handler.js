@@ -6,7 +6,6 @@ import ProductQuote from "src/services/product_quote";
 import Ecommerce from "src/services/ecommerce";
 import Haravan from "src/services/haravan";
 import Misa from "src/services/misa";
-import Shield from "src/services/jemmia-shield";
 
 export default {
   queue: async (batch, env) => {
@@ -14,7 +13,6 @@ export default {
 
     switch (batch.queue) {
     case "order":
-      await Shield.ShieldOrderStatusService.dequeueOrderStatusQueue(batch, env);
       await Ecommerce.OrderNotificationService.orderNotificationDequeue(batch, env);
       await Haravan.OrderModule.OrderService.dequeueOrderQueue(batch, env);
       await ProductQuote.ProductQuoteOrderService.dequeueOrderQueue(batch, env);

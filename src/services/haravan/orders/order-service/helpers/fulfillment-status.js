@@ -4,6 +4,8 @@ export function getFulfillmentStatus(status) {
   }
 
   switch (String(status).toLowerCase()) {
+  case "notfulfilled":
+    return "Chưa giao hàng";
   case "fulfilled":
     return "Đã giao hàng";
   case "partial":

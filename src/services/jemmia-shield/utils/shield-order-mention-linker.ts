@@ -8,6 +8,9 @@ import {
   ORDER_REGEX
 } from "src/constants/jemmia-shield-constants";
 import { ShieldOrderLinkInfo } from "services/jemmia-shield/interfaces/shield-interface";
+import dayjs from "dayjs";
+import { getFinancialStatus } from "src/services/haravan/orders/order-service/helpers/financial-status";
+import { getFulfillmentStatus } from "src/services/haravan/orders/order-service/helpers/fulfillment-status";
 
 export class ShieldOrderMentionLinker {
   /**
@@ -99,7 +102,7 @@ export class ShieldOrderMentionLinker {
     return Array.from(new Set(matches));
   }
 
-  private static createFrappeClient(env: any) {
+  public static createFrappeClient(env: any) {
     return new FrappeClient({
       url: env.JEMMIA_ERP_BASE_URL,
       apiKey: env.JEMMIA_ERP_API_KEY,
@@ -107,7 +110,7 @@ export class ShieldOrderMentionLinker {
     });
   }
 
-  private static async fetchOrderLinks(
+  public static async fetchOrderLinks(
     frappeClient: any,
     orderCodes: string[]
   ): Promise<ShieldOrderLinkInfo[]> {
@@ -128,7 +131,18 @@ export class ShieldOrderMentionLinker {
     try {
       const orders = await getSalesOrdersByHaravanOrderId(
         frappeClient,
-        orderCode
+        orderCode,
+        [
+          "name",
+          "haravan_order_id",
+          "split_order_group",
+          "grand_total",
+          "transaction_date",
+          "financial_status",
+          "fulfillment_status",
+          "cancelled_status",
+          "status"
+        ]
       );
       if (!orders || orders.length === 0) return null;
 
@@ -137,37 +151,109 @@ export class ShieldOrderMentionLinker {
       return {
         orderCode,
         erpName: order.name,
-        haravanId: order.split_order_group || haravanIdOnly
+        haravanId: order.split_order_group || haravanIdOnly,
+        total: order.grand_total,
+        orderDate: order.transaction_date,
+        paymentStatus: order.financial_status,
+        deliveryStatus: order.fulfillment_status,
+        status: order.status,
+        cancelledStatus: order.cancelled_status
       };
     } catch {
       return null;
     }
   }
 
-  private static buildOrderCardElements(
+  private static async buildSingleOrderCardElements(
     env: any,
-    orderLinks: ShieldOrderLinkInfo[]
-  ): any[] {
-    const erpBaseUrl = `${env.ERP_APP_URL}/app/sales-order`;
-    const haravanBaseUrl = `${env.HARAVAN_APP_URL}/admin/orders`;
+    link: ShieldOrderLinkInfo
+  ): Promise<any[]> {
+    const db = Database.instance(env);
+    const orderNumber = link.orderCode.replace("ORDER", "");
+
+    const order = await db.order.findFirst({
+      where: {
+        order_number: `ORDER${orderNumber}`
+      }
+    });
+
+    const total = order ? Number(order.total_price) : link.total;
+    const orderDate = order ? order.created_at : link.orderDate;
+    const paymentStatus = order ? order.financial_status : link.paymentStatus;
+    const deliveryStatus = order ? order.fulfillment_status : link.deliveryStatus;
+    const cancelledStatus = order ? order.cancelled_status : link.cancelledStatus;
+
+    const formattedTotal = new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND"
+    }).format(total);
+
+    const formattedDate = dayjs(orderDate).format("DD/MM/YYYY HH:mm");
+    const paymentStatusText = getFinancialStatus(paymentStatus);
+    const deliveryStatusText = getFulfillmentStatus(deliveryStatus);
 
     const header = {
       tag: "div",
       text: {
         tag: "lark_md",
-        content: "**📦 Thông tin đơn hàng:**"
+        content: `**📦 Thông tin đơn hàng: ${link.orderCode}**`
       }
     };
 
-    const linkElements = orderLinks.map((link) => ({
+    const details: string[] = [
+      `💰 **Tổng giá trị:** ${formattedTotal}`,
+      `📅 **Ngày đặt hàng:** ${formattedDate}`,
+      `💳 **Thanh toán:** ${paymentStatusText}`,
+      `🚚 **Giao hàng:** ${deliveryStatusText}`
+    ];
+
+    if (String(cancelledStatus).toLowerCase() === "cancelled") {
+      details.push("🚫 **Trạng thái huỷ:** Đã huỷ");
+    }
+
+    const contentElement = {
       tag: "div",
       text: {
         tag: "lark_md",
-        content: `**${link.orderCode}:** [ERP](${erpBaseUrl}/${link.erpName}) | [Haravan](${haravanBaseUrl}/${link.haravanId})`
+        content: details.join("\n")
       }
-    }));
+    };
 
-    return [header, ...linkElements];
+    const actionButtons = this.buildActionButtons(env, link);
+
+    return [header, contentElement, actionButtons];
+  }
+
+  private static buildActionButtons(
+    env: any,
+    linkInfo: ShieldOrderLinkInfo
+  ): any {
+    const erpBaseUrl = `${env.ERP_APP_URL}/app/sales-order`;
+    const haravanBaseUrl = `${env.HARAVAN_APP_URL}/admin/orders`;
+
+    return {
+      tag: "action",
+      actions: [
+        {
+          tag: "button",
+          text: {
+            tag: "plain_text",
+            content: "Xem trên ERP"
+          },
+          url: `${erpBaseUrl}/${linkInfo.erpName}`,
+          type: "default"
+        },
+        {
+          tag: "button",
+          text: {
+            tag: "plain_text",
+            content: "Xem trên Haravan"
+          },
+          url: `${haravanBaseUrl}/${linkInfo.haravanId}`,
+          type: "default"
+        }
+      ]
+    };
   }
 
   private static async sendOrderInfoCard(
@@ -175,15 +261,18 @@ export class ShieldOrderMentionLinker {
     event: any,
     orderLinks: ShieldOrderLinkInfo[]
   ): Promise<void> {
-    const elements = this.buildOrderCardElements(env, orderLinks);
     const threadId = event.message.root_id ?? event.message.message_id;
-    const cardContent = JSON.stringify({ elements });
 
-    await JemmiaShieldLarkService.sendMessageToThread(
-      env,
-      threadId,
-      JEMMIA_SHIELD_MESSAGE_TYPE.INTERACTIVE,
-      cardContent
-    );
+    for (const link of orderLinks) {
+      const elements = await this.buildSingleOrderCardElements(env, link);
+      const cardContent = JSON.stringify({ elements });
+
+      await JemmiaShieldLarkService.sendMessageToThread(
+        env,
+        threadId,
+        JEMMIA_SHIELD_MESSAGE_TYPE.INTERACTIVE,
+        cardContent
+      );
+    }
   }
 }
