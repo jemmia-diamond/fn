@@ -1,19 +1,12 @@
 export function getFulfillmentStatus(status) {
-  if (status === null || status === undefined || status === "") {
-    return "Chưa giao hàng";
-  }
+  const key = String(status ?? "").trim().toLowerCase();
 
-  switch (String(status).toLowerCase()) {
-  case "notfulfilled":
-    return "Chưa giao hàng";
-  case "fulfilled":
-    return "Đã giao hàng";
-  case "partial":
-    return "Giao một phần";
-  case "restocked":
-    return "Đã hoàn kho";
-  default:
-    return "Không xác định";
-  }
+  const map = {
+    notfulfilled: "Chưa giao hàng",
+    fulfilled: "Đã giao hàng",
+    partial: "Giao một phần",
+    restocked: "Đã hoàn kho"
+  };
+
+  return map[key] ?? "Không xác định";
 }
-
