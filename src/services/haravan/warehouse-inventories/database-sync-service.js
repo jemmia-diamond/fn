@@ -3,6 +3,7 @@ import utc from "dayjs/plugin/utc.js";
 import Database from "services/database";
 import HaravanAPI from "services/clients/haravan-client";
 import * as crypto from "crypto";
+import { sleep } from "services/utils/sleep.js";
 
 dayjs.extend(utc);
 
@@ -65,7 +66,7 @@ export default class DatabaseSyncService {
 
     while (hasMore) {
       if (page > 1) {
-        await this._sleep(DatabaseSyncService.RATE_LIMIT_DELAY_MS);
+        await sleep(DatabaseSyncService.RATE_LIMIT_DELAY_MS);
       }
 
       const response = await haravanClient.product.getProducts({
@@ -104,7 +105,7 @@ export default class DatabaseSyncService {
 
       for (let vi = 0; vi < variantIds.length; vi += VARIANT_CHUNK_SIZE) {
         if (li > 0 || vi > 0) {
-          await this._sleep(DatabaseSyncService.RATE_LIMIT_DELAY_MS);
+          await sleep(DatabaseSyncService.RATE_LIMIT_DELAY_MS);
         }
 
         const variantChunk = variantIds.slice(vi, vi + VARIANT_CHUNK_SIZE);
@@ -129,10 +130,10 @@ export default class DatabaseSyncService {
       loc_id: item.loc_id ? BigInt(item.loc_id) : null,
       product_id: item.product_id ? BigInt(item.product_id) : null,
       variant_id: item.variant_id ? BigInt(item.variant_id) : null,
-      qty_onhand: item.qty_onhand ?? null,
-      qty_committed: item.qty_committed ?? null,
-      qty_available: item.qty_available ?? null,
-      qty_incoming: item.qty_incoming ?? null,
+      qty_onhand: item.qty_onhand ?? 0,
+      qty_committed: item.qty_committed ?? 0,
+      qty_available: item.qty_available ?? 0,
+      qty_incoming: item.qty_incoming ?? 0,
       updated_at: item.updated_at ? dayjs(item.updated_at).toDate() : null
     };
   }
@@ -164,9 +165,5 @@ export default class DatabaseSyncService {
       });
       await Promise.all(operations);
     }, this.dbConnection);
-  }
-
-  _sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
   }
 }
