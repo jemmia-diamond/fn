@@ -246,10 +246,14 @@ export default class FrappeClient {
       const error = new Error(errorMessage);
       error.originalError = e;
       error.frappeData = e.response?.data;
-      return Sentry.captureException(error);
+      error.status = e.response?.status;
+      error.response = e.response;
+      Sentry.captureException(error);
+      throw error;
     }
 
     Sentry.captureException(e);
+    throw e;
   }
 
   async executeSQL(sql) {
