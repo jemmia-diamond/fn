@@ -45,6 +45,9 @@ export default class ProductService {
   }
 
   async searchJewelry(searchKey, limit, page) {
+    if (!searchKey || typeof searchKey !== "string") {
+      return [];
+    }
     const lowerSearchKey = searchKey.toLowerCase();
     const likePattern = `%${lowerSearchKey}%`;
     const offset = (page - 1) * limit;
