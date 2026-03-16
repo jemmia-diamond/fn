@@ -228,7 +228,7 @@ export class ShieldOrderMentionLinker {
     env: any,
     linkInfo: ShieldOrderLinkInfo
   ): any {
-    const erpBaseUrl = `${env.ERP_APP_URL}/app/sales-order`;
+    const erpBaseUrl = `${env.JEMMIA_ERP_BASE_URL}/app/sales-order`;
     const haravanBaseUrl = `${env.HARAVAN_APP_URL}/admin/orders`;
 
     return {
