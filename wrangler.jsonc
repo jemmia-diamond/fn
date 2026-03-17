@@ -69,7 +69,8 @@
     "GOOGLE_MERCHANT_ID": "183425778",
     "LARK_RECALL_REDIRECT_URI":"https://fn.jemmia.vn/jemmia-shield/callback",
     "LARK_RECALL_VIEW_URL": "https://fn.jemmia.vn/jemmia-shield/message-recall/view",
-    "LARK_APP_SHIELD_ID":"cli_a9fd9bc9f7b9ded0"
+    "LARK_APP_SHIELD_ID":"cli_a9fd9bc9f7b9ded0",
+    "OAUTH_REDIRECT_ENDPOINT":"https://fn.jemmia.vn"
   },
   "secrets_store_secrets": [
     {
