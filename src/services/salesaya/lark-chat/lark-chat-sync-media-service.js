@@ -5,7 +5,7 @@ import LarkChatParser from "services/salesaya/lark-chat/lark-chat-parser";
 import { TABLES } from "services/larksuite/docs/constant";
 import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/constant";
 import { getFilename } from "services/salesaya/lark-chat/lark-chat-helper";
-import { WorkplaceClient } from "services/clients/workplace-client";
+import NocoDBClient from "services/clients/nocodb-client";
 import LarksuiteService from "services/larksuite/lark";
 import { TIMEZONE_VIETNAM } from "src/constants";
 import dayjs from "dayjs";
@@ -17,6 +17,9 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 
 export default class LarkChatSyncMediaService {
+  static DESIGN_IMAGES_TABLE = "myrbfubgj2h3ztl";
+  static DESIGNS_TABLE = "m1g1pwq2zmk2scc";
+
   constructor(env, larkAxiosClient, larkSdkClient) {
     this.env = env;
     this.larkAxiosClient = larkAxiosClient;
@@ -48,7 +51,7 @@ export default class LarkChatSyncMediaService {
   };
 
   async syncChat(chatId, startTime, endTime) {
-    const workplaceClient = await WorkplaceClient.initialize(this.env, this.workplaceBaseId);
+    const nocodb = new NocoDBClient(this.env);
     let pageToken = "";
     let hasMore = true;
     while (hasMore) {
@@ -133,17 +136,52 @@ export default class LarkChatSyncMediaService {
 
         const links = [...imageLinks, ...fileLinks].join(", ");
         if (uniqueCodes.length === 1) {
-          const updated = await workplaceClient.designImages.updateMediaByDesignCode(uniqueCodes[0], fileLinks, imageLinks);
+          const designImageTableId = LarkChatSyncMediaService.DESIGN_IMAGES_TABLE;
+          const designTableId = LarkChatSyncMediaService.DESIGNS_TABLE;
+
+          const rowRes = await nocodb.listRecords(designImageTableId, {
+            where: `(design_code,eq,${uniqueCodes[0]})`,
+            limit: 1
+          });
+          const row = rowRes.list?.[0] ?? null;
+
+          let updated = false;
+          if (row) {
+            const mergedVideos = Array.from(new Set([...(row.videos || []), ...fileLinks]));
+            const mergedImages = Array.from(new Set([...(row.images || []), ...imageLinks]));
+            await nocodb.updateRecords(designImageTableId, {
+              Id: row.Id,
+              videos: mergedVideos,
+              images: mergedImages
+            });
+            updated = true;
+          }
+
           if (!updated) {
-            let existDesign = await workplaceClient.designs.getByDesignCode(uniqueCodes[0]);
-            if (existDesign === null) {
-              existDesign = await workplaceClient.designs.getByErpCode(uniqueCodes[0]);
+            let existDesignRes = await nocodb.listRecords(designTableId, { where: `(design_code,eq,${uniqueCodes[0]})`, limit: 1 });
+            let existDesign = existDesignRes.list?.[0] ?? null;
+            if (!existDesign) {
+              existDesignRes = await nocodb.listRecords(designTableId, { where: `(erp_code,eq,${uniqueCodes[0]})`, limit: 1 });
+              existDesign = existDesignRes.list?.[0] ?? null;
             }
-            if (existDesign === null) {
-              existDesign = await workplaceClient.designs.getByCode(uniqueCodes[0]);
+            if (!existDesign) {
+              existDesignRes = await nocodb.listRecords(designTableId, { where: `(code,eq,${uniqueCodes[0]})`, limit: 1 });
+              existDesign = existDesignRes.list?.[0] ?? null;
             }
-            if (existDesign !== null) {
-              await workplaceClient.designImages.createByDesignCode(existDesign, fileLinks, imageLinks);
+
+            if (existDesign) {
+              const data = {
+                designs: [existDesign.Id],
+                videos: fileLinks,
+                images: imageLinks
+              };
+              try {
+                await nocodb.createRecords(designImageTableId, data);
+              } catch (error) {
+                if (error.response?.status !== 422 || error.response?.data?.error !== "INVALID_PK_VALUE") {
+                  throw error;
+                }
+              }
             } else {
               await this.writeRecord(uniqueCodes[0], links, "Thất bại", "Không thể get thông tin sản phẩm từ nocodb", msg.message_id);
               continue;
