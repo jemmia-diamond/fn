@@ -11,3 +11,5 @@ export const JEMMIA_SHIELD_CONTENT_TAG = {
   HREF: "a",
   AT: "at"
 } as const;
+
+export const ORDER_REGEX = /ORDER(\d+)/g;
