@@ -135,6 +135,8 @@ export default class PancakeLeadSyncService {
     if (!hasError) {
       await this.env.FN_KV.put(this.KV_KEY, currentTime);
       console.warn(`Finished sync. Total processed: ${totalProcessed}. Checkpoint saved: ${currentTime}`);
+    } else {
+      await this.env.FN_KV.put(this.KV_KEY, currentTime);
     }
   }
 
