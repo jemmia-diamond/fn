@@ -51,6 +51,10 @@ export default class ProductService {
     const lowerSearchKey = searchKey.toLowerCase();
     const likePattern = `%${lowerSearchKey}%`;
     const offset = (page - 1) * limit;
+    const workplaceUrlPrefix = JEWELRY_IMAGE.WORKPLACE_URL_PREFIX;
+    const workplaceFullUrl = JEWELRY_IMAGE.WORKPLACE_FULL_URL;
+    const cdnUrl = JEWELRY_IMAGE.CDN_URL;
+
     const result = await this.db.$queryRaw`
       SELECT
         CAST(p.haravan_product_id AS DOUBLE PRECISION) AS id,
@@ -65,7 +69,7 @@ export default class ProductService {
           ELSE TRUE
         END AS has_360,
         img.images,
-        var.variants
+        COALESCE(var.variants, '[]') AS variants
       FROM ecom.materialized_products p
         INNER JOIN workplace.designs d ON d.id = p.design_id
         LEFT JOIN workplace.ecom_360 e ON p.workplace_id = e.product_id
@@ -80,9 +84,8 @@ export default class ProductService {
         ) img ON img.product_id = p.haravan_product_id
 
         -- Subquery for pre-aggregated variants
-        INNER JOIN (
+        INNER JOIN LATERAL (
           SELECT
-            v.haravan_product_id,
             JSON_AGG(
               JSON_BUILD_OBJECT(
                 'id', CAST(v.haravan_variant_id AS DOUBLE PRECISION),
@@ -92,10 +95,37 @@ export default class ProductService {
                 'price', CAST(v.price AS DOUBLE PRECISION),
                 'price_compare_at', CAST(v.price_compare_at AS DOUBLE PRECISION)
               )
-            ) AS variants
+            ) FILTER (WHERE design_imgs.images IS NOT NULL AND array_length(design_imgs.images, 1) > 0) AS variants
           FROM ecom.materialized_variants v
-          GROUP BY v.haravan_product_id
-        ) var ON var.haravan_product_id = p.haravan_product_id
+    
+          LEFT JOIN LATERAL (
+            SELECT 
+              di.material_color,
+              COALESCE(
+                array_agg(
+                  CASE 
+                    WHEN item.value->>'url' LIKE ${workplaceUrlPrefix} || '%' THEN
+                      REPLACE(item.value->>'url', ${workplaceFullUrl}, ${cdnUrl})
+                    ELSE item.value->>'url'
+                  END
+                ) FILTER (WHERE jsonb_typeof(item.value) = 'object' AND item.value->>'url' IS NOT NULL),
+                ARRAY[]::text[]
+              ) as images
+            FROM workplace.design_images di
+            CROSS JOIN LATERAL jsonb_array_elements(
+              CASE 
+                WHEN di.retouch IS NOT NULL AND di.retouch != '' AND jsonb_typeof(di.retouch::jsonb) = 'array'
+                THEN di.retouch::jsonb
+                ELSE '[]'::jsonb
+              END
+            ) AS item
+            WHERE di.design_id = d.id
+            GROUP BY di.material_color
+          ) design_imgs ON design_imgs.material_color = v.material_color
+
+          WHERE v.haravan_product_id = p.haravan_product_id
+          HAVING COUNT(*) > 0
+        ) var ON TRUE
 
       WHERE lower(concat(p.title, d.design_code, p.haravan_product_type)) LIKE ${likePattern}
       LIMIT ${limit}
