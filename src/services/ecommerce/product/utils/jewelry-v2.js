@@ -159,8 +159,11 @@ export function buildQueryV2(jsonParams) {
       d.ring_band_type,
       p.haravan_product_type AS product_type,
       p.has_360,
-      JSON_AGG(
-        ${variantJsonBuildObject}
+      COALESCE(
+        JSON_AGG(
+          ${variantJsonBuildObject}
+        ) FILTER (WHERE design_imgs.images IS NOT NULL AND array_length(design_imgs.images, 1) > 0),
+        '[]'
       ) AS variants
     FROM ecom.materialized_products p 
       INNER JOIN workplace.designs d ON p.design_id = d.id 

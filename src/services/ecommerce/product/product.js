@@ -277,8 +277,11 @@ export default class ProductService {
         'Round' AS shape_of_main_stone,
         p.has_360,
         p.estimated_gold_weight,
-        JSON_AGG(
-          ${Prisma.raw(variantJsonBuildObject)}
+        COALESCE(
+          JSON_AGG(
+            ${Prisma.raw(variantJsonBuildObject)}
+          ) FILTER (WHERE design_imgs.images IS NOT NULL AND array_length(design_imgs.images, 1) > 0),
+          '[]'
         ) AS variants,
         JSON_BUILD_OBJECT(
           'name', p.primary_collection,
