@@ -39,7 +39,7 @@ export function buildQueryV2(jsonParams) {
 
   // Pre-aggregate design images by material_color (performance optimization)
   designImagesJoin = `
-    LEFT JOIN LATERAL (
+    INNER JOIN LATERAL (
       SELECT 
         di.material_color,
         COALESCE(
@@ -62,7 +62,7 @@ export function buildQueryV2(jsonParams) {
       ) AS item
       WHERE di.design_id = d.id
       GROUP BY di.material_color
-    ) design_imgs ON design_imgs.material_color = v.material_color
+    ) design_imgs ON design_imgs.material_color = v.material_color AND array_length(design_imgs.images, 1) > 0
   `;
 
   if (jsonParams.matched_diamonds) {
@@ -159,11 +159,8 @@ export function buildQueryV2(jsonParams) {
       d.ring_band_type,
       p.haravan_product_type AS product_type,
       p.has_360,
-      COALESCE(
-        JSON_AGG(
-          ${variantJsonBuildObject}
-        ) FILTER (WHERE design_imgs.images IS NOT NULL AND array_length(design_imgs.images, 1) > 0),
-        '[]'
+      JSON_AGG(
+        ${variantJsonBuildObject}
       ) AS variants
     FROM ecom.materialized_products p 
       INNER JOIN workplace.designs d ON p.design_id = d.id 
