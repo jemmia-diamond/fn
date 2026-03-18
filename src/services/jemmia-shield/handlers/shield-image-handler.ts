@@ -29,16 +29,24 @@ export default class ShieldImageHandler {
       imageBuffer
     );
 
-    let bufferToUpload = imageBuffer;
-    if (
+    const isSensitive =
       analyzeResult.has_handwriting ||
       analyzeResult.ner_results.length > 0 ||
-      analyzeResult.ocr_results.length > 0
-    ) {
-      bufferToUpload = await ImageHelper.blurImage(imageBuffer, {
-        blurSize: 24
-      });
+      analyzeResult.ocr_results.length > 0;
+
+    if (!isSensitive) {
+      await JemmiaShieldLarkService.sendMessageToThread(
+        env,
+        event.message.root_id ?? event.message.message_id,
+        JEMMIA_SHIELD_MESSAGE_TYPE.IMAGE,
+        JSON.stringify({ image_key: appOwnedImageKey })
+      );
+      return;
     }
+
+    const bufferToUpload = await ImageHelper.blurImage(imageBuffer, {
+      blurSize: 24
+    });
 
     const newImageKey = await JemmiaShieldLarkService.uploadImage(
       env,
