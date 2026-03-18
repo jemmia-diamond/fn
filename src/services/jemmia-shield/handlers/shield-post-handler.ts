@@ -43,16 +43,19 @@ export default class ShieldPostHandler {
     this.resolvePostMentions(content, mentions);
     const imageMap = await this.downloadPostImages(env, event, content);
 
+    const persistedImageKeyMap = new Map<string, string>();
     for (const line of originalContent.content) {
       for (const item of line) {
         if (item.tag === JEMMIA_SHIELD_CONTENT_TAG.IMG) {
           const buffer = imageMap.get(item.image_key);
           if (buffer) {
-            item.image_key = await ShieldUtils.reuploadImageForPersistence(
+            const persistedKey = await ShieldUtils.reuploadImageForPersistence(
               env,
               buffer,
               item.image_key
             );
+            persistedImageKeyMap.set(item.image_key, persistedKey);
+            item.image_key = persistedKey;
           }
         }
       }
@@ -61,6 +64,51 @@ export default class ShieldPostHandler {
     await ShieldNotificationService.notifyUserAboutSensitiveScan(env, event);
 
     await JemmiaShieldLarkService.recallMessage(env, event.message.message_id);
+
+    let postText = "";
+    if (content.title) postText += content.title + " ";
+    for (const line of content.content) {
+      for (const item of line) {
+        if (item.tag === JEMMIA_SHIELD_CONTENT_TAG.TEXT) {
+          postText += item.text + " ";
+        } else if (item.tag === JEMMIA_SHIELD_CONTENT_TAG.HREF) {
+          postText += item.text + " ";
+        }
+      }
+    }
+
+    const isTextSensitive =
+      !!postText && (await ShieldPresidioService.detectSensitiveInfo(env, postText));
+
+    let hasSensitiveImage = false;
+    for (const line of content.content) {
+      for (const item of line) {
+        if (item.tag === JEMMIA_SHIELD_CONTENT_TAG.IMG) {
+          const buffer = imageMap.get(item.image_key);
+          if (!buffer) continue;
+          const result = await ShieldPresidioService.analyzeImage(env, buffer);
+          if (
+            result.has_handwriting ||
+            result.ner_results.length > 0 ||
+            result.ocr_results.length > 0
+          ) {
+            hasSensitiveImage = true;
+            break;
+          }
+        }
+      }
+      if (hasSensitiveImage) break;
+    }
+
+    if (!isTextSensitive && !hasSensitiveImage) {
+      await JemmiaShieldLarkService.sendMessageToThread(
+        env,
+        event.message.root_id ?? event.message.message_id,
+        JEMMIA_SHIELD_MESSAGE_TYPE.POST,
+        JSON.stringify(originalContent)
+      );
+      return;
+    }
 
     if (content.title) {
       content.title = await ShieldPresidioService.maskSensitiveInfo(
@@ -84,20 +132,21 @@ export default class ShieldPostHandler {
               env,
               buffer
             );
-            let bufferToUpload = buffer;
-            if (
+            const isSensitive =
               result.has_handwriting ||
               result.ner_results.length > 0 ||
-              result.ocr_results.length > 0
-            ) {
-              bufferToUpload = await ImageHelper.blurImage(buffer, {
-                blurSize: 24
-              });
+              result.ocr_results.length > 0;
+
+            if (!isSensitive) {
+              const persistedKey = persistedImageKeyMap.get(item.image_key);
+              if (persistedKey) item.image_key = persistedKey;
+              continue;
             }
-            const newKey = await JemmiaShieldLarkService.uploadImage(
-              env,
-              bufferToUpload
-            );
+
+            const blurred = await ImageHelper.blurImage(buffer, {
+              blurSize: 24
+            });
+            const newKey = await JemmiaShieldLarkService.uploadImage(env, blurred);
             item.image_key = newKey;
           }
         } else if (item.tag === JEMMIA_SHIELD_CONTENT_TAG.HREF) {
