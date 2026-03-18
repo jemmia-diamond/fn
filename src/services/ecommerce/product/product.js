@@ -64,13 +64,23 @@ export default class ProductService {
           WHEN e.product_id IS NULL THEN FALSE
           ELSE TRUE
         END AS has_360,
+        img.images,
         var.variants
       FROM ecom.materialized_products p
         INNER JOIN workplace.designs d ON d.id = p.design_id
         LEFT JOIN workplace.ecom_360 e ON p.workplace_id = e.product_id
 
+        -- Subquery for pre-aggregated images
+        INNER JOIN (
+          SELECT
+            i.product_id,
+            array_agg(i.src ORDER BY i.src) AS images
+          FROM haravan.images i
+          GROUP BY i.product_id
+        ) img ON img.product_id = p.haravan_product_id
+
         -- Subquery for pre-aggregated variants
-        INNER JOIN LATERAL (
+        INNER JOIN (
           SELECT
             v.haravan_product_id,
             JSON_AGG(
