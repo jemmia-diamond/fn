@@ -1,6 +1,7 @@
 import JewelryController from "controllers/ecommerce/jewelry-controller";
 import JewelryControllerV2 from "controllers/ecommerce/jewelry-controller-v2";
 import SearchController from "controllers/ecommerce/search-controller";
+import SearchControllerV2 from "controllers/ecommerce/search-controller-v2";
 import DiamondController from "controllers/ecommerce/diamond-controller";
 import WeddingRingController from "controllers/ecommerce/wedding-ring-controller";
 import IndDayStatController from "controllers/ecommerce/ind-day-stat-controller";
@@ -18,6 +19,7 @@ export default {
   JewelryController: JewelryController,
   JewelryControllerV2: JewelryControllerV2,
   SearchController: SearchController,
+  SearchControllerV2: SearchControllerV2,
   DiamondController: DiamondController,
   WeddingRingController: WeddingRingController,
   IndDayStatController: IndDayStatController,
