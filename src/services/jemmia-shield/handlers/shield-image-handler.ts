@@ -29,10 +29,7 @@ export default class ShieldImageHandler {
       imageBuffer
     );
 
-    const isSensitive =
-      analyzeResult.has_handwriting ||
-      analyzeResult.ner_results.length > 0 ||
-      analyzeResult.ocr_results.length > 0;
+    const isSensitive = analyzeResult.ner_results.length > 0;
 
     if (!isSensitive) {
       await JemmiaShieldLarkService.sendMessageToThread(
