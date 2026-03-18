@@ -195,6 +195,7 @@ export function buildQueryV2(jsonParams) {
             ${collectionJoinEcomProductsClause}
             ${linkedCollectionJoinEcomProductsClause}
             INNER JOIN ecom.materialized_variants v ON v.haravan_product_id = p.haravan_product_id
+            ${designImagesJoin}
             ${diamondJoinsForCount}
             ${warehouseJoinClause}
         WHERE 1 = 1 
