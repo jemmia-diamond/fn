@@ -88,7 +88,8 @@ export default class ShieldPostHandler {
           if (!buffer) continue;
           const result = await ShieldPresidioService.analyzeImage(env, buffer);
           if (
-            result.ner_results.length > 0
+            result.ner_results.length > 0 &&
+            result.ner_results.some((result: any) => result.score >= 0.5)
           ) {
             hasSensitiveImage = true;
             break;
@@ -131,7 +132,8 @@ export default class ShieldPostHandler {
               buffer
             );
             const isSensitive =
-              result.ner_results.length > 0;
+              result.ner_results.length > 0 &&
+              result.ner_results.some((result: any) => result.score >= 0.5);
 
             if (!isSensitive) {
               const persistedKey = persistedImageKeyMap.get(item.image_key);

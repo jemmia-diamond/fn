@@ -29,7 +29,8 @@ export default class ShieldImageHandler {
       imageBuffer
     );
 
-    const isSensitive = analyzeResult.ner_results.length > 0;
+    const isSensitive = analyzeResult.ner_results.length > 0 &&
+    analyzeResult.ner_results.some((result: any) => result.score >= 0.5);
 
     if (!isSensitive) {
       await JemmiaShieldLarkService.sendMessageToThread(
