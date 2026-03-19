@@ -5,8 +5,8 @@ export default async (c, next) => {
   try {
     await next();
 
-    // Don't send 404 and 502 responses to Sentry
-    if (c.res.status === 404 || c.res.status === 502) { return; }
+    // Don't send 404 responses to Sentry
+    if (c.res.status === 404) { return; }
   } catch (error) {
     // If it's already an HTTPException, let it bubble up
     if (error instanceof HTTPException) {
