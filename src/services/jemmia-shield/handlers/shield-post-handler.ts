@@ -4,7 +4,8 @@ import ShieldNotificationService from "services/jemmia-shield/shield-notificatio
 import { ShieldUtils } from "services/jemmia-shield/utils/shield-utils";
 import {
   JEMMIA_SHIELD_MESSAGE_TYPE,
-  JEMMIA_SHIELD_CONTENT_TAG
+  JEMMIA_SHIELD_CONTENT_TAG,
+  JEMMIA_SHIELD_NER_SCORE_THRESHOLD
 } from "src/constants/jemmia-shield-constants";
 import ImageHelper from "services/utils/image-helper";
 
@@ -88,7 +89,10 @@ export default class ShieldPostHandler {
           if (!buffer) continue;
           const result = await ShieldPresidioService.analyzeImage(env, buffer);
           if (
-            result.ner_results.length > 0
+            result.ner_results.length > 0 &&
+            result.ner_results.some(
+              (result) => result.score >= JEMMIA_SHIELD_NER_SCORE_THRESHOLD
+            )
           ) {
             hasSensitiveImage = true;
             break;
@@ -131,7 +135,10 @@ export default class ShieldPostHandler {
               buffer
             );
             const isSensitive =
-              result.ner_results.length > 0;
+              result.ner_results.length > 0 &&
+              result.ner_results.some(
+                (result) => result.score >= JEMMIA_SHIELD_NER_SCORE_THRESHOLD
+              );
 
             if (!isSensitive) {
               const persistedKey = persistedImageKeyMap.get(item.image_key);

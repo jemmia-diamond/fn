@@ -12,4 +12,6 @@ export const JEMMIA_SHIELD_CONTENT_TAG = {
   AT: "at"
 } as const;
 
+export const JEMMIA_SHIELD_NER_SCORE_THRESHOLD = 0.5;
+
 export const ORDER_REGEX = /ORDER(\d+)/g;
