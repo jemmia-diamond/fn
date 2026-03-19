@@ -1,8 +1,8 @@
 import BaseWorkplaceClient from "services/clients/workplace-client/base-client";
 
 export default class HaravanCollectionClient extends BaseWorkplaceClient {
-  constructor(api, baseId) {
-    super(api, baseId, "haravan_collections");
+  constructor(nocodbClient, baseId, tableId) {
+    super(nocodbClient, baseId, tableId);
   }
 
   async get(id) {

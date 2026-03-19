@@ -45,6 +45,9 @@ export default class ProductService {
   }
 
   async searchJewelry(searchKey, limit, page) {
+    if (!searchKey || typeof searchKey !== "string") {
+      return [];
+    }
     const lowerSearchKey = searchKey.toLowerCase();
     const likePattern = `%${lowerSearchKey}%`;
     const offset = (page - 1) * limit;
@@ -286,7 +289,7 @@ export default class ProductService {
 
         ${Prisma.raw(lateralJoinClause)}
 
-        LEFT JOIN LATERAL (
+        INNER JOIN LATERAL (
           SELECT 
             di.material_color,
             COALESCE(
@@ -309,7 +312,7 @@ export default class ProductService {
           ) AS item
           WHERE di.design_id = d.id
           GROUP BY di.material_color
-        ) design_imgs ON design_imgs.material_color = v.material_color
+        ) design_imgs ON design_imgs.material_color = v.material_color AND array_length(design_imgs.images, 1) > 0
 
       WHERE p.haravan_product_id = ${productId}
       GROUP BY

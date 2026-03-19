@@ -162,8 +162,9 @@ export default class LarkChatSyncMediaService {
 
   static async syncMedia(env) {
     try {
-      const larkAxiosClient = await LarksuiteService.createLarkAxiosClient(env);
       const larkSdkClient = await LarksuiteService.createClientV2(env);
+      const token = await LarksuiteService.getTenantAccessTokenFromClient({ larkClient: larkSdkClient, env });
+      const larkAxiosClient = await LarksuiteService.createLarkAxiosClient(env, token);
       const service = new LarkChatSyncMediaService(env, larkAxiosClient, larkSdkClient);
       const startTime = dayjs().tz(TIMEZONE_VIETNAM).subtract(1, "day").startOf("day").unix();
       await service.syncChat(CHAT_GROUPS.MEDIA_GROUP.chat_id, startTime);

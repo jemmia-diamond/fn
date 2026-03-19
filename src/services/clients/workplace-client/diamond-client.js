@@ -1,8 +1,8 @@
 import BaseWorkplaceClient from "services/clients/workplace-client/base-client";
 
 export default class DiamondClient extends BaseWorkplaceClient {
-  constructor(api, baseId) {
-    super(api, baseId, "diamonds");
+  constructor(nocodbClient, baseId, tableId) {
+    super(nocodbClient, baseId, tableId);
   }
 
   async get(id) {
