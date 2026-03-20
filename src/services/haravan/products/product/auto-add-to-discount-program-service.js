@@ -85,13 +85,13 @@ export default class AutoAddToDiscountProgramService {
       for (const diamond of diamonds) {
         try {
           const existing = await nocodb.listRecords(diamondHaravanCollectionsTableId, {
-            where: `(diamond_id,eq,${diamond.Id})~and(haravan_collection_id,eq,${DIAMOND_COLLECTION_ID})`
+            where: `(diamond_id,eq,${diamond.id})~and(haravan_collection_id,eq,${DIAMOND_COLLECTION_ID})`
           });
 
           if (existing.list?.length === 0) {
             await nocodb.createRecords(diamondHaravanCollectionsTableId, {
-              diamond_id: diamond.Id,
-              haravan_collection_id: DIAMOND_COLLECTION_ID
+              diamonds: { id: diamond.id },
+              haravan_collections: { id: DIAMOND_COLLECTION_ID }
             });
           }
         } catch (error) {
@@ -151,13 +151,13 @@ export default class AutoAddToDiscountProgramService {
 
       try {
         const existing = await nocodb.listRecords(jewelryHaravanCollectionsTableId, {
-          where: `(products_id,eq,${product.Id})~and(haravan_collections_id,eq,${JEWELRY_COLLECTION_ID})`
+          where: `(products_id,eq,${product.id})~and(haravan_collections_id,eq,${JEWELRY_COLLECTION_ID})`
         });
 
         if (existing.list?.length === 0) {
           await nocodb.createRecords(jewelryHaravanCollectionsTableId, {
-            products_id: product.Id,
-            haravan_collections_id: JEWELRY_COLLECTION_ID
+            products: { id: product.id },
+            haravan_collections: { id: JEWELRY_COLLECTION_ID }
           });
         }
       } catch (error) {
