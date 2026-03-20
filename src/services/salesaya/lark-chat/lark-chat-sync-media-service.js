@@ -149,7 +149,7 @@ export default class LarkChatSyncMediaService {
             const mergedVideos = Array.from(new Set([...(row.videos || []), ...fileLinks]));
             const mergedImages = Array.from(new Set([...(row.images || []), ...imageLinks]));
             await nocodb.updateRecords(designImageTableId, {
-              Id: row.Id,
+              id: row.id,
               videos: mergedVideos,
               images: mergedImages
             });
@@ -170,7 +170,7 @@ export default class LarkChatSyncMediaService {
 
             if (existDesign) {
               const data = {
-                designs: [existDesign.Id],
+                designs: [existDesign.id],
                 videos: fileLinks,
                 images: imageLinks
               };

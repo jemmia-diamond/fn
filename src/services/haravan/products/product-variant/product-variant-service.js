@@ -25,7 +25,7 @@ export default class ProductVariantService {
 
         if (diamond) {
           await nocodb.updateRecords(diamondTableId, {
-            Id: diamond.Id,
+            id: diamond.id,
             is_incoming: null
           });
         }
@@ -69,7 +69,7 @@ export default class ProductVariantService {
         if (records?.list?.length > 0) {
           for (const record of records.list) {
             await nocodb.updateRecords(variantsTableId, {
-              Id: record.Id,
+              id: record.id,
               final_discount_price: 0
             });
           }

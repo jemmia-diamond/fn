@@ -117,8 +117,8 @@ export default class NocoDBClient {
       // Update
       const record = records.list[0];
       // Need ID to update
-      if (record.Id) {
-        return this.updateRecords(tableId, { Id: record.Id, ...data });
+      if (record.id) {
+        return this.updateRecords(tableId, { id: record.id, ...data });
       }
     }
     // Create if not found
