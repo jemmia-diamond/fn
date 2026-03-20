@@ -19,7 +19,7 @@ export default class DiamondCollectService {
       const activeRules = await DiamondDiscountService.getActiveRules(this.env);
       const allCollections = await this._fetchCollections(nocoClient, activeRules);
 
-      const { ruleCollections, percentCollectionIds } = this._buildRuleCollectionsMap(allCollections);
+      const { ruleCollections, allPercentCollectionIds } = this._buildRuleCollectionsMap(allCollections);
 
       await this._processDiamondBatches({
         db,
@@ -27,7 +27,7 @@ export default class DiamondCollectService {
         haravanApi,
         activeRules,
         ruleCollections,
-        percentCollectionIds
+        allPercentCollectionIds
       });
 
     } catch (error) {
@@ -52,7 +52,7 @@ export default class DiamondCollectService {
       return { list: [] };
     }
 
-    const where = `(discount_type,eq,percent)~and(discount_value,in,${uniquePercents.join(",")})`;
+    const where = "(discount_type,eq,percent)~and(discount_value,gt,0)";
     let collections = await nocoClient.listRecords(DiamondCollectService.HARAVAN_COLLECTIONS_TABLE, {
       where: where,
       limit: 1000
@@ -136,7 +136,7 @@ export default class DiamondCollectService {
 
   _buildRuleCollectionsMap(allCollections) {
     const ruleCollections = {};
-    const percentCollectionIds = new Set();
+    const allPercentCollectionIds = new Set();
 
     for (const col of (allCollections.list || [])) {
       if (col.discount_value) {
@@ -148,7 +148,7 @@ export default class DiamondCollectService {
 
         if (col.id) {
           ruleCollections[discountVal].nocodbId = col.id;
-          percentCollectionIds.add(col.id);
+          allPercentCollectionIds.add(col.id);
         }
 
         if (col.haravan_id) {
@@ -157,11 +157,11 @@ export default class DiamondCollectService {
       }
     }
 
-    return { ruleCollections, percentCollectionIds };
+    return { ruleCollections, allPercentCollectionIds };
   }
 
   async _processDiamondBatches(context) {
-    const { db, nocoClient, percentCollectionIds } = context;
+    const { db, nocoClient } = context;
     let offset = 0;
     const limit = 100;
 
@@ -190,7 +190,7 @@ export default class DiamondCollectService {
           const list = relatedCollections.list || [];
 
           for (const entry of list) {
-            if (percentCollectionIds.has(entry.haravan_collections?.id)) {
+            if (context.allPercentCollectionIds.has(entry.haravan_collection_id)) {
               if (!diamondCollectionsMap[entry.diamond_id]) {
                 diamondCollectionsMap[entry.diamond_id] = [];
               }
@@ -252,7 +252,7 @@ export default class DiamondCollectService {
       const rules = ruleCollections[discountPercent] || {};
       const targetNocodbCollectionId = rules.nocodbId || null;
 
-      await this._syncNocoDBCollections(diamond, targetNocodbCollectionId, ruleCollections, nocoClient, existingEntries);
+      await this._syncNocoDBCollections(diamond, targetNocodbCollectionId, context, existingEntries);
       await this._syncHaravanCollections(diamond, targetNocodbCollectionId, rules.haravanId, nocoClient, haravanApi, existingEntries);
 
     } catch (error) {
@@ -264,11 +264,15 @@ export default class DiamondCollectService {
     }
   }
 
-  async _syncNocoDBCollections(diamond, targetCollectionId, ruleCollections, nocoClient, existingEntries) {
+  async _syncNocoDBCollections(diamond, targetCollectionId, context, existingEntries) {
+    const { ruleCollections, nocoClient, allPercentCollectionIds } = context;
     const existingList = existingEntries || [];
     const defaultDiscountCollectionId = ruleCollections[DiamondCollectService.DEFAULT_DISCOUNT_PERCENT]?.nocodbId;
 
     for (const entry of existingList) {
+      if (!allPercentCollectionIds.has(entry.haravan_collection_id)) {
+        continue;
+      }
       const isTargetCollection = entry.haravan_collection_id === targetCollectionId;
       const isDefaultCollection = entry.haravan_collection_id === defaultDiscountCollectionId;
 
