@@ -12,13 +12,12 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import timezone from "dayjs/plugin/timezone.js";
 import * as Sentry from "@sentry/cloudflare";
+import { NOCODB_TABLES } from "src/constants/nocodb-tables";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
 export default class LarkChatSyncMediaService {
-  static DESIGN_IMAGES_TABLE = "myrbfubgj2h3ztl";
-  static DESIGNS_TABLE = "m1g1pwq2zmk2scc";
 
   constructor(env, larkAxiosClient, larkSdkClient) {
     this.env = env;
@@ -136,8 +135,8 @@ export default class LarkChatSyncMediaService {
 
         const links = [...imageLinks, ...fileLinks].join(", ");
         if (uniqueCodes.length === 1) {
-          const designImageTableId = LarkChatSyncMediaService.DESIGN_IMAGES_TABLE;
-          const designTableId = LarkChatSyncMediaService.DESIGNS_TABLE;
+          const designImageTableId = NOCODB_TABLES.DESIGN_IMAGES;
+          const designTableId = NOCODB_TABLES.DESIGNS;
 
           const rowRes = await nocodb.listRecords(designImageTableId, {
             where: `(design_code,eq,${uniqueCodes[0]})`,

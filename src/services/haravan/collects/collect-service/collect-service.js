@@ -2,11 +2,9 @@ import * as Sentry from "@sentry/cloudflare";
 import HaravanAPI from "services/clients/haravan-client";
 import NocoDBClient from "services/clients/nocodb-client";
 import { BadRequestException } from "src/exception/exceptions";
+import { NOCODB_TABLES } from "src/constants/nocodb-tables";
 
 export default class CollectService {
-  static DIAMONDS_TABLE = "m4qggn3vyz5qyqi";
-  static PRODUCTS_TABLE = "mhx7y71vqz64ydn";
-  static HARAVAN_COLLECTIONS_TABLE = "mpgeruya41k3zcg";
 
   constructor(env) {
     this.env = env;
@@ -30,7 +28,7 @@ export default class CollectService {
     const nocodb = new NocoDBClient(this.env);
 
     // Get Haravan Collection ID from ID
-    const collectionRes = await nocodb.listRecords(CollectService.HARAVAN_COLLECTIONS_TABLE, { where: `(Id,eq,${haravan_collection_id})`, limit: 1 });
+    const collectionRes = await nocodb.listRecords(NOCODB_TABLES.HARAVAN_COLLECTIONS, { where: `(Id,eq,${haravan_collection_id})`, limit: 1 });
     const collection = collectionRes.list?.[0] ?? null;
 
     if (!collection) {
@@ -41,13 +39,13 @@ export default class CollectService {
     // Get Haravan Product ID from ID
     let realProductId;
     if (diamond_id) {
-      const diamondRes = await nocodb.listRecords(CollectService.DIAMONDS_TABLE, { where: `(Id,eq,${diamond_id})`, limit: 1 });
+      const diamondRes = await nocodb.listRecords(NOCODB_TABLES.DIAMONDS, { where: `(Id,eq,${diamond_id})`, limit: 1 });
       const diamond = diamondRes.list?.[0] ?? null;
       if (diamond) {
         realProductId = diamond.product_id;
       }
     } else if (product_id) {
-      const jewelryRes = await nocodb.listRecords(CollectService.PRODUCTS_TABLE, { where: `(Id,eq,${product_id})`, limit: 1 });
+      const jewelryRes = await nocodb.listRecords(NOCODB_TABLES.JEWELRIES, { where: `(Id,eq,${product_id})`, limit: 1 });
       const jewelry = jewelryRes.list?.[0] ?? null;
       if (jewelry) {
         realProductId = jewelry.haravan_product_id;
@@ -92,7 +90,7 @@ export default class CollectService {
     const nocodb = new NocoDBClient(this.env);
 
     // Get Haravan Collection ID
-    const collectionRes2 = await nocodb.listRecords(CollectService.HARAVAN_COLLECTIONS_TABLE, { where: `(Id,eq,${haravan_collection_id})`, limit: 1 });
+    const collectionRes2 = await nocodb.listRecords(NOCODB_TABLES.HARAVAN_COLLECTIONS, { where: `(Id,eq,${haravan_collection_id})`, limit: 1 });
     const collection = collectionRes2.list?.[0] ?? null;
 
     if (!collection) {
@@ -103,13 +101,13 @@ export default class CollectService {
     // Get Haravan Product ID
     let realProductId;
     if (diamond_id) {
-      const diamondRes2 = await nocodb.listRecords(CollectService.DIAMONDS_TABLE, { where: `(Id,eq,${diamond_id})`, limit: 1 });
+      const diamondRes2 = await nocodb.listRecords(NOCODB_TABLES.DIAMONDS, { where: `(Id,eq,${diamond_id})`, limit: 1 });
       const diamond = diamondRes2.list?.[0] ?? null;
       if (diamond) {
         realProductId = diamond.product_id;
       }
     } else if (product_id) {
-      const jewelryRes2 = await nocodb.listRecords(CollectService.PRODUCTS_TABLE, { where: `(Id,eq,${product_id})`, limit: 1 });
+      const jewelryRes2 = await nocodb.listRecords(NOCODB_TABLES.JEWELRIES, { where: `(Id,eq,${product_id})`, limit: 1 });
       const jewelry = jewelryRes2.list?.[0] ?? null;
       if (jewelry) {
         realProductId = jewelry.haravan_product_id;

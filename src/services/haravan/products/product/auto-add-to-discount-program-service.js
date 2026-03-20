@@ -2,6 +2,7 @@ import * as Sentry from "@sentry/cloudflare";
 import NocoDBClient from "services/clients/nocodb-client";
 import { HARAVAN_TOPIC } from "services/ecommerce/enum";
 import { SKU_LENGTH, HRV_PRODUCT_TYPE } from "services/haravan/products/product-variant/constant";
+import { NOCODB_TABLES } from "src/constants/nocodb-tables";
 
 const EXCLUDED_COLLECTION_TITLES = [
   "Lotus Essence",
@@ -16,13 +17,6 @@ const EXCLUDED_COLLECTION_TITLES = [
 ];
 
 export default class AutoAddToDiscountProgramService {
-  static DIAMONDS_TABLE = "m4qggn3vyz5qyqi";
-  static JEWELRIES_TABLE = "mhx7y71vqz64ydn";
-  static DIAMOND_HARAVAN_COLLECTIONS_TABLE = "mxu3rae3quofz6n";
-  static JEWELRY_HARAVAN_COLLECTIONS_TABLE = "mvhqmb8qzxl8y7z";
-  static HARAVAN_COLLECTIONS_TABLE = "mpgeruya41k3zcg";
-  static DESIGNS_TABLE = "m1g1pwq2zmk2scc";
-  static COLLECTIONS_TABLE = "m861dlk1gn7ws8x";
 
   constructor(env) {
     this.env = env;
@@ -76,7 +70,7 @@ export default class AutoAddToDiscountProgramService {
     try {
       const nocodb = new NocoDBClient(this.env);
 
-      const diamondsQuery = await nocodb.listRecords(AutoAddToDiscountProgramService.DIAMONDS_TABLE, {
+      const diamondsQuery = await nocodb.listRecords(NOCODB_TABLES.DIAMONDS, {
         where: `(product_id,eq,${haravanProductId})`
       });
       const diamonds = diamondsQuery.list || [];
@@ -86,7 +80,7 @@ export default class AutoAddToDiscountProgramService {
       }
 
       const DIAMOND_COLLECTION_ID = this.env.DEFAULT_HARAVAN_DIAMOND_DISCOUNT_COLLECTION_ID;
-      const diamondHaravanCollectionsTableId = AutoAddToDiscountProgramService.DIAMOND_HARAVAN_COLLECTIONS_TABLE;
+      const diamondHaravanCollectionsTableId = NOCODB_TABLES.DIAMOND_HARAVAN_COLLECTIONS;
 
       for (const diamond of diamonds) {
         try {
@@ -117,7 +111,7 @@ export default class AutoAddToDiscountProgramService {
     try {
       const nocodb = new NocoDBClient(this.env);
 
-      const productsQuery = await nocodb.listRecords(AutoAddToDiscountProgramService.JEWELRIES_TABLE, {
+      const productsQuery = await nocodb.listRecords(NOCODB_TABLES.JEWELRIES, {
         where: `(haravan_product_id,eq,${haravanProductId})`,
         limit: 1
       });
@@ -130,14 +124,14 @@ export default class AutoAddToDiscountProgramService {
 
       if (product.design_id) {
         try {
-          const designRes = await nocodb.listRecords(AutoAddToDiscountProgramService.DESIGNS_TABLE, {
+          const designRes = await nocodb.listRecords(NOCODB_TABLES.DESIGNS, {
             where: `(id,eq,${product.design_id})`,
             limit: 1
           });
           const design = designRes.list?.[0] ?? null;
 
           if (design && design.collections_id) {
-            const collectionRes = await nocodb.listRecords(AutoAddToDiscountProgramService.COLLECTIONS_TABLE, {
+            const collectionRes = await nocodb.listRecords(NOCODB_TABLES.COLLECTIONS, {
               where: `(id,eq,${design.collections_id})`,
               limit: 1
             });
@@ -153,7 +147,7 @@ export default class AutoAddToDiscountProgramService {
       }
 
       const JEWELRY_COLLECTION_ID = this.env.DEFAULT_HARAVAN_JEWELRY_DISCOUNT_COLLECTION_ID;
-      const jewelryHaravanCollectionsTableId = AutoAddToDiscountProgramService.JEWELRY_HARAVAN_COLLECTIONS_TABLE;
+      const jewelryHaravanCollectionsTableId = NOCODB_TABLES.JEWELRY_HARAVAN_COLLECTIONS;
 
       try {
         const existing = await nocodb.listRecords(jewelryHaravanCollectionsTableId, {

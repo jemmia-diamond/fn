@@ -1,9 +1,8 @@
 import * as Sentry from "@sentry/cloudflare";
 import NocoDBClient from "services/clients/nocodb-client";
+import { NOCODB_TABLES } from "src/constants/nocodb-tables";
 
 export default class ProductVariantService {
-  static DIAMONDS_TABLE = "m4qggn3vyz5qyqi";
-  static VARIANTS_TABLE = "mkab64qnm6ab9r5";
   constructor(env) {
     this.env = env;
   }
@@ -12,7 +11,7 @@ export default class ProductVariantService {
     const variants = product.variants || [];
 
     const nocodb = new NocoDBClient(this.env);
-    const diamondTableId = ProductVariantService.DIAMONDS_TABLE;
+    const diamondTableId = NOCODB_TABLES.DIAMONDS;
 
     for (const variant of variants) {
       const qty = variant?.inventory_advance?.qty_available ?? 0;
@@ -36,7 +35,7 @@ export default class ProductVariantService {
 
   async updateStockTag(diamondId, hasStock) {
     const nocodb = new NocoDBClient(this.env);
-    const diamondTableId = ProductVariantService.DIAMONDS_TABLE;
+    const diamondTableId = NOCODB_TABLES.DIAMONDS;
 
     await nocodb.updateRecords(diamondTableId, {
       Id: diamondId,
@@ -46,7 +45,7 @@ export default class ProductVariantService {
 
   async findVariantsByGiaReport(diamond) {
     const nocodb = new NocoDBClient(this.env);
-    const variantTableId = ProductVariantService.VARIANTS_TABLE;
+    const variantTableId = NOCODB_TABLES.VARIANTS;
     const giaReportNo = diamond.report_no;
     return await nocodb.listRecords(variantTableId, {
       where: `(sku,like,%${giaReportNo}%)`
@@ -57,7 +56,7 @@ export default class ProductVariantService {
     const variants = product.variants || [];
 
     const nocodb = new NocoDBClient(this.env);
-    const variantsTableId = ProductVariantService.VARIANTS_TABLE;
+    const variantsTableId = NOCODB_TABLES.VARIANTS;
 
     for (const variant of variants) {
       const qty = variant?.inventory_advance?.qty_available ?? 0;
