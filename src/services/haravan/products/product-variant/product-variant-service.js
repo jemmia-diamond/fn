@@ -38,7 +38,7 @@ export default class ProductVariantService {
     const diamondTableId = NOCODB_TABLES.DIAMONDS;
 
     await nocodb.updateRecords(diamondTableId, {
-      Id: diamondId,
+      id: diamondId,
       is_incoming: hasStock ? null : true // Assuming hasStock means it's not incoming, and !hasStock means it is incoming
     });
   }
