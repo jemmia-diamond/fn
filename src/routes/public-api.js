@@ -28,6 +28,7 @@ export default class PublicAPIRoutes {
 
     // Search
     ecommerceNamespaceApi.get("/search", Ecommerce.SearchController.index);
+    ecommerceNamespaceApi.get("/v2/search", Ecommerce.SearchControllerV2.index);
 
     // Web form
     ecommerceNamespaceApi.post("/website-forms", Ecommerce.WebsiteFormController.create);
