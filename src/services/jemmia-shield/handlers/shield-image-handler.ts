@@ -2,7 +2,10 @@ import JemmiaShieldLarkService from "services/jemmia-shield/jemmia-shield-lark-s
 import ShieldPresidioService from "services/jemmia-shield/shield-presidio-service";
 import ShieldNotificationService from "services/jemmia-shield/shield-notification-service";
 import { ShieldUtils } from "services/jemmia-shield/utils/shield-utils";
-import { JEMMIA_SHIELD_MESSAGE_TYPE } from "src/constants/jemmia-shield-constants";
+import {
+  JEMMIA_SHIELD_MESSAGE_TYPE,
+  JEMMIA_SHIELD_NER_SCORE_THRESHOLD
+} from "src/constants/jemmia-shield-constants";
 import ImageHelper from "services/utils/image-helper";
 
 export default class ShieldImageHandler {
@@ -29,16 +32,25 @@ export default class ShieldImageHandler {
       imageBuffer
     );
 
-    let bufferToUpload = imageBuffer;
-    if (
-      analyzeResult.has_handwriting ||
-      analyzeResult.ner_results.length > 0 ||
-      analyzeResult.ocr_results.length > 0
-    ) {
-      bufferToUpload = await ImageHelper.blurImage(imageBuffer, {
-        blurSize: 24
-      });
+    const isSensitive =
+      analyzeResult.ner_results.length > 0 &&
+      analyzeResult.ner_results.some(
+        (result) => result.score >= JEMMIA_SHIELD_NER_SCORE_THRESHOLD
+      );
+
+    if (!isSensitive) {
+      await JemmiaShieldLarkService.sendMessageToThread(
+        env,
+        event.message.root_id ?? event.message.message_id,
+        JEMMIA_SHIELD_MESSAGE_TYPE.IMAGE,
+        JSON.stringify({ image_key: appOwnedImageKey })
+      );
+      return;
     }
+
+    const bufferToUpload = await ImageHelper.blurImage(imageBuffer, {
+      blurSize: 24
+    });
 
     const newImageKey = await JemmiaShieldLarkService.uploadImage(
       env,
