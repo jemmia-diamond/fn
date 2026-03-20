@@ -2732,8 +2732,8 @@ packages:
     resolution: {integrity: sha512-0/A9rDy9P7cJ+8w1c9WD9V//9Wj15Ce2MPz8Ri6032usz+NfePxx5AcN3bN+r6ZL6jEo066/yNYB3tn4pQEx+A==}
     hasBin: true
 
-  validator@13.15.23:
-    resolution: {integrity: sha512-4yoz1kEWqUjzi5zsPbAS/903QXSYp0UOtHsPpp7p9rHAw/W+dkInskAE386Fat3oKRROwO98d9ZB0G4cObgUyw==}
+  validator@13.15.26:
+    resolution: {integrity: sha512-spH26xU080ydGggxRyR1Yhcbgx+j3y5jbNXk/8L+iRvdIEQ4uTRH2Sgf2dokud6Q4oAtsbNvJ1Ft+9xmm6IZcA==}
     engines: {node: '>= 0.10'}
 
   wcwidth@1.0.1:
@@ -4953,7 +4953,7 @@ snapshots:
       chevrotain: 10.5.0
       dayjs: 1.11.13
       jsep: 1.4.0
-      validator: 13.15.23
+      validator: 13.15.26
     transitivePeerDependencies:
       - debug
 
@@ -5493,7 +5493,7 @@ snapshots:
 
   uuid@11.1.0: {}
 
-  validator@13.15.23: {}
+  validator@13.15.26: {}
 
   wcwidth@1.0.1:
     dependencies:
