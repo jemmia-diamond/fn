@@ -3,7 +3,6 @@ import * as Sentry from "@sentry/cloudflare";
 import { createAxiosClient } from "services/utils/http-client";
 
 const DEFAULT_HEADERS = { Accept: "application/json" };
-const RETRYABLE_ERROR = "has been modified after you have opened it";
 
 export default class FrappeClient {
   constructor({ url, username, password, apiKey, apiSecret, verify = true }) {
@@ -94,25 +93,13 @@ export default class FrappeClient {
     });
   }
 
-  async update(doc, maxRetries = 1) {
+  async update(doc) {
     const url = `/api/resource/${encodeURIComponent(doc.doctype)}/${encodeURIComponent(doc.name)}`;
-
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        const res = await this.axiosClient.put(url, { data: JSON.stringify(doc) });
-        return this.postProcess(res);
-      } catch (error) {
-        if (error.response?.data?.exception?.includes(RETRYABLE_ERROR) && attempt < maxRetries) {
-          try {
-            const freshDoc = await this.getDoc(doc.doctype, doc.name);
-            doc = { ...freshDoc, ...doc };
-            continue;
-          } catch {
-            break;
-          }
-        }
-        this.praseError(error);
-      }
+    try {
+      const res = await this.axiosClient.put(url, { data: JSON.stringify(doc) });
+      return this.postProcess(res);
+    } catch (error) {
+      return this.praseError(error);
     }
   }
 
@@ -245,14 +232,6 @@ export default class FrappeClient {
           errorMessage = `${errorMessage} - ${e.response.data.exception}`;
         }
       }
-    }
-
-    if (errorMessage?.includes(RETRYABLE_ERROR)) {
-      const error = new Error(RETRYABLE_ERROR);
-      error.shouldRetry = true;
-      error.status = e.response?.status;
-      error.response = e.response;
-      throw error;
     }
 
     if (!errorMessage && e.response?.data?.exception) {
