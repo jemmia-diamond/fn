@@ -44,6 +44,48 @@ export default class ShieldPostHandler {
     this.resolvePostMentions(content, mentions);
     const imageMap = await this.downloadPostImages(env, event, content);
 
+    let postText = "";
+    if (content.title) postText += content.title + " ";
+    for (const line of content.content) {
+      for (const item of line) {
+        if (item.tag === JEMMIA_SHIELD_CONTENT_TAG.TEXT) {
+          postText += item.text + " ";
+        } else if (item.tag === JEMMIA_SHIELD_CONTENT_TAG.HREF) {
+          postText += item.text + " ";
+        }
+      }
+    }
+
+    const isTextSensitive =
+      !!postText && (await ShieldPresidioService.detectSensitiveInfo(env, postText));
+
+    const sensitiveImageMap = new Map<string, boolean>();
+    let hasSensitiveImage = false;
+    for (const line of content.content) {
+      for (const item of line) {
+        if (item.tag === JEMMIA_SHIELD_CONTENT_TAG.IMG) {
+          const buffer = imageMap.get(item.image_key);
+          if (!buffer) continue;
+          const result = await ShieldPresidioService.analyzeImage(env, buffer);
+          const isSensitive =
+            result.ner_results.length > 0 &&
+            result.ner_results.some(
+              (result) => result.score >= JEMMIA_SHIELD_NER_SCORE_THRESHOLD
+            );
+          sensitiveImageMap.set(item.image_key, isSensitive);
+          if (isSensitive) {
+            hasSensitiveImage = true;
+            break;
+          }
+        }
+      }
+      if (hasSensitiveImage) break;
+    }
+
+    if (!isTextSensitive && !hasSensitiveImage) {
+      return;
+    }
+
     const persistedImageKeyMap = new Map<string, string>();
     for (const line of originalContent.content) {
       for (const item of line) {
@@ -66,52 +108,6 @@ export default class ShieldPostHandler {
 
     await JemmiaShieldLarkService.recallMessage(env, event.message.message_id);
 
-    let postText = "";
-    if (content.title) postText += content.title + " ";
-    for (const line of content.content) {
-      for (const item of line) {
-        if (item.tag === JEMMIA_SHIELD_CONTENT_TAG.TEXT) {
-          postText += item.text + " ";
-        } else if (item.tag === JEMMIA_SHIELD_CONTENT_TAG.HREF) {
-          postText += item.text + " ";
-        }
-      }
-    }
-
-    const isTextSensitive =
-      !!postText && (await ShieldPresidioService.detectSensitiveInfo(env, postText));
-
-    let hasSensitiveImage = false;
-    for (const line of content.content) {
-      for (const item of line) {
-        if (item.tag === JEMMIA_SHIELD_CONTENT_TAG.IMG) {
-          const buffer = imageMap.get(item.image_key);
-          if (!buffer) continue;
-          const result = await ShieldPresidioService.analyzeImage(env, buffer);
-          if (
-            result.ner_results.length > 0 &&
-            result.ner_results.some(
-              (result) => result.score >= JEMMIA_SHIELD_NER_SCORE_THRESHOLD
-            )
-          ) {
-            hasSensitiveImage = true;
-            break;
-          }
-        }
-      }
-      if (hasSensitiveImage) break;
-    }
-
-    if (!isTextSensitive && !hasSensitiveImage) {
-      await JemmiaShieldLarkService.sendMessageToThread(
-        env,
-        event.message.root_id ?? event.message.message_id,
-        JEMMIA_SHIELD_MESSAGE_TYPE.POST,
-        JSON.stringify(originalContent)
-      );
-      return;
-    }
-
     if (content.title) {
       content.title = await ShieldPresidioService.maskSensitiveInfo(
         env,
@@ -130,15 +126,7 @@ export default class ShieldPostHandler {
         } else if (item.tag === JEMMIA_SHIELD_CONTENT_TAG.IMG) {
           const buffer = imageMap.get(item.image_key);
           if (buffer) {
-            const result = await ShieldPresidioService.analyzeImage(
-              env,
-              buffer
-            );
-            const isSensitive =
-              result.ner_results.length > 0 &&
-              result.ner_results.some(
-                (result) => result.score >= JEMMIA_SHIELD_NER_SCORE_THRESHOLD
-              );
+            const isSensitive = sensitiveImageMap.get(item.image_key) ?? false;
 
             if (!isSensitive) {
               const persistedKey = persistedImageKeyMap.get(item.image_key);
