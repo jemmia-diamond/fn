@@ -122,11 +122,13 @@ export function aggregateQuery(jsonParams) {
   }
 
   if (jsonParams.fineness && jsonParams.fineness.length > 0) {
-    filterSql = Prisma.sql`${filterSql} AND wr.fineness ~ ANY(${jsonParams.fineness})\n`;
+    const patterns = jsonParams.fineness.map((f) => `%${f}%`);
+    filterSql = Prisma.sql`${filterSql} AND wr.fineness LIKE ANY(${patterns})\n`;
   }
 
   if (jsonParams.material_colors && jsonParams.material_colors.length > 0) {
-    filterSql = Prisma.sql`${filterSql} AND wr.material_colors ~ ANY(${jsonParams.material_colors})\n`;
+    const patterns = jsonParams.material_colors.map((color) => `%${color}%`);
+    filterSql = Prisma.sql`${filterSql} AND wr.material_colors LIKE ANY(${patterns})\n`;
   }
 
   if (jsonParams.is_in_stock) {

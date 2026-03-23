@@ -160,7 +160,7 @@ export default class ProductService {
   async getJewelryById(id, params) {
     const { variantJsonBuildObject, lateralJoinClause } =
       buildQuerySingle(params);
-    const dataSql = `
+    const dataSql = Prisma.sql`
       SELECT
           CAST(p.haravan_product_id AS INT) AS id,
           p.title,
@@ -179,7 +179,7 @@ export default class ProductService {
           img.images,
           p.estimated_gold_weight,
           JSON_AGG(
-            ${variantJsonBuildObject}
+            ${Prisma.raw(variantJsonBuildObject)}
           ) AS variants,
           JSON_BUILD_OBJECT(
                'name', p.primary_collection,
@@ -195,7 +195,7 @@ export default class ProductService {
             GROUP BY i.product_id
           ) img ON img.product_id = p.haravan_product_id
 
-          ${lateralJoinClause}
+          ${Prisma.raw(lateralJoinClause)}
         WHERE 1 = 1
           AND p.haravan_product_id = ${id}
         GROUP BY
@@ -205,7 +205,7 @@ export default class ProductService {
           p.qty_onhand, img.images, p.has_360, p.estimated_gold_weight,
           p.primary_collection, p.primary_collection_handle
     `;
-    const result = await this.db.$queryRaw(Prisma.raw(dataSql));
+    const result = await this.db.$queryRaw(dataSql);
     return result?.[0] || null;
   }
 
