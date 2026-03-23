@@ -250,11 +250,8 @@ export default class FrappeClient {
       e.message = errorMessage;
       e.frappeData = e.response?.data;
       e.status = e.response?.status;
-      Sentry.captureException(e);
-      throw e;
     }
 
-    Sentry.captureException(e);
     throw e;
   }
 
