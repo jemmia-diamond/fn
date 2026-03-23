@@ -10,22 +10,12 @@ import ImageHelper from "services/utils/image-helper";
 
 export default class ShieldImageHandler {
   static async handleImageMessage(env: any, event: any, content: any) {
-    await ShieldNotificationService.notifyUserAboutSensitiveScan(env, event);
-
     const imageKey = content.image_key;
     const imageBuffer = await JemmiaShieldLarkService.getImage(
       env,
       event.message.message_id,
       imageKey
     );
-
-    const appOwnedImageKey = await ShieldUtils.reuploadImageForPersistence(
-      env,
-      imageBuffer,
-      imageKey
-    );
-
-    await JemmiaShieldLarkService.recallMessage(env, event.message.message_id);
 
     const analyzeResult = await ShieldPresidioService.analyzeImage(
       env,
@@ -39,14 +29,18 @@ export default class ShieldImageHandler {
       );
 
     if (!isSensitive) {
-      await JemmiaShieldLarkService.sendMessageToThread(
-        env,
-        event.message.root_id ?? event.message.message_id,
-        JEMMIA_SHIELD_MESSAGE_TYPE.IMAGE,
-        JSON.stringify({ image_key: appOwnedImageKey })
-      );
       return;
     }
+
+    await ShieldNotificationService.notifyUserAboutSensitiveScan(env, event);
+
+    const appOwnedImageKey = await ShieldUtils.reuploadImageForPersistence(
+      env,
+      imageBuffer,
+      imageKey
+    );
+
+    await JemmiaShieldLarkService.recallMessage(env, event.message.message_id);
 
     const bufferToUpload = await ImageHelper.blurImage(imageBuffer, {
       blurSize: 24
