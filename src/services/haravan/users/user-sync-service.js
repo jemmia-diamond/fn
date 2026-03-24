@@ -5,6 +5,7 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 
 dayjs.extend(utc);
+const UPSERT_BATCH_SIZE = 20;
 
 export default class UserSyncService {
   constructor(env) {
@@ -49,28 +50,33 @@ export default class UserSyncService {
     if (!users || users.length === 0) return;
 
     const currentDateTime = dayjs().utc().toDate();
-    await this.db.$transaction(async (tx) => {
-      const operations = users.map(user => {
-        const data = this._mapUser(user);
-        const id = data.id;
-        delete data.id;
 
-        return tx.user.upsert({
-          where: { id },
-          create: {
-            uuid: crypto.randomUUID(),
-            id,
-            ...data,
-            database_created_at: currentDateTime,
-            database_updated_at: currentDateTime
-          },
-          update: {
-            ...data,
-            database_updated_at: currentDateTime
-          }
+    for (let i = 0; i < users.length; i += UPSERT_BATCH_SIZE) {
+      const batch = users.slice(i, i + UPSERT_BATCH_SIZE);
+
+      await this.db.$transaction(async (tx) => {
+        const operations = batch.map(user => {
+          const data = this._mapUser(user);
+          const id = data.id;
+          delete data.id;
+
+          return tx.user.upsert({
+            where: { id },
+            create: {
+              uuid: crypto.randomUUID(),
+              id,
+              ...data,
+              database_created_at: currentDateTime,
+              database_updated_at: currentDateTime
+            },
+            update: {
+              ...data,
+              database_updated_at: currentDateTime
+            }
+          });
         });
-      });
-      await Promise.all(operations);
-    }, this.dbConnection);
+        await Promise.all(operations);
+      }, this.dbConnection);
+    }
   }
 }
