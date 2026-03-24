@@ -7,6 +7,6 @@ export const NOCODB_TABLES = {
   HARAVAN_COLLECTIONS: "mpgeruya41k3zcg",
   DESIGNS: "m1g1pwq2zmk2scc",
   COLLECTIONS: "m861dlk1gn7ws8x",
-  DESIGN_IMAGES: "myrbfubgj2h3ztl",
+  DESIGN_IMAGES: "m9t4aeympg0lokc",
   SERIALS: "mm80xzmei7q85k7"
 };
