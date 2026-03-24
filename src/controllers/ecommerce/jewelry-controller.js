@@ -1,17 +1,18 @@
 import Ecommerce from "services/ecommerce";
 import { parseNumber } from "services/utils/num-helper";
+import { splitParams } from "services/utils/param-helper";
 
 export default class JewelryController {
   static async index(ctx) {
     const params = await ctx.req.query();
 
     const jsonParams = {
-      categories: params.categories ? params.categories.split(",") : [],
-      product_types: params.product_types ? params.product_types.split(",") : [],
-      material_colors: params.material_colors ? params.material_colors.split(",") : [],
-      genders: params.gender ? params.gender.split(",") : [],
-      fineness: params.fineness ? params.fineness.split(",") : [],
-      pages: params.pages ? params.pages.split(",") : [],
+      categories: splitParams(params.categories),
+      product_types: splitParams(params.product_types),
+      material_colors: splitParams(params.material_colors),
+      genders: splitParams(params.gender),
+      fineness: splitParams(params.fineness),
+      pages: splitParams(params.pages),
       is_in_stock: params.is_in_stock ? params.is_in_stock === "true" : null,
       pagination: {
         from: parseNumber(params.from, 1),
@@ -26,24 +27,25 @@ export default class JewelryController {
         order: params.sort_order || "asc"
       },
       main_holder_size: {
-        lower: params["main_holder_size.lower"] ? parseFloat(params["main_holder_size.lower"]) : undefined,
-        upper: params["main_holder_size.upper"] ? parseFloat(params["main_holder_size.upper"]) : undefined
+        lower: params["main_holder_size.lower"]
+          ? parseFloat(params["main_holder_size.lower"])
+          : undefined,
+        upper: params["main_holder_size.upper"]
+          ? parseFloat(params["main_holder_size.upper"])
+          : undefined
       },
-      design_tags: params.design_tags ? params.design_tags.split(",") : [],
-      ring_head_styles: params.ring_head_styles ? params.ring_head_styles.split(",") : [],
-      ring_band_styles: params.ring_band_styles ? params.ring_band_styles.split(",") : [],
-      excluded_ring_head_styles: params.excluded_ring_head_styles ? params.excluded_ring_head_styles.split(",") : [],
-      excluded_ring_band_styles: params.excluded_ring_band_styles ? params.excluded_ring_band_styles.split(",") : [],
-      product_ids: params.product_ids
-        ? params.product_ids
-          .split(",")
-          .map((v) => Number(v.trim()))
-          .filter((n) => Number.isInteger(n) && n > 0)
-        : [],
-      linked_collections: params.linked_collections ? params.linked_collections.split(",") : [],
+      design_tags: splitParams(params.design_tags),
+      ring_head_styles: splitParams(params.ring_head_styles),
+      ring_band_styles: splitParams(params.ring_band_styles),
+      excluded_ring_head_styles: splitParams(params.excluded_ring_head_styles),
+      excluded_ring_band_styles: splitParams(params.excluded_ring_band_styles),
+      product_ids: splitParams(params.product_ids)
+        .map((v) => Number(v.trim()))
+        .filter((n) => Number.isInteger(n) && n > 0),
+      linked_collections: splitParams(params.linked_collections),
       matched_diamonds: params.matched_diamonds === "true",
-      ring_sizes: params.ring_sizes ? params.ring_sizes.split(",").map((size) => size.trim()) : [],
-      warehouse_ids: params.warehouse_ids ? params.warehouse_ids.split(",").map((id) => id.trim()) : []
+      ring_sizes: splitParams(params.ring_sizes),
+      warehouse_ids: splitParams(params.warehouse_ids)
     };
 
     const productService = new Ecommerce.ProductService(ctx.env);
