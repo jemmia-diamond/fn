@@ -113,10 +113,20 @@ export default class ConversationSyncService {
       ...conversationTagUpserts
     ]);
 
-    if (this.ctx) {
-      this.ctx.waitUntil(this.processScoringWebhooks(chunk));
+    let isSalesayaEnabled = await this.env.FN_KV.get("ENABLE_SALESAYA_WEBHOOK");
+    if (isSalesayaEnabled === null) {
+      await this.env.FN_KV.put("ENABLE_SALESAYA_WEBHOOK", "0");
+      isSalesayaEnabled = false;
     } else {
-      await this.processScoringWebhooks(chunk);
+      isSalesayaEnabled = isSalesayaEnabled === "1";
+    }
+
+    if (isSalesayaEnabled) {
+      if (this.ctx) {
+        this.ctx.waitUntil(this.processScoringWebhooks(chunk));
+      } else {
+        await this.processScoringWebhooks(chunk);
+      }
     }
   }
 

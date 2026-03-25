@@ -16,7 +16,8 @@ const StockTrackerSchema = z.object({
         lt: z.number().optional()
       })
     ]).optional(),
-    original_price: z.number().optional()
+    original_price: z.number().optional(),
+    fluorescence: z.string().optional()
   })).min(1),
   warehouses: z.array(z.string()).optional()
 });

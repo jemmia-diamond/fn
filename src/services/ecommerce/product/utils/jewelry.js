@@ -1,12 +1,14 @@
+import { Prisma } from "@prisma-cli";
+
 export function buildQuery(jsonParams) {
   const {
-    filterString,
-    sortString,
-    paginationString,
+    filterSql,
+    sortSql,
+    paginationSql,
     handleFinenessPriority,
     collectionJoinEcomProductsClause,
     linkedCollectionJoinEcomProductsClause,
-    havingString,
+    havingSql,
     warehouseJoinClause
   } = aggregateQuery(jsonParams);
 
@@ -39,14 +41,13 @@ export function buildQuery(jsonParams) {
   };
 
   const extraFieldsSql = extraFields
-    .filter(field => allowedExtraFields[field])
-    .map(field => `'${field}', ${allowedExtraFields[field]}`)
+    .filter((field) => allowedExtraFields[field])
+    .map((field) => `'${field}', ${allowedExtraFields[field]}`)
     .join(",\n");
 
   const extraFieldsClause = extraFieldsSql ? `${extraFieldsSql},` : "";
 
   if (jsonParams.matched_diamonds) {
-
     diamondJoinsForCount = "";
     diamondFiltersForCount = "";
 
@@ -130,7 +131,7 @@ export function buildQuery(jsonParams) {
     `;
   }
 
-  const dataSql = `
+  const dataSql = Prisma.sql`
     SELECT
       CAST(p.haravan_product_id AS INT) AS id,
       p.title,
@@ -143,12 +144,12 @@ export function buildQuery(jsonParams) {
       p.has_360,
       img.images,
       JSON_AGG(
-        ${variantJsonBuildObject}
+        ${Prisma.raw(variantJsonBuildObject)}
       ) AS variants
     FROM ecom.materialized_products p
       INNER JOIN workplace.designs d ON p.design_id = d.id
-      ${collectionJoinEcomProductsClause}
-      ${linkedCollectionJoinEcomProductsClause}
+      ${Prisma.raw(collectionJoinEcomProductsClause)}
+      ${Prisma.raw(linkedCollectionJoinEcomProductsClause)}
 
       -- Subquery for pre-aggregated images
       INNER JOIN (
@@ -159,22 +160,22 @@ export function buildQuery(jsonParams) {
         GROUP BY i.product_id
       ) img ON img.product_id = p.haravan_product_id
 
-      ${lateralJoinClause}
-      ${warehouseJoinClause}
+      ${Prisma.raw(lateralJoinClause)}
+      ${Prisma.raw(warehouseJoinClause)}
     WHERE 1 = 1
       AND (p.haravan_product_type != 'Nhẫn Cưới')
-      ${filterString}
+      ${filterSql}
     GROUP BY
       p.haravan_product_id, p.title, d.design_code, p.handle,
       d.diamond_holder, d.main_stone, d.ring_band_type, p.haravan_product_type,
       p.max_price, p.min_price, p.max_price_18, p.max_price_14,
-      img.images, p.has_360 ${collectionJoinEcomProductsClause ? ", p2.image_updated_at" : ""}
-    ${havingString}
-    ${sortString}
-    ${paginationString}
+      img.images, p.has_360 ${collectionJoinEcomProductsClause ? Prisma.raw(", p2.image_updated_at") : Prisma.empty}
+    ${havingSql}
+    ${sortSql}
+    ${paginationSql}
   `;
 
-  const countSql = `
+  const countSql = Prisma.sql`
     SELECT
       COUNT(*) AS total,
       (SELECT ARRAY_AGG(DISTINCT mv.material_color)
@@ -185,18 +186,18 @@ export function buildQuery(jsonParams) {
       SELECT p.haravan_product_id
       FROM ecom.materialized_products p
         INNER JOIN workplace.designs d ON d.id = p.design_id
-        ${collectionJoinEcomProductsClause}
-        ${linkedCollectionJoinEcomProductsClause}
+        ${Prisma.raw(collectionJoinEcomProductsClause)}
+        ${Prisma.raw(linkedCollectionJoinEcomProductsClause)}
         INNER JOIN ecom.materialized_variants v
           ON v.haravan_product_id = p.haravan_product_id
-        ${diamondJoinsForCount}
-        ${warehouseJoinClause}
+        ${Prisma.raw(diamondJoinsForCount)}
+        ${Prisma.raw(warehouseJoinClause)}
       WHERE 1 = 1
         AND p.haravan_product_type != 'Nhẫn Cưới'
-        ${filterString}
-        ${diamondFiltersForCount}
+        ${filterSql}
+        ${Prisma.raw(diamondFiltersForCount)}
       GROUP BY p.haravan_product_id
-      ${havingString}
+      ${havingSql}
     ) AS sub;
   `;
 
@@ -213,8 +214,8 @@ export function buildQuerySingle({ matchedDiamonds, extraFields }) {
   };
 
   const extraFieldsSql = fields
-    .filter(field => allowedExtraFields[field])
-    .map(field => `'${field}', ${allowedExtraFields[field]}`)
+    .filter((field) => allowedExtraFields[field])
+    .map((field) => `'${field}', ${allowedExtraFields[field]}`)
     .join(",\n");
 
   const extraFieldsClause = extraFieldsSql ? `${extraFieldsSql},` : "";
@@ -332,43 +333,43 @@ export function buildQuerySingle({ matchedDiamonds, extraFields }) {
 }
 
 export function aggregateQuery(jsonParams) {
-  let filterString = "";
-  let sortString = "";
-  let paginationString = "";
+  let filterSql = Prisma.empty;
+  let sortSql = Prisma.empty;
+  let paginationSql = Prisma.empty;
   let handleFinenessPriority = "18K";
   let sortedColumn = "p.max_price_18";
   let collectionJoinEcomProductsClause = "";
-  let havingString = "";
+  let havingSql = Prisma.empty;
   let linkedCollectionJoinEcomProductsClause = "";
   let needsP2Join = false;
   let warehouseJoinClause = "";
   if (jsonParams.is_in_stock) {
-    havingString += "HAVING SUM(v.qty_available) > 0\n";
+    havingSql = Prisma.sql`HAVING SUM(v.qty_available) > 0\n`;
   }
 
   if (jsonParams.categories && jsonParams.categories.length > 0) {
-    filterString += `AND p.category IN ('${jsonParams.categories.join("','")}')\n`;
+    filterSql = Prisma.sql`${filterSql} AND p.category = ANY(${jsonParams.categories})\n`;
   }
 
   if (jsonParams.pages && jsonParams.pages.length > 0) {
-    filterString += `AND p2.pages IN ('${jsonParams.pages.join("','")}')\n`;
+    filterSql = Prisma.sql`${filterSql} AND p2.pages = ANY(${jsonParams.pages})\n`;
     needsP2Join = true;
   }
 
   if (jsonParams.product_types && jsonParams.product_types.length > 0) {
-    filterString += `AND p.haravan_product_type IN ('${jsonParams.product_types.join("','")}')\n`;
+    filterSql = Prisma.sql`${filterSql} AND p.haravan_product_type = ANY(${jsonParams.product_types})\n`;
   }
 
   if (jsonParams.material_colors && jsonParams.material_colors.length > 0) {
-    filterString += `AND v.material_color IN ('${jsonParams.material_colors.join("','")}')\n`;
+    filterSql = Prisma.sql`${filterSql} AND v.material_color = ANY(${jsonParams.material_colors})\n`;
   }
 
   if (jsonParams.ring_sizes && jsonParams.ring_sizes.length > 0) {
-    filterString += `AND v.ring_size IN ('${jsonParams.ring_sizes.join("','")}')\n`;
+    filterSql = Prisma.sql`${filterSql} AND v.ring_size = ANY(${jsonParams.ring_sizes})\n`;
   }
 
   if (jsonParams.fineness && jsonParams.fineness.length > 0) {
-    filterString += `AND v.fineness IN ('${jsonParams.fineness.join("','")}')\n`;
+    filterSql = Prisma.sql`${filterSql} AND v.fineness = ANY(${jsonParams.fineness})\n`;
     if (jsonParams.fineness.includes("Vàng 14K")) {
       sortedColumn = "p.max_price_14";
       handleFinenessPriority = "14K";
@@ -376,113 +377,141 @@ export function aggregateQuery(jsonParams) {
   }
 
   if (jsonParams.price?.min) {
-    filterString += `AND p.min_price >= ${jsonParams.price.min}\n`;
+    filterSql = Prisma.sql`${filterSql} AND p.min_price >= ${jsonParams.price.min}\n`;
   }
 
   if (jsonParams.price?.max) {
-    filterString += `AND p.max_price <= ${jsonParams.price.max}\n`;
+    filterSql = Prisma.sql`${filterSql} AND p.max_price <= ${jsonParams.price.max}\n`;
   }
 
   if (jsonParams.genders && jsonParams.genders.length > 0) {
-    filterString += `AND d.gender IN ('${jsonParams.genders.join("','")}')\n`;
+    filterSql = Prisma.sql`${filterSql} AND d.gender = ANY(${jsonParams.genders})\n`;
   }
 
   if (jsonParams.design_tags && jsonParams.design_tags.length > 0) {
-    filterString += `AND d.tag IN ('${jsonParams.design_tags.join("','")}')\n`;
+    filterSql = Prisma.sql`${filterSql} AND d.tag = ANY(${jsonParams.design_tags})\n`;
   }
 
-  if (jsonParams.linked_collections && jsonParams.linked_collections.length > 0) {
-    linkedCollectionJoinEcomProductsClause += "INNER JOIN workplace.products_haravan_collection linked_cp ON linked_cp.products_id = p.workplace_id \n";
-    linkedCollectionJoinEcomProductsClause += "INNER JOIN workplace.haravan_collections hc ON hc.id = linked_cp.haravan_collections_id \n";
-    filterString += `AND hc.title IN ('${jsonParams.linked_collections.join("','")}')\n`;
+  if (
+    jsonParams.linked_collections &&
+    jsonParams.linked_collections.length > 0
+  ) {
+    linkedCollectionJoinEcomProductsClause +=
+      "INNER JOIN workplace.products_haravan_collection linked_cp ON linked_cp.products_id = p.workplace_id \n";
+    linkedCollectionJoinEcomProductsClause +=
+      "INNER JOIN workplace.haravan_collections hc ON hc.id = linked_cp.haravan_collections_id \n";
+    filterSql = Prisma.sql`${filterSql} AND hc.title = ANY(${jsonParams.linked_collections})\n`;
   }
 
   if (jsonParams.ring_head_styles && jsonParams.ring_head_styles.length > 0) {
-    const normalizedHeadStyles = jsonParams.ring_head_styles.map(style => style.trim().toLowerCase());
-    filterString += "AND (\n";
-    filterString += `  (d.ring_head_style IS NOT NULL AND d.ring_head_style != '' AND POSITION(' - ' IN d.ring_head_style) > 0 AND LOWER(SPLIT_PART(d.ring_head_style, ' - ', 2)) IN ('${normalizedHeadStyles.join("','")}'))\n`;
-    filterString += `  OR (d.ring_head_style IS NOT NULL AND d.ring_head_style != '' AND POSITION(' - ' IN d.ring_head_style) = 0 AND LOWER(d.ring_head_style) IN ('${normalizedHeadStyles.join("','")}'))\n`;
-    filterString += ")\n";
-  }
-
-  if (jsonParams.ring_band_styles && jsonParams.ring_band_styles.length > 0) {
-    const normalizedBandStyles = jsonParams.ring_band_styles.map(style => style.trim().toLowerCase());
-    filterString += "AND (\n";
-    filterString += `  (d.ring_band_style IS NOT NULL AND d.ring_band_style != '' AND POSITION(' - ' IN d.ring_band_style) > 0 AND LOWER(SPLIT_PART(d.ring_band_style, ' - ', 2)) IN ('${normalizedBandStyles.join("','")}'))\n`;
-    filterString += `  OR (d.ring_band_style IS NOT NULL AND d.ring_band_style != '' AND POSITION(' - ' IN d.ring_band_style) = 0 AND LOWER(d.ring_band_style) IN ('${normalizedBandStyles.join("','")}'))\n`;
-    filterString += ")\n";
-  }
-
-  if (jsonParams.excluded_ring_head_styles && jsonParams.excluded_ring_head_styles.length > 0) {
-    const normalizedExcludedHeadStyles = jsonParams.excluded_ring_head_styles.map(style => style.trim().toLowerCase());
-    filterString += `
-      AND (
-        d.ring_head_style IS NULL OR
-        d.ring_head_style = '' OR
-        LOWER(
-          CASE
-            WHEN POSITION(' - ' IN d.ring_head_style) > 0
-            THEN SPLIT_PART(d.ring_head_style, ' - ', 2)
-            ELSE d.ring_head_style
-          END
-        ) NOT IN ('${normalizedExcludedHeadStyles.join("','")}')
-      )
+    const normalizedHeadStyles = jsonParams.ring_head_styles.map((style) =>
+      style.trim().toLowerCase()
+    );
+    filterSql = Prisma.sql`
+      ${filterSql} AND (
+            (d.ring_head_style IS NOT NULL AND d.ring_head_style != '' AND POSITION(' - ' IN d.ring_head_style) > 0 AND LOWER(SPLIT_PART(d.ring_head_style, ' - ', 2)) = ANY(${normalizedHeadStyles}))
+            OR (d.ring_head_style IS NOT NULL AND d.ring_head_style != '' AND POSITION(' - ' IN d.ring_head_style) = 0 AND LOWER(d.ring_head_style) = ANY(${normalizedHeadStyles}))
+          )\n
     `;
   }
 
-  if (jsonParams.excluded_ring_band_styles && jsonParams.excluded_ring_band_styles.length > 0) {
-    const normalizedExcludedBandStyles = jsonParams.excluded_ring_band_styles.map(style => style.trim().toLowerCase());
-    filterString += `
-      AND (
-        d.ring_band_style IS NULL OR
-        d.ring_band_style = '' OR
-        LOWER(
-          CASE
-            WHEN POSITION(' - ' IN d.ring_band_style) > 0
-            THEN SPLIT_PART(d.ring_band_style, ' - ', 2)
-            ELSE d.ring_band_style
-          END
-        ) NOT IN ('${normalizedExcludedBandStyles.join("','")}')
-      )
+  if (jsonParams.ring_band_styles && jsonParams.ring_band_styles.length > 0) {
+    const normalizedBandStyles = jsonParams.ring_band_styles.map((style) =>
+      style.trim().toLowerCase()
+    );
+    filterSql = Prisma.sql`
+      ${filterSql} AND (
+            (d.ring_band_style IS NOT NULL AND d.ring_band_style != '' AND POSITION(' - ' IN d.ring_band_style) > 0 AND LOWER(SPLIT_PART(d.ring_band_style, ' - ', 2)) = ANY(${normalizedBandStyles}))
+            OR (d.ring_band_style IS NOT NULL AND d.ring_band_style != '' AND POSITION(' - ' IN d.ring_band_style) = 0 AND LOWER(d.ring_band_style) = ANY(${normalizedBandStyles}))
+          )\n
+    `;
+  }
+
+  if (
+    jsonParams.excluded_ring_head_styles &&
+    jsonParams.excluded_ring_head_styles.length > 0
+  ) {
+    const normalizedExcludedHeadStyles =
+      jsonParams.excluded_ring_head_styles.map((style) =>
+        style.trim().toLowerCase()
+      );
+    filterSql = Prisma.sql`
+      ${filterSql}
+            AND (
+              d.ring_head_style IS NULL OR
+              d.ring_head_style = '' OR
+              LOWER(
+                CASE
+                  WHEN POSITION(' - ' IN d.ring_head_style) > 0
+                  THEN SPLIT_PART(d.ring_head_style, ' - ', 2)
+                  ELSE d.ring_head_style
+                END
+              ) != ALL(${normalizedExcludedHeadStyles}::text[])
+            )
+    `;
+  }
+
+  if (
+    jsonParams.excluded_ring_band_styles &&
+    jsonParams.excluded_ring_band_styles.length > 0
+  ) {
+    const normalizedExcludedBandStyles =
+      jsonParams.excluded_ring_band_styles.map((style) =>
+        style.trim().toLowerCase()
+      );
+    filterSql = Prisma.sql`
+      ${filterSql}
+            AND (
+              d.ring_band_style IS NULL OR
+              d.ring_band_style = '' OR
+              LOWER(
+                CASE
+                  WHEN POSITION(' - ' IN d.ring_band_style) > 0
+                  THEN SPLIT_PART(d.ring_band_style, ' - ', 2)
+                  ELSE d.ring_band_style
+                END
+              ) != ALL(${normalizedExcludedBandStyles}::text[])
+            )
     `;
   }
 
   if (jsonParams.sort?.by === "price") {
-    sortString += `ORDER BY ${sortedColumn} ${jsonParams.sort.order === "asc" ? "ASC" : "DESC"}\n`;
+    sortSql = Prisma.sql`ORDER BY ${Prisma.raw(sortedColumn)} ${jsonParams.sort.order === "asc" ? Prisma.raw("ASC") : Prisma.raw("DESC")}\n`;
   } else {
-    sortString += "ORDER BY p2.image_updated_at DESC\n";
+    sortSql = Prisma.sql`ORDER BY p2.image_updated_at DESC\n`;
     needsP2Join = true;
   }
 
-  if (jsonParams.product_ids && jsonParams.product_ids.length) {
-    filterString += `
-      AND p.haravan_product_id IN (${jsonParams.product_ids.join(",")})
-    `;
+  if (jsonParams.product_ids && jsonParams.product_ids.length > 0) {
+    filterSql = Prisma.sql`${filterSql} AND p.haravan_product_id = ANY(${jsonParams.product_ids})\n`;
   }
 
-  if (jsonParams.main_holder_size?.lower || jsonParams.main_holder_size?.upper) {
-    filterString += "AND d.diamond_holder = 'Có ổ chủ'\n";
-
-    filterString += "AND d.main_stone ~ '^[a-zA-Z]+ [0-9]+l[0-9]+$'\n";
+  if (
+    jsonParams.main_holder_size?.lower ||
+    jsonParams.main_holder_size?.upper
+  ) {
+    filterSql = Prisma.sql`${filterSql} AND d.diamond_holder = 'Có ổ chủ'\n`;
+    filterSql = Prisma.sql`${filterSql} AND d.main_stone ~ '^[a-zA-Z]+ [0-9]+l[0-9]+$'\n`;
 
     if (jsonParams.main_holder_size?.lower) {
-      filterString += `AND CAST(REPLACE(SPLIT_PART(d.main_stone, ' ', 2), 'l', '.') AS DECIMAL) >= ${jsonParams.main_holder_size.lower}\n`;
+      filterSql = Prisma.sql`${filterSql} AND CAST(REPLACE(SPLIT_PART(d.main_stone, ' ', 2), 'l', '.') AS DECIMAL) >= ${jsonParams.main_holder_size.lower}\n`;
     }
 
     if (jsonParams.main_holder_size?.upper) {
-      filterString += `AND CAST(REPLACE(SPLIT_PART(d.main_stone, ' ', 2), 'l', '.') AS DECIMAL) < ${jsonParams.main_holder_size.upper}\n`;
+      filterSql = Prisma.sql`${filterSql} AND CAST(REPLACE(SPLIT_PART(d.main_stone, ' ', 2), 'l', '.') AS DECIMAL) < ${jsonParams.main_holder_size.upper}\n`;
     }
   }
 
   if (jsonParams.pagination) {
-    paginationString += `LIMIT ${jsonParams.pagination.limit} `;
+    paginationSql = Prisma.sql`LIMIT ${jsonParams.pagination.limit} `;
     if (jsonParams.pagination.from !== 1) {
-      paginationString += `OFFSET ${jsonParams.pagination.from - 1}\n`;
+      paginationSql = Prisma.sql`${paginationSql} OFFSET ${jsonParams.pagination.from - 1}\n`;
     }
   }
 
   if (needsP2Join) {
-    collectionJoinEcomProductsClause = "LEFT JOIN ecom.products p2 ON p.haravan_product_id = p2.haravan_product_id";
+    collectionJoinEcomProductsClause =
+      "LEFT JOIN ecom.products p2 ON p.haravan_product_id = p2.haravan_product_id";
   }
 
   if (jsonParams.warehouse_ids && jsonParams.warehouse_ids.length > 0) {
@@ -493,17 +522,17 @@ export function aggregateQuery(jsonParams) {
         ON w.id = wi.loc_id
     `;
 
-    filterString += `AND w.id IN (${jsonParams.warehouse_ids.join(",")})\n`;
+    filterSql = Prisma.sql`${filterSql} AND w.id = ANY(${jsonParams.warehouse_ids})\n`;
   }
 
   return {
-    filterString,
-    sortString,
-    paginationString,
+    filterSql,
+    sortSql,
+    paginationSql,
     handleFinenessPriority,
     collectionJoinEcomProductsClause,
     linkedCollectionJoinEcomProductsClause,
-    havingString,
+    havingSql,
     warehouseJoinClause
   };
 }

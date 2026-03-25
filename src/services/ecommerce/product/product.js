@@ -1,9 +1,18 @@
 import Database from "services/database";
 import { retryQuery } from "services/utils/retry-utils";
 import { Prisma } from "@prisma-cli";
-import { buildQuerySingle, buildQuery } from "services/ecommerce/product/utils/jewelry";
-import { buildQueryV2, buildQuerySingleV2 } from "services/ecommerce/product/utils/jewelry-v2";
-import { buildWeddingRingByIdQuery, buildWeddingRingsQuery } from "services/ecommerce/product/utils/wedding-ring";
+import {
+  buildQuerySingle,
+  buildQuery
+} from "services/ecommerce/product/utils/jewelry";
+import {
+  buildQueryV2,
+  buildQuerySingleV2
+} from "services/ecommerce/product/utils/jewelry-v2";
+import {
+  buildWeddingRingByIdQuery,
+  buildWeddingRingsQuery
+} from "services/ecommerce/product/utils/wedding-ring";
 import { JEWELRY_IMAGE } from "src/controllers/ecommerce/constant";
 import * as Sentry from "@sentry/cloudflare";
 
@@ -16,8 +25,8 @@ export default class ProductService {
     try {
       const { dataSql, countSql } = buildQuery(jsonParams);
 
-      const data = await retryQuery(() => this.db.$queryRaw`${Prisma.raw(dataSql)}`);
-      const count = await retryQuery(() => this.db.$queryRaw`${Prisma.raw(countSql)}`);
+      const data = await retryQuery(() => this.db.$queryRaw(dataSql));
+      const count = await retryQuery(() => this.db.$queryRaw(countSql));
 
       return {
         data,
@@ -32,7 +41,8 @@ export default class ProductService {
   }
 
   async getJewelry(jsonParams) {
-    const { data, count, material_colors, fineness } = await this.getJewelryData(jsonParams);
+    const { data, count, material_colors, fineness } =
+      await this.getJewelryData(jsonParams);
     return {
       data,
       metadata: {
@@ -116,8 +126,8 @@ export default class ProductService {
   async getWeddingRingsData(jsonParams) {
     const { dataSql, countSql } = buildWeddingRingsQuery(jsonParams);
 
-    const data = await retryQuery(() => this.db.$queryRaw`${Prisma.raw(dataSql)}`);
-    const count = await retryQuery(() => this.db.$queryRaw`${Prisma.raw(countSql)}`);
+    const data = await retryQuery(() => this.db.$queryRaw(dataSql));
+    const count = await retryQuery(() => this.db.$queryRaw(countSql));
 
     return {
       data,
@@ -128,7 +138,8 @@ export default class ProductService {
   }
 
   async getWeddingRings(jsonParams) {
-    const { data, count, material_colors, fineness } = await this.getWeddingRingsData(jsonParams);
+    const { data, count, material_colors, fineness } =
+      await this.getWeddingRingsData(jsonParams);
     return {
       data,
       metadata: {
@@ -142,13 +153,14 @@ export default class ProductService {
 
   async getWeddingRingById(id) {
     const dataSql = buildWeddingRingByIdQuery(id);
-    const data = await this.db.$queryRaw`${Prisma.raw(dataSql)}`;
+    const data = await this.db.$queryRaw(dataSql);
     return data?.[0] || null;
   }
 
   async getJewelryById(id, params) {
-    const { variantJsonBuildObject, lateralJoinClause } = buildQuerySingle(params);
-    const dataSql = `
+    const { variantJsonBuildObject, lateralJoinClause } =
+      buildQuerySingle(params);
+    const dataSql = Prisma.sql`
       SELECT
           CAST(p.haravan_product_id AS INT) AS id,
           p.title,
@@ -167,7 +179,7 @@ export default class ProductService {
           img.images,
           p.estimated_gold_weight,
           JSON_AGG(
-            ${variantJsonBuildObject}
+            ${Prisma.raw(variantJsonBuildObject)}
           ) AS variants,
           JSON_BUILD_OBJECT(
                'name', p.primary_collection,
@@ -183,7 +195,7 @@ export default class ProductService {
             GROUP BY i.product_id
           ) img ON img.product_id = p.haravan_product_id
 
-          ${lateralJoinClause}
+          ${Prisma.raw(lateralJoinClause)}
         WHERE 1 = 1
           AND p.haravan_product_id = ${id}
         GROUP BY
@@ -193,7 +205,7 @@ export default class ProductService {
           p.qty_onhand, img.images, p.has_360, p.estimated_gold_weight,
           p.primary_collection, p.primary_collection_handle
     `;
-    const result = await this.db.$queryRaw`${Prisma.raw(dataSql)}`;
+    const result = await this.db.$queryRaw(dataSql);
     return result?.[0] || null;
   }
 
@@ -229,8 +241,8 @@ export default class ProductService {
   async getJewelryDataV2(jsonParams) {
     const { dataSql, countSql } = buildQueryV2(jsonParams);
 
-    const data = await retryQuery(() => this.db.$queryRaw`${Prisma.raw(dataSql)}`);
-    const count = await retryQuery(() => this.db.$queryRaw`${Prisma.raw(countSql)}`);
+    const data = await retryQuery(() => this.db.$queryRaw(dataSql));
+    const count = await retryQuery(() => this.db.$queryRaw(countSql));
 
     return {
       data,
@@ -241,7 +253,8 @@ export default class ProductService {
   }
 
   async getJewelryV2(jsonParams) {
-    const { data, count, material_colors, fineness } = await this.getJewelryDataV2(jsonParams);
+    const { data, count, material_colors, fineness } =
+      await this.getJewelryDataV2(jsonParams);
     return {
       data,
       metadata: {
@@ -255,7 +268,8 @@ export default class ProductService {
 
   async getJewelryByIdV2(id, params = {}) {
     const productId = parseInt(id, 10);
-    const { variantJsonBuildObject, lateralJoinClause } = buildQuerySingleV2(params);
+    const { variantJsonBuildObject, lateralJoinClause } =
+      buildQuerySingleV2(params);
     const workplaceUrlPrefix = JEWELRY_IMAGE.WORKPLACE_URL_PREFIX;
     const workplaceFullUrl = JEWELRY_IMAGE.WORKPLACE_FULL_URL;
     const cdnUrl = JEWELRY_IMAGE.CDN_URL;
