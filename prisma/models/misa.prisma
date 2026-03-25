@@ -726,3 +726,134 @@ model misaAccountsPayableDetails {
   @@map("accounts_payable_details")
   @@schema("misa")
 }
+
+model misaBalanceSheetQuarterlyFact {
+  time_id           Int
+  item_code         String    @db.VarChar
+  item_name         String?
+  item_index        Int?
+  description       String?
+  formula_type      Int?
+  formula_front_end String?
+  category          Int?
+  amount            Decimal?  @db.Decimal
+  prev_amount       Decimal?  @db.Decimal
+  quarter           Int?
+  year              Int?
+  from_date         DateTime? @db.Timestamptz(6)
+  to_date           DateTime? @db.Timestamptz(6)
+  sync_at           DateTime? @db.Timestamptz(6)
+
+  @@id([time_id, item_code])
+  @@map("balance_sheet_quarterly_fact")
+  @@schema("misa")
+}
+
+model misaBalanceSheetYearlyFact {
+  time_id           Int
+  item_code         String    @db.VarChar
+  item_name         String?
+  item_index        Int?
+  description       String?
+  formula_type      Int?
+  formula_front_end String?
+  category          Int?
+  amount            Decimal?  @db.Decimal
+  prev_amount       Decimal?  @db.Decimal
+  year              Int?
+  from_date         DateTime? @db.Timestamptz(6)
+  to_date           DateTime? @db.Timestamptz(6)
+  sync_at           DateTime? @db.Timestamptz(6)
+
+  @@id([time_id, item_code])
+  @@map("balance_sheet_yearly_fact")
+  @@schema("misa")
+}
+
+model misaIncomeStatementQuarterlyFact {
+  time_id     Int
+  item_code   String    @db.VarChar
+  item_name   String?
+  amount      Decimal?  @db.Decimal
+  prev_amount Decimal?  @db.Decimal
+  quarter     Int?
+  year        Int?
+  from_date   DateTime? @db.Timestamptz(6)
+  to_date     DateTime? @db.Timestamptz(6)
+  sync_at     DateTime? @db.Timestamptz(6)
+  created_at  DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@id([time_id, item_code])
+  @@map("income_statement_quarterly_fact")
+  @@schema("misa")
+}
+
+model misaIncomeStatementYearlyFact {
+  time_id     Int
+  item_code   String    @db.VarChar
+  item_name   String?
+  amount      Decimal?  @db.Decimal
+  prev_amount Decimal?  @db.Decimal
+  year        Int?
+  from_date   DateTime? @db.Timestamptz(6)
+  to_date     DateTime? @db.Timestamptz(6)
+  sync_at     DateTime? @db.Timestamptz(6)
+  created_at  DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@id([time_id, item_code])
+  @@map("income_statement_yearly_fact")
+  @@schema("misa")
+}
+
+model misaCashFlowQuarterlyFact {
+  time_id           Int
+  item_code         String?   @db.VarChar
+  item_name         String    @db.VarChar
+  item_index        Int?
+  description       String?
+  category          Int?
+  formula_type      Int?
+  formula_front_end String?
+  formula           String?
+  amount            Decimal?  @db.Decimal
+  prev_amount       Decimal?  @db.Decimal
+  quarter           Int?
+  year              Int?
+  hidden            Boolean?
+  is_bold           Boolean?
+  is_italic         Boolean?
+  sort_order        Int?
+  from_date         DateTime? @db.Timestamptz(6)
+  to_date           DateTime? @db.Timestamptz(6)
+  sync_at           DateTime? @db.Timestamptz(6)
+
+  @@id([time_id, item_name])
+  @@map("cash_flow_quarterly_fact")
+  @@schema("misa")
+}
+
+model misaCashFlowYearlyFact {
+  time_id           Int
+  item_code         String?   @db.VarChar
+  item_name         String    @db.VarChar
+  item_index        Int?
+  description       String?
+  category          Int?
+  formula_type      Int?
+  formula_front_end String?
+  formula           String?
+  amount            Decimal?  @db.Decimal
+  prev_amount       Decimal?  @db.Decimal
+  year              Int?
+  hidden            Boolean?
+  is_bold           Boolean?
+  is_italic         Boolean?
+  sort_order        Int?
+  from_date         DateTime? @db.Timestamptz(6)
+  to_date           DateTime? @db.Timestamptz(6)
+  sync_at           DateTime? @db.Timestamptz(6)
+
+  @@id([time_id, item_name])
+  @@map("cash_flow_yearly_fact")
+  @@schema("misa")
+}
