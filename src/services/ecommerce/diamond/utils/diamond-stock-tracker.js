@@ -122,7 +122,7 @@ export function buildStockTrackerQuery(targets, warehouseNames) {
     JOIN haravan.variants hv ON hv.id = d.variant_id
     JOIN TargetConditions tc ON (
       (tc.s1 IS NULL OR d.edge_size_1 = tc.s1)
-      AND (tc.s2 IS NULL OR d.edge_size_2 = tc.s2)
+      AND (tc.s2 IS NULL OR TRUNC(d.edge_size_2::numeric, 1) = TRUNC(tc.s2::numeric, 1))
       AND (tc.c_gte IS NULL OR d.carat >= tc.c_gte)
       AND (tc.c_lte IS NULL OR d.carat <= tc.c_lte)
       AND (tc.c_gt IS NULL OR d.carat > tc.c_gt)
