@@ -149,6 +149,7 @@ export default class DiamondService {
           size: sizeStr,
           color: target.color ?? null,
           clarity: target.clarity ?? null,
+          fluorescence: target.fluorescence ?? null,
           carat: target.carat ?? null,
           base_price: target.original_price ?? null,
           current_price: target.original_price ?? null,

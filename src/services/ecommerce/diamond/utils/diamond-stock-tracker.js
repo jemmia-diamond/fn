@@ -89,6 +89,7 @@ export function buildStockTrackerQuery(targets, warehouseNames) {
       d.carat,
       d.color,
       d.clarity,
+      d.fluorescence,
       CAST(d.price AS DOUBLE PRECISION) AS base_price,
       CAST(
         CASE
