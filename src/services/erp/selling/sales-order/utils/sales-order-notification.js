@@ -7,7 +7,7 @@ import { getItemPromotions } from "services/erp/selling/sales-order/utils/sales-
 
 dayjs.extend(utc);
 
-export const composeSalesOrderNotification = (salesOrder, promotionData, leadSource, policyData, productCategoryData, purposeData, customer, primarySalesPerson, secondarySalesPeople) => {
+export const composeSalesOrderNotification = (salesOrder, promotionData, leadSource, policyData, productCategoryData, customer, primarySalesPerson, secondarySalesPeople) => {
   const orderNumber = salesOrder.order_number;
 
   const orderPromotionNames = salesOrder.promotions.map((promotion) => promotion.promotion);
@@ -42,7 +42,6 @@ export const composeSalesOrderNotification = (salesOrder, promotionData, leadSou
     - Ngày thanh toán dự kiến: ${expectedPaymentDate}
     - Kênh tiếp cận đầu tiên: ${leadSource.source_name}
     - Hành trình khách hàng: ${customer.customer_journey}
-    - Mục đích đơn hàng: ${purposeData && purposeData.length > 0 ? purposeData.map(p => p.title).join(", ") : "Không"}
   `;
 
   content += `

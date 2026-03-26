@@ -78,11 +78,14 @@ export default class PaymentEntryService {
       const leftAmountToPaid = parseFloat(primaryOrder.balance);
       const paid = parseFloat(transferAmount);
 
-      // ONLY ACCEPT 1000 VND DIFFERENCE
-      if (Math.abs(paid - leftAmountToPaid) <= 1000) {
-        transferAmount = leftAmountToPaid;
-      } else if (paid > leftAmountToPaid) {
-        throw new Error(`Overpayment: Payment amount ${paid} exceeds outstanding amount ${leftAmountToPaid}`);
+      // Temporary skip validation if balance is negative
+      if (leftAmountToPaid > 0) {
+        // ONLY ACCEPT 1000 VND DIFFERENCE
+        if (Math.abs(paid - leftAmountToPaid) <= 1000) {
+          transferAmount = leftAmountToPaid;
+        } else if (paid > leftAmountToPaid) {
+          throw new Error(`Overpayment: Payment amount ${paid} exceeds outstanding amount ${leftAmountToPaid}`);
+        }
       }
     }
 
