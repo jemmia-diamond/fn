@@ -638,8 +638,8 @@ export default class SalesOrderService {
       filters: [["name", "in", productCategoryNames]]
     });
 
-    const purposeNames = salesOrderData.sales_order_purposes.map(purpose => purpose.sales_order_purposes);
-    const purposeData = await this.frappeClient.getList("Sales Order Purpose", {
+    const purposeNames = (salesOrderData.sales_order_purposes || []).map(purpose => purpose.purchase_purpose || purpose.sales_order_purpose || purpose.purpose);
+    const purposeData = await this.frappeClient.getList("Purchase Purpose", {
       filters: [["name", "in", purposeNames]]
     });
 
