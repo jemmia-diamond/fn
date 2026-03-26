@@ -638,6 +638,11 @@ export default class SalesOrderService {
       filters: [["name", "in", productCategoryNames]]
     });
 
+    const purposeNames = salesOrderData.sales_order_purposes.map(purpose => purpose.sales_order_purposes);
+    const purposeData = await this.frappeClient.getList("Sales Order Purpose", {
+      filters: [["name", "in", purposeNames]]
+    });
+
     const primarySalesPersonName = salesOrderData.primary_sales_person;
     const primarySalesPerson = await this.frappeClient.getDoc("Sales Person", primarySalesPersonName);
 
@@ -649,7 +654,7 @@ export default class SalesOrderService {
       filters: [["name", "in", secondarySalesPersonNames]]
     });
 
-    const content = composeSalesOrderNotification(salesOrderData, promotionData, leadSource, policyData, productCategoryData, customer, primarySalesPerson, secondarySalesPeople);
+    const content = composeSalesOrderNotification(salesOrderData, promotionData, leadSource, policyData, productCategoryData, purposeData, customer, primarySalesPerson, secondarySalesPeople);
 
     return content;
   }
