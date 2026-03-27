@@ -215,6 +215,7 @@ export default class BuyBackInstanceService {
       customer_name: data.customer_name,
       phone_number: phoneNumber,
       national_id: data.national_id,
+      serial_number: data.serial_number,
       reason: data.reason,
       refund_amount: data.refund_amount,
       order_code: data.order_code,
@@ -223,6 +224,6 @@ export default class BuyBackInstanceService {
       products_info: typeof data.products_info === "string" ? data.products_info : JSON.stringify(data.products_info || [])
     };
     const ignoredFields = Object.keys(erpData).filter(key => key !== "status" && key !== "doctype");
-    await frappeClient.upsert(erpData, "lark_instance_id", ignoredFields);
+    await frappeClient.upsert(erpData, ["lark_instance_id", "submitted_date"], ignoredFields);
   }
 }

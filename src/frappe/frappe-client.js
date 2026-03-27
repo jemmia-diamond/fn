@@ -62,7 +62,7 @@ export default class FrappeClient {
       const res = await this.axiosClient.get(url, { params });
       return this.postProcess(res);
     } catch (error) {
-      return this.praseError(error);
+      return this.parseError(error);
     }
   }
 
@@ -72,7 +72,7 @@ export default class FrappeClient {
       const res = await this.axiosClient.get(url);
       return this.postProcess(res);
     } catch (error) {
-      return this.praseError(error);
+      return this.parseError(error);
     }
   }
 
@@ -82,7 +82,7 @@ export default class FrappeClient {
       const res = await this.axiosClient.post(url, { data: JSON.stringify(doc) });
       return this.postProcess(res);
     } catch (error) {
-      return this.praseError(error);
+      return this.parseError(error);
     }
   }
 
@@ -99,12 +99,18 @@ export default class FrappeClient {
       const res = await this.axiosClient.put(url, { data: JSON.stringify(doc) });
       return this.postProcess(res);
     } catch (error) {
-      return this.praseError(error);
+      return this.parseError(error);
     }
   }
 
   async upsert(doc, key, ignoredFields = []) {
-    const documents = await this.getList(doc.doctype, { filters: [[key, "=", doc[key]]] });
+    let filters;
+    if (Array.isArray(key)) {
+      filters = key.map(k => [k, "=", doc[k]]);
+    } else {
+      filters = [[key, "=", doc[key]]];
+    }
+    const documents = await this.getList(doc.doctype, { filters });
     if (documents.length > 1) {
       throw new Error(`Multiple ${doc.doctype} found for ${key} ${doc[key]}`);
     } else if (documents.length === 1) {
@@ -217,11 +223,15 @@ export default class FrappeClient {
 
   postProcess(res) {
     const data = res.data;
-    if (data?.exc) throw new Error(`Frappe Exception: ${data?.exc}`);
+    if (data?.exc) {
+      const error = new Error(`Frappe Exception: ${data.exc}`);
+      error.response = res;
+      throw error;
+    }
     return data.message || data.data || null;
   }
 
-  praseError(e) {
+  parseError(e) {
     let errorMessage = null;
     if (e.response?.data?._server_messages) {
       const serverMessages = JSON.parse(e.response.data._server_messages);
@@ -243,16 +253,11 @@ export default class FrappeClient {
     }
 
     if (errorMessage) {
-      const error = new Error(errorMessage);
-      error.originalError = e;
-      error.frappeData = e.response?.data;
-      error.status = e.response?.status;
-      error.response = e.response;
-      Sentry.captureException(error);
-      throw error;
+      e.message = errorMessage;
+      e.frappeData = e.response?.data;
+      e.status = e.response?.status;
     }
 
-    Sentry.captureException(e);
     throw e;
   }
 
