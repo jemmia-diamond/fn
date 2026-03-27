@@ -5,6 +5,7 @@ import HaravanAPI from "services/clients/haravan-client";
 import OrderMapper from "services/haravan/orders/order-mapper";
 import * as crypto from "crypto";
 import { sleep } from "services/utils/sleep.js";
+import { isTestOrder } from "services/utils/order-intercepter";
 
 dayjs.extend(utc);
 
@@ -91,12 +92,15 @@ export default class OrderDatabaseSyncService {
   async _processOrderBatch(orders) {
     if (!orders || orders.length === 0) return;
 
+    const validOrders = orders.filter(order => !isTestOrder(order));
+    if (validOrders.length === 0) return;
+
     const lineItems = [];
     const refunds = [];
     const transactions = [];
     const fulfillments = [];
 
-    for (const order of orders) {
+    for (const order of validOrders) {
       const orderId = order.id;
 
       for (const item of order.line_items || []) {
@@ -116,7 +120,7 @@ export default class OrderDatabaseSyncService {
       }
     }
 
-    await this._upsertOrders(orders);
+    await this._upsertOrders(validOrders);
     await this._upsertLineItems(lineItems);
     await this._upsertRefunds(refunds);
     await this._upsertTransactions(transactions);
