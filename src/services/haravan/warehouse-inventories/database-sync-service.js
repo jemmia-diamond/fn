@@ -102,11 +102,7 @@ export default class DatabaseSyncService {
     for (let li = 0; li < locationIds.length; li += LOCATION_CHUNK_SIZE) {
       const locationChunk = locationIds.slice(li, li + LOCATION_CHUNK_SIZE);
       const strLocationIds = locationChunk.join(",");
-
       for (let vi = 0; vi < variantIds.length; vi += VARIANT_CHUNK_SIZE) {
-        if (li > 0 || vi > 0) {
-          await sleep(DatabaseSyncService.RATE_LIMIT_DELAY_MS);
-        }
 
         const variantChunk = variantIds.slice(vi, vi + VARIANT_CHUNK_SIZE);
         const strVariantIds = variantChunk.join(",");
