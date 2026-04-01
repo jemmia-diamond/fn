@@ -79,20 +79,11 @@ export default class ProductService {
           WHEN e.product_id IS NULL THEN FALSE
           ELSE TRUE
         END AS has_360,
-        img.images,
         var.variants
       FROM ecom.materialized_products p
         INNER JOIN workplace.designs d ON d.id = p.design_id
         LEFT JOIN workplace.ecom_360 e ON p.workplace_id = e.product_id
 
-        -- Subquery for pre-aggregated images
-        INNER JOIN (
-          SELECT
-            i.product_id,
-            array_agg(i.src ORDER BY i.src) AS images
-          FROM haravan.images i
-          GROUP BY i.product_id
-        ) img ON img.product_id = p.haravan_product_id
 
         -- Subquery for pre-aggregated variants with variant-level images
         INNER JOIN LATERAL (
@@ -106,12 +97,12 @@ export default class ProductService {
                 'ring_size', v.ring_size,
                 'price', CAST(v.price AS DOUBLE PRECISION),
                 'price_compare_at', CAST(v.price_compare_at AS DOUBLE PRECISION),
-                'images', COALESCE(design_imgs.images, ARRAY[]::text[])
+                'images', design_imgs.images
               )
             ) AS variants
           FROM ecom.materialized_variants v
     
-          LEFT JOIN LATERAL (
+          INNER JOIN LATERAL (
             SELECT 
               di.material_color,
               COALESCE(
@@ -134,10 +125,11 @@ export default class ProductService {
             ) AS item
             WHERE di.design_id = d.id
             GROUP BY di.material_color
-          ) design_imgs ON design_imgs.material_color = v.material_color
+          ) design_imgs ON design_imgs.material_color = v.material_color AND array_length(design_imgs.images, 1) > 0
 
           WHERE v.haravan_product_id = p.haravan_product_id
           GROUP BY v.haravan_product_id
+          HAVING COUNT(*) > 0
         ) var ON TRUE
 
       WHERE lower(concat(p.title, d.design_code, p.haravan_product_type)) LIKE ${likePattern}
