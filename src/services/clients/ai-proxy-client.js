@@ -1,13 +1,17 @@
-import { createAxiosClient } from "services/utils/http-client";
+import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
+import { generateText } from "ai";
+import { AI_MODELS } from "constants/ai-proxy";
 
 export default class AIProxyClient {
   #env;
+  #model;
   #token;
   #baseUrl;
-  #model = "gpt-5.4";
+  #provider;
 
-  constructor(env) {
+  constructor(env, model) {
     this.#env = env;
+    this.#model = model || AI_MODELS.GPT_5_4;
   }
 
   async #getToken() {
@@ -32,30 +36,31 @@ export default class AIProxyClient {
     return this.#baseUrl;
   }
 
-  async #createClient() {
-    const token = await this.#getToken();
-    const baseUrl = this.#getBaseUrl();
+  async #getProvider() {
+    if (this.#provider) return this.#provider;
 
-    const client = createAxiosClient({
-      baseURL: baseUrl,
+    const token = await this.#getToken();
+    const baseURL = this.#getBaseUrl();
+
+    this.#provider = createOpenAICompatible({
+      name: "jemmia-proxy",
+      baseURL,
       headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
+        Authorization: `Bearer ${token}`
       }
     });
 
-    return client;
+    return this.#provider;
   }
 
-  async chatCompletions(content) {
-    const client = await this.#createClient();
-    const response = await client.post("/chat/completions", {
-      model: this.#model,
-      messages: [
-        { role: "user", content }
-      ]
+  async translate(content) {
+    const provider = await this.#getProvider();
+    const { text: translatedText } = await generateText({
+      model: provider(this.#model),
+      messages: [{ role: "user", content }]
     });
-    return response.data;
+
+    return translatedText.trim();
   }
 }
 
