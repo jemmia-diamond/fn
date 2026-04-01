@@ -381,12 +381,14 @@ model erpnextLead {
   notes                  Json?
   user_tags              Json?
   preferred_product_type Json?
+  proposed_budget        String?   @db.VarChar(255)
   database_created_at    DateTime? @default(now()) @db.Timestamp(6)
   database_updated_at    DateTime? @db.Timestamp(6)
 
   @@index([name])
   @@index([purpose_lead])
   @@index([budget_lead])
+  @@index([proposed_budget])
   @@index([province])
   @@index([region])
   @@map("leads")
