@@ -1,5 +1,4 @@
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
-import { generateText } from "ai";
 import { AI_MODELS } from "src/constants/ai-proxy";
 
 export default class AIProxyClient {
@@ -53,14 +52,13 @@ export default class AIProxyClient {
     return this.#provider;
   }
 
-  async translate(content) {
+  /**
+   * Returns a model instance for the configured model.
+   * @returns {Promise<Object>} The AI model instance.
+   */
+  async getModel() {
     const provider = await this.#getProvider();
-    const { text: translatedText } = await generateText({
-      model: provider(this.#model),
-      prompt: content
-    });
-
-    return translatedText.trim();
+    return provider(this.#model);
   }
 }
 
