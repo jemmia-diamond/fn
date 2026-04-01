@@ -4,7 +4,7 @@ import { AI_MODELS } from "src/constants/ai-proxy";
 /**
  * Utility to create an OpenAI-compatible model instance using AI Proxy.
  *
- * @param {Object} env Cloudflare environment with AI_PROXY_TOKEN (or AI_PROXY_TOKEN_SECRET) and optional AI_PROXY_URL.
+ * @param {Object} env
  * @param {string} modelName Name of the model to use (defaults to GPT-5.4).
  * @returns {Promise<Object>} The AI model instance.
  */
