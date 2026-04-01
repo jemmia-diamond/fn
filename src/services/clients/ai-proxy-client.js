@@ -1,6 +1,6 @@
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { generateText } from "ai";
-import { AI_MODELS } from "constants/ai-proxy";
+import { AI_MODELS } from "src/constants/ai-proxy";
 
 export default class AIProxyClient {
   #env;
