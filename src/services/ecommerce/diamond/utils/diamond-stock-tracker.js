@@ -16,6 +16,7 @@ export function buildStockTrackerQuery(targets, warehouseNames) {
 
     const color = t.color ? `'${t.color.replace(/'/g, "''")}'` : "NULL";
     const clarity = t.clarity ? `'${t.clarity.replace(/'/g, "''")}'` : "NULL";
+    const fluorescence = t.fluorescence ? `'${t.fluorescence.replace(/'/g, "''")}'` : "NULL";
 
     const s1Str = s1 !== null ? `${s1}` : "NULL";
     const s2Str = s2 !== null ? `${s2}` : "NULL";
@@ -26,10 +27,10 @@ export function buildStockTrackerQuery(targets, warehouseNames) {
     const cLtStr = c_lt !== null ? `${c_lt}` : "NULL";
 
     if (index === 0) {
-      return `(${index + 1}::int, ${s1Str}::real, ${s2Str}::real, ${cGteStr}::real, ${cLteStr}::real, ${cGtStr}::real, ${cLtStr}::real, ${color}::text, ${clarity}::text, ${priceStr}::numeric)`;
+      return `(${index + 1}::int, ${s1Str}::real, ${s2Str}::real, ${cGteStr}::real, ${cLteStr}::real, ${cGtStr}::real, ${cLtStr}::real, ${color}::text, ${clarity}::text, ${fluorescence}::text, ${priceStr}::numeric)`;
     }
 
-    return `(${index + 1}, ${s1Str}, ${s2Str}, ${cGteStr}, ${cLteStr}, ${cGtStr}, ${cLtStr}, ${color}, ${clarity}, ${priceStr})`;
+    return `(${index + 1}, ${s1Str}, ${s2Str}, ${cGteStr}, ${cLteStr}, ${cGtStr}, ${cLtStr}, ${color}, ${clarity}, ${fluorescence}, ${priceStr})`;
   }).join(", ");
 
   const warehouseNamesList = warehouseNames.map(name => `'${name.replace(/'/g, "''")}'`).join(", ");
@@ -38,11 +39,11 @@ export function buildStockTrackerQuery(targets, warehouseNames) {
     WITH TargetConditions AS (
       SELECT 
         MIN(target_index) as target_index,
-        s1, s2, c_gte, c_lte, c_gt, c_lt, col, clar, orig_price
+        s1, s2, c_gte, c_lte, c_gt, c_lt, col, clar, fluorescence, orig_price
       FROM (VALUES
         ${valuesClause}
-      ) AS t(target_index, s1, s2, c_gte, c_lte, c_gt, c_lt, col, clar, orig_price)
-      GROUP BY s1, s2, c_gte, c_lte, c_gt, c_lt, col, clar, orig_price
+      ) AS t(target_index, s1, s2, c_gte, c_lte, c_gt, c_lt, col, clar, fluorescence, orig_price)
+      GROUP BY s1, s2, c_gte, c_lte, c_gt, c_lt, col, clar, fluorescence, orig_price
     ),
     RetailInventoryStatus AS (
       SELECT 
@@ -88,6 +89,7 @@ export function buildStockTrackerQuery(targets, warehouseNames) {
       d.carat,
       d.color,
       d.clarity,
+      d.fluorescence,
       CAST(d.price AS DOUBLE PRECISION) AS base_price,
       CAST(
         CASE
@@ -119,14 +121,15 @@ export function buildStockTrackerQuery(targets, warehouseNames) {
     FROM workplace.diamonds d
     JOIN haravan.variants hv ON hv.id = d.variant_id
     JOIN TargetConditions tc ON (
-      (tc.s1 IS NULL OR d.edge_size_1 = tc.s1)
-      AND (tc.s2 IS NULL OR d.edge_size_2 = tc.s2)
+      (tc.s1 IS NULL OR TRUNC(d.edge_size_1::numeric, 1) = TRUNC(tc.s1::numeric, 1))
+      AND (tc.s2 IS NULL OR TRUNC(d.edge_size_2::numeric, 1) = TRUNC(tc.s2::numeric, 1))
       AND (tc.c_gte IS NULL OR d.carat >= tc.c_gte)
       AND (tc.c_lte IS NULL OR d.carat <= tc.c_lte)
       AND (tc.c_gt IS NULL OR d.carat > tc.c_gt)
       AND (tc.c_lt IS NULL OR d.carat < tc.c_lt)
       AND (tc.col IS NULL OR d.color = tc.col)
       AND (tc.clar IS NULL OR d.clarity = tc.clar)
+      AND (tc.fluorescence IS NULL OR d.fluorescence = tc.fluorescence)
       AND (tc.orig_price IS NULL OR d.price = tc.orig_price)
     )
     LEFT JOIN RetailInventoryStatus inv ON inv.variant_id = d.variant_id

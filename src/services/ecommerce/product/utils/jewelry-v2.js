@@ -1,16 +1,17 @@
 // Import aggregateQuery from jewelry.js to reuse filter logic
 import { aggregateQuery } from "services/ecommerce/product/utils/jewelry";
 import { JEWELRY_IMAGE } from "src/controllers/ecommerce/constant";
+import { Prisma } from "@prisma-cli";
 
 export function buildQueryV2(jsonParams) {
   const {
-    filterString,
-    sortString,
-    paginationString,
+    filterSql,
+    sortSql,
+    paginationSql,
     handleFinenessPriority,
     collectionJoinEcomProductsClause,
     linkedCollectionJoinEcomProductsClause,
-    havingString,
+    havingSql,
     warehouseJoinClause
   } = aggregateQuery(jsonParams);
 
@@ -148,7 +149,7 @@ export function buildQueryV2(jsonParams) {
     `;
   }
 
-  const dataSql = `
+  const dataSql = Prisma.sql`
     SELECT  
       CAST(p.haravan_product_id AS INT) AS id,
       p.title,
@@ -160,30 +161,30 @@ export function buildQueryV2(jsonParams) {
       p.haravan_product_type AS product_type,
       p.has_360,
       JSON_AGG(
-        ${variantJsonBuildObject}
+        ${Prisma.raw(variantJsonBuildObject)}
       ) AS variants
     FROM ecom.materialized_products p 
       INNER JOIN workplace.designs d ON p.design_id = d.id 
-      ${collectionJoinEcomProductsClause}
-      ${linkedCollectionJoinEcomProductsClause}
+      ${Prisma.raw(collectionJoinEcomProductsClause)}
+      ${Prisma.raw(linkedCollectionJoinEcomProductsClause)}
 
-      ${lateralJoinClause}
-      ${designImagesJoin}
-      ${warehouseJoinClause}
+      ${Prisma.raw(lateralJoinClause)}
+      ${Prisma.raw(designImagesJoin)}
+      ${Prisma.raw(warehouseJoinClause)}
     WHERE 1 = 1
       AND p.haravan_product_type != 'Nhẫn Cưới' 
-      ${filterString}
+      ${filterSql}
     GROUP BY 
       p.haravan_product_id, p.title, d.design_code, p.handle,
       d.diamond_holder, d.main_stone, d.ring_band_type, p.haravan_product_type,
       p.max_price, p.min_price, p.max_price_18, p.max_price_14, 
-      p.has_360 ${collectionJoinEcomProductsClause ? ", p2.image_updated_at" : ""}
-    ${havingString}
-    ${sortString}
-    ${paginationString}
+      p.has_360 ${collectionJoinEcomProductsClause ? Prisma.raw(", p2.image_updated_at") : Prisma.empty}
+    ${havingSql}
+    ${sortSql}
+    ${paginationSql}
   `;
 
-  const countSql = `
+  const countSql = Prisma.sql`
     SELECT
     COUNT(*) AS total,
      (SELECT ARRAY_AGG(DISTINCT mv.material_color ) FROM ecom.materialized_variants mv) AS material_colors,
@@ -192,16 +193,17 @@ export function buildQueryV2(jsonParams) {
         SELECT p.haravan_product_id
         FROM ecom.materialized_products p 
             INNER JOIN workplace.designs d ON d.id = p.design_id
-            ${collectionJoinEcomProductsClause}
-            ${linkedCollectionJoinEcomProductsClause}
+            ${Prisma.raw(collectionJoinEcomProductsClause)}
+            ${Prisma.raw(linkedCollectionJoinEcomProductsClause)}
             INNER JOIN ecom.materialized_variants v ON v.haravan_product_id = p.haravan_product_id
-            ${diamondJoinsForCount}
-            ${warehouseJoinClause}
+            ${Prisma.raw(designImagesJoin)}
+            ${Prisma.raw(diamondJoinsForCount)}
+            ${Prisma.raw(warehouseJoinClause)}
         WHERE 1 = 1 
           AND p.haravan_product_type != 'Nhẫn Cưới'
-          ${filterString}
+          ${filterSql}
         GROUP BY p.haravan_product_id
-        ${havingString}
+        ${havingSql}
     ) AS subquery
   `;
 

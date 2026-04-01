@@ -11,13 +11,13 @@ import { validateSalesOrder } from "services/erp/selling/sales-order/utils/sales
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/constant";
-
 import { fetchSalesOrdersFromERP, saveSalesOrdersToDatabase, calculateGroupOrderPaymentRecordsTotal, calculateOrderPaymentRecordsTotal, ensureSelfReference, getAllRelatedPaymentEntries, shouldSkipSharedPayment } from "src/services/erp/selling/sales-order/utils/sales-order-helpers";
 import { getRefOrderChain } from "services/ecommerce/order-tracking/queries/get-initial-order";
 import Larksuite from "services/larksuite";
 import { ERPR2StorageService } from "services/r2-object/erp/erp-r2-storage-service";
 import HaravanAPI from "services/clients/haravan-client";
 import { retryQuery } from "src/services/utils/retry-utils";
+import { isTestOrder } from "services/utils/order-intercepter";
 
 dayjs.extend(utc);
 
@@ -68,6 +68,10 @@ export default class SalesOrderService {
   };
 
   async processHaravanOrder(haravanOrderData) {
+    if (isTestOrder(haravanOrderData)){
+      return true;
+    }
+
     // Initialize services
     const addressService = new AddressService(this.env);
     const contactService = new ContactService(this.env);
@@ -638,6 +642,11 @@ export default class SalesOrderService {
       filters: [["name", "in", productCategoryNames]]
     });
 
+    const purposeNames = (salesOrderData.sales_order_purposes || []).map(purpose => purpose.purchase_purpose || purpose.sales_order_purpose || purpose.purpose);
+    const purposeData = await this.frappeClient.getList("Purchase Purpose", {
+      filters: [["name", "in", purposeNames]]
+    });
+
     const primarySalesPersonName = salesOrderData.primary_sales_person;
     const primarySalesPerson = await this.frappeClient.getDoc("Sales Person", primarySalesPersonName);
 
@@ -649,7 +658,7 @@ export default class SalesOrderService {
       filters: [["name", "in", secondarySalesPersonNames]]
     });
 
-    const content = composeSalesOrderNotification(salesOrderData, promotionData, leadSource, policyData, productCategoryData, customer, primarySalesPerson, secondarySalesPeople);
+    const content = composeSalesOrderNotification(salesOrderData, promotionData, leadSource, policyData, productCategoryData, purposeData, customer, primarySalesPerson, secondarySalesPeople);
 
     return content;
   }

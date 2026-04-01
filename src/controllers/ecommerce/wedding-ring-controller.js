@@ -1,6 +1,7 @@
 import Ecommerce from "services/ecommerce";
 import { API_CONFIG } from "src/controllers/ecommerce/constant";
 import { validateParams } from "services/ecommerce/product/utils/validation";
+import { splitParams } from "services/utils/param-helper";
 
 export default class WeddingRingController {
   static async index(ctx) {
@@ -8,11 +9,20 @@ export default class WeddingRingController {
 
     const jsonParams = {
       pagination: {
-        from: Math.max(API_CONFIG.MIN_FROM, params.from ? Number(params.from) : API_CONFIG.DEFAULT_FROM),
-        limit: Math.min(API_CONFIG.MAX_LIMIT, Math.max(1, params.limit ? Number(params.limit) : API_CONFIG.DEFAULT_LIMIT))
+        from: Math.max(
+          API_CONFIG.MIN_FROM,
+          params.from ? Number(params.from) : API_CONFIG.DEFAULT_FROM
+        ),
+        limit: Math.min(
+          API_CONFIG.MAX_LIMIT,
+          Math.max(
+            1,
+            params.limit ? Number(params.limit) : API_CONFIG.DEFAULT_LIMIT
+          )
+        )
       },
-      fineness: params.fineness ? params.fineness.split(",") : [],
-      material_colors: params.material_colors ? params.material_colors.split(",") : [],
+      fineness: splitParams(params.fineness),
+      material_colors: splitParams(params.material_colors),
       is_in_stock: params.is_in_stock ? params.is_in_stock === "true" : null,
       sort: {
         by: params.sort_by || "price",
@@ -22,14 +32,11 @@ export default class WeddingRingController {
         min: params.min_price ? Number(params.min_price) : null,
         max: params.max_price ? Number(params.max_price) : null
       },
-      product_ids: params.product_ids
-        ? params.product_ids
-          .split(",")
-          .map((v) => Number(v.trim()))
-          .filter((n) => Number.isInteger(n) && n > 0)
-        : [],
-      ring_band_styles: params.ring_band_styles ? params.ring_band_styles.split(",") : [],
-      excluded_ring_band_styles: params.excluded_ring_band_styles ? params.excluded_ring_band_styles.split(",") : []
+      product_ids: splitParams(params.product_ids)
+        .map((v) => Number(v.trim()))
+        .filter((n) => Number.isInteger(n) && n > 0),
+      ring_band_styles: splitParams(params.ring_band_styles),
+      excluded_ring_band_styles: splitParams(params.excluded_ring_band_styles)
     };
 
     const { isValidated, message } = validateParams(jsonParams);

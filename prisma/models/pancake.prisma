@@ -21,6 +21,7 @@ model conversation {
   ad_ids              Json?
 
   @@unique([id, page_id], map: "conversation_id_page_idx")
+  @@index([type, updated_at(sort: Desc)], map: "idx_conv_sync_filter")
   @@index([page_id], map: "idx_conversation_page_id")
   @@index([id], map: "idx_id")
   @@index([uuid], map: "ix_pancake_conversation_uuid")
@@ -55,6 +56,7 @@ model conversation_tag {
   database_updated_at DateTime? @default(now()) @db.Timestamp(6)
 
   @@id([conversation_id, inserted_at, tag_page_id, action])
+  @@index([conversation_id, tag_page_id, database_updated_at(sort: Desc)], map: "idx_tag_sync_window")
   @@schema("pancake")
 }
 
@@ -149,6 +151,7 @@ model page_customer {
   phone               String?   @db.VarChar(255)
   updated_at          DateTime? @db.Timestamp(6)
 
+  @@index([customer_id, updated_at], map: "idx_customer_sync_lookup")
   @@index([uuid], map: "ix_pancake_page_customer_uuid")
   @@schema("pancake")
 }

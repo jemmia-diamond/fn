@@ -1,11 +1,10 @@
 import FrappeClient from "frappe/frappe-client";
 import Database from "services/database";
 import NocoDBClient from "services/clients/nocodb-client.js";
+import { NOCODB_TABLES } from "src/constants/nocodb-tables";
 
 export default class SalesOrderItemService {
   DOCTYPE = "Sales Order Item";
-  NOCO_DIAMOND_TABLE = "m4qggn3vyz5qyqi";
-  NOCO_SERIAL_TABLE = "mm80xzmei7q85k7";
   constructor(env) {
     this.env = env;
     this.frappeClient = new FrappeClient({
@@ -31,7 +30,7 @@ export default class SalesOrderItemService {
 
     // Check if the item is a diamond
     if (isGiaItem) {
-      const record = await this._findRecordInTable(this.NOCO_DIAMOND_TABLE, "variant_id", variant_id);
+      const record = await this._findRecordInTable(NOCODB_TABLES.DIAMONDS, "variant_id", variant_id);
       const policy = record
         ? this.processDiamondPolicy(record.policy_rules, real_order_date, defaultPolicy)
         : defaultPolicy;
@@ -45,7 +44,7 @@ export default class SalesOrderItemService {
     }
 
     // Check if the item has serial number
-    const record = await this._findRecordInTable(this.NOCO_SERIAL_TABLE, "serial_number", serialNumber);
+    const record = await this._findRecordInTable(NOCODB_TABLES.SERIALS, "serial_number", serialNumber);
     const policy = record ? this.processSerialPolicy(record.policy) : defaultPolicy;
     return this.updatePolicy(name, policy);
   }

@@ -4,7 +4,8 @@ import ShieldNotificationService from "services/jemmia-shield/shield-notificatio
 import { ShieldUtils } from "services/jemmia-shield/utils/shield-utils";
 import {
   JEMMIA_SHIELD_MESSAGE_TYPE,
-  JEMMIA_SHIELD_CONTENT_TAG
+  JEMMIA_SHIELD_CONTENT_TAG,
+  JEMMIA_SHIELD_NER_SCORE_THRESHOLD
 } from "src/constants/jemmia-shield-constants";
 import ImageHelper from "services/utils/image-helper";
 
@@ -43,16 +44,61 @@ export default class ShieldPostHandler {
     this.resolvePostMentions(content, mentions);
     const imageMap = await this.downloadPostImages(env, event, content);
 
+    let postText = "";
+    if (content.title) postText += content.title + " ";
+    for (const line of content.content) {
+      for (const item of line) {
+        if (item.tag === JEMMIA_SHIELD_CONTENT_TAG.TEXT) {
+          postText += item.text + " ";
+        } else if (item.tag === JEMMIA_SHIELD_CONTENT_TAG.HREF) {
+          postText += item.text + " ";
+        }
+      }
+    }
+
+    const isTextSensitive =
+      !!postText && (await ShieldPresidioService.detectSensitiveInfo(env, postText));
+
+    const sensitiveImageMap = new Map<string, boolean>();
+    let hasSensitiveImage = false;
+    for (const line of content.content) {
+      for (const item of line) {
+        if (item.tag === JEMMIA_SHIELD_CONTENT_TAG.IMG) {
+          const buffer = imageMap.get(item.image_key);
+          if (!buffer) continue;
+          const result = await ShieldPresidioService.analyzeImage(env, buffer);
+          const isSensitive =
+            result.ner_results.length > 0 &&
+            result.ner_results.some(
+              (result) => result.score >= JEMMIA_SHIELD_NER_SCORE_THRESHOLD
+            );
+          sensitiveImageMap.set(item.image_key, isSensitive);
+          if (isSensitive) {
+            hasSensitiveImage = true;
+            break;
+          }
+        }
+      }
+      if (hasSensitiveImage) break;
+    }
+
+    if (!isTextSensitive && !hasSensitiveImage) {
+      return;
+    }
+
+    const persistedImageKeyMap = new Map<string, string>();
     for (const line of originalContent.content) {
       for (const item of line) {
         if (item.tag === JEMMIA_SHIELD_CONTENT_TAG.IMG) {
           const buffer = imageMap.get(item.image_key);
           if (buffer) {
-            item.image_key = await ShieldUtils.reuploadImageForPersistence(
+            const persistedKey = await ShieldUtils.reuploadImageForPersistence(
               env,
               buffer,
               item.image_key
             );
+            persistedImageKeyMap.set(item.image_key, persistedKey);
+            item.image_key = persistedKey;
           }
         }
       }
@@ -80,24 +126,18 @@ export default class ShieldPostHandler {
         } else if (item.tag === JEMMIA_SHIELD_CONTENT_TAG.IMG) {
           const buffer = imageMap.get(item.image_key);
           if (buffer) {
-            const result = await ShieldPresidioService.analyzeImage(
-              env,
-              buffer
-            );
-            let bufferToUpload = buffer;
-            if (
-              result.has_handwriting ||
-              result.ner_results.length > 0 ||
-              result.ocr_results.length > 0
-            ) {
-              bufferToUpload = await ImageHelper.blurImage(buffer, {
-                blurSize: 24
-              });
+            const isSensitive = sensitiveImageMap.get(item.image_key) ?? false;
+
+            if (!isSensitive) {
+              const persistedKey = persistedImageKeyMap.get(item.image_key);
+              if (persistedKey) item.image_key = persistedKey;
+              continue;
             }
-            const newKey = await JemmiaShieldLarkService.uploadImage(
-              env,
-              bufferToUpload
-            );
+
+            const blurred = await ImageHelper.blurImage(buffer, {
+              blurSize: 24
+            });
+            const newKey = await JemmiaShieldLarkService.uploadImage(env, blurred);
             item.image_key = newKey;
           }
         } else if (item.tag === JEMMIA_SHIELD_CONTENT_TAG.HREF) {

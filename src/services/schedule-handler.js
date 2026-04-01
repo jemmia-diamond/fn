@@ -37,6 +37,7 @@ export default {
       await new ERP.CRM.PancakeLeadSyncService(env).syncPancakeLeads({ batchTime });
       await new Ecommerce.JewelryDiamondPairService(env).processOutOfStockDiamonds();
       await new Misa.InventoryItemSyncService(env).syncInventoryItems();
+      await new Haravan.OrderModule.DatabaseSyncService(env).sync();
       break;
     case "*/10 * * * *": // At every 10th minute
       await ERP.Selling.SerialService.syncSerialsToERP(env);
@@ -44,10 +45,11 @@ export default {
       await new ProductQuote.DesignCodeService(env).syncDesignCodeToLark();
       await new Ecommerce.VariantSyncService(env).syncVariants();
       await ERP.Selling.BuybackExchangeSyncService.cronSync(env);
-      await new Haravan.WarehouseInventory.DatabaseSyncService(env).sync();
+      await new Haravan.Customer.DatabaseSyncService(env).sync();
       break;
     case "*/15 * * * *": // At every 15th minute
       await ERP.Contacts.ContactService.cronSyncContactsToDatabase(env);
+      await new Haravan.WarehouseInventory.DatabaseSyncService(env).sync();
       break;
     case "*/20 * * * *": // At every 20th minute
       await ERP.Selling.SalesOrderService.cronSyncSalesOrdersToDatabase(env);
@@ -80,6 +82,7 @@ export default {
       await new Ecommerce.DiamondCollectService(env).syncDiamondsToCollects();
       await Salesaya.LarkChatSyncMediaService.syncMedia(env);
       await new Pancake.PageSyncService(env).syncPages();
+      await new Haravan.Users.UserSyncService(env).sync().catch(() => {});
       break;
     case "30 0 * * *": // 07:30
       await ERP.CRM.LeadDemandService.syncLeadDemandToDatabase(env);

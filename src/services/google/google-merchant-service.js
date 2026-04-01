@@ -1,6 +1,7 @@
 import GoogleAuth from "services/google/auth.js";
 import * as Sentry from "@sentry/cloudflare";
 import { createAxiosClient } from "services/utils/http-client";
+import { sleep } from "services/utils/sleep";
 
 export default class GoogleMerchantService {
   constructor(env) {
@@ -10,6 +11,18 @@ export default class GoogleMerchantService {
     this.client = createAxiosClient({
       baseURL: "https://merchantapi.googleapis.com",
       timeout: 30000
+    }, {
+      retries: 5,
+      retryDelay: (retryCount) => {
+        return Math.pow(2, retryCount) * 1000;
+      },
+      retryCondition: (error) => {
+        return (
+          !error.response ||
+          (error.response.status >= 500 && error.response.status <= 599) ||
+          error.response.status === 429
+        );
+      }
     });
   }
 
@@ -76,18 +89,13 @@ export default class GoogleMerchantService {
   }
 
   async insertProduct(productData) {
-    try {
-      const headers = await this._getHeaders();
-      const dataSourceId = await this._getDataSourceId();
-      const url = `/products/v1/accounts/${this.merchantId}/productInputs:insert?dataSource=accounts/${this.merchantId}/dataSources/${dataSourceId}`;
+    const headers = await this._getHeaders();
+    const dataSourceId = await this._getDataSourceId();
+    const url = `/products/v1/accounts/${this.merchantId}/productInputs:insert?dataSource=accounts/${this.merchantId}/dataSources/${dataSourceId}`;
 
-      const response = await this.client.post(url, productData, { headers });
+    const response = await this.client.post(url, productData, { headers });
 
-      return response.data;
-    } catch (error) {
-      Sentry.captureException(error);
-      throw error;
-    }
+    return response.data;
   }
 
   async deleteProduct(productId) {
@@ -110,15 +118,12 @@ export default class GoogleMerchantService {
 
   async insertProducts(products) {
     try {
-      const results = await Promise.allSettled(
-        products.map(product => this.insertProduct(product))
-      );
-
-      const failCount = results.filter(r => r.status === "rejected").length;
-      if (failCount > 0) {
-        results.filter(r => r.status === "rejected").forEach(r => Sentry.captureException(r.reason));
+      for (let index = 0; index < products.length; index++) {
+        await this.insertProduct(products[index]);
+        await sleep(500);
       }
     } catch (error) {
+      console.warn(error);
       Sentry.captureException(error);
     }
   }
