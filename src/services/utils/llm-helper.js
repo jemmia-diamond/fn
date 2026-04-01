@@ -9,8 +9,8 @@ import { AI_MODELS } from "src/constants/ai-proxy";
  * @returns {Promise<Object>} The AI model instance.
  */
 export async function getAIModel(env, modelName = AI_MODELS.GPT_5_4) {
-  const token = (await env.AI_PROXY_TOKEN_SECRET?.get()) || env.AI_PROXY_TOKEN;
-  const baseUrl = (env.AI_PROXY_URL || "https://aiproxy.jemmia.vn") + "/v1";
+  const token = await env.AI_PROXY_TOKEN_SECRET.get();
+  const baseUrl = env.AI_PROXY_URL + "/v1";
 
   const provider = createOpenAICompatible({
     name: "jemmia-proxy",
