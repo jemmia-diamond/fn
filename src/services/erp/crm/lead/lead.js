@@ -6,6 +6,7 @@ import utc from "dayjs/plugin/utc.js";
 import ContactService from "services/erp/contacts/contact/contact";
 import { areAllFieldsEmpty, fetchLeadsFromERP, saveLeadsToDatabase } from "services/erp/crm/lead/utils/lead-helppers";
 import { createInsertLeadPayload, createUpdateLeadPayload } from "services/erp/crm/lead/utils/pancake-utils";
+import { normalizeToStandardFormat } from "services/utils/phone-utils";
 
 dayjs.extend(utc);
 
@@ -241,7 +242,7 @@ export default class LeadService {
 
     try {
       const contactService = new ContactService(this.env);
-      const phone = data.raw_data.phone;
+      const phone = normalizeToStandardFormat(data.raw_data.phone);
       const source = data.source === "Partner" ? this.PartnerLeadSource : this.WebsiteFormLeadSource;
 
       const dataBuilder = async () => {
@@ -310,9 +311,11 @@ export default class LeadService {
 
   async processCallLogLead(data) {
     const contactService = new ContactService(this.env);
-    const phone = data.type === "Incoming" ? data.from : data.to;
+    const initialPhone = data.type === "Incoming" ? data.from : data.to;
 
-    if (!phone) return;
+    if (!initialPhone) return;
+
+    const phone = normalizeToStandardFormat(initialPhone);
 
     const dataBuilder = async () => {
       const leadData = {
