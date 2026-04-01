@@ -57,7 +57,7 @@ export default class AIProxyClient {
     const provider = await this.#getProvider();
     const { text: translatedText } = await generateText({
       model: provider(this.#model),
-      messages: [{ role: "user", content }]
+      prompt: content
     });
 
     return translatedText.trim();
