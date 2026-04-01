@@ -75,6 +75,7 @@ export const mapLeadsToDatabase = (leads) => {
     whatsapp_no: safeValue(lead.whatsapp_no),
     phone_ext: safeValue(lead.phone_ext),
     check_duplicate: lead.check_duplicate || null,
+    proposed_budget: safeValue(lead.proposed_budget),
     // data from child table
     preferred_product_type: lead.preferred_product_type || null,
     doctype: lead.doctype || null,
