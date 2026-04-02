@@ -21,24 +21,28 @@ export default class PageSyncService {
    * Synchronizes Haravan pages between Vietnamese and English versions.
    */
   async sync() {
-    const HRV_API_KEY = await this.env.HARAVAN_TOKEN_SECRET.get();
-    const haravanClient = new HaravanAPI(HRV_API_KEY);
-    const model = await getAIModel(this.env, AI_MODELS.GPT_5_4);
+    try {
+      const HRV_API_KEY = await this.env.HARAVAN_TOKEN_SECRET.get();
+      const haravanClient = new HaravanAPI(HRV_API_KEY);
+      const model = await getAIModel(this.env, AI_MODELS.GPT_5_4);
 
-    const allPages = await this.#fetchAndFilterPages(haravanClient);
+      const allPages = await this.#fetchAndFilterPages(haravanClient);
 
-    const viPages = allPages.filter(p => SyncHelper.isVietnamese(p.title));
-    const enPages = allPages.filter(p => !SyncHelper.isVietnamese(p.title));
+      const viPages = allPages.filter(p => SyncHelper.isVietnamese(p.title));
+      const enPages = allPages.filter(p => !SyncHelper.isVietnamese(p.title));
 
-    const { matchedPairs, missingPages, orphanEnPages } = this.#matchPages(viPages, enPages);
-    const outOfSyncPages = this.#filterOutOfSyncArticles(matchedPairs);
+      const { matchedPairs, missingPages, orphanEnPages } = this.#matchPages(viPages, enPages);
+      const outOfSyncPages = this.#filterOutOfSyncArticles(matchedPairs);
 
-    await this.#reconcilePages(haravanClient, {
-      model,
-      outOfSyncPages,
-      missingPages,
-      orphanEnPages
-    });
+      await this.#reconcilePages(haravanClient, {
+        model,
+        outOfSyncPages,
+        missingPages,
+        orphanEnPages
+      });
+    } catch (err) {
+      Sentry.captureException(err);
+    }
   }
 
   async #fetchAndFilterPages(haravanClient) {
