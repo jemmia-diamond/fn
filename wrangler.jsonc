@@ -73,6 +73,7 @@
     "OAUTH_REDIRECT_ENDPOINT":"https://fn.jemmia.vn",
     "HARAVAN_APP_URL": "https://jemmiavn.myharavan.com",
     "AI_PROXY_URL": "https://aiproxy.jemmia.vn",
+    "S3_API_URL": "https://90814f99c119cd5dc08362580f81a76f.r2.cloudflarestorage.com"
   },
   "secrets_store_secrets": [
     {
@@ -154,6 +155,16 @@
       "binding": "AI_PROXY_TOKEN_SECRET",
       "store_id": "dff6fef7003446178302a7874af64fde",
       "secret_name": "AI_PROXY_TOKEN"
+    },
+    {
+      "binding": "R2_ACCESS_KEY_ID_SECRET",
+      "store_id": "dff6fef7003446178302a7874af64fde",
+      "secret_name": "R2_ACCESS_KEY_ID"
+    },
+    {
+      "binding": "R2_SECRET_ACCESS_KEY_SECRET",
+      "store_id": "dff6fef7003446178302a7874af64fde",
+      "secret_name": "R2_SECRET_ACCESS_KEY"
     }
   ],
   "kv_namespaces": [
@@ -290,6 +301,10 @@
     {
       "binding": "JEMMIA_ERP_R2_STORAGE",
       "bucket_name": "jemmia-erp"
+    },
+    {
+      "binding": "JEMMIA_ASSETS_R2_STORAGE",
+      "bucket_name": "assets"
     }
   ],
   "triggers": {
