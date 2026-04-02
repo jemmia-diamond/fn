@@ -72,7 +72,7 @@
     "LARK_APP_SHIELD_ID":"cli_a9fd9bc9f7b9ded0",
     "OAUTH_REDIRECT_ENDPOINT":"https://fn.jemmia.vn",
     "HARAVAN_APP_URL": "https://jemmiavn.myharavan.com",
-    "AI_PROXY_URL": "https://aiproxy.jemmia.vn",
+    "AI_PROXY_URL": "https://aiproxy.jemmia.vn"
   },
   "secrets_store_secrets": [
     {
@@ -290,6 +290,10 @@
     {
       "binding": "JEMMIA_ERP_R2_STORAGE",
       "bucket_name": "jemmia-erp"
+    },
+    {
+      "binding": "JEMMIA_ASSETS_R2_STORAGE",
+      "bucket_name": "assets"
     }
   ],
   "triggers": {
