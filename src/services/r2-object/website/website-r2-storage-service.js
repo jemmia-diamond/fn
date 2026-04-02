@@ -4,23 +4,18 @@ export class WebsiteR2StorageService extends R2StorageService {
   constructor(env) {
     super(env, "JEMMIA_ASSETS_R2_STORAGE");
     this.prefix = "website";
-    this.bucketName = "assets";
   }
 
   async upload(filename, body) {
     const key = `${this.prefix}/${filename}`;
-    await this._putObject(key, body, this.bucketName);
+    await this._putObject(key, body);
 
     const publicBaseUrl = this.env.R2_JEMMIA_WEBSITE_PUBLIC_URL;
     return `${publicBaseUrl}/${key}`;
   }
 
-  async getObjectByKey(key) {
-    return this._getObject(key);
-  }
-
-  async downloadObject(filename) {
+  async getObject(filename) {
     const key = `${this.prefix}/${filename}`;
-    return this._downloadObject(key, this.bucketName);
+    return this._getObject(key);
   }
 }
