@@ -13,7 +13,6 @@ export class R2StorageService {
     this.env = env;
     this.bindingName = bindingName;
     this.bucket = env[bindingName];
-    this.s3Client = null;
 
     if (!this.bucket) {
       throw new Error(`R2 binding '${bindingName}' not found on env object.`);
@@ -21,8 +20,8 @@ export class R2StorageService {
   }
 
   /**
-   * Get object as ArrayBuffer
-   * @param {string} key
+   * Get an object from R2.
+   * @param {string} key - The object key.
    * @returns {Promise<ArrayBuffer|null>}
    */
   async _getObject(key) {
