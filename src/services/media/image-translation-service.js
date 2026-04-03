@@ -102,7 +102,7 @@ export default class ImageTranslationService {
    * @returns {Promise<Uint8Array>} The translated image buffer.
    */
   async generateTranslatedImage(imageBuffer, metadata, env, mimeType) {
-    const apiKey = await env.GOOGLE_API_KEY_SECRET.get();
+    const apiKey = await env.GEMINI_API_KEY_SECRET.get();
     const model = this.models.GENERATION;
 
     const ai = new GoogleGenAI({ apiKey });
