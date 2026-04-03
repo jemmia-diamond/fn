@@ -227,6 +227,10 @@
       {
         "queue": "erpnext-order-creation",
         "binding": "ERPNEXT_ORDER_CREATION_QUEUE"
+      },
+      {
+        "queue": "notification",
+        "binding": "NOTIFICATION_QUEUE"
       }
     ],
     "consumers": [
@@ -283,6 +287,9 @@
         "retry_delay": 600,
         "max_retries": 6,
         "max_batch_size": 1
+      },
+      {
+        "queue": "notification"
       }
     ]
   },
