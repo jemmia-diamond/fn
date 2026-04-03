@@ -349,6 +349,7 @@ export default class LeadService {
       await leadService.processCallLogLead(callLog);
     }
   }
+
   async syncLeadsToDatabase(options = {}) {
 
     const { isSyncType = LeadService.SYNC_TYPE_AUTO, minutesBack = 10 } = options;
@@ -381,6 +382,7 @@ export default class LeadService {
       }
     }
   }
+
   static async cronSyncLeadsToDatabase(env) {
     const syncService = new LeadService(env);
     return await syncService.syncLeadsToDatabase({
