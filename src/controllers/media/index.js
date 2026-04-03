@@ -1,5 +1,5 @@
-import TranslateImageController from "controllers/media/translate-image-controller";
+import ImageTranslationController from "controllers/media/image-translation-controller";
 
 export default {
-  TranslateImageController
+  ImageTranslationController
 };

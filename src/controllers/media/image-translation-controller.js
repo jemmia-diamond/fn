@@ -1,6 +1,6 @@
 import ImageTranslationService from "services/media/image-translation-service";
 
-export default class TranslateImageController {
+export default class ImageTranslationController {
   static async create(c) {
     const body = await c.req.parseBody();
     const image = body.image;

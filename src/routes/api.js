@@ -69,6 +69,6 @@ export default class APIRoutes {
     larksuiteApi.get("/subscriptions", Larksuite.ApprovalSubscriptionController.index);
 
     const mediaApi = api.basePath("/media");
-    mediaApi.post("/translate-image", Media.TranslateImageController.create);
+    mediaApi.post("/translate-image", Media.ImageTranslationController.create);
   };
 };
