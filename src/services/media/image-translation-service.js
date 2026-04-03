@@ -1,6 +1,7 @@
 import { generateText } from "ai";
 import { getAIModel } from "services/utils/llm-helper";
 import { GoogleGenAI } from "@google/genai";
+import { v4 as uuidv4 } from "uuid";
 
 /**
  * Service of image translation.
