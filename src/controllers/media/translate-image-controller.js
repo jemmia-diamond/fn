@@ -10,13 +10,8 @@ export default class TranslateImageController {
     }
 
     const service = new ImageTranslationService();
-    const { translatedImageBuffer, outputFilename } = await service.translateImage(image, c.env);
+    const publicUrl = await service.translateImage(image, c.env);
 
-    return new Response(translatedImageBuffer, {
-      headers: {
-        "Content-Type": service.responseContentType,
-        "Content-Disposition": `attachment; filename="${outputFilename}"`
-      }
-    });
+    return c.json({ url: publicUrl });
   }
 }

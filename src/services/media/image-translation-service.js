@@ -2,6 +2,7 @@ import { generateText } from "ai";
 import { getAIModel } from "services/utils/llm-helper";
 import { GoogleGenAI } from "@google/genai";
 import { v4 as uuidv4 } from "uuid";
+import { WebsiteR2StorageService } from "services/r2-object/website/website-r2-storage-service";
 
 /**
  * Service of image translation.
@@ -12,16 +13,13 @@ export default class ImageTranslationService {
    * @param {string} [config.extractionModel]
    * @param {string} [config.generationModel]
    * @param {string} [config.targetLang]
-   * @param {string} [config.responseContentType]
    */
   constructor({
     extractionModel = "gpt-5.4",
     generationModel = "gemini-3.1-flash-image-preview",
-    targetLang = "English",
-    responseContentType = "image/jpeg"
+    targetLang = "English"
   } = {}) {
     this.targetLang = targetLang;
-    this.responseContentType = responseContentType;
     this.models = {
       EXTRACTION: extractionModel,
       GENERATION: generationModel
@@ -100,9 +98,10 @@ export default class ImageTranslationService {
    * @param {Uint8Array} imageBuffer
    * @param {Array} metadata
    * @param {Object} env
+   * @param {string} mimeType
    * @returns {Promise<Uint8Array>} The translated image buffer.
    */
-  async generateTranslatedImage(imageBuffer, metadata, env) {
+  async generateTranslatedImage(imageBuffer, metadata, env, mimeType) {
     const apiKey = await env.GOOGLE_API_KEY_SECRET.get();
     const model = this.models.GENERATION;
 
@@ -119,7 +118,7 @@ export default class ImageTranslationService {
               { text: prompt },
               {
                 inlineData: {
-                  mimeType: "image/jpeg",
+                  mimeType,
                   data: Buffer.from(imageBuffer).toString("base64")
                 }
               }
@@ -154,6 +153,7 @@ export default class ImageTranslationService {
   async translateImage(image, env) {
     const imageArrayBuffer = await image.arrayBuffer();
     const imageBuffer = new Uint8Array(imageArrayBuffer);
+    const mimeType = image.type;
 
     const metadata = await this.extractMetadata(imageBuffer, env);
 
@@ -161,11 +161,15 @@ export default class ImageTranslationService {
       return imageBuffer;
     }
 
-    const translatedImageBuffer = await this.generateTranslatedImage(imageBuffer, metadata, env);
+    const translatedImageBuffer = await this.generateTranslatedImage(imageBuffer, metadata, env, mimeType);
 
     const uniqueId = uuidv4().split("-")[0];
     const outputFilename = `en_${image.name.split(".")[0]}_${uniqueId}.jpg`;
 
-    return { translatedImageBuffer, outputFilename };
+    // Save to R2
+    const storage = new WebsiteR2StorageService(env);
+    const publicUrl = await storage.upload(outputFilename, translatedImageBuffer);
+
+    return publicUrl;
   }
 }
