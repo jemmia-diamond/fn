@@ -71,12 +71,10 @@ export default class ImageTranslationService {
         responseFormat: { type: "json_object" }
       });
 
-      // Try to parse JSON from content
       let content;
       try {
         content = JSON.parse(contentStr);
       } catch {
-        // If not valid JSON, try to extract it from code blocks or cleanup
         const match = contentStr.match(/\[.*\]/s);
         if (match) {
           content = JSON.parse(match[0]);
@@ -148,19 +146,25 @@ export default class ImageTranslationService {
   /**
    * Full translation pipeline.
    *
-   * @param {Uint8Array} imageBuffer
+   * @param {File} image
    * @param {Object} env
    * @returns {Promise<Uint8Array>}
    */
-  async translateImage(imageBuffer, env) {
+  async translateImage(image, env) {
+    const imageArrayBuffer = await image.arrayBuffer();
+    const imageBuffer = new Uint8Array(imageArrayBuffer);
+
     const metadata = await this.extractMetadata(imageBuffer, env);
 
     if (metadata.length === 0) {
       return imageBuffer;
     }
 
-    const translatedImage = await this.generateTranslatedImage(imageBuffer, metadata, env);
+    const translatedImageBuffer = await this.generateTranslatedImage(imageBuffer, metadata, env);
 
-    return translatedImage;
+    const uniqueId = uuidv4().split("-")[0];
+    const outputFilename = `en_${image.name.split(".")[0]}_${uniqueId}.jpg`;
+
+    return { translatedImageBuffer, outputFilename };
   }
 }
