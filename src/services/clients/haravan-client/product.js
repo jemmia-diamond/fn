@@ -2,7 +2,7 @@ import BaseConnector from "services/clients/haravan-client/base-connector";
 
 class ProductConnector extends BaseConnector {
   async getProducts(options = {}) {
-    return this.get("/products.json", options);
+    return await this.get("/products.json", options);
   }
 
   async countProducts() {
