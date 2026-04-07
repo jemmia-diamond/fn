@@ -12,9 +12,9 @@
     "postdeploy": "pnpm sentry:sourcemaps"
   },
   "dependencies": {
+    "@ai-sdk/google": "^3.0.59",
     "@ai-sdk/openai-compatible": "^2.0.37",
     "@directus/sdk": "^20.0.2",
-    "@google/genai": "^1.47.0",
     "@haverstack/axios-fetch-adapter": "^0.12.0",
     "@hono/sentry": "^1.2.1",
     "@larksuiteoapi/node-sdk": "1.47.1",

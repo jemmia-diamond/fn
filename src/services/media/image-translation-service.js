@@ -1,6 +1,6 @@
-import { generateText } from "ai";
-import { getAIModel } from "services/utils/llm-helper";
-import { GoogleGenAI } from "@google/genai";
+import { generateText, generateImage } from "ai";
+import { getOpenAICompatibleModel, getGoogleGenerativeAIModel } from "services/utils/llm-helper";
+import { AI_MODELS } from "src/constants/ai-proxy";
 import { v4 as uuidv4 } from "uuid";
 import { WebsiteR2StorageService } from "services/r2-object/website/website-r2-storage-service";
 
@@ -15,8 +15,8 @@ export default class ImageTranslationService {
    * @param {string} [config.targetLang]
    */
   constructor({
-    extractionModel = "gpt-5.4",
-    generationModel = "gemini-3.1-flash-image-preview",
+    extractionModel = AI_MODELS.GEMINI_3_1_FLASH_LITE_PREVIEW,
+    generationModel = AI_MODELS.GEMINI_3_1_FLASH_IMAGE_PREVIEW,
     targetLang = "English"
   } = {}) {
     this.targetLang = targetLang;
@@ -53,11 +53,11 @@ export default class ImageTranslationService {
   async extractMetadata(imageBuffer, env) {
     const prompt = this.prompts.EXTRACT_METADATA(this.targetLang);
 
-    const modelResource = await getAIModel(env, this.models.EXTRACTION);
+    const model = await getOpenAICompatibleModel(env);
 
     try {
       const { text: contentStr } = await generateText({
-        model: modelResource,
+        model: model(this.models.EXTRACTION),
         messages: [
           {
             role: "user",
@@ -101,43 +101,24 @@ export default class ImageTranslationService {
    * @param {string} mimeType
    * @returns {Promise<Uint8Array>} The translated image buffer.
    */
-  async generateTranslatedImage(imageBuffer, metadata, env, mimeType) {
-    const apiKey = await env.GEMINI_API_KEY_SECRET.get();
-    const model = this.models.GENERATION;
-
-    const ai = new GoogleGenAI({ apiKey });
-
+  async generateTranslatedImage(imageBuffer, metadata, env) {
     const prompt = this.prompts.GENERATE_IMAGE(metadata);
+    const model = await getGoogleGenerativeAIModel(env);
 
     try {
-      const response = await ai.models.generateContent({
-        model,
-        contents: [
-          {
-            parts: [
-              { text: prompt },
-              {
-                inlineData: {
-                  mimeType,
-                  data: Buffer.from(imageBuffer).toString("base64")
-                }
-              }
-            ]
-          }
-        ]
+      const { image } = await generateImage({
+        model: model.image(this.models.GENERATION),
+        prompt: {
+          text: prompt,
+          images: [imageBuffer]
+        }
       });
 
-      // Check if response contains an image part
-      const candidate = response.candidates?.[0];
-      const parts = candidate?.content?.parts || [];
-      const imagePart = parts.find((p) => p.inlineData && p.inlineData.mimeType.startsWith("image/"));
-
-      if (!imagePart) {
-        throw new Error("Google GenAI failed to return an image");
+      if (!image || !image.uint8Array) {
+        throw new Error("AI SDK failed to return an image buffer");
       }
 
-      const outputBase64 = imagePart.inlineData.data;
-      return new Uint8Array(Buffer.from(outputBase64, "base64"));
+      return image.uint8Array;
     } catch (error) {
       throw error;
     }
@@ -153,7 +134,6 @@ export default class ImageTranslationService {
   async translateImage(image, env) {
     const imageArrayBuffer = await image.arrayBuffer();
     const imageBuffer = new Uint8Array(imageArrayBuffer);
-    const mimeType = image.type;
 
     const metadata = await this.extractMetadata(imageBuffer, env);
 
@@ -161,10 +141,12 @@ export default class ImageTranslationService {
       return imageBuffer;
     }
 
-    const translatedImageBuffer = await this.generateTranslatedImage(imageBuffer, metadata, env, mimeType);
+    const translatedImageBuffer = await this.generateTranslatedImage(imageBuffer, metadata, env);
 
     const uniqueId = uuidv4().split("-")[0];
-    const outputFilename = `en_${image.name.split(".")[0]}_${uniqueId}.jpg`;
+    const extension = image.name.split(".").pop();
+    const nameWithoutExt = image.name.substring(0, image.name.lastIndexOf("."));
+    const outputFilename = `en_${nameWithoutExt}_${uniqueId}.${extension}`;
 
     // Save to R2
     const storage = new WebsiteR2StorageService(env);
