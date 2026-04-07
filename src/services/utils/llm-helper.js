@@ -1,5 +1,5 @@
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
-import { AI_MODELS } from "src/constants/ai-proxy";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
 
 /**
  * Utility to create an OpenAI-compatible model instance using AI Proxy.
@@ -8,7 +8,7 @@ import { AI_MODELS } from "src/constants/ai-proxy";
  * @param {string} modelName Name of the model to use (defaults to GPT-5.4).
  * @returns {Promise<Object>} The AI model instance.
  */
-export async function getAIModel(env, modelName = AI_MODELS.GPT_5_4) {
+export async function getOpenAICompatibleModel(env) {
   const token = await env.AI_PROXY_TOKEN_SECRET.get();
   const baseUrl = env.AI_PROXY_URL + "/v1";
 
@@ -20,5 +20,17 @@ export async function getAIModel(env, modelName = AI_MODELS.GPT_5_4) {
     }
   });
 
-  return provider(modelName);
+  return provider;
+}
+
+export async function getGoogleGenerativeAIModel(env) {
+  const token = await env.GEMINI_API_KEY_SECRET.get();
+  const baseUrl = env.GOOGLE_GENERATIVE_AI_URL;
+
+  const provider = createGoogleGenerativeAI({
+    apiKey: token,
+    baseURL: baseUrl
+  });
+
+  return provider;
 }
