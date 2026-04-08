@@ -29,6 +29,7 @@ export default {
       await new Pancake.TagSyncService(env).syncTags();
       await new Ecommerce.ProductG1PromotionSyncService(env).syncPromotions();
       await new Haravan.Collect.CollectionProductSyncService(env).syncCollectionProducts();
+      await new Larksuite.Docs.DocxRawContentSyncService(env).sync();
       break;
     case "*/5 * * * *": // At every 5th minute
       const batchTime = dayjs().utc();
