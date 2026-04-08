@@ -60,6 +60,7 @@ export default {
       await ERP.Contacts.AddressService.cronSyncAddressesToDatabase(env);
       await Ecommerce.ProductService.refreshMaterializedViews(env);
       await DatabaseOperations.MaterializedViewService.refresh30Minutes(env);
+      await new Haravan.AccountingSalesOrders.LarkSyncService(env).sync();
       break;
     case "0 */3 * * *": // At every 3rd hour
       await InventoryCMS.InventoryCheckSheetService.syncInventoryCheckSheetToDatabase(env);
