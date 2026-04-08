@@ -4,7 +4,7 @@ export default class DocxService {
   static async getRawContent(env, documentId) {
     const larkClient = await LarksuiteService.createClientV2(env);
 
-    const response = await larkClient.docx.document.getRawContent({
+    const response = await larkClient.docx.document.rawContent({
       path: {
         document_id: documentId
       },

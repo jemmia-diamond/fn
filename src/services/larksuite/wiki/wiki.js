@@ -9,7 +9,7 @@ export default class WikiService {
       50
     );
 
-    return responses.flatMap(res => res?.data?.items ?? []);
+    return responses.flatMap((res) => res?.data?.items ?? []);
   }
 
   static async listNodes(env, spaceId) {
@@ -24,6 +24,6 @@ export default class WikiService {
       50
     );
 
-    return responses.flatMap(res => res?.data?.items ?? []);
+    return responses.flatMap((res) => res?.data?.items ?? []);
   }
 }
