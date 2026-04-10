@@ -1,37 +1,72 @@
+import * as cheerio from "cheerio";
+
 export default class SyncHelper {
   static normalizeHtml(html) {
     if (!html) return "";
-    let result = html
-      .toLowerCase()
-      .replace(/<!--[\s\S]*?-->/g, "")
-      .replace(/<([a-z1-6]+)\s*([^>]*)>/gi, (match, tag, attrs) => {
-        attrs = attrs || "";
-        const srcMatch = attrs.match(/src=["\x27]([^"\x27]+)["\x27]/i);
-        const hrefMatch = attrs.match(/href=["\x27]([^"\x27]+)["\x27]/i);
-        let res = `<${tag}`;
-        if (srcMatch) {
-          const filename = srcMatch[1].split("/").pop().split("?")[0].replace(/^en_/, "");
-          res += ` src="${filename}"`;
-        }
-        if (hrefMatch) {
-          const filename = hrefMatch[1].split("/").pop().split("?")[0].replace(/^en_/, "");
-          res += ` href="${filename}"`;
-        }
-        return res + ">";
-      })
-      .replace(/>[^<]+/g, ">")
-      .replace(/[^>]+</g, "<")
-      .replace(/\/>/g, ">")
-      .replace(/\s+/g, "")
-      .trim();
+    try {
+      const $ = cheerio.load(html, { decodeEntities: false });
 
-    let temp;
-    do {
-      temp = result;
-      result = result.replace(/<([a-z1-6]+)\s*[^>]*><\/\1>/gi, "");
-    } while (result !== temp);
+      // Remove all text nodes and comments
+      $("*")
+        .contents()
+        .filter(function () {
+          return this.type === "text" || this.type === "comment";
+        })
+        .remove();
 
-    return result;
+      // Keep and normalize src, href, remove other attributes
+      $("*").each(function () {
+        const el = $(this);
+        const attrs = Object.keys(el.attr() || {});
+        for (const attr of attrs) {
+          if (attr.toLowerCase() === "src" || attr.toLowerCase() === "href") {
+            let val = el.attr(attr);
+            if (val) {
+              const filename = val
+                .split("/")
+                .pop()
+                .split("?")[0]
+                .replace(/^en_/, "");
+              el.attr(attr, filename);
+            }
+          } else {
+            el.removeAttr(attr);
+          }
+        }
+      });
+
+      // Loop to remove empty tags (except basic self-closing tags)
+      const selfClosingTags = [
+        "img",
+        "br",
+        "hr",
+        "input",
+        "meta",
+        "link",
+        "source",
+        "iframe"
+      ];
+      let changed;
+      do {
+        changed = false;
+        $("*").each(function () {
+          const el = $(this);
+          if (
+            el.children().length === 0 &&
+            !selfClosingTags.includes(el[0].name.toLowerCase())
+          ) {
+            el.remove();
+            changed = true;
+          }
+        });
+      } while (changed);
+
+      return $.html().replace(/\s+/g, "");
+    } catch (e) {
+      // Fallback if parsing fails
+      console.warn("Error normalizing HTML:", e);
+      return html.length.toString();
+    }
   }
 
   static isHtmlStructureSync(html1, html2) {
