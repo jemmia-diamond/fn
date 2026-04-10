@@ -28,15 +28,9 @@ class HaravanAPI {
     this.orderTransaction = new TransactionOrderConnector(accessToken);
     this.inventoryAdjustment = new InventoryAdjustmentConnector(accessToken);
     this.inventoryLocation = new InventoryLocationConnector(accessToken);
-    this.inventoryPurchaseOrder = new InventoryPurchaseOrderConnector(
-      accessToken
-    );
-    this.inventoryPurchaseReceive = new InventoryPurchaseReceiveConnector(
-      accessToken
-    );
-    this.inventoryPurchaseReturn = new InventoryPurchaseReturnConnector(
-      accessToken
-    );
+    this.inventoryPurchaseOrder = new InventoryPurchaseOrderConnector(accessToken);
+    this.inventoryPurchaseReceive = new InventoryPurchaseReceiveConnector(accessToken);
+    this.inventoryPurchaseReturn = new InventoryPurchaseReturnConnector(accessToken);
     this.inventoryTransfer = new InventoryTransferConnector(accessToken);
     this.location = new LocationConnector(accessToken);
     this.collect = new CollectConnector(accessToken);
