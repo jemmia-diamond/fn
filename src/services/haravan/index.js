@@ -6,6 +6,7 @@ import WarehouseInventory from "services/haravan/warehouse-inventories";
 import Customer from "services/haravan/customers";
 import Users from "services/haravan/users";
 import Articles from "services/haravan/articles";
+import AccountingSalesOrders from "services/haravan/accounting-sales-orders";
 
 export default {
   HaravanClient: HaravanClient,
@@ -15,5 +16,6 @@ export default {
   WarehouseInventory,
   Users,
   Customer,
-  Articles
+  Articles,
+  AccountingSalesOrders
 };
