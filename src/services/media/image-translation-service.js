@@ -1,5 +1,8 @@
 import { generateText, generateImage } from "ai";
-import { getOpenAICompatibleModel, getGoogleGenerativeAIModel } from "services/utils/llm-helper";
+import {
+  getOpenAICompatibleModel,
+  getGoogleGenerativeAIModel
+} from "services/utils/llm-helper";
 import { AI_MODELS } from "src/constants/ai-proxy";
 import { v4 as uuidv4 } from "uuid";
 import { WebsiteR2StorageService } from "services/r2-object/website/website-r2-storage-service";
@@ -43,13 +46,6 @@ export default class ImageTranslationService {
     };
   }
 
-  /**
-   * Stage 1: Extract text, translation, position, and style from the image.
-   *
-   * @param {Uint8Array} imageBuffer
-   * @param {Object} env
-   * @returns {Promise<Array>} Metadata JSON array.
-   */
   async extractMetadata(imageBuffer, env) {
     const prompt = this.prompts.EXTRACT_METADATA(this.targetLang);
 
@@ -124,6 +120,14 @@ export default class ImageTranslationService {
     }
   }
 
+  async urlToBuffer(url) {
+    const response = await fetch(url);
+    if (!response.ok)
+      throw new Error(`Failed to fetch image: ${response.status}`);
+    const arrayBuffer = await response.arrayBuffer();
+    return new Uint8Array(arrayBuffer);
+  }
+
   /**
    * Full translation pipeline.
    *
@@ -131,26 +135,47 @@ export default class ImageTranslationService {
    * @param {Object} env
    * @returns {Promise<Uint8Array>}
    */
-  async translateImage(image, env) {
-    const imageArrayBuffer = await image.arrayBuffer();
-    const imageBuffer = new Uint8Array(imageArrayBuffer);
+  async translateImage(image, env, originalUrl = "") {
+    let imageBuffer;
+    let fileName = "image.jpg";
+
+    if (image instanceof Uint8Array) {
+      imageBuffer = image;
+      if (originalUrl) {
+        fileName = originalUrl.split("/").pop().split("?")[0] || "image.jpg";
+      }
+    } else {
+      const imageArrayBuffer = await image.arrayBuffer();
+      imageBuffer = new Uint8Array(imageArrayBuffer);
+      fileName = image.name || "image.jpg";
+    }
 
     const metadata = await this.extractMetadata(imageBuffer, env);
 
     if (metadata.length === 0) {
-      return imageBuffer;
+      return originalUrl;
     }
 
-    const translatedImageBuffer = await this.generateTranslatedImage(imageBuffer, metadata, env);
+    const translatedImageBuffer = await this.generateTranslatedImage(
+      imageBuffer,
+      metadata,
+      env
+    );
 
     const uniqueId = uuidv4().split("-")[0];
-    const extension = image.name.split(".").pop();
-    const nameWithoutExt = image.name.substring(0, image.name.lastIndexOf("."));
+    const extension = fileName.includes(".")
+      ? fileName.split(".").pop()
+      : "jpg";
+    const nameWithoutExt = fileName.includes(".")
+      ? fileName.substring(0, fileName.lastIndexOf("."))
+      : fileName;
     const outputFilename = `en_${nameWithoutExt}_${uniqueId}.${extension}`;
 
-    // Save to R2
     const storage = new WebsiteR2StorageService(env);
-    const publicUrl = await storage.upload(outputFilename, translatedImageBuffer);
+    const publicUrl = await storage.upload(
+      outputFilename,
+      translatedImageBuffer
+    );
 
     return publicUrl;
   }
