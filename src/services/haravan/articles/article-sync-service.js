@@ -3,11 +3,7 @@ import HaravanAPI from "services/clients/haravan-client/index.js";
 import SyncHelper from "services/haravan/utils/sync-helper.js";
 import { getOpenAICompatibleModel } from "services/utils/llm-helper.js";
 import ImageTranslationService from "services/media/image-translation-service.js";
-import { TRANSLATION_PROMPTS } from "src/constants/ai-proxy";
-
-const AI_MODELS = {
-  GEMINI_FLASH_LITE: "gemini-2.5-flash-lite"
-};
+import { TRANSLATION_PROMPTS, AI_MODELS } from "src/constants/ai-proxy";
 
 export default class ArticleSyncService {
   static CONFIG = {
@@ -53,7 +49,7 @@ export default class ArticleSyncService {
     while (attempt < maxRetries) {
       try {
         const provider = await getOpenAICompatibleModel(this.env);
-        const model = provider(AI_MODELS.GEMINI_FLASH_LITE);
+        const model = provider(AI_MODELS.GEMINI_2_5_FLASH_LITE);
         const { text: content } = await generateText({
           model,
           prompt
