@@ -1,9 +1,9 @@
 import BaseConnector from "services/clients/haravan-client/base-connector";
 
 class ArticleConnector extends BaseConnector {
-  constructor(accessToken) {
+  constructor(accessToken, env = {}) {
     super(accessToken);
-    this.baseUrl = "https://apis.haravan.com/web";
+    this.baseUrl = env?.HARAVAN_API_BASE_URL + "/web";
   }
 
   async getArticles(blogId, options = {}) {
@@ -15,11 +15,15 @@ class ArticleConnector extends BaseConnector {
   }
 
   async createArticle(blogId, articleData) {
-    return this.post(`/blogs/${blogId}/articles.json`, { article: articleData });
+    return this.post(`/blogs/${blogId}/articles.json`, {
+      article: articleData
+    });
   }
 
   async updateArticle(blogId, articleId, articleData) {
-    return this.put(`/blogs/${blogId}/articles/${articleId}.json`, { article: { id: articleId, ...articleData } });
+    return this.put(`/blogs/${blogId}/articles/${articleId}.json`, {
+      article: { id: articleId, ...articleData }
+    });
   }
 
   async deleteArticle(blogId, articleId) {

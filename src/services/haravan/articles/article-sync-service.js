@@ -1,7 +1,12 @@
+import { generateText } from "ai";
 import HaravanAPI from "services/clients/haravan-client/index.js";
 import SyncHelper from "services/haravan/utils/sync-helper.js";
+import { getOpenAICompatibleModel } from "services/utils/llm-helper.js";
+import ImageTranslationService from "services/media/image-translation-service.js";
 
-const AI_PROXY_URL = "https://aiproxy.jemmia.vn/v1/chat/completions";
+const AI_MODELS = {
+  GEMINI_FLASH_LITE: "gemini-2.5-flash-lite"
+};
 
 const TRANSLATION_PROMPTS = {
   HTML: "Translate the following HTML content from Vietnamese to English. Requirements: Keep the entire HTML structure unchanged (tags, attributes, formatting, indentation). Only translate visible Vietnamese text content into English. Do NOT modify tag names, attribute names, attribute values, class names, IDs, inline styles, scripts, or URLs. Do NOT add, remove, or reorder any elements. Preserve special characters, entities, and whitespace. If text is already in English, keep it as is. Return ONLY the final translated HTML. Do not include explanations, comments, or any extra text. HTML to translate: ",
@@ -10,31 +15,27 @@ const TRANSLATION_PROMPTS = {
 
 export default class ArticleSyncService {
   static CONFIG = {
-    FETCH_LIMIT: 50,          // Articles per page
+    FETCH_LIMIT: 50, // Articles per page
     SYNC_THRESHOLD_MS: 600000, // 10 min - VI must be newer than EN by this to trigger sync
-    RECONCILE_BATCH_SIZE: 15  // Parallel processing batch size
+    RECONCILE_BATCH_SIZE: 15 // Parallel processing batch size
   };
 
   static BLOG_ID_MAP = {
     1001010235: "1001036523", // Stone
-    1001010234: "1001036524",//  Wedding Handbook
-    1001010233: "1001036525",//  Jewellery Knowledge
-    1001010232: "1001036526",//  Gold
-    1001010230: "1001036527",//  Lifestyle
-    1000951114: "1001036528",//  You may like
-    1000951111: "1001036529",//  Latest
-    1000951110: "1001036530",//  Trending
-    1000950161: "1001036531",//  Events
-    1000950159: "1001036532",//  Useful Information
-    1000950158: "1001036533",//  Recruitment
-    1000950163: "1001036534",//  Promotion
-    1000950160: "1001036535",//  Diamond Knowledge
+    1001010234: "1001036524", //  Wedding Handbook
+    1001010233: "1001036525", //  Jewellery Knowledge
+    1001010232: "1001036526", //  Gold
+    1001010230: "1001036527", //  Lifestyle
+    1000951114: "1001036528", //  You may like
+    1000951111: "1001036529", //  Latest
+    1000951110: "1001036530", //  Trending
+    1000950161: "1001036531", //  Events
+    1000950159: "1001036532", //  Useful Information
+    1000950158: "1001036533", //  Recruitment
+    1000950163: "1001036534", //  Promotion
+    1000950160: "1001036535", //  Diamond Knowledge
     1000634955: "1001036536" //  Press
   };
-
-  static SKIP_TITLES = [
-    "Đá Jasper: Nguồn gốc, ý nghĩa phong thủy & giá bán 2026"
-  ];
 
   constructor(env) {
     this.env = env;
@@ -49,41 +50,18 @@ export default class ArticleSyncService {
     const prompt = isHtml
       ? TRANSLATION_PROMPTS.HTML + text
       : TRANSLATION_PROMPTS.TEXT + text;
-    const AI_PROXY_TOKEN = await this.env.AI_PROXY_TOKEN_SECRET.get();
 
     const maxRetries = 3;
     let attempt = 0;
 
     while (attempt < maxRetries) {
       try {
-        const response = await fetch(AI_PROXY_URL, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${AI_PROXY_TOKEN}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            model: "gemini-2.5-flash-lite",
-            messages: [{ role: "user", content: prompt }]
-          })
+        const provider = await getOpenAICompatibleModel(this.env);
+        const model = provider(AI_MODELS.GEMINI_FLASH_LITE);
+        const { text: content } = await generateText({
+          model,
+          prompt
         });
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`AI Proxy error: ${response.status} - ${errorText}`);
-        }
-
-        const data = await response.json();
-        if (!data.choices || !data.choices[0]?.message) {
-          throw new Error(`Invalid AI response: ${JSON.stringify(data)}`);
-        }
-
-        const content =
-          data.choices[0].message.content ||
-          data.choices[0].message.reasoning_content;
-        if (!content) {
-          throw new Error(`AI returned empty content: ${JSON.stringify(data)}`);
-        }
 
         return content.trim();
       } catch (error) {
@@ -145,14 +123,10 @@ export default class ArticleSyncService {
     );
 
     viArticles = viArticles.filter(
-      (a) =>
-        !ArticleSyncService.SKIP_TITLES.includes(a.title) &&
-        !a.title.toLowerCase().includes("ladipage")
+      (a) => !a.title.toLowerCase().includes("ladipage")
     );
     enArticles = enArticles.filter(
-      (a) =>
-        !ArticleSyncService.SKIP_TITLES.includes(a.title) &&
-        !a.title.toLowerCase().includes("ladipage")
+      (a) => !a.title.toLowerCase().includes("ladipage")
     );
 
     const viGroups = {};
@@ -198,9 +172,56 @@ export default class ArticleSyncService {
     return { matchedPairs, missingArticles, orphanEnArticles };
   }
 
+  getImages(html) {
+    if (!html) return [];
+    const images = [];
+    const imgRegex = /<img\s+[^>]*src=["']([^"']+)["'][^>]*>/gi;
+    let match;
+    while ((match = imgRegex.exec(html)) !== null) {
+      images.push(match[1]);
+    }
+    return images;
+  }
+
+  async translateImagesInHtml(html, imageService) {
+    if (!html) return html;
+    const images = this.getImages(html);
+    if (images.length === 0) return html;
+
+    let updatedHtml = html;
+    const batchSize = ArticleSyncService.CONFIG.RECONCILE_BATCH_SIZE;
+
+    for (let i = 0; i < images.length; i += batchSize) {
+      const batch = images.slice(i, i + batchSize);
+      await Promise.all(
+        batch.map(async (src) => {
+          let fullSrc = src.startsWith("//") ? "https:" + src : src;
+          const result = await imageService.translateImage(fullSrc, this.env);
+          if (result.success && result.isTranslated) {
+            updatedHtml = updatedHtml.replace(
+              new RegExp(src.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g"),
+              result.newUrl
+            );
+            return true;
+          }
+          return false;
+        })
+      );
+    }
+    return updatedHtml;
+  }
+
+  async translateFeaturedImage(src, imageService) {
+    if (!src) return null;
+    let fullSrc = src.startsWith("//") ? "https:" + src : src;
+    const result = await imageService.translateImage(fullSrc, this.env);
+    return result.success && result.isTranslated ? result.newUrl : src;
+  }
+
   async sync() {
     const HRV_API_KEY = await this.env.HARAVAN_TOKEN_SECRET.get();
-    const haravanClient = new HaravanAPI(HRV_API_KEY);
+    const haravanClient = new HaravanAPI(HRV_API_KEY, this.env);
+    const imageService = new ImageTranslationService();
 
     const now = new Date();
     const yesterday = new Date(now);
@@ -229,11 +250,17 @@ export default class ArticleSyncService {
 
         if (!structureSync || sourceUpdated) {
           const enTitle = await this.translateText(pair.vi.title, false);
-          const enBody = await this.translateText(pair.vi.body_html, true);
+          let enBody = await this.translateText(pair.vi.body_html, true);
+          enBody = await this.translateImagesInHtml(enBody, imageService);
+          const featuredImage = await this.translateFeaturedImage(
+            pair.vi.image?.src,
+            imageService
+          );
           await haravanClient.article.updateArticle(enId, pair.en.id, {
             title: enTitle,
             body_html: enBody,
-            author: pair.vi.author
+            author: pair.vi.author,
+            image: featuredImage ? { src: featuredImage } : null
           });
         }
       }
@@ -244,12 +271,18 @@ export default class ArticleSyncService {
 
       for (const vi of missingArticles) {
         const enTitle = await this.translateText(vi.title, false);
-        const enBody = await this.translateText(vi.body_html, true);
+        let enBody = await this.translateText(vi.body_html, true);
+        enBody = await this.translateImagesInHtml(enBody, imageService);
+        const featuredImage = await this.translateFeaturedImage(
+          vi.image?.src,
+          imageService
+        );
         await haravanClient.article.createArticle(enId, {
           title: enTitle,
           body_html: enBody,
           author: vi.author,
-          published_at: vi.published_at
+          published_at: vi.published_at,
+          image: featuredImage ? { src: featuredImage } : null
         });
       }
     }
