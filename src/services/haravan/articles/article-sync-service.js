@@ -3,10 +3,7 @@ import HaravanAPI from "services/clients/haravan-client/index.js";
 import SyncHelper from "services/haravan/utils/sync-helper.js";
 import { getOpenAICompatibleModel } from "services/utils/llm-helper.js";
 import ImageTranslationService from "services/media/image-translation-service.js";
-
-const AI_MODELS = {
-  GEMINI_FLASH_LITE: "gemini-2.5-flash-lite"
-};
+import { TRANSLATION_PROMPTS, AI_MODELS } from "src/constants/ai-proxy";
 
 const TRANSLATION_PROMPTS = {
   HTML: "Translate the following HTML content from Vietnamese to English. Requirements: Keep the entire HTML structure unchanged (tags, attributes, formatting, indentation). Only translate visible Vietnamese text content into English. Do NOT modify tag names, attribute names, attribute values, class names, IDs, inline styles, scripts, or URLs. Do NOT add, remove, or reorder any elements. Preserve special characters, entities, and whitespace. If text is already in English, keep it as is. Return ONLY the final translated HTML. Do not include explanations, comments, or any extra text. HTML to translate: ",
@@ -57,7 +54,7 @@ export default class ArticleSyncService {
     while (attempt < maxRetries) {
       try {
         const provider = await getOpenAICompatibleModel(this.env);
-        const model = provider(AI_MODELS.GEMINI_FLASH_LITE);
+        const model = provider(AI_MODELS.GEMINI_2_5_FLASH_LITE);
         const { text: content } = await generateText({
           model,
           prompt
