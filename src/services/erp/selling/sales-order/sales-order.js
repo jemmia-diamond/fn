@@ -18,6 +18,7 @@ import { ERPR2StorageService } from "services/r2-object/erp/erp-r2-storage-servi
 import HaravanAPI from "services/clients/haravan-client";
 import { retryQuery } from "src/services/utils/retry-utils";
 import { isTestOrder } from "services/utils/order-intercepter";
+import { sleep } from "services/utils/sleep";
 
 dayjs.extend(utc);
 
@@ -162,8 +163,8 @@ export default class SalesOrderService {
       try {
         const orderData = message.body;
         await salesOrderService.sendNotificationToLark(orderData, true);
-        await salesOrderService.updateSalesOrderPaidAmount(orderData.name);
-        await salesOrderService.syncHaravanFinancialStatus(orderData);
+        const updatedOrderData = await salesOrderService.updateSalesOrderPaidAmount(orderData.name);
+        await salesOrderService.syncHaravanFinancialStatus(updatedOrderData || orderData);
       } catch (error) {
         Sentry.captureException(error);
       }
@@ -964,8 +965,7 @@ export default class SalesOrderService {
   }
 
   async syncHaravanFinancialStatus(salesOrderData) {
-    const grandTotal = parseFloat(salesOrderData.grand_total) - parseFloat(salesOrderData.return_amount || 0);
-    if (Math.abs(grandTotal - salesOrderData.paid_amount) <= 1000) {
+    if (Math.abs(salesOrderData.grand_total - salesOrderData.paid_amount) <= 1000) {
       const HRV_API_KEY = await this.env.HARAVAN_TOKEN_SECRET.get();
       if (!HRV_API_KEY) {
         return;
@@ -1123,5 +1123,39 @@ export default class SalesOrderService {
     }
 
     return totalAllocated;
+  }
+
+  static async cronUpdateTechnicalSalesOrdersPaidAmount(env) {
+    const salesOrderService = new SalesOrderService(env);
+    const sql = `
+      SELECT name 
+      FROM \`tabSales Order\` so
+      WHERE so.owner = 'tech@jemmia.vn' and so.grand_total > 0 and so.cancelled_status = 'Uncancelled' 
+        AND so.haravan_created_at >= '2026-01-01 00:00:00'
+        AND NOT EXISTS (
+          SELECT 1 
+          FROM \`tabPayment Entry Reference\` child
+          WHERE child.parent = so.name 
+            AND child.parentfield = 'group_payment_entries'
+        ) 
+      ORDER BY so.haravan_created_at DESC
+    `;
+
+    const orders = await salesOrderService.frappeClient.executeSQL(sql);
+
+    if (Array.isArray(orders) && orders.length > 0) {
+      for (const order of orders) {
+        try {
+          const orderName = typeof order === "object" ? order.name : (Array.isArray(order) ? order[0] : order);
+          if (orderName) {
+            await salesOrderService.updateSalesOrderPaidAmount(orderName);
+
+            await sleep(1000);
+          }
+        } catch (error) {
+          Sentry.captureException(error);
+        }
+      }
+    }
   }
 }
