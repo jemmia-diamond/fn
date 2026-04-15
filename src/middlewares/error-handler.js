@@ -14,10 +14,10 @@ export default async (c, next) => {
 
     // If it's already an HTTPException, let it bubble up
     if (error instanceof HTTPException) {
-      throw error;
+      return error.getResponse();
     }
 
     // Return generic 500 error to client
-    return c.json({ error: "Internal server error" }, 500);
+    return c.json({ error: error.message ?? "Internal server error" }, 500);
   }
 };
