@@ -20,13 +20,11 @@ import loggrageLogger from "services/custom-logger";
 const app = new Hono()
   // Add an onError hook to report unhandled exceptions to Sentry.
   .onError((err, c) => {
-    // Report _all_ unhandled errors.
-    // Sentry.captureException(err);
+    // Handle known HTTP Exceptions
     if (err instanceof HTTPException) {
+      Sentry.captureException(err);
       return err.getResponse();
     }
-    // Or just report errors which are not instances of HTTPException
-    Sentry.captureException(err);
     return c.json({ error: "Internal server error" }, 500);
   });
 
