@@ -52,7 +52,7 @@ export default class DiamondCollectService {
     }
 
     const where = "(discount_type,eq,percent)~and(discount_value,gt,0)";
-    let collections = await nocoClient.listRecords(NOCODB_TABLES.HARAVAN_COLLECTIONS, {
+    let collections = await nocoClient.listRecords(NOCODB_TABLES.MARKETING.HARAVAN_COLLECTIONS, {
       where: where,
       limit: 1000
     });
@@ -63,7 +63,7 @@ export default class DiamondCollectService {
     if (missingPercents.length > 0) {
       await this._ensureMissingCollectionsExist(nocoClient, missingPercents);
 
-      collections = await nocoClient.listRecords(NOCODB_TABLES.HARAVAN_COLLECTIONS, {
+      collections = await nocoClient.listRecords(NOCODB_TABLES.MARKETING.HARAVAN_COLLECTIONS, {
         where: where,
         limit: 1000
       });
@@ -81,10 +81,10 @@ export default class DiamondCollectService {
     }));
 
     try {
-      const createdCollections = await nocoClient.createRecords(NOCODB_TABLES.HARAVAN_COLLECTIONS, newRecords);
+      const createdCollections = await nocoClient.createRecords(NOCODB_TABLES.MARKETING.HARAVAN_COLLECTIONS, newRecords);
       const createdCollectionIds = (createdCollections || []).map(record => record.id);
 
-      const createdCollectionsList = await nocoClient.listRecords(NOCODB_TABLES.HARAVAN_COLLECTIONS, {
+      const createdCollectionsList = await nocoClient.listRecords(NOCODB_TABLES.MARKETING.HARAVAN_COLLECTIONS, {
         where: `(id,in,${createdCollectionIds.join(",")})`
       });
 
@@ -96,7 +96,7 @@ export default class DiamondCollectService {
     } catch (error) {
       Sentry.captureException(error, {
         tags: {
-          tableId: NOCODB_TABLES.HARAVAN_COLLECTIONS,
+          tableId: NOCODB_TABLES.MARKETING.HARAVAN_COLLECTIONS,
           tableName: "haravan_collections"
         }
       });
@@ -116,7 +116,7 @@ export default class DiamondCollectService {
             "type": "records.after.update",
             "version": "v3",
             "data": {
-              "table_id": NOCODB_TABLES.HARAVAN_COLLECTIONS,
+              "table_id": NOCODB_TABLES.MARKETING.HARAVAN_COLLECTIONS,
               "table_name": "haravan_collections",
               "rows": [col]
             }
@@ -126,7 +126,7 @@ export default class DiamondCollectService {
     } catch (error) {
       Sentry.captureException(error, {
         tags: {
-          tableId: NOCODB_TABLES.HARAVAN_COLLECTIONS,
+          tableId: NOCODB_TABLES.MARKETING.HARAVAN_COLLECTIONS,
           tableName: "haravan_collections"
         }
       });
@@ -180,7 +180,7 @@ export default class DiamondCollectService {
         const entriesLimit = 1000;
 
         while (true) {
-          const relatedCollections = await nocoClient.listRecords(NOCODB_TABLES.DIAMOND_HARAVAN_COLLECTIONS, {
+          const relatedCollections = await nocoClient.listRecords(NOCODB_TABLES.SUPPLY.DIAMOND_HARAVAN_COLLECTIONS, {
             where,
             limit: entriesLimit,
             offset: entriesOffset
@@ -277,7 +277,7 @@ export default class DiamondCollectService {
 
       if (!isTargetCollection && !isDefaultCollection) {
         console.warn("Removing discount collection for diamond:", diamond.id, entry.haravan_collection_id);
-        await nocoClient.deleteRecords(NOCODB_TABLES.DIAMOND_HARAVAN_COLLECTIONS, [{
+        await nocoClient.deleteRecords(NOCODB_TABLES.SUPPLY.DIAMOND_HARAVAN_COLLECTIONS, [{
           diamond_id: diamond.id,
           haravan_collection_id: entry.haravan_collection_id
         }]);
@@ -294,7 +294,7 @@ export default class DiamondCollectService {
     if (!exists) {
       try {
         console.warn("Adding discount collection for diamond:", diamond.id, targetNocodbCollectionId);
-        await nocoClient.createRecords(NOCODB_TABLES.DIAMOND_HARAVAN_COLLECTIONS, {
+        await nocoClient.createRecords(NOCODB_TABLES.SUPPLY.DIAMOND_HARAVAN_COLLECTIONS, {
           diamonds: { id: diamond.id },
           haravan_collections: { id: targetNocodbCollectionId }
         });

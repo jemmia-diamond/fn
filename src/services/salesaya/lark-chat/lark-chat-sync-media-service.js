@@ -135,8 +135,8 @@ export default class LarkChatSyncMediaService {
 
         const links = [...imageLinks, ...fileLinks].join(", ");
         if (uniqueCodes.length === 1) {
-          const designImageTableId = NOCODB_TABLES.DESIGN_IMAGES;
-          const designTableId = NOCODB_TABLES.DESIGNS;
+          const designImageTableId = NOCODB_TABLES.MARKETING.DESIGN_IMAGES;
+          const designTableId = NOCODB_TABLES.SUPPLY.DESIGNS;
 
           const rowRes = await nocodb.listRecords(designImageTableId, {
             where: `(design_code,eq,${uniqueCodes[0]})`,
