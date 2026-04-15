@@ -30,7 +30,7 @@ export default class SalesOrderItemService {
 
     // Check if the item is a diamond
     if (isGiaItem) {
-      const record = await this._findRecordInTable(NOCODB_TABLES.DIAMONDS, "variant_id", variant_id);
+      const record = await this._findRecordInTable(NOCODB_TABLES.SUPPLY.DIAMONDS, "variant_id", variant_id);
       const policy = record
         ? this.processDiamondPolicy(record.policy_rules, real_order_date, defaultPolicy)
         : defaultPolicy;
@@ -44,7 +44,7 @@ export default class SalesOrderItemService {
     }
 
     // Check if the item has serial number
-    const record = await this._findRecordInTable(NOCODB_TABLES.SERIALS, "serial_number", serialNumber);
+    const record = await this._findRecordInTable(NOCODB_TABLES.SUPPLY.SERIALS, "serial_number", serialNumber);
     const policy = record ? this.processSerialPolicy(record.policy) : defaultPolicy;
     return this.updatePolicy(name, policy);
   }
