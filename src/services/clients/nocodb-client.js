@@ -43,7 +43,7 @@ export default class NocoDBClient {
   async #getBaseUrl() {
     if (this.#baseUrl) return this.#baseUrl;
 
-    const url = this.#env.NOCODB_WORKPLACE_BASE_URL || "https://app.nocodb.com";
+    const url = this.#env.NOCODB_WORKSPACE_BASE_URL || "https://app.nocodb.com";
     this.#baseUrl = url.replace(/\/$/, "");
     return this.#baseUrl;
   }
