@@ -10,6 +10,7 @@ export default class InventoryCheckNotificationController {
     } catch (error) {
       console.warn(error);
       Sentry.captureException(error);
+      return ctx.json({ message: e.message, status: 500 });
     }
   }
 }
