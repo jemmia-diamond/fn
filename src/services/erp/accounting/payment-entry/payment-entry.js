@@ -20,7 +20,8 @@ const REFERENCE_SCHEMA = {
   order_number: (ref) => ref.order_number,
   balance: (ref) => ref.balance,
   allocated_amount: (ref) => ref.allocated_amount,
-  outstanding_amount: (ref) => ref.outstanding_amount
+  outstanding_amount: (ref) => ref.outstanding_amount,
+  unallocated_amount: (ref) => ref.unallocated_amount
 };
 
 export default class PaymentEntryService {
