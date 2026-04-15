@@ -21,12 +21,12 @@ const app = new Hono()
   // Add an onError hook to report unhandled exceptions to Sentry.
   .onError((err, c) => {
     // Report _all_ unhandled errors.
-    Sentry.captureException(err);
+    // Sentry.captureException(err);
     if (err instanceof HTTPException) {
       return err.getResponse();
     }
     // Or just report errors which are not instances of HTTPException
-    // Sentry.captureException(err);
+    Sentry.captureException(err);
     return c.json({ error: "Internal server error" }, 500);
   });
 
