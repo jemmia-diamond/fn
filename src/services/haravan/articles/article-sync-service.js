@@ -101,8 +101,10 @@ export default class ArticleSyncService {
   getSignature(article) {
     const time = SyncHelper.normalizeDate(article.published_at) || "no-time";
     const imgPart = article.image
-      ? (article.image.src.match(/([a-f0-9]{32})/i)?.[1] ||
-          article.image.src.split("/").pop().split("?")[0]).replace(/^en_/, "")
+      ? (
+        article.image.src.match(/([a-f0-9]{32})/i)?.[1] ||
+          article.image.src.split("/").pop().split("?")[0]
+      ).replace(/^en_/, "")
       : "no-img";
     return `${time}|${imgPart}`;
   }
