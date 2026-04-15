@@ -2,11 +2,17 @@ import axios from "axios";
 import axiosRetry from "axios-retry";
 
 const RETRY_CONFIG = {
-  retries: 2,
-  retryDelay: axiosRetry.exponentialDelay,
-  retryCondition: (error) =>
-    axiosRetry.isNetworkOrIdempotentRequestError(error) ||
-    error.response?.status >= 500
+  retries: 3,
+  retryDelay: (retryCount, error) => {
+    return axiosRetry.exponentialDelay(retryCount, error, 1000);
+  },
+  shouldResetTimeout: true,
+  retryCondition: (error) => {
+    const isNetworkError = axiosRetry.isNetworkOrIdempotentRequestError(error);
+    const isRetryableStatus = (error.response?.status ?? 0) >= 500 || error.response.status === 401 || error.response.status === 404;
+
+    return isNetworkError || isRetryableStatus;
+  }
 };
 
 export default class NocoDBClient {
