@@ -107,7 +107,8 @@ export default class PaymentEntryService {
       haravan_order_name: primaryOrder?.order_number || "Đơn hàng cọc",
       transfer_status: Constants.TRANSFER_STATUS.PENDING,
       gateway: paymentEntry.gateway,
-      payment_references
+      payment_references,
+      refund_amount: paymentEntry.refund_amount
     };
 
     const result = await this.manualPaymentService.createManualPayment(data);
@@ -156,7 +157,8 @@ export default class PaymentEntryService {
       customer_phone_order_later: customer_phone_number,
       customer_name_order_later: customer_name,
       payment_references,
-      admin_editing: paymentEntry.admin_editing
+      admin_editing: paymentEntry.admin_editing,
+      refund_amount: paymentEntry.refund_amount
     };
 
     const result = await this.createQRService.handlePostQr(qrGeneratorPayload);
