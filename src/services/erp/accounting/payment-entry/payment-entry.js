@@ -278,7 +278,8 @@ export default class PaymentEntryService {
       transfer_status,
       gateway: paymentEntry.gateway,
       payment_entry_name: paymentEntry.name,
-      shipping_code: paymentEntry?.shipping_code
+      shipping_code: paymentEntry?.shipping_code,
+      refund_amount: paymentEntry.refund_amount
     };
 
     const existingRefs = this._normalizeReferences(existingPayment.payment_references);
@@ -405,6 +406,7 @@ export default class PaymentEntryService {
     }
 
     let updateQr = qrPayment;
+    const refund_amount = paymentEntry.refund_amount;
     if (qrPayment.haravan_order_number === "ORDERLATER" && primaryOrder) {
       updateQr = await this.updateOrderLater(
         qrPaymentId, {
@@ -414,7 +416,8 @@ export default class PaymentEntryService {
           haravan_order_total_price: primaryOrder?.total_amount || null,
           customer_name: paymentEntry.customer_details.name,
           customer_phone_number: paymentEntry.customer_details.phone || paymentEntry.customer_details.mobile_no,
-          payment_references
+          payment_references,
+          refund_amount
         }
       );
       if (!updateQr) {
@@ -436,7 +439,7 @@ export default class PaymentEntryService {
     if (existingRefs !== newRefs) {
       updateQr = await this.db.qrPaymentTransaction.update({
         where: { id: qrPaymentId },
-        data: { payment_references }
+        data: { payment_references, refund_amount }
       });
     }
 
