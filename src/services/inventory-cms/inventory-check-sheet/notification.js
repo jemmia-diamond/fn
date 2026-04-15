@@ -7,6 +7,7 @@ import { readItems } from "@directus/sdk";
 import LarksuiteService from "services/larksuite/lark";
 import * as Sentry from "@sentry/cloudflare";
 import { TIMEZONE_VIETNAM } from "src/constants";
+import { retryRequest } from "services/utils/retry-utils";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -107,13 +108,13 @@ export default class CheckSheetNotificationService {
 
   static async sendNotification(env, chatId, messageText) {
     const larkClient = await LarksuiteService.createClientV2(env);
-    await larkClient.im.message.create({
+    await retryRequest(() => larkClient.im.message.create({
       params: { receive_id_type: "chat_id" },
       data: {
         receive_id: chatId,
         msg_type: "text",
         content: JSON.stringify({ text: messageText })
       }
-    });
+    }));
   }
 }

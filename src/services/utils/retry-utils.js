@@ -4,6 +4,7 @@ export const retryQuery = async (queryFn, retries = 3, delay = 1000) => {
   } catch (error) {
     // Retry on error code 58000 (Internal Error) or timeout/handshake issues
     const errorMessage = error?.message?.toLowerCase() || "";
+    const statusCode = error?.status || error?.response?.status;
     const shouldRetry = retries > 0 && (
       error?.code === "58000" ||
       errorMessage.includes("58000") ||
@@ -13,7 +14,12 @@ export const retryQuery = async (queryFn, retries = 3, delay = 1000) => {
       errorMessage.includes("bad gateway") ||
       errorMessage.includes("502") ||
       errorMessage.includes("503") ||
-      errorMessage.includes("invalid array buffer length")
+      errorMessage.includes("invalid array buffer length") ||
+      statusCode === 400 ||
+      statusCode === 429 ||
+      statusCode === 500 ||
+      statusCode === 502 ||
+      statusCode === 503
     );
 
     if (shouldRetry) {
@@ -22,4 +28,8 @@ export const retryQuery = async (queryFn, retries = 3, delay = 1000) => {
     }
     throw error;
   }
+};
+
+export const retryRequest = async (requestFn, retries = 3, delay = 1000) => {
+  return retryQuery(requestFn, retries, delay);
 };

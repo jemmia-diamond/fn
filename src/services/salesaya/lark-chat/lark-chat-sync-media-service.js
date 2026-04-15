@@ -26,7 +26,7 @@ export default class LarkChatSyncMediaService {
     this.appToken = TABLES.SALESAYA_MEDIA.app_token;
     this.tableId = TABLES.SALESAYA_MEDIA.table_id;
     this.workplaceBaseId = this.env.NOCODB_MARKETING_BASE_ID;
-    this.workplaceBaseUrl = this.env.NOCODB_WORKPLACE_BASE_URL;
+    this.workplaceBaseUrl = this.env.NOCODB_WORKSPACE_BASE_URL;
     this.fetcher = new LarkChatResourceFetcher(env, larkAxiosClient);
     this.uploader = new LarkChatMediaUploader(`${this.env.SALESAYA_API_BASE_URL}/files/upload`);
     this.parser = new LarkChatParser(larkSdkClient);
