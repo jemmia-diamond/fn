@@ -8,6 +8,7 @@ export default class InventoryCheckNotificationController {
       const result = await InventoryCms.CheckSheetNotificationService.processInventoryCheck(data?.payload, ctx.env);
       return ctx.json(result);
     } catch (error) {
+      console.warn(`InventoryCheckNotification failed at ${new Date()}`);
       console.warn(error);
       Sentry.captureException(error);
     }
