@@ -8,14 +8,14 @@ export default async (c, next) => {
     // Don't send 404 responses to Sentry
     if (c.res.status === 404) { return; }
   } catch (error) {
+    Sentry.captureException(error, {
+      fingerprint: [error.name || "Error", error.message || "Unknown error"]
+    });
+
     // If it's already an HTTPException, let it bubble up
     if (error instanceof HTTPException) {
       throw error;
     }
-
-    Sentry.captureException(error, {
-      fingerprint: [error.name || "Error", error.message || "Unknown error"]
-    });
 
     // Return generic 500 error to client
     return c.json({ error: "Internal server error" }, 500);
