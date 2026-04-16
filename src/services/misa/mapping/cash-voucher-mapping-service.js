@@ -71,7 +71,7 @@ export default class CashVoucherMappingService {
       account_object_name: customerName,
       account_object_address: customerAddress,
       account_object_code: customerCode,
-      journal_memo: `Thu tiền đơn hàng ${orderNumbers}`,
+      journal_memo: `${Misa.Utils.getRefundPrefix(v.refund_amount)}Thu tiền đơn hàng ${orderNumbers}`,
       employee_code: v.payment_references?.length > 1 ? null : employee_code,
       employee_name: v.payment_references?.length > 1 ? null : employee_name,
       created_by: "Tự động hóa",
@@ -110,11 +110,11 @@ export default class CashVoucherMappingService {
   }
 
   static async _craftingDetail(references, v, orderNumbers, debitAccount, creditInfo, customerCode, customerName, db, env) {
-    const createDetailItem = (orderNumber, amount, index) => ({
+    const createDetailItem = (orderNumber, amount, index, isRefund = false) => ({
       sort_order: index,
       amount_oc: Number(amount),
       amount: Number(amount),
-      description: `Thu tiền đơn hàng ${orderNumber}`,
+      description: isRefund ? `Hoàn tiền ${orderNumber}` : `Thu tiền đơn hàng ${orderNumber}`,
       debit_account: debitAccount,
       credit_account: creditInfo.credit_account || null,
       organization_unit_name: creditInfo.unit_name || null,
@@ -129,12 +129,18 @@ export default class CashVoucherMappingService {
     }
 
     const dbInstance = db || Database.instance(env);
+    const refundedOrderNumber = [];
     const details = await Promise.all(
       references.map(async (ref, idx) => {
         const orderNumber = await Misa.Utils.getJournalNote(dbInstance, null, null, ref?.haravan_order_id, ref?.order_number, ref?.haravan_ref_order_id);
+        if (ref?.unallocated_amount > 0) refundedOrderNumber.push(orderNumber);
         return createDetailItem(orderNumber, ref?.allocated_amount, idx);
       })
     );
+
+    if (v.refund_amount && v.refund_amount > 0) {
+      details.push(createDetailItem(refundedOrderNumber.join(", "), v.refund_amount, details.length, true));
+    }
 
     return details;
   }
