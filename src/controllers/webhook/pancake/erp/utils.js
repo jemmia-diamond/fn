@@ -2,10 +2,11 @@ export const shouldReceiveWebhook = (body) => {
   if (body?.event_type !== "messaging") {
     return false;
   }
+  const pageId = body?.page_id;
+  const senderId = body?.data?.message?.from?.id;
 
-  const pageCustomerId = body?.data?.message?.from?.page_customer_id;
   // Ignore message from admin
-  if (!pageCustomerId) {
+  if (pageId == senderId) {
     return false;
   }
 
@@ -14,7 +15,6 @@ export const shouldReceiveWebhook = (body) => {
     return false;
   }
 
-  const pageId = body?.page_id;
   if (!pageId || pageId.trim() === "") {
     return false;
   }
