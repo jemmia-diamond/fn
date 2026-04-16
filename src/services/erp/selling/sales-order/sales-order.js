@@ -1158,4 +1158,195 @@ export default class SalesOrderService {
       }
     }
   }
+
+  static async cronBackfillSalesOrderItemPromotions(env) {
+    const salesOrderService = new SalesOrderService(env);
+    const sql = `
+      SELECT DISTINCT parent AS name
+      FROM \`tabSales Order Item\`
+      WHERE creation >= '2026-01-01 00:00:00'
+        AND (new_promotions IS NULL OR new_promotions = '' OR new_promotions = '[]')
+        AND (
+          IFNULL(promotion_1, '') != '' OR 
+          IFNULL(promotion_2, '') != '' OR 
+          IFNULL(promotion_3, '') != '' OR 
+          IFNULL(promotion_4, '') != '' OR 
+          IFNULL(promotion_5, '') != ''
+        )
+    `;
+
+    const orders = await salesOrderService.frappeClient.executeSQL(sql);
+
+    if (Array.isArray(orders) && orders.length > 0) {
+      for (const order of orders) {
+        try {
+          const orderName = typeof order === "object" ? order.name : (Array.isArray(order) ? order[0] : order);
+          if (orderName) {
+            const so = await salesOrderService.frappeClient.getDoc("Sales Order", orderName);
+            if (!so || !so.items) continue;
+
+            let isUpdated = false;
+            const updatedItems = so.items.map(item => {
+              if (!item.new_promotions || item.new_promotions === "" || item.new_promotions === "[]") {
+                const promos = [
+                  item.promotion_1,
+                  item.promotion_2,
+                  item.promotion_3,
+                  item.promotion_4,
+                  item.promotion_5
+                ].filter(p => p && p.trim() !== "");
+
+                if (promos.length > 0) {
+                  item.new_promotions = JSON.stringify(promos);
+                  isUpdated = true;
+                }
+              }
+              return item;
+            });
+
+            if (isUpdated) {
+              await salesOrderService.frappeClient.update({
+                doctype: "Sales Order",
+                name: so.name,
+                items: updatedItems
+              });
+              await sleep(1000);
+            }
+          }
+        } catch (error) {
+          Sentry.captureException(error);
+        }
+      }
+    }
+  }
+
+  static async cronBackfillSalesOrderItemPromotionsFromRefOrders(env) {
+    const salesOrderService = new SalesOrderService(env);
+    const sql = `
+      SELECT DISTINCT item.parent AS name
+      FROM \`tabSales Order Item\` item
+      JOIN \`tabSales Order\` so ON item.parent = so.name
+      WHERE item.creation >= '2026-01-01 00:00:00'
+        AND (item.new_promotions IS NULL OR item.new_promotions = '' OR item.new_promotions = '[]')
+        AND so.haravan_ref_order_id IS NOT NULL 
+        AND so.haravan_ref_order_id != ''
+        AND so.haravan_ref_order_id != 'null'
+        AND so.haravan_ref_order_id != '0'
+        AND so.haravan_ref_order_id != 0
+      ORDER BY item.creation DESC
+    `;
+
+    const orders = await salesOrderService.frappeClient.executeSQL(sql);
+
+    if (Array.isArray(orders) && orders.length > 0) {
+      for (const order of orders) {
+        try {
+          const orderName = typeof order === "object" ? order.name : (Array.isArray(order) ? order[0] : order);
+          if (orderName) {
+            const so = await salesOrderService.frappeClient.getDoc("Sales Order", orderName);
+            if (!so || !so.items || !so.haravan_ref_order_id) continue;
+
+            const refOrdersFetch = await salesOrderService.frappeClient.getList("Sales Order", {
+              filters: [["haravan_order_id", "=", String(so.haravan_ref_order_id)]],
+              fields: ["name"]
+            });
+
+            if (!refOrdersFetch || refOrdersFetch.length === 0) continue;
+
+            const refOrders = [];
+            for (const refFetch of refOrdersFetch) {
+              try {
+                const refOrder = await salesOrderService.frappeClient.getDoc("Sales Order", refFetch.name);
+                if (refOrder) refOrders.push(refOrder);
+              } catch (e) {
+                console.warn(`Could not fetch Sales Order ${refFetch.name} for traversal`, e);
+              }
+            }
+
+            const refPromotionsMap = {};
+            for (const refOrder of refOrders) {
+              if (refOrder.items) {
+                for (const item of refOrder.items) {
+                  const hasPromos = item.new_promotions &&
+                                    item.new_promotions !== "" &&
+                                    item.new_promotions !== "[]" &&
+                                    (!Array.isArray(item.new_promotions) || item.new_promotions.length > 0);
+
+                  if (hasPromos) {
+                    const promosToSave = typeof item.new_promotions === "string"
+                      ? item.new_promotions
+                      : JSON.stringify(item.new_promotions);
+
+                    if (item.haravan_variant_id) {
+                      refPromotionsMap[String(item.haravan_variant_id)] = promosToSave;
+                    }
+
+                    // Fallback map by GIA number if available
+                    const giaIdMatch = item.sku?.match(/(GIA\d+)/) || item.variant_title?.match(/(GIA\d+)/);
+                    if (giaIdMatch) {
+                      refPromotionsMap[giaIdMatch[1]] = promosToSave;
+                    }
+
+                    // Fallback map by Serial Number for non-diamonds
+                    if (item.serial_numbers && item.serial_numbers.trim() !== "") {
+                      refPromotionsMap[item.serial_numbers.trim()] = promosToSave;
+                    }
+                  }
+                }
+              }
+            }
+
+            let isUpdated = false;
+            const updatedItems = so.items.map(item => {
+              const isEmpty = !item.new_promotions ||
+                              item.new_promotions === "" ||
+                              item.new_promotions === "[]" ||
+                              (Array.isArray(item.new_promotions) && item.new_promotions.length === 0);
+
+              if (isEmpty) {
+                let matchedPromotions = null;
+
+                // Priority 1: Match exactly by Haravan Variant ID
+                if (item.haravan_variant_id && refPromotionsMap[String(item.haravan_variant_id)]) {
+                  matchedPromotions = refPromotionsMap[String(item.haravan_variant_id)];
+                }
+
+                // Priority 2: Fallback to matching by GIA certificate suffix string
+                if (!matchedPromotions) {
+                  const giaIdMatch = item.sku?.match(/(GIA\d+)/) || item.variant_title?.match(/(GIA\d+)/);
+                  if (giaIdMatch && refPromotionsMap[giaIdMatch[1]]) {
+                    matchedPromotions = refPromotionsMap[giaIdMatch[1]];
+                  }
+                }
+
+                // Priority 3: Fallback to matching exactly by Serial Numbers (for non-diamonds)
+                if (!matchedPromotions && item.serial_numbers && item.serial_numbers.trim() !== "") {
+                  if (refPromotionsMap[item.serial_numbers.trim()]) {
+                    matchedPromotions = refPromotionsMap[item.serial_numbers.trim()];
+                  }
+                }
+
+                if (matchedPromotions) {
+                  item.new_promotions = matchedPromotions;
+                  isUpdated = true;
+                }
+              }
+              return item;
+            });
+
+            if (isUpdated) {
+              await salesOrderService.frappeClient.update({
+                doctype: "Sales Order",
+                name: so.name,
+                items: updatedItems
+              });
+              await sleep(1000);
+            }
+          }
+        } catch (error) {
+          Sentry.captureException(error);
+        }
+      }
+    }
+  }
 }

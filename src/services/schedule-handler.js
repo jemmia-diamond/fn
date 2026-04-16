@@ -29,6 +29,8 @@ export default {
       await new Pancake.TagSyncService(env).syncTags();
       await new Ecommerce.ProductG1PromotionSyncService(env).syncPromotions();
       await new Haravan.Collect.CollectionProductSyncService(env).syncCollectionProducts();
+      // await ERP.Selling.SalesOrderService.cronBackfillSalesOrderItemPromotions(env);
+      // await ERP.Selling.SalesOrderService.cronBackfillSalesOrderItemPromotionsFromRefOrders(env);
       break;
     case "*/5 * * * *": // At every 5th minute
       const batchTime = dayjs().utc();
