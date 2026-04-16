@@ -52,6 +52,7 @@ export default class QrPaymentFetchingService {
       misa_synced_at: true,
       payment_entry_name: true,
       payment_references: true,
+      refund_amount: true,
       haravan_order: {
         select: {
           id: true,
