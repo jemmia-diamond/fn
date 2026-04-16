@@ -354,6 +354,8 @@ export default class ProductService {
         ) design_imgs ON design_imgs.material_color = v.material_color
 
       WHERE p.haravan_product_id = ${productId}
+        AND design_imgs.images IS NOT NULL
+        AND array_length(design_imgs.images, 1) > 0
       GROUP BY
         p.haravan_product_id, p.title, d.design_code, p.handle,
         d.diamond_holder, d.ring_band_type, d.main_stone, d.stone_quantity, p.haravan_product_type,
