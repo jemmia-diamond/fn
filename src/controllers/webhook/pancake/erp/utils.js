@@ -3,9 +3,9 @@ export const shouldReceiveWebhook = (body) => {
     return false;
   }
 
-  const adminId = body?.data?.message?.from?.admin_id;
+  const adminName = body?.data?.message?.from?.admin_name;
   // Ignore message from admin
-  if (adminId) {
+  if (adminName) {
     return false;
   }
 
