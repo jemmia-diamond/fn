@@ -44,6 +44,12 @@ async function getJournalNote(db, payment = null, orderChain = null, haravanOrde
   return finalNote;
 }
 
-export default {
-  getJournalNote
-};
+function getRefundPrefix(refundAmount) {
+  if (!refundAmount || refundAmount <= 0) {
+    return "";
+  }
+  const formattedAmount = Number(refundAmount).toLocaleString("vi-VN");
+  return `Hoàn tiền (${formattedAmount}) `;
+}
+
+export default { getJournalNote, getRefundPrefix };
