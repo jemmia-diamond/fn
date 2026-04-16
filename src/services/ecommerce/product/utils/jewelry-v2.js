@@ -63,7 +63,7 @@ export function buildQueryV2(jsonParams) {
       ) AS item
       WHERE di.design_id = d.id
       GROUP BY di.material_color
-    ) design_imgs ON design_imgs.material_color = v.material_color AND array_length(design_imgs.images, 1) > 0
+    ) design_imgs ON design_imgs.material_color = v.material_color
   `;
 
   if (jsonParams.matched_diamonds) {
@@ -173,6 +173,7 @@ export function buildQueryV2(jsonParams) {
       ${Prisma.raw(warehouseJoinClause)}
     WHERE 1 = 1
       AND p.haravan_product_type != 'Nhẫn Cưới' 
+      AND array_length(design_imgs.images, 1) > 0
       ${filterSql}
     GROUP BY 
       p.haravan_product_id, p.title, d.design_code, p.handle,
@@ -201,6 +202,7 @@ export function buildQueryV2(jsonParams) {
             ${Prisma.raw(warehouseJoinClause)}
         WHERE 1 = 1 
           AND p.haravan_product_type != 'Nhẫn Cưới'
+          AND array_length(design_imgs.images, 1) > 0
           ${filterSql}
         GROUP BY p.haravan_product_id
         ${havingSql}
@@ -245,7 +247,7 @@ export function buildQuerySingleV2(params = {}) {
         'qty_available', v.qty_available,
         'qty_onhand', v.qty_onhand,
         'diamonds', COALESCE(v.diamonds, '[]'::json),
-        'images', design_imgs.images
+        'images', COALESCE(design_imgs.images, ARRAY[]::text[])
       )
     `;
 
@@ -304,12 +306,12 @@ export function buildQuerySingleV2(params = {}) {
         'estimated_gold_weight', v.estimated_gold_weight,
         'qty_available', v.qty_available,
         'qty_onhand', v.qty_onhand,
-        'images', design_imgs.images
+        'images', COALESCE(design_imgs.images, ARRAY[]::text[])
       )
     `;
 
     lateralJoinClause = `
-      INNER JOIN LATERAL (
+      LEFT JOIN LATERAL (
         SELECT *
         FROM ecom.materialized_variants v
         WHERE v.haravan_product_id = p.haravan_product_id

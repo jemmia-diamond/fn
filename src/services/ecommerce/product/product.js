@@ -299,7 +299,7 @@ export default class ProductService {
     const workplaceFullUrl = JEWELRY_IMAGE.WORKPLACE_FULL_URL;
     const cdnUrl = JEWELRY_IMAGE.CDN_URL;
 
-    const result = await this.db.$queryRaw`
+    const result = await retryQuery(() => this.db.$queryRaw`
       SELECT
         CAST(p.haravan_product_id AS INT) AS id,
         p.title,
@@ -328,7 +328,7 @@ export default class ProductService {
 
         ${Prisma.raw(lateralJoinClause)}
 
-        INNER JOIN LATERAL (
+        LEFT JOIN LATERAL (
           SELECT 
             di.material_color,
             COALESCE(
@@ -351,16 +351,18 @@ export default class ProductService {
           ) AS item
           WHERE di.design_id = d.id
           GROUP BY di.material_color
-        ) design_imgs ON design_imgs.material_color = v.material_color AND array_length(design_imgs.images, 1) > 0
+        ) design_imgs ON design_imgs.material_color = v.material_color
 
       WHERE p.haravan_product_id = ${productId}
+        AND design_imgs.images IS NOT NULL
+        AND array_length(design_imgs.images, 1) > 0
       GROUP BY
         p.haravan_product_id, p.title, d.design_code, p.handle,
         d.diamond_holder, d.ring_band_type, d.main_stone, d.stone_quantity, p.haravan_product_type,
         p.max_price, p.min_price, p.max_price_18, p.max_price_14,
         p.qty_onhand, p.has_360, p.estimated_gold_weight,
         p.primary_collection, p.primary_collection_handle
-    `;
+    `);
     return result?.[0] || null;
   }
 }
