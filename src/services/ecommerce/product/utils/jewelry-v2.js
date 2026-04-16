@@ -245,7 +245,7 @@ export function buildQuerySingleV2(params = {}) {
         'qty_available', v.qty_available,
         'qty_onhand', v.qty_onhand,
         'diamonds', COALESCE(v.diamonds, '[]'::json),
-        'images', COALESCE(design_imgs.images, ARRAY[]::text[])
+        'images', design_imgs.images
       )
     `;
 
@@ -304,12 +304,12 @@ export function buildQuerySingleV2(params = {}) {
         'estimated_gold_weight', v.estimated_gold_weight,
         'qty_available', v.qty_available,
         'qty_onhand', v.qty_onhand,
-        'images', COALESCE(design_imgs.images, ARRAY[]::text[])
+        'images', design_imgs.images
       )
     `;
 
     lateralJoinClause = `
-      LEFT JOIN LATERAL (
+      INNER JOIN LATERAL (
         SELECT *
         FROM ecom.materialized_variants v
         WHERE v.haravan_product_id = p.haravan_product_id
