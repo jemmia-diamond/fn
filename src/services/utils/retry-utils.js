@@ -14,7 +14,6 @@ export const retryQuery = async (queryFn, retries = 3, delay = 1000) => {
       errorMessage.includes("bad gateway") ||
       errorMessage.includes("502") ||
       errorMessage.includes("503") ||
-      errorMessage.includes("invalid array buffer length") ||
       statusCode === 400 ||
       statusCode === 429 ||
       statusCode === 500 ||
