@@ -1,5 +1,5 @@
 import { DebounceActions, DebounceService } from "src/durable-objects";
-import { isPromotionalMessage, shouldReceiveWebhook } from "controllers/webhook/pancake/erp/utils";
+import { shouldReceiveWebhook } from "controllers/webhook/pancake/erp/utils";
 import { retryQuery } from "services/utils/retry-utils";
 
 export default class PancakeERPMessageController {
@@ -15,10 +15,10 @@ export default class PancakeERPMessageController {
       await retryQuery(() => ctx.env["MESSAGE_QUEUE"].send(data));
 
       const conversationId = data?.data?.conversation?.id;
-      const messageText = data?.data?.message?.original_message;
+      const pageCustomerId = data?.data?.message?.from?.page_customer_id;
 
-      // Only trigger summary queue if it's not a promotional message
-      if (!isPromotionalMessage(messageText)) {
+      // Only trigger summary queue if it's a message from a customer
+      if (pageCustomerId) {
         const key = `conversation-${conversationId}`;
         await DebounceService.debounce({
           env: ctx.env,

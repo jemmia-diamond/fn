@@ -1,5 +1,3 @@
-import { PROMO_REGEX } from "src/constants/pancake";
-
 export const shouldReceiveWebhook = (body) => {
   if (body?.event_type !== "messaging") {
     return false;
@@ -22,14 +20,4 @@ export const shouldReceiveWebhook = (body) => {
   }
 
   return true;
-};
-
-/**
- * Checks if a message contains promotional keywords.
- * @param {string} text
- * @returns {boolean}
- */
-export const isPromotionalMessage = (text) => {
-  if (!text) return false;
-  return PROMO_REGEX.test(text);
 };
