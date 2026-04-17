@@ -346,6 +346,7 @@ export default class PaymentEntryService {
     const paymentEntry = rawToPaymentEntry(rawPaymentEntry);
     const references = paymentEntry.references || [];
     const salesOrderReferences = references.filter((ref) => ref.reference_doctype === "Sales Order");
+    const refund_amount = paymentEntry.refund_amount;
 
     const primaryOrder = salesOrderReferences[0] ? rawToReference(salesOrderReferences[0]) : null;
     let qrPaymentId = paymentEntry?.custom_transaction_id;
@@ -398,6 +399,8 @@ export default class PaymentEntryService {
       const outstandingAmount = parseFloat(primaryOrder.outstanding_amount);
 
       if (toPayAmount > outstandingAmount) {
+        if(refund_amount > 0) return;
+
         throw new Error(JSON.stringify({
           error_msg: `Payment amount ${toPayAmount} exceeds remaining amount ${outstandingAmount}`,
           error_code: LinkQRWithRealOrderService.OVERPAYMENT
@@ -406,7 +409,6 @@ export default class PaymentEntryService {
     }
 
     let updateQr = qrPayment;
-    const refund_amount = paymentEntry.refund_amount;
     if (qrPayment.haravan_order_number === "ORDERLATER" && primaryOrder) {
       updateQr = await this.updateOrderLater(
         qrPaymentId, {
