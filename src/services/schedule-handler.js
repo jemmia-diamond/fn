@@ -39,6 +39,8 @@ export default {
       await new Ecommerce.JewelryDiamondPairService(env).processOutOfStockDiamonds();
       await new Misa.InventoryItemSyncService(env).syncInventoryItems();
       await new Haravan.OrderModule.DatabaseSyncService(env).sync();
+      await new Haravan.Product.DatabaseSyncService(env).sync();
+      await new Haravan.WarehouseInventory.DatabaseSyncService(env).sync();
       break;
     case "*/10 * * * *": // At every 10th minute
       await ERP.Selling.SerialService.syncSerialsToERP(env);
@@ -50,7 +52,6 @@ export default {
       break;
     case "*/15 * * * *": // At every 15th minute
       await ERP.Contacts.ContactService.cronSyncContactsToDatabase(env);
-      await new Haravan.WarehouseInventory.DatabaseSyncService(env).sync();
       break;
     case "*/20 * * * *": // At every 20th minute
       await ERP.Selling.SalesOrderService.cronSyncSalesOrdersToDatabase(env);
@@ -61,6 +62,7 @@ export default {
       await ERP.Contacts.AddressService.cronSyncAddressesToDatabase(env);
       await Ecommerce.ProductService.refreshMaterializedViews(env);
       await DatabaseOperations.MaterializedViewService.refresh30Minutes(env);
+      await new Haravan.AccountingSalesOrders.LarkSyncService(env).sync();
       break;
     case "0 */3 * * *": // At every 3rd hour
       await InventoryCMS.InventoryCheckSheetService.syncInventoryCheckSheetToDatabase(env);

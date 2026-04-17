@@ -61,7 +61,7 @@
     "R2_JEMMIA_WEBSITE_PUBLIC_URL": "https://assets.jemmia.vn",
     "NOCODB_SUPPLY_BASE_ID": "pl4e7zwnui0k8y1",
     "NOCODB_MARKETING_BASE_ID": "pbzopuiobhc8xf1",
-    "NOCODB_WORKPLACE_BASE_URL": "https://workplace.jemmia.vn/",
+    "NOCODB_WORKSPACE_BASE_URL": "https://workspace.jemmia.vn/",
     "SALESAYA_API_BASE_URL": "https://api.salesaya.com",
     "DEFAULT_HARAVAN_DIAMOND_DISCOUNT_COLLECTION_ID": 32,
     "DEFAULT_HARAVAN_JEWELRY_DISCOUNT_COLLECTION_ID": 31,
@@ -72,7 +72,8 @@
     "LARK_APP_SHIELD_ID":"cli_a9fd9bc9f7b9ded0",
     "OAUTH_REDIRECT_ENDPOINT":"https://fn.jemmia.vn",
     "HARAVAN_APP_URL": "https://jemmiavn.myharavan.com",
-    "AI_PROXY_URL": "https://aiproxy.jemmia.vn"
+    "AI_PROXY_URL": "https://aiproxy.jemmia.vn",
+    "GOOGLE_GENERATIVE_AI_URL": "https://generativelanguage.googleapis.com/v1beta"
   },
   "secrets_store_secrets": [
     {

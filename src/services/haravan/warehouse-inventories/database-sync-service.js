@@ -7,11 +7,11 @@ import { sleep } from "services/utils/sleep.js";
 
 dayjs.extend(utc);
 
-const VARIANT_CHUNK_SIZE = 20;
-const LOCATION_CHUNK_SIZE = 5;
+const VARIANT_CHUNK_SIZE = 50;
+const LOCATION_CHUNK_SIZE = 20;
 
 export default class DatabaseSyncService {
-  static RATE_LIMIT_DELAY_MS = 500;
+  static RATE_LIMIT_DELAY_MS = 100;
   static MAX_RETRY_AFTER_SECONDS = 3;
   static DEFAULT_KV_KEY = "haravan_warehouse_inventory_sync:last_date";
 
