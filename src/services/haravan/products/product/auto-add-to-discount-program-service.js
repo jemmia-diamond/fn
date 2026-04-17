@@ -70,7 +70,7 @@ export default class AutoAddToDiscountProgramService {
     try {
       const nocodb = new NocoDBClient(this.env);
 
-      const diamondsQuery = await nocodb.listRecords(NOCODB_TABLES.DIAMONDS, {
+      const diamondsQuery = await nocodb.listRecords(NOCODB_TABLES.SUPPLY.DIAMONDS, {
         where: `(product_id,eq,${haravanProductId})`
       });
       const diamonds = diamondsQuery.list || [];
@@ -80,7 +80,7 @@ export default class AutoAddToDiscountProgramService {
       }
 
       const DIAMOND_COLLECTION_ID = this.env.DEFAULT_HARAVAN_DIAMOND_DISCOUNT_COLLECTION_ID;
-      const diamondHaravanCollectionsTableId = NOCODB_TABLES.DIAMOND_HARAVAN_COLLECTIONS;
+      const diamondHaravanCollectionsTableId = NOCODB_TABLES.SUPPLY.DIAMOND_HARAVAN_COLLECTIONS;
 
       for (const diamond of diamonds) {
         try {
@@ -111,7 +111,7 @@ export default class AutoAddToDiscountProgramService {
     try {
       const nocodb = new NocoDBClient(this.env);
 
-      const productsQuery = await nocodb.listRecords(NOCODB_TABLES.JEWELRIES, {
+      const productsQuery = await nocodb.listRecords(NOCODB_TABLES.SUPPLY.JEWELRIES, {
         where: `(haravan_product_id,eq,${haravanProductId})`,
         limit: 1
       });
@@ -124,14 +124,14 @@ export default class AutoAddToDiscountProgramService {
 
       if (product.design_id) {
         try {
-          const designRes = await nocodb.listRecords(NOCODB_TABLES.DESIGNS, {
+          const designRes = await nocodb.listRecords(NOCODB_TABLES.SUPPLY.DESIGNS, {
             where: `(id,eq,${product.design_id})`,
             limit: 1
           });
           const design = designRes.list?.[0] ?? null;
 
           if (design && design.collections_id) {
-            const collectionRes = await nocodb.listRecords(NOCODB_TABLES.COLLECTIONS, {
+            const collectionRes = await nocodb.listRecords(NOCODB_TABLES.SUPPLY.COLLECTIONS, {
               where: `(id,eq,${design.collections_id})`,
               limit: 1
             });
@@ -147,7 +147,7 @@ export default class AutoAddToDiscountProgramService {
       }
 
       const JEWELRY_COLLECTION_ID = this.env.DEFAULT_HARAVAN_JEWELRY_DISCOUNT_COLLECTION_ID;
-      const jewelryHaravanCollectionsTableId = NOCODB_TABLES.JEWELRY_HARAVAN_COLLECTIONS;
+      const jewelryHaravanCollectionsTableId = NOCODB_TABLES.SUPPLY.JEWELRY_HARAVAN_COLLECTIONS;
 
       try {
         const existing = await nocodb.listRecords(jewelryHaravanCollectionsTableId, {

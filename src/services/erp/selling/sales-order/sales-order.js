@@ -18,6 +18,7 @@ import { ERPR2StorageService } from "services/r2-object/erp/erp-r2-storage-servi
 import HaravanAPI from "services/clients/haravan-client";
 import { retryQuery } from "src/services/utils/retry-utils";
 import { isTestOrder } from "services/utils/order-intercepter";
+import { sleep } from "services/utils/sleep";
 
 dayjs.extend(utc);
 
@@ -162,8 +163,8 @@ export default class SalesOrderService {
       try {
         const orderData = message.body;
         await salesOrderService.sendNotificationToLark(orderData, true);
-        await salesOrderService.updateSalesOrderPaidAmount(orderData.name);
-        await salesOrderService.syncHaravanFinancialStatus(orderData);
+        const updatedOrderData = await salesOrderService.updateSalesOrderPaidAmount(orderData.name);
+        await salesOrderService.syncHaravanFinancialStatus(updatedOrderData || orderData);
       } catch (error) {
         Sentry.captureException(error);
       }
@@ -738,17 +739,12 @@ export default class SalesOrderService {
         currentSalesOrder.name,
         ...(currentSalesOrder.ref_sales_orders || []).map(r => r.sales_order)
       ];
-      const paymentEntryNames = await getAllRelatedPaymentEntries(
-        this.frappeClient,
-        refSalesOrderNames
-      );
 
-      // Unique payment entries
-      const uniquePaymentEntryNames = [...new Set(paymentEntryNames.map(pe => pe.name))];
+      const relatedPaymentEntryStubs = await getAllRelatedPaymentEntries(this.frappeClient, relatedOrderNames);
+      const uniqueRelPeNames = [...new Set(relatedPaymentEntryStubs.map(pe => pe.name))];
 
-      // Fetch payment entries in parallel
-      const paymentEntries = await Promise.all(
-        uniquePaymentEntryNames.map(name => this.frappeClient.getDoc("Payment Entry", name))
+      const sessionPaymentEntries = await Promise.all(
+        uniqueRelPeNames.map(name => this.frappeClient.getDoc("Payment Entry", name))
       );
 
       const currentPaymentEntriesMap = new Map();
@@ -756,67 +752,95 @@ export default class SalesOrderService {
         if (row.reference_name) currentPaymentEntriesMap.set(row.reference_name, row.name);
       });
 
+      const currentGroupPaymentEntriesMap = new Map();
+      (currentSalesOrder.group_payment_entries || []).forEach(row => {
+        if (row.reference_name) currentGroupPaymentEntriesMap.set(row.reference_name, row.name);
+      });
+
       let paymentEntriesTotal = 0.0;
+      let groupPaymentEntryTotal = 0.0;
       const linkedPaymentEntries = [];
-      for (const entry of paymentEntries) {
+      const groupLinkedPaymentEntries = [];
+
+      for (const entry of sessionPaymentEntries) {
         if (entry && entry.references) {
-          const refs = entry.references.filter(r => r.reference_doctype === "Sales Order" && refSalesOrderNames.includes(r.reference_name));
-
-          for (const ref of refs) {
-            if (shouldSkipSharedPayment(ref.reference_name, salesOrderName, isSplitOrder, isFirstSplitOrder)) {
-              continue;
-            }
-
-            const allocated = parseFloat(ref.allocated_amount || 0);
-            if (entry.payment_type === "Pay") {
-              paymentEntriesTotal -= allocated;
-            } else {
-              paymentEntriesTotal += allocated;
+          const selfRelevantRefs = entry.references.filter(r => r.reference_doctype === "Sales Order" && refSalesOrderNames.includes(r.reference_name));
+          for (const ref of selfRelevantRefs) {
+            if (!shouldSkipSharedPayment(ref.reference_name, salesOrderName, isSplitOrder, isFirstSplitOrder)) {
+              const allocated = parseFloat(ref.allocated_amount || 0);
+              if (entry.payment_type === "Pay") {
+                paymentEntriesTotal -= allocated;
+              } else {
+                paymentEntriesTotal += allocated;
+              }
             }
           }
-
-          const ref = refs.find(r => r.reference_name === salesOrderName);
-
-          if (ref) {
-            // Build linked payment entry row
-            const row = {
-              doctype: "Payment Entry Reference",
-              reference_doctype: "Payment Entry",
-              reference_name: entry.name,
-              total_amount: ref.total_amount,
-              outstanding_amount: ref.outstanding_amount,
-              allocated_amount: entry.payment_type === "Pay" ? -Math.abs(ref.allocated_amount) : ref.allocated_amount,
-              mode_of_payment: entry.mode_of_payment,
-              gateway: entry.gateway,
-              paid_amount: entry.paid_amount,
-              payment_date: entry.payment_date,
-              payment_order_status: entry.payment_order_status,
-              bank_account: entry.bank_account,
-              bank: entry.bank,
-              bank_account_no: entry.bank_account_no,
-              bank_account_branch: entry.bank_account_branch
-            };
-
+          const selfRef = selfRelevantRefs.find(r => r.reference_name === salesOrderName);
+          if (selfRef) {
+            const row = buildPaymentEntryReferenceRow(entry, selfRef);
             if (currentPaymentEntriesMap.has(entry.name)) {
               row.name = currentPaymentEntriesMap.get(entry.name);
             }
             linkedPaymentEntries.push(row);
           }
+
+          const groupRefs = entry.references.filter(r => r.reference_doctype === "Sales Order" && relatedOrderNames.includes(r.reference_name));
+          for (const ref of groupRefs) {
+            const allocated = parseFloat(ref.allocated_amount || 0);
+            if (entry.payment_type === "Pay") {
+              groupPaymentEntryTotal -= allocated;
+            } else {
+              groupPaymentEntryTotal += allocated;
+            }
+
+            const groupRow = buildPaymentEntryReferenceRow(entry, ref);
+            if (currentGroupPaymentEntriesMap.has(entry.name)) {
+              groupRow.name = currentGroupPaymentEntriesMap.get(entry.name);
+            }
+            groupLinkedPaymentEntries.push(groupRow);
+          }
         }
+      }
+
+      function buildPaymentEntryReferenceRow(entry, ref) {
+        return {
+          doctype: "Payment Entry Reference",
+          reference_doctype: "Payment Entry",
+          reference_name: entry.name,
+          total_amount: ref.total_amount,
+          outstanding_amount: ref.outstanding_amount,
+          allocated_amount: entry.payment_type === "Pay" ? -Math.abs(ref.allocated_amount) : ref.allocated_amount,
+          mode_of_payment: entry.mode_of_payment,
+          gateway: entry.gateway,
+          paid_amount: entry.paid_amount,
+          payment_date: entry.payment_date,
+          payment_order_status: entry.payment_order_status,
+          bank_account: entry.bank_account,
+          bank: entry.bank,
+          bank_account_no: entry.bank_account_no,
+          bank_account_branch: entry.bank_account_branch
+        };
       }
 
       const currentLinkedPaymentEntries = currentSalesOrder.payment_entries || [];
       const isPaymentEntriesChanged = currentLinkedPaymentEntries.length !== linkedPaymentEntries.length ||
-        !linkedPaymentEntries.every(l => currentLinkedPaymentEntries.some(c => c.reference_name === l.reference_name));
+        !linkedPaymentEntries.every(l => {
+          const matched = currentLinkedPaymentEntries.find(c => c.reference_name === l.reference_name);
+          return matched && parseFloat(matched.allocated_amount) === parseFloat(l.allocated_amount);
+        });
+
+      const currentGroupLinkedPaymentEntries = currentSalesOrder.group_payment_entries || [];
+      const isGroupPaymentEntriesChanged = currentGroupLinkedPaymentEntries.length !== groupLinkedPaymentEntries.length ||
+        !groupLinkedPaymentEntries.every(l => {
+          const matched = currentGroupLinkedPaymentEntries.find(c => c.reference_name === l.reference_name);
+          return matched && parseFloat(matched.allocated_amount) === parseFloat(l.allocated_amount);
+        });
+
       // Calculate group grand total
       const splitOrderDocs = splitOrders.map(order => allRelatedOrders.find(r => r.name === order.name) || order);
 
       const groupGrandTotal = splitOrderDocs.reduce((sum, order) => sum + parseFloat(order.grand_total || 0) - parseFloat(order.return_amount || 0), 0);
       const groupPaymentRecordsTotal = calculateGroupOrderPaymentRecordsTotal(splitOrderDocs);
-
-      // Combined Payment Total = (ERP Payment Entries linked to any order in group) + (Haravan Payment Records on each split order)
-      const relatedPaymentEntries = await getAllRelatedPaymentEntries(this.frappeClient, relatedOrderNames);
-      const groupPaymentEntryTotal = await this.calculateGroupPaymentTotal(relatedOrderNames, relatedPaymentEntries);
       const groupPaymentTotal = groupPaymentEntryTotal + groupPaymentRecordsTotal;
 
       if (groupPaymentTotal >= groupGrandTotal) {
@@ -833,13 +857,14 @@ export default class SalesOrderService {
           const hasChangeAmount = docPaid !== docTotal || currentTotalAllocated !== groupPaymentTotal || currentBalanceGroup !== newBalanceGroup;
 
           if (order.name === salesOrderName) {
-            if (hasChangeAmount || isPaymentEntriesChanged) {
+            if (hasChangeAmount || isPaymentEntriesChanged || isGroupPaymentEntriesChanged) {
               const updated = await this.frappeClient.update({
                 doctype: "Sales Order",
                 name: doc.name,
                 paid_amount: docTotal,
                 balance: 0,
                 payment_entries: linkedPaymentEntries,
+                group_payment_entries: groupLinkedPaymentEntries,
                 total_allocated_group_payment: groupPaymentTotal,
                 balance_group_payment: newBalanceGroup
               });
@@ -885,6 +910,7 @@ export default class SalesOrderService {
       if (parseFloat(totalPaid) !== parseFloat(currentPaidAmount) ||
           parseFloat(currentBalance) !== parseFloat(balance) ||
           isPaymentEntriesChanged ||
+          isGroupPaymentEntriesChanged ||
           currentTotalAllocatedGroupPayment !== parseFloat(groupPaymentTotal) ||
           currentBalanceGroupPayment !== newBalanceGroupPayment
       ) {
@@ -894,6 +920,7 @@ export default class SalesOrderService {
           paid_amount: totalPaid,
           balance: balance,
           payment_entries: linkedPaymentEntries,
+          group_payment_entries: groupLinkedPaymentEntries,
           total_allocated_group_payment: groupPaymentTotal,
           balance_group_payment: newBalanceGroupPayment
         });
@@ -938,8 +965,7 @@ export default class SalesOrderService {
   }
 
   async syncHaravanFinancialStatus(salesOrderData) {
-    const grandTotal = parseFloat(salesOrderData.grand_total) - parseFloat(salesOrderData.return_amount || 0);
-    if (Math.abs(grandTotal - salesOrderData.paid_amount) <= 1000) {
+    if (Math.abs(salesOrderData.grand_total - salesOrderData.paid_amount) <= 1000) {
       const HRV_API_KEY = await this.env.HARAVAN_TOKEN_SECRET.get();
       if (!HRV_API_KEY) {
         return;
@@ -1097,5 +1123,39 @@ export default class SalesOrderService {
     }
 
     return totalAllocated;
+  }
+
+  static async cronUpdateTechnicalSalesOrdersPaidAmount(env) {
+    const salesOrderService = new SalesOrderService(env);
+    const sql = `
+      SELECT name 
+      FROM \`tabSales Order\` so
+      WHERE so.owner = 'tech@jemmia.vn' and so.grand_total > 0 and so.cancelled_status = 'Uncancelled' 
+        AND so.haravan_created_at >= '2026-01-01 00:00:00'
+        AND NOT EXISTS (
+          SELECT 1 
+          FROM \`tabPayment Entry Reference\` child
+          WHERE child.parent = so.name 
+            AND child.parentfield = 'group_payment_entries'
+        ) 
+      ORDER BY so.haravan_created_at DESC
+    `;
+
+    const orders = await salesOrderService.frappeClient.executeSQL(sql);
+
+    if (Array.isArray(orders) && orders.length > 0) {
+      for (const order of orders) {
+        try {
+          const orderName = typeof order === "object" ? order.name : (Array.isArray(order) ? order[0] : order);
+          if (orderName) {
+            await salesOrderService.updateSalesOrderPaidAmount(orderName);
+
+            await sleep(1000);
+          }
+        } catch (error) {
+          Sentry.captureException(error);
+        }
+      }
+    }
   }
 }

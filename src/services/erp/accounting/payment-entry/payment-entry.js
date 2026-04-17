@@ -20,7 +20,8 @@ const REFERENCE_SCHEMA = {
   order_number: (ref) => ref.order_number,
   balance: (ref) => ref.balance,
   allocated_amount: (ref) => ref.allocated_amount,
-  outstanding_amount: (ref) => ref.outstanding_amount
+  outstanding_amount: (ref) => ref.outstanding_amount,
+  unallocated_amount: (ref) => ref.unallocated_amount
 };
 
 export default class PaymentEntryService {
@@ -106,7 +107,8 @@ export default class PaymentEntryService {
       haravan_order_name: primaryOrder?.order_number || "Đơn hàng cọc",
       transfer_status: Constants.TRANSFER_STATUS.PENDING,
       gateway: paymentEntry.gateway,
-      payment_references
+      payment_references,
+      refund_amount: paymentEntry.refund_amount
     };
 
     const result = await this.manualPaymentService.createManualPayment(data);
@@ -155,7 +157,8 @@ export default class PaymentEntryService {
       customer_phone_order_later: customer_phone_number,
       customer_name_order_later: customer_name,
       payment_references,
-      admin_editing: paymentEntry.admin_editing
+      admin_editing: paymentEntry.admin_editing,
+      refund_amount: paymentEntry.refund_amount
     };
 
     const result = await this.createQRService.handlePostQr(qrGeneratorPayload);
@@ -275,7 +278,8 @@ export default class PaymentEntryService {
       transfer_status,
       gateway: paymentEntry.gateway,
       payment_entry_name: paymentEntry.name,
-      shipping_code: paymentEntry?.shipping_code
+      shipping_code: paymentEntry?.shipping_code,
+      refund_amount: paymentEntry.refund_amount
     };
 
     const existingRefs = this._normalizeReferences(existingPayment.payment_references);
@@ -342,6 +346,7 @@ export default class PaymentEntryService {
     const paymentEntry = rawToPaymentEntry(rawPaymentEntry);
     const references = paymentEntry.references || [];
     const salesOrderReferences = references.filter((ref) => ref.reference_doctype === "Sales Order");
+    const refund_amount = paymentEntry.refund_amount;
 
     const primaryOrder = salesOrderReferences[0] ? rawToReference(salesOrderReferences[0]) : null;
     let qrPaymentId = paymentEntry?.custom_transaction_id;
@@ -393,7 +398,8 @@ export default class PaymentEntryService {
       const toPayAmount = parseFloat(qrPayment.transfer_amount);
       const outstandingAmount = parseFloat(primaryOrder.outstanding_amount);
 
-      if (toPayAmount > outstandingAmount) {
+      if (toPayAmount > outstandingAmount && (refund_amount == 0 || refund_amount == null) ) {
+
         throw new Error(JSON.stringify({
           error_msg: `Payment amount ${toPayAmount} exceeds remaining amount ${outstandingAmount}`,
           error_code: LinkQRWithRealOrderService.OVERPAYMENT
@@ -411,7 +417,8 @@ export default class PaymentEntryService {
           haravan_order_total_price: primaryOrder?.total_amount || null,
           customer_name: paymentEntry.customer_details.name,
           customer_phone_number: paymentEntry.customer_details.phone || paymentEntry.customer_details.mobile_no,
-          payment_references
+          payment_references,
+          refund_amount
         }
       );
       if (!updateQr) {
@@ -433,7 +440,7 @@ export default class PaymentEntryService {
     if (existingRefs !== newRefs) {
       updateQr = await this.db.qrPaymentTransaction.update({
         where: { id: qrPaymentId },
-        data: { payment_references }
+        data: { payment_references, refund_amount }
       });
     }
 
