@@ -398,8 +398,7 @@ export default class PaymentEntryService {
       const toPayAmount = parseFloat(qrPayment.transfer_amount);
       const outstandingAmount = parseFloat(primaryOrder.outstanding_amount);
 
-      if (toPayAmount > outstandingAmount) {
-        if(refund_amount > 0) return;
+      if (toPayAmount > outstandingAmount && (refund_amount == 0 || refund_amount == null) ) {
 
         throw new Error(JSON.stringify({
           error_msg: `Payment amount ${toPayAmount} exceeds remaining amount ${outstandingAmount}`,
