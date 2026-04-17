@@ -1,5 +1,6 @@
 /* eslint-disable no-console */
 import DocxService from "services/larksuite/docs/docx";
+import WikiService from "services/larksuite/wiki/wiki";
 import LarksuiteService from "services/larksuite/lark";
 import * as Sentry from "@sentry/cloudflare";
 import dayjs from "dayjs";
@@ -7,8 +8,12 @@ import { sleep } from "services/utils/sleep";
 
 export default class DocxRawContentSyncService {
   static KV_KEY = "larksuite:docx_sync:last_sync_time";
-  static ALLOWED_SPACES = [
-    7625925816733126366 // Jemmia - Van Ban Chinh Thuc
+  static DIRECT_NODES = [
+    {
+      name: "Tech Team Knowledge",
+      nodeToken: "LKZlwo4tkidMOskk8GDlUBCXg1f",
+      skipSelf: true
+    }
   ];
 
   constructor(env) {
@@ -17,94 +22,154 @@ export default class DocxRawContentSyncService {
 
   async sync() {
     const kv = this.env.FN_KV;
-    const lastSyncDate = await kv.get(DocxRawContentSyncService.KV_KEY);
     const toDate = dayjs().utc().toISOString();
 
-    const lastSyncTimestamp = lastSyncDate
-      ? dayjs(lastSyncDate).subtract(5, "minutes").valueOf()
-      : 0;
+    // Set to 0 for normal incremental sync, or a number (e.g., 5) to backfill the last X hours.
+    const FORCE_BACKFILL_HOURS = 24;
+
+    let lastSyncTimestamp;
+    if (FORCE_BACKFILL_HOURS > 0) {
+      lastSyncTimestamp = dayjs
+        .utc()
+        .subtract(FORCE_BACKFILL_HOURS, "hours")
+        .valueOf();
+      console.warn(
+        `[DocxRawContentSyncService] !!! FORCING BACKFILL: Fetching all changes since ${dayjs(lastSyncTimestamp).toISOString()} !!!`
+      );
+    } else {
+      const lastSyncDate = await kv.get(DocxRawContentSyncService.KV_KEY);
+      lastSyncTimestamp = lastSyncDate
+        ? dayjs(lastSyncDate).subtract(5, "minutes").valueOf()
+        : 0;
+    }
 
     try {
-      console.warn(
-        `[DocxRawContentSyncService] Starting sync... (Last sync: ${lastSyncDate || "Never"})`
-      );
-
-      const larkClient = await LarksuiteService.createClientV2(this.env);
-      const spaces = [];
-      let pageToken = null;
-      let hasMore = true;
-      while (hasMore) {
-        const res = await larkClient.wiki.space.list({
-          params: {
-            page_size: 50,
-            page_token: pageToken
-          }
-        });
-        spaces.push(...(res?.data?.items ?? []));
-        hasMore = res?.data?.has_more ?? false;
-        pageToken = res?.data?.page_token;
+      if (FORCE_BACKFILL_HOURS === 0) {
+        console.warn(
+          `[DocxRawContentSyncService] Starting recursive sync... (Last successful sync: ${dayjs(lastSyncTimestamp).toISOString()})`
+        );
       }
-      console.warn(
-        `[DocxRawContentSyncService] Found ${spaces.length} spaces.`
+
+      const larkClient = await LarksuiteService.createClientV2(
+        this.env,
+        "brainy"
       );
 
       const documentsToSync = [];
+      const processedTokens = new Set();
+      const discoveryQueue = [];
 
-      for (const space of spaces) {
-        const spaceId = space.space_id;
-        const spaceName = space.name;
-        const spaceUpdateTime = parseInt(space.update_time || 0, 10) * 1000;
-
-        if (spaceUpdateTime <= lastSyncTimestamp) {
-          console.warn(
-            `[DocxRawContentSyncService] Skipping space: ${spaceName} (${spaceId}) - not updated since last sync`
-          );
-          continue;
-        }
-
-        if (!DocxRawContentSyncService.ALLOWED_SPACES.includes(spaceId)) {
-          console.warn(
-            `[DocxRawContentSyncService] Skipping space: ${spaceName} (${spaceId}) - not in allowed list`
-          );
-          continue;
-        }
-
+      // 1. Seed Discovery Queue from Direct Nodes
+      for (const direct of DocxRawContentSyncService.DIRECT_NODES) {
         console.warn(
-          `[DocxRawContentSyncService] Processing space: ${spaceName} (${spaceId})`
+          `[DocxRawContentSyncService] Seeding direct node: ${direct.name} (${direct.nodeToken})`
         );
-
-        const nodes = [];
-        let nodePageToken = null;
-        let nodeHasMore = true;
-        while (nodeHasMore) {
-          const res = await larkClient.wiki.spaceNode.list({
-            path: {
-              space_id: spaceId
-            },
-            params: {
-              page_size: 50,
-              page_token: nodePageToken
-            }
+        try {
+          const node = await WikiService.getNode({
+            larkClient,
+            nodeToken: direct.nodeToken
           });
-          nodes.push(...(res?.data?.items ?? []));
-          nodeHasMore = res?.data?.has_more ?? false;
-          nodePageToken = res?.data?.page_token;
-        }
-        console.warn(
-          `[DocxRawContentSyncService] Found ${nodes.length} nodes in space ${spaceId}.`
-        );
 
-        for (const node of nodes) {
-          if (node.obj_type === "docx") {
-            const documentId = node.obj_token;
-            const title = node.title;
-            documentsToSync.push({ documentId, title });
+          if (node) {
+            const nodeUpdateTime =
+              parseInt(
+                node.node_update_time ||
+                  node.obj_edit_time ||
+                  node.update_time ||
+                  0,
+                10
+              ) * 1000;
+            const updated = nodeUpdateTime > lastSyncTimestamp;
+
+            // Add the parent node itself if it's a docx and updated (unless skipped)
+            if (node.obj_type === "docx") {
+              if (updated && !direct.skipSelf) {
+                documentsToSync.push({
+                  documentId: node.obj_token,
+                  title: node.title
+                });
+              } else if (!updated) {
+                console.warn(
+                  `[DocxRawContentSyncService] Skipping direct node content: ${node.title} (Modified: ${dayjs(nodeUpdateTime).toISOString()}, Threshold: ${dayjs(lastSyncTimestamp).toISOString()})`
+                );
+              } else {
+                console.warn(
+                  `[DocxRawContentSyncService] Ignoring parent document content: ${node.title} (Reason: skipSelf)`
+                );
+              }
+              processedTokens.add(node.node_token);
+            }
+
+            // Always check for children of direct nodes to ensure deep discovery
+            discoveryQueue.push({
+              spaceId: node.space_id,
+              parentToken: node.node_token
+            });
           }
+        } catch (err) {
+          console.error(
+            `[DocxRawContentSyncService] Failed to seed direct node ${direct.nodeToken}:`,
+            err.message
+          );
+        }
+      }
+
+      // 2. Recursive Discovery
+      while (discoveryQueue.length > 0) {
+        const { spaceId, parentToken } = discoveryQueue.shift();
+
+        try {
+          const nodes = await WikiService.listNodes({
+            larkClient,
+            spaceId,
+            parentNodeToken: parentToken
+          });
+
+          for (const node of nodes) {
+            if (processedTokens.has(node.node_token)) continue;
+            processedTokens.add(node.node_token);
+
+            const nodeUpdateTime =
+              parseInt(
+                node.node_update_time ||
+                  node.obj_edit_time ||
+                  node.update_time ||
+                  0,
+                10
+              ) * 1000;
+            const updated = nodeUpdateTime > lastSyncTimestamp;
+
+            if (node.obj_type === "docx") {
+              if (updated) {
+                documentsToSync.push({
+                  documentId: node.obj_token,
+                  title: node.title
+                });
+              } else {
+                console.warn(
+                  `[DocxRawContentSyncService] Skipping nested document: ${node.title} (Modified: ${dayjs(nodeUpdateTime).toISOString()}, Threshold: ${dayjs(lastSyncTimestamp).toISOString()})`
+                );
+              }
+            }
+
+            // If node has sub-pages, add to discovery queue
+            if (node.has_child) {
+              discoveryQueue.push({
+                spaceId: node.space_id,
+                parentToken: node.node_token
+              });
+            }
+          }
+        } catch (discoveryError) {
+          console.error(
+            `[DocxRawContentSyncService] Discovery failed for ${parentToken || spaceId}:`,
+            discoveryError.message
+          );
         }
       }
 
       console.warn(
-        `[DocxRawContentSyncService] Found ${documentsToSync.length} documents to sync.`
+        `[DocxRawContentSyncService] Discovered ${documentsToSync.length} documents to sync.`
       );
 
       for (const doc of documentsToSync) {
@@ -113,13 +178,14 @@ export default class DocxRawContentSyncService {
         );
 
         try {
-          const rawData = await DocxService.getRawContent(
-            this.env,
-            doc.documentId
-          );
+          const rawData = await DocxService.getRawContent({
+            larkClient,
+            documentId: doc.documentId
+          });
 
           console.warn(
-            `[DocxRawContentSyncService] Successfully fetched raw content for "${doc.title}" (Size: ${JSON.stringify(rawData.content).length} bytes).`
+            `[DocxRawContentSyncService] Full Response Body for "${doc.title}":`,
+            JSON.stringify(rawData, null, 2)
           );
         } catch (innerError) {
           console.error(

@@ -1,9 +1,5 @@
-import LarksuiteService from "services/larksuite/lark";
-
 export default class DocxService {
-  static async getRawContent(env, documentId) {
-    const larkClient = await LarksuiteService.createClientV2(env);
-
+  static async getRawContent({ larkClient, documentId }) {
     const response = await larkClient.docx.document.rawContent({
       path: {
         document_id: documentId
@@ -14,7 +10,9 @@ export default class DocxService {
     });
 
     if (response?.code !== 0) {
-      throw new Error(`Lark Docx Raw Content API error: ${response.msg || "Unknown error"} (code: ${response.code})`);
+      throw new Error(
+        `Lark Docx Raw Content API error: ${response.msg || "Unknown error"} (code: ${response.code})`
+      );
     }
 
     return response.data;
