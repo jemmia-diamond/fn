@@ -125,33 +125,77 @@ export default class ImageTranslationService {
   }
 
   /**
+   * Fetch image from URL and return as ArrayBuffer with metadata.
+   *
+   * @param {string} imageUrl
+   * @returns {Promise<{buffer: Uint8Array, name: string, mimeType: string}>}
+   */
+  async fetchImageFromUrl(imageUrl) {
+    const response = await fetch(imageUrl);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch image from URL: ${imageUrl} (${response.status})`);
+    }
+
+    const arrayBuffer = await response.arrayBuffer();
+    const contentType = response.headers.get("content-type") || "image/jpeg";
+    const extension = contentType.split("/")[1]?.split(";")[0] || "jpg";
+
+    const urlParts = imageUrl.split("/");
+    const filename = urlParts[urlParts.length - 1].split("?")[0] || `image.${extension}`;
+
+    return {
+      buffer: new Uint8Array(arrayBuffer),
+      name: filename,
+      mimeType: contentType
+    };
+  }
+
+  /**
    * Full translation pipeline.
    *
-   * @param {File} image
+   * @param {File|string} image - File object or image URL
    * @param {Object} env
-   * @returns {Promise<Uint8Array>}
+   * @returns {Promise<{success: boolean, isTranslated: boolean, newUrl?: string, originalUrl?: string}>}
    */
   async translateImage(image, env) {
-    const imageArrayBuffer = await image.arrayBuffer();
-    const imageBuffer = new Uint8Array(imageArrayBuffer);
+    let imageBuffer;
+    let imageName;
+
+    if (typeof image === "string") {
+      const imageData = await this.fetchImageFromUrl(image);
+      imageBuffer = imageData.buffer;
+      imageName = imageData.name;
+    } else {
+      const imageArrayBuffer = await image.arrayBuffer();
+      imageBuffer = new Uint8Array(imageArrayBuffer);
+      imageName = image.name;
+    }
 
     const metadata = await this.extractMetadata(imageBuffer, env);
 
     if (metadata.length === 0) {
-      return imageBuffer;
+      return {
+        success: true,
+        isTranslated: false,
+        newUrl: typeof image === "string" ? image : null
+      };
     }
 
     const translatedImageBuffer = await this.generateTranslatedImage(imageBuffer, metadata, env);
 
     const uniqueId = uuidv4().split("-")[0];
-    const extension = image.name.split(".").pop();
-    const nameWithoutExt = image.name.substring(0, image.name.lastIndexOf("."));
+    const extension = imageName.split(".").pop();
+    const nameWithoutExt = imageName.substring(0, imageName.lastIndexOf("."));
     const outputFilename = `en_${nameWithoutExt}_${uniqueId}.${extension}`;
 
     // Save to R2
     const storage = new WebsiteR2StorageService(env);
     const publicUrl = await storage.upload(outputFilename, translatedImageBuffer);
 
-    return publicUrl;
+    return {
+      success: true,
+      isTranslated: true,
+      newUrl: publicUrl
+    };
   }
 }
