@@ -173,7 +173,7 @@ export function buildQueryV2(jsonParams) {
       ${Prisma.raw(warehouseJoinClause)}
     WHERE 1 = 1
       AND p.haravan_product_type != 'Nhẫn Cưới' 
-      AND array_length(design_imgs.images, 1) > 0
+      AND cardinality(design_imgs.images) > 0
       ${filterSql}
     GROUP BY 
       p.haravan_product_id, p.title, d.design_code, p.handle,
@@ -202,7 +202,7 @@ export function buildQueryV2(jsonParams) {
             ${Prisma.raw(warehouseJoinClause)}
         WHERE 1 = 1 
           AND p.haravan_product_type != 'Nhẫn Cưới'
-          AND array_length(design_imgs.images, 1) > 0
+          AND cardinality(design_imgs.images) > 0
           ${filterSql}
         GROUP BY p.haravan_product_id
         ${havingSql}

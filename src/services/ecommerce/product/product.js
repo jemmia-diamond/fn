@@ -125,7 +125,7 @@ export default class ProductService {
             ) AS item
             WHERE di.design_id = d.id
             GROUP BY di.material_color
-          ) design_imgs ON design_imgs.material_color = v.material_color AND array_length(design_imgs.images, 1) > 0
+          ) design_imgs ON design_imgs.material_color = v.material_color AND cardinality(design_imgs.images) > 0
 
           WHERE v.haravan_product_id = p.haravan_product_id
           GROUP BY v.haravan_product_id
@@ -355,7 +355,7 @@ export default class ProductService {
 
       WHERE p.haravan_product_id = ${productId}
         AND design_imgs.images IS NOT NULL
-        AND array_length(design_imgs.images, 1) > 0
+        AND cardinality(design_imgs.images) > 0
       GROUP BY
         p.haravan_product_id, p.title, d.design_code, p.handle,
         d.diamond_holder, d.ring_band_type, d.main_stone, d.stone_quantity, p.haravan_product_type,
