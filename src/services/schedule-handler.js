@@ -131,6 +131,7 @@ export default {
       break;
     case "0 14 * * *": // 21:00
       await ERP.Automation.AssignmentRuleService.enableAssignmentRuleOffHour(env);
+      await new Haravan.Articles.ArticleSyncService(env).sync().catch(() => {});
       break;
     default:
       break;
