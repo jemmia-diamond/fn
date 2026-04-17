@@ -8,6 +8,7 @@ import BuybackExchangeService from "services/larksuite/buyback-exchange-service"
 import Ticket from "services/larksuite/tech-ticket";
 import ShieldMessageService from "services/jemmia-shield/shield-message-service";
 import JemmiaShieldLarkService from "services/jemmia-shield/jemmia-shield-lark-service";
+import Wiki from "services/larksuite/wiki";
 
 export default {
   Contact: Contact,
@@ -19,5 +20,6 @@ export default {
   BuybackExchangeService,
   Ticket,
   ShieldMessageService,
-  JemmiaShieldLarkService
+  JemmiaShieldLarkService,
+  Wiki: Wiki
 };
