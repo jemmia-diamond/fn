@@ -29,6 +29,8 @@ export default class BankTransactionVerificationService {
   async verifyAndUpdatePaymentEntry(payload) {
     const references = payload?.references;
     const bank_transactions = payload?.bank_transactions;
+    if (!bank_transactions?.length) return;
+
     const {
       bank_transaction_name,
       sepay_id,
@@ -55,13 +57,10 @@ export default class BankTransactionVerificationService {
 
     const { paymentEntryName } = validation;
 
-    const qrPayment = await this.db.qrPaymentTransaction.findFirst({
-      where: {
-        id: qr_payment_id,
-        payment_entry_name: paymentEntryName,
-        is_deleted: false
-      }
-    });
+    const orConditions = [{ payment_entry_name: paymentEntryName }];
+    if (qr_payment_id) orConditions.unshift({ id: qr_payment_id });
+
+    const qrPayment = await this.db.qrPaymentTransaction.findFirst({ where: { OR: orConditions } });
 
     if (!qrPayment) {
       return this.failedPayload(
