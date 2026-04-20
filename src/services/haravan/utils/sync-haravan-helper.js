@@ -1,4 +1,4 @@
-export default class SyncHelper {
+export default class SyncHaravanHelper {
   static normalizeHtml(html) {
     if (!html) return "";
     let result = html

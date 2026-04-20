@@ -18,7 +18,7 @@ import UserConnector from "services/clients/haravan-client/user";
 import ArticleConnector from "services/clients/haravan-client/article";
 
 class HaravanAPI {
-  constructor(accessToken, env = {}) {
+  constructor(accessToken) {
     this.customer = new CustomerConnector(accessToken);
     this.product = new ProductConnector(accessToken);
     this.productVariant = new ProductVariantConnector(accessToken);
@@ -36,7 +36,7 @@ class HaravanAPI {
     this.collect = new CollectConnector(accessToken);
     this.collectCustom = new CustomCollectConnector(accessToken);
     this.user = new UserConnector(accessToken);
-    this.article = new ArticleConnector(accessToken, env);
+    this.article = new ArticleConnector(accessToken);
   }
 }
 

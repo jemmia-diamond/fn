@@ -1,15 +1,16 @@
 import { generateText } from "ai";
 import HaravanAPI from "services/clients/haravan-client/index.js";
-import SyncHelper from "services/haravan/utils/sync-helper.js";
+import HaravanSyncHelper from "services/haravan/utils/sync-haravan-helper";
 import { getOpenAICompatibleModel } from "services/utils/llm-helper.js";
 import ImageTranslationService from "services/media/image-translation-service.js";
+import { retryQuery } from "services/utils/retry-utils";
+import * as Sentry from "@sentry/cloudflare";
 import { TRANSLATION_PROMPTS, AI_MODELS } from "src/constants/ai-proxy";
 
 export default class ArticleSyncService {
   static CONFIG = {
     FETCH_LIMIT: 50, // Articles per page
-    SYNC_THRESHOLD_MS: 600000, // 10 min - VI must be newer than EN by this to trigger sync
-    RECONCILE_BATCH_SIZE: 15 // Parallel processing batch size
+    SYNC_THRESHOLD_MS: 600000 // 10 min - VI must be newer than EN by this to trigger sync
   };
 
   static BLOG_ID_MAP = {
@@ -34,7 +35,7 @@ export default class ArticleSyncService {
   }
 
   getSignature(article) {
-    const time = SyncHelper.normalizeDate(article.published_at) || "no-time";
+    const time = HaravanSyncHelper.normalizeDate(article.published_at) || "no-time";
     const imgPart = article.image
       ? (article.image.src.match(/([a-f0-9]{32})/i)?.[1] ||
           article.image.src.split("/").pop().split("?")[0]).replace(/^en_/, "")
@@ -53,35 +54,18 @@ export default class ArticleSyncService {
     return images;
   }
 
-  async sleep(ms) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-  }
-
   async translateText(text, isHtml = true) {
     if (!text) return text;
     const prompt = isHtml
       ? TRANSLATION_PROMPTS.HTML + text
       : TRANSLATION_PROMPTS.TEXT + text;
+    const provider = await getOpenAICompatibleModel(this.env);
+    const model = provider(AI_MODELS.GEMINI_2_5_FLASH_LITE);
 
-    const maxRetries = 3;
-    let attempt = 0;
-
-    while (attempt < maxRetries) {
-      try {
-        const provider = await getOpenAICompatibleModel(this.env);
-        const model = provider(AI_MODELS.GEMINI_2_5_FLASH_LITE);
-        const { text: content } = await generateText({
-          model,
-          prompt
-        });
-
-        return content.trim();
-      } catch (error) {
-        attempt++;
-        if (attempt >= maxRetries) throw error;
-        await this.sleep(1000 * Math.pow(2, attempt));
-      }
-    }
+    return retryQuery(async () => {
+      const { text: content } = await generateText({ model, prompt });
+      return content.trim();
+    });
   }
 
   async fetchAllArticles(haravanClient, blogId, dateRange = null) {
@@ -181,119 +165,143 @@ export default class ArticleSyncService {
     if (images.length === 0) return html;
 
     let updatedHtml = html;
-    const batchSize = ArticleSyncService.CONFIG.RECONCILE_BATCH_SIZE;
 
-    for (let i = 0; i < images.length; i += batchSize) {
-      const batch = images.slice(i, i + batchSize);
-      await Promise.all(
-        batch.map(async (src) => {
-          let fullSrc = src.startsWith("//") ? "https:" + src : src;
-          const result = await imageService.translateImage(fullSrc, this.env);
-          if (result.success && result.isTranslated) {
-            updatedHtml = updatedHtml.replace(
-              new RegExp(src.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g"),
-              result.newUrl
-            );
-            return true;
-          }
-          return false;
-        })
-      );
+    for (const src of images) {
+      let fullSrc = src.startsWith("//") ? "https:" + src : src;
+      const newUrl = await imageService.translateImage(fullSrc, this.env);
+      if (typeof newUrl === "string" && newUrl !== fullSrc) {
+        updatedHtml = updatedHtml.replace(
+          new RegExp(src.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g"),
+          newUrl
+        );
+      }
     }
     return updatedHtml;
   }
 
   async translateFeaturedImage(src, imageService) {
     if (!src) return null;
-    let fullSrc = src.startsWith("//") ? "https:" + src : src;
-    const result = await imageService.translateImage(fullSrc, this.env);
-    return result.success && result.isTranslated ? result.newUrl : src;
+    const fullSrc = src.startsWith("//") ? "https:" + src : src;
+    const newUrl = await imageService.translateImage(fullSrc, this.env);
+    return typeof newUrl === "string" ? newUrl : src;
   }
 
   async sync() {
-    const HRV_API_KEY = await this.env.HARAVAN_TOKEN_SECRET.get();
-    const haravanClient = new HaravanAPI(HRV_API_KEY, this.env);
-    const imageService = new ImageTranslationService();
+    try {
+      const HRV_API_KEY = await this.env.HARAVAN_TOKEN_SECRET.get();
+      const haravanClient = new HaravanAPI(HRV_API_KEY, this.env);
+      const imageService = new ImageTranslationService();
 
-    const now = new Date();
-    const yesterday = new Date(now);
-    yesterday.setDate(yesterday.getDate() - 1);
-    yesterday.setHours(0, 0, 0, 0);
+      const now = new Date();
+      const yesterday = new Date(now);
+      yesterday.setDate(yesterday.getDate() - 1);
+      yesterday.setHours(0, 0, 0, 0);
 
-    const dateRange = {
-      min: yesterday.toISOString(),
-      max: now.toISOString()
-    };
+      const dateRange = {
+        min: yesterday.toISOString(),
+        max: now.toISOString()
+      };
 
-    for (const viId of Object.keys(ArticleSyncService.BLOG_ID_MAP)) {
-      const enId = ArticleSyncService.BLOG_ID_MAP[viId];
+      for (const viId of Object.keys(ArticleSyncService.BLOG_ID_MAP)) {
+        const enId = ArticleSyncService.BLOG_ID_MAP[viId];
 
-      try {
-        const { matchedPairs, missingArticles, orphanEnArticles } =
-          await this.checkBlogPair(haravanClient, viId, enId, dateRange);
+        try {
+          const { matchedPairs, missingArticles, orphanEnArticles } =
+            await this.checkBlogPair(haravanClient, viId, enId, dateRange);
 
-        for (const pair of matchedPairs) {
-          try {
-            const structureSync = SyncHelper.isHtmlStructureSync(
-              pair.vi.body_html,
-              pair.en.body_html
-            );
-            const viUpdated = new Date(pair.vi.updated_at).getTime();
-            const enUpdated = new Date(pair.en.updated_at).getTime();
-            const sourceUpdated =
-              viUpdated - enUpdated > ArticleSyncService.CONFIG.SYNC_THRESHOLD_MS;
-
-            if (!structureSync || sourceUpdated) {
-              const enTitle = await this.translateText(pair.vi.title, false);
-              let enBody = await this.translateText(pair.vi.body_html, true);
-              enBody = await this.translateImagesInHtml(enBody, imageService);
-              const featuredImage = await this.translateFeaturedImage(
-                pair.vi.image?.src,
-                imageService
+          for (const pair of matchedPairs) {
+            try {
+              const structureSync = HaravanSyncHelper.isHtmlStructureSync(
+                pair.vi.body_html,
+                pair.en.body_html
               );
-              await haravanClient.article.updateArticle(enId, pair.en.id, {
-                title: enTitle,
-                body_html: enBody,
-                author: pair.vi.author,
-                image: featuredImage ? { src: featuredImage } : null
+              const viUpdated = new Date(pair.vi.updated_at).getTime();
+              const enUpdated = new Date(pair.en.updated_at).getTime();
+              const sourceUpdated =
+                viUpdated - enUpdated > ArticleSyncService.CONFIG.SYNC_THRESHOLD_MS;
+
+              if (!structureSync || sourceUpdated) {
+                const enTitle = await this.translateText(pair.vi.title, false);
+                let enBody = await this.translateText(pair.vi.body_html, true);
+                enBody = await this.translateImagesInHtml(enBody, imageService);
+                const featuredImage = await this.translateFeaturedImage(
+                  pair.vi.image?.src,
+                  imageService
+                );
+                await haravanClient.article.updateArticle(enId, pair.en.id, {
+                  title: enTitle,
+                  body_html: enBody,
+                  author: pair.vi.author,
+                  image: featuredImage ? { src: featuredImage } : null
+                });
+              }
+            } catch (error) {
+              Sentry.captureException(error, {
+                extra: {
+                  viBlogId: viId,
+                  enBlogId: enId,
+                  articleId: pair.en.id,
+                  articleHandle: pair.en.handle,
+                  action: "update"
+                }
               });
             }
-          } catch (error) {
-            console.warn(`[ArticleSync] Failed to update article EN:${pair.en.id}: ${error.message}`);
           }
-        }
 
-        for (const orphan of orphanEnArticles) {
-          try {
-            await haravanClient.article.deleteArticle(enId, orphan.id);
-          } catch (error) {
-            console.warn(`[ArticleSync] Failed to delete orphan article EN:${orphan.id}: ${error.message}`);
+          for (const orphan of orphanEnArticles) {
+            try {
+              await haravanClient.article.deleteArticle(enId, orphan.id);
+            } catch (error) {
+              Sentry.captureException(error, {
+                extra: {
+                  viBlogId: viId,
+                  enBlogId: enId,
+                  articleId: orphan.id,
+                  articleHandle: orphan.handle,
+                  action: "delete"
+                }
+              });
+            }
           }
-        }
 
-        for (const vi of missingArticles) {
-          try {
-            const enTitle = await this.translateText(vi.title, false);
-            let enBody = await this.translateText(vi.body_html, true);
-            enBody = await this.translateImagesInHtml(enBody, imageService);
-            const featuredImage = await this.translateFeaturedImage(
-              vi.image?.src,
-              imageService
-            );
-            await haravanClient.article.createArticle(enId, {
-              title: enTitle,
-              body_html: enBody,
-              author: vi.author,
-              published_at: vi.published_at,
-              image: featuredImage ? { src: featuredImage } : null
-            });
-          } catch (error) {
-            console.warn(`[ArticleSync] Failed to create article from VI:${vi.id}: ${error.message}`);
+          for (const vi of missingArticles) {
+            try {
+              const enTitle = await this.translateText(vi.title, false);
+              let enBody = await this.translateText(vi.body_html, true);
+              enBody = await this.translateImagesInHtml(enBody, imageService);
+              const featuredImage = await this.translateFeaturedImage(
+                vi.image?.src,
+                imageService
+              );
+              await haravanClient.article.createArticle(enId, {
+                title: enTitle,
+                body_html: enBody,
+                author: vi.author,
+                published_at: vi.published_at,
+                image: featuredImage ? { src: featuredImage } : null
+              });
+            } catch (error) {
+              Sentry.captureException(error, {
+                extra: {
+                  viBlogId: viId,
+                  enBlogId: enId,
+                  articleId: vi.id,
+                  articleHandle: vi.handle,
+                  action: "create"
+                }
+              });
+            }
           }
+        } catch (error) {
+          Sentry.captureException(error, {
+            extra: { viBlogId: viId, enBlogId: enId, action: "processBlog" }
+          });
         }
-      } catch (error) {
-        console.warn(`[ArticleSync] Failed to process blog pair VI:${viId} -> EN:${enId}: ${error.message}`);
       }
+    } catch (error) {
+      Sentry.captureException(error, {
+        extra: { action: "syncArticles" }
+      });
     }
   }
 }
