@@ -22,6 +22,14 @@ export default class DocxRawContentSyncService {
 
   async sync() {
     const kv = this.env.FN_KV;
+
+    // Feature Flag Check
+    const isEnabled = await kv.get("fv_fn_DOCX_RAW_CONTENT_SYNC_ENABLED");
+    if (isEnabled === "false") {
+      console.warn("[DocxRawContentSyncService] Flow is disabled via feature flag (fv_fn_DOCX_RAW_CONTENT_SYNC_ENABLED). Skipping sync.");
+      return;
+    }
+
     const toDate = dayjs().utc().toISOString();
 
     // Set to 0 for normal incremental sync, or a number (e.g., 5) to backfill the last X hours.
