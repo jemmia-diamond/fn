@@ -1,6 +1,6 @@
 import { generateText } from "ai";
 import HaravanAPI from "services/clients/haravan-client/index.js";
-import SyncHelper from "services/haravan/utils/sync-helper.js";
+import HaravanSyncHelper from "services/haravan/utils/sync-haravan-helper";
 import { getOpenAICompatibleModel } from "services/utils/llm-helper.js";
 import ImageTranslationService from "services/media/image-translation-service.js";
 import { retryQuery } from "services/utils/retry-utils";
@@ -35,7 +35,7 @@ export default class ArticleSyncService {
   }
 
   getSignature(article) {
-    const time = SyncHelper.normalizeDate(article.published_at) || "no-time";
+    const time = HaravanSyncHelper.normalizeDate(article.published_at) || "no-time";
     const imgPart = article.image
       ? (article.image.src.match(/([a-f0-9]{32})/i)?.[1] ||
           article.image.src.split("/").pop().split("?")[0]).replace(/^en_/, "")
@@ -59,10 +59,10 @@ export default class ArticleSyncService {
     const prompt = isHtml
       ? TRANSLATION_PROMPTS.HTML + text
       : TRANSLATION_PROMPTS.TEXT + text;
+    const provider = await getOpenAICompatibleModel(this.env);
+    const model = provider(AI_MODELS.GEMINI_2_5_FLASH_LITE);
 
     return retryQuery(async () => {
-      const provider = await getOpenAICompatibleModel(this.env);
-      const model = provider(AI_MODELS.GEMINI_2_5_FLASH_LITE);
       const { text: content } = await generateText({ model, prompt });
       return content.trim();
     });
@@ -211,7 +211,7 @@ export default class ArticleSyncService {
 
           for (const pair of matchedPairs) {
             try {
-              const structureSync = SyncHelper.isHtmlStructureSync(
+              const structureSync = HaravanSyncHelper.isHtmlStructureSync(
                 pair.vi.body_html,
                 pair.en.body_html
               );

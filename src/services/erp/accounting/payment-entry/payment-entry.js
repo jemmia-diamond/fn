@@ -430,7 +430,8 @@ export default class PaymentEntryService {
     }
 
     if ((parseFloat(paymentEntry.paid_amount) !== parseFloat(updateQr.transfer_amount))
-      || (paymentEntry.bank_details.bank_code !== updateQr.bank_code)) {
+      || (paymentEntry.bank_details.bank_code !== updateQr.bank_code)
+      || (paymentEntry.bank_account_no !== updateQr.bank_account_number)) {
       updateQr = await this._updateQRAmount(qrPaymentId, paymentEntry, updateQr);
     }
 
