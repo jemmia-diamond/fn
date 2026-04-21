@@ -11,14 +11,11 @@ import {
   buildWeddingRingsQuery
 } from "services/ecommerce/product/utils/wedding-ring";
 import { JEWELRY_IMAGE } from "src/controllers/ecommerce/constant";
-import * as Sentry from "@sentry/cloudflare";
 
 export default class ProductService {
   constructor(env) {
     this.db = Database.instance(env);
   }
-
-
 
   async searchJewelry(searchKey, limit, page) {
     if (!searchKey || typeof searchKey !== "string") {
@@ -147,8 +144,6 @@ export default class ProductService {
     const data = await this.db.$queryRaw(dataSql);
     return data?.[0] || null;
   }
-
-
 
   async get3dMetadataByJewelryId(productId) {
     const id = BigInt(productId);
