@@ -5,8 +5,6 @@ export default class PublicAPIRoutes {
   static register(publicApi) {
     const ecommerceNamespaceApi = publicApi.basePath("/ecommerce");
 
-    ecommerceNamespaceApi.get("/products/jewelries", Ecommerce.JewelryController.index);
-    ecommerceNamespaceApi.get("/products/jewelries/:id", Ecommerce.JewelryController.show);
     ecommerceNamespaceApi.get("/products/jewelries/:id/3d-metadata", Ecommerce.Jewelry3DMetadataController.show);
 
     ecommerceNamespaceApi.get("/products/:id/availability", Ecommerce.ProductAvailabilityController.index);

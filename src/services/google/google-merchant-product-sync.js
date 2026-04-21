@@ -29,7 +29,7 @@ export default class GoogleMerchantProductSyncService {
           extraFields: ["sku"]
         };
 
-        const result = await this.productService.getJewelry(jsonParams);
+        const result = await this.productService.getJewelryV2(jsonParams);
         const products = result.data;
         const count = result.metadata.total;
 
@@ -81,7 +81,7 @@ export default class GoogleMerchantProductSyncService {
 
   _mapToMerchantProduct(product, variant) {
     try {
-      let imageLink = product.images && product.images.length > 0 ? product.images[0] : "";
+      let imageLink = variant.images && variant.images.length > 0 ? variant.images[0] : "";
 
       let availability = "in_stock";
       let availabilityDate = undefined;
