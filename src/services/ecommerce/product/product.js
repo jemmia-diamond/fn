@@ -1,10 +1,7 @@
 import Database from "services/database";
 import { retryQuery } from "services/utils/retry-utils";
 import { Prisma } from "@prisma-cli";
-import {
-  buildQuerySingle,
-  buildQuery
-} from "services/ecommerce/product/utils/jewelry";
+
 import {
   buildQueryV2,
   buildQuerySingleV2
@@ -14,44 +11,10 @@ import {
   buildWeddingRingsQuery
 } from "services/ecommerce/product/utils/wedding-ring";
 import { JEWELRY_IMAGE } from "src/controllers/ecommerce/constant";
-import * as Sentry from "@sentry/cloudflare";
 
 export default class ProductService {
   constructor(env) {
     this.db = Database.instance(env);
-  }
-
-  async getJewelryData(jsonParams) {
-    try {
-      const { dataSql, countSql } = buildQuery(jsonParams);
-
-      const data = await retryQuery(() => this.db.$queryRaw(dataSql));
-      const count = await retryQuery(() => this.db.$queryRaw(countSql));
-
-      return {
-        data,
-        count: count.length ? Number(count[0].total) : 0,
-        material_colors: count.length ? count[0].material_colors : [],
-        fineness: count.length ? count[0].fineness : []
-      };
-    } catch (e) {
-      Sentry.captureException(e);
-      throw e;
-    }
-  }
-
-  async getJewelry(jsonParams) {
-    const { data, count, material_colors, fineness } =
-      await this.getJewelryData(jsonParams);
-    return {
-      data,
-      metadata: {
-        total: count,
-        material_colors: material_colors,
-        fineness: fineness,
-        pagination: jsonParams.pagination
-      }
-    };
   }
 
   async searchJewelry(searchKey, limit, page) {
@@ -180,58 +143,6 @@ export default class ProductService {
     const dataSql = buildWeddingRingByIdQuery(id);
     const data = await this.db.$queryRaw(dataSql);
     return data?.[0] || null;
-  }
-
-  async getJewelryById(id, params) {
-    const { variantJsonBuildObject, lateralJoinClause } =
-      buildQuerySingle(params);
-    const dataSql = Prisma.sql`
-      SELECT
-          CAST(p.haravan_product_id AS INT) AS id,
-          p.title,
-          d.design_code,
-          p.handle,
-          d.diamond_holder,
-          CASE
-           	WHEN d.ring_band_type = 'None' THEN NULL
-           	ELSE d.ring_band_type
-        	END AS ring_band_type,
-          d.main_stone,
-          d.stone_quantity,
-          p.haravan_product_type AS product_type,
-         'Round' AS shape_of_main_stone,
-          p.has_360,
-          img.images,
-          p.estimated_gold_weight,
-          JSON_AGG(
-            ${Prisma.raw(variantJsonBuildObject)}
-          ) AS variants,
-          JSON_BUILD_OBJECT(
-               'name', p.primary_collection,
-               'handle', p.primary_collection_handle
-        	) AS primary_collection
-        FROM ecom.materialized_products p
-          INNER JOIN workplace.designs d ON d.id = p.design_id
-          INNER JOIN (
-            SELECT
-              i.product_id,
-              array_agg(i.src ORDER BY i.src) AS images
-            FROM haravan.images i
-            GROUP BY i.product_id
-          ) img ON img.product_id = p.haravan_product_id
-
-          ${Prisma.raw(lateralJoinClause)}
-        WHERE 1 = 1
-          AND p.haravan_product_id = ${id}
-        GROUP BY
-        	p.haravan_product_id, p.title, d.design_code, p.handle,
-          d.diamond_holder, d.ring_band_type, d.main_stone, d.stone_quantity, p.haravan_product_type,
-          p.max_price, p.min_price, p.max_price_18, p.max_price_14,
-          p.qty_onhand, img.images, p.has_360, p.estimated_gold_weight,
-          p.primary_collection, p.primary_collection_handle
-    `;
-    const result = await this.db.$queryRaw(dataSql);
-    return result?.[0] || null;
   }
 
   async get3dMetadataByJewelryId(productId) {
