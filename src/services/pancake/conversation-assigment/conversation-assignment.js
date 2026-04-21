@@ -17,7 +17,7 @@ export default class ConversationAssignmentService {
   async getLastConversationAssigneesHistory(conversationId) {
     const result = await this.db.$queryRaw`
       SELECT 
-          (c.assignee_histories -> (jsonb_array_length(c.assignee_histories) - 1)) ->'payload'->'added_users' AS added_users
+          (c.assignee_histories -> (jsonb_array_length(COALESCE(c.assignee_histories, '[]'::jsonb)) - 1)) ->'payload'->'added_users' AS added_users
           FROM pancake.conversation c
           WHERE c.id = ${conversationId};
     `;
