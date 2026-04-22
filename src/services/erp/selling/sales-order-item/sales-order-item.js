@@ -98,6 +98,8 @@ export default class SalesOrderItemService {
   }
 
   _parseRule(rule) {
+    if (rule == null) return null;
+
     const parts = rule?.split(":");
     if (parts?.length < 3) return null;
 
