@@ -39,7 +39,6 @@ export default {
       await new Misa.InventoryItemSyncService(env).syncInventoryItems();
       await new Haravan.OrderModule.DatabaseSyncService(env).sync();
       await new Haravan.Product.DatabaseSyncService(env).sync();
-      await new Haravan.WarehouseInventory.DatabaseSyncService(env).sync();
       break;
     case "*/10 * * * *": // At every 10th minute
       await ERP.Selling.SerialService.syncSerialsToERP(env);
@@ -131,6 +130,7 @@ export default {
       break;
     case "0 14 * * *": // 21:00
       await ERP.Automation.AssignmentRuleService.enableAssignmentRuleOffHour(env);
+      await new Haravan.Articles.ArticleSyncService(env).sync();
       break;
     default:
       break;

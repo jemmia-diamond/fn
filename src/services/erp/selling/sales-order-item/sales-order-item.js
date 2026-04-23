@@ -98,8 +98,10 @@ export default class SalesOrderItemService {
   }
 
   _parseRule(rule) {
-    const parts = rule.split(":");
-    if (parts.length < 3) return null;
+    if (rule == null) return null;
+
+    const parts = rule?.split(":");
+    if (parts?.length < 3) return null;
 
     const dateRange = parts[1].trim();
     const policy = parts.slice(2).join(":").trim();

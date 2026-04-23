@@ -228,8 +228,10 @@ export default class BuyBackInstanceService {
     try {
       await frappeClient.upsert(erpData, "lark_instance_id", ignoredFields);
     } catch (error) {
-      const isDuplicate = error?.message?.includes("UniqueValidationError")
-        || error?.message?.includes("Duplicate entry");
+      const msg = error?.message || "";
+      const isDuplicate = error?.status === 417
+        || msg.includes("UniqueValidationError")
+        || msg.includes("Duplicate entry");
 
       if (!isDuplicate) {
         throw error;
