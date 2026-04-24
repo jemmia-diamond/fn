@@ -80,7 +80,6 @@ export default {
       await ERP.Setup.EmployeeService.syncEmployeesToDatabase(env);
       await ERP.Selling.SalesPersonService.syncSalesPersonToDatabase(env);
       await Larksuite.Docs.Base.RecordService.syncRecordsToDatabase(env);
-      await new Ecommerce.DiamondCollectService(env).syncDiamondsToCollects();
       await Salesaya.LarkChatSyncMediaService.syncMedia(env);
       await new Pancake.PageSyncService(env).syncPages();
       await new Haravan.Users.UserSyncService(env).sync().catch(() => {});
