@@ -4,7 +4,6 @@ import {
   getGoogleGenerativeAIModel
 } from "services/utils/llm-helper";
 import { AI_MODELS } from "src/constants/ai-proxy";
-import { v4 as uuidv4 } from "uuid";
 import { WebsiteR2StorageService } from "services/r2-object/website/website-r2-storage-service";
 import * as Sentry from "@sentry/cloudflare";
 
@@ -163,7 +162,47 @@ export default class ImageTranslationService {
   }
 
   /**
-   * Full translation pipeline.
+   * Build the expected EN filename from VI filename.
+   * VI: {filename}.png → EN: en_{filename}.png
+   *
+   * @param {string} viFilename
+   * @returns {string}
+   */
+  getTranslatedFilename(viFilename) {
+    const nameWithoutExt = viFilename.substring(0, viFilename.lastIndexOf("."));
+    const extension = viFilename.split(".").pop();
+    return `en_${nameWithoutExt}.${extension}`;
+  }
+
+  /**
+   * Check if translated image already exists in R2.
+   *
+   * @param {string} enFilename
+   * @param {Object} env
+   * @returns {Promise<boolean>}
+   */
+  async isTranslatedImageExists(enFilename, env) {
+    const storage = new WebsiteR2StorageService(env);
+    const key = `${storage.prefix}/${enFilename}`;
+    const object = await storage.bucket.head(key);
+    return object !== null;
+  }
+
+  /**
+   * Get public URL for translated image.
+   *
+   * @param {string} enFilename
+   * @param {Object} env
+   * @returns {string}
+   */
+  getTranslatedImageUrl(enFilename, env) {
+    const storage = new WebsiteR2StorageService(env);
+    const key = `${storage.prefix}/${enFilename}`;
+    return `${env.R2_JEMMIA_WEBSITE_PUBLIC_URL}/${key}`;
+  }
+
+  /**
+   * Full translation pipeline with signature-based cache.
    *
    * @param {File|string} image - File object or image URL
    * @param {Object} env
@@ -183,6 +222,12 @@ export default class ImageTranslationService {
       imageName = image.name || "image.jpg";
     }
 
+    const enFilename = this.getTranslatedFilename(imageName);
+
+    if (await this.isTranslatedImageExists(enFilename, env)) {
+      return this.getTranslatedImageUrl(enFilename, env);
+    }
+
     const metadata = await this.extractMetadata(imageBuffer, env);
 
     if (metadata.length === 0) {
@@ -195,17 +240,8 @@ export default class ImageTranslationService {
       env
     );
 
-    const uniqueId = uuidv4().split("-")[0];
-    const extension = imageName.split(".").pop();
-    const nameWithoutExt = imageName.substring(0, imageName.lastIndexOf("."));
-    const outputFilename = `en_${nameWithoutExt}_${uniqueId}.${extension}`;
-
-    // Save to R2
     const storage = new WebsiteR2StorageService(env);
-    const publicUrl = await storage.upload(
-      outputFilename,
-      translatedImageBuffer
-    );
+    const publicUrl = await storage.upload(enFilename, translatedImageBuffer);
 
     return publicUrl;
   }

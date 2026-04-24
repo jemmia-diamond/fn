@@ -97,16 +97,16 @@ export default class ArticleSyncService {
     return all;
   }
 
-  async checkBlogPair(haravanClient, viBlogId, enBlogId, dateRange = null) {
+  async checkBlogPair(haravanClient, viBlogId, enBlogId, viDateRange = null, enDateRange = null) {
     let viArticles = await this.fetchAllArticles(
       haravanClient,
       viBlogId,
-      dateRange
+      viDateRange
     );
     let enArticles = await this.fetchAllArticles(
       haravanClient,
       enBlogId,
-      dateRange
+      enDateRange
     );
 
     viArticles = viArticles.filter(
@@ -193,13 +193,15 @@ export default class ArticleSyncService {
       const imageService = new ImageTranslationService();
 
       const now = new Date();
-      const yesterday = new Date(now);
-      yesterday.setDate(yesterday.getDate() - 1);
-      yesterday.setHours(0, 0, 0, 0);
+      const endTime = new Date(now);
+      endTime.setHours(21, 0, 0, 0);
+
+      const startTime = new Date(endTime);
+      startTime.setDate(startTime.getDate() - 1);
 
       const dateRange = {
-        min: yesterday.toISOString(),
-        max: now.toISOString()
+        min: startTime.toISOString(),
+        max: endTime.toISOString()
       };
 
       for (const viId of Object.keys(ArticleSyncService.BLOG_ID_MAP)) {
@@ -207,7 +209,7 @@ export default class ArticleSyncService {
 
         try {
           const { matchedPairs, missingArticles, orphanEnArticles } =
-            await this.checkBlogPair(haravanClient, viId, enId, dateRange);
+            await this.checkBlogPair(haravanClient, viId, enId, dateRange, null);
 
           for (const pair of matchedPairs) {
             try {
