@@ -65,6 +65,9 @@ export default {
     case "erpnext-order-creation":
       await ERP.Selling.SalesOrderService.dequeueOrderQueue(batch, env);
       break;
+    case "promotion-diamond-collect-sync":
+      await new Ecommerce.DiamondCollectService(env).syncDiamondsToCollects();
+      break;
     default:
       break;
     }

@@ -12,6 +12,7 @@ import WebsiteFormController from "controllers/ecommerce/website-form-controller
 import DiamondPricesController from "controllers/ecommerce/diamond-prices-controller";
 import Jewelry3DMetadataController from "controllers/ecommerce/jewelry-3d-metadata-controller";
 import DiamondStockTrackerController from "controllers/ecommerce/diamond-stock-tracker-controller";
+import DiamondCollectController from "controllers/ecommerce/diamond-collect-controller";
 
 export default {
   JewelryControllerV2: JewelryControllerV2,
@@ -27,5 +28,6 @@ export default {
   WebsiteFormController: WebsiteFormController,
   DiamondPricesController: DiamondPricesController,
   Jewelry3DMetadataController: Jewelry3DMetadataController,
-  DiamondStockTrackerController: DiamondStockTrackerController
+  DiamondStockTrackerController: DiamondStockTrackerController,
+  DiamondCollectController: DiamondCollectController
 };
