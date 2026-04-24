@@ -238,7 +238,7 @@ model larksuite_users {
   @@schema("larksuite")
 }
 
-model larksuiteTechTickets {
+model larksuiteTechTicket {
   record_id                   String    @id @map("record_id")
   ticket_id                   String?   @map("ticket_id")
   ticket_name                 String?   @map("ticket_name")
@@ -254,7 +254,14 @@ model larksuiteTechTickets {
   expected_completion_time    DateTime? @map("expected_completion_time")
   ticket_no_in_month          String?   @map("ticket_no_in_month")
   current_number_in_month     Int?      @map("current_number_in_month")
+  new_deadline                DateTime? @map("new_deadline")
+  sla_50_percent              DateTime? @map("sla_50_percent")
+  reminder_time               DateTime? @map("reminder_time")
+  manager                     String?   @map("manager")
   synced_at                   DateTime  @default(now()) @map("synced_at")
+  responded_at                DateTime?
+  processed_at                DateTime?
+  completed_at                DateTime?
 
   @@map("tech_tickets")
   @@schema("larksuite")

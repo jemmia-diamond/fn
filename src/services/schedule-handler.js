@@ -14,6 +14,7 @@ import { TIMEZONE_VIETNAM } from "src/constants";
 import Google from "services/google";
 import Salesaya from "services/salesaya";
 import Pancake from "services/pancake";
+import Haravan from "services/haravan";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -26,6 +27,8 @@ export default {
       await ERP.CRM.LeadService.syncCallLogLead(env);
       await ERP.Selling.SalesOrderService.fillSerialNumbersToTemporaryOrderItems(env);
       await new Pancake.TagSyncService(env).syncTags();
+      await new Ecommerce.ProductG1PromotionSyncService(env).syncPromotions();
+      await new Haravan.Collect.CollectionProductSyncService(env).syncCollectionProducts();
       break;
     case "*/5 * * * *": // At every 5th minute
       const batchTime = dayjs().utc();
@@ -34,6 +37,8 @@ export default {
       await new ERP.CRM.PancakeLeadSyncService(env).syncPancakeLeads({ batchTime });
       await new Ecommerce.JewelryDiamondPairService(env).processOutOfStockDiamonds();
       await new Misa.InventoryItemSyncService(env).syncInventoryItems();
+      await new Haravan.OrderModule.DatabaseSyncService(env).sync();
+      await new Haravan.Product.DatabaseSyncService(env).sync();
       break;
     case "*/10 * * * *": // At every 10th minute
       await ERP.Selling.SerialService.syncSerialsToERP(env);
@@ -41,6 +46,7 @@ export default {
       await new ProductQuote.DesignCodeService(env).syncDesignCodeToLark();
       await new Ecommerce.VariantSyncService(env).syncVariants();
       await ERP.Selling.BuybackExchangeSyncService.cronSync(env);
+      await new Haravan.Customer.DatabaseSyncService(env).sync();
       break;
     case "*/15 * * * *": // At every 15th minute
       await ERP.Contacts.ContactService.cronSyncContactsToDatabase(env);
@@ -54,6 +60,7 @@ export default {
       await ERP.Contacts.AddressService.cronSyncAddressesToDatabase(env);
       await Ecommerce.ProductService.refreshMaterializedViews(env);
       await DatabaseOperations.MaterializedViewService.refresh30Minutes(env);
+      await new Haravan.AccountingSalesOrders.LarkSyncService(env).sync();
       break;
     case "0 */3 * * *": // At every 3rd hour
       await InventoryCMS.InventoryCheckSheetService.syncInventoryCheckSheetToDatabase(env);
@@ -76,6 +83,7 @@ export default {
       await new Ecommerce.DiamondCollectService(env).syncDiamondsToCollects();
       await Salesaya.LarkChatSyncMediaService.syncMedia(env);
       await new Pancake.PageSyncService(env).syncPages();
+      await new Haravan.Users.UserSyncService(env).sync().catch(() => {});
       break;
     case "30 0 * * *": // 07:30
       await ERP.CRM.LeadDemandService.syncLeadDemandToDatabase(env);
@@ -122,6 +130,7 @@ export default {
       break;
     case "0 14 * * *": // 21:00
       await ERP.Automation.AssignmentRuleService.enableAssignmentRuleOffHour(env);
+      await new Haravan.Articles.ArticleSyncService(env).sync();
       break;
     default:
       break;

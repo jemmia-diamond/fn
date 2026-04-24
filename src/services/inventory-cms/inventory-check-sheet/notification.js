@@ -7,6 +7,7 @@ import { readItems } from "@directus/sdk";
 import LarksuiteService from "services/larksuite/lark";
 import * as Sentry from "@sentry/cloudflare";
 import { TIMEZONE_VIETNAM } from "src/constants";
+import { retryRequest } from "services/utils/retry-utils";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -22,10 +23,12 @@ const CHAT_IDS = {
 export default class CheckSheetNotificationService {
   static async processInventoryCheck(payload, env) {
     const { warehouse, staff: staffId, lines = [] } = payload;
+    const targetChatId = this.getTargetChatId(warehouse);
     const alertedLines = lines.filter(l => l.count_in_book > l.count_for_real || l.count_extra_for_real);
+    if (targetChatId == CHAT_IDS["[ALL]"]) return { success: true, alertedLines: alertedLines.length };
+
     const staffName = await this.getStaffName(staffId, env);
     const messageText = this.composeMessage(payload, alertedLines, staffName);
-    const targetChatId = this.getTargetChatId(warehouse);
     await this.sendNotification(env, targetChatId, messageText);
 
     return { success: true, alertedLines: alertedLines.length };
@@ -107,13 +110,13 @@ export default class CheckSheetNotificationService {
 
   static async sendNotification(env, chatId, messageText) {
     const larkClient = await LarksuiteService.createClientV2(env);
-    await larkClient.im.message.create({
+    await retryRequest(() => larkClient.im.message.create({
       params: { receive_id_type: "chat_id" },
       data: {
         receive_id: chatId,
         msg_type: "text",
         content: JSON.stringify({ text: messageText })
       }
-    });
+    }));
   }
 }

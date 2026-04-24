@@ -2,6 +2,7 @@ import * as Sentry from "@sentry/cloudflare";
 import Database from "services/database";
 import RecordService from "services/larksuite/docs/base/record/record";
 import { TABLES } from "services/larksuite/docs/constant";
+import { isTestOrder } from "services/utils/order-intercepter";
 
 export default class ProductQuoteOrderService {
   constructor(env) {
@@ -14,6 +15,9 @@ export default class ProductQuoteOrderService {
     for (const message of messages) {
       try {
         const orderData = message.body;
+        if (isTestOrder(orderData)) {
+          return true;
+        }
         await ProductQuoteOrderService.syncOrderToLark(_env, orderData);
       } catch (error) {
         Sentry.captureException(error);

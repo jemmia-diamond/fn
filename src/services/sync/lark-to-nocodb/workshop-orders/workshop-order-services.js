@@ -1,7 +1,8 @@
 import * as Sentry from "@sentry/cloudflare";
 import { RecordConnector } from "services/clients/lark-client/docs";
 import NocoDBClient from "services/clients/nocodb-client";
-import { LARK_APP_TOKEN, LARK_TABLE_ID, NOCODB_TABLE_ID, POLICY_FIELDS, SERIAL_NUMBER, LAST_UPDATED_AT } from "services/sync/lark-to-nocodb/workshop-orders/constants";
+import { LARK_APP_TOKEN, LARK_TABLE_ID, POLICY_FIELDS, SERIAL_NUMBER, LAST_UPDATED_AT } from "services/sync/lark-to-nocodb/workshop-orders/constants";
+import { NOCODB_TABLES } from "src/constants/nocodb-tables";
 
 const KV_KEY = "workshop_order_sync:last_date";
 const FIELDS = [SERIAL_NUMBER, POLICY_FIELDS, LAST_UPDATED_AT];
@@ -127,7 +128,7 @@ export default class WorkshopOrderServices {
     const serials = recordsToSync.map(r => r.serialNumber).join(",");
 
     try {
-      const searchData = await this.nocoClient.listRecords(NOCODB_TABLE_ID, {
+      const searchData = await this.nocoClient.listRecords(NOCODB_TABLES.SUPPLY.SERIALS, {
         where: `(serial_number,in,${serials})`,
         limit: recordsToSync.length,
         fields: ["id", "serial_number"]
@@ -144,7 +145,7 @@ export default class WorkshopOrderServices {
         const existingRecord = existingMap.get(record.serialNumber);
 
         if (existingRecord) {
-          await this.nocoClient.updateRecords(NOCODB_TABLE_ID, {
+          await this.nocoClient.updateRecords(NOCODB_TABLES.SUPPLY.SERIALS, {
             id: existingRecord.id,
             policy: record.policy
           });

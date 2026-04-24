@@ -5,18 +5,20 @@ import LarkChatParser from "services/salesaya/lark-chat/lark-chat-parser";
 import { TABLES } from "services/larksuite/docs/constant";
 import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/constant";
 import { getFilename } from "services/salesaya/lark-chat/lark-chat-helper";
-import { WorkplaceClient } from "services/clients/workplace-client";
+import NocoDBClient from "services/clients/nocodb-client";
 import LarksuiteService from "services/larksuite/lark";
 import { TIMEZONE_VIETNAM } from "src/constants";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import timezone from "dayjs/plugin/timezone.js";
 import * as Sentry from "@sentry/cloudflare";
+import { NOCODB_TABLES } from "src/constants/nocodb-tables";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
 export default class LarkChatSyncMediaService {
+
   constructor(env, larkAxiosClient, larkSdkClient) {
     this.env = env;
     this.larkAxiosClient = larkAxiosClient;
@@ -24,7 +26,7 @@ export default class LarkChatSyncMediaService {
     this.appToken = TABLES.SALESAYA_MEDIA.app_token;
     this.tableId = TABLES.SALESAYA_MEDIA.table_id;
     this.workplaceBaseId = this.env.NOCODB_MARKETING_BASE_ID;
-    this.workplaceBaseUrl = this.env.NOCODB_WORKPLACE_BASE_URL;
+    this.workplaceBaseUrl = this.env.NOCODB_WORKSPACE_BASE_URL;
     this.fetcher = new LarkChatResourceFetcher(env, larkAxiosClient);
     this.uploader = new LarkChatMediaUploader(`${this.env.SALESAYA_API_BASE_URL}/files/upload`);
     this.parser = new LarkChatParser(larkSdkClient);
@@ -48,7 +50,7 @@ export default class LarkChatSyncMediaService {
   };
 
   async syncChat(chatId, startTime, endTime) {
-    const workplaceClient = await WorkplaceClient.initialize(this.env, this.workplaceBaseId);
+    const nocodb = new NocoDBClient(this.env);
     let pageToken = "";
     let hasMore = true;
     while (hasMore) {
@@ -86,52 +88,99 @@ export default class LarkChatSyncMediaService {
         const fileLinks = [];
 
         for (let i = 0; i < parsed.images.length; i++) {
-          const img = parsed.images[i];
-          const key = `${img.message_id}_${img.key}`;
+          try {
+            const img = parsed.images[i];
+            const key = `${img.message_id}_${img.key}`;
 
-          if (!buffersCache[key]) {
-            buffersCache[key] = await this.fetcher.getBufferByKey(
-              img.message_id,
-              img.key,
-              "image"
-            );
+            if (!buffersCache[key]) {
+              buffersCache[key] = await this.fetcher.getBufferByKey(
+                img.message_id,
+                img.key,
+                "image"
+              );
+            }
+
+            if (buffersCache[key]) {
+              const filename = getFilename(parsed.codes[0], i + 1, "jpg");
+              const link = await this.uploader.upload(buffersCache[key], filename);
+              if (link) imageLinks.push(link);
+            }
+          } catch (error) {
+            Sentry.captureException(error);
           }
-
-          const filename = getFilename(parsed.codes[0], i + 1, "jpg");
-          const link = await this.uploader.upload(buffersCache[key], filename);
-          if (link) imageLinks.push(link);
         }
 
         for (let i = 0; i < parsed.files.length; i++) {
-          const f = parsed.files[i];
-          const key = `${f.message_id}_${f.key}`;
+          try {
+            const f = parsed.files[i];
+            const key = `${f.message_id}_${f.key}`;
 
-          if (!buffersCache[key]) {
-            buffersCache[key] = await this.fetcher.getBufferByKey(
-              f.message_id,
-              f.key,
-              "file"
-            );
+            if (!buffersCache[key]) {
+              buffersCache[key] = await this.fetcher.getBufferByKey(
+                f.message_id,
+                f.key,
+                "file"
+              );
+            }
+
+            if (buffersCache[key]) {
+              const filename = getFilename(parsed.codes[0], i + 1, "mp4");
+              const link = await this.uploader.upload(buffersCache[key], filename);
+              if (link) fileLinks.push(link);
+            }
+          } catch (error) {
+            Sentry.captureException(error);
           }
-
-          const filename = getFilename(parsed.codes[0], i + 1, "mp4");
-          const link = await this.uploader.upload(buffersCache[key], filename);
-          if (link) fileLinks.push(link);
         }
 
         const links = [...imageLinks, ...fileLinks].join(", ");
         if (uniqueCodes.length === 1) {
-          const updated = await workplaceClient.designImages.updateMediaByDesignCode(uniqueCodes[0], fileLinks, imageLinks);
+          const designImageTableId = NOCODB_TABLES.MARKETING.DESIGN_IMAGES;
+          const designTableId = NOCODB_TABLES.SUPPLY.DESIGNS;
+
+          const rowRes = await nocodb.listRecords(designImageTableId, {
+            where: `(design_code,eq,${uniqueCodes[0]})`,
+            limit: 1
+          });
+          const row = rowRes.list?.[0] ?? null;
+
+          let updated = false;
+          if (row) {
+            const mergedVideos = Array.from(new Set([...(row.videos || []), ...fileLinks]));
+            const mergedImages = Array.from(new Set([...(row.images || []), ...imageLinks]));
+            await nocodb.updateRecords(designImageTableId, {
+              id: row.id,
+              videos: mergedVideos,
+              images: mergedImages
+            });
+            updated = true;
+          }
+
           if (!updated) {
-            let existDesign = await workplaceClient.designs.getByDesignCode(uniqueCodes[0]);
-            if (existDesign === null) {
-              existDesign = await workplaceClient.designs.getByErpCode(uniqueCodes[0]);
+            let existDesignRes = await nocodb.listRecords(designTableId, { where: `(design_code,eq,${uniqueCodes[0]})`, limit: 1 });
+            let existDesign = existDesignRes.list?.[0] ?? null;
+            if (!existDesign) {
+              existDesignRes = await nocodb.listRecords(designTableId, { where: `(erp_code,eq,${uniqueCodes[0]})`, limit: 1 });
+              existDesign = existDesignRes.list?.[0] ?? null;
             }
-            if (existDesign === null) {
-              existDesign = await workplaceClient.designs.getByCode(uniqueCodes[0]);
+            if (!existDesign) {
+              existDesignRes = await nocodb.listRecords(designTableId, { where: `(code,eq,${uniqueCodes[0]})`, limit: 1 });
+              existDesign = existDesignRes.list?.[0] ?? null;
             }
-            if (existDesign !== null) {
-              await workplaceClient.designImages.createByDesignCode(existDesign, fileLinks, imageLinks);
+
+            if (existDesign) {
+              const data = {
+                designs: [existDesign.id],
+                videos: fileLinks,
+                images: imageLinks
+              };
+              try {
+                await nocodb.createRecords(designImageTableId, data);
+              } catch (error) {
+                if (error.response?.status !== 422 || error.response?.data?.error !== "INVALID_PK_VALUE") {
+                  throw error;
+                }
+              }
             } else {
               await this.writeRecord(uniqueCodes[0], links, "Thất bại", "Không thể get thông tin sản phẩm từ nocodb", msg.message_id);
               continue;
@@ -150,8 +199,9 @@ export default class LarkChatSyncMediaService {
 
   static async syncMedia(env) {
     try {
-      const larkAxiosClient = await LarksuiteService.createLarkAxiosClient(env);
       const larkSdkClient = await LarksuiteService.createClientV2(env);
+      const token = await LarksuiteService.getTenantAccessTokenFromClient({ larkClient: larkSdkClient, env });
+      const larkAxiosClient = await LarksuiteService.createLarkAxiosClient(env, token);
       const service = new LarkChatSyncMediaService(env, larkAxiosClient, larkSdkClient);
       const startTime = dayjs().tz(TIMEZONE_VIETNAM).subtract(1, "day").startOf("day").unix();
       await service.syncChat(CHAT_GROUPS.MEDIA_GROUP.chat_id, startTime);

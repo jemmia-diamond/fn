@@ -1,4 +1,5 @@
 import InventoryCms from "services/inventory-cms";
+
 export default class InventoryCheckNotificationController {
   static async create(ctx) {
     const data = await ctx.req.json();

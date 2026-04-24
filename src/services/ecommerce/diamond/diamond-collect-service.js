@@ -3,6 +3,7 @@ import DiamondDiscountService from "services/ecommerce/diamond/diamond-discount-
 import Database from "src/services/database";
 import * as Sentry from "@sentry/cloudflare";
 import HaravanAPI from "services/clients/haravan-client";
+import { NOCODB_TABLES } from "src/constants/nocodb-tables";
 
 export default class DiamondCollectService {
   constructor(env) {
@@ -10,8 +11,6 @@ export default class DiamondCollectService {
   }
 
   static DEFAULT_DISCOUNT_PERCENT = 8;
-  static HARAVAN_COLLECTIONS_TABLE = "mpgeruya41k3zcg";
-  static DIAMONDS_HARAVAN_COLLECTION_TABLE = "mxu3rae3quofz6n";
 
   async syncDiamondsToCollects() {
     try {
@@ -19,7 +18,7 @@ export default class DiamondCollectService {
       const activeRules = await DiamondDiscountService.getActiveRules(this.env);
       const allCollections = await this._fetchCollections(nocoClient, activeRules);
 
-      const { ruleCollections, discountCollectionIds } = this._buildRuleCollectionsMap(allCollections);
+      const { ruleCollections, allPercentCollectionIds } = this._buildRuleCollectionsMap(allCollections);
 
       await this._processDiamondBatches({
         db,
@@ -27,7 +26,7 @@ export default class DiamondCollectService {
         haravanApi,
         activeRules,
         ruleCollections,
-        discountCollectionIds
+        allPercentCollectionIds
       });
 
     } catch (error) {
@@ -52,17 +51,91 @@ export default class DiamondCollectService {
       return { list: [] };
     }
 
-    const where = `(discount_type,eq,percent)~and(discount_value,in,${uniquePercents.join(",")})`;
-    return await nocoClient.listRecords(DiamondCollectService.HARAVAN_COLLECTIONS_TABLE, {
+    const where = "(discount_type,eq,percent)~and(discount_value,gt,0)";
+    let collections = await nocoClient.listRecords(NOCODB_TABLES.MARKETING.HARAVAN_COLLECTIONS, {
       where: where,
       limit: 1000
     });
+
+    const existingPercents = new Set((collections.list || []).map(c => Number(c.discount_value)));
+    const missingPercents = uniquePercents.filter(p => !existingPercents.has(Number(p)));
+
+    if (missingPercents.length > 0) {
+      await this._ensureMissingCollectionsExist(nocoClient, missingPercents);
+
+      collections = await nocoClient.listRecords(NOCODB_TABLES.MARKETING.HARAVAN_COLLECTIONS, {
+        where: where,
+        limit: 1000
+      });
+    }
+
+    return collections;
+  }
+
+  async _ensureMissingCollectionsExist(nocoClient, missingPercents) {
+    const newRecords = missingPercents.map(percent => ({
+      discount_type: "percent",
+      discount_value: percent,
+      title: `Chương trình nền KCV ${percent}%`,
+      auto_create: true
+    }));
+
+    try {
+      const createdCollections = await nocoClient.createRecords(NOCODB_TABLES.MARKETING.HARAVAN_COLLECTIONS, newRecords);
+      const createdCollectionIds = (createdCollections || []).map(record => record.id);
+
+      const createdCollectionsList = await nocoClient.listRecords(NOCODB_TABLES.MARKETING.HARAVAN_COLLECTIONS, {
+        where: `(id,in,${createdCollectionIds.join(",")})`
+      });
+
+      if (createdCollectionsList.list.length > 0) {
+        for (const col of createdCollectionsList.list) {
+          await this._triggerCollectionWebhook(col);
+        }
+      }
+    } catch (error) {
+      Sentry.captureException(error, {
+        tags: {
+          tableId: NOCODB_TABLES.MARKETING.HARAVAN_COLLECTIONS,
+          tableName: "haravan_collections"
+        }
+      });
+    }
+  }
+
+  async _triggerCollectionWebhook(col) {
+    try {
+      await fetch(
+        "https://fagwjdzlfqwwyul2ij6ehvug3e0vhowc.lambda-url.ap-southeast-1.on.aws/",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            "type": "records.after.update",
+            "version": "v3",
+            "data": {
+              "table_id": NOCODB_TABLES.MARKETING.HARAVAN_COLLECTIONS,
+              "table_name": "haravan_collections",
+              "rows": [col]
+            }
+          })
+        }
+      );
+    } catch (error) {
+      Sentry.captureException(error, {
+        tags: {
+          tableId: NOCODB_TABLES.MARKETING.HARAVAN_COLLECTIONS,
+          tableName: "haravan_collections"
+        }
+      });
+    }
   }
 
   _buildRuleCollectionsMap(allCollections) {
     const ruleCollections = {};
-    let baseCollectionId = null;
-    const allManagedIds = [];
+    const allPercentCollectionIds = new Set();
 
     for (const col of (allCollections.list || [])) {
       if (col.discount_value) {
@@ -74,10 +147,7 @@ export default class DiamondCollectService {
 
         if (col.id) {
           ruleCollections[discountVal].nocodbId = col.id;
-          allManagedIds.push(col.id);
-          if (discountVal == DiamondCollectService.DEFAULT_DISCOUNT_PERCENT) {
-            baseCollectionId = col.id;
-          }
+          allPercentCollectionIds.add(col.id);
         }
 
         if (col.haravan_id) {
@@ -86,10 +156,7 @@ export default class DiamondCollectService {
       }
     }
 
-    return {
-      ruleCollections,
-      discountCollectionIds: allManagedIds.filter(id => id !== baseCollectionId)
-    };
+    return { ruleCollections, allPercentCollectionIds };
   }
 
   async _processDiamondBatches(context) {
@@ -113,7 +180,7 @@ export default class DiamondCollectService {
         const entriesLimit = 1000;
 
         while (true) {
-          const relatedCollections = await nocoClient.listRecords(DiamondCollectService.DIAMONDS_HARAVAN_COLLECTION_TABLE, {
+          const relatedCollections = await nocoClient.listRecords(NOCODB_TABLES.SUPPLY.DIAMOND_HARAVAN_COLLECTIONS, {
             where,
             limit: entriesLimit,
             offset: entriesOffset
@@ -122,10 +189,12 @@ export default class DiamondCollectService {
           const list = relatedCollections.list || [];
 
           for (const entry of list) {
-            if (!diamondCollectionsMap[entry.diamond_id]) {
-              diamondCollectionsMap[entry.diamond_id] = [];
+            if (context.allPercentCollectionIds.has(entry.haravan_collection_id)) {
+              if (!diamondCollectionsMap[entry.diamond_id]) {
+                diamondCollectionsMap[entry.diamond_id] = [];
+              }
+              diamondCollectionsMap[entry.diamond_id].push(entry);
             }
-            diamondCollectionsMap[entry.diamond_id].push(entry);
           }
 
           if (list.length < entriesLimit) {
@@ -172,7 +241,7 @@ export default class DiamondCollectService {
 
   async _processSingleDiamond(diamond, context, existingEntries) {
     try {
-      const { activeRules, ruleCollections, discountCollectionIds, nocoClient, haravanApi } = context;
+      const { activeRules, ruleCollections, nocoClient, haravanApi } = context;
 
       const discountPercent = DiamondDiscountService.calculateDiscountPercent({
         diamondSize: parseFloat(diamond.edge_size_2 || 0),
@@ -182,7 +251,7 @@ export default class DiamondCollectService {
       const rules = ruleCollections[discountPercent] || {};
       const targetNocodbCollectionId = rules.nocodbId || null;
 
-      await this._syncNocoDBCollections(diamond, targetNocodbCollectionId, discountCollectionIds, nocoClient, existingEntries);
+      await this._syncNocoDBCollections(diamond, targetNocodbCollectionId, context, existingEntries);
       await this._syncHaravanCollections(diamond, targetNocodbCollectionId, rules.haravanId, nocoClient, haravanApi, existingEntries);
 
     } catch (error) {
@@ -194,16 +263,21 @@ export default class DiamondCollectService {
     }
   }
 
-  async _syncNocoDBCollections(diamond, targetCollectionId, discountCollectionIds, nocoClient, existingEntries) {
+  async _syncNocoDBCollections(diamond, targetCollectionId, context, existingEntries) {
+    const { ruleCollections, nocoClient, allPercentCollectionIds } = context;
     const existingList = existingEntries || [];
+    const defaultDiscountCollectionId = ruleCollections[DiamondCollectService.DEFAULT_DISCOUNT_PERCENT]?.nocodbId;
 
     for (const entry of existingList) {
-      const isDiscountCollection = discountCollectionIds.includes(entry.haravan_collection_id);
-      const isCurrentCollection = entry.haravan_collection_id === targetCollectionId;
+      if (!allPercentCollectionIds.has(entry.haravan_collection_id)) {
+        continue;
+      }
+      const isTargetCollection = entry.haravan_collection_id === targetCollectionId;
+      const isDefaultCollection = entry.haravan_collection_id === defaultDiscountCollectionId;
 
-      if (isDiscountCollection && !isCurrentCollection) {
+      if (!isTargetCollection && !isDefaultCollection) {
         console.warn("Removing discount collection for diamond:", diamond.id, entry.haravan_collection_id);
-        await nocoClient.deleteRecords(DiamondCollectService.DIAMONDS_HARAVAN_COLLECTION_TABLE, [{
+        await nocoClient.deleteRecords(NOCODB_TABLES.SUPPLY.DIAMOND_HARAVAN_COLLECTIONS, [{
           diamond_id: diamond.id,
           haravan_collection_id: entry.haravan_collection_id
         }]);
@@ -220,7 +294,7 @@ export default class DiamondCollectService {
     if (!exists) {
       try {
         console.warn("Adding discount collection for diamond:", diamond.id, targetNocodbCollectionId);
-        await nocoClient.createRecords(DiamondCollectService.DIAMONDS_HARAVAN_COLLECTION_TABLE, {
+        await nocoClient.createRecords(NOCODB_TABLES.SUPPLY.DIAMOND_HARAVAN_COLLECTIONS, {
           diamonds: { id: diamond.id },
           haravan_collections: { id: targetNocodbCollectionId }
         });

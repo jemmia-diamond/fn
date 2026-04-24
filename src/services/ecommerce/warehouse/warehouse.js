@@ -1,5 +1,4 @@
 import Database from "services/database";
-import { Prisma } from "@prisma-cli";
 import { buildQuery } from "services/ecommerce/warehouse/utils/warehouse";
 
 export default class WarehouseService {
@@ -9,7 +8,7 @@ export default class WarehouseService {
 
   async getAvailableWarehouses(productId) {
     const dataSql = buildQuery(productId);
-    const results = await this.db.$queryRaw`${Prisma.raw(dataSql)}`;
+    const results = await this.db.$queryRaw(dataSql);
 
     return results.map(r => ({
       variant_id: Number(r.variant_id),

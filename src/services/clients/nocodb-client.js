@@ -43,7 +43,7 @@ export default class NocoDBClient {
   async #getBaseUrl() {
     if (this.#baseUrl) return this.#baseUrl;
 
-    const url = this.#env.NOCODB_WORKPLACE_BASE_URL || "https://app.nocodb.com";
+    const url = this.#env.NOCODB_WORKSPACE_BASE_URL || "https://app.nocodb.com";
     this.#baseUrl = url.replace(/\/$/, "");
     return this.#baseUrl;
   }
@@ -112,14 +112,13 @@ export default class NocoDBClient {
   }
 
   async upsert(tableId, data, params = {}) {
-
     const records = await this.listRecords(tableId, { where: params.where, limit: 1 });
     if (records.list && records.list.length > 0) {
       // Update
       const record = records.list[0];
       // Need ID to update
-      if (record.Id) {
-        return this.updateRecords(tableId, { Id: record.Id, ...data });
+      if (record.id) {
+        return this.updateRecords(tableId, { id: record.id, ...data });
       }
     }
     // Create if not found

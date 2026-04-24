@@ -2,7 +2,7 @@ import axios from "axios";
 import axiosRetry from "axios-retry";
 
 const RETRY_CONFIG = {
-  retries: 2,
+  retries: 5,
   retryDelay: axiosRetry.exponentialDelay,
   shouldResetTimeout: true,
   retryCondition: (error) =>
@@ -14,7 +14,7 @@ class BaseConnector {
   constructor(accessToken = null) {
     this.accessToken = accessToken;
     this.baseUrl = "https://apis.haravan.com/com";
-    this.timeout = 30000;
+    this.timeout = 50000;
   }
 
   getHeaders() {
