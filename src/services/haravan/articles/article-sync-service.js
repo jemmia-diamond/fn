@@ -209,7 +209,7 @@ export default class ArticleSyncService {
 
         try {
           const { matchedPairs, missingArticles, orphanEnArticles } =
-            await this.checkBlogPair(haravanClient, viId, enId, dateRange, null);
+            await this.checkBlogPair(haravanClient, viId, enId, dateRange);
 
           for (const pair of matchedPairs) {
             try {
