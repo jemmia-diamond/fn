@@ -162,47 +162,33 @@ export default class ImageTranslationService {
   }
 
   /**
-   * Build the expected EN filename from VI filename.
-   * VI: {filename}.png → EN: en_{filename}.png
+   * Build the expected EN filename from VI filename and content hash.
+   * VI: {filename}.png → EN: en_{filename}_{hash}.png
    *
    * @param {string} viFilename
+   * @param {string} hash
    * @returns {string}
    */
-  getTranslatedFilename(viFilename) {
+  getTranslatedFilename(viFilename, hash) {
     const nameWithoutExt = viFilename.substring(0, viFilename.lastIndexOf("."));
     const extension = viFilename.split(".").pop();
-    return `en_${nameWithoutExt}.${extension}`;
+    return `en_${nameWithoutExt}_${hash}.${extension}`;
   }
 
   /**
-   * Check if translated image already exists in R2.
+   * Compute SHA-256 hash of image buffer.
    *
-   * @param {string} enFilename
-   * @param {Object} env
-   * @returns {Promise<boolean>}
+   * @param {Uint8Array} buffer
+   * @returns {Promise<string>}
    */
-  async isTranslatedImageExists(enFilename, env) {
-    const storage = new WebsiteR2StorageService(env);
-    const key = `${storage.prefix}/${enFilename}`;
-    const object = await storage.bucket.head(key);
-    return object !== null;
+  async computeHash(buffer) {
+    const hashBuffer = await crypto.subtle.digest("SHA-256", buffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, "0")).join("").substring(0, 8);
   }
 
   /**
-   * Get public URL for translated image.
-   *
-   * @param {string} enFilename
-   * @param {Object} env
-   * @returns {string}
-   */
-  getTranslatedImageUrl(enFilename, env) {
-    const storage = new WebsiteR2StorageService(env);
-    const key = `${storage.prefix}/${enFilename}`;
-    return `${env.R2_JEMMIA_WEBSITE_PUBLIC_URL}/${key}`;
-  }
-
-  /**
-   * Full translation pipeline with signature-based cache.
+   * Full translation pipeline with content-based cache.
    *
    * @param {File|string} image - File object or image URL
    * @param {Object} env
@@ -222,7 +208,8 @@ export default class ImageTranslationService {
       imageName = image.name || "image.jpg";
     }
 
-    const enFilename = this.getTranslatedFilename(imageName);
+    const hash = await this.computeHash(imageBuffer);
+    const enFilename = this.getTranslatedFilename(imageName, hash);
 
     if (await this.isTranslatedImageExists(enFilename, env)) {
       return this.getTranslatedImageUrl(enFilename, env);
