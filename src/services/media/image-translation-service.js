@@ -187,13 +187,16 @@ export default class ImageTranslationService {
     return hashArray.map(b => b.toString(16).padStart(2, "0")).join("").substring(0, 8);
   }
 
-  /**
-   * Full translation pipeline with content-based cache.
-   *
-   * @param {File|string} image - File object or image URL
-   * @param {Object} env
-   * @returns {Promise<string|null>}
-   */
+  async isTranslatedImageExists(filename, env) {
+    const storage = new WebsiteR2StorageService(env);
+    return await storage.exists(filename);
+  }
+
+  async getTranslatedImageUrl(filename, env) {
+    const storage = new WebsiteR2StorageService(env);
+    return storage.getPublicUrl(filename);
+  }
+
   async translateImage(image, env) {
     let imageBuffer;
     let imageName;

@@ -9,8 +9,14 @@ import { TRANSLATION_PROMPTS, AI_MODELS } from "src/constants/ai-proxy";
 
 export default class ArticleSyncService {
   static CONFIG = {
-    FETCH_LIMIT: 50, // Articles per page
-    SYNC_THRESHOLD_MS: 600000 // 10 min - VI must be newer than EN by this to trigger sync
+    FETCH_LIMIT: 50,
+    SYNC_THRESHOLD_MS: 600000,
+    IMAGE_BATCH_SIZE: 5,
+    IMAGE_MAX_RETRIES: 3,
+    IMAGE_RETRY_DELAY: 2000,
+    ARTICLE_MAX_RETRIES: 3,
+    ARTICLE_RETRY_DELAY: 2000,
+    API_REQUEST_DELAY: 200
   };
 
   static BLOG_ID_MAP = {
@@ -82,7 +88,10 @@ export default class ArticleSyncService {
 
     while (hasMore) {
       try {
-        const data = await haravanClient.article.getArticles(blogId, params);
+        const data = await retryQuery(async () => {
+          return haravanClient.article.getArticles(blogId, params);
+        }, ArticleSyncService.CONFIG.ARTICLE_MAX_RETRIES, ArticleSyncService.CONFIG.ARTICLE_RETRY_DELAY);
+
         const articles = data.articles || [];
         all = all.concat(articles);
         if (articles.length < limit) hasMore = false;
@@ -90,7 +99,10 @@ export default class ArticleSyncService {
           page++;
           params.page = page;
         }
-      } catch {
+      } catch (error) {
+        Sentry.captureException(error, {
+          extra: { blogId, page, action: "fetchAllArticles" }
+        });
         hasMore = false;
       }
     }
@@ -159,31 +171,59 @@ export default class ArticleSyncService {
     return { matchedPairs, missingArticles, orphanEnArticles };
   }
 
+  async translateImageWithRetry(src, imageService) {
+    let fullSrc = src.startsWith("//") ? "https:" + src : src;
+
+    return retryQuery(async () => {
+      const newUrl = await imageService.translateImage(fullSrc, this.env);
+      return { src, newUrl: typeof newUrl === "string" ? newUrl : fullSrc, success: true };
+    }, ArticleSyncService.CONFIG.IMAGE_MAX_RETRIES, ArticleSyncService.CONFIG.IMAGE_RETRY_DELAY).catch(error => {
+      Sentry.captureException(error, {
+        extra: { src, action: "translateImageWithRetry" }
+      });
+      return { src, newUrl: fullSrc, success: false, error };
+    });
+  }
+
   async translateImagesInHtml(html, imageService) {
     if (!html) return html;
     const images = this.getImages(html);
     if (images.length === 0) return html;
 
-    let updatedHtml = html;
+    const batchSize = ArticleSyncService.CONFIG.IMAGE_BATCH_SIZE;
+    const results = [];
 
-    for (const src of images) {
-      let fullSrc = src.startsWith("//") ? "https:" + src : src;
-      const newUrl = await imageService.translateImage(fullSrc, this.env);
-      if (typeof newUrl === "string" && newUrl !== fullSrc) {
+    for (let i = 0; i < images.length; i += batchSize) {
+      const batch = images.slice(i, i + batchSize);
+      const batchResults = await Promise.allSettled(
+        batch.map(src => this.translateImageWithRetry(src, imageService))
+      );
+      results.push(...batchResults.map(r => r.status === "fulfilled" ? r.value : null));
+    }
+
+    let updatedHtml = html;
+    for (const result of results) {
+      if (result && result.success && result.newUrl !== result.src) {
         updatedHtml = updatedHtml.replace(
-          new RegExp(src.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g"),
-          newUrl
+          new RegExp(result.src.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g"),
+          result.newUrl
         );
       }
     }
+
     return updatedHtml;
   }
 
   async translateFeaturedImage(src, imageService) {
     if (!src) return null;
     const fullSrc = src.startsWith("//") ? "https:" + src : src;
-    const newUrl = await imageService.translateImage(fullSrc, this.env);
-    return typeof newUrl === "string" ? newUrl : src;
+
+    const result = await this.translateImageWithRetry(fullSrc, imageService);
+    return result.success ? result.newUrl : fullSrc;
+  }
+
+  async sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 
   async sync() {
@@ -236,6 +276,7 @@ export default class ArticleSyncService {
                   author: pair.vi.author,
                   image: featuredImage ? { src: featuredImage } : null
                 });
+                await this.sleep(ArticleSyncService.CONFIG.API_REQUEST_DELAY);
               }
             } catch (error) {
               Sentry.captureException(error, {
@@ -253,6 +294,7 @@ export default class ArticleSyncService {
           for (const orphan of orphanEnArticles) {
             try {
               await haravanClient.article.deleteArticle(enId, orphan.id);
+              await this.sleep(ArticleSyncService.CONFIG.API_REQUEST_DELAY);
             } catch (error) {
               Sentry.captureException(error, {
                 extra: {
@@ -282,6 +324,7 @@ export default class ArticleSyncService {
                 published_at: vi.published_at,
                 image: featuredImage ? { src: featuredImage } : null
               });
+              await this.sleep(ArticleSyncService.CONFIG.API_REQUEST_DELAY);
             } catch (error) {
               Sentry.captureException(error, {
                 extra: {
