@@ -4,6 +4,7 @@ import HaravanSyncHelper from "services/haravan/utils/sync-haravan-helper";
 import { getOpenAICompatibleModel } from "services/utils/llm-helper.js";
 import ImageTranslationService from "services/media/image-translation-service.js";
 import { retryQuery } from "services/utils/retry-utils";
+import { sleep } from "services/utils/sleep.js";
 import * as Sentry from "@sentry/cloudflare";
 import { TRANSLATION_PROMPTS, AI_MODELS } from "src/constants/ai-proxy";
 
@@ -12,10 +13,6 @@ export default class ArticleSyncService {
     FETCH_LIMIT: 50,
     SYNC_THRESHOLD_MS: 600000,
     IMAGE_BATCH_SIZE: 5,
-    IMAGE_MAX_RETRIES: 3,
-    IMAGE_RETRY_DELAY: 2000,
-    ARTICLE_MAX_RETRIES: 3,
-    ARTICLE_RETRY_DELAY: 2000,
     API_REQUEST_DELAY: 200
   };
 
@@ -90,7 +87,7 @@ export default class ArticleSyncService {
       try {
         const data = await retryQuery(async () => {
           return haravanClient.article.getArticles(blogId, params);
-        }, ArticleSyncService.CONFIG.ARTICLE_MAX_RETRIES, ArticleSyncService.CONFIG.ARTICLE_RETRY_DELAY);
+        });
 
         const articles = data.articles || [];
         all = all.concat(articles);
@@ -177,7 +174,7 @@ export default class ArticleSyncService {
     return retryQuery(async () => {
       const newUrl = await imageService.translateImage(fullSrc, this.env);
       return { src, newUrl: typeof newUrl === "string" ? newUrl : fullSrc, success: true };
-    }, ArticleSyncService.CONFIG.IMAGE_MAX_RETRIES, ArticleSyncService.CONFIG.IMAGE_RETRY_DELAY).catch(error => {
+    }).catch(error => {
       Sentry.captureException(error, {
         extra: { src, action: "translateImageWithRetry" }
       });
@@ -220,10 +217,6 @@ export default class ArticleSyncService {
 
     const result = await this.translateImageWithRetry(fullSrc, imageService);
     return result.success ? result.newUrl : fullSrc;
-  }
-
-  async sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
   }
 
   async sync() {
@@ -276,7 +269,7 @@ export default class ArticleSyncService {
                   author: pair.vi.author,
                   image: featuredImage ? { src: featuredImage } : null
                 });
-                await this.sleep(ArticleSyncService.CONFIG.API_REQUEST_DELAY);
+                await sleep(ArticleSyncService.CONFIG.API_REQUEST_DELAY);
               }
             } catch (error) {
               Sentry.captureException(error, {
@@ -294,7 +287,7 @@ export default class ArticleSyncService {
           for (const orphan of orphanEnArticles) {
             try {
               await haravanClient.article.deleteArticle(enId, orphan.id);
-              await this.sleep(ArticleSyncService.CONFIG.API_REQUEST_DELAY);
+              await sleep(ArticleSyncService.CONFIG.API_REQUEST_DELAY);
             } catch (error) {
               Sentry.captureException(error, {
                 extra: {
@@ -324,7 +317,7 @@ export default class ArticleSyncService {
                 published_at: vi.published_at,
                 image: featuredImage ? { src: featuredImage } : null
               });
-              await this.sleep(ArticleSyncService.CONFIG.API_REQUEST_DELAY);
+              await sleep(ArticleSyncService.CONFIG.API_REQUEST_DELAY);
             } catch (error) {
               Sentry.captureException(error, {
                 extra: {
