@@ -137,7 +137,7 @@ export default class CustomerService {
     for (const message of messages) {
       const body = message.body;
       const erpTopic = body.erpTopic;
-      await this.processPayload(body.data, erpTopic).catch(err => Sentry.captureException(err));
+      await this.processPayload(body.data, erpTopic);
     }
   }
 
