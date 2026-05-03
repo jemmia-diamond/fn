@@ -5,6 +5,19 @@ import { createAxiosClient } from "services/utils/http-client";
 const DEFAULT_HEADERS = { Accept: "application/json" };
 
 export default class FrappeClient {
+  static #instance = null;
+
+  static instance(env) {
+    if (!this.#instance) {
+      this.#instance = new FrappeClient({
+        url: env.JEMMIA_ERP_BASE_URL,
+        apiKey: env.JEMMIA_ERP_API_KEY,
+        apiSecret: env.JEMMIA_ERP_API_SECRET
+      });
+    }
+    return this.#instance;
+  }
+
   constructor({ url, username, password, apiKey, apiSecret, verify = true }) {
     this.url = url;
     this.verify = verify;

@@ -9,7 +9,7 @@ import { EXTRA_HOOKS } from "services/pancake/constants/extra-hook.constant";
 export default class ConversationService {
   constructor(env) {
     this.env = env;
-    this.pancakeClient = new PancakeClient(env.PANCAKE_ACCESS_TOKEN);
+    this.pancakeClient = PancakeClient.instance(env);
     this.leadService = new LeadService(env);
     this.db = Database.instance(env);
   }
@@ -194,11 +194,11 @@ export default class ConversationService {
 
     if (!existingDocName) return;
 
-    const aihub = new AIHUBClient(env);
+    const aihub = AIHUBClient.instance(this.env);
     return await aihub.makeRequest("/lead-info", {
       "pageId": body.page_id,
       "conversationId": conversationId,
-      "webhookUrl": `${env.HOST}/webhook/ai-hub/erp/leads`
+      "webhookUrl": `${this.env.HOST}/webhook/ai-hub/erp/leads`
     });
   }
 

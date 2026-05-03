@@ -12,7 +12,7 @@ export default class TagSyncService {
   constructor(env) {
     this.env = env;
     this.db = Database.instance(env);
-    this.pancakeClient = new PancakeClient(env.PANCAKE_ACCESS_TOKEN);
+    this.pancakeClient = PancakeClient.instance(env);
   }
 
   async syncTags() {

@@ -11,8 +11,18 @@ const RETRY_CONFIG = {
 };
 
 export default class AIHUBClient {
+  static #instance = null;
+
+  static instance(env) {
+    if (!this.#instance) {
+      this.#instance = new AIHUBClient(env);
+    }
+    return this.#instance;
+  }
+
   #bearerToken;
   #env;
+  #axiosClient;
 
   constructor(env) {
     this.#env = env;
@@ -37,10 +47,12 @@ export default class AIHUBClient {
     return this.#bearerToken;
   }
 
-  async #createClient() {
+  async #getClient() {
+    if (this.#axiosClient) return this.#axiosClient;
+
     const token = await this.#getBearerToken();
 
-    const client = axios.create({
+    this.#axiosClient = axios.create({
       baseURL: API_BASE_URL,
       headers: {
         "Content-Type": "application/json",
@@ -48,13 +60,13 @@ export default class AIHUBClient {
       }
     });
 
-    axiosRetry(client, RETRY_CONFIG);
+    axiosRetry(this.#axiosClient, RETRY_CONFIG);
 
-    return client;
+    return this.#axiosClient;
   }
 
   async makeRequest(endpoint, data = null) {
-    const client = await this.#createClient();
+    const client = await this.#getClient();
     const response = await client.post(endpoint, data);
     return response.data;
   }

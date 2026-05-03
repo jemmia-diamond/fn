@@ -11,11 +11,7 @@ export default class UserService {
   constructor(env) {
     this.env = env;
     this.doctype = "User";
-    this.frappeClient = new FrappeClient({
-      url: this.env.JEMMIA_ERP_BASE_URL,
-      apiKey: this.env.JEMMIA_ERP_API_KEY,
-      apiSecret: this.env.JEMMIA_ERP_API_SECRET
-    });
+    this.frappeClient = FrappeClient.instance(env);
     this.db = Database.instance(env);
   }
 

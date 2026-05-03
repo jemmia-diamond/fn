@@ -4,6 +4,15 @@ const GETTING_LOG = "1";
 const LOGS_LIMIT = 0;
 const DEFAULT_LOG_TYPE = "1-2";
 export default class UptimeRobotClient {
+  static #instance = null;
+
+  static instance(env) {
+    if (!this.#instance) {
+      this.#instance = new UptimeRobotClient(env);
+    }
+    return this.#instance;
+  }
+
   constructor(env) {
     this.env = env;
     this.baseUrl = "https://api.uptimerobot.com/v2";

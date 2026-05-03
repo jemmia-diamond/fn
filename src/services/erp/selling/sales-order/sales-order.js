@@ -58,14 +58,8 @@ export default class SalesOrderService {
       delivering: "Delivering",
       delivered: "Delivered"
     };
-    this.frappeClient = new FrappeClient(
-      {
-        url: env.JEMMIA_ERP_BASE_URL,
-        apiKey: env.JEMMIA_ERP_API_KEY,
-        apiSecret: env.JEMMIA_ERP_API_SECRET
-      }
-    );
-    this.db = Database.instance(env);
+    this.frappeClient = FrappeClient.instance(this.env);
+    this.db = Database.instance(this.env);
   };
 
   async processHaravanOrder(haravanOrderData) {

@@ -40,7 +40,7 @@ export default class DiamondCollectService {
     return {
       haravanApi: new HaravanAPI(HRV_API_KEY),
       db: Database.instance(this.env),
-      nocoClient: new NocoDBClient(this.env)
+      nocoClient: NocoDBClient.instance(this.env)
     };
   }
 

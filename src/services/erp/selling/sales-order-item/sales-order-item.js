@@ -7,13 +7,9 @@ export default class SalesOrderItemService {
   DOCTYPE = "Sales Order Item";
   constructor(env) {
     this.env = env;
-    this.frappeClient = new FrappeClient({
-      url: env.JEMMIA_ERP_BASE_URL,
-      apiKey: env.JEMMIA_ERP_API_KEY,
-      apiSecret: env.JEMMIA_ERP_API_SECRET
-    });
+    this.frappeClient = FrappeClient.instance(env);
     this.db = Database.instance(env);
-    this.nocodbClient = new NocoDBClient(env);
+    this.nocodbClient = NocoDBClient.instance(env);
   }
 
   async dequeueSalesOrderItemQueue(batch) {

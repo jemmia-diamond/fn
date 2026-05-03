@@ -15,7 +15,7 @@ export default class WorkshopOrderServices {
   constructor(env) {
     this.env = env;
     this.larkClient = new RecordConnector(env);
-    this.nocoClient = new NocoDBClient(env);
+    this.nocoClient = NocoDBClient.instance(env);
     this.kv = env.FN_KV;
   }
 

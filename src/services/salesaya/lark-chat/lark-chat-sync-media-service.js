@@ -50,7 +50,7 @@ export default class LarkChatSyncMediaService {
   };
 
   async syncChat(chatId, startTime, endTime) {
-    const nocodb = new NocoDBClient(this.env);
+    const nocodb = NocoDBClient.instance(this.env);
     let pageToken = "";
     let hasMore = true;
     while (hasMore) {

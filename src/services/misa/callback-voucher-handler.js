@@ -22,13 +22,7 @@ export default class MisaCallbackVoucherHandler {
   constructor(env) {
     this.env = env;
     this.db = Database.instance(env);
-    this.frappeClient = new FrappeClient(
-      {
-        url: env.JEMMIA_ERP_BASE_URL,
-        apiKey: env.JEMMIA_ERP_API_KEY,
-        apiSecret: env.JEMMIA_ERP_API_SECRET
-      }
-    );
+    this.frappeClient = FrappeClient.instance(env);
     this.doctype = "Payment Entry";
   }
 

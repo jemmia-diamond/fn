@@ -10,9 +10,19 @@ const RETRY_CONFIG = {
 };
 
 export default class NocoDBClient {
+  static #instance = null;
+
+  static instance(env) {
+    if (!this.#instance) {
+      this.#instance = new NocoDBClient(env);
+    }
+    return this.#instance;
+  }
+
   #env;
   #apiToken;
   #baseUrl;
+  #axiosClient;
 
   /**
    * @param {object} env
@@ -48,20 +58,22 @@ export default class NocoDBClient {
     return this.#baseUrl;
   }
 
-  async #createClient() {
+  async #getClient() {
+    if (this.#axiosClient) return this.#axiosClient;
+
     const token = await this.#getApiToken();
     const baseUrl = await this.#getBaseUrl();
 
-    const client = axios.create({
+    this.#axiosClient = axios.create({
       baseURL: baseUrl,
       headers: {
         "xc-token": token
       }
     });
 
-    axiosRetry(client, RETRY_CONFIG);
+    axiosRetry(this.#axiosClient, RETRY_CONFIG);
 
-    return client;
+    return this.#axiosClient;
   }
 
   /**
@@ -71,7 +83,7 @@ export default class NocoDBClient {
    * @param {object} [config] - Axios config
    */
   async #request(method, url, config = {}) {
-    const client = await this.#createClient();
+    const client = await this.#getClient();
     try {
       const response = await client.request({
         method,

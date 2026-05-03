@@ -189,11 +189,7 @@ export default class BuyBackInstanceService {
   }
 
   async upsertToErp(data) {
-    const frappeClient = new FrappeClient({
-      url: this.env.JEMMIA_ERP_BASE_URL,
-      apiKey: this.env.JEMMIA_ERP_API_KEY,
-      apiSecret: this.env.JEMMIA_ERP_API_SECRET
-    });
+    const frappeClient = FrappeClient.instance(this.env);
 
     let phoneNumber = data.phone_number;
     try {

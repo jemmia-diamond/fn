@@ -1,6 +1,15 @@
 import { createAxiosClient, DEFAULT_RETRY_CONFIG } from "services/utils/http-client";
 
 export default class MisaClient {
+  static #instance = null;
+
+  static instance(env) {
+    if (!this.#instance) {
+      this.#instance = new MisaClient(env);
+    }
+    return this.#instance;
+  }
+
   static RETRIEVABLE_LIMIT = 1000;
   static KV_TOKEN_KEY = "misa:access_token";
   static TOKEN_TTL_HOURS = 11;

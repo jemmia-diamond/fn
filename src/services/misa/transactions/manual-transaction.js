@@ -39,7 +39,7 @@ export default class ManualTransactionService {
     }
 
     try {
-      const misaClient = new MisaClient(this.env);
+      const misaClient = MisaClient.instance(this.env);
       await misaClient.getAccessToken();
 
       const bankDictionary = await misaClient.getDictionary(8, 0, MisaClient.RETRIEVABLE_LIMIT, null);

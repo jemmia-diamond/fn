@@ -1,6 +1,16 @@
 import { createAxiosClient } from "services/utils/http-client";
 
 export default class PancakeClient {
+  static #instance = null;
+
+  static instance(env) {
+    if (!this.#instance) {
+      const token = env.PANCAKE_ACCESS_TOKEN;
+      this.#instance = new PancakeClient(token);
+    }
+    return this.#instance;
+  }
+
   constructor(accessToken) {
     this.baseUrl = "https://pages.fm/api";
     this.accessToken = accessToken;

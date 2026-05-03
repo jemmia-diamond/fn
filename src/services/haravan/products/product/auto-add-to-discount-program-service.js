@@ -68,7 +68,7 @@ export default class AutoAddToDiscountProgramService {
 
   async addToDiamondCollection(haravanProductId) {
     try {
-      const nocodb = new NocoDBClient(this.env);
+      const nocodb = NocoDBClient.instance(this.env);
 
       const diamondsQuery = await nocodb.listRecords(NOCODB_TABLES.SUPPLY.DIAMONDS, {
         where: `(product_id,eq,${haravanProductId})`
@@ -109,7 +109,7 @@ export default class AutoAddToDiscountProgramService {
 
   async addToJewelryCollection(haravanProductId) {
     try {
-      const nocodb = new NocoDBClient(this.env);
+      const nocodb = NocoDBClient.instance(this.env);
 
       const productsQuery = await nocodb.listRecords(NOCODB_TABLES.SUPPLY.JEWELRIES, {
         where: `(haravan_product_id,eq,${haravanProductId})`,

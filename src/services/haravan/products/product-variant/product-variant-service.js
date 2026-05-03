@@ -10,7 +10,7 @@ export default class ProductVariantService {
   async clearIncomingStockTag(product) {
     const variants = product.variants || [];
 
-    const nocodb = new NocoDBClient(this.env);
+    const nocodb = NocoDBClient.instance(this.env);
     const diamondTableId = NOCODB_TABLES.SUPPLY.DIAMONDS;
 
     for (const variant of variants) {
@@ -34,7 +34,7 @@ export default class ProductVariantService {
   }
 
   async updateStockTag(diamondId, hasStock) {
-    const nocodb = new NocoDBClient(this.env);
+    const nocodb = NocoDBClient.instance(this.env);
     const diamondTableId = NOCODB_TABLES.SUPPLY.DIAMONDS;
 
     await nocodb.updateRecords(diamondTableId, {
@@ -44,7 +44,7 @@ export default class ProductVariantService {
   }
 
   async findVariantsByGiaReport(diamond) {
-    const nocodb = new NocoDBClient(this.env);
+    const nocodb = NocoDBClient.instance(this.env);
     const variantTableId = NOCODB_TABLES.SUPPLY.VARIANTS;
     const giaReportNo = diamond.report_no;
     return await nocodb.listRecords(variantTableId, {
@@ -55,7 +55,7 @@ export default class ProductVariantService {
   async clearFinalDiscountValueIfOutOfStock(product) {
     const variants = product.variants || [];
 
-    const nocodb = new NocoDBClient(this.env);
+    const nocodb = NocoDBClient.instance(this.env);
     const variantsTableId = NOCODB_TABLES.SUPPLY.VARIANTS;
 
     for (const variant of variants) {

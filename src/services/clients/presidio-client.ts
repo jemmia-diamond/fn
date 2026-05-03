@@ -30,6 +30,15 @@ export interface AnalyzeImageResponse {
 }
 
 export default class PresidioClient {
+  private static instance_: PresidioClient | null = null;
+
+  static instance(env: any) {
+    if (!this.instance_) {
+      this.instance_ = new PresidioClient(env);
+    }
+    return this.instance_;
+  }
+
   private env: any;
   private client: any;
 
@@ -170,7 +179,7 @@ export default class PresidioClient {
     }
 
     const formData = new FormData();
-    const blob = new Blob([inputBuffer], { type: "image/jpeg" });
+    const blob = new Blob([new Uint8Array(inputBuffer)], { type: "image/jpeg" });
 
     formData.append("file", blob, (file as any).name || "image.jpg");
 
@@ -229,10 +238,14 @@ export default class PresidioClient {
 
     // Try using File constructor if available (safer for FormData)
     if (typeof File !== "undefined") {
-      const fileObj = new File([inputBuffer], fileName, { type: "image/jpeg" });
+      const fileObj = new File([new Uint8Array(inputBuffer)], fileName, {
+        type: "image/jpeg"
+      });
       formData.append("file", fileObj);
     } else {
-      const blob = new Blob([inputBuffer], { type: "image/jpeg" });
+      const blob = new Blob([new Uint8Array(inputBuffer)], {
+        type: "image/jpeg"
+      });
       formData.append("file", blob, fileName);
     }
 

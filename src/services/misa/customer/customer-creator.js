@@ -14,13 +14,9 @@ const IGNORE_TAGS = ["nội bộ"];
 export default class CustomerCreator {
   constructor(env) {
     this.env = env;
-    this.misaClient = new MisaClient(env);
+    this.misaClient = MisaClient.instance(env);
     this.db = Database.instance(env);
-    this.frappeClient = new FrappeClient({
-      url: env.JEMMIA_ERP_BASE_URL,
-      apiKey: env.JEMMIA_ERP_API_KEY,
-      apiSecret: env.JEMMIA_ERP_API_SECRET
-    });
+    this.frappeClient = FrappeClient.instance(env);
     this.doctype = "Customer";
     this.dbConnection = {
       timeout: 15000,

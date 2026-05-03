@@ -18,11 +18,7 @@ export default class DiamondDiscountService {
    */
   static async getActiveRules(env) {
     try {
-      const frappeClient = new FrappeClient({
-        url: env.JEMMIA_ERP_BASE_URL,
-        apiKey: env.JEMMIA_ERP_API_KEY,
-        apiSecret: env.JEMMIA_ERP_API_SECRET
-      });
+      const frappeClient = FrappeClient.instance(env);
 
       const now = dayjs().format("YYYY-MM-DD");
 

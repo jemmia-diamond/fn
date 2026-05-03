@@ -14,7 +14,7 @@ export default class CustomerSyncService {
   constructor(env) {
     this.env = env;
     this.db = Database.instance(env);
-    this.pancakeClient = new PancakeClient(env.PANCAKE_ACCESS_TOKEN);
+    this.pancakeClient = PancakeClient.instance(env);
     this.phoneRegex = /(?:\+84|0)(?:3[2-9]|5[6|8|9]|7[0|6-9]|8[1-6|89]|9[0-4|6-9])(?:\d{7})/;
   }
 

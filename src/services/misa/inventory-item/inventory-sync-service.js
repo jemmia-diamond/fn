@@ -32,7 +32,7 @@ export default class MisaInventoryItemSyncService {
     const updatedAtMin = fromDate;
 
     try {
-      const misaClient = new MisaClient(this.env);
+      const misaClient = MisaClient.instance(this.env);
       await misaClient.getAccessToken();
       const HRV_API_KEY = await this.env.HARAVAN_TOKEN_SECRET.get();
       const haravanClient = new HaravanAPI(HRV_API_KEY);

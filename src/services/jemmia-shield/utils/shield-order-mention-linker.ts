@@ -103,11 +103,7 @@ export class ShieldOrderMentionLinker {
   }
 
   public static createFrappeClient(env: any) {
-    return new FrappeClient({
-      url: env.JEMMIA_ERP_BASE_URL,
-      apiKey: env.JEMMIA_ERP_API_KEY,
-      apiSecret: env.JEMMIA_ERP_API_SECRET
-    });
+    return FrappeClient.instance(env);
   }
 
   public static async fetchOrderLinks(

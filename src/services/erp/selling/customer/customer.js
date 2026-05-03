@@ -18,13 +18,7 @@ export default class CustomerService {
   constructor(env) {
     this.env = env;
     this.doctype = "Customer";
-    this.frappeClient = new FrappeClient(
-      {
-        url: env.JEMMIA_ERP_BASE_URL,
-        apiKey: env.JEMMIA_ERP_API_KEY,
-        apiSecret: env.JEMMIA_ERP_API_SECRET
-      }
-    );
+    this.frappeClient = FrappeClient.instance(env);
     this.defaultCustomerName = "Khách Vãng Lai";
     this.db = Database.instance(env);
     this.genderMap = {

@@ -78,7 +78,7 @@ export default class MisaVoucherSyncService {
    */
   async _createVouchersForDateRange(startDate, endDate) {
     // Initialize MISA client
-    const misaClient = new MisaClient(this.env);
+    const misaClient = MisaClient.instance(this.env);
     await misaClient.getAccessToken();
 
     // Pre-fetch bank dictionary of our company

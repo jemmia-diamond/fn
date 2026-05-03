@@ -25,7 +25,7 @@ export default class CollectService {
       return;
     }
 
-    const nocodb = new NocoDBClient(this.env);
+    const nocodb = NocoDBClient.instance(this.env);
 
     // Get Haravan Collection ID from ID
     const collectionRes = await nocodb.listRecords(NOCODB_TABLES.SUPPLY.HARAVAN_COLLECTIONS, { where: `(id,eq,${haravan_collection_id})`, limit: 1 });
@@ -87,7 +87,7 @@ export default class CollectService {
       return;
     }
 
-    const nocodb = new NocoDBClient(this.env);
+    const nocodb = NocoDBClient.instance(this.env);
 
     // Get Haravan Collection ID
     const collectionRes2 = await nocodb.listRecords(NOCODB_TABLES.SUPPLY.HARAVAN_COLLECTIONS, { where: `(id,eq,${haravan_collection_id})`, limit: 1 });

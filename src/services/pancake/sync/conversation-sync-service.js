@@ -46,7 +46,7 @@ export default class ConversationSyncService {
     this.env = env;
     this.ctx = ctx;
     this.db = Database.instance(env);
-    this.pancakeClient = new PancakeClient(env.PANCAKE_ACCESS_TOKEN);
+    this.pancakeClient = PancakeClient.instance(env);
   }
 
   async syncConversations({ batchTime } = {}) {

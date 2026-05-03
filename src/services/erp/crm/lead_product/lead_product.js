@@ -10,13 +10,7 @@ export default class LeadProductService {
   constructor(env) {
     this.env = env;
     this.doctype = "Lead Product";
-    this.frappeClient = new FrappeClient(
-      {
-        url: env.JEMMIA_ERP_BASE_URL,
-        apiKey: env.JEMMIA_ERP_API_KEY,
-        apiSecret: env.JEMMIA_ERP_API_SECRET
-      }
-    );
+    this.frappeClient = FrappeClient.instance(env);
     this.db = Database.instance(env);
   }
 

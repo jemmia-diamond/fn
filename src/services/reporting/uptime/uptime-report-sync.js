@@ -16,7 +16,7 @@ const DEFAULT_LOG_TYPE = "1-2";
 export default class UptimeReportSyncService {
   constructor(env) {
     this.env = env;
-    this.client = new UptimeRobotClient(env);
+    this.client = UptimeRobotClient.instance(env);
     this.db = Database.instance(env);
   }
 
