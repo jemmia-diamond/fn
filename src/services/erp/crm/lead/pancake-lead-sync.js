@@ -14,22 +14,29 @@ export default class PancakeLeadSyncService {
     this.leadService = new LeadService(env);
     this.DEFAULT_TIME_MARK = "2020-05-31 17:00:00";
     this.BATCH_SIZE = 50;
-    this.KV_KEY = "pancake_lead_sync_last_time";
+  }
+
+  async getSyncTimeframe(batchTime) {
+    const kv = this.env.FN_KV;
+    const KV_KEY = "pancake_lead_sync_last_time";
+    const now = batchTime ? batchTime : dayjs().utc();
+
+    const lastSyncTimeStr = await kv.get(KV_KEY);
+    let updatedTime;
+
+    if (lastSyncTimeStr) {
+      updatedTime = lastSyncTimeStr;
+    } else {
+      updatedTime = now.subtract(10, "minutes").format("YYYY-MM-DD HH:mm:ss");
+    }
+
+    return { now, updatedTime, KV_KEY };
   }
 
   async syncPancakeLeads({ batchTime } = {}) {
     console.warn("Starting syncPancakeLeads...");
 
-    const runTime = batchTime ? batchTime : dayjs().utc();
-
-    // Get latest checkpoint
-    let lastSyncTime = await this.env.FN_KV.get(this.KV_KEY);
-    if (!lastSyncTime) {
-      lastSyncTime = runTime.subtract(5, "minutes").subtract(1, "minute").format("YYYY-MM-DD HH:mm:ss");
-    }
-
-    const updatedTime = lastSyncTime;
-    const currentTime = runTime.subtract(1, "minute").format("YYYY-MM-DD HH:mm:ss");
+    const { now, updatedTime, KV_KEY } = await this.getSyncTimeframe(batchTime);
     const defaultTimeMark = this.DEFAULT_TIME_MARK;
 
     console.warn(`Syncing leads updated since ${updatedTime}`);
@@ -131,12 +138,12 @@ export default class PancakeLeadSyncService {
       }
     }
 
-    // Save new checkpoint
+    // Save checkpoint — only advance if no errors, matching syncConversations/syncCustomers pattern
     if (!hasError) {
-      await this.env.FN_KV.put(this.KV_KEY, currentTime);
-      console.warn(`Finished sync. Total processed: ${totalProcessed}. Checkpoint saved: ${currentTime}`);
+      await this.env.FN_KV.put(KV_KEY, now.format("YYYY-MM-DD HH:mm:ss"));
+      console.warn(`Finished sync. Total processed: ${totalProcessed}. Checkpoint saved: ${now.format("YYYY-MM-DD HH:mm:ss")}`);
     } else {
-      await this.env.FN_KV.put(this.KV_KEY, currentTime);
+      console.warn(`Finished sync with errors. Total processed: ${totalProcessed}. Checkpoint NOT advanced.`);
     }
   }
 
