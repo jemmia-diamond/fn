@@ -27,7 +27,7 @@ export default class PancakeLeadSyncService {
     if (lastSyncTimeStr) {
       updatedTime = lastSyncTimeStr;
     } else {
-      updatedTime = now.subtract(10, "minutes").format("YYYY-MM-DD HH:mm:ss");
+      updatedTime = now.subtract(5, "minutes").subtract(1, "minute").format("YYYY-MM-DD HH:mm:ss");
     }
 
     return { now, updatedTime, KV_KEY };
@@ -138,12 +138,14 @@ export default class PancakeLeadSyncService {
       }
     }
 
-    // Save checkpoint — only advance if no errors, matching syncConversations/syncCustomers pattern
-    if (!hasError) {
-      await this.env.FN_KV.put(KV_KEY, now.format("YYYY-MM-DD HH:mm:ss"));
-      console.warn(`Finished sync. Total processed: ${totalProcessed}. Checkpoint saved: ${now.format("YYYY-MM-DD HH:mm:ss")}`);
+    // Save checkpoint — always advance with 1-minute overlap buffer to prevent data loss
+    const currentTime = now.subtract(1, "minute").format("YYYY-MM-DD HH:mm:ss");
+    await this.env.FN_KV.put(KV_KEY, currentTime);
+
+    if (hasError) {
+      console.warn(`Finished sync with errors. Total processed: ${totalProcessed}. Checkpoint advanced to ${currentTime} (with overlap).`);
     } else {
-      console.warn(`Finished sync with errors. Total processed: ${totalProcessed}. Checkpoint NOT advanced.`);
+      console.warn(`Finished sync. Total processed: ${totalProcessed}. Checkpoint saved: ${currentTime}`);
     }
   }
 
