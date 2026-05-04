@@ -6,6 +6,7 @@ import utc from "dayjs/plugin/utc.js";
 import ContactService from "services/erp/contacts/contact/contact";
 import { areAllFieldsEmpty, fetchLeadsFromERP, saveLeadsToDatabase } from "services/erp/crm/lead/utils/lead-helppers";
 import { createInsertLeadPayload, createUpdateLeadPayload } from "services/erp/crm/lead/utils/pancake-utils";
+import { normalizeToStandardFormat } from "services/utils/phone-utils";
 
 dayjs.extend(utc);
 
@@ -241,7 +242,7 @@ export default class LeadService {
 
     try {
       const contactService = new ContactService(this.env);
-      const phone = data.raw_data.phone;
+      const phone = normalizeToStandardFormat(data.raw_data.phone);
       const source = data.source === "Partner" ? this.PartnerLeadSource : this.WebsiteFormLeadSource;
 
       const dataBuilder = async () => {
@@ -255,7 +256,7 @@ export default class LeadService {
           status: "Lead",
           naming_series: "CRM-LEAD-.YYYY.-",
           source: source,
-          first_name: data.raw_data.name || "Chưa rõ",
+          first_name: data.raw_data.name?.trim() || "Chưa rõ",
           phone: phone,
           lead_owner: this.defaultLeadOwner,
           province: provinces.length ? provinces[0].name : null,
@@ -310,9 +311,11 @@ export default class LeadService {
 
   async processCallLogLead(data) {
     const contactService = new ContactService(this.env);
-    const phone = data.type === "Incoming" ? data.from : data.to;
+    const initialPhone = data.type === "Incoming" ? data.from : data.to;
 
-    if (!phone) return;
+    if (!initialPhone) return;
+
+    const phone = normalizeToStandardFormat(initialPhone);
 
     const dataBuilder = async () => {
       const leadData = {
@@ -346,6 +349,7 @@ export default class LeadService {
       await leadService.processCallLogLead(callLog);
     }
   }
+
   async syncLeadsToDatabase(options = {}) {
 
     const { isSyncType = LeadService.SYNC_TYPE_AUTO, minutesBack = 10 } = options;
@@ -378,6 +382,7 @@ export default class LeadService {
       }
     }
   }
+
   static async cronSyncLeadsToDatabase(env) {
     const syncService = new LeadService(env);
     return await syncService.syncLeadsToDatabase({

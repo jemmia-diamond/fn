@@ -12,13 +12,13 @@ import { TABLES } from "services/larksuite/docs/constant";
 import { BadRequestException } from "src/exception/exceptions";
 import HaravanAPI from "services/clients/haravan-client";
 import Misa from "services/misa";
+import { isTestOrder } from "services/utils/order-intercepter";
 
 export default class OrderService {
   constructor(env) {
     this.env = env;
     this.db = Database.instance(env);
     this.hrvClient = new HaravanAPIClient(env);
-    this.larkClient = LarksuiteService.createClient(env);
   }
 
   async invalidOrderNotification(order) {
@@ -35,7 +35,8 @@ export default class OrderService {
     }
     if (negativeOrderedVariants.length > 0) {
       const message = negativeStockOrderMessage(order, negativeOrderedVariants);
-      await this.larkClient.im.message.create({
+      const larkClient = await LarksuiteService.createClientV2(this.env);
+      await larkClient.im.message.create({
         params: {
           receive_id_type: "chat_id"
         },
@@ -200,6 +201,9 @@ export default class OrderService {
     for (const message of batch.messages) {
       try {
         const data = message.body;
+        if (isTestOrder(data)) {
+          return true;
+        }
         await orderService.upsertHaravanOrder(data);
         const haravan_topic = data.haravan_topic;
         if (haravan_topic === HARAVAN_TOPIC.CREATED) {

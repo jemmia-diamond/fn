@@ -4,6 +4,7 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import * as Sentry from "@sentry/cloudflare";
 import { isInvalidTokenError } from "pancake/utils";
+import { sleep } from "services/utils/sleep";
 
 dayjs.extend(utc);
 
@@ -43,6 +44,7 @@ export default class PageSyncService {
 
       for (const page of pageList) {
         await this.syncPageUsers(page.id);
+        await sleep(1000);
       }
 
       console.warn("Finished syncPages.");

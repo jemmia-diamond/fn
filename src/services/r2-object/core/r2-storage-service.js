@@ -42,4 +42,24 @@ export class R2StorageService {
       return null;
     }
   }
+
+  /**
+   * Put object using S3 SDK
+   * @param {string} key
+   * @param {any} body
+   */
+  async _putObject(key, body) {
+    if (!key) {
+      Sentry.captureMessage("Error: No key provided to putObject.");
+      return null;
+    }
+
+    try {
+      const object = await this.bucket.put(key, body);
+      return object;
+    } catch (err) {
+      Sentry.captureException(err);
+      return null;
+    }
+  }
 }

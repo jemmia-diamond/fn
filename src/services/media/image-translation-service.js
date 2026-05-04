@@ -1,0 +1,238 @@
+import { generateText, generateImage } from "ai";
+import {
+  getOpenAICompatibleModel,
+  getGoogleGenerativeAIModel
+} from "services/utils/llm-helper";
+import { AI_MODELS } from "src/constants/ai-proxy";
+import { WebsiteR2StorageService } from "services/r2-object/website/website-r2-storage-service";
+import * as Sentry from "@sentry/cloudflare";
+
+/**
+ * Service of image translation.
+ */
+export default class ImageTranslationService {
+  /**
+   * @param {Object} config
+   * @param {string} [config.extractionModel]
+   * @param {string} [config.generationModel]
+   * @param {string} [config.targetLang]
+   */
+  constructor({
+    extractionModel = AI_MODELS.GEMINI_3_1_FLASH_LITE_PREVIEW,
+    generationModel = AI_MODELS.GEMINI_3_1_FLASH_IMAGE_PREVIEW,
+    targetLang = "English"
+  } = {}) {
+    this.targetLang = targetLang;
+    this.models = {
+      EXTRACTION: extractionModel,
+      GENERATION: generationModel
+    };
+    this.prompts = {
+      EXTRACT_METADATA: (targetLang) => `
+        Extract ALL text from this image. For each text:
+        - Content (original Vietnamese)
+        - Translated to natural ${targetLang} (MAINTAIN the same casing as original, e.g., if original is ALL CAPS, translation must be ALL CAPS)
+        - Approximate position (top-left, center, bottom...)
+        - Style description (cursive, bold, glitter, serif, size relative...)
+        Return as a clean JSON array with keys: content_vi, translated, position, style.
+        If NO Vietnamese text is found in the image, return an empty array [].
+      `,
+
+      GENERATE_IMAGE: (metadata) => `
+        Replace the text in the image with the following translations. Keep EXACT same font style, size, color, glitter effect, spacing, and layout. Do not change background or any other elements. Here is the mapping:
+        ${JSON.stringify(metadata, null, 2)}
+        Return only the final edited image.
+      `
+    };
+  }
+
+  /**
+   * Stage 1: Extract text, translation, position, and style from the image.
+   *
+   * @param {Uint8Array} imageBuffer
+   * @param {Object} env
+   * @returns {Promise<Array>} Metadata JSON array.
+   */
+  async extractMetadata(imageBuffer, env) {
+    const prompt = this.prompts.EXTRACT_METADATA(this.targetLang);
+
+    const model = await getOpenAICompatibleModel(env);
+
+    try {
+      const { text: contentStr } = await generateText({
+        model: model(this.models.EXTRACTION),
+        messages: [
+          {
+            role: "user",
+            content: [
+              { type: "text", text: prompt },
+              { type: "image", image: imageBuffer }
+            ]
+          }
+        ],
+        responseFormat: { type: "json_object" }
+      });
+
+      let content;
+      try {
+        content = JSON.parse(contentStr);
+      } catch {
+        const match = contentStr.match(/\[.*\]/s);
+        if (match) {
+          content = JSON.parse(match[0]);
+        } else {
+          throw new Error("Failed to parse JSON from AI response");
+        }
+      }
+
+      const metadata = Array.isArray(content)
+        ? content
+        : content.text || content.data || Object.values(content)[0] || [];
+
+      return metadata;
+    } catch (error) {
+      Sentry.captureException(error, {
+        extra: { action: "extractMetadata" }
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Stage 2: Generate translated image using Google GenAI SDK.
+   *
+   * @param {Uint8Array} imageBuffer
+   * @param {Array} metadata
+   * @param {Object} env
+   * @returns {Promise<Uint8Array>} The translated image buffer.
+   */
+  async generateTranslatedImage(imageBuffer, metadata, env) {
+    const prompt = this.prompts.GENERATE_IMAGE(metadata);
+    const model = await getGoogleGenerativeAIModel(env);
+
+    try {
+      const { image } = await generateImage({
+        model: model.image(this.models.GENERATION),
+        prompt: {
+          text: prompt,
+          images: [imageBuffer]
+        }
+      });
+
+      if (!image || !image.uint8Array) {
+        throw new Error("AI SDK failed to return an image buffer");
+      }
+
+      return image.uint8Array;
+    } catch (error) {
+      Sentry.captureException(error, {
+        extra: { action: "generateTranslatedImage" }
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Fetch image from URL and return as ArrayBuffer with metadata.
+   *
+   * @param {string} imageUrl
+   * @returns {Promise<{buffer: Uint8Array, name: string, mimeType: string}>}
+   */
+  async fetchImageFromUrl(imageUrl) {
+    const response = await fetch(imageUrl);
+    if (!response.ok) {
+      throw new Error(
+        `Failed to fetch image from URL: ${imageUrl} (${response.status})`
+      );
+    }
+
+    const arrayBuffer = await response.arrayBuffer();
+    const contentType = response.headers.get("content-type") || "image/jpeg";
+    const extension = contentType.split("/")[1]?.split(";")[0] || "jpg";
+
+    const urlParts = imageUrl.split("/");
+    const filename =
+      urlParts[urlParts.length - 1].split("?")[0] || `image.${extension}`;
+
+    return {
+      buffer: new Uint8Array(arrayBuffer),
+      name: filename,
+      mimeType: contentType
+    };
+  }
+
+  /**
+   * Build the expected EN filename from VI filename and content hash.
+   * VI: {filename}.png → EN: en_{filename}_{hash}.png
+   *
+   * @param {string} viFilename
+   * @param {string} hash
+   * @returns {string}
+   */
+  getTranslatedFilename(viFilename, hash) {
+    const nameWithoutExt = viFilename.substring(0, viFilename.lastIndexOf("."));
+    const extension = viFilename.split(".").pop();
+    return `en_${nameWithoutExt}_${hash}.${extension}`;
+  }
+
+  /**
+   * Compute SHA-256 hash of image buffer.
+   *
+   * @param {Uint8Array} buffer
+   * @returns {Promise<string>}
+   */
+  async computeHash(buffer) {
+    const hashBuffer = await crypto.subtle.digest("SHA-256", buffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, "0")).join("").substring(0, 8);
+  }
+
+  async isTranslatedImageExists(filename, env) {
+    const storage = new WebsiteR2StorageService(env);
+    return await storage.exists(filename);
+  }
+
+  async getTranslatedImageUrl(filename, env) {
+    const storage = new WebsiteR2StorageService(env);
+    return storage.getPublicUrl(filename);
+  }
+
+  async translateImage(image, env) {
+    let imageBuffer;
+    let imageName;
+
+    if (typeof image === "string") {
+      const imageData = await this.fetchImageFromUrl(image);
+      imageBuffer = imageData.buffer;
+      imageName = imageData.name;
+    } else {
+      const imageArrayBuffer = await image.arrayBuffer();
+      imageBuffer = new Uint8Array(imageArrayBuffer);
+      imageName = image.name || "image.jpg";
+    }
+
+    const hash = await this.computeHash(imageBuffer);
+    const enFilename = this.getTranslatedFilename(imageName, hash);
+
+    if (await this.isTranslatedImageExists(enFilename, env)) {
+      return this.getTranslatedImageUrl(enFilename, env);
+    }
+
+    const metadata = await this.extractMetadata(imageBuffer, env);
+
+    if (metadata.length === 0) {
+      return typeof image === "string" ? image : null;
+    }
+
+    const translatedImageBuffer = await this.generateTranslatedImage(
+      imageBuffer,
+      metadata,
+      env
+    );
+
+    const storage = new WebsiteR2StorageService(env);
+    const publicUrl = await storage.upload(enFilename, translatedImageBuffer);
+
+    return publicUrl;
+  }
+}

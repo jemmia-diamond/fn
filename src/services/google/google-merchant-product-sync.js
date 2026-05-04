@@ -3,7 +3,7 @@ import DiamondService from "services/ecommerce/diamond/diamond.js";
 import GoogleMerchantService from "services/google/google-merchant-service.js";
 import * as Sentry from "@sentry/cloudflare";
 
-const LIMIT = 50;
+const LIMIT = 20;
 
 export default class GoogleMerchantProductSyncService {
   constructor(env) {
@@ -29,7 +29,7 @@ export default class GoogleMerchantProductSyncService {
           extraFields: ["sku"]
         };
 
-        const result = await this.productService.getJewelry(jsonParams);
+        const result = await this.productService.getJewelryV2(jsonParams);
         const products = result.data;
         const count = result.metadata.total;
 
@@ -81,7 +81,7 @@ export default class GoogleMerchantProductSyncService {
 
   _mapToMerchantProduct(product, variant) {
     try {
-      let imageLink = product.images && product.images.length > 0 ? product.images[0] : "";
+      let imageLink = variant.images && variant.images.length > 0 ? variant.images[0] : "";
 
       let availability = "in_stock";
       let availabilityDate = undefined;
@@ -129,11 +129,10 @@ export default class GoogleMerchantProductSyncService {
       const allMaterials = [...new Set(product.variants.map(v => v.material_color).filter(Boolean))].join(", ");
 
       return {
-        channel: "ONLINE",
         offerId: offerId.toLowerCase(),
         contentLanguage: "vi",
         feedLabel: "VN",
-        attributes: {
+        productAttributes: {
           title: title,
           description: description,
           link: link,
@@ -182,11 +181,10 @@ export default class GoogleMerchantProductSyncService {
       const itemGroupId = diamond.product_id ? diamond.product_id.toString() : `${diamond.variant_id}`;
 
       return {
-        channel: "ONLINE",
         offerId: offerId.toLowerCase(),
         contentLanguage: "vi",
         feedLabel: "VN",
-        attributes: {
+        productAttributes: {
           title: title,
           description: description,
           link: link,

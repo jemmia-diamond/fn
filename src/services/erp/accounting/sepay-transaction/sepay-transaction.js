@@ -329,42 +329,62 @@ export default class SepayTransactionService {
     try {
       const body = zalopayTransaction;
       const { data: dataStr } = body || {};
-      if (dataStr) {
-        const parsedData = JSON.parse(dataStr);
-        let embedDataJson = null;
-        let itemJson = null;
 
-        embedDataJson = parsedData.embed_data ? JSON.parse(parsedData.embed_data) : null;
-        itemJson = parsedData.item ? JSON.parse(parsedData.item) : null;
-        const createDto = {
-          id: parsedData.app_trans_id,
-          amount_in: String(parsedData.amount || 0),
-          transaction_date: parsedData.server_time ? dayjs(parsedData.server_time).format("YYYY-MM-DD HH:mm:ss") : null,
-
-          app_id: parsedData.app_id,
-          app_time: parsedData.app_time ? BigInt(parsedData.app_time) : null,
-          app_user: parsedData.app_user,
-          embed_data: embedDataJson,
-          item: itemJson,
-          zp_trans_id: parsedData.zp_trans_id ? BigInt(parsedData.zp_trans_id) : null,
-          server_time: parsedData.server_time ? BigInt(parsedData.server_time) : null,
-          channel: parsedData.channel,
-          merchant_user_id: parsedData.merchant_user_id,
-          user_fee_amount: parsedData.user_fee_amount ? BigInt(parsedData.user_fee_amount) : null,
-          discount_amount: parsedData.discount_amount ? BigInt(parsedData.discount_amount) : null
-        };
-
-        const { id: _id, ...updateDto } = createDto;
-
-        return await this.db.sepay_transaction.upsert({
-          create: createDto,
-          update: updateDto,
-          where: {
-            id: parsedData.app_trans_id
-          }
-        });
+      if (!dataStr) {
+        console.warn("[ZaloPay] No data field in callback payload, skipping");
+        return null;
       }
+
+      const parsedData = typeof dataStr === "string" ? JSON.parse(dataStr) : dataStr;
+
+      if (!parsedData.app_trans_id) {
+        console.warn("[ZaloPay] Missing app_trans_id in callback data, skipping");
+        return null;
+      }
+
+      const safeJsonParse = (value) => {
+        if (!value) return null;
+        if (typeof value === "object") return value;
+        try { return JSON.parse(value); } catch { return value; }
+      };
+
+      const safeBigInt = (value) => {
+        if (value == null) return null;
+        try { return BigInt(value); } catch { return null; }
+      };
+
+      const createDto = {
+        id: parsedData.app_trans_id,
+        amount_in: String(parsedData.amount || 0),
+        transaction_date: parsedData.server_time ? dayjs(parsedData.server_time).format("YYYY-MM-DD HH:mm:ss") : null,
+
+        app_id: parsedData.app_id,
+        app_time: safeBigInt(parsedData.app_time),
+        app_user: parsedData.app_user,
+        embed_data: safeJsonParse(parsedData.embed_data),
+        item: safeJsonParse(parsedData.item),
+        zp_trans_id: safeBigInt(parsedData.zp_trans_id),
+        server_time: safeBigInt(parsedData.server_time),
+        channel: parsedData.channel,
+        merchant_user_id: parsedData.merchant_user_id,
+        user_fee_amount: safeBigInt(parsedData.user_fee_amount),
+        discount_amount: safeBigInt(parsedData.discount_amount)
+      };
+
+      const { id: _id, ...updateDto } = createDto;
+
+      const result = await this.db.sepay_transaction.upsert({
+        create: createDto,
+        update: updateDto,
+        where: {
+          id: parsedData.app_trans_id
+        }
+      });
+
+      console.warn(`[ZaloPay] Transaction saved: ${parsedData.app_trans_id}, zp_trans_id: ${parsedData.zp_trans_id}`);
+      return result;
     } catch (e) {
+      console.warn("[ZaloPay] Failed to create transaction:", e.message);
       Sentry.captureException(e);
       return null;
     }
@@ -394,7 +414,10 @@ export default class SepayTransactionService {
         await service.processTransaction(body);
       } catch (error) {
         Sentry.captureException(error);
-        await env["SEPAY_TRANSACTION_QUEUE"].send(message.body, { delaySeconds: TEN_MINUTES });
+        const status = error?.status || error?.response?.status;
+        if (status === 502 || status === 503 || status === 504) {
+          await env["SEPAY_TRANSACTION_QUEUE"].send(message.body, { delaySeconds: TEN_MINUTES });
+        }
       }
     }
   }

@@ -104,7 +104,9 @@ export function rawToPaymentEntry(body) {
     verified_by: body.verified_by,
     gateway: body.gateway,
     payment_code: body.payment_code,
-    admin_editing: body.admin_editing
+    admin_editing: body.admin_editing,
+    shipping_code: body.shipping_code,
+    refund_amount: body.refund_amount
   };
 }
 
@@ -141,6 +143,7 @@ export function rawToReference(ref) {
     reference_name: ref.reference_name,
     split_order_group_name: ref.split_order_group_name,
     total_amount: ref.total_amount,
+    unallocated_amount: ref.unallocated_amount,
     sales_order_details: ref.sales_order_details
       ? {
         haravan_cancelled_status: ref.sales_order_details.haravan_cancelled_status,

@@ -50,7 +50,7 @@ export default class BuyBackInstanceService {
     }
 
     for (const instance of transformedInstances) {
-      await db.buyback_exchange_approval_instances.upsert({
+      await db.larksuiteBuybackExchangeApprovalInstance.upsert({
         where: {
           instance_code: instance.instance_code
         },
@@ -68,7 +68,11 @@ export default class BuyBackInstanceService {
           refund_amount: instance.refund_amount ? parseFloat(instance.refund_amount) : null,
           is_synced_to_crm: false,
           updated_at: new Date(),
-          submitted_date: instance.submitted_date
+          submitted_date: instance.submitted_date,
+          department_id: instance.department_id,
+          department_name: instance.department_name,
+          product_handed_over_at: instance.handover_date,
+          user_id: instance.user_id
         },
         create: {
           instance_code: instance.instance_code,
@@ -86,7 +90,11 @@ export default class BuyBackInstanceService {
           is_synced_to_crm: false,
           created_at: new Date(),
           updated_at: new Date(),
-          submitted_date: instance.submitted_date
+          submitted_date: instance.submitted_date,
+          department_id: instance.department_id,
+          department_name: instance.department_name,
+          product_handed_over_at: instance.handover_date,
+          user_id: instance.user_id
         }
       });
     }
@@ -98,7 +106,8 @@ export default class BuyBackInstanceService {
       serial_number: instance.serial_number,
       status: instance.status,
       submitted_date: instance.start_time ? new Date(Number(instance.start_time)) : null,
-      new_order_code: instance.new_order_code
+      new_order_code: instance.new_order_code,
+      user_id: instance.user_id
     };
   };
 
@@ -146,12 +155,16 @@ export default class BuyBackInstanceService {
       reason: instance.reason,
       refund_amount: instance.refund_amount ? parseFloat(instance.refund_amount) : null,
       submitted_date: instance.submitted_date,
-      updated_at: new Date()
+      updated_at: new Date(),
+      department_id: instance.department_id,
+      department_name: instance.department_name,
+      product_handed_over_at: instance.handover_date,
+      user_id: instance.user_id
     });
 
     const dbData = prepareDbData(finalInstance);
 
-    await db.buyback_exchange_approval_instances.upsert({
+    await db.larksuiteBuybackExchangeApprovalInstance.upsert({
       where: {
         instance_code: finalInstance.instance_code
       },
@@ -169,7 +182,7 @@ export default class BuyBackInstanceService {
       Sentry.captureException(erpError);
     }
 
-    await db.buyback_exchange_approval_instances.update({
+    await db.larksuiteBuybackExchangeApprovalInstance.update({
       where: { instance_code: finalInstance.instance_code },
       data: { is_synced_to_crm: true }
     });
@@ -202,6 +215,7 @@ export default class BuyBackInstanceService {
       customer_name: data.customer_name,
       phone_number: phoneNumber,
       national_id: data.national_id,
+      serial_number: data.serial_number,
       reason: data.reason,
       refund_amount: data.refund_amount,
       order_code: data.order_code,
@@ -210,6 +224,18 @@ export default class BuyBackInstanceService {
       products_info: typeof data.products_info === "string" ? data.products_info : JSON.stringify(data.products_info || [])
     };
     const ignoredFields = Object.keys(erpData).filter(key => key !== "status" && key !== "doctype");
-    await frappeClient.upsert(erpData, "lark_instance_id", ignoredFields);
+
+    try {
+      await frappeClient.upsert(erpData, "lark_instance_id", ignoredFields);
+    } catch (error) {
+      const msg = error?.message || "";
+      const isDuplicate = error?.status === 417
+        || msg.includes("UniqueValidationError")
+        || msg.includes("Duplicate entry");
+
+      if (!isDuplicate) {
+        throw error;
+      }
+    }
   }
 }

@@ -5,6 +5,7 @@ import utc from "dayjs/plugin/utc.js";
 import Database from "services/database";
 import { fetchContactsFromERP, saveContactsToDatabase, deleteContactFromDatabase } from "services/erp/contacts/contact/utils/contact-helppers";
 import { parseURLParameters, getParam } from "services/utils/url-helper";
+import { normalizeToStandardFormat } from "services/utils/phone-utils";
 
 dayjs.extend(utc);
 
@@ -28,14 +29,15 @@ export default class ContactService {
     this.defaultCallLogSourceGroup = "Call Center";
   };
 
-  async findContactByPrimaryPhone(phone) {
-    const contacts = await this.frappeClient.getList(this.doctype, {
-      filters: [
-        ["Contact Phone", "phone", "=", phone],
-        ["Contact Phone", "is_primary_phone", "=", true],
-        ["haravan_customer_id", "is", "set"]
-      ]
-    });
+  async findContactByPrimaryPhone(phone, newCustomerInfo = {}) {
+    const contacts = await this.frappeClient.getList(this.doctype,
+      { filters:
+        [
+          ["Contact Phone", "phone", "=", newCustomerInfo?.phone || phone],
+          ["Contact Phone", "is_primary_phone", "=", newCustomerInfo?.is_new ? false : true],
+          ["haravan_customer_id", "is", newCustomerInfo?.is_new ? "not set" : "set"]
+        ]
+      });
     if (contacts.length) {
       return await this.frappeClient.getDoc(this.doctype, contacts[0].name);
     }
@@ -52,7 +54,7 @@ export default class ContactService {
     return contact;
   };
 
-  async processHaravanContact(customerData, customer) {
+  async processHaravanContact(customerData, customer = null, newCustomerInfo = {}) {
     const nameParts = customerData["phone"] ? [customerData.last_name, customerData.first_name].filter(Boolean) : [this.defaultContactName];
     const mappedContactData = {
       doctype: this.doctype,
@@ -68,7 +70,12 @@ export default class ContactService {
         }
       ];
 
-      const existingContact = await this.findContactByPrimaryPhone(customerData["phone"]);
+      const existingContact = await this.findContactByPrimaryPhone(customerData["phone"], newCustomerInfo);
+      if (existingContact && newCustomerInfo?.is_new) {
+        mappedContactData.name = existingContact.name;
+        const newCustomerContact = await this.frappeClient.update(mappedContactData);
+        return newCustomerContact;
+      }
       if (existingContact) {
         if (customer) {
           return await this.frappeClient.reference(existingContact, "Contact", customer, "Customer");
@@ -89,6 +96,8 @@ export default class ContactService {
     const conversionUrlParams = parseURLParameters(data.raw_data.conversion_url);
     const originalUrlPageParams = parseURLParameters(data.raw_data.origin_url_page);
 
+    const normalizedPhone = normalizeToStandardFormat(data.raw_data.phone);
+
     const contactData = {
       doctype: this.doctype,
       custom_uuid: data.custom_uuid,
@@ -96,7 +105,7 @@ export default class ContactService {
       inserted_at: dayjs(data.database_created_at).utc().format("YYYY-MM-DD HH:mm:ss"),
       phone_nos: [
         {
-          "phone": data.raw_data.phone,
+          "phone": normalizedPhone,
           "is_primary_phone": 1
         }
       ],
@@ -139,7 +148,7 @@ export default class ContactService {
     const defaultContact = await this.frappeClient.getList(this.doctype, {
       filters: [
         ["Dynamic Link", "link_name", "=", lead.name],
-        ["Contact Phone", "phone", "=", data.raw_data.phone],
+        ["Contact Phone", "phone", "=", normalizedPhone],
         ["source", "=", lead.source],
         ["custom_uuid", "=", null]
       ]

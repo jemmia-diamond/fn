@@ -4,7 +4,6 @@ import * as Sentry from "@sentry/cloudflare";
 
 import { Hono } from "hono";
 import { bearerAuth } from "hono/bearer-auth";
-import { HTTPException } from "hono/http-exception";
 
 import Routes from "src/routes";
 import { DebounceDurableObject } from "src/durable-objects";
@@ -17,18 +16,7 @@ import queueHandler from "services/queue-handler";
 import scheduleHandler from "services/schedule-handler";
 import loggrageLogger from "services/custom-logger";
 
-const app = new Hono()
-  // Add an onError hook to report unhandled exceptions to Sentry.
-  .onError((err, c) => {
-    // Report _all_ unhandled errors.
-    Sentry.captureException(err);
-    if (err instanceof HTTPException) {
-      return err.getResponse();
-    }
-    // Or just report errors which are not instances of HTTPException
-    // Sentry.captureException(err);
-    return c.json({ error: "Internal server error" }, 500);
-  });
+const app = new Hono();
 
 const api = app.basePath("/api");
 const publicApi = app.basePath("/public-api");

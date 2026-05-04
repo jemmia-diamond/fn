@@ -3,10 +3,11 @@ import utc from "dayjs/plugin/utc.js";
 import { SKU_LENGTH, SKU_PREFIX } from "services/haravan/products/product-variant/constant";
 import { numberToCurrency } from "services/utils/number-helper";
 import { stringSquishLarkMessage } from "services/utils/string-helper";
+import { getItemPromotions } from "services/erp/selling/sales-order/utils/sales-order-helpers";
 
 dayjs.extend(utc);
 
-export const composeSalesOrderNotification = (salesOrder, promotionData, leadSource, policyData, productCategoryData, customer, primarySalesPerson, secondarySalesPeople) => {
+export const composeSalesOrderNotification = (salesOrder, promotionData, leadSource, policyData, productCategoryData, purposeData, customer, primarySalesPerson, secondarySalesPeople) => {
   const orderNumber = salesOrder.order_number;
 
   const orderPromotionNames = salesOrder.promotions.map((promotion) => promotion.promotion);
@@ -28,7 +29,7 @@ export const composeSalesOrderNotification = (salesOrder, promotionData, leadSou
   `;
 
   salesOrder.items.map((item, idx) => {
-    content += composeItemContent(item, idx + 1, promotionData.filter((promotion) => [item.promotion_1, item.promotion_2, item.promotion_3, item.promotion_4, item.promotion_5].includes(promotion.name)));
+    content += composeItemContent(item, idx + 1, promotionData.filter((promotion) => getItemPromotions(item).includes(promotion.name)));
   });
 
   content += `
@@ -41,6 +42,7 @@ export const composeSalesOrderNotification = (salesOrder, promotionData, leadSou
     - Ngày thanh toán dự kiến: ${expectedPaymentDate}
     - Kênh tiếp cận đầu tiên: ${leadSource.source_name}
     - Hành trình khách hàng: ${customer.customer_journey}
+    - Mục đích đơn hàng: ${purposeData && purposeData.length > 0 ? purposeData.map(p => p.title).join(", ") : "Không"}
   `;
 
   content += `
@@ -101,11 +103,7 @@ export const extractPromotions = (salesOrder) => {
   const promotionNames = [];
   const items = salesOrder.items;
   for (const item of items) {
-    if (item.promotion_1) { promotionNames.push(item.promotion_1); };
-    if (item.promotion_2) { promotionNames.push(item.promotion_2); };
-    if (item.promotion_3) { promotionNames.push(item.promotion_3); };
-    if (item.promotion_4) { promotionNames.push(item.promotion_4); };
-    if (item.promotion_5) { promotionNames.push(item.promotion_5); };
+    getItemPromotions(item).forEach(p => promotionNames.push(p));
   }
 
   const promotions = salesOrder.promotions;
@@ -196,7 +194,7 @@ const composeLineItemsChangeMessage = (oldItems, newItems, promotionData) => {
       message += `Giá: ${numberToCurrency(item.price_list_rate)}\n`;
       message += `Giá khuyến mãi: ${numberToCurrency(item.rate)}\n`;
 
-      const itemPromotions = promotionData.filter((promotion) => [item.promotion_1, item.promotion_2, item.promotion_3, item.promotion_4, item.promotion_5].includes(promotion.name));
+      const itemPromotions = promotionData.filter((promotion) => getItemPromotions(item).includes(promotion.name));
       if (itemPromotions && itemPromotions.length > 0) {
         message += "CTKM: \n";
         message += `${composeChildrenContent(itemPromotions, "title")}`;
@@ -242,8 +240,8 @@ const composeLineItemsChangeMessage = (oldItems, newItems, promotionData) => {
         }
 
         // Promotions
-        const oldPromotions = [oldItem.promotion_1, oldItem.promotion_2, oldItem.promotion_3, oldItem.promotion_4, oldItem.promotion_5].filter(Boolean);
-        const newPromotions = [newItem.promotion_1, newItem.promotion_2, newItem.promotion_3, newItem.promotion_4, newItem.promotion_5].filter(Boolean);
+        const oldPromotions = getItemPromotions(oldItem);
+        const newPromotions = getItemPromotions(newItem);
 
         const addedPromotions = newPromotions.filter(promo => !oldPromotions.includes(promo));
         const removedPromotions = oldPromotions.filter(promo => !newPromotions.includes(promo));

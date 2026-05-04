@@ -1,4 +1,3 @@
-import JewelryController from "controllers/ecommerce/jewelry-controller";
 import JewelryControllerV2 from "controllers/ecommerce/jewelry-controller-v2";
 import SearchController from "controllers/ecommerce/search-controller";
 import DiamondController from "controllers/ecommerce/diamond-controller";
@@ -12,9 +11,10 @@ import DiamondProfileImageController from "controllers/ecommerce/diamond-profile
 import WebsiteFormController from "controllers/ecommerce/website-form-controller";
 import DiamondPricesController from "controllers/ecommerce/diamond-prices-controller";
 import Jewelry3DMetadataController from "controllers/ecommerce/jewelry-3d-metadata-controller";
+import DiamondStockTrackerController from "controllers/ecommerce/diamond-stock-tracker-controller";
+import DiamondCollectController from "controllers/ecommerce/diamond-collect-controller";
 
 export default {
-  JewelryController: JewelryController,
   JewelryControllerV2: JewelryControllerV2,
   SearchController: SearchController,
   DiamondController: DiamondController,
@@ -27,5 +27,7 @@ export default {
   DiamondProfileImageController: DiamondProfileImageController,
   WebsiteFormController: WebsiteFormController,
   DiamondPricesController: DiamondPricesController,
-  Jewelry3DMetadataController: Jewelry3DMetadataController
+  Jewelry3DMetadataController: Jewelry3DMetadataController,
+  DiamondStockTrackerController: DiamondStockTrackerController,
+  DiamondCollectController: DiamondCollectController
 };

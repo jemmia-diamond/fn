@@ -6,6 +6,7 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import HaravanAPI from "services/clients/haravan-client";
 import { reverseMap } from "services/utils/object";
+import ContactService from "src/services/erp/contacts/contact/contact";
 
 dayjs.extend(utc);
 
@@ -136,7 +137,7 @@ export default class CustomerService {
     for (const message of messages) {
       const body = message.body;
       const erpTopic = body.erpTopic;
-      await this.processPayload(body.data, erpTopic).catch(err => Sentry.captureException(err));
+      await this.processPayload(body.data, erpTopic);
     }
   }
 
@@ -171,6 +172,7 @@ export default class CustomerService {
       throw new Error("Haravan access token not found");
     }
 
+    const contactService = new ContactService(this.env);
     const haravanClient = new HaravanAPI(accessToken);
     const rawPhone = customerData.mobile_no || customerData.phone;
     const haravanPayload = {
@@ -183,14 +185,14 @@ export default class CustomerService {
 
     try {
       const haravanResult = await haravanClient.customer.createCustomer(haravanPayload);
+      const contact = await contactService.processHaravanContact(haravanResult?.customer, null,
+        { phone: rawPhone, is_new: true });
       haravanResult.customer.created_by = customerData.modified_by;
       const customer = await this.frappeClient.getDoc(this.doctype, customerData.name);
-
-      if (customer) {
-        customer.haravan_id = String(haravanResult.customer.id);
-        customer.customer_primary_contact = haravanResult.customer.phone;
-        await this.frappeClient.update(customer);
-      }
+      customer.haravan_id = String(haravanResult.customer.id);
+      customer.phone = contact.phone;
+      customer.mobile_no = contact.phone;
+      await this.frappeClient.update(customer);
     } catch (error) {
       if (error.status === 422) {
         const errorMessage = error?.response?.data?.errors || "";

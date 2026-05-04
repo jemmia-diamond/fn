@@ -4,6 +4,8 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import * as Sentry from "@sentry/cloudflare";
 import { isInvalidTokenError } from "pancake/utils";
+import { sleep } from "services/utils/sleep";
+import { createAxiosClient } from "services/utils/http-client";
 
 dayjs.extend(utc);
 
@@ -12,24 +14,52 @@ const EXCLUDED_PAGE_IDS = [
   "110263770893806",
   "114459901519364",
   "ttm_-000GnI37aFDBuqWw6N750AvvJXaodrxaoS6",
-  "104886481441594"
+  "104886481441594",
+  "pzl_762606746528554285",
+  "pzl_430606616970016418",
+  "pzl_550456359846379296",
+  "pzl_356265354327632803",
+  "pzl_202808320883378469",
+  "pzl_268122604338301220",
+  "pzl_206522067617376165",
+  "pzl_791460500601993133",
+  "pzl_791738827487056557",
+  "pzl_1787761007110548927",
+  "pzl_789486868622428589",
+  "pzl_791641868597281709",
+  "pzl_478657129671247265",
+  "pzl_844243676143645100",
+  "pzl_327051493451022627",
+  "pzl_762328394012488749",
+  "pzl_846174006397669804",
+  "pzl_568559459090795424",
+  "pzl_416990669504812066",
+  "pzl_401509552876787234",
+  "pzl_502353010578832545",
+  "pzl_847853447763681324",
+  "529651860237848",
+  "434826109715125"
 ];
 
 export default class ConversationSyncService {
-  constructor(env) {
+  constructor(env, ctx) {
     this.env = env;
+    this.ctx = ctx;
     this.db = Database.instance(env);
     this.pancakeClient = new PancakeClient(env.PANCAKE_ACCESS_TOKEN);
   }
 
-  async syncConversations() {
+  async syncConversations({ batchTime } = {}) {
     try {
       console.warn("Starting syncConversations...");
-      const { sinceUnix, untilUnix } = this.getSyncTimeframe();
+      const { sinceUnix, untilUnix, now, KV_KEY } =
+        await this.getSyncTimeframe(batchTime);
 
       const pageData = await this.pancakeClient.getPages();
       if (isInvalidTokenError(pageData)) {
-        throw new Error("Pancake API Error [102]: Invalid access_token during page query");
+        throw new Error(
+          "Pancake API Error [102]: Invalid access_token during page query"
+        );
       }
 
       const pages = pageData?.categorized?.activated || [];
@@ -40,9 +70,13 @@ export default class ConversationSyncService {
 
       for (let i = pages.length - 1; i >= 0; i--) {
         await this.syncPageConversations(pages[i].id, sinceUnix, untilUnix);
+        await sleep(1000);
       }
 
-      console.warn("Finished syncConversations.");
+      await this.env.FN_KV.put(KV_KEY, now.format("YYYY-MM-DD HH:mm:ss"));
+      console.warn(
+        `Finished syncConversations. Saved checkpoint: ${now.format("YYYY-MM-DD HH:mm:ss")}`
+      );
     } catch (error) {
       this.captureException(error);
     }
@@ -54,10 +88,20 @@ export default class ConversationSyncService {
     let pageNumber = 1;
     while (true) {
       try {
-        const data = await this.pancakeClient.getConversations(pageId, sinceUnix, untilUnix, pageNumber);
+        const data = await this.pancakeClient.getConversations(
+          pageId,
+          sinceUnix,
+          untilUnix,
+          pageNumber
+        );
 
         if (isInvalidTokenError(data)) {
-          this.captureException(new Error(`Pancake API Error [102]: Invalid access_token for page ${pageId}`), pageId);
+          this.captureException(
+            new Error(
+              `Pancake API Error [102]: Invalid access_token for page ${pageId}`
+            ),
+            pageId
+          );
           break;
         }
 
@@ -66,6 +110,7 @@ export default class ConversationSyncService {
 
         await this.upsertConversations(conversations, pageId);
         pageNumber++;
+        await sleep(1000);
       } catch (error) {
         this.captureException(error, pageId);
         break;
@@ -90,15 +135,25 @@ export default class ConversationSyncService {
     for (const item of chunk) {
       const conversationData = this.mapToConversationModel(item);
       if (item.id) {
-        conversationUpserts.push(this.db.conversation.upsert({
-          where: { id: item.id },
-          create: conversationData,
-          update: { ...conversationData, uuid: undefined, database_updated_at: dayjs().utc().toDate() }
-        }));
+        conversationUpserts.push(
+          this.db.conversation.upsert({
+            where: { id: item.id },
+            create: conversationData,
+            update: {
+              ...conversationData,
+              uuid: undefined,
+              database_updated_at: dayjs().utc().toDate()
+            }
+          })
+        );
       }
 
       this.mapAndPrepareCustomerUpserts(item, pageCustomerUpserts);
-      this.mapAndPrepareTagUpserts(item, conversationTagUpserts, duplicatesTagKey);
+      this.mapAndPrepareTagUpserts(
+        item,
+        conversationTagUpserts,
+        duplicatesTagKey
+      );
     }
 
     await Promise.all([
@@ -106,13 +161,30 @@ export default class ConversationSyncService {
       ...pageCustomerUpserts,
       ...conversationTagUpserts
     ]);
+
+    let isSalesayaEnabled = await this.env.FN_KV.get("ENABLE_SALESAYA_WEBHOOK");
+    if (isSalesayaEnabled === null) {
+      await this.env.FN_KV.put("ENABLE_SALESAYA_WEBHOOK", "0");
+      isSalesayaEnabled = false;
+    } else {
+      isSalesayaEnabled = isSalesayaEnabled === "1";
+    }
+
+    if (isSalesayaEnabled) {
+      if (this.ctx) {
+        this.ctx.waitUntil(this.processScoringWebhooks(chunk));
+      } else {
+        await this.processScoringWebhooks(chunk);
+      }
+    }
   }
 
   mapToConversationModel(item) {
     let addedUsers = null;
     const assigneeHistories = item.assignee_histories || [];
     if (assigneeHistories.length > 0) {
-      const payload = assigneeHistories[assigneeHistories.length - 1].payload || {};
+      const payload =
+        assigneeHistories[assigneeHistories.length - 1].payload || {};
       const payloadAddedUsers = payload.added_users || [];
       if (payloadAddedUsers.length > 0) {
         addedUsers = payloadAddedUsers[0];
@@ -132,7 +204,9 @@ export default class ConversationSyncService {
       id: item.id || null,
       customer_id: item.customer_id || null,
       type: item.type || null,
-      inserted_at: item.inserted_at ? dayjs.utc(item.inserted_at).toDate() : null,
+      inserted_at: item.inserted_at
+        ? dayjs.utc(item.inserted_at).toDate()
+        : null,
       page_id: item.page_id || null,
       has_phone: item.has_phone ?? null,
       post_id: item.post_id || null,
@@ -153,11 +227,22 @@ export default class ConversationSyncService {
     const customers = item.customers || [];
     for (const customerItem of customers) {
       if (item.id && customerItem.id) {
-        pageCustomerUpserts.push(this.db.conversation_page_customer.upsert({
-          where: { customer_id_conversation_id: { customer_id: customerItem.id, conversation_id: item.id } },
-          create: { uuid: crypto.randomUUID(), customer_id: customerItem.id, conversation_id: item.id },
-          update: { database_updated_at: dayjs().utc().toDate() }
-        }));
+        pageCustomerUpserts.push(
+          this.db.conversation_page_customer.upsert({
+            where: {
+              customer_id_conversation_id: {
+                customer_id: customerItem.id,
+                conversation_id: item.id
+              }
+            },
+            create: {
+              uuid: crypto.randomUUID(),
+              customer_id: customerItem.id,
+              conversation_id: item.id
+            },
+            update: { database_updated_at: dayjs().utc().toDate() }
+          })
+        );
       }
     }
   }
@@ -189,28 +274,97 @@ export default class ConversationSyncService {
             action: action
           };
 
-          conversationTagUpserts.push(this.db.conversation_tag.upsert({
-            where: { conversation_id_inserted_at_tag_page_id_action: { conversation_id: item.id, inserted_at: dayjs.utc(insertedAt).toDate(), tag_page_id: tagPageId, action: action } },
-            create: tagData,
-            update: { ...tagData, uuid: undefined, database_updated_at: dayjs().utc().toDate() }
-          }));
+          conversationTagUpserts.push(
+            this.db.conversation_tag.upsert({
+              where: {
+                conversation_id_inserted_at_tag_page_id_action: {
+                  conversation_id: item.id,
+                  inserted_at: dayjs.utc(insertedAt).toDate(),
+                  tag_page_id: tagPageId,
+                  action: action
+                }
+              },
+              create: tagData,
+              update: {
+                ...tagData,
+                uuid: undefined,
+                database_updated_at: dayjs().utc().toDate()
+              }
+            })
+          );
         }
       }
     }
   }
 
-  getSyncTimeframe() {
-    const now = dayjs().utc();
-    return {
-      now,
-      untilUnix: now.unix(),
-      sinceUnix: now.subtract(10, "minutes").unix()
-    };
+  async getSyncTimeframe(batchTime) {
+    const kv = this.env.FN_KV;
+    const KV_KEY = "pancake_conversation_sync_last_time";
+    const now = batchTime ? batchTime : dayjs().utc();
+    const untilUnix = now.unix();
+
+    const lastSyncTimeStr = await kv.get(KV_KEY);
+    let sinceUnix;
+
+    if (lastSyncTimeStr) {
+      sinceUnix = dayjs.utc(lastSyncTimeStr).unix();
+    } else {
+      sinceUnix = now.subtract(10, "minutes").unix();
+    }
+
+    return { now, untilUnix, sinceUnix, KV_KEY };
   }
 
   captureException(error, pageId = null) {
     const tags = { flow: "PancakeSync:conversations" };
     if (pageId) tags.page_id = pageId;
     Sentry.captureException(error, { tags });
+  }
+
+  async pushSalesayaWebhook(payload) {
+    if (!payload?.conversationId || !payload?.pageId) return;
+
+    const client = createAxiosClient(
+      {
+        baseURL: "https://api.salesaya.com",
+        headers: { "Content-Type": "application/json" },
+        timeout: 5000
+      },
+      { retries: 0 }
+    );
+
+    return client.post("/scoring", payload).catch((error) => {
+      console.warn("Salesaya:scoring-webhook error", error);
+      Sentry.captureException(error, {
+        tags: { flow: "Salesaya:scoring-webhook" },
+        extra: {
+          conversationId: payload.conversationId,
+          pageId: payload.pageId
+        }
+      });
+    });
+  }
+
+  async processScoringWebhooks(chunk) {
+    for (const item of chunk) {
+      if (!item.id || !item.page_id) continue;
+
+      const payload = {
+        conversationId: item.id,
+        pageId: item.page_id
+      };
+
+      const assigneeHistories = item.assignee_histories || [];
+      if (assigneeHistories.length > 0) {
+        const historyPayload =
+          assigneeHistories[assigneeHistories.length - 1].payload || {};
+        const payloadAddedUsers = historyPayload.added_users || [];
+        if (payloadAddedUsers.length > 0 && payloadAddedUsers[0].id) {
+          payload.assigneeIds = [payloadAddedUsers[0].id];
+        }
+      }
+
+      await this.pushSalesayaWebhook(payload);
+    }
   }
 }

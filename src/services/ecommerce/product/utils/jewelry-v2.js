@@ -1,22 +1,23 @@
 // Import aggregateQuery from jewelry.js to reuse filter logic
 import { aggregateQuery } from "services/ecommerce/product/utils/jewelry";
 import { JEWELRY_IMAGE } from "src/controllers/ecommerce/constant";
+import { Prisma } from "@prisma-cli";
 
 export function buildQueryV2(jsonParams) {
   const {
-    filterString,
-    sortString,
-    paginationString,
+    filterSql,
+    sortSql,
+    paginationSql,
     handleFinenessPriority,
     collectionJoinEcomProductsClause,
     linkedCollectionJoinEcomProductsClause,
-    havingString,
+    havingSql,
     warehouseJoinClause
   } = aggregateQuery(jsonParams);
 
   const finenessOrder = handleFinenessPriority === "14K" ? "ASC" : "DESC";
 
-  const priceField = `
+  const priceField = Prisma.sql`
     CASE
       WHEN EXISTS (
         SELECT 1 
@@ -32,21 +33,24 @@ export function buildQueryV2(jsonParams) {
     END
   `;
 
-  let lateralJoinClause = "";
-  let variantJsonBuildObject = "";
+  let lateralJoinClause;
+  let variantJsonBuildObject;
   let diamondJoinsForCount = "";
-  let designImagesJoin = "";
+
+  const workplaceUrlPrefix = JEWELRY_IMAGE.WORKPLACE_URL_PREFIX;
+  const workplaceFullUrl = JEWELRY_IMAGE.WORKPLACE_FULL_URL;
+  const cdnUrl = JEWELRY_IMAGE.CDN_URL;
 
   // Pre-aggregate design images by material_color (performance optimization)
-  designImagesJoin = `
-    LEFT JOIN LATERAL (
+  const designImagesJoin = Prisma.sql`
+    INNER JOIN LATERAL (
       SELECT 
         di.material_color,
         COALESCE(
           array_agg(
             CASE 
-              WHEN item.value->>'url' LIKE '${JEWELRY_IMAGE.WORKPLACE_URL_PREFIX}%' THEN
-                REPLACE(item.value->>'url', '${JEWELRY_IMAGE.WORKPLACE_FULL_URL}', '${JEWELRY_IMAGE.CDN_URL}')
+              WHEN item.value->>'url' LIKE ${workplaceUrlPrefix} || '%' THEN
+                REPLACE(item.value->>'url', ${workplaceFullUrl}, ${cdnUrl})
               ELSE item.value->>'url'
             END
           ) FILTER (WHERE jsonb_typeof(item.value) = 'object' AND item.value->>'url' IS NOT NULL),
@@ -67,7 +71,7 @@ export function buildQueryV2(jsonParams) {
 
   if (jsonParams.matched_diamonds) {
     // V2 with matched diamonds support
-    variantJsonBuildObject = `
+    variantJsonBuildObject = Prisma.sql`
       JSON_BUILD_OBJECT(
         'id', CAST(v.haravan_variant_id AS INT),
         'fineness', v.fineness,
@@ -82,7 +86,7 @@ export function buildQueryV2(jsonParams) {
       )
     `;
 
-    lateralJoinClause = `
+    lateralJoinClause = Prisma.sql`
       INNER JOIN LATERAL (
         SELECT
           v.*,
@@ -119,12 +123,12 @@ export function buildQueryV2(jsonParams) {
                  v.qty_available, v.qty_onhand, v.applique_material,
                  v.estimated_gold_weight, v.ring_band_style, v.ring_head_style,
                  v.final_discount_price
-        ORDER BY v.fineness ${finenessOrder}, v.price DESC
+        ORDER BY v.fineness ${Prisma.raw(finenessOrder)}, v.price DESC
       ) v ON TRUE
     `;
   } else {
     // V2 without matched diamonds
-    variantJsonBuildObject = `
+    variantJsonBuildObject = Prisma.sql`
       JSON_BUILD_OBJECT(
         'id', CAST(v.haravan_variant_id AS INT),
         'fineness', v.fineness,
@@ -138,17 +142,17 @@ export function buildQueryV2(jsonParams) {
       )
     `;
 
-    lateralJoinClause = `
+    lateralJoinClause = Prisma.sql`
       INNER JOIN LATERAL (
         SELECT *
         FROM ecom.materialized_variants v
         WHERE v.haravan_product_id = p.haravan_product_id
-        ORDER BY v.fineness ${finenessOrder}, v.price DESC
+        ORDER BY v.fineness ${Prisma.raw(finenessOrder)}, v.price DESC
       ) v ON TRUE
     `;
   }
 
-  const dataSql = `
+  const dataSql = Prisma.sql`
     SELECT  
       CAST(p.haravan_product_id AS INT) AS id,
       p.title,
@@ -164,26 +168,27 @@ export function buildQueryV2(jsonParams) {
       ) AS variants
     FROM ecom.materialized_products p 
       INNER JOIN workplace.designs d ON p.design_id = d.id 
-      ${collectionJoinEcomProductsClause}
-      ${linkedCollectionJoinEcomProductsClause}
+      ${Prisma.raw(collectionJoinEcomProductsClause)}
+      ${Prisma.raw(linkedCollectionJoinEcomProductsClause)}
 
       ${lateralJoinClause}
       ${designImagesJoin}
-      ${warehouseJoinClause}
+      ${Prisma.raw(warehouseJoinClause)}
     WHERE 1 = 1
       AND p.haravan_product_type != 'Nhẫn Cưới' 
-      ${filterString}
+      AND cardinality(design_imgs.images) > 0
+      ${filterSql}
     GROUP BY 
       p.haravan_product_id, p.title, d.design_code, p.handle,
       d.diamond_holder, d.main_stone, d.ring_band_type, p.haravan_product_type,
       p.max_price, p.min_price, p.max_price_18, p.max_price_14, 
-      p.has_360 ${collectionJoinEcomProductsClause ? ", p2.image_updated_at" : ""}
-    ${havingString}
-    ${sortString}
-    ${paginationString}
+      p.has_360 ${collectionJoinEcomProductsClause ? Prisma.raw(", p2.image_updated_at") : Prisma.empty}
+    ${havingSql}
+    ${sortSql}
+    ${paginationSql}
   `;
 
-  const countSql = `
+  const countSql = Prisma.sql`
     SELECT
     COUNT(*) AS total,
      (SELECT ARRAY_AGG(DISTINCT mv.material_color ) FROM ecom.materialized_variants mv) AS material_colors,
@@ -192,16 +197,18 @@ export function buildQueryV2(jsonParams) {
         SELECT p.haravan_product_id
         FROM ecom.materialized_products p 
             INNER JOIN workplace.designs d ON d.id = p.design_id
-            ${collectionJoinEcomProductsClause}
-            ${linkedCollectionJoinEcomProductsClause}
+            ${Prisma.raw(collectionJoinEcomProductsClause)}
+            ${Prisma.raw(linkedCollectionJoinEcomProductsClause)}
             INNER JOIN ecom.materialized_variants v ON v.haravan_product_id = p.haravan_product_id
-            ${diamondJoinsForCount}
-            ${warehouseJoinClause}
+            ${designImagesJoin}
+            ${Prisma.raw(diamondJoinsForCount)}
+            ${Prisma.raw(warehouseJoinClause)}
         WHERE 1 = 1 
           AND p.haravan_product_type != 'Nhẫn Cưới'
-          ${filterString}
+          AND cardinality(design_imgs.images) > 0
+          ${filterSql}
         GROUP BY p.haravan_product_id
-        ${havingString}
+        ${havingSql}
     ) AS subquery
   `;
 
@@ -209,7 +216,7 @@ export function buildQueryV2(jsonParams) {
 }
 
 export function buildQuerySingleV2(params = {}) {
-  const priceField = `
+  const priceField = Prisma.sql`
     CASE
       WHEN EXISTS (
         SELECT 1 
@@ -225,12 +232,12 @@ export function buildQuerySingleV2(params = {}) {
     END
   `;
 
-  let lateralJoinClause = "";
-  let variantJsonBuildObject = "";
+  let lateralJoinClause;
+  let variantJsonBuildObject;
 
   if (params.matched_diamonds) {
     // With matched diamonds
-    variantJsonBuildObject = `
+    variantJsonBuildObject = Prisma.sql`
       JSON_BUILD_OBJECT(
         'id', CAST(v.haravan_variant_id AS INT),
         'fineness', v.fineness,
@@ -243,11 +250,11 @@ export function buildQuerySingleV2(params = {}) {
         'qty_available', v.qty_available,
         'qty_onhand', v.qty_onhand,
         'diamonds', COALESCE(v.diamonds, '[]'::json),
-        'images', design_imgs.images
+        'images', COALESCE(design_imgs.images, ARRAY[]::text[])
       )
     `;
 
-    lateralJoinClause = `
+    lateralJoinClause = Prisma.sql`
       LEFT JOIN LATERAL (
         SELECT
           v.*,
@@ -290,7 +297,7 @@ export function buildQuerySingleV2(params = {}) {
     `;
   } else {
     // Without matched diamonds
-    variantJsonBuildObject = `
+    variantJsonBuildObject = Prisma.sql`
       JSON_BUILD_OBJECT(
         'id', CAST(v.haravan_variant_id AS INT),
         'fineness', v.fineness,
@@ -302,12 +309,12 @@ export function buildQuerySingleV2(params = {}) {
         'estimated_gold_weight', v.estimated_gold_weight,
         'qty_available', v.qty_available,
         'qty_onhand', v.qty_onhand,
-        'images', design_imgs.images
+        'images', COALESCE(design_imgs.images, ARRAY[]::text[])
       )
     `;
 
-    lateralJoinClause = `
-      INNER JOIN LATERAL (
+    lateralJoinClause = Prisma.sql`
+      LEFT JOIN LATERAL (
         SELECT *
         FROM ecom.materialized_variants v
         WHERE v.haravan_product_id = p.haravan_product_id
@@ -318,3 +325,4 @@ export function buildQuerySingleV2(params = {}) {
 
   return { variantJsonBuildObject, lateralJoinClause };
 }
+

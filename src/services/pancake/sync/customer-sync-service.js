@@ -4,10 +4,10 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import * as Sentry from "@sentry/cloudflare";
 import { isInvalidTokenError } from "pancake/utils";
+import { sleep } from "services/utils/sleep";
 
 dayjs.extend(utc);
 
-const INITIAL_SYNC_SINCE_DATE = "2024-10-31T17:00:00Z";
 const SYNC_PAGE_SIZE = 100;
 
 export default class CustomerSyncService {
@@ -18,10 +18,10 @@ export default class CustomerSyncService {
     this.phoneRegex = /(?:\+84|0)(?:3[2-9]|5[6|8|9]|7[0|6-9]|8[1-6|89]|9[0-4|6-9])(?:\d{7})/;
   }
 
-  async syncCustomers() {
+  async syncCustomers({ batchTime } = {}) {
     try {
       console.warn("Starting syncCustomers...");
-      const { sinceUnix, untilUnix } = await this.getSyncTimeframe();
+      const { sinceUnix, untilUnix, now, KV_KEY } = await this.getSyncTimeframe(batchTime);
 
       const pageData = await this.pancakeClient.getPages();
       if (isInvalidTokenError(pageData)) {
@@ -36,9 +36,11 @@ export default class CustomerSyncService {
 
       for (let i = pages.length - 1; i >= 0; i--) {
         await this.syncPageCustomers(pages[i].id, sinceUnix, untilUnix);
+        await sleep(1000);
       }
 
-      console.warn("Finished syncCustomers.");
+      await this.env.FN_KV.put(KV_KEY, now.format("YYYY-MM-DD HH:mm:ss"));
+      console.warn(`Finished syncCustomers. Saved checkpoint: ${now.format("YYYY-MM-DD HH:mm:ss")}`);
     } catch (error) {
       this.captureException(error);
     }
@@ -64,6 +66,7 @@ export default class CustomerSyncService {
 
         if (customers.length < SYNC_PAGE_SIZE) break;
         pageNumber++;
+        await sleep(1000);
       } catch (error) {
         this.captureException(error, pageId);
         break;
@@ -126,19 +129,22 @@ export default class CustomerSyncService {
     };
   }
 
-  async getSyncTimeframe() {
-    const now = dayjs().utc();
+  async getSyncTimeframe(batchTime) {
+    const kv = this.env.FN_KV;
+    const KV_KEY = "pancake_customer_sync_last_time";
+    const now = batchTime ? batchTime : dayjs().utc();
     const untilUnix = now.unix();
 
-    const anyCustomer = await this.db.page_customer.findFirst({ select: { id: true } });
+    const lastSyncTimeStr = await kv.get(KV_KEY);
     let sinceUnix;
-    if (!anyCustomer) {
-      sinceUnix = dayjs(INITIAL_SYNC_SINCE_DATE).unix();
+
+    if (lastSyncTimeStr) {
+      sinceUnix = dayjs.utc(lastSyncTimeStr).unix();
     } else {
       sinceUnix = now.subtract(10, "minutes").unix();
     }
 
-    return { now, untilUnix, sinceUnix };
+    return { now, untilUnix, sinceUnix, KV_KEY };
   }
 
   captureException(error, pageId = null) {

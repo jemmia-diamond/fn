@@ -61,7 +61,7 @@
     "R2_JEMMIA_WEBSITE_PUBLIC_URL": "https://assets.jemmia.vn",
     "NOCODB_SUPPLY_BASE_ID": "pl4e7zwnui0k8y1",
     "NOCODB_MARKETING_BASE_ID": "pbzopuiobhc8xf1",
-    "NOCODB_WORKPLACE_BASE_URL": "https://workplace.jemmia.vn/",
+    "NOCODB_WORKSPACE_BASE_URL": "https://workspace.jemmia.vn/",
     "SALESAYA_API_BASE_URL": "https://api.salesaya.com",
     "DEFAULT_HARAVAN_DIAMOND_DISCOUNT_COLLECTION_ID": 32,
     "DEFAULT_HARAVAN_JEWELRY_DISCOUNT_COLLECTION_ID": 31,
@@ -70,7 +70,10 @@
     "LARK_RECALL_REDIRECT_URI":"https://fn.jemmia.vn/jemmia-shield/callback",
     "LARK_RECALL_VIEW_URL": "https://fn.jemmia.vn/jemmia-shield/message-recall/view",
     "LARK_APP_SHIELD_ID":"cli_a9fd9bc9f7b9ded0",
-    "OAUTH_REDIRECT_ENDPOINT":"https://fn.jemmia.vn"
+    "OAUTH_REDIRECT_ENDPOINT":"https://fn.jemmia.vn",
+    "HARAVAN_APP_URL": "https://jemmiavn.myharavan.com",
+    "AI_PROXY_URL": "https://aiproxy.jemmia.vn",
+    "GOOGLE_GENERATIVE_AI_URL": "https://generativelanguage.googleapis.com/v1beta"
   },
   "secrets_store_secrets": [
     {
@@ -147,6 +150,16 @@
       "binding": "LARK_SHIELD_ENCRYPT_KEY_SECRET",
       "store_id": "dff6fef7003446178302a7874af64fde",
       "secret_name": "LARK_SHIELD_ENCRYPT_KEY"
+    },
+    {
+      "binding": "AI_PROXY_TOKEN_SECRET",
+      "store_id": "dff6fef7003446178302a7874af64fde",
+      "secret_name": "AI_PROXY_TOKEN"
+    },
+    {
+      "binding": "GEMINI_API_KEY_SECRET",
+      "store_id": "dff6fef7003446178302a7874af64fde",
+      "secret_name": "GEMINI_API_KEY"
     }
   ],
   "kv_namespaces": [
@@ -228,6 +241,10 @@
       {
         "queue": "erpnext-order-creation",
         "binding": "ERPNEXT_ORDER_CREATION_QUEUE"
+      },
+      {
+        "queue": "promotion-diamond-collect-sync",
+        "binding": "PROMOTION_DIAMOND_COLLECT_SYNC_QUEUE"
       }
     ],
     "consumers": [
@@ -293,6 +310,11 @@
         "retry_delay": 600,
         "max_retries": 6,
         "max_batch_size": 1
+      },
+      {
+        "queue": "promotion-diamond-collect-sync",
+        "max_concurrency": 1,
+        "max_retries": 0
       }
     ]
   },
@@ -300,6 +322,10 @@
     {
       "binding": "JEMMIA_ERP_R2_STORAGE",
       "bucket_name": "jemmia-erp"
+    },
+    {
+      "binding": "JEMMIA_ASSETS_R2_STORAGE",
+      "bucket_name": "assets"
     }
   ],
   "triggers": {

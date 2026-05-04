@@ -9,6 +9,7 @@ import Delivery from "controllers/delivery";
 import Payment from "controllers/payment";
 import Salesaya from "controllers/salesaya";
 import Larksuite from "controllers/larksuite";
+import Media from "controllers/media";
 
 export default class APIRoutes {
   static register(api) {
@@ -31,6 +32,7 @@ export default class APIRoutes {
 
     jemmiaERPNamespaceApi.post("/sales_orders", ERP.SalesOrderController.create);
     jemmiaERPNamespaceApi.post("/sales_orders/:id/notifications", ERP.SalesOrderNotificationController.create);
+    jemmiaERPNamespaceApi.post("/promotions/diamond-collects", Ecommerce.DiamondCollectController.create);
 
     const pancakeNamespaceApi = api.basePath("/pancake");
     pancakeNamespaceApi.post("/conversation_assignments", Pancake.ConversationAssignmentController.create);
@@ -41,6 +43,8 @@ export default class APIRoutes {
     const ecommerceNamespaceApi = api.basePath("/ecommerce");
     ecommerceNamespaceApi.delete("/ind-day-stats", Ecommerce.IndDayStatController.destroy);
     ecommerceNamespaceApi.post("/products/jewelries/diamond-replacements", Ecommerce.JewelryDiamondPairController.create);
+
+    ecommerceNamespaceApi.post("/diamonds/stock-tracker", Ecommerce.DiamondStockTrackerController.create);
 
     ecommerceNamespaceApi.get("/cards/:id", Ecommerce.CardController.show);
     ecommerceNamespaceApi.post("/cards", Ecommerce.CardController.create);
@@ -64,5 +68,8 @@ export default class APIRoutes {
     const larksuiteApi = api.basePath("/larksuites");
     larksuiteApi.get("/buyback-exchanges", Larksuite.BuybackExchangeController.index);
     larksuiteApi.get("/subscriptions", Larksuite.ApprovalSubscriptionController.index);
+
+    const mediaApi = api.basePath("/media");
+    mediaApi.post("/image-translation", Media.ImageTranslationController.create);
   };
 };
