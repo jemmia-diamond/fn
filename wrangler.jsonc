@@ -267,10 +267,12 @@
       },
       {
         "queue": "message-summary",
+        "max_batch_size": 1,
         "retry_delay": 600
       },
       {
-        "queue": "pancake-message-last-interaction"
+        "queue": "pancake-message-last-interaction",
+        "max_batch_size": 1
       },
       {
         "queue": "erpnext-contacts"

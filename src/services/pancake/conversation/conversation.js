@@ -208,39 +208,29 @@ export default class ConversationService {
 
   static async dequeueMessageSummaryQueue(batch, env) {
     const conversationService = new ConversationService(env);
-    const messages = batch.messages;
-
-    for (const message of messages) {
-      const body = message.body;
-
-      await conversationService.summarizeLead(env, body);
+    for (const message of batch.messages) {
+      await conversationService.summarizeLead(env, message.body);
     }
   }
 
   static async dequeueMessageLastCustomerQueue(batch, env) {
     const conversationService = new ConversationService(env);
-    const messages = batch.messages;
-    for (const message of messages) {
-      const body = message.body;
-      await conversationService.processLastCustomerMessage(body);
+    for (const message of batch.messages) {
+      await conversationService.processLastCustomerMessage(message.body);
     }
   }
 
   static async dequeueMessageSyncCustomerToLeadCRM(batch, env) {
     const conversationService = new ConversationService(env);
-    const messages = batch.messages;
-    for (const message of messages) {
-      const body = message.body;
-      await conversationService.syncCustomerToLeadCrm(body);
+    for (const message of batch.messages) {
+      await conversationService.syncCustomerToLeadCrm(message.body);
     }
   }
 
   static async dequeueExtraHooksQueue(batch, env) {
     const conversationService = new ConversationService(env);
-    const messages = batch.messages;
-    for (const message of messages) {
-      const body = message.body;
-      await conversationService.triggerExtraHooks(body);
+    for (const message of batch.messages) {
+      await conversationService.triggerExtraHooks(message.body);
     }
   }
 }
