@@ -237,7 +237,7 @@ export default class SalesOrderService {
 
   async sendNotificationToLark(initialSalesOrderData, isUpdateMessage = false) {
     let salesOrderData = structuredClone(initialSalesOrderData);
-
+    const dbConnection = { timeout: 30000, maxWait: 10000 };
     const larkClient = await LarksuiteService.createClientV2(this.env);
 
     const haravanRefOrderId = salesOrderData.haravan_ref_order_id;
@@ -403,18 +403,20 @@ export default class SalesOrderService {
 
         if ((content && replyResponse.msg === "success") || (isSendImagesSuccess.every(Boolean))) {
           if (isOrderTracked) {
-            await retryQuery(() => this.db.erpnextSalesOrderNotificationTracking.updateMany({
-              where: {
-                uuid: currentOrderTracking.uuid
-              },
-              data: {
-                order_data: {
-                  items: salesOrderData.items,
-                  attachments: salesOrderData.attachments,
-                  paid_amount: salesOrderData.paid_amount
+            await retryQuery(() => this.db.$transaction(async (tx) => {
+              return tx.erpnextSalesOrderNotificationTracking.updateMany({
+                where: {
+                  uuid: currentOrderTracking.uuid
+                },
+                data: {
+                  order_data: {
+                    items: salesOrderData.items,
+                    attachments: salesOrderData.attachments,
+                    paid_amount: salesOrderData.paid_amount
+                  }
                 }
-              }
-            }));
+              });
+            }, dbConnection));
             return { success: true, message: "Cập nhật đơn thành công!" };
           }
           await retryQuery(() => this.db.erpnextSalesOrderNotificationTracking.create({
@@ -476,18 +478,20 @@ export default class SalesOrderService {
 
       if ((content && replyResponse.msg === "success") || (isSendImagesSuccess.every(Boolean))) {
         // Update
-        await retryQuery(() => this.db.erpnextSalesOrderNotificationTracking.updateMany({
-          where: {
-            uuid: notificationTracking.uuid
-          },
-          data: {
-            order_data: {
-              items: salesOrderData.items,
-              attachments: salesOrderData.attachments,
-              paid_amount: salesOrderData.paid_amount
+        await retryQuery(() => this.db.$transaction(async (tx) => {
+          return tx.erpnextSalesOrderNotificationTracking.updateMany({
+            where: {
+              uuid: notificationTracking.uuid
+            },
+            data: {
+              order_data: {
+                items: salesOrderData.items,
+                attachments: salesOrderData.attachments,
+                paid_amount: salesOrderData.paid_amount
+              }
             }
-          }
-        }));
+          });
+        }, dbConnection));
         return { success: true, message: "Gửi cập nhật đơn thành công!" };
       }
 
