@@ -1,5 +1,6 @@
 import { DebounceActions, DebounceService } from "src/durable-objects";
 import { shouldReceiveWebhook } from "controllers/webhook/pancake/erp/utils";
+import { retryQuery } from "services/utils/retry-utils";
 
 export default class PancakeERPMessageController {
   static async create(ctx) {
@@ -11,8 +12,8 @@ export default class PancakeERPMessageController {
         return ctx.json({ message: "Message Ignored" });
       }
 
-      await ctx.env["MESSAGE_QUEUE"].send(data);
-      await ctx.env["PANCAKE_MESSAGE_WEBHOOK_DISPATCH_QUEUE"].send(data);
+      await retryQuery(() => ctx.env["MESSAGE_QUEUE"].send(data));
+      await retryQuery(() => ctx.env["PANCAKE_MESSAGE_WEBHOOK_DISPATCH_QUEUE"].send(data));
 
       const conversationId = data?.data?.conversation?.id;
 
