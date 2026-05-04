@@ -23,6 +23,7 @@ model manualPaymentTransaction {
   payment_entry_name  String?   @unique @db.VarChar(255)
   gateway             String?   @db.VarChar(255)
   payment_references  Json?
+  refund_amount       Decimal?  @db.Decimal(12, 2)
 
   @@index([uuid])
   @@map("manual_payments")

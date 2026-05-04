@@ -30,5 +30,9 @@ export const CHAT_GROUPS = {
   BANK_TRANSACTION_NOTIFICATION: {
     chat_id: "oc_14f4bb7d2233783133751b70b3eaaa34",
     group_name: "[Bot] Thông Báo Tiền Vào"
+  },
+  PROMOTION_SYNC_NOTIFICATION: {
+    chat_id: "oc_0c56ab7868f6f90b3f3f6e0fdfd03482",
+    group_name: "Hỗ trợ công thức tính CTKM"
   }
 };

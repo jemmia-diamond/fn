@@ -1,3 +1,5 @@
+import { Prisma } from "@prisma-cli";
+
 function processSize(text) {
   return text.replace(".0", "ly").replaceAll(".", "ly");
 }
@@ -51,7 +53,7 @@ export function formatData(rows) {
   }));
 }
 
-export const dataSql = `
+export const dataSql = Prisma.sql`
   SELECT
     CONCAT(dpl."size", dpl.carat) AS title,
     dpl.color,

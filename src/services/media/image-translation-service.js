@@ -1,8 +1,11 @@
 import { generateText, generateImage } from "ai";
-import { getOpenAICompatibleModel, getGoogleGenerativeAIModel } from "services/utils/llm-helper";
+import {
+  getOpenAICompatibleModel,
+  getGoogleGenerativeAIModel
+} from "services/utils/llm-helper";
 import { AI_MODELS } from "src/constants/ai-proxy";
-import { v4 as uuidv4 } from "uuid";
 import { WebsiteR2StorageService } from "services/r2-object/website/website-r2-storage-service";
+import * as Sentry from "@sentry/cloudflare";
 
 /**
  * Service of image translation.
@@ -88,6 +91,9 @@ export default class ImageTranslationService {
 
       return metadata;
     } catch (error) {
+      Sentry.captureException(error, {
+        extra: { action: "extractMetadata" }
+      });
       throw error;
     }
   }
@@ -98,7 +104,6 @@ export default class ImageTranslationService {
    * @param {Uint8Array} imageBuffer
    * @param {Array} metadata
    * @param {Object} env
-   * @param {string} mimeType
    * @returns {Promise<Uint8Array>} The translated image buffer.
    */
   async generateTranslatedImage(imageBuffer, metadata, env) {
@@ -120,37 +125,113 @@ export default class ImageTranslationService {
 
       return image.uint8Array;
     } catch (error) {
+      Sentry.captureException(error, {
+        extra: { action: "generateTranslatedImage" }
+      });
       throw error;
     }
   }
 
   /**
-   * Full translation pipeline.
+   * Fetch image from URL and return as ArrayBuffer with metadata.
    *
-   * @param {File} image
-   * @param {Object} env
-   * @returns {Promise<Uint8Array>}
+   * @param {string} imageUrl
+   * @returns {Promise<{buffer: Uint8Array, name: string, mimeType: string}>}
    */
+  async fetchImageFromUrl(imageUrl) {
+    const response = await fetch(imageUrl);
+    if (!response.ok) {
+      throw new Error(
+        `Failed to fetch image from URL: ${imageUrl} (${response.status})`
+      );
+    }
+
+    const arrayBuffer = await response.arrayBuffer();
+    const contentType = response.headers.get("content-type") || "image/jpeg";
+    const extension = contentType.split("/")[1]?.split(";")[0] || "jpg";
+
+    const urlParts = imageUrl.split("/");
+    const filename =
+      urlParts[urlParts.length - 1].split("?")[0] || `image.${extension}`;
+
+    return {
+      buffer: new Uint8Array(arrayBuffer),
+      name: filename,
+      mimeType: contentType
+    };
+  }
+
+  /**
+   * Build the expected EN filename from VI filename and content hash.
+   * VI: {filename}.png → EN: en_{filename}_{hash}.png
+   *
+   * @param {string} viFilename
+   * @param {string} hash
+   * @returns {string}
+   */
+  getTranslatedFilename(viFilename, hash) {
+    const nameWithoutExt = viFilename.substring(0, viFilename.lastIndexOf("."));
+    const extension = viFilename.split(".").pop();
+    return `en_${nameWithoutExt}_${hash}.${extension}`;
+  }
+
+  /**
+   * Compute SHA-256 hash of image buffer.
+   *
+   * @param {Uint8Array} buffer
+   * @returns {Promise<string>}
+   */
+  async computeHash(buffer) {
+    const hashBuffer = await crypto.subtle.digest("SHA-256", buffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, "0")).join("").substring(0, 8);
+  }
+
+  async isTranslatedImageExists(filename, env) {
+    const storage = new WebsiteR2StorageService(env);
+    return await storage.exists(filename);
+  }
+
+  async getTranslatedImageUrl(filename, env) {
+    const storage = new WebsiteR2StorageService(env);
+    return storage.getPublicUrl(filename);
+  }
+
   async translateImage(image, env) {
-    const imageArrayBuffer = await image.arrayBuffer();
-    const imageBuffer = new Uint8Array(imageArrayBuffer);
+    let imageBuffer;
+    let imageName;
+
+    if (typeof image === "string") {
+      const imageData = await this.fetchImageFromUrl(image);
+      imageBuffer = imageData.buffer;
+      imageName = imageData.name;
+    } else {
+      const imageArrayBuffer = await image.arrayBuffer();
+      imageBuffer = new Uint8Array(imageArrayBuffer);
+      imageName = image.name || "image.jpg";
+    }
+
+    const hash = await this.computeHash(imageBuffer);
+    const enFilename = this.getTranslatedFilename(imageName, hash);
+
+    if (await this.isTranslatedImageExists(enFilename, env)) {
+      return this.getTranslatedImageUrl(enFilename, env);
+    }
 
     const metadata = await this.extractMetadata(imageBuffer, env);
 
     if (metadata.length === 0) {
-      return imageBuffer;
+      return typeof image === "string" ? image : null;
     }
 
-    const translatedImageBuffer = await this.generateTranslatedImage(imageBuffer, metadata, env);
+    const translatedImageBuffer = await this.generateTranslatedImage(
+      imageBuffer,
+      metadata,
+      env
+    );
 
-    const uniqueId = uuidv4().split("-")[0];
-    const extension = image.name.split(".").pop();
-    const nameWithoutExt = image.name.substring(0, image.name.lastIndexOf("."));
-    const outputFilename = `en_${nameWithoutExt}_${uniqueId}.${extension}`;
-
-    // Save to R2
     const storage = new WebsiteR2StorageService(env);
-    const publicUrl = await storage.upload(outputFilename, translatedImageBuffer);
+    const publicUrl = await storage.upload(enFilename, translatedImageBuffer);
 
     return publicUrl;
   }

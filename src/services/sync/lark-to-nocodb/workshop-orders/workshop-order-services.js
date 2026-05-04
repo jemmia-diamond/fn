@@ -128,7 +128,7 @@ export default class WorkshopOrderServices {
     const serials = recordsToSync.map(r => r.serialNumber).join(",");
 
     try {
-      const searchData = await this.nocoClient.listRecords(NOCODB_TABLES.SERIALS, {
+      const searchData = await this.nocoClient.listRecords(NOCODB_TABLES.SUPPLY.SERIALS, {
         where: `(serial_number,in,${serials})`,
         limit: recordsToSync.length,
         fields: ["id", "serial_number"]
@@ -145,7 +145,7 @@ export default class WorkshopOrderServices {
         const existingRecord = existingMap.get(record.serialNumber);
 
         if (existingRecord) {
-          await this.nocoClient.updateRecords(NOCODB_TABLES.SERIALS, {
+          await this.nocoClient.updateRecords(NOCODB_TABLES.SUPPLY.SERIALS, {
             id: existingRecord.id,
             policy: record.policy
           });

@@ -34,5 +34,9 @@ export const TABLES = {
   TECH_TICKET: {
     table_id: "tblfEv32pnjHMDTF",
     app_token: "LecWbGlCqadLdTsVXF9lSCAJgzb"
+  },
+  ORDER_INFO: {
+    table_id: "tbljR4rVxyFsKi2l",
+    app_token: "H4qZwx5C3iptOik24colG00Qgkf"
   }
 };

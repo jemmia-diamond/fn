@@ -19,7 +19,6 @@ export default class OrderService {
     this.env = env;
     this.db = Database.instance(env);
     this.hrvClient = new HaravanAPIClient(env);
-    this.larkClient = LarksuiteService.createClient(env);
   }
 
   async invalidOrderNotification(order) {
@@ -36,7 +35,8 @@ export default class OrderService {
     }
     if (negativeOrderedVariants.length > 0) {
       const message = negativeStockOrderMessage(order, negativeOrderedVariants);
-      await this.larkClient.im.message.create({
+      const larkClient = await LarksuiteService.createClientV2(this.env);
+      await larkClient.im.message.create({
         params: {
           receive_id_type: "chat_id"
         },
