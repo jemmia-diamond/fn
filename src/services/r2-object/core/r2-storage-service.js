@@ -20,6 +20,25 @@ export class R2StorageService {
   }
 
   /**
+   * Check if an object exists in R2.
+   * @param {string} key - The object key.
+   * @returns {Promise<boolean>}
+   */
+  async exists(key) {
+    if (!key) {
+      return false;
+    }
+
+    try {
+      const object = await this.bucket.head(key);
+      return object !== null;
+    } catch (err) {
+      Sentry.captureException(err);
+      return false;
+    }
+  }
+
+  /**
    * Get an object from R2.
    * @param {string} key - The object key.
    * @returns {Promise<ArrayBuffer|null>}
