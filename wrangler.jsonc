@@ -183,6 +183,22 @@
         "binding": "ORDER_QUEUE"
       },
       {
+        "queue": "haravan-order-notification",
+        "binding": "HARAVAN_ORDER_NOTIFICATION_QUEUE"
+      },
+      {
+        "queue": "haravan-order-stock-control",
+        "binding": "HARAVAN_ORDER_STOCK_CONTROL_QUEUE"
+      },
+      {
+        "queue": "haravan-order-transaction-sync",
+        "binding": "HARAVAN_ORDER_TRANSACTION_SYNC_QUEUE"
+      },
+      {
+        "queue": "haravan-order-product-quote-sync",
+        "binding": "HARAVAN_ORDER_PRODUCT_QUOTE_SYNC_QUEUE"
+      },
+      {
         "queue": "message",
         "binding": "MESSAGE_QUEUE"
       },
@@ -242,7 +258,27 @@
     "consumers": [
       {
         "queue": "order",
-        "max_concurrency": 1,
+        "retry_delay": 600,
+        "max_batch_size": 1
+      },
+      {
+        "queue": "haravan-order-notification",
+        "retry_delay": 600,
+        "max_batch_size": 1
+      },
+      {
+        "queue": "haravan-order-stock-control",
+        "retry_delay": 600,
+        "max_batch_size": 1
+      },
+      {
+        "queue": "haravan-order-transaction-sync",
+        "retry_delay": 600,
+        "max_batch_size": 1
+      },
+      {
+        "queue": "haravan-order-product-quote-sync",
+        "retry_delay": 600,
         "max_batch_size": 1
       },
       {

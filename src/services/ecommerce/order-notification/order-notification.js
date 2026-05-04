@@ -1,4 +1,3 @@
-import * as Sentry from "@sentry/cloudflare";
 import LarksuiteService from "services/larksuite/lark";
 import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/constant";
 import { HARAVAN_TOPIC } from "services/ecommerce/enum";
@@ -69,13 +68,9 @@ export default class OrderNotificationService {
     const orderNotificationService = new OrderNotificationService(env);
 
     for (const message of batch.messages) {
-      try {
-        const orderData = message.body;
-        if (orderData.haravan_topic === HARAVAN_TOPIC.CREATED) {
-          await orderNotificationService.sendOrderNotification(orderData);
-        }
-      } catch (error) {
-        Sentry.captureException(error);
+      const orderData = message.body;
+      if (orderData.haravan_topic === HARAVAN_TOPIC.CREATED) {
+        await orderNotificationService.sendOrderNotification(orderData);
       }
     }
   }
