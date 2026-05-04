@@ -1,4 +1,3 @@
-import * as Sentry from "@sentry/cloudflare";
 import PancakeClient from "pancake/pancake-client";
 import Database from "services/database";
 import LeadService from "services/erp/crm/lead/lead";
@@ -40,39 +39,29 @@ export default class ConversationService {
   async findExistingLead({
     conversationId
   }) {
-    try {
-      const result = await this.db.$queryRaw`
-        SELECT * FROM pancake.frappe_lead_conversation AS flc
-        WHERE flc.conversation_id = ${conversationId}
-        LIMIT 1;
-      `;
-      if (result && result.length > 0) {
-        return result[0];
-      }
-      return null;
-    } catch (error) {
-      Sentry.captureException(error);
-      return undefined;
+    const result = await this.db.$queryRaw`
+      SELECT * FROM pancake.frappe_lead_conversation AS flc
+      WHERE flc.conversation_id = ${conversationId}
+      LIMIT 1;
+    `;
+    if (result && result.length > 0) {
+      return result[0];
     }
+    return null;
   }
 
   async findPageInfo({
     pageId
   }) {
-    try {
-      const result = await this.db.$queryRaw`
-        SELECT * FROM pancake.page AS p
-        WHERE p.id = ${pageId}
-        LIMIT 1;
-      `;
-      if (result && result.length > 0) {
-        return result[0];
-      }
-      return null;
-    } catch (error) {
-      Sentry.captureException(error);
-      return undefined;
+    const result = await this.db.$queryRaw`
+      SELECT * FROM pancake.page AS p
+      WHERE p.id = ${pageId}
+      LIMIT 1;
+    `;
+    if (result && result.length > 0) {
+      return result[0];
     }
+    return null;
   }
 
   async processLastCustomerMessage(body) {
@@ -119,12 +108,11 @@ export default class ConversationService {
     const existingDocName = await this.findExistingLead({
       conversationId: conversationId
     });
-    if (existingDocName === undefined) return;
 
     const pancakePage = await this.findPageInfo({
       pageId: pageId
     });
-    if (pancakePage === undefined || pancakePage === null) return;
+    if (pancakePage === null) return;
 
     let frappeNameId;
     if (existingDocName !== null) {
@@ -198,12 +186,10 @@ export default class ConversationService {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body)
-      }).catch(err => {
-        Sentry.captureException(err);
       })
     );
 
-    await Promise.allSettled(promises);
+    await Promise.all(promises);
   }
 
   static async dequeueMessageSummaryQueue(batch, env) {
