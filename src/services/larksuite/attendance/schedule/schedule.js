@@ -9,7 +9,7 @@ dayjs.extend(utc);
 export default class ScheduleService {
   static async syncScheduleToDatabase(env) {
     const db = Database.instance(env);
-    const larkClient = LarksuiteService.createClient(env);
+    const larkClient = await LarksuiteService.createClientV2(env);
     const tenantAccessToken = await LarksuiteService.getTenantAccessToken(env);
 
     const currentDate = dayjs().utc();

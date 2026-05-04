@@ -6,8 +6,8 @@ export class ImageMessagingService {
   /**
      * Uploads an image file to Lark and returns the image_key.
      */
-  static async uploadLarkImage({ larkClient, imageBuffer, env }) {
-    const tenantAccessToken = await LarksuiteService.getTenantAccessTokenFromClient({ larkClient, env });
+  static async uploadLarkImage({ imageBuffer, env }) {
+    const tenantAccessToken = await LarksuiteService.getTenantAccessToken(env);
     if (!tenantAccessToken) {
       Sentry.captureException(new Error("Could not obtain tenant access token for upload."));
       return null;
@@ -49,8 +49,8 @@ export class ImageMessagingService {
   /**
      * Sends an image message to a Lark chat.
      */
-  static async sendLarkImageMessage({ larkClient, chatId, imageKey, rootMessageId, env, isReply }) {
-    const tenantAccessToken = await LarksuiteService.getTenantAccessTokenFromClient({ larkClient, env });
+  static async sendLarkImageMessage({ chatId, imageKey, rootMessageId, env, isReply }) {
+    const tenantAccessToken = await LarksuiteService.getTenantAccessToken(env);
     if (!tenantAccessToken) {
       Sentry.captureException(new Error("Could not obtain tenant access token for sending message."));
       return;
@@ -98,14 +98,14 @@ export class ImageMessagingService {
   /**
      * Combined function to download → upload → send image to Lark chat.
      */
-  static async sendLarkImageFromUrl({ larkClient, imageBuffer, chatId, rootMessageId, env, isReply = true }) {
+  static async sendLarkImageFromUrl({ imageBuffer, chatId, rootMessageId, env, isReply = true }) {
     try {
 
-      const imageKey = await ImageMessagingService.uploadLarkImage({ larkClient, imageBuffer, env });
+      const imageKey = await ImageMessagingService.uploadLarkImage({ imageBuffer, env });
       if (!imageKey) return false;
 
       await ImageMessagingService.sendLarkImageMessage({
-        larkClient, chatId, imageKey, rootMessageId, env, isReply
+        chatId, imageKey, rootMessageId, env, isReply
       });
       return true;
     }  catch (e) {
