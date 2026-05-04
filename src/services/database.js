@@ -1,10 +1,12 @@
 import { PrismaClient } from "@prisma-cli";
 import { PrismaPg } from "@prisma/adapter-pg";
 
-let prismaInstance = null;
-
+// Example usage:
+// const db = Database.instance(c.env);
+// const users = await db.$queryRaw`SELECT * FROM larksuite.users`;
 class Database {
   static createClient(env) {
+    // If DATABASE_URL is set, use it directly. Otherwise, use Hyperdrive.
     const connectionString = env.DATABASE_URL || env.HYPERDRIVE.connectionString;
     const adapter = new PrismaPg({ connectionString });
 
@@ -16,10 +18,7 @@ class Database {
   }
 
   static instance(env) {
-    if (!prismaInstance) {
-      prismaInstance = Database.createClient(env);
-    }
-    return prismaInstance;
+    return Database.createClient(env);
   }
 }
 
