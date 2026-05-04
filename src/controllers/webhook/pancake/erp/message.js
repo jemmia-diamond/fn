@@ -12,7 +12,7 @@ export default class PancakeERPMessageController {
       }
 
       await ctx.env["MESSAGE_QUEUE"].send(data);
-      await ctx.env["MESSAGE_EXTRA_HOOKS_QUEUE"].send(data);
+      await ctx.env["PANCAKE_MESSAGE_WEBHOOK_DISPATCH_QUEUE"].send(data);
 
       const conversationId = data?.data?.conversation?.id;
 
@@ -29,7 +29,7 @@ export default class PancakeERPMessageController {
         env: ctx.env,
         key: key,
         data: data,
-        actionType: DebounceActions.SEND_TO_MESSAGE_LAST_CUSTOMER_QUEUE,
+        actionType: DebounceActions.SEND_TO_PANCAKE_MESSAGE_LAST_INTERACTION_QUEUE,
         delay: 30000
       });
     }

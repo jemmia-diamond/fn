@@ -195,12 +195,12 @@
         "binding": "MESSAGE_SUMMARY_QUEUE"
       },
       {
-        "queue": "message-last-customer",
-        "binding": "MESSAGE_LAST_CUSTOMER_QUEUE"
+        "queue": "pancake-message-last-interaction",
+        "binding": "PANCAKE_MESSAGE_LAST_INTERACTION_QUEUE"
       },
       {
-        "queue": "message-extra-hooks",
-        "binding": "MESSAGE_EXTRA_HOOKS_QUEUE"
+        "queue": "pancake-message-webhook-dispatch",
+        "binding": "PANCAKE_MESSAGE_WEBHOOK_DISPATCH_QUEUE"
       },
       {
         "queue": "erpnext-contacts",
@@ -262,7 +262,7 @@
         "retry_delay": 600
       },
       {
-        "queue": "message-extra-hooks",
+        "queue": "pancake-message-webhook-dispatch",
         "max_batch_size": 1
       },
       {
@@ -270,7 +270,7 @@
         "retry_delay": 600
       },
       {
-        "queue": "message-last-customer"
+        "queue": "pancake-message-last-interaction"
       },
       {
         "queue": "erpnext-contacts"
