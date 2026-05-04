@@ -11,7 +11,7 @@ export default class InstanceService {
   static async syncInstancesToDatabase(env) {
     const instanceService = new InstanceService(env);
     const db = Database.instance(env);
-    const larkClient = LarksuiteService.createClient(env);
+    const larkClient = await LarksuiteService.createClientV2(env);
     const timeThreshold = dayjs().utc();
     const startTime = timeThreshold.subtract(1, "day").subtract(1, "hour").unix() * 1000;
     const endTime = timeThreshold.add(12, "hour").unix() * 1000;
