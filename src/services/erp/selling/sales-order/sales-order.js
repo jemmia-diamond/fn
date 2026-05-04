@@ -692,7 +692,6 @@ export default class SalesOrderService {
           const imageBuffer = await new ERPR2StorageService(this.env).getObjectByKey(r2Key);
           if (!imageBuffer) return false;
           return Larksuite.Messaging.ImageMessagingService.sendLarkImageFromUrl({
-            larkClient,
             imageBuffer,
             chatId: chatId,
             env: this.env,

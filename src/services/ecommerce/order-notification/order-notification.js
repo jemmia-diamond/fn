@@ -11,7 +11,6 @@ export default class OrderNotificationService {
 
   constructor(env) {
     this.env = env;
-    this.larkClient = LarksuiteService.createClient(env);
   }
 
   async sendOrderNotification(orderData) {
@@ -20,7 +19,8 @@ export default class OrderNotificationService {
     }
 
     const message = this.buildOrderMessage(orderData);
-    await this.larkClient.im.message.create({
+    const larkClient = await LarksuiteService.createClientV2(this.env);
+    await larkClient.im.message.create({
       params: {
         receive_id_type: "chat_id"
       },
