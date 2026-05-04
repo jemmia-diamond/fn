@@ -13,6 +13,7 @@ export default class GoogleMerchantService {
       timeout: 30000
     }, {
       retries: 5,
+      shouldResetTimeout: true,
       retryDelay: (retryCount) => {
         return Math.pow(2, retryCount) * 1000;
       },
