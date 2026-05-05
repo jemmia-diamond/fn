@@ -101,7 +101,7 @@ export default class ConversationService {
     const pageId = body?.page_id;
 
     const hasPhone = body?.data?.message?.has_phone;
-    if (hasPhone === undefined || hasPhone === false) {
+    if (!hasPhone) {
       return;
     }
 
@@ -149,7 +149,7 @@ export default class ConversationService {
       }
     }
 
-    if (frappeNameId !== undefined && frappeNameId !== null) {
+    if (frappeNameId) {
       await this.upsertFrappeLeadConversation(conversationId, frappeNameId);
     }
   }
