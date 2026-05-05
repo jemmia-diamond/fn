@@ -195,6 +195,14 @@
         "binding": "MESSAGE_SUMMARY_QUEUE"
       },
       {
+        "queue": "pancake-message-last-interaction",
+        "binding": "PANCAKE_MESSAGE_LAST_INTERACTION_QUEUE"
+      },
+      {
+        "queue": "pancake-message-webhook-dispatch",
+        "binding": "PANCAKE_MESSAGE_WEBHOOK_DISPATCH_QUEUE"
+      },
+      {
         "queue": "erpnext-contacts",
         "binding": "ERPNEXT_CONTACTS_QUEUE"
       },
@@ -246,14 +254,25 @@
         "max_batch_size": 1
       },
       {
+        "queue": "zalo-message"
+      },
+      {
         "queue": "message",
+        "max_batch_size": 1,
+        "retry_delay": 600
+      },
+      {
+        "queue": "pancake-message-webhook-dispatch",
         "max_batch_size": 1
       },
       {
-        "queue": "zalo-message",
+        "queue": "message-summary",
+        "max_batch_size": 1,
+        "retry_delay": 600
       },
       {
-        "queue": "message-summary"
+        "queue": "pancake-message-last-interaction",
+        "max_batch_size": 1
       },
       {
         "queue": "erpnext-contacts"
