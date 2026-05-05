@@ -33,9 +33,14 @@ export default {
     case "message":
       await Pancake.ConversationService.dequeueMessageSyncCustomerToLeadCRM(batch, env);
       break;
+    case "pancake-message-webhook-dispatch":
+      await Pancake.ConversationService.dequeueExtraHooksQueue(batch, env);
+      break;
     case "message-summary":
-      await Pancake.ConversationService.dequeueMessageQueue(batch, env);
       await Pancake.ConversationService.dequeueMessageSummaryQueue(batch, env);
+      break;
+    case "pancake-message-last-interaction":
+      await Pancake.ConversationService.dequeueMessageLastCustomerQueue(batch, env);
       break;
     case "zalo-message":
       await Ecommerce.SendZaloMessage.dequeueSendZaloDeliveryMessageQueue(batch, env);
