@@ -1,5 +1,7 @@
+import { Prisma } from "@prisma-cli";
+
 export function buildQuery(productId) {
-  const dataSql = `
+  return Prisma.sql`
     SELECT
       wi.variant_id,
       wi.loc_id,
@@ -11,6 +13,4 @@ export function buildQuery(productId) {
     GROUP BY wi.variant_id, wi.loc_id, w.name
     HAVING SUM(wi.qty_available) > 0;
   `;
-
-  return dataSql;
 }

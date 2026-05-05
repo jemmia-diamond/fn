@@ -61,7 +61,7 @@
     "R2_JEMMIA_WEBSITE_PUBLIC_URL": "https://assets.jemmia.vn",
     "NOCODB_SUPPLY_BASE_ID": "pl4e7zwnui0k8y1",
     "NOCODB_MARKETING_BASE_ID": "pbzopuiobhc8xf1",
-    "NOCODB_WORKPLACE_BASE_URL": "https://workplace.jemmia.vn/",
+    "NOCODB_WORKSPACE_BASE_URL": "https://workspace.jemmia.vn/",
     "SALESAYA_API_BASE_URL": "https://api.salesaya.com",
     "DEFAULT_HARAVAN_DIAMOND_DISCOUNT_COLLECTION_ID": 32,
     "DEFAULT_HARAVAN_JEWELRY_DISCOUNT_COLLECTION_ID": 31,
@@ -233,6 +233,10 @@
       {
         "queue": "erpnext-order-creation",
         "binding": "ERPNEXT_ORDER_CREATION_QUEUE"
+      },
+      {
+        "queue": "promotion-diamond-collect-sync",
+        "binding": "PROMOTION_DIAMOND_COLLECT_SYNC_QUEUE"
       }
     ],
     "consumers": [
@@ -289,6 +293,11 @@
         "retry_delay": 600,
         "max_retries": 6,
         "max_batch_size": 1
+      },
+      {
+        "queue": "promotion-diamond-collect-sync",
+        "max_concurrency": 1,
+        "max_retries": 0
       }
     ]
   },

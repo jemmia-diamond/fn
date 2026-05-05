@@ -2,30 +2,39 @@ import * as lark from "@larksuiteoapi/node-sdk";
 import { createFetchAdapter } from "@haverstack/axios-fetch-adapter";
 import { createAxiosClient, DEFAULT_RETRY_CONFIG } from "services/utils/http-client";
 const fetchAdapter = createFetchAdapter();
+let clientV2Instance = null;
 
 export default class LarksuiteService {
 
-  static createClient(env) {
-    const client = new lark.Client({
-      appId: env.LARKSUITE_APP_ID,
-      appSecret: env.LARKSUITE_APP_SECRET,
-      domain: "https://open.larksuite.com"
-    });
-    client.httpInstance.defaults.adapter = fetchAdapter;
-    return client;
+  static async _getCredentials(env) {
+    const appId = env.LARK_APP_ID || env.LARKSUITE_APP_ID;
+    let appSecret;
+
+    try {
+      appSecret = await env.LARK_APP_SECRET_SECRET?.get();
+    } catch {
+      appSecret = env.LARKSUITE_APP_SECRET;
+    }
+    appSecret = appSecret || env.LARKSUITE_APP_SECRET;
+
+    return { appId, appSecret };
   }
 
   static async createClientV2(env) {
-    const larkAppId = env.LARK_APP_ID;
-    const larkAppSecretSecret = await env.LARK_APP_SECRET_SECRET.get();
-    const larkApiEndpoint = env.LARK_API_ENDPOINT;
-    const client = new lark.Client({
-      appId: larkAppId,
-      appSecret: larkAppSecretSecret,
+    if (clientV2Instance) {
+      return clientV2Instance;
+    }
+
+    const { appId, appSecret } = await this._getCredentials(env);
+    const larkApiEndpoint = env.LARK_API_ENDPOINT || "https://open.larksuite.com";
+
+    clientV2Instance = new lark.Client({
+      appId: appId,
+      appSecret: appSecret,
       domain: larkApiEndpoint
     });
-    client.httpInstance.defaults.adapter = fetchAdapter;
-    return client;
+    clientV2Instance.httpInstance.defaults.adapter = fetchAdapter;
+    return clientV2Instance;
   }
 
   static async createLarkAxiosClient(env, token) {
@@ -41,21 +50,13 @@ export default class LarksuiteService {
   }
 
   static async getTenantAccessToken(env) {
-    const larkClient = LarksuiteService.createClient(env);
-    const res = await larkClient.auth.tenantAccessToken.internal({
-      data: {
-        app_id: env.LARKSUITE_APP_ID,
-        app_secret: env.LARKSUITE_APP_SECRET
-      }
-    });
-    return res.tenant_access_token;
-  }
+    const larkClient = await LarksuiteService.createClientV2(env);
+    const { appId, appSecret } = await this._getCredentials(env);
 
-  static async getTenantAccessTokenFromClient({ larkClient, env }) {
     const res = await larkClient.auth.tenantAccessToken.internal({
       data: {
-        app_id: env.LARK_APP_ID,
-        app_secret: await env.LARK_APP_SECRET_SECRET.get()
+        app_id: appId,
+        app_secret: appSecret
       }
     });
     return res.tenant_access_token;
@@ -82,7 +83,7 @@ export default class LarksuiteService {
   }
 
   static async getUserInfo(env, userId) {
-    const client = this.createClient(env);
+    const client = await this.createClientV2(env);
     const res = await client.contact.user.get({
       path: {
         user_id: userId

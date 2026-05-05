@@ -224,6 +224,18 @@ export default class BuyBackInstanceService {
       products_info: typeof data.products_info === "string" ? data.products_info : JSON.stringify(data.products_info || [])
     };
     const ignoredFields = Object.keys(erpData).filter(key => key !== "status" && key !== "doctype");
-    await frappeClient.upsert(erpData, "lark_instance_id", ignoredFields);
+
+    try {
+      await frappeClient.upsert(erpData, "lark_instance_id", ignoredFields);
+    } catch (error) {
+      const msg = error?.message || "";
+      const isDuplicate = error?.status === 417
+        || msg.includes("UniqueValidationError")
+        || msg.includes("Duplicate entry");
+
+      if (!isDuplicate) {
+        throw error;
+      }
+    }
   }
 }

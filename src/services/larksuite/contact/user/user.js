@@ -6,7 +6,7 @@ export default class UserService {
   static async syncUsersToDatabase(env) {
     try {
       const db = Database.instance(env);
-      const larkClient = LarksuiteService.createClient(env);
+      const larkClient = await LarksuiteService.createClientV2(env);
       const pageSize = 50;
       const usersArrays = [];
 

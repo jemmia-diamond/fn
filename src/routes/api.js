@@ -32,6 +32,7 @@ export default class APIRoutes {
 
     jemmiaERPNamespaceApi.post("/sales_orders", ERP.SalesOrderController.create);
     jemmiaERPNamespaceApi.post("/sales_orders/:id/notifications", ERP.SalesOrderNotificationController.create);
+    jemmiaERPNamespaceApi.post("/promotions/diamond-collects", Ecommerce.DiamondCollectController.create);
 
     const pancakeNamespaceApi = api.basePath("/pancake");
     pancakeNamespaceApi.post("/conversation_assignments", Pancake.ConversationAssignmentController.create);

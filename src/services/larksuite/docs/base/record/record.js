@@ -11,7 +11,7 @@ export default class RecordService {
   static async syncRecordsToDatabase(env) {
     try {
       const db = Database.instance(env);
-      const larkClient = LarksuiteService.createClient(env);
+      const larkClient = await LarksuiteService.createClientV2(env);
       const timeThreshold = dayjs().utc().subtract(1, "day").subtract(5, "minutes").valueOf();
       const pageSize = 100;
 
