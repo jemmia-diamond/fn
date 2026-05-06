@@ -1,6 +1,5 @@
 import LarksuiteService from "services/larksuite/lark";
 import Database from "services/database";
-import { TABLES } from "services/larksuite/docs/constant";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import * as Sentry from "@sentry/cloudflare";
@@ -15,9 +14,7 @@ export default class RecordService {
       const timeThreshold = dayjs().utc().subtract(1, "day").subtract(5, "minutes").valueOf();
       const pageSize = 100;
 
-      const tables = [
-        TABLES.DEBT_TRACKING
-      ];
+      const tables = [];
 
       const allRecords = [];
 
