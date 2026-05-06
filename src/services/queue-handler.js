@@ -12,10 +12,23 @@ export default {
     console.log(`[CLOUDFLARE DEQUEUING]: ${JSON.stringify(batch)}`);
 
     switch (batch.queue) {
-    case "order":
+    case "haravan-order-notification":
       await Ecommerce.OrderNotificationService.orderNotificationDequeue(batch, env);
-      await Haravan.OrderModule.OrderService.dequeueOrderQueue(batch, env);
+      break;
+    case "order":
+      await Haravan.OrderModule.OrderService.dequeueUpsertOrder(batch, env);
+      break;
+    case "haravan-order-stock-control":
+      await Haravan.OrderModule.OrderService.dequeueStockNotification(batch, env);
+      break;
+    case "haravan-order-transaction-sync":
+      await Haravan.OrderModule.OrderService.dequeueTransactionSync(batch, env);
+      break;
+    case "haravan-order-product-quote-sync":
       await ProductQuote.ProductQuoteOrderService.dequeueOrderQueue(batch, env);
+      break;
+    case "erpnext-order-creation":
+      await ERP.Selling.SalesOrderService.dequeueOrderQueue(batch, env);
       break;
     case "message":
       await Pancake.ConversationService.dequeueMessageSyncCustomerToLeadCRM(batch, env);
@@ -66,9 +79,6 @@ export default {
       } else {
         await new ERP.Selling.CustomerService(env).dequeueCustomerQueue(batch);
       }
-      break;
-    case "erpnext-order-creation":
-      await ERP.Selling.SalesOrderService.dequeueOrderQueue(batch, env);
       break;
     case "promotion-diamond-collect-sync":
       await new Ecommerce.DiamondCollectService(env).syncDiamondsToCollects();

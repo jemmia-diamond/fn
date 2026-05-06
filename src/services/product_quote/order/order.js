@@ -13,17 +13,12 @@ export default class ProductQuoteOrderService {
   static async dequeueOrderQueue(batch, _env) {
     const messages = batch.messages || [];
     for (const message of messages) {
-      try {
-        const orderData = message.body;
-        if (isTestOrder(orderData)) {
-          return true;
-        }
-        await ProductQuoteOrderService.syncOrderToLark(_env, orderData);
-      } catch (error) {
-        Sentry.captureException(error);
+      const orderData = message.body;
+      if (isTestOrder(orderData)) {
+        continue;
       }
+      await ProductQuoteOrderService.syncOrderToLark(_env, orderData);
     }
-
   }
 
   /**

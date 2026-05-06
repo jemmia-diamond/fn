@@ -16,6 +16,14 @@ export default class HaravanERPOrderController {
         await HaravanERPOrderController.sendToZaloMessageQueue(ctx, data);
       }
       await ctx.env["ORDER_QUEUE"].send(data);
+      await ctx.env["HARAVAN_ORDER_PRODUCT_QUOTE_SYNC_QUEUE"].send(data);
+
+      if (data.haravan_topic === HARAVAN_TOPIC.CREATED) {
+        await ctx.env["HARAVAN_ORDER_NOTIFICATION_QUEUE"].send(data);
+        await ctx.env["HARAVAN_ORDER_STOCK_CONTROL_QUEUE"].send(data);
+        await ctx.env["HARAVAN_ORDER_TRANSACTION_SYNC_QUEUE"].send(data);
+      }
+
       await ctx.env["ERPNEXT_ORDER_CREATION_QUEUE"].send(data);
       return ctx.json({ message: "Message sent to queue", status: 200 });
     } catch (e) {
