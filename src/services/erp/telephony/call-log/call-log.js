@@ -1,7 +1,7 @@
 import FrappeClient from "src/frappe/frappe-client";
 import StringeeClient from "src/stringee/stringee-client";
 import { timestampToDatetime } from "src/stringee/utils/datetime";
-import { normalizePhoneNumber } from "src/stringee/utils/phone-number";
+import { normalizeToStandardFormat } from "services/utils/phone-utils";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 
@@ -58,8 +58,8 @@ export default class CallLogService {
     return {
       doctype: this.doctype,
       id: callLog.id,
-      from: normalizePhoneNumber(callLog.from_number),
-      to: normalizePhoneNumber(callLog.to_number),
+      from: normalizeToStandardFormat(callLog.from_number),
+      to: normalizeToStandardFormat(callLog.to_number) || callLog.to_number,
       start_time: timestampToDatetime(callLog.start_time),
       end_time: timestampToDatetime(callLog.stop_time),
       duration: callLog.answer_duration,
