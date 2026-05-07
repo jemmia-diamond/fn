@@ -1,7 +1,7 @@
 import * as Sentry from "@sentry/cloudflare";
 import PancakePOSClient from "services/clients/pancake-pos-client";
 import PancakePOSOrderMapper from "services/pancake/order/pancake-pos-order-mapper";
-import FrappeClient from "frappe/frappe-client";
+import LeadService from "services/erp/crm/lead/lead";
 
 const SHOP_ID_MAP = {
   "jemmia cần thơ": 714173334,
@@ -23,7 +23,48 @@ export default class PancakePOSOrderService {
   constructor(env) {
     this.env = env;
     this.client = null;
-    this.frappeClient = null;
+    this.leadService = null;
+  }
+
+  getClient() {
+    if (!this.client) {
+      const apiKey = this.env.PANCAKE_POS_API_KEY;
+      if (!apiKey) {
+        throw new Error("PANCAKE_POS_API_KEY is not configured in environment");
+      }
+      this.client = new PancakePOSClient(apiKey);
+    }
+    return this.client;
+  }
+
+  getLeadService() {
+    if (!this.leadService) {
+      this.leadService = new LeadService(this.env);
+    }
+    return this.leadService;
+  }
+
+  async getLeadFromERP(phone) {
+    if (!phone) return null;
+
+    try {
+      const leadService = this.getLeadService();
+
+      const leads = await leadService.frappeClient.getList("Lead", {
+        filters: [["phone", "=", phone]],
+        fields: ["name", "lead_source_name", "pancake_data"],
+        limit_page_length: 1
+      });
+
+      if (!leads || leads.length === 0) {
+        return null;
+      }
+
+      return leads[0];
+    } catch (error) {
+      Sentry.captureException(error);
+      return null;
+    }
   }
 
   getClient() {
