@@ -170,7 +170,8 @@ export default class ContactService {
   }
 
   async processCallLogContact(data, lead, source) {
-    const phone = data.type === "Incoming" ? data.from : data.to;
+    const initialPhone = data.type === "Incoming" ? data.from : data.to;
+    const phone = normalizeToStandardFormat(initialPhone);
     const contactData = {
       doctype: this.doctype,
       stringee_id: data.id,
