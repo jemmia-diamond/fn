@@ -16,6 +16,7 @@ export default {
       await Ecommerce.OrderNotificationService.orderNotificationDequeue(batch, env);
       await Haravan.OrderModule.OrderService.dequeueOrderQueue(batch, env);
       await ProductQuote.ProductQuoteOrderService.dequeueOrderQueue(batch, env);
+      await Pancake.PancakePOSOrderService.dequeuePancakeOrderQueue(batch, env);
       break;
     case "message":
       await Pancake.ConversationService.dequeueMessageSyncCustomerToLeadCRM(batch, env);
