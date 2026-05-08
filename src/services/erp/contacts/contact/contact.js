@@ -239,12 +239,8 @@ export default class ContactService {
       const docEvent = body.doc_event;
       const contactName = body.name;
       const doctype = body.doctype;
-      try {
-        if (docEvent && contactName && doctype === contactService.doctype) {
-          await contactService.processContactFromWebhook(body, docEvent);
-        }
-      } catch (error) {
-        Sentry.captureException(error);
+      if (docEvent && contactName && doctype === contactService.doctype) {
+        await contactService.processContactFromWebhook(body, docEvent);
       }
     }
   }
