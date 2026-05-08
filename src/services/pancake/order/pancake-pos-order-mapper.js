@@ -4,25 +4,31 @@ export default class PancakePOSOrderMapper {
     const billingAddress = haravanOrder.billing_address || {};
     const customer = haravanOrder.customer || {};
 
-    const items = (haravanOrder.line_items || []).map(item => ({
-      product_id: item.product_id?.toString(),
-      variation_id: item.variant_id?.toString(),
-      quantity: item.quantity,
+    const totalPrice = (haravanOrder.line_items || []).reduce(
+      (sum, item) => sum + parseFloat(item.price || 0) * (item.quantity || 1), 0
+    );
+    const itemNames = (haravanOrder.line_items || [])
+      .map(item => item.name || item.title)
+      .filter(Boolean)
+      .join(" + ");
+
+    const items = [{
+      quantity: 1,
       discount_each_product: 0,
       is_bonus_product: false,
       is_discount_percent: false,
       is_wholesale: false,
-      one_time_product: false,
+      one_time_product: true,
       variation_info: {
-        name: item.name || item.title,
-        retail_price: parseFloat(item.price),
-        weight: item.grams || null,
+        name: itemNames || haravanOrder.order_number || "",
+        retail_price: totalPrice,
+        weight: null,
         detail: null,
         fields: null,
         display_id: null,
         product_display_id: null
       }
-    }));
+    }];
 
     const conversationId = this.extractConversationId(haravanOrder);
 
@@ -57,7 +63,8 @@ export default class PancakePOSOrderMapper {
       custom_id: haravanOrder.order_number || "",
       activated_promotion_advances: [],
       status: this.mapOrderStatus(haravanOrder.financial_status),
-      cash: this.calculateCashAmount(haravanOrder)
+      cash: this.calculateCashAmount(haravanOrder),
+      prepaid: this.calculatePrepaidAmount(haravanOrder)
     };
 
     return orderData;
@@ -125,18 +132,24 @@ export default class PancakePOSOrderMapper {
     }, 0);
   }
 
-  static calculateCashAmount(haravanOrder) {
+  static isCODPayment(haravanOrder) {
     const gateway = haravanOrder.gateway?.toLowerCase() || "";
     const processingMethod = haravanOrder.processing_method?.toLowerCase() || "";
+    return gateway.includes("cod") ||
+           processingMethod.includes("cod") ||
+           processingMethod.includes("cash");
+  }
 
-    const isCOD = gateway.includes("cod") ||
-                  processingMethod.includes("cod") ||
-                  processingMethod.includes("cash");
+  static calculateCashAmount(haravanOrder) {
+    return this.isCODPayment(haravanOrder) ? parseFloat(haravanOrder.total_price) : 0;
+  }
 
-    if (isCOD) {
-      return parseFloat(haravanOrder.total_price);
-    }
+  // Prepaid = amount already paid upfront (online payment, bank transfer, card, etc.)
+  // For COD orders, prepaid = 0 (payment collected on delivery)
+  static calculatePrepaidAmount(haravanOrder) {
+    if (this.isCODPayment(haravanOrder)) return 0;
 
-    return 0;
+    const isPaid = ["paid", "partially_paid"].includes(haravanOrder.financial_status);
+    return isPaid ? parseFloat(haravanOrder.total_price) : 0;
   }
 }

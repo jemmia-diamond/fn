@@ -56,6 +56,15 @@ export default class PancakePOSClient {
     }
 
     const response = await client.request(config);
+
+    // Pancake POS returns HTTP 200 even for logical errors
+    // Check the `success` field explicitly
+    if (response.data && response.data.success === false) {
+      throw new Error(
+        `Pancake POS Error ${response.data.error_code}: ${response.data.message}`
+      );
+    }
+
     return response.data;
   }
 
