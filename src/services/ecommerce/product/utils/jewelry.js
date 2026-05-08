@@ -138,7 +138,8 @@ export function aggregateQuery(jsonParams) {
   }
 
   if (jsonParams.product_ids && jsonParams.product_ids.length > 0) {
-    filterClauses.push(Prisma.sql`AND p.haravan_product_id = ANY(${jsonParams.product_ids})\n`);
+    const productIds = jsonParams.product_ids.map(id => typeof id === "string" ? BigInt(id) : id);
+    filterClauses.push(Prisma.sql`AND p.haravan_product_id = ANY(${productIds})\n`);
   }
 
   if (jsonParams.main_holder_size?.lower || jsonParams.main_holder_size?.upper) {
