@@ -5,7 +5,7 @@ import { ResolvedLead, HaravanOrderPayload } from "services/pancake/pos/types";
 import {
   HARAVAN_FINANCIAL_STATUS,
   HARAVAN_FULFILLMENT_STATUS,
-  HARAVAN_TOPIC,
+  HARAVAN_TOPIC
 } from "services/ecommerce/enum";
 
 const POS_STATUS = {
@@ -25,7 +25,7 @@ const POS_STATUS = {
   RESTOCKING: 11,
   CANCELED: 6,
   DELETED: 7,
-  PURCHASED: 20,
+  PURCHASED: 20
 } as const;
 
 export default class PancakePOSSyncService {
@@ -72,7 +72,7 @@ export default class PancakePOSSyncService {
   private async resolveAdsId(customerPhone: string): Promise<ResolvedLead | null> {
     const pageCustomer = await this.db.page_customer.findFirst({
       where: { phone: customerPhone },
-      select: { customer_id: true },
+      select: { customer_id: true }
     });
     if (!pageCustomer?.customer_id) return null;
 
@@ -80,10 +80,10 @@ export default class PancakePOSSyncService {
       where: {
         customer_id: pageCustomer.customer_id,
         type: "INBOX",
-        NOT: { ad_ids: null },
+        NOT: { ad_ids: null }
       },
       orderBy: { updated_at: "desc" },
-      select: { id: true, page_id: true, ad_ids: true },
+      select: { id: true, page_id: true, ad_ids: true }
     });
     if (!conversation) return null;
 
@@ -95,14 +95,14 @@ export default class PancakePOSSyncService {
     return {
       conversationId: conversation.id ?? "",
       pageId: conversation.page_id ?? "",
-      adIds,
+      adIds
     };
   }
 
   private async resolveShopId(pageId: string): Promise<number | null> {
     const page = await this.db.page.findFirst({
       where: { id: pageId },
-      select: { pos_shop_id: true },
+      select: { pos_shop_id: true }
     });
     return page?.pos_shop_id ?? null;
   }
@@ -145,13 +145,13 @@ export default class PancakePOSSyncService {
       shipping_fee: shippingFee,
       ad_id: lead.adIds[0],
       page_id: lead.pageId,
-      conversation_id: lead.conversationId,
+      conversation_id: lead.conversationId
     };
   }
 
   private async syncOrderCreate(order: HaravanOrderPayload, shopId: number, lead: ResolvedLead): Promise<void> {
     const existing = await this.db.pancake_pos_order_sync.findUnique({
-      where: { haravan_order_id: BigInt(order.id) },
+      where: { haravan_order_id: BigInt(order.id) }
     });
     if (existing?.pancake_order_id) return;
 
@@ -167,7 +167,7 @@ export default class PancakePOSSyncService {
         shop_id: shopId,
         ads_id: lead.adIds[0],
         status,
-        synced_at: new Date(),
+        synced_at: new Date()
       },
       update: {
         pancake_order_id: posOrder.id,
@@ -175,14 +175,14 @@ export default class PancakePOSSyncService {
         ads_id: lead.adIds[0],
         status,
         synced_at: new Date(),
-        updated_at: new Date(),
-      },
+        updated_at: new Date()
+      }
     });
   }
 
   private async syncOrderUpdate(order: HaravanOrderPayload, shopId: number): Promise<void> {
     const sync = await this.db.pancake_pos_order_sync.findUnique({
-      where: { haravan_order_id: BigInt(order.id) },
+      where: { haravan_order_id: BigInt(order.id) }
     });
     if (!sync?.pancake_order_id) return;
 
@@ -192,7 +192,7 @@ export default class PancakePOSSyncService {
     await this.client.updateOrderStatus(sync.shop_id ?? shopId, sync.pancake_order_id, status);
     await this.db.pancake_pos_order_sync.update({
       where: { haravan_order_id: BigInt(order.id) },
-      data: { status, updated_at: new Date() },
+      data: { status, updated_at: new Date() }
     });
   }
 }

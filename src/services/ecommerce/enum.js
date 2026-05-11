@@ -17,11 +17,11 @@ export const HARAVAN_FINANCIAL_STATUS = {
   PAID: "paid",
   PARTIALLY_REFUNDED: "partially_refunded",
   REFUNDED: "refunded",
-  VOIDED: "voided",
+  VOIDED: "voided"
 };
 
 export const HARAVAN_FULFILLMENT_STATUS = {
   UNSHIPPED: "unshipped",
   SHIPPED: "shipped",
-  PARTIAL: "partial",
+  PARTIAL: "partial"
 };

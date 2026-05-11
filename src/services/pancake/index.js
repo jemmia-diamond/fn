@@ -14,5 +14,5 @@ export default {
   CustomerSyncService,
   TagSyncService,
   PancakePOSSyncService,
-  PancakePOSShopSyncService,
+  PancakePOSShopSyncService
 };

@@ -42,7 +42,7 @@ export default class PancakePosClient {
   constructor(apiKey: string) {
     this.client = axios.create({
       baseURL: "https://pos.pages.fm/api/v1",
-      params: { api_key: apiKey },
+      params: { api_key: apiKey }
     });
   }
 
