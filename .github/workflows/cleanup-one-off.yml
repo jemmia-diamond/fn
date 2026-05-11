@@ -1,0 +1,46 @@
+name: Cleanup one-off scripts
+
+on:
+  schedule:
+    - cron: "0 0 * * 1"
+  workflow_dispatch:
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Delete one-off scripts older than 30 days
+        id: cleanup
+        run: |
+          deleted=()
+          while IFS= read -r -d '' file; do
+            name=$(basename "$file" .ts)
+            deleted+=("$name")
+            rm "$file"
+            echo "Deleted: $file"
+          done < <(find src/one-off -name "*.ts" ! -name "index.ts" -mtime +30 -print0)
+
+          if [ ${#deleted[@]} -eq 0 ]; then
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+            # Remove deleted entries from index.ts
+            for name in "${deleted[@]}"; do
+              sed -i "/${name}/d" src/one-off/index.ts
+            done
+          fi
+
+      - name: Create PR if changes
+        if: steps.cleanup.outputs.has_changes == 'true'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          title: "chore: cleanup old one-off scripts"
+          commit-message: "chore: remove one-off scripts older than 30 days"
+          branch: "auto/cleanup-one-off"
+          delete-branch: true
+          body: "Automated cleanup: removed one-off scripts older than 30 days."
