@@ -81,6 +81,7 @@ export default {
       await ERP.Selling.SalesPersonService.syncSalesPersonToDatabase(env);
       await Salesaya.LarkChatSyncMediaService.syncMedia(env);
       await new Pancake.PageSyncService(env).syncPages();
+      await new Pancake.PancakePOSShopSyncService(env).syncShops();
       await new Haravan.Users.UserSyncService(env).sync().catch(() => {});
       break;
     case "30 0 * * *": // 07:30
