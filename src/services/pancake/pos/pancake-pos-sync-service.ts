@@ -131,7 +131,10 @@ export default class PancakePOSSyncService {
 
   private buildCreatePayload(order: HaravanOrderPayload, lead: ResolvedLead, status: number): CreateOrderPayload {
     const fullName = [order.customer_first_name, order.customer_last_name].filter(Boolean).join(" ") || undefined;
-    const shippingFee = parseFloat(String(order.shipping_lines?.[0]?.price ?? 0)) || 0;
+    const shippingFee = (order.shipping_lines ?? []).reduce(
+      (total, line) => total + (parseFloat(String(line.price ?? 0)) || 0),
+      0
+    );
 
     return {
       bill_full_name: fullName,
