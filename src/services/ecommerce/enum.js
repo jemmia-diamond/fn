@@ -13,7 +13,6 @@ export const HARAVAN_DISPATCH_TYPE_ZALO_MSG = {
 
 export const HARAVAN_FINANCIAL_STATUS = {
   PENDING: "pending",
-  AUTHORIZED: "authorized",
   PARTIALLY_PAID: "partially_paid",
   PAID: "paid",
   PARTIALLY_REFUNDED: "partially_refunded",

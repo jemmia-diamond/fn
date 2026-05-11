@@ -121,7 +121,7 @@ export default class PancakePOSSyncService {
       return POS_STATUS.PACKAGING;
     }
 
-    if (fs === HARAVAN_FINANCIAL_STATUS.AUTHORIZED || fs === HARAVAN_FINANCIAL_STATUS.PARTIALLY_PAID) {
+    if (fs === HARAVAN_FINANCIAL_STATUS.PARTIALLY_PAID) {
       return POS_STATUS.CONFIRMED;
     }
 
