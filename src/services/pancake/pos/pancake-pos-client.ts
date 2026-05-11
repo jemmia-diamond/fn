@@ -40,8 +40,8 @@ export default class PancakePosClient {
   private apiKeySecret: any;
   private httpClient: AxiosInstance | null = null;
 
-  constructor(env: any) {
-    this.apiKeySecret = env.PANCAKE_POS_API_KEY_SECRET;
+  constructor(apiKeySecret: any) {
+    this.apiKeySecret = apiKeySecret;
   }
 
   private async getClient(): Promise<AxiosInstance> {
