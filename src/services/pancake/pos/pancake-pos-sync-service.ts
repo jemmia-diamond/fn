@@ -1,50 +1,44 @@
-import { Prisma } from "@prisma/client";
 import * as Sentry from "@sentry/cloudflare";
 import Database from "services/database";
 import PancakePosClient, { CreateOrderPayload } from "services/pancake/pos/pancake-pos-client";
+import { ResolvedLead, HaravanOrderPayload } from "services/pancake/pos/types";
+import {
+  HARAVAN_FINANCIAL_STATUS,
+  HARAVAN_FULFILLMENT_STATUS,
+  HARAVAN_TOPIC,
+} from "services/ecommerce/enum";
 
-// Pancake POS order status integers
 const POS_STATUS = {
   NEW: 0,
+  WAITING_FOR_CONFIRMATION: 17,
   CONFIRMED: 1,
+  PACKAGING: 8,
+  WAITING_FOR_PICKUP: 9,
+  WAIT_FOR_PRINTING: 12,
+  PRINTED: 13,
+  SHIPPED: 2,
   RECEIVED: 3,
-  RETURNED: 5,
-  CANCELED: 6,
+  COLLECTED_MONEY: 16,
+  RETURNING: 4,
   PARTIAL_RETURN: 15,
+  RETURNED: 5,
+  RESTOCKING: 11,
+  CANCELED: 6,
+  DELETED: 7,
+  PURCHASED: 20,
 } as const;
-
-interface ResolvedLead {
-  conversationId: string;
-  pageId: string;
-  adIds: string[];
-}
-
-interface HaravanOrderPayload {
-  id: number;
-  name: string;
-  haravan_topic: string;
-  financial_status: string;
-  fulfillment_status: string | null;
-  customer_phone: string;
-  customer_first_name: string | null;
-  customer_last_name: string | null;
-  total_price: string;
-  subtotal_price: string;
-  total_discounts: string;
-  total_shipping_price_set?: { shop_money?: { amount?: string } };
-}
 
 export default class PancakePOSSyncService {
   private db: ReturnType<typeof Database.instance>;
   private client: PancakePosClient;
 
-  constructor(env: { PANCAKE_POS_API_KEY: string; HYPERDRIVE: unknown }) {
+  constructor(env: any) {
     this.db = Database.instance(env);
     this.client = new PancakePosClient(env.PANCAKE_POS_API_KEY);
   }
 
-  static async dequeueOrderQueue(batch: { messages: Array<{ body: HaravanOrderPayload; ack: () => void; retry: () => void }> }, env: unknown): Promise<void> {
-    const service = new PancakePOSSyncService(env as { PANCAKE_POS_API_KEY: string; HYPERDRIVE: unknown });
+  static async dequeueOrderQueue(batch: any, env: any): Promise<void> {
+    const service = new PancakePOSSyncService(env);
     for (const msg of batch.messages) {
       try {
         await service.processOrder(msg.body);
@@ -68,77 +62,101 @@ export default class PancakePOSSyncService {
       return;
     }
 
-    if (order.haravan_topic === "orders/create") {
+    if (order.haravan_topic === HARAVAN_TOPIC.CREATED) {
       await this.syncOrderCreate(order, shopId, lead);
-    } else if (order.haravan_topic === "orders/updated") {
+    } else if (order.haravan_topic === HARAVAN_TOPIC.UPDATED) {
       await this.syncOrderUpdate(order, shopId);
     }
   }
 
   private async resolveAdsId(customerPhone: string): Promise<ResolvedLead | null> {
-    const rows = await this.db.$queryRaw<Array<{ conversation_id: string; page_id: string; ad_ids: unknown }>>(
-      Prisma.sql`
-        SELECT c.id AS conversation_id, c.page_id, c.ad_ids
-        FROM pancake.conversation c
-        JOIN pancake.page_customer pc ON c.customer_id = pc.customer_id
-        WHERE pc.phone = ${customerPhone}
-          AND c.ad_ids IS NOT NULL
-          AND c.type = 'INBOX'
-        ORDER BY c.updated_at DESC
-        LIMIT 1
-      `
-    );
+    const pageCustomer = await this.db.page_customer.findFirst({
+      where: { phone: customerPhone },
+      select: { customer_id: true },
+    });
+    if (!pageCustomer?.customer_id) return null;
 
-    const row = rows[0];
-    if (!row) return null;
+    const conversation = await this.db.conversation.findFirst({
+      where: {
+        customer_id: pageCustomer.customer_id,
+        type: "INBOX",
+        NOT: { ad_ids: null },
+      },
+      orderBy: { updated_at: "desc" },
+      select: { id: true, page_id: true, ad_ids: true },
+    });
+    if (!conversation) return null;
 
-    const adIds: string[] = Array.isArray(row.ad_ids) ? row.ad_ids.filter(Boolean) : [];
+    const adIds: string[] = Array.isArray(conversation.ad_ids)
+      ? (conversation.ad_ids as string[]).filter(Boolean)
+      : [];
     if (adIds.length === 0) return null;
 
-    return { conversationId: row.conversation_id, pageId: row.page_id, adIds };
+    return {
+      conversationId: conversation.id ?? "",
+      pageId: conversation.page_id ?? "",
+      adIds,
+    };
   }
 
   private async resolveShopId(pageId: string): Promise<number | null> {
     const page = await this.db.page.findFirst({
       where: { id: pageId },
-      select: { pos_shop_id: true }
+      select: { pos_shop_id: true },
     });
     return page?.pos_shop_id ?? null;
   }
 
   private mapStatus(financialStatus: string, fulfillmentStatus: string | null): number {
-    if (financialStatus === "cancelled" || financialStatus === "voided") return POS_STATUS.CANCELED;
-    if (financialStatus === "refunded") return POS_STATUS.RETURNED;
-    if (financialStatus === "partially_refunded") return POS_STATUS.PARTIAL_RETURN;
-    if (financialStatus === "paid") {
-      return fulfillmentStatus === "fulfilled" ? POS_STATUS.RECEIVED : POS_STATUS.CONFIRMED;
+    const fs = financialStatus?.toLowerCase();
+    const ff = fulfillmentStatus?.toLowerCase() ?? null;
+
+    if (fs === HARAVAN_FINANCIAL_STATUS.CANCELLED || fs === HARAVAN_FINANCIAL_STATUS.VOIDED) {
+      return POS_STATUS.CANCELED;
     }
-    return POS_STATUS.NEW;
+    if (fs === HARAVAN_FINANCIAL_STATUS.REFUNDED) return POS_STATUS.RETURNED;
+    if (fs === HARAVAN_FINANCIAL_STATUS.PARTIALLY_REFUNDED) return POS_STATUS.PARTIAL_RETURN;
+
+    if (fs === HARAVAN_FINANCIAL_STATUS.PAID) {
+      if (ff === HARAVAN_FULFILLMENT_STATUS.FULFILLED) return POS_STATUS.RECEIVED;
+      if (ff === HARAVAN_FULFILLMENT_STATUS.PARTIAL) return POS_STATUS.SHIPPED;
+      if (ff === HARAVAN_FULFILLMENT_STATUS.RESTOCKED) return POS_STATUS.RESTOCKING;
+      return POS_STATUS.PACKAGING;
+    }
+
+    if (fs === HARAVAN_FINANCIAL_STATUS.AUTHORIZED || fs === HARAVAN_FINANCIAL_STATUS.PARTIALLY_PAID) {
+      return POS_STATUS.CONFIRMED;
+    }
+
+    // pending, open
+    return POS_STATUS.WAITING_FOR_CONFIRMATION;
   }
 
-  private buildCreatePayload(order: HaravanOrderPayload, status: number): CreateOrderPayload {
+  private buildCreatePayload(order: HaravanOrderPayload, lead: ResolvedLead, status: number): CreateOrderPayload {
     const fullName = [order.customer_first_name, order.customer_last_name].filter(Boolean).join(" ") || undefined;
     const shippingFee = parseFloat(order.total_shipping_price_set?.shop_money?.amount ?? "0") || 0;
 
     return {
       bill_full_name: fullName,
-      bill_phone_number: order.customer_phone,
+      bill_phone_number: order.customer_phone ?? undefined,
       note: order.name,
       status,
       total_discount: parseFloat(order.total_discounts) || 0,
       shipping_fee: shippingFee,
+      ad_id: lead.adIds[0],
+      page_id: lead.pageId,
+      conversation_id: lead.conversationId,
     };
   }
 
   private async syncOrderCreate(order: HaravanOrderPayload, shopId: number, lead: ResolvedLead): Promise<void> {
-    // Idempotency guard
     const existing = await this.db.pancake_pos_order_sync.findUnique({
-      where: { haravan_order_id: BigInt(order.id) }
+      where: { haravan_order_id: BigInt(order.id) },
     });
     if (existing?.pancake_order_id) return;
 
     const status = this.mapStatus(order.financial_status, order.fulfillment_status);
-    const payload = this.buildCreatePayload(order, status);
+    const payload = this.buildCreatePayload(order, lead, status);
     const posOrder = await this.client.createOrder(shopId, payload);
 
     await this.db.pancake_pos_order_sync.upsert({
@@ -158,13 +176,13 @@ export default class PancakePOSSyncService {
         status,
         synced_at: new Date(),
         updated_at: new Date(),
-      }
+      },
     });
   }
 
   private async syncOrderUpdate(order: HaravanOrderPayload, shopId: number): Promise<void> {
     const sync = await this.db.pancake_pos_order_sync.findUnique({
-      where: { haravan_order_id: BigInt(order.id) }
+      where: { haravan_order_id: BigInt(order.id) },
     });
     if (!sync?.pancake_order_id) return;
 
@@ -174,7 +192,7 @@ export default class PancakePOSSyncService {
     await this.client.updateOrderStatus(sync.shop_id ?? shopId, sync.pancake_order_id, status);
     await this.db.pancake_pos_order_sync.update({
       where: { haravan_order_id: BigInt(order.id) },
-      data: { status, updated_at: new Date() }
+      data: { status, updated_at: new Date() },
     });
   }
 }

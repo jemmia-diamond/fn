@@ -1,4 +1,18 @@
-import axios from "axios";
+import axios, { AxiosInstance } from "axios";
+
+export interface PancakePosShop {
+  id: number;
+  name: string;
+  pages: Array<{ id: string; platform: string; shop_id: number }>;
+}
+
+export interface OrderItem {
+  variation_id?: string;
+  quantity: number;
+  variation_info: {
+    retail_price: number;
+  };
+}
 
 export interface CreateOrderPayload {
   bill_full_name?: string;
@@ -7,14 +21,10 @@ export interface CreateOrderPayload {
   status?: number;
   total_discount?: number;
   shipping_fee?: number;
+  ad_id?: string;
+  page_id?: string;
+  conversation_id?: string;
   items?: OrderItem[];
-}
-
-export interface OrderItem {
-  variation_id?: number;
-  quantity: number;
-  price: number;
-  discount_each_product?: number;
 }
 
 export interface PancakePosOrder {
@@ -27,39 +37,26 @@ export interface PancakePosOrder {
 }
 
 export default class PancakePosClient {
-  private baseUrl = "https://pages.fm/api/v1";
-  private apiKey: string;
+  private client: AxiosInstance;
 
   constructor(apiKey: string) {
-    this.apiKey = apiKey;
+    this.client = axios.create({
+      baseURL: "https://pos.pages.fm/api/v1",
+      params: { api_key: apiKey },
+    });
   }
 
   async createOrder(shopId: number, payload: CreateOrderPayload): Promise<PancakePosOrder> {
-    const url = `${this.baseUrl}/shops/${shopId}/orders`;
-    const response = await axios.post(url, payload, {
-      headers: { "X-API-KEY": this.apiKey }
-    });
+    const response = await this.client.post(`/shops/${shopId}/orders`, payload);
     return response.data.order ?? response.data;
   }
 
   async updateOrderStatus(shopId: number, orderId: number, status: number): Promise<void> {
-    const url = `${this.baseUrl}/shops/${shopId}/orders/${orderId}`;
-    await axios.put(url, { status }, {
-      headers: { "X-API-KEY": this.apiKey }
-    });
+    await this.client.put(`/shops/${shopId}/orders/${orderId}`, { status });
   }
 
   async getShops(): Promise<PancakePosShop[]> {
-    const url = `${this.baseUrl}/shops`;
-    const response = await axios.get(url, {
-      headers: { "X-API-KEY": this.apiKey }
-    });
+    const response = await this.client.get("/shops");
     return response.data.shops ?? response.data ?? [];
   }
-}
-
-export interface PancakePosShop {
-  id: number;
-  name: string;
-  pages: Array<{ id: string; platform: string; shop_id: number }>;
 }
