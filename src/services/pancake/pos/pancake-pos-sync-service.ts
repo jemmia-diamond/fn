@@ -108,20 +108,20 @@ export default class PancakePOSSyncService {
   }
 
   private mapStatus(financialStatus: string, fulfillmentStatus: string | null): number {
-    const fs = financialStatus?.toLowerCase();
-    const ff = fulfillmentStatus?.toLowerCase() ?? null;
+    const normalizedFinancialStatus = financialStatus?.toLowerCase();
+    const normalizedFulfillmentStatus = fulfillmentStatus?.toLowerCase() ?? null;
 
-    if (fs === HARAVAN_FINANCIAL_STATUS.VOIDED) return POS_STATUS.CANCELED;
-    if (fs === HARAVAN_FINANCIAL_STATUS.REFUNDED) return POS_STATUS.RETURNED;
-    if (fs === HARAVAN_FINANCIAL_STATUS.PARTIALLY_REFUNDED) return POS_STATUS.PARTIAL_RETURN;
+    if (normalizedFinancialStatus === HARAVAN_FINANCIAL_STATUS.VOIDED) return POS_STATUS.CANCELED;
+    if (normalizedFinancialStatus === HARAVAN_FINANCIAL_STATUS.REFUNDED) return POS_STATUS.RETURNED;
+    if (normalizedFinancialStatus === HARAVAN_FINANCIAL_STATUS.PARTIALLY_REFUNDED) return POS_STATUS.PARTIAL_RETURN;
 
-    if (fs === HARAVAN_FINANCIAL_STATUS.PAID) {
-      if (ff === HARAVAN_FULFILLMENT_STATUS.SHIPPED) return POS_STATUS.RECEIVED;
-      if (ff === HARAVAN_FULFILLMENT_STATUS.PARTIAL) return POS_STATUS.SHIPPED;
+    if (normalizedFinancialStatus === HARAVAN_FINANCIAL_STATUS.PAID) {
+      if (normalizedFulfillmentStatus === HARAVAN_FULFILLMENT_STATUS.SHIPPED) return POS_STATUS.RECEIVED;
+      if (normalizedFulfillmentStatus === HARAVAN_FULFILLMENT_STATUS.PARTIAL) return POS_STATUS.SHIPPED;
       return POS_STATUS.PACKAGING;
     }
 
-    if (fs === HARAVAN_FINANCIAL_STATUS.PARTIALLY_PAID) {
+    if (normalizedFinancialStatus === HARAVAN_FINANCIAL_STATUS.PARTIALLY_PAID) {
       return POS_STATUS.CONFIRMED;
     }
 
@@ -131,7 +131,7 @@ export default class PancakePOSSyncService {
 
   private buildCreatePayload(order: HaravanOrderPayload, lead: ResolvedLead, status: number): CreateOrderPayload {
     const fullName = [order.customer_first_name, order.customer_last_name].filter(Boolean).join(" ") || undefined;
-    const shippingFee = parseFloat(order.total_shipping_price_set?.shop_money?.amount ?? "0") || 0;
+    const shippingFee = parseFloat(String(order.shipping_lines?.[0]?.price ?? 0)) || 0;
 
     return {
       bill_full_name: fullName,

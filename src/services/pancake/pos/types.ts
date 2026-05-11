@@ -16,5 +16,5 @@ export interface HaravanOrderPayload {
   total_price: string;
   subtotal_price: string;
   total_discounts: string;
-  total_shipping_price_set?: { shop_money?: { amount?: string } };
+  shipping_lines?: Array<{ price?: number | string }> | null;
 }
