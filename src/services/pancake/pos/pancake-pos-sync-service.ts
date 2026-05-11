@@ -1,4 +1,3 @@
-import * as Sentry from "@sentry/cloudflare";
 import Database from "services/database";
 import PancakePosClient, { CreateOrderPayload } from "services/pancake/pos/pancake-pos-client";
 import { ResolvedLead, HaravanOrderPayload } from "services/pancake/pos/types";
@@ -40,13 +39,8 @@ export default class PancakePOSSyncService {
   static async dequeueOrderQueue(batch: any, env: any): Promise<void> {
     const service = new PancakePOSSyncService(env);
     for (const msg of batch.messages) {
-      try {
-        await service.processOrder(msg.body);
-        msg.ack();
-      } catch (error) {
-        Sentry.captureException(error, { tags: { service: "PancakePOSSyncService" } });
-        msg.retry();
-      }
+      await service.processOrder(msg.body);
+      msg.ack();
     }
   }
 
