@@ -8,7 +8,7 @@ export default class PancakePOSShopSyncService {
 
   constructor(env: any) {
     this.db = Database.instance(env);
-    this.client = new PancakePosClient(env.PANCAKE_POS_API_KEY);
+    this.client = new PancakePosClient(env.PANCAKE_POS_API_KEY_SECRET);
   }
 
   async syncShops(): Promise<void> {

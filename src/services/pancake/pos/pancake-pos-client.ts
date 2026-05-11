@@ -37,26 +37,38 @@ export interface PancakePosOrder {
 }
 
 export default class PancakePosClient {
-  private client: AxiosInstance;
+  private apiKeySecret: { get(): Promise<string> };
+  private httpClient: AxiosInstance | null = null;
 
-  constructor(apiKey: string) {
-    this.client = axios.create({
-      baseURL: "https://pos.pages.fm/api/v1",
-      params: { api_key: apiKey }
-    });
+  constructor(apiKeySecret: { get(): Promise<string> }) {
+    this.apiKeySecret = apiKeySecret;
+  }
+
+  private async getClient(): Promise<AxiosInstance> {
+    if (!this.httpClient) {
+      const apiKey = await this.apiKeySecret.get();
+      this.httpClient = axios.create({
+        baseURL: "https://pos.pages.fm/api/v1",
+        params: { api_key: apiKey }
+      });
+    }
+    return this.httpClient;
   }
 
   async createOrder(shopId: number, payload: CreateOrderPayload): Promise<PancakePosOrder> {
-    const response = await this.client.post(`/shops/${shopId}/orders`, payload);
+    const client = await this.getClient();
+    const response = await client.post(`/shops/${shopId}/orders`, payload);
     return response.data.order ?? response.data;
   }
 
   async updateOrderStatus(shopId: number, orderId: number, status: number): Promise<void> {
-    await this.client.put(`/shops/${shopId}/orders/${orderId}`, { status });
+    const client = await this.getClient();
+    await client.put(`/shops/${shopId}/orders/${orderId}`, { status });
   }
 
   async getShops(): Promise<PancakePosShop[]> {
-    const response = await this.client.get("/shops");
+    const client = await this.getClient();
+    const response = await client.get("/shops");
     return response.data.shops ?? response.data ?? [];
   }
 }
