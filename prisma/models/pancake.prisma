@@ -202,6 +202,6 @@ model pancakePOSOrderSync {
   created_at       DateTime  @default(now()) @db.Timestamp(6)
   updated_at       DateTime  @default(now()) @db.Timestamp(6)
 
-  @@map("pancake_pos_order_sync")
+  @@map("pancake_pos_order_syncs")
   @@schema("pancake")
 }
