@@ -37,11 +37,11 @@ export interface PancakePosOrder {
 }
 
 export default class PancakePosClient {
-  private apiKeySecret: { get(): Promise<string> };
+  private apiKeySecret: any;
   private httpClient: AxiosInstance | null = null;
 
-  constructor(apiKeySecret: { get(): Promise<string> }) {
-    this.apiKeySecret = apiKeySecret;
+  constructor(env: any) {
+    this.apiKeySecret = env.PANCAKE_POS_API_KEY_SECRET;
   }
 
   private async getClient(): Promise<AxiosInstance> {

@@ -33,7 +33,7 @@ export default class PancakePOSSyncService {
 
   constructor(env: any) {
     this.db = Database.instance(env);
-    this.client = new PancakePosClient(env.PANCAKE_POS_API_KEY_SECRET);
+    this.client = new PancakePosClient(env);
   }
 
   static async dequeueOrderQueue(batch: any, env: any): Promise<void> {
