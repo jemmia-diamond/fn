@@ -144,7 +144,7 @@ export default class PancakePOSSyncService {
   }
 
   private async syncOrderCreate(order: HaravanOrderPayload, shopId: number, lead: ResolvedLead): Promise<void> {
-    const existing = await this.db.pancake_pos_order_sync.findUnique({
+    const existing = await this.db.pancakePOSOrderSync.findUnique({
       where: { haravan_order_id: BigInt(order.id) }
     });
     if (existing?.pancake_order_id) return;
@@ -153,7 +153,7 @@ export default class PancakePOSSyncService {
     const payload = this.buildCreatePayload(order, lead, status);
     const posOrder = await this.client.createOrder(shopId, payload);
 
-    await this.db.pancake_pos_order_sync.upsert({
+    await this.db.pancakePOSOrderSync.upsert({
       where: { haravan_order_id: BigInt(order.id) },
       create: {
         haravan_order_id: BigInt(order.id),
@@ -175,7 +175,7 @@ export default class PancakePOSSyncService {
   }
 
   private async syncOrderUpdate(order: HaravanOrderPayload, shopId: number): Promise<void> {
-    const sync = await this.db.pancake_pos_order_sync.findUnique({
+    const sync = await this.db.pancakePOSOrderSync.findUnique({
       where: { haravan_order_id: BigInt(order.id) }
     });
     if (!sync?.pancake_order_id) return;
@@ -184,7 +184,7 @@ export default class PancakePOSSyncService {
     if (sync.status === status) return;
 
     await this.client.updateOrderStatus(sync.shop_id ?? shopId, sync.pancake_order_id, status);
-    await this.db.pancake_pos_order_sync.update({
+    await this.db.pancakePOSOrderSync.update({
       where: { haravan_order_id: BigInt(order.id) },
       data: { status, updated_at: new Date() }
     });

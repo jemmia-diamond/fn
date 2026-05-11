@@ -192,7 +192,7 @@ model pancake_users {
   @@schema("pancake")
 }
 
-model pancake_pos_order_sync {
+model pancakePOSOrderSync {
   haravan_order_id BigInt    @id
   pancake_order_id Int?
   shop_id          Int?
@@ -202,5 +202,6 @@ model pancake_pos_order_sync {
   created_at       DateTime  @default(now()) @db.Timestamp(6)
   updated_at       DateTime  @default(now()) @db.Timestamp(6)
 
+  @@map("pancake_pos_order_sync")
   @@schema("pancake")
 }
