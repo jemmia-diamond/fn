@@ -111,16 +111,13 @@ export default class PancakePOSSyncService {
     const fs = financialStatus?.toLowerCase();
     const ff = fulfillmentStatus?.toLowerCase() ?? null;
 
-    if (fs === HARAVAN_FINANCIAL_STATUS.CANCELLED || fs === HARAVAN_FINANCIAL_STATUS.VOIDED) {
-      return POS_STATUS.CANCELED;
-    }
+    if (fs === HARAVAN_FINANCIAL_STATUS.VOIDED) return POS_STATUS.CANCELED;
     if (fs === HARAVAN_FINANCIAL_STATUS.REFUNDED) return POS_STATUS.RETURNED;
     if (fs === HARAVAN_FINANCIAL_STATUS.PARTIALLY_REFUNDED) return POS_STATUS.PARTIAL_RETURN;
 
     if (fs === HARAVAN_FINANCIAL_STATUS.PAID) {
-      if (ff === HARAVAN_FULFILLMENT_STATUS.FULFILLED) return POS_STATUS.RECEIVED;
+      if (ff === HARAVAN_FULFILLMENT_STATUS.SHIPPED) return POS_STATUS.RECEIVED;
       if (ff === HARAVAN_FULFILLMENT_STATUS.PARTIAL) return POS_STATUS.SHIPPED;
-      if (ff === HARAVAN_FULFILLMENT_STATUS.RESTOCKED) return POS_STATUS.RESTOCKING;
       return POS_STATUS.PACKAGING;
     }
 
@@ -128,7 +125,7 @@ export default class PancakePOSSyncService {
       return POS_STATUS.CONFIRMED;
     }
 
-    // pending, open
+    // pending
     return POS_STATUS.WAITING_FOR_CONFIRMATION;
   }
 
