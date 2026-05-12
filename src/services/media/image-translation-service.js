@@ -189,12 +189,14 @@ export default class ImageTranslationService {
 
   async isTranslatedImageExists(filename, env) {
     const storage = new WebsiteR2StorageService(env);
-    return await storage.exists(filename);
+    const key = `${storage.prefix}/${filename}`;
+    return await storage.exists(key);
   }
 
   async getTranslatedImageUrl(filename, env) {
     const storage = new WebsiteR2StorageService(env);
-    return storage.getPublicUrl(filename);
+    const key = `${storage.prefix}/${filename}`;
+    return `${env.R2_JEMMIA_WEBSITE_PUBLIC_URL}/${key}`;
   }
 
   async translateImage(image, env) {

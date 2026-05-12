@@ -196,24 +196,30 @@ export default class OrderService {
     await this.env["MISA_QUEUE"].send(payload);
   }
 
-  static async dequeueOrderQueue(batch, env) {
+  static async dequeueUpsertOrder(batch, env) {
     const orderService = new OrderService(env);
     for (const message of batch.messages) {
-      try {
-        const data = message.body;
-        if (isTestOrder(data)) {
-          return true;
-        }
-        await orderService.upsertHaravanOrder(data);
-        const haravan_topic = data.haravan_topic;
-        if (haravan_topic === HARAVAN_TOPIC.CREATED) {
-          await orderService.invalidOrderNotification(data, env);
-          await orderService.syncRefTransactions(data);
-        }
-      }
-      catch (error) {
-        Sentry.captureException(error);
-      }
+      const data = message.body;
+      if (isTestOrder(data)) continue;
+      await orderService.upsertHaravanOrder(data);
+    }
+  }
+
+  static async dequeueStockNotification(batch, env) {
+    const orderService = new OrderService(env);
+    for (const message of batch.messages) {
+      const data = message.body;
+      if (isTestOrder(data)) continue;
+      await orderService.invalidOrderNotification(data, env);
+    }
+  }
+
+  static async dequeueTransactionSync(batch, env) {
+    const orderService = new OrderService(env);
+    for (const message of batch.messages) {
+      const data = message.body;
+      if (isTestOrder(data)) continue;
+      await orderService.syncRefTransactions(data);
     }
   }
 }

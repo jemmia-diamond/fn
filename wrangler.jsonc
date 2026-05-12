@@ -183,6 +183,22 @@
         "binding": "ORDER_QUEUE"
       },
       {
+        "queue": "haravan-order-notification",
+        "binding": "HARAVAN_ORDER_NOTIFICATION_QUEUE"
+      },
+      {
+        "queue": "haravan-order-stock-control",
+        "binding": "HARAVAN_ORDER_STOCK_CONTROL_QUEUE"
+      },
+      {
+        "queue": "haravan-order-transaction-sync",
+        "binding": "HARAVAN_ORDER_TRANSACTION_SYNC_QUEUE"
+      },
+      {
+        "queue": "haravan-order-product-quote-sync",
+        "binding": "HARAVAN_ORDER_PRODUCT_QUOTE_SYNC_QUEUE"
+      },
+      {
         "queue": "message",
         "binding": "MESSAGE_QUEUE"
       },
@@ -193,6 +209,14 @@
       {
         "queue": "message-summary",
         "binding": "MESSAGE_SUMMARY_QUEUE"
+      },
+      {
+        "queue": "pancake-message-last-interaction",
+        "binding": "PANCAKE_MESSAGE_LAST_INTERACTION_QUEUE"
+      },
+      {
+        "queue": "pancake-message-webhook-dispatch",
+        "binding": "PANCAKE_MESSAGE_WEBHOOK_DISPATCH_QUEUE"
       },
       {
         "queue": "erpnext-contacts",
@@ -242,18 +266,49 @@
     "consumers": [
       {
         "queue": "order",
-        "max_concurrency": 1,
+        "retry_delay": 600,
         "max_batch_size": 1
+      },
+      {
+        "queue": "haravan-order-notification",
+        "retry_delay": 600,
+        "max_batch_size": 1
+      },
+      {
+        "queue": "haravan-order-stock-control",
+        "retry_delay": 600,
+        "max_batch_size": 1
+      },
+      {
+        "queue": "haravan-order-transaction-sync",
+        "retry_delay": 600,
+        "max_batch_size": 1
+      },
+      {
+        "queue": "haravan-order-product-quote-sync",
+        "retry_delay": 600,
+        "max_batch_size": 1
+      },
+      {
+        "queue": "zalo-message"
       },
       {
         "queue": "message",
+        "max_batch_size": 1,
+        "retry_delay": 600
+      },
+      {
+        "queue": "pancake-message-webhook-dispatch",
         "max_batch_size": 1
       },
       {
-        "queue": "zalo-message",
+        "queue": "message-summary",
+        "max_batch_size": 1,
+        "retry_delay": 600
       },
       {
-        "queue": "message-summary"
+        "queue": "pancake-message-last-interaction",
+        "max_batch_size": 1
       },
       {
         "queue": "erpnext-contacts"

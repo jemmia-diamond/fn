@@ -170,7 +170,8 @@ export default class ContactService {
   }
 
   async processCallLogContact(data, lead, source) {
-    const phone = data.type === "Incoming" ? data.from : data.to;
+    const initialPhone = data.type === "Incoming" ? data.from : data.to;
+    const phone = normalizeToStandardFormat(initialPhone);
     const contactData = {
       doctype: this.doctype,
       stringee_id: data.id,
@@ -239,12 +240,8 @@ export default class ContactService {
       const docEvent = body.doc_event;
       const contactName = body.name;
       const doctype = body.doctype;
-      try {
-        if (docEvent && contactName && doctype === contactService.doctype) {
-          await contactService.processContactFromWebhook(body, docEvent);
-        }
-      } catch (error) {
-        Sentry.captureException(error);
+      if (docEvent && contactName && doctype === contactService.doctype) {
+        await contactService.processContactFromWebhook(body, docEvent);
       }
     }
   }

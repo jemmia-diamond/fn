@@ -1,4 +1,3 @@
-import * as Sentry from "@sentry/cloudflare";
 import PancakeClient from "pancake/pancake-client";
 import Database from "services/database";
 import LeadService from "services/erp/crm/lead/lead";
@@ -40,139 +39,118 @@ export default class ConversationService {
   async findExistingLead({
     conversationId
   }) {
-    try {
-      const result = await this.db.$queryRaw`
-        SELECT * FROM pancake.frappe_lead_conversation AS flc
-        WHERE flc.conversation_id = ${conversationId}
-        LIMIT 1;
-      `;
-      if (result && result.length > 0) {
-        return result[0];
-      }
-      return null;
-    } catch (error) {
-      Sentry.captureException(error);
-      return undefined;
+    const result = await this.db.$queryRaw`
+      SELECT * FROM pancake.frappe_lead_conversation AS flc
+      WHERE flc.conversation_id = ${conversationId}
+      LIMIT 1;
+    `;
+    if (result && result.length > 0) {
+      return result[0];
     }
+    return null;
   }
 
   async findPageInfo({
     pageId
   }) {
-    try {
-      const result = await this.db.$queryRaw`
-        SELECT * FROM pancake.page AS p
-        WHERE p.id = ${pageId}
-        LIMIT 1;
-      `;
-      if (result && result.length > 0) {
-        return result[0];
-      }
-      return null;
-    } catch (error) {
-      Sentry.captureException(error);
-      return undefined;
+    const result = await this.db.$queryRaw`
+      SELECT * FROM pancake.page AS p
+      WHERE p.id = ${pageId}
+      LIMIT 1;
+    `;
+    if (result && result.length > 0) {
+      return result[0];
     }
+    return null;
   }
 
   async processLastCustomerMessage(body) {
-    try {
-      const receiveWebhook = shouldReceiveWebhook(body);
+    const receiveWebhook = shouldReceiveWebhook(body);
 
-      if (!receiveWebhook) {
-        return;
-      }
-
-      const message = body?.data?.message;
-      if (!message) {
-        console.warn(`No message found in data: ${JSON.stringify(body?.data)}`);
-        return;
-      }
-
-      const conversationId = message.conversation_id;
-      const pageId = message.page_id;
-      const insertedAt = message.inserted_at;
-
-      if (!insertedAt) {
-        throw new Error("Page ID: " + pageId + ", Conversation ID: " + conversationId + ", Inserted At: " + insertedAt);
-      }
-      // Store the time of the last customer message
-      const result = await this.updateConversation(conversationId, pageId, insertedAt);
-      return result;
-    } catch (err){
-      Sentry.captureException(err);
+    if (!receiveWebhook) {
       return;
     }
+
+    const message = body?.data?.message;
+    if (!message) {
+      console.warn(`No message found in data: ${JSON.stringify(body?.data)}`);
+      return;
+    }
+
+    const conversationId = message.conversation_id;
+    const pageId = message.page_id;
+    const insertedAt = message.inserted_at;
+
+    if (!insertedAt) {
+      throw new Error("Page ID: " + pageId + ", Conversation ID: " + conversationId + ", Inserted At: " + insertedAt);
+    }
+    // Store the time of the last customer message
+    const result = await this.updateConversation(conversationId, pageId, insertedAt);
+    return result;
   }
 
   async syncCustomerToLeadCrm(body) {
-    try {
-      const receiveWebhook = shouldReceiveWebhook(body);
+    const receiveWebhook = shouldReceiveWebhook(body);
 
-      if (!receiveWebhook) {
-        return;
-      }
-
-      const conversationId = body?.data?.conversation?.id;
-
-      const pageId = body?.page_id;
-
-      const hasPhone = body?.data?.message?.has_phone;
-      if (hasPhone === undefined || hasPhone === false) {
-        return;
-      }
-
-      const existingDocName = await this.findExistingLead({
-        conversationId: conversationId
-      });
-      if (existingDocName === undefined) return;
-
-      const pancakePage = await this.findPageInfo({
-        pageId: pageId
-      });
-      if (pancakePage === undefined || pancakePage === null) return;
-
-      let frappeNameId;
-      if (existingDocName !== null) {
-        frappeNameId = existingDocName.frappe_name_id;
-
-        const lead = await this.leadService.updateLead({
-          frappeNameId: existingDocName.frappe_name_id,
-          customerPhone: body?.data?.message?.phone_info?.[0]?.phone_number ?? "",
-          customerName: body?.data?.conversation?.from?.name ?? "",
-          platform: pancakePage.platform ?? "",
-          conversationId: conversationId ?? "",
-          pageId: pageId,
-          pageName: pancakePage.name ?? "",
-          type: body?.data?.conversation?.type ?? "",
-          pancakeUserId: body?.data?.conversation?.assignee_ids?.[0] ?? ""
-        });
-        if (lead) {
-          frappeNameId = lead.name;
-        }
-      } else {
-        const newLead = await this.leadService.insertLead({
-          customerName: body?.data?.conversation?.from?.name ?? "",
-          customerPhone: body?.data?.message?.phone_info?.[0].phone_number ?? "",
-          platform: pancakePage.platform ?? "",
-          conversationId: conversationId ?? "",
-          pageId: pageId,
-          pageName: pancakePage.name ?? "",
-          type: body?.data?.conversation?.type ?? "",
-          pancakeUserId: body?.data?.conversation?.assignee_ids?.[0] ?? ""
-        });
-
-        if (newLead) {
-          frappeNameId = newLead.name;
-        }
-      }
-
-      if (frappeNameId !== undefined && frappeNameId !== null) {
-        await this.upsertFrappeLeadConversation(conversationId, frappeNameId);
-      }
-    } catch (error) {
-      Sentry.captureException(error);
+    if (!receiveWebhook) {
       return;
+    }
+
+    const conversationId = body?.data?.conversation?.id;
+
+    const pageId = body?.page_id;
+
+    const hasPhone = body?.data?.message?.has_phone;
+    if (!hasPhone) {
+      return;
+    }
+
+    const existingDocName = await this.findExistingLead({
+      conversationId: conversationId
+    });
+
+    const pancakePage = await this.findPageInfo({
+      pageId: pageId
+    });
+    if (pancakePage === null) return;
+
+    let frappeNameId;
+    if (existingDocName !== null) {
+      frappeNameId = existingDocName.frappe_name_id;
+
+      const lead = await this.leadService.updateLead({
+        frappeNameId: existingDocName.frappe_name_id,
+        customerPhone: body?.data?.message?.phone_info?.[0]?.phone_number ?? "",
+        customerName: body?.data?.conversation?.from?.name ?? "",
+        platform: pancakePage.platform ?? "",
+        conversationId: conversationId ?? "",
+        pageId: pageId,
+        pageName: pancakePage.name ?? "",
+        type: body?.data?.conversation?.type ?? "",
+        pancakeUserId: body?.data?.conversation?.assignee_ids?.[0] ?? ""
+      });
+      if (lead) {
+        frappeNameId = lead.name;
+      }
+    } else {
+      const newLead = await this.leadService.insertLead({
+        customerName: body?.data?.conversation?.from?.name ?? "",
+        customerPhone: body?.data?.message?.phone_info?.[0].phone_number ?? "",
+        platform: pancakePage.platform ?? "",
+        conversationId: conversationId ?? "",
+        pageId: pageId,
+        pageName: pancakePage.name ?? "",
+        type: body?.data?.conversation?.type ?? "",
+        pancakeUserId: body?.data?.conversation?.assignee_ids?.[0] ?? ""
+      });
+
+      if (newLead) {
+        frappeNameId = newLead.name;
+      }
+    }
+
+    if (frappeNameId) {
+      await this.upsertFrappeLeadConversation(conversationId, frappeNameId);
     }
   }
 
@@ -208,45 +186,37 @@ export default class ConversationService {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body)
-      }).catch(err => {
-        Sentry.captureException(err);
       })
     );
 
-    await Promise.allSettled(promises);
+    await Promise.all(promises);
   }
 
   static async dequeueMessageSummaryQueue(batch, env) {
     const conversationService = new ConversationService(env);
-    const messages = batch.messages;
-
-    for (const message of messages) {
-      const body = message.body;
-
-      await conversationService.summarizeLead(env, body).catch(err =>
-        Sentry.captureException(err)
-      );
+    for (const message of batch.messages) {
+      await conversationService.summarizeLead(env, message.body);
     }
   }
 
-  static async dequeueMessageQueue(batch, env) {
+  static async dequeueMessageLastCustomerQueue(batch, env) {
     const conversationService = new ConversationService(env);
-    const messages = batch.messages;
-    for (const message of messages) {
-      const body = message.body;
-      await conversationService.processLastCustomerMessage(body);
+    for (const message of batch.messages) {
+      await conversationService.processLastCustomerMessage(message.body);
     }
   }
 
   static async dequeueMessageSyncCustomerToLeadCRM(batch, env) {
     const conversationService = new ConversationService(env);
-    const messages = batch.messages;
-    for (const message of messages) {
-      const body = message.body;
-      await Promise.all([
-        conversationService.syncCustomerToLeadCrm(body),
-        conversationService.triggerExtraHooks(body)
-      ]);
+    for (const message of batch.messages) {
+      await conversationService.syncCustomerToLeadCrm(message.body);
+    }
+  }
+
+  static async dequeueExtraHooksQueue(batch, env) {
+    const conversationService = new ConversationService(env);
+    for (const message of batch.messages) {
+      await conversationService.triggerExtraHooks(message.body);
     }
   }
 }

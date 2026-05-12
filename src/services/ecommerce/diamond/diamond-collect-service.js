@@ -4,6 +4,7 @@ import Database from "src/services/database";
 import * as Sentry from "@sentry/cloudflare";
 import HaravanAPI from "services/clients/haravan-client";
 import { NOCODB_TABLES } from "src/constants/nocodb-tables";
+import { sendPromotionSyncNotification } from "services/ecommerce/diamond/utils/notification";
 
 export default class DiamondCollectService {
   constructor(env) {
@@ -14,6 +15,11 @@ export default class DiamondCollectService {
 
   async syncDiamondsToCollects() {
     try {
+      await sendPromotionSyncNotification(
+        this.env,
+        "🚀 [CTKM nền] Bắt đầu đồng bộ CTKM nền Kim Cương sang Haravan & Nocodb..."
+      );
+
       const { haravanApi, db, nocoClient } = await this._initializeClients();
       const activeRules = await DiamondDiscountService.getActiveRules(this.env);
       const allCollections = await this._fetchCollections(nocoClient, activeRules);
@@ -29,8 +35,17 @@ export default class DiamondCollectService {
         allPercentCollectionIds
       });
 
+      await sendPromotionSyncNotification(
+        this.env,
+        "✅ [CTKM nền] Hoàn tất đồng bộ CTKM nền Kim Cương. Dữ liệu đã được cập nhật trên Haravan và Nocodb."
+      );
+
     } catch (error) {
       Sentry.captureException(error);
+      await sendPromotionSyncNotification(
+        this.env,
+        `❌ [CTKM nền] Lỗi đồng bộ: ${error.message || "Unknown error"}`
+      );
     }
   }
 

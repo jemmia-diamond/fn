@@ -79,7 +79,6 @@ export default {
       await ERP.Core.UserService.syncUsersToDatabase(env);
       await ERP.Setup.EmployeeService.syncEmployeesToDatabase(env);
       await ERP.Selling.SalesPersonService.syncSalesPersonToDatabase(env);
-      await Larksuite.Docs.Base.RecordService.syncRecordsToDatabase(env);
       await Salesaya.LarkChatSyncMediaService.syncMedia(env);
       await new Pancake.PageSyncService(env).syncPages();
       await new Haravan.Users.UserSyncService(env).sync().catch(() => {});
@@ -130,6 +129,7 @@ export default {
     case "0 14 * * *": // 21:00
       await ERP.Automation.AssignmentRuleService.enableAssignmentRuleOffHour(env);
       await new Haravan.Articles.ArticleSyncService(env).sync();
+      await new Haravan.ConfigTranslator.ConfigTranslatorService(env).sync();
       break;
     default:
       break;

@@ -7,6 +7,7 @@ import Customer from "services/haravan/customers";
 import Users from "services/haravan/users";
 import Articles from "services/haravan/articles";
 import AccountingSalesOrders from "services/haravan/accounting-sales-orders";
+import ConfigTranslator from "services/haravan/config-translator";
 
 export default {
   HaravanClient: HaravanClient,
@@ -17,5 +18,6 @@ export default {
   Users,
   Customer,
   Articles,
-  AccountingSalesOrders
+  AccountingSalesOrders,
+  ConfigTranslator
 };
