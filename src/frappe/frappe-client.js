@@ -256,6 +256,7 @@ export default class FrappeClient {
       e.message = errorMessage;
       e.frappeData = e.response?.data;
       e.status = e.response?.status;
+      e.exc_type = e.response?.data?.exc_type;
     }
 
     throw e;
