@@ -1,4 +1,3 @@
-import * as Sentry from "@sentry/cloudflare";
 import HaravanAPI from "services/clients/haravan-client";
 import NocoDBClient from "services/clients/nocodb-client";
 import { BadRequestException } from "src/exception/exceptions";
@@ -141,16 +140,11 @@ export default class CollectService {
   static async dequeueCollectQueue(batch, env) {
     const service = new CollectService(env);
     for (const message of batch.messages) {
-      try {
-        const body = message.body;
-        if (body.type === "records.after.insert") {
-          await service.createCollect(body);
-        } else if (body.type === "records.after.delete") {
-          await service.removeCollect(body);
-        }
-      }
-      catch (error) {
-        Sentry.captureException(error);
+      const body = message.body;
+      if (body.type === "records.after.insert") {
+        await service.createCollect(body);
+      } else if (body.type === "records.after.delete") {
+        await service.removeCollect(body);
       }
     }
   }
