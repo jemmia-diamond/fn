@@ -70,22 +70,22 @@ export default class CustomerService {
     try {
       customer = await this.frappeClient.upsert(mappedCustomerData, "haravan_id");
     } catch (error) {
-      const isLinkError = (error.exc_type === "LinkValidationError" || error.status === 417 || (error.message && error.message.includes("Status: 417"))) && error.message.includes("From Lead");
+      const isLinkError = (error.exc_type === "LinkValidationError" || error.status === 417 || (error.message && error.message.includes("417"))) && (error.message.includes("From Lead") || error.message.includes("Could not find Lead"));
       if (!isLinkError) {
         throw error;
       }
 
       const rawPhone = customerData.phone || customerData.mobile_no;
-      if (!rawPhone) {
-        throw error;
+      let lead = null;
+      if (rawPhone) {
+        lead = await this.findLeadByPhone(rawPhone);
       }
 
-      const lead = await this.findLeadByPhone(rawPhone);
-      if (!lead) {
-        throw error;
+      if (lead) {
+        mappedCustomerData.lead_name = lead.name;
+      } else {
+        mappedCustomerData.lead_name = "";
       }
-
-      mappedCustomerData.lead_name = lead.name;
       customer = await this.frappeClient.upsert(mappedCustomerData, "haravan_id");
     }
     return customer;
