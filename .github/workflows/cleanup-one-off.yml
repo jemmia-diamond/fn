@@ -2,7 +2,7 @@ name: Cleanup one-off scripts
 
 on:
   schedule:
-    - cron: "0 0 * * 1"
+    - cron: "0 0 * * 0"
   workflow_dispatch:
 
 jobs:
@@ -14,33 +14,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Delete one-off scripts older than 30 days
-        id: cleanup
-        run: |
-          deleted=()
-          while IFS= read -r -d '' file; do
-            name=$(basename "$file" .ts)
-            deleted+=("$name")
-            rm "$file"
-            echo "Deleted: $file"
-          done < <(find src/one-off -name "*.ts" ! -name "index.ts" -mtime +30 -print0)
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".node-version"
 
-          if [ ${#deleted[@]} -eq 0 ]; then
-            echo "has_changes=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "has_changes=true" >> "$GITHUB_OUTPUT"
-            # Remove deleted entries from index.ts
-            for name in "${deleted[@]}"; do
-              sed -i "/${name}/d" src/one-off/index.ts
-            done
-          fi
+      - name: Delete one-off scripts older than 7 days (by filename prefix)
+        id: cleanup
+        env:
+          ONE_OFF_RETENTION_DAYS: "7"
+        run: node scripts/cleanup-one-off.mjs
 
       - name: Create PR if changes
         if: steps.cleanup.outputs.has_changes == 'true'
         uses: peter-evans/create-pull-request@v6
         with:
-          title: "chore: cleanup old one-off scripts"
-          commit-message: "chore: remove one-off scripts older than 30 days"
+          title: "chore: cleanup one-off scripts older than 7 days"
+          commit-message: "chore: remove one-off scripts older than 7 days"
           branch: "auto/cleanup-one-off"
           delete-branch: true
-          body: "Automated cleanup: removed one-off scripts older than 30 days."
+          body: |
+            Automated cleanup (weekly Sunday UTC):
+            - Removed `src/one-off/*.ts` files matching `^[0-9]{14}_.+\.ts$` whose `YYYYMMDDHHmmss` prefix is older than **7 days** (UTC).
+            - Updated `src/one-off/index.ts` (imports + `ONE_OFF_SCRIPTS` entries tied to deleted modules).
