@@ -20,6 +20,11 @@ export const HARAVAN_FINANCIAL_STATUS = {
   VOIDED: "voided"
 };
 
+export const HARAVAN_CANCELLED_STATUS = {
+  CANCELLED: "cancelled",
+  UNCANCELLED: "uncancelled"
+};
+
 export const HARAVAN_FULFILLMENT_STATUS = {
   UNSHIPPED: "unshipped",
   SHIPPED: "shipped",
