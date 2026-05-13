@@ -3,12 +3,10 @@ import { retryQuery } from "services/utils/retry-utils";
 
 import {
   buildQueryV2,
-  buildQuerySingleV2
+  buildQuerySingleV2,
+  buildInventoryMetricsSql
 } from "services/ecommerce/product/utils/jewelry-v2";
-import {
-  buildWeddingRingByIdQuery,
-  buildWeddingRingsQuery
-} from "services/ecommerce/product/utils/wedding-ring";
+import { buildWeddingRingByIdQuery, buildWeddingRingsQuery } from "services/ecommerce/product/utils/wedding-ring";
 import { JEWELRY_IMAGE } from "src/controllers/ecommerce/constant";
 
 export default class ProductService {
@@ -16,7 +14,7 @@ export default class ProductService {
     this.db = Database.instance(env);
   }
 
-  async searchJewelry(searchKey, limit, page) {
+  async searchJewelry(searchKey, limit, page, options = {}) {
     if (!searchKey || typeof searchKey !== "string") {
       return [];
     }
@@ -40,7 +38,7 @@ export default class ProductService {
         CASE
           WHEN e.product_id IS NULL THEN FALSE
           ELSE TRUE
-        END AS has_360,
+        END AS has_360${buildInventoryMetricsSql(options)},
         var.variants
       FROM ecom.materialized_products p
         INNER JOIN workplace.designs d ON d.id = p.design_id
@@ -98,6 +96,7 @@ export default class ProductService {
       LIMIT ${limit}
       OFFSET ${offset};
     `;
+
     return result;
   }
 
@@ -201,10 +200,10 @@ export default class ProductService {
     };
   }
 
-  async getJewelryByIdV2(id, params = {}) {
+  async getJewelryByIdV2(id, options = {}) {
     const productId = parseInt(id, 10);
     const { variantJsonBuildObject, lateralJoinClause } =
-      buildQuerySingleV2(params);
+      buildQuerySingleV2(options);
     const workplaceUrlPrefix = JEWELRY_IMAGE.WORKPLACE_URL_PREFIX;
     const workplaceFullUrl = JEWELRY_IMAGE.WORKPLACE_FULL_URL;
     const cdnUrl = JEWELRY_IMAGE.CDN_URL;
@@ -225,7 +224,7 @@ export default class ProductService {
         p.haravan_product_type AS product_type,
         'Round' AS shape_of_main_stone,
         p.has_360,
-        p.estimated_gold_weight,
+        p.estimated_gold_weight${buildInventoryMetricsSql(options)},
         JSON_AGG(
           ${variantJsonBuildObject}
         ) AS variants,

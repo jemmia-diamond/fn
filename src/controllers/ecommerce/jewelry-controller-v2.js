@@ -34,6 +34,8 @@ export default class JewelryControllerV2 {
       ring_head_styles: splitParams(params.ring_head_styles),
       ring_band_styles: splitParams(params.ring_band_styles),
       excluded_ring_head_styles: splitParams(params.excluded_ring_head_styles),
+      return_inventory_metrics: params.return_inventory_metrics === "true",
+      limit_selling_quantity: parseNumber(params.limit_selling_quantity, null),
       excluded_ring_band_styles: splitParams(params.excluded_ring_band_styles),
       product_ids: splitParams(params.product_ids)
         .map((v) => Number(v.trim()))
@@ -51,13 +53,15 @@ export default class JewelryControllerV2 {
 
   static async show(ctx) {
     const { id } = ctx.req.param();
-    const { matched_diamonds } = ctx.req.query();
+    const params = await ctx.req.query();
     if (isNaN(Number(id))) {
       return ctx.json({ error: "Invalid id. Must be a number." }, 400);
     }
     const productService = new Ecommerce.ProductService(ctx.env);
     const result = await productService.getJewelryByIdV2(id, {
-      matched_diamonds: matched_diamonds === "true"
+      matched_diamonds: params.matched_diamonds === "true",
+      return_inventory_metrics: params.return_inventory_metrics === "true",
+      limit_selling_quantity: parseNumber(params.limit_selling_quantity, null)
     });
     if (!result) {
       return ctx.json({ error: "Jewelry not found" }, 404);
