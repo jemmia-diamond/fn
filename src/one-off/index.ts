@@ -1,7 +1,9 @@
-import backfillPancakePosOrders from "src/one-off/20260511000000_backfill_pancake_pos_orders";
-import syncPancakePosShops from "src/one-off/20260511000001_sync_pancake_pos_shops";
+import syncPancakePosShops from "src/one-off/20260511000000_sync_pancake_pos_shops";
+import backfillPageCustomerPhoneNormalize from "src/one-off/20260513000000_backfill_page_customer_phone_normalize";
+import testHandler from "one-off/20260501000000_test";
 
 export const ONE_OFF_SCRIPTS: Array<{ name: string; handler: (env: any) => Promise<void> }> = [
   { name: "20260511000001_sync_pancake_pos_shops", handler: syncPancakePosShops },
-  { name: "20260511000000_backfill_pancake_pos_orders", handler: backfillPancakePosOrders }
+  { name: "20260513000000_backfill_page_customer_phone_normalize", handler: backfillPageCustomerPhoneNormalize },
+  { name: "20260501000000_test.ts", handler: testHandler }
 ];

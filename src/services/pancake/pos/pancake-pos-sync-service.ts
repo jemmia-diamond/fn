@@ -6,6 +6,7 @@ import {
   HARAVAN_CANCELLED_STATUS,
   HARAVAN_TOPIC
 } from "services/ecommerce/enum";
+import { normalizeToStandardFormat } from "services/utils/phone-utils";
 
 const POS_STATUS = {
   NEW: 0,
@@ -14,14 +15,6 @@ const POS_STATUS = {
 
 const PANCAKE_POS_BASE_ORDER_VARIATION_ID = "1b756676-3314-43f5-b03e-4829a166f779";
 const PANCAKE_POS_BASE_ORDER_PRODUCT_ID = "2cc80df9-72ef-4267-8577-1ed9c1d2035d";
-
-function normalizeVietnamPhoneCore(raw: string): string {
-  const digits = raw.replace(/\D/g, "");
-  if (!digits) return "";
-  if (digits.startsWith("84")) return digits.slice(2);
-  if (digits.startsWith("0")) return digits.slice(1);
-  return digits;
-}
 
 export default class PancakePOSSyncService {
   private db: ReturnType<typeof Database.instance>;
@@ -67,11 +60,15 @@ export default class PancakePOSSyncService {
   }
 
   private async resolveAdsId(customerPhone: string): Promise<ResolvedLead | null> {
-    const phoneCore = normalizeVietnamPhoneCore(customerPhone);
-    if (!phoneCore) return null;
+    const target = normalizeToStandardFormat(customerPhone);
+    if (!target) return null;
 
     const pageCustomer = await this.db.page_customer.findFirst({
-      where: { phone: { contains: phoneCore } }, //!HARDCODE: USE = in FIRST MERGE, AND CHANGE TO CONTAINS AFTER.
+      where: {
+        phone_numbers_normalize: {
+          array_contains: [target]
+        }
+      },
       orderBy: { updated_at: "desc" },
       select: { customer_id: true }
     });
