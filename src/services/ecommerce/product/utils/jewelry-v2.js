@@ -3,6 +3,16 @@ import { aggregateQuery } from "services/ecommerce/product/utils/jewelry";
 import { JEWELRY_IMAGE } from "src/controllers/ecommerce/constant";
 import { Prisma } from "@prisma-cli";
 
+function buildInventoryMetricsSql(opts = {}) {
+  if (!opts.return_inventory_metrics) {
+    return Prisma.sql``;
+  }
+  const limitSql = opts.limit_selling_quantity !== null && opts.limit_selling_quantity !== undefined
+    ? Prisma.sql`CAST(${opts.limit_selling_quantity} AS INT)`
+    : Prisma.sql`NULL`;
+  return Prisma.sql`, CAST((SELECT COALESCE(SUM(quantity), 0) FROM haravan.line_items WHERE product_id = p.haravan_product_id) AS INT) AS sold_quantity, ${limitSql} AS limit_selling_quantity`;
+}
+
 export function buildQueryV2(jsonParams) {
   const {
     filterSql,
@@ -162,7 +172,7 @@ export function buildQueryV2(jsonParams) {
       d.main_stone,
       d.ring_band_type,
       p.haravan_product_type AS product_type,
-      p.has_360,
+      p.has_360${buildInventoryMetricsSql(jsonParams)},
       JSON_AGG(
         ${variantJsonBuildObject}
       ) AS variants

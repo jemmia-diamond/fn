@@ -9,7 +9,10 @@ export default class SearchController {
     const limit = Number(params.limit) <= MAX_SEARCH_RESULT ? Number(params.limit) : MAX_SEARCH_RESULT;
     const page = Math.max(1, Number(params.page) || 1);
     const productService = new Ecommerce.ProductService(ctx.env);
-    const result = await productService.searchJewelry(searchKey, limit, page);
+    const result = await productService.searchJewelry(searchKey, limit, page, {
+      return_inventory_metrics: params.return_inventory_metrics === "true",
+      limit_selling_quantity: params.limit_selling_quantity ? Number(params.limit_selling_quantity) : null
+    });
     const responseBody = {
       data: result
     };
