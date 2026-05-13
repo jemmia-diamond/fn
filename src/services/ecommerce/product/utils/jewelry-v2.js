@@ -3,7 +3,7 @@ import { aggregateQuery } from "services/ecommerce/product/utils/jewelry";
 import { JEWELRY_IMAGE } from "src/controllers/ecommerce/constant";
 import { Prisma } from "@prisma-cli";
 
-function buildInventoryMetricsSql(opts = {}) {
+export function buildInventoryMetricsSql(opts = {}) {
   if (!opts.return_inventory_metrics) {
     return Prisma.sql``;
   }

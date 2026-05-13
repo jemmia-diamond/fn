@@ -3,21 +3,11 @@ import { retryQuery } from "services/utils/retry-utils";
 
 import {
   buildQueryV2,
-  buildQuerySingleV2
+  buildQuerySingleV2,
+  buildInventoryMetricsSql
 } from "services/ecommerce/product/utils/jewelry-v2";
 import { buildWeddingRingByIdQuery, buildWeddingRingsQuery } from "services/ecommerce/product/utils/wedding-ring";
 import { JEWELRY_IMAGE } from "src/controllers/ecommerce/constant";
-import { Prisma } from "@prisma-cli";
-
-function buildInventoryMetricsSql(opts = {}) {
-  if (!opts.return_inventory_metrics) {
-    return Prisma.sql``;
-  }
-  const limitSql = opts.limit_selling_quantity !== null && opts.limit_selling_quantity !== undefined
-    ? Prisma.sql`CAST(${opts.limit_selling_quantity} AS INT)`
-    : Prisma.sql`NULL`;
-  return Prisma.sql`, CAST((SELECT COALESCE(SUM(quantity), 0) FROM haravan.line_items WHERE product_id = p.haravan_product_id) AS INT) AS sold_quantity, ${limitSql} AS limit_selling_quantity`;
-}
 
 export default class ProductService {
   constructor(env) {
