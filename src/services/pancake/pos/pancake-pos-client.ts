@@ -7,9 +7,12 @@ export interface PancakePosShop {
 }
 
 export interface OrderItem {
-  variation_id?: string;
+  variation_id: string;
+  product_id: string;
   quantity: number;
+  discount_each_product: number;
   variation_info: {
+    name: string | null;
     retail_price: number;
   };
 }
@@ -17,13 +20,12 @@ export interface OrderItem {
 export interface CreateOrderPayload {
   bill_full_name?: string;
   bill_phone_number?: string;
+  conversation_id?: string;
   note?: string;
   status?: number;
-  total_discount?: number;
   shipping_fee?: number;
   ad_id?: string;
   page_id?: string;
-  conversation_id?: string;
   items?: OrderItem[];
 }
 
@@ -58,7 +60,7 @@ export default class PancakePosClient {
   async createOrder(shopId: number, payload: CreateOrderPayload): Promise<PancakePosOrder> {
     const client = await this.getClient();
     const response = await client.post(`/shops/${shopId}/orders`, payload);
-    return response.data.order ?? response.data;
+    return response.data.data;
   }
 
   async updateOrderStatus(shopId: number, orderId: number, status: number): Promise<void> {
