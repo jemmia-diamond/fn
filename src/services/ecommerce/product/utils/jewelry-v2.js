@@ -10,7 +10,7 @@ export function buildInventoryMetricsSql(opts = {}) {
   const limitSql = opts.limit_selling_quantity !== null && opts.limit_selling_quantity !== undefined
     ? Prisma.sql`CAST(${opts.limit_selling_quantity} AS INT)`
     : Prisma.sql`NULL`;
-  return Prisma.sql`, CAST((SELECT COALESCE(SUM(quantity), 0) FROM haravan.line_items WHERE product_id = p.haravan_product_id) AS INT) AS sold_quantity, ${limitSql} AS limit_selling_quantity`;
+  return Prisma.sql`, CAST((SELECT COALESCE(SUM(ln.quantity), 0) FROM haravan.line_items ln INNER JOIN haravan.orders o ON ln.order_id = o.id WHERE ln.product_id = p.haravan_product_id AND o.cancelled_status = 'uncancelled') AS INT) AS sold_quantity, ${limitSql} AS limit_selling_quantity`;
 }
 
 export function buildQueryV2(jsonParams) {
