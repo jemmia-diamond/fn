@@ -1,0 +1,39 @@
+name: Cleanup one-off scripts
+
+on:
+  schedule:
+    - cron: "0 0 * * 0"
+  workflow_dispatch:
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".node-version"
+
+      - name: Delete one-off scripts older than 7 days (by filename prefix)
+        id: cleanup
+        env:
+          ONE_OFF_RETENTION_DAYS: "7"
+        run: node scripts/cleanup-one-off.mjs
+
+      - name: Create PR if changes
+        if: steps.cleanup.outputs.has_changes == 'true'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          title: "chore: cleanup one-off scripts older than 7 days"
+          commit-message: "chore: remove one-off scripts older than 7 days"
+          branch: "auto/cleanup-one-off"
+          delete-branch: true
+          body: |
+            Automated cleanup (weekly Sunday UTC):
+            - Removed `src/one-off/*.ts` files matching `^[0-9]{14}_.+\.ts$` whose `YYYYMMDDHHmmss` prefix is older than **7 days** (UTC).
+            - Updated `src/one-off/index.ts` (imports + `ONE_OFF_SCRIPTS` entries tied to deleted modules).
