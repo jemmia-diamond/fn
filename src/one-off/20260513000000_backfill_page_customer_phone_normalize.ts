@@ -11,12 +11,13 @@ const CONCURRENCY_LIMIT = 15;
 export default async function backfillPageCustomerPhoneNormalize(env: any): Promise<void> {
   const db = Database.instance(env);
   const limit = pLimit(CONCURRENCY_LIMIT);
-  let lastUuid: string | null = null;
+
+  let offset = 0;
 
   while (true) {
     const rows = await db.page_customer.findMany({
       take: BATCH_SIZE,
-      ...(lastUuid ? { skip: 1, cursor: { uuid: lastUuid } } : {}),
+      skip: offset,
       orderBy: { uuid: "asc" },
       select: {
         uuid: true,
@@ -41,8 +42,6 @@ export default async function backfillPageCustomerPhoneNormalize(env: any): Prom
       )
     );
 
-    lastUuid = rows[rows.length - 1].uuid;
-
-    if (rows.length < BATCH_SIZE) break;
+    offset += rows.length;
   }
 }
