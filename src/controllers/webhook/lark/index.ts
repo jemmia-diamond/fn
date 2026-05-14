@@ -1,6 +1,8 @@
 import ShieldEventController from "controllers/jemmia-shield/shield-event-controller";
+import LarkAppointmentController from "controllers/larksuite/appointment-controller";
 import EventRedirectController from "controllers/larksuite/event-redirect-controller";
 import LarkApprovalOrdersController from "controllers/larksuite/lark-approval-orders-controller";
+import AppointmentService from "services/larksuite/appointment/appointment-service";
 
 export default class LarkWebhook {
   static async register(webhook: any) {
@@ -11,5 +13,16 @@ export default class LarkWebhook {
       "/approval/orders-options",
       LarkApprovalOrdersController.create
     );
+    namespace.post(
+      "/appointment",
+      LarkAppointmentController.create
+    );
+    namespace.get(
+      "/appointment",
+      LarkAppointmentController.create
+
+    );
+
+
   }
 }

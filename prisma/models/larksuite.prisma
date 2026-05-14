@@ -271,3 +271,23 @@ model larksuiteTechTicket {
   @@index([created_time])
   @@index([updated_time])
 }
+
+model larksuiteAppointment {
+  record_id               String    @id @map("record_id")
+  store                   String    @default("") @db.VarChar(200)
+  name                    String    @default("") @db.VarChar(200)
+  phone_number            String    @default("") @db.VarChar(200)
+  gender                  String    @default("") @db.VarChar(200)
+  product_images          Json?
+  note                    String?   @db.VarChar(200)
+  date_time               DateTime? @db.Timestamp(6)
+  conversation_greeting   String?   @db.VarChar(200)
+  customer_response       String?   @db.VarChar(200)
+  main_sales              Json?
+  offline_sales           Json?
+  status                  String?      
+  created_at              DateTime? @db.Timestamp(6)
+  updated_at              DateTime? @db.Timestamp(6)
+
+  @@schema("larksuite")
+}

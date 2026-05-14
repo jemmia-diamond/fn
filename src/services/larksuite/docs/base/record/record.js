@@ -146,7 +146,6 @@ export default class RecordService {
     env, appToken, tableId, recordId, userIdType = "open_id"
   }) {
     const larkClient = await LarksuiteService.createClientV2(env);
-
     const response = await larkClient.bitable.appTableRecord.get({
       path: {
         app_token: appToken,
