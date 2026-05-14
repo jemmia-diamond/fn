@@ -160,6 +160,11 @@
       "binding": "GEMINI_API_KEY_SECRET",
       "store_id": "dff6fef7003446178302a7874af64fde",
       "secret_name": "GEMINI_API_KEY"
+    },
+    {
+      "binding": "PANCAKE_POS_API_KEY_SECRET",
+      "store_id": "dff6fef7003446178302a7874af64fde",
+      "secret_name": "PANCAKE_POS_API_KEY"
     }
   ],
   "kv_namespaces": [
@@ -261,6 +266,10 @@
       {
         "queue": "promotion-diamond-collect-sync",
         "binding": "PROMOTION_DIAMOND_COLLECT_SYNC_QUEUE"
+      },
+      {
+        "queue": "pancake-pos-sync",
+        "binding": "PANCAKE_POS_SYNC_QUEUE"
       }
     ],
     "consumers": [
@@ -353,6 +362,12 @@
         "queue": "promotion-diamond-collect-sync",
         "max_concurrency": 1,
         "max_retries": 0
+      },
+      {
+        "queue": "pancake-pos-sync",
+        "retry_delay": 600,
+        "max_retries": 6,
+        "max_batch_size": 1
       }
     ]
   },
