@@ -20,21 +20,17 @@ export default class PancakePOSShopSyncService {
   async syncShops(): Promise<void> {
     await this.initPromise;
 
-    try {
-      const shops = await this.client!.getShops();
-      if (!shops || shops.length === 0) return;
+    const shops = await this.client!.getShops();
+    if (!shops || shops.length === 0) return;
 
-      for (const shop of shops) {
-        for (const page of shop.pages ?? []) {
-          if (!page.id) continue;
-          await this.db.page.update({
-            where: { id: page.id },
-            data: { pos_shop_id: shop.id }
-          });
-        }
+    for (const shop of shops) {
+      for (const page of shop.pages ?? []) {
+        if (!page.id) continue;
+        await this.db.page.update({
+          where: { id: page.id },
+          data: { pos_shop_id: shop.id }
+        });
       }
-    } catch (error) {
-      Sentry.captureException(error, { tags: { service: "PancakePOSShopSyncService" } });
     }
   }
 }
