@@ -4,7 +4,7 @@ export default class LarkAppointmentController {
   static async create(ctx) {
     try {
       const body = await ctx.req.json();
-      const { token, app_token, table_id, record_id, ...rest } = body || {};
+      const { token, app_token, table_id, record_id } = body || {};
       const expectedToken = await ctx.env.BEARER_TOKEN;
       if (token !== expectedToken) {
         return ctx.json({

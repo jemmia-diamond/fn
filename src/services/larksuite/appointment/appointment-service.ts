@@ -1,12 +1,12 @@
 import RecordService from "services/larksuite/docs/base/record/record";
-import { LarksuiteAppointmentRawFields, LarksuiteAppointmentParsedFields, IFrappeLead, ILarksuitAppointment, LarksuiteSalePerson, IFrappeSalesPerson } from "./types";
+import { LarksuiteAppointmentRawFields, LarksuiteAppointmentParsedFields, IFrappeLead, ILarksuitAppointment, LarksuiteSalePerson, IFrappeSalesPerson } from "src/services/larksuite/appointment/types";
 import { PrismaClient } from "@prisma-cli";
 import Database from "services/database";
 import FrappeClient from "src/frappe/frappe-client";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import timezone from "dayjs/plugin/timezone.js";
-import LarksuiteService from "../lark";
+import LarksuiteService from "src/services/larksuite/lark";
 import * as lark from "@larksuiteoapi/node-sdk";
 
 dayjs.extend(utc);
@@ -35,7 +35,7 @@ export default class AppointmentService {
   private constructor(env: any) {
     this.env = env;
     this.db = Database.instance(env);
-    // @ts-ignore
+    // @ts-expect-error This FrappeClient was written in javascript so we can not define the type for it
     this.frappeClient = new FrappeClient({
       url: env.JEMMIA_ERP_BASE_URL,
       apiKey: env.JEMMIA_ERP_API_KEY,
@@ -44,7 +44,7 @@ export default class AppointmentService {
   }
 
   async syncLarkRecord(appToken: string, tableId: string, recordId: string): Promise<ILarksuitAppointment> {
-    // @ts-ignore
+    // @ts-expect-error This RecordService was written in javascript so we can not define the type for it
     const record = await RecordService.getLarksuiteRecord({
       env: this.env,
       appToken,
@@ -53,25 +53,25 @@ export default class AppointmentService {
     });
 
     if (!record) {
-      throw new Error(`Lark record not found`);
+      throw new Error("Lark record not found");
     }
 
     const rawFields = (record.fields || {}) as LarksuiteAppointmentRawFields;
 
     const fields: LarksuiteAppointmentParsedFields = {
-      store: rawFields['Cửa hàng']?.[0] || '',
-      name: rawFields['Tên khách hàng/ facebook'] || '',
-      phone_number: rawFields['Số điện thoại'] || '',
-      gender: rawFields['Giới tính'] || '',
-      product_images: rawFields['Hình ảnh sản phẩm (nếu có)'] || null,
-      note: rawFields['Lưu ý đặc biệt'] || null,
-      date_time: rawFields['Ngày khách dự kiến tới CH'] ? new Date(rawFields['Ngày khách dự kiến tới CH']) : null,
-      conversation_greeting: rawFields['Nội dung đón tiếp tại cửa hàng'] || null,
-      customer_response: rawFields['Offlie Phản hồi'] || null,
-      main_sales: rawFields['Sale chính'] || null,
-      offline_sales: rawFields['Sale Offline tiếp nhận'] || null,
-      status: rawFields['Trạng thái đơn hàng'] || null,
-      policy: rawFields['Chính sách thu mua thu đổi'] || null,
+      store: rawFields["Cửa hàng"]?.[0] || "",
+      name: rawFields["Tên khách hàng/ facebook"] || "",
+      phone_number: rawFields["Số điện thoại"] || "",
+      gender: rawFields["Giới tính"] || "",
+      product_images: rawFields["Hình ảnh sản phẩm (nếu có)"] || null,
+      note: rawFields["Lưu ý đặc biệt"] || null,
+      date_time: rawFields["Ngày khách dự kiến tới CH"] ? new Date(rawFields["Ngày khách dự kiến tới CH"]) : null,
+      conversation_greeting: rawFields["Nội dung đón tiếp tại cửa hàng"] || null,
+      customer_response: rawFields["Offlie Phản hồi"] || null,
+      main_sales: rawFields["Sale chính"] || null,
+      offline_sales: rawFields["Sale Offline tiếp nhận"] || null,
+      status: rawFields["Trạng thái đơn hàng"] || null,
+      policy: rawFields["Chính sách thu mua thu đổi"] || null
     };
 
     const data: ILarksuitAppointment = {
@@ -79,7 +79,7 @@ export default class AppointmentService {
       ...fields,
       product_images: fields.product_images ? fields.product_images : null,
       main_sales: fields.main_sales ? fields.main_sales : null,
-      offline_sales: fields.offline_sales ? fields.offline_sales : null,
+      offline_sales: fields.offline_sales ? fields.offline_sales : null
     };
 
     return data;
@@ -96,7 +96,7 @@ export default class AppointmentService {
       });
       return attachments || [];
     } catch (error) {
-      console.error(`Error fetching attachments for ${doctype} ${docname}:`, error);
+      console.warn(`Error fetching attachments for ${doctype} ${docname}:`, error);
       return [];
     }
   }
@@ -113,7 +113,7 @@ export default class AppointmentService {
       const stream = await response.getReadableStream();
       return stream;
     } catch (error) {
-      console.error("Error downloading file:", error);
+      console.warn("Error downloading file:", error);
       return null;
     }
   }
@@ -128,7 +128,7 @@ export default class AppointmentService {
       });
       return lead;
     } catch (error) {
-      console.error("Error fetching lead info:", error);
+      console.warn("Error fetching lead info:", error);
       return null;
     }
   }
@@ -154,7 +154,7 @@ export default class AppointmentService {
 
       return salesPersons;
     } catch (error) {
-      console.error("Error fetching Sales Persons:", error);
+      console.warn("Error fetching Sales Persons:", error);
       // Fallback to cache if request fails but cache exists, otherwise return empty array
       return this.salesPersonCache || [];
     }
@@ -200,7 +200,7 @@ export default class AppointmentService {
       estimated_budget: lead ? lead.budget_lead : undefined,
       range_estimated_budget: lead ? lead.proposed_budget : undefined,
       main_sales: main_sales.filter(Boolean),
-      offline_sales: offline_sales.filter(Boolean),
+      offline_sales: offline_sales.filter(Boolean)
     };
   }
 
