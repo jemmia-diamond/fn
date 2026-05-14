@@ -5,6 +5,10 @@ import utc from "dayjs/plugin/utc.js";
 import * as Sentry from "@sentry/cloudflare";
 import { isInvalidTokenError } from "pancake/utils";
 import { sleep } from "services/utils/sleep";
+import {
+  normalizePageCustomerPhone,
+  normalizePageCustomerPhoneNumbers
+} from "services/pancake/sync/page-customer-phone-normalize";
 
 dayjs.extend(utc);
 
@@ -116,7 +120,9 @@ export default class CustomerSyncService {
       id: item.id,
       birthday: item.birthday || null,
       phone_numbers: phoneNumbers,
+      phone_numbers_normalize: normalizePageCustomerPhoneNumbers(phoneNumbers),
       phone: phone,
+      phone_normalize: normalizePageCustomerPhone(phone),
       notes: item.notes || [],
       can_inbox: item.can_inbox ?? null,
       customer_id: item.customer_id || null,
