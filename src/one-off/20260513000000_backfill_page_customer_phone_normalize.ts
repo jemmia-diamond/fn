@@ -7,6 +7,7 @@ import {
 
 const BATCH_SIZE = 300;
 const CONCURRENCY_LIMIT = 15;
+const EMPTY = 0;
 
 export default async function backfillPageCustomerPhoneNormalize(env: any): Promise<void> {
   const db = Database.instance(env);
@@ -31,7 +32,7 @@ export default async function backfillPageCustomerPhoneNormalize(env: any): Prom
       }
     });
 
-    if (rows.length === 0) break;
+    if (rows.length === EMPTY) break;
 
     await Promise.all(
       rows.map((row) =>
