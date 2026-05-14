@@ -20,15 +20,15 @@ export default async function backfillPageCustomerPhoneNormalize(env: any): Prom
       skip: offset,
       where: {
         phone: {
-          not: null,
-        },
+          not: null
+        }
       },
       orderBy: { uuid: "asc" },
       select: {
         uuid: true,
         phone: true,
-        phone_numbers: true,
-      },
+        phone_numbers: true
+      }
     });
 
     if (rows.length === 0) break;
