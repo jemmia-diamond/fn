@@ -19,7 +19,7 @@ export default class PancakePOSShopSyncService {
 
   async syncShops(): Promise<void> {
     await this.initPromise;
-    
+
     try {
       const shops = await this.client!.getShops();
       if (!shops || shops.length === 0) return;
