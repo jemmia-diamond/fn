@@ -1,19 +1,21 @@
 import { normalizeToStandardFormat } from "services/utils/phone-utils";
 
 export function normalizePageCustomerPhone(raw) {
-  if (raw == null || raw === "") return null;
-  const s = typeof raw === "string" ? raw : String(raw);
+  if (!raw) return null;
+
+  const s = String(raw);
   const n = normalizeToStandardFormat(s);
   return n || null;
 }
 
 export function normalizePageCustomerPhoneNumbers(phoneNumbersJson) {
-  if (!Array.isArray(phoneNumbersJson) || phoneNumbersJson.length === 0) return null;
-  const out = [];
-  for (const item of phoneNumbersJson) {
-    if (typeof item !== "string") continue;
-    const n = normalizeToStandardFormat(item);
-    if (n) out.push(n);
+  if (!Array.isArray(phoneNumbersJson) || !phoneNumbersJson.length) {
+    return null;
   }
+
+  const out = phoneNumbersJson
+    .map(item => typeof item === "string" ? normalizeToStandardFormat(item) : null)
+    .filter(Boolean);
+
   return out.length ? out : null;
 }
