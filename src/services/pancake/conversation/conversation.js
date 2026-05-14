@@ -180,6 +180,105 @@ export default class ConversationService {
     });
   }
 
+  async backfillLeadSummaries(env, leads = null, delayMs = 500) {
+    const aihub = new AIHUBClient(env);
+    const results = [];
+    const KV_KEY = "backfill_lead_summary_checkpoint";
+
+    if (!leads) {
+      const lastCheckpointStr = await env.FN_KV.get(KV_KEY);
+
+      if (lastCheckpointStr) {
+        console.warn(`[Backfill] Resuming from checkpoint: ${lastCheckpointStr}`);
+        const { time, lastId } = JSON.parse(lastCheckpointStr);
+        leads = await this.db.$queryRaw`
+          SELECT c.page_id AS "pageId", c.id AS "conversationId", c.inserted_at AS "insertedAt"
+          FROM pancake.conversation c 
+          JOIN pancake.page_customer pc ON c.customer_id = pc.customer_id 
+          WHERE c.inserted_at >= '2026-01-01 00:00:00'::timestamp AND c.inserted_at <= '2026-03-17 00:00:00'::timestamp 
+            AND c.type = 'INBOX' 
+            AND c.id NOT LIKE '%pzl_%' AND pc.phone IS NOT NULL AND pc.phone != ''
+            AND (c.inserted_at < ${time}::timestamp OR (c.inserted_at = ${time}::timestamp AND c.id < ${lastId}))
+          ORDER BY c.inserted_at DESC, c.id DESC
+        `;
+        console.warn(leads.length);
+      } else {
+        leads = await this.db.$queryRaw`
+          SELECT c.page_id AS "pageId", c.id AS "conversationId", c.inserted_at AS "insertedAt"
+          FROM pancake.conversation c 
+          JOIN pancake.page_customer pc ON c.customer_id = pc.customer_id 
+          WHERE c.inserted_at >= '2026-01-01 00:00:00'::timestamp AND c.inserted_at <= '2026-03-17 00:00:00'::timestamp  
+            AND c.type = 'INBOX' 
+            AND c.id NOT LIKE '%pzl_%' AND pc.phone IS NOT NULL AND pc.phone != ''
+          ORDER BY c.inserted_at DESC, c.id DESC
+        `;
+      }
+    }
+
+    if (!leads || leads.length === 0) {
+      console.warn("[Backfill] No more leads to process.");
+      return results;
+    }
+
+    let processedCount = 0;
+    const BATCH_SIZE = 50;
+    let lastCheckpointData = null;
+
+    for (const lead of leads) {
+      const { pageId, conversationId, insertedAt } = lead;
+
+      try {
+        const existingDocName = await this.findExistingLead({
+          conversationId: conversationId
+        });
+
+        if (!existingDocName) {
+          console.warn(`[Backfill] Skipped ${conversationId}: No existing lead found.`);
+          results.push({ conversationId, status: "skipped", reason: "Lead not found" });
+        } else {
+          const response = await aihub.makeRequest("/lead-info", {
+            "pageId": pageId,
+            "conversationId": conversationId,
+            "webhookUrl": `${env.HOST}/webhook/ai-hub/erp/leads`
+          });
+
+          console.warn(`[Backfill] Successfully triggered summary for ${conversationId}`);
+          results.push({ conversationId, status: "success", data: response });
+        }
+      } catch (error) {
+        console.warn(`[Backfill] Error processing ${conversationId}:`, error.message);
+        results.push({ conversationId, status: "error", error: error.message });
+      }
+
+      if (insertedAt) {
+        lastCheckpointData = JSON.stringify({
+          time: new Date(insertedAt).toISOString(),
+          lastId: conversationId
+        });
+      }
+
+      processedCount++;
+
+      // Checkpoint tracking by batch
+      if (processedCount % BATCH_SIZE === 0 && lastCheckpointData && env.FN_KV) {
+        console.warn(`[Backfill] Saving checkpoint (Batch ${processedCount}): ${lastCheckpointData}`);
+        await env.FN_KV.put(KV_KEY, lastCheckpointData);
+      }
+
+      if (delayMs > 0) {
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+      }
+    }
+
+    // Save final checkpoint if there was a remainder
+    if (processedCount % BATCH_SIZE !== 0 && lastCheckpointData && env.FN_KV) {
+      console.warn(`[Backfill] Saving final checkpoint: ${lastCheckpointData}`);
+      await env.FN_KV.put(KV_KEY, lastCheckpointData);
+    }
+
+    return results;
+  }
+
   async triggerExtraHooks(body) {
     const promises = EXTRA_HOOKS.map(url =>
       fetch(url, {

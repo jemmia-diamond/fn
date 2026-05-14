@@ -106,6 +106,8 @@ export default {
       await ERP.Automation.AssignmentRuleService.updateAssignmentRulesMidDay(env);
       break;
     case "30 6 * * *": // 13:30
+      // TEMPORARY: Backfill lead summarization
+      await new Pancake.ConversationService(env).backfillLeadSummaries(env);
       break;
     case "0 10 * * *": // 17:00
       await ERP.Automation.AssignmentRuleService.updateAssignmentRulesEndDay(env);
