@@ -26,6 +26,7 @@ export default {
       break;
     case "haravan-order-product-quote-sync":
       await ProductQuote.ProductQuoteOrderService.dequeueOrderQueue(batch, env);
+      await Pancake.PancakePOSOrderService.dequeuePancakeOrderQueue(batch, env);
       break;
     case "erpnext-order-creation":
       await ERP.Selling.SalesOrderService.dequeueOrderQueue(batch, env);
