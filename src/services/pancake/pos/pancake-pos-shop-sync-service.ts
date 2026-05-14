@@ -1,4 +1,3 @@
-import * as Sentry from "@sentry/cloudflare";
 import Database from "services/database";
 import PancakePosClient from "services/pancake/pos/pancake-pos-client";
 
