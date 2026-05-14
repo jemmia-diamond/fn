@@ -1,3 +1,4 @@
+import pLimit from "p-limit";
 import Database from "services/database";
 import {
   normalizePageCustomerPhone,
@@ -5,9 +6,11 @@ import {
 } from "services/pancake/sync/page-customer-phone-normalize";
 
 const BATCH_SIZE = 300;
+const CONCURRENCY_LIMIT = 15;
 
 export default async function backfillPageCustomerPhoneNormalize(env: any): Promise<void> {
   const db = Database.instance(env);
+  const limit = pLimit(CONCURRENCY_LIMIT);
   let lastUuid: string | null = null;
 
   while (true) {
@@ -26,13 +29,15 @@ export default async function backfillPageCustomerPhoneNormalize(env: any): Prom
 
     await Promise.all(
       rows.map((row) =>
-        db.page_customer.update({
-          where: { uuid: row.uuid },
-          data: {
-            phone_normalize: normalizePageCustomerPhone(row.phone),
-            phone_numbers_normalize: normalizePageCustomerPhoneNumbers(row.phone_numbers)
-          }
-        })
+        limit(() =>
+          db.page_customer.update({
+            where: { uuid: row.uuid },
+            data: {
+              phone_normalize: normalizePageCustomerPhone(row.phone),
+              phone_numbers_normalize: normalizePageCustomerPhoneNumbers(row.phone_numbers)
+            }
+          })
+        )
       )
     );
 
