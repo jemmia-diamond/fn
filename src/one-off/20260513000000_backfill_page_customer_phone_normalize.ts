@@ -33,8 +33,8 @@ export default async function backfillPageCustomerPhoneNormalize(env: any): Prom
           db.page_customer.update({
             where: { uuid: row.uuid },
             data: {
-              phone_normalized: normalizePageCustomerPhone(row.phone),
-              phone_numbers_normalized: normalizePageCustomerPhoneNumbers(row.phone_numbers)
+              normalized_phone: normalizePageCustomerPhone(row.phone),
+              normalized_phone_numbers: normalizePageCustomerPhoneNumbers(row.phone_numbers)
             }
           })
         )

@@ -148,10 +148,10 @@ model page_customer {
   database_created_at DateTime? @default(now()) @db.Timestamp(6)
   database_updated_at DateTime? @default(now()) @db.Timestamp(6)
   phone_numbers       Json?
-  phone_numbers_normalized Json?
+  normalized_phone_numbers Json?
   notes               Json?
   phone               String?   @db.VarChar(255)
-  phone_normalized     String?   @db.VarChar(255)
+  normalized_phone     String?   @db.VarChar(255)
   updated_at          DateTime? @db.Timestamp(6)
 
   @@index([customer_id, updated_at], map: "idx_customer_sync_lookup")
