@@ -18,12 +18,17 @@ export default async function backfillPageCustomerPhoneNormalize(env: any): Prom
     const rows = await db.page_customer.findMany({
       take: BATCH_SIZE,
       skip: offset,
+      where: {
+        phone: {
+          not: null,
+        },
+      },
       orderBy: { uuid: "asc" },
       select: {
         uuid: true,
         phone: true,
-        phone_numbers: true
-      }
+        phone_numbers: true,
+      },
     });
 
     if (rows.length === 0) break;
