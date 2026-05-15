@@ -20,7 +20,7 @@ export default class PancakePOSShopSyncService {
     await this.initPromise;
 
     const shops = await this.client!.getShops();
-    if (!shops || shops.length === 0) return;
+    if (!shops || !shops.length) return;
 
     for (const shop of shops) {
       for (const page of shop.pages ?? []) {

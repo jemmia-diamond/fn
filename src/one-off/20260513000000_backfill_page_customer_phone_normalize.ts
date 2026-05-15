@@ -31,7 +31,7 @@ export default async function backfillPageCustomerPhoneNormalize(env: any): Prom
       }
     });
 
-    if (rows.length === 0) break;
+    if (!rows.length) break;
 
     await Promise.all(
       rows.map((row) =>
