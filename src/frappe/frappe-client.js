@@ -1,5 +1,6 @@
 // FrappeClient.js
 import * as Sentry from "@sentry/cloudflare";
+import FormData from "form-data";
 import { createAxiosClient } from "services/utils/http-client";
 
 const DEFAULT_HEADERS = { Accept: "application/json" };
@@ -80,6 +81,16 @@ export default class FrappeClient {
     const url = `/api/resource/${encodeURIComponent(doc.doctype)}`;
     try {
       const res = await this.axiosClient.post(url, { data: JSON.stringify(doc) });
+      return this.postProcess(res);
+    } catch (error) {
+      return this.parseError(error);
+    }
+  }
+
+  async deleteDoc(doctype, name) {
+    const url = `/api/resource/${encodeURIComponent(doctype)}/${encodeURIComponent(name)}`;
+    try {
+      const res = await this.axiosClient.delete(url);
       return this.postProcess(res);
     } catch (error) {
       return this.parseError(error);
@@ -228,7 +239,7 @@ export default class FrappeClient {
       error.response = res;
       throw error;
     }
-    return data.message || data.data || null;
+    return data?.message || data?.data || null;
   }
 
   parseError(e) {
@@ -283,6 +294,28 @@ export default class FrappeClient {
     } catch (error) {
       Sentry.captureException(error);
       return [];
+    }
+  }
+
+  async uploadFile(blob, fileName, doctype, docname) {
+    const url = "/api/method/upload_file";
+    try {
+      const formData = new FormData();
+      formData.append("file", blob, fileName);
+      formData.append("doctype", doctype);
+      formData.append("docname", docname);
+
+      const res = await fetch(`${this.axiosClient.defaults.baseURL}${url}`, {
+        method: "POST",
+        headers: {
+          "Authorization": this.headers["Authorization"]
+        },
+        body: formData
+      }).then((response) => response.json());
+
+      return this.postProcess({ data: res });
+    } catch (error) {
+      return this.parseError(error);
     }
   }
 }
