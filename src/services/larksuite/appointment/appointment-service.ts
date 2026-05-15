@@ -1,5 +1,5 @@
 import RecordService from "services/larksuite/docs/base/record/record";
-import { LarksuiteAppointmentRawFields, LarksuiteAppointmentParsedFields, IFrappeLead, ILarksuitAppointment, LarksuiteSalePerson, IFrappeSalesPerson } from "src/services/larksuite/appointment/types";
+import { LarksuiteAppointmentRawFields, LarksuiteAppointmentParsedFields, IFrappeLead, ILarksuiteAppointment, LarksuiteSalePerson, IFrappeSalesPerson, IFrapperAttachment, LarksuiteAttachment } from "src/services/larksuite/appointment/types";
 import { PrismaClient } from "@prisma-cli";
 import Database from "services/database";
 import FrappeClient from "src/frappe/frappe-client";
@@ -7,10 +7,17 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import timezone from "dayjs/plugin/timezone.js";
 import LarksuiteService from "src/services/larksuite/lark";
-import * as lark from "@larksuiteoapi/node-sdk";
+import { TIMEZONE_VIETNAM } from "src/constants";
+import normalizePhoneNumber from "services/utils/normalize-phone-number";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
+
+const GENDER_MAP: Record<string, string> = {
+  "nam": "Male",
+  "nữ": "Female",
+  "lgbt": "LGBT"
+};
 
 export default class AppointmentService {
   env: any;
@@ -18,10 +25,6 @@ export default class AppointmentService {
   frappeClient: FrappeClient;
 
   private static _instance: AppointmentService;
-
-  // Cache for Sales Persons
-  private salesPersonCache: IFrappeSalesPerson[] | null = null;
-  private salesPersonCacheTime: number = 0;
 
   public static instance(env: any): AppointmentService {
     if (!this._instance) {
@@ -43,7 +46,7 @@ export default class AppointmentService {
     });
   }
 
-  async syncLarkRecord(appToken: string, tableId: string, recordId: string): Promise<ILarksuitAppointment> {
+  async syncLarkRecord(appToken: string, tableId: string, recordId: string): Promise<ILarksuiteAppointment> {
     // @ts-expect-error This RecordService was written in javascript so we can not define the type for it
     const record = await RecordService.getLarksuiteRecord({
       env: this.env,
@@ -57,7 +60,6 @@ export default class AppointmentService {
     }
 
     const rawFields = (record.fields || {}) as LarksuiteAppointmentRawFields;
-
     const fields: LarksuiteAppointmentParsedFields = {
       store: rawFields["Cửa hàng"]?.[0] || "",
       name: rawFields["Tên khách hàng/ facebook"] || "",
@@ -74,7 +76,7 @@ export default class AppointmentService {
       policy: rawFields["Chính sách thu mua thu đổi"] || null
     };
 
-    const data: ILarksuitAppointment = {
+    const data: ILarksuiteAppointment = {
       record_id: recordId,
       ...fields,
       product_images: fields.product_images ? fields.product_images : null,
@@ -85,7 +87,7 @@ export default class AppointmentService {
     return data;
   }
 
-  async getDocumentAttachments(doctype: string, docname: string) {
+  async getDocumentAttachments(doctype: string, docname: string): Promise<IFrapperAttachment[]> {
     try {
       const attachments = await this.frappeClient.getList("File", {
         fields: ["name", "file_name", "file_url", "is_private"],
@@ -101,20 +103,44 @@ export default class AppointmentService {
     }
   }
 
-  async downloadFile(fileToken: string) {
+  async downloadFileAndUploadFrappe(attachments: LarksuiteAttachment[], docname: string) {
     try {
-      const larkClient: lark.Client = await LarksuiteService.createClientV2(this.env);
-      const response = await larkClient.drive.file.download({
-        path: {
-          file_token: fileToken
-        }
-      });
+      if (!attachments || attachments.length === 0) return;
+      const accessToken = await LarksuiteService.getTenantAccessToken(this.env);
+      const results = await Promise.all(attachments.map(async (attachment) => {
+        const blob = await fetch(attachment.url, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`
+          }
+        })
+          .then((response) => response.blob())
+          .catch((error) => {
+            console.warn("Error downloading blob:", error);
+            throw error;
+          });
 
-      const stream = await response.getReadableStream();
-      return stream;
+        const data = await this.frappeClient.uploadFile(blob, attachment.name, "Appointment", docname);
+        return data;
+      }));
+
+      return results;
     } catch (error) {
       console.warn("Error downloading file:", error);
       return null;
+    }
+  }
+
+  async removeFileAttachment(attachments: IFrapperAttachment[]) {
+    if (!attachments || attachments.length === 0) {
+      return;
+    }
+
+    try {
+      await Promise.all(attachments.map(async (attachment) => {
+        await this.frappeClient.deleteDoc("File", attachment.name);
+      }));
+    } catch (error) {
+      console.warn("Error removing file attachments:", error);
     }
   }
 
@@ -123,7 +149,7 @@ export default class AppointmentService {
       const lead: IFrappeLead[] = await this.frappeClient.getList("Lead", {
         fields: ["name", "first_name", "budget_lead", "proposed_budget", "phone", "email_id"],
         filters: {
-          phone: phoneNumber
+          phone: normalizePhoneNumber(phoneNumber)
         }
       });
       return lead;
@@ -133,48 +159,50 @@ export default class AppointmentService {
     }
   }
 
-  async getAllSalesPersons(): Promise<IFrappeSalesPerson[]> {
-    const CACHE_TTL = 5 * 60 * 1000; // 5 minutes in milliseconds
-    const now = Date.now();
-
-    // Return cached data if valid
-    if (this.salesPersonCache && (now - this.salesPersonCacheTime < CACHE_TTL)) {
-      return this.salesPersonCache;
+  async getAllSalesPersons(employeeEmails: string[], names: string[]): Promise<IFrappeSalesPerson[]> {
+    if ((!employeeEmails || employeeEmails.length === 0) && (!names || names.length === 0)) {
+      return [];
     }
 
     try {
+      const or_filters: any[] = [];
+      if (employeeEmails && employeeEmails.length > 0) {
+        or_filters.push(["employee_email", "in", employeeEmails]);
+      }
+      if (names && names.length > 0) {
+        or_filters.push(["sales_person_name", "in", names]);
+      }
+
       const salesPersons = await this.frappeClient.getList("Sales Person", {
         fields: ["name", "sales_person_name", "employee_email"],
-        limit_page_length: 1000 // Ensure we get a large enough batch to cover all sales persons
+        or_filters: or_filters,
+        limit_page_length: 100
       });
 
-      // Update cache
-      this.salesPersonCache = salesPersons;
-      this.salesPersonCacheTime = now;
-
-      return salesPersons;
+      return salesPersons || [];
     } catch (error) {
       console.warn("Error fetching Sales Persons:", error);
-      // Fallback to cache if request fails but cache exists, otherwise return empty array
-      return this.salesPersonCache || [];
+      return [];
     }
   }
 
-  private async mapLarkToFrappe(dataRequest: ILarksuitAppointment, lead?: IFrappeLead) {
-    let gender = "Male";
-    if (dataRequest.gender?.toLowerCase() === "nữ" || dataRequest.gender?.toLowerCase() === "female") {
-      gender = "Female";
-    } else if (dataRequest.gender?.toLowerCase() === "lgbt") {
-      gender = "LGBT";
-    }
+  private async mapLarkToFrappe(dataRequest: ILarksuiteAppointment, lead?: IFrappeLead) {
+    const genderLower = dataRequest.gender?.toLowerCase() || "";
+    const gender = GENDER_MAP[genderLower] || "Male";
 
     const scheduledTime = dataRequest.date_time
-      ? dayjs(dataRequest.date_time).tz("Asia/Ho_Chi_Minh").format("YYYY-MM-DD HH:mm:ss")
+      ? dayjs(dataRequest.date_time).tz(TIMEZONE_VIETNAM).format("YYYY-MM-DD HH:mm:ss")
       : undefined;
 
-    const salesPersons = await this.getAllSalesPersons();
+    const allEmails = [...(dataRequest.main_sales || []), ...(dataRequest.offline_sales || [])].map(s => s.email).filter(Boolean);
+    const allNames = [...(dataRequest.main_sales || []), ...(dataRequest.offline_sales || [])].map(s => s.name).filter(Boolean);
+    const salesPersons = (allEmails.length > 0 || allNames.length > 0) ? await this.getAllSalesPersons(allEmails, allNames) : [];
+
     const mapSalesPerson = (person: LarksuiteSalePerson) => {
-      const matched = salesPersons.find((sp: IFrappeSalesPerson) => sp.employee_email === person.email);
+      const matched = salesPersons.find((sp: IFrappeSalesPerson) =>
+        (sp.employee_email && sp.employee_email === person.email) ||
+        (sp.sales_person_name && sp.sales_person_name === person.name)
+      );
       if (matched) {
         return { sales_person: matched.name };
       }
@@ -204,7 +232,7 @@ export default class AppointmentService {
     };
   }
 
-  async createNewERPAppointment(dataRequest: ILarksuitAppointment, lead?: IFrappeLead) {
+  async createNewERPAppointment(dataRequest: ILarksuiteAppointment, lead?: IFrappeLead) {
     const payload = await this.mapLarkToFrappe(dataRequest, lead);
     const data = await this.frappeClient.insert({
       doctype: "Appointment",
@@ -213,7 +241,7 @@ export default class AppointmentService {
     return data;
   }
 
-  async updateERPAppointment(recordId: string, dataRequest: ILarksuitAppointment, lead?: IFrappeLead) {
+  async updateERPAppointment(recordId: string, dataRequest: ILarksuiteAppointment, lead?: IFrappeLead) {
     const existing = await this.frappeClient.getList("Appointment", {
       filters: { record_id: recordId },
       limit_start: 0,
@@ -234,16 +262,21 @@ export default class AppointmentService {
     }
   }
 
-  async upsertERPAppointment(dataRequest: ILarksuitAppointment, lead?: IFrappeLead) {
+  async upsertERPAppointment(dataRequest: ILarksuiteAppointment, lead?: IFrappeLead) {
     const existing = await this.frappeClient.getList("Appointment", {
       filters: { record_id: dataRequest.record_id },
       limit_start: 1
     });
 
     if (existing && existing.length > 0) {
+      const attachments = await this.getDocumentAttachments("Appointment", existing[0].name);
+      await this.removeFileAttachment(attachments);
+      await this.downloadFileAndUploadFrappe(dataRequest.product_images, existing[0].name);
       return await this.updateERPAppointment(dataRequest.record_id, dataRequest, lead);
     } else {
-      return await this.createNewERPAppointment(dataRequest, lead);
+      const appointment = await this.createNewERPAppointment(dataRequest, lead);
+      await this.downloadFileAndUploadFrappe(dataRequest.product_images, appointment.name);
+      return appointment;
     }
   }
 }

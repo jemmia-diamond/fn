@@ -53,7 +53,7 @@ export interface LarksuiteAppointmentParsedFields {
     policy: string | null;
 }
 
-export interface ILarksuitAppointment extends LarksuiteAppointmentParsedFields {
+export interface ILarksuiteAppointment extends LarksuiteAppointmentParsedFields {
     record_id: string;
 }
 
