@@ -205,8 +205,6 @@ export default class ProductService {
       SELECT 
         s.haravan_product_id, 
         s.set_name as title, 
-        s.main_image_link,
-        s.haravan_variant_id,
         array_remove(array_agg(ds.design_id), NULL) as design_ids
       FROM workplace.sets s
       LEFT JOIN workplace.design_set ds ON ds.set_id = s.id
@@ -236,11 +234,6 @@ export default class ProductService {
       id: setProduct.haravan_product_id,
       title: setProduct.title,
       product_type: "Bộ Trang Sức Kim Cương",
-      variants: [{
-        id: setProduct.haravan_variant_id,
-        price: 0
-      }],
-      images: setProduct.main_image_link ? [{ src: setProduct.main_image_link }] : [],
       linked_products: linkedProductsData
     };
   }
