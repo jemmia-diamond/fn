@@ -30,6 +30,7 @@ export default {
       await new Pancake.TagSyncService(env).syncTags();
       await new Ecommerce.ProductG1PromotionSyncService(env).syncPromotions();
       await new Haravan.Collect.CollectionProductSyncService(env).syncCollectionProducts();
+      await new Larksuite.Docs.DocxRawContentSyncService(env).sync();
       break;
     case "*/5 * * * *": // At every 5th minute
       await new OneOffHandler(env).run();
@@ -127,6 +128,7 @@ export default {
       await Larksuite.Ticket.TechTicketService.syncTechTickets(env, { mode: "daily" });
       await new Google.GoogleMerchantProductSyncService(env).sync();
       await new ERP.Accounting.PaymentEntryNotificationService(env).runMorningBatch();
+      await new Larksuite.Docs.DocxRawContentSyncService(env).sync();
       break;
     case "0 14 * * *": // 21:00
       await ERP.Automation.AssignmentRuleService.enableAssignmentRuleOffHour(env);
