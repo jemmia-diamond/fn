@@ -1,6 +1,12 @@
 import HaravanAPI from "services/clients/haravan-client";
 import NocoDBClient from "services/clients/nocodb-client";
 
+const DEFAULT_VARIANT_TITLE = "Default Title";
+const DEFAULT_PRODUCT_TITLE = "Untitled";
+const PRODUCT_TYPE_SET = "Bộ Trang Sức Kim Cương";
+const TEMPLATE_SUFFIX_COLLECT = "product.collect";
+const VENDOR = "Jemmia";
+
 export default class SetsSyncService {
   constructor(env) {
     this.env = env;
@@ -28,7 +34,7 @@ export default class SetsSyncService {
   }
 
   formatVariantTitle(designCodes) {
-    if (!designCodes) return "Default Title";
+    if (!designCodes) return DEFAULT_VARIANT_TITLE;
     if (Array.isArray(designCodes)) {
       return designCodes.join("/");
     }
@@ -37,8 +43,10 @@ export default class SetsSyncService {
 
   async handleInsert(row, variantTitle, haravanApi, nocoClient, tableId) {
     const productData = {
-      title: row.title || "Untitled",
-      product_type: "Bộ Trang Sức Kim Cương",
+      title: row.title || DEFAULT_PRODUCT_TITLE,
+      product_type: PRODUCT_TYPE_SET,
+      vendor: VENDOR,
+      template_suffix: TEMPLATE_SUFFIX_COLLECT,
       variants: [
         {
           option1: variantTitle
@@ -62,7 +70,8 @@ export default class SetsSyncService {
 
     const updateData = {
       id: row.haravan_product_id,
-      title: row.title || "Untitled"
+      title: row.title || DEFAULT_PRODUCT_TITLE,
+      template_suffix: TEMPLATE_SUFFIX_COLLECT
     };
 
     if (row.haravan_variant_id) {
