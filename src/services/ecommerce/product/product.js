@@ -200,6 +200,51 @@ export default class ProductService {
     };
   }
 
+  async getSetByIdV2(id, options = {}) {
+    const setProducts = await this.db.$queryRaw`
+      SELECT 
+        s.haravan_product_id, 
+        s.set_name as title, 
+        s.main_image_link,
+        s.haravan_variant_id,
+        array_remove(array_agg(ds.design_id), NULL) as design_ids
+      FROM workplace.sets s
+      LEFT JOIN workplace.design_set ds ON ds.set_id = s.id
+      WHERE s.haravan_product_id = ${parseInt(id)}
+      GROUP BY s.id
+    `;
+
+    if (!setProducts || setProducts.length === 0) {
+      return null;
+    }
+
+    const setProduct = setProducts[0];
+    const designIds = (setProduct.design_ids || []).filter(dId => dId != null);
+
+    let linkedProductsData = [];
+    if (designIds.length > 0) {
+      const jsonParams = {
+        design_ids: designIds,
+        pagination: { from: 1, limit: 100 },
+        ...options
+      };
+      const linkedProducts = await this.getJewelryV2(jsonParams);
+      linkedProductsData = linkedProducts.data;
+    }
+
+    return {
+      id: setProduct.haravan_product_id,
+      title: setProduct.title,
+      product_type: "Bộ Trang Sức Kim Cương",
+      variants: [{
+        id: setProduct.haravan_variant_id,
+        price: 0
+      }],
+      images: setProduct.main_image_link ? [{ src: setProduct.main_image_link }] : [],
+      linked_products: linkedProductsData
+    };
+  }
+
   async getJewelryByIdV2(id, options = {}) {
     const productId = parseInt(id, 10);
     const { variantJsonBuildObject, lateralJoinClause } =

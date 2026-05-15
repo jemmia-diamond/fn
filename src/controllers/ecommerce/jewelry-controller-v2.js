@@ -58,6 +58,21 @@ export default class JewelryControllerV2 {
       return ctx.json({ error: "Invalid id. Must be a number." }, 400);
     }
     const productService = new Ecommerce.ProductService(ctx.env);
+    const isSet = params.type === "set";
+
+    if (isSet) {
+      const result = await productService.getSetByIdV2(id, {
+        return_inventory_metrics: params.return_inventory_metrics === "true",
+        limit_selling_quantity: parseNumber(params.limit_selling_quantity, null)
+      });
+
+      if (!result) {
+        return ctx.json({ error: "Set not found in database" }, 404);
+      }
+
+      return ctx.json({ data: result }, 200);
+    }
+
     const result = await productService.getJewelryByIdV2(id, {
       matched_diamonds: params.matched_diamonds === "true",
       return_inventory_metrics: params.return_inventory_metrics === "true",
