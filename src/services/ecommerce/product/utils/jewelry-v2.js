@@ -9,30 +9,23 @@ export function buildInventoryMetricsSql(opts = {}) {
   const limitSql = opts.limit_selling_quantity !== null && opts.limit_selling_quantity !== undefined
     ? Prisma.sql`CAST(${opts.limit_selling_quantity} AS INT)`
     : Prisma.sql`NULL`;
-  return Prisma.sql`, CAST(COALESCE(h_sales.sold_quantity, 0) + COALESCE(wp_metrics.sold_before_2025, 0) AS INT) AS sold_quantity, ${limitSql} AS limit_selling_quantity`;
-}
-
-export function buildInventoryMetricsJoinSql(opts = {}) {
-  if (!opts.return_inventory_metrics) {
-    return Prisma.sql``;
-  }
   return Prisma.sql`
-    LEFT JOIN LATERAL (
-      SELECT COALESCE(SUM(ln.quantity), 0) AS sold_quantity
-      FROM haravan.line_items ln 
-      INNER JOIN haravan.orders o ON ln.order_id = o.id 
-      WHERE ln.product_id = p.haravan_product_id 
-        AND o.cancelled_status = 'uncancelled'
-    ) h_sales ON TRUE
-    LEFT JOIN workplace.products wp_metrics ON wp_metrics.haravan_product_id = p.haravan_product_id
+    , CAST(
+        COALESCE(
+          (
+            SELECT CASE 
+              WHEN p.haravan_product_type = ANY (ARRAY['Bông Tai'::text, 'Bông Tai Nguyên Chiếc'::text]) 
+              THEN SUM(ln.quantity) / 2
+              ELSE SUM(ln.quantity)
+            END
+            FROM haravan.line_items ln 
+            INNER JOIN haravan.orders o ON ln.order_id = o.id 
+            WHERE ln.product_id = p.haravan_product_id 
+              AND o.cancelled_status = 'uncancelled'
+          ), 0
+        ) + COALESCE(p.sold_before_2025, 0) 
+      AS INT) AS sold_quantity, ${limitSql} AS limit_selling_quantity
   `;
-}
-
-export function buildInventoryMetricsGroupBySql(opts = {}) {
-  if (!opts.return_inventory_metrics) {
-    return Prisma.sql``;
-  }
-  return Prisma.sql`, h_sales.sold_quantity, wp_metrics.sold_before_2025`;
 }
 
 export function buildQueryV2(jsonParams) {
@@ -205,7 +198,6 @@ export function buildQueryV2(jsonParams) {
       ${lateralJoinClause}
       ${designImagesJoin}
       ${Prisma.raw(warehouseJoinClause)}
-      ${buildInventoryMetricsJoinSql(jsonParams)}
     WHERE 1 = 1
       AND p.haravan_product_type != 'Nhẫn Cưới' 
       AND cardinality(design_imgs.images) > 0
@@ -214,7 +206,8 @@ export function buildQueryV2(jsonParams) {
       p.haravan_product_id, p.title, d.design_code, p.handle,
       d.diamond_holder, d.main_stone, d.ring_band_type, p.haravan_product_type,
       p.max_price, p.min_price, p.max_price_18, p.max_price_14, 
-      p.has_360${buildInventoryMetricsGroupBySql(jsonParams)} ${collectionJoinEcomProductsClause ? Prisma.raw(", p2.image_updated_at") : Prisma.empty}
+      p.has_360, p.sold_before_2025 ${collectionJoinEcomProductsClause ? Prisma.raw(", p2.image_updated_at") : Prisma.empty}
+
     ${havingSql}
     ${sortSql}
     ${paginationSql}
