@@ -23,17 +23,8 @@ export default class LarkAppointmentController {
         data: {}
       });
     }
-
     const appointmentService = AppointmentService.instance(ctx.env);
-    const record = await appointmentService.syncLarkRecord(appToken, tableId, record_id);
-    let leadRecord = undefined;
-    if (record.phone_number) {
-      const leads = await appointmentService.fetchLeadInfoByPhoneNumber(record.phone_number);
-      if (leads && leads.length > 0) {
-        leadRecord = leads[0];
-      }
-    }
-    const erpAppointment = await appointmentService.upsertERPAppointment(record, leadRecord);
+    const erpAppointment = await appointmentService.createOrUpdateAppointment(appToken, tableId, record_id);
 
     return ctx.json({
       code: 0,
