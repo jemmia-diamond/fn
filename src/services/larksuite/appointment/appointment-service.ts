@@ -1,13 +1,16 @@
 import RecordService from "services/larksuite/docs/base/record/record";
-import { LarksuiteAppointmentRawFields, LarksuiteAppointmentParsedFields, IFrappeLead, ILarksuiteAppointment, LarksuiteSalePerson, IFrappeSalesPerson, IFrapperAttachment, LarksuiteAttachment } from "src/services/larksuite/appointment/types";
+import {
+  LarksuiteAppointmentRawFields,
+  LarksuiteAppointmentParsedFields,
+  IFrappeLead,
+  ILarksuiteAppointment,
+  IFrapperAttachment,
+  LarksuiteAttachment
+} from "src/services/larksuite/appointment/types";
 import { PrismaClient } from "@prisma-cli";
 import Database from "services/database";
 import FrappeClient from "src/frappe/frappe-client";
-import dayjs from "dayjs";
-import utc from "dayjs/plugin/utc.js";
-import timezone from "dayjs/plugin/timezone.js";
 import LarksuiteService from "src/services/larksuite/lark";
-import { TIMEZONE_VIETNAM } from "src/constants";
 import { fetchLeadInfoByPhoneNumber } from "frappe/lead";
 import { mapLarkToFrappe } from "frappe/utils/utils-lark";
 export default class AppointmentService {
@@ -139,7 +142,7 @@ export default class AppointmentService {
     const record = await this.syncLarkRecord(appToken, tableId, recordId);
     const lead = await fetchLeadInfoByPhoneNumber(this.frappeClient, record.phone_number);
     const erpAppointment = await this.upsertERPAppointment(record, lead);
-    return erpAppointment
+    return erpAppointment;
   }
 
   async createNewERPAppointment(dataRequest: ILarksuiteAppointment, lead?: IFrappeLead) {
