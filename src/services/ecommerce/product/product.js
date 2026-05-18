@@ -4,9 +4,7 @@ import { retryQuery } from "services/utils/retry-utils";
 import {
   buildQueryV2,
   buildQuerySingleV2,
-  buildInventoryMetricsSql,
-  buildInventoryMetricsJoinSql,
-  buildInventoryMetricsGroupBySql
+  buildInventoryMetricsSql
 } from "services/ecommerce/product/utils/jewelry-v2";
 import { buildWeddingRingByIdQuery, buildWeddingRingsQuery } from "services/ecommerce/product/utils/wedding-ring";
 import { JEWELRY_IMAGE } from "src/controllers/ecommerce/constant";
@@ -45,7 +43,6 @@ export default class ProductService {
       FROM ecom.materialized_products p
         INNER JOIN workplace.designs d ON d.id = p.design_id
         LEFT JOIN workplace.ecom_360 e ON p.workplace_id = e.product_id
-        ${buildInventoryMetricsJoinSql(options)}
 
         INNER JOIN LATERAL (
           SELECT
@@ -300,7 +297,6 @@ export default class ProductService {
           WHERE di.design_id = d.id
           GROUP BY di.material_color
         ) design_imgs ON design_imgs.material_color = v.material_color
-        ${buildInventoryMetricsJoinSql(options)}
 
         WHERE 1 = 1
           AND p.haravan_product_id = ${productId}
@@ -309,7 +305,7 @@ export default class ProductService {
           d.diamond_holder, d.ring_band_type, d.main_stone, d.stone_quantity, p.haravan_product_type,
           p.max_price, p.min_price, p.max_price_18, p.max_price_14,
           p.qty_onhand, p.has_360, p.estimated_gold_weight,
-          p.primary_collection, p.primary_collection_handle${buildInventoryMetricsGroupBySql(options)}
+          p.primary_collection, p.primary_collection_handle, p.sold_before_2025
     `);
     return result?.[0] || null;
   }
