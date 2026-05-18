@@ -12,26 +12,26 @@ model larksuiteRecord {
 }
 
 model larksuiteBuybackExchangeApprovalInstance {
-  id               Int       @id @default(autoincrement())
-  instance_code    String?   @unique @db.VarChar
-  serial_number    String?   @db.VarChar
-  instance_type    String?   @db.VarChar
-  order_code       String?   @db.VarChar
-  new_order_code   String?   @db.VarChar
-  status           String?   @db.VarChar
-  customer_name    String?   @db.VarChar
-  phone_number     String?   @db.VarChar
-  national_id      String?   @db.VarChar
-  products_info    Json?
-  reason           String?   @db.VarChar
-  refund_amount    Decimal?  @db.Decimal
-  is_synced_to_crm Boolean?
-  created_at       DateTime? @db.Timestamp(6)
-  updated_at       DateTime? @db.Timestamp(6)
-  submitted_date   DateTime? @db.Timestamp(6)
-  user_id          String?   @db.VarChar
-  department_id    String?   @db.VarChar
-  department_name  String?   @db.VarChar
+  id                     Int       @id @default(autoincrement())
+  instance_code          String?   @unique @db.VarChar
+  serial_number          String?   @db.VarChar
+  instance_type          String?   @db.VarChar
+  order_code             String?   @db.VarChar
+  new_order_code         String?   @db.VarChar
+  status                 String?   @db.VarChar
+  customer_name          String?   @db.VarChar
+  phone_number           String?   @db.VarChar
+  national_id            String?   @db.VarChar
+  products_info          Json?
+  reason                 String?   @db.VarChar
+  refund_amount          Decimal?  @db.Decimal
+  is_synced_to_crm       Boolean?
+  created_at             DateTime? @db.Timestamp(6)
+  updated_at             DateTime? @db.Timestamp(6)
+  submitted_date         DateTime? @db.Timestamp(6)
+  user_id                String?   @db.VarChar
+  department_id          String?   @db.VarChar
+  department_name        String?   @db.VarChar
   product_handed_over_at DateTime? @db.Timestamp(6)
 
   @@map("buyback_exchange_approval_instances")
@@ -239,35 +239,55 @@ model larksuite_users {
 }
 
 model larksuiteTechTicket {
-  record_id                   String    @id @map("record_id")
-  ticket_id                   String?   @map("ticket_id")
-  ticket_name                 String?   @map("ticket_name")
-  ticket_type                 String?   @map("ticket_type")
-  ticket_priority             String?   @map("ticket_priority")
-  ticket_status               String?   @map("ticket_status")
-  description                 String?   @map("description")
-  solution_update             String?   @map("solution_update")
-  created_time                DateTime? @map("created_time")
-  updated_time                DateTime? @map("updated_time")
-  manual_updated_time         DateTime? @map("manual_updated_time")
-  completed_time              DateTime? @map("completed_time")
-  expected_completion_time    DateTime? @map("expected_completion_time")
-  ticket_no_in_month          String?   @map("ticket_no_in_month")
-  current_number_in_month     Int?      @map("current_number_in_month")
-  new_deadline                DateTime? @map("new_deadline")
-  sla_50_percent              DateTime? @map("sla_50_percent")
-  reminder_time               DateTime? @map("reminder_time")
-  manager                     String?   @map("manager")
-  synced_at                   DateTime  @default(now()) @map("synced_at")
-  responded_at                DateTime?
-  processed_at                DateTime?
-  completed_at                DateTime?
+  record_id                String    @id @map("record_id")
+  ticket_id                String?   @map("ticket_id")
+  ticket_name              String?   @map("ticket_name")
+  ticket_type              String?   @map("ticket_type")
+  ticket_priority          String?   @map("ticket_priority")
+  ticket_status            String?   @map("ticket_status")
+  description              String?   @map("description")
+  solution_update          String?   @map("solution_update")
+  created_time             DateTime? @map("created_time")
+  updated_time             DateTime? @map("updated_time")
+  manual_updated_time      DateTime? @map("manual_updated_time")
+  completed_time           DateTime? @map("completed_time")
+  expected_completion_time DateTime? @map("expected_completion_time")
+  ticket_no_in_month       String?   @map("ticket_no_in_month")
+  current_number_in_month  Int?      @map("current_number_in_month")
+  new_deadline             DateTime? @map("new_deadline")
+  sla_50_percent           DateTime? @map("sla_50_percent")
+  reminder_time            DateTime? @map("reminder_time")
+  manager                  String?   @map("manager")
+  synced_at                DateTime  @default(now()) @map("synced_at")
+  responded_at             DateTime?
+  processed_at             DateTime?
+  completed_at             DateTime?
 
-  @@map("tech_tickets")
-  @@schema("larksuite")
   @@index([ticket_id])
   @@index([ticket_priority])
   @@index([ticket_status])
   @@index([created_time])
   @@index([updated_time])
+  @@map("tech_tickets")
+  @@schema("larksuite")
+}
+
+model larksuiteAppointment {
+  record_id             String    @id
+  store                 String?
+  name                  String?
+  phone_number          String?
+  gender                String?
+  product_images        Json?
+  note                  String?
+  date_time             DateTime?
+  conversation_greeting String?
+  customer_response     String?
+  main_sales            Json?
+  offline_sales         Json?
+  status                String?
+  policy                String?
+
+  @@map("appointments")
+  @@schema("larksuite")
 }
