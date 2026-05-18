@@ -1,7 +1,13 @@
 export const NOCODB_TABLES = {
   MARKETING: {
     HARAVAN_COLLECTIONS: "m7k3ehq5fv2aijy",
-    DESIGN_IMAGES: "m9t4aeympg0lokc"
+    DESIGN_IMAGES: "m9t4aeympg0lokc",
+    DIAMONDS: "mb5pjluub5fhxv4",
+    DIAMOND_HARAVAN_COLLECTIONS: "m4nfkbe9wt73fiy",
+    JEWELRIES: "mtg2xkx68h64drc",
+    JEWELRY_HARAVAN_COLLECTIONS: "m0ndwr6sst0xywa",
+    DESIGNS: "m8uoppedyaiwcmd",
+    COLLECTIONS: "muqhbu3bfkfhxpk"
   },
   SUPPLY: {
     HARAVAN_COLLECTIONS: "mpgeruya41k3zcg",
