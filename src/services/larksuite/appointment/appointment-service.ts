@@ -16,6 +16,8 @@ import { mapLarkToFrappe } from "frappe/utils/utils-lark";
 export default class AppointmentService {
   env: any;
   db: PrismaClient;
+  appToken: string;
+  tableId: string;
   frappeClient: FrappeClient;
 
   private static _instance: AppointmentService;
@@ -38,14 +40,16 @@ export default class AppointmentService {
       apiKey: env.JEMMIA_ERP_API_KEY,
       apiSecret: env.JEMMIA_ERP_API_SECRET
     });
+    this.appToken = env.LARK_APPOINTMENT_APP_TOKEN;
+    this.tableId = env.LARK_APPOINTMENT_TABLE_ID;
   }
 
-  private async syncLarkRecord(appToken: string, tableId: string, recordId: string): Promise<ILarksuiteAppointment> {
+  private async syncLarkRecord(recordId: string): Promise<ILarksuiteAppointment> {
     // @ts-expect-error This RecordService was written in javascript so we can not define the type for it
     const record = await RecordService.getLarksuiteRecord({
       env: this.env,
-      appToken,
-      tableId,
+      appToken: this.appToken,
+      tableId: this.tableId,
       recordId
     });
 
@@ -138,8 +142,8 @@ export default class AppointmentService {
     }
   }
 
-  async createOrUpdateAppointment(appToken: string, tableId: string, recordId: string) {
-    const record = await this.syncLarkRecord(appToken, tableId, recordId);
+  async createOrUpdateAppointment(recordId: string) {
+    const record = await this.syncLarkRecord(recordId);
     const lead = await fetchLeadInfoByPhoneNumber(this.frappeClient, record.phone_number);
     const erpAppointment = await this.upsertERPAppointment(record, lead);
     return erpAppointment;
