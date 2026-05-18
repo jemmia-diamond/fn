@@ -1,8 +1,6 @@
 import Database from "services/database";
 import PancakePosClient from "services/pancake/pos/pancake-pos-client";
 
-const EMPTY = 0;
-
 export default class PancakePOSShopSyncService {
   private db: ReturnType<typeof Database.instance>;
   private client: PancakePosClient | undefined;
@@ -22,7 +20,7 @@ export default class PancakePOSShopSyncService {
     await this.initPromise;
 
     const shops = await this.client!.getShops();
-    if (!shops || shops.length === EMPTY) return;
+    if (!shops.length) return;
 
     for (const shop of shops) {
       for (const page of shop.pages ?? []) {
