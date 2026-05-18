@@ -27,7 +27,7 @@ export default class LeadService {
     this.PartnerLeadSource = "CRM-LEAD-SOURCE-0000107";
     this.defaultLeadOwner = "tech@jemmia.vn";
     this.CallLogLeadSource = "CRM-LEAD-SOURCE-0000022";
-    this.DiamondConf2026LeadSource = "CRM-LEAD-SOURCE-0000024";
+    this.DiamondConf2026LeadSource = "CRM-LEAD-SOURCE-0000116";
   }
 
   async updateLeadInfoFromSummary(data, conversationId) {
