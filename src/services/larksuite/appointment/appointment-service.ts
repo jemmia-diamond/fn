@@ -51,7 +51,6 @@ export default class AppointmentService {
     }
 
     const rawFields = (record.fields || {}) as LarksuiteAppointmentRawFields;
-    console.log('rawFields', rawFields);
     const fields: LarksuiteAppointmentParsedFields = {
       store: rawFields["Cửa hàng"]?.[0] || "",
       name: rawFields["Tên khách hàng/ facebook"] || "",
