@@ -1,5 +1,5 @@
 import { IFrapperAttachment } from "services/larksuite/appointment/types";
-import FrappeClient from "./frappe-client";
+import FrappeClient from "frappe/frappe-client";
 
 export async function removeFileAttachment(
   frappeClient: FrappeClient,
