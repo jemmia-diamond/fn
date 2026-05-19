@@ -195,4 +195,17 @@ export default class AppointmentService {
       return appointment;
     }
   }
+
+  static async dequeueAppointmentQueue(batch: any, env: any) {
+    const appointmentService = AppointmentService.instance(env);
+    const messages = batch.messages;
+    for (const message of messages) {
+      const messageBody = message.body;
+      const recordId = messageBody.record_id;
+      if (!recordId) {
+        continue;
+      }
+      await appointmentService.createOrUpdateAppointment(recordId);
+    }
+  }
 }

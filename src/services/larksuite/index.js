@@ -8,8 +8,10 @@ import BuybackExchangeService from "services/larksuite/buyback-exchange-service"
 import Ticket from "services/larksuite/tech-ticket";
 import ShieldMessageService from "services/jemmia-shield/shield-message-service";
 import JemmiaShieldLarkService from "services/jemmia-shield/jemmia-shield-lark-service";
+import AppointmentService from "services/larksuite/appointment/appointment-service";
 
 export default {
+  AppointmentService,
   Contact: Contact,
   Attendance: Attendance,
   LarksuiteService: LarksuiteService,
