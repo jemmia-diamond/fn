@@ -160,14 +160,10 @@ export default class SalesOrderService {
   static async dequeueSalesOrderNotificationQueue(batch, env) {
     const salesOrderService = new SalesOrderService(env);
     for (const message of batch.messages) {
-      try {
-        const orderData = message.body;
-        await salesOrderService.sendNotificationToLark(orderData, true);
-        const updatedOrderData = await salesOrderService.updateSalesOrderPaidAmount(orderData.name);
-        await salesOrderService.syncHaravanFinancialStatus(updatedOrderData || orderData);
-      } catch (error) {
-        Sentry.captureException(error);
-      }
+      const orderData = message.body;
+      await salesOrderService.sendNotificationToLark(orderData, true);
+      const updatedOrderData = await salesOrderService.updateSalesOrderPaidAmount(orderData.name);
+      await salesOrderService.syncHaravanFinancialStatus(updatedOrderData || orderData);
     }
   }
 

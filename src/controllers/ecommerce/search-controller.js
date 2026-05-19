@@ -1,4 +1,6 @@
 import Ecommerce from "services/ecommerce";
+import { parseNumber } from "services/utils/num-helper";
+
 const MAX_SEARCH_RESULT = 30;
 
 export default class SearchController {
@@ -9,10 +11,14 @@ export default class SearchController {
     const limit = Number(params.limit) <= MAX_SEARCH_RESULT ? Number(params.limit) : MAX_SEARCH_RESULT;
     const page = Math.max(1, Number(params.page) || 1);
     const productService = new Ecommerce.ProductService(ctx.env);
-    const result = await productService.searchJewelry(searchKey, limit, page);
+    const result = await productService.searchJewelry(searchKey, limit, page, {
+      return_inventory_metrics: params.return_inventory_metrics === "true",
+      limit_selling_quantity: parseNumber(params.limit_selling_quantity, null)
+    });
     const responseBody = {
       data: result
     };
     return ctx.json(responseBody);
   }
 }
+

@@ -1,3 +1,4 @@
+import verifyLarkWebhook from "auth/lark-auth";
 import ShieldEventController from "controllers/jemmia-shield/shield-event-controller";
 import LarkAppointmentController from "controllers/larksuite/appointment-controller";
 import EventRedirectController from "controllers/larksuite/event-redirect-controller";
@@ -6,6 +7,7 @@ import LarkApprovalOrdersController from "controllers/larksuite/lark-approval-or
 export default class LarkWebhook {
   static async register(webhook: any) {
     const namespace = webhook.basePath("/lark");
+    namespace.use("/appointment", verifyLarkWebhook);
     namespace.post("/recall/event", ShieldEventController.create);
     namespace.post("/event/redirect", EventRedirectController.create);
     namespace.post(

@@ -2,7 +2,7 @@ import * as Sentry from "@sentry/cloudflare";
 
 import { generateText } from "ai";
 
-import HaravanClient from "services/clients/haravan-client";
+import HaravanClient from "services/haravan/haravan-client";
 import ImageTranslationService from "services/media/image-translation-service";
 
 import { getOpenAICompatibleModel } from "services/utils/llm-helper";
