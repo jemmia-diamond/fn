@@ -103,7 +103,7 @@ export default class AppointmentService {
 
   private async downloadFileAndUploadFrappe(attachments: LarksuiteAttachment[], docname: string) {
     try {
-      if (!attachments || attachments.length === 0) return;
+      if (!attachments?.length) return;
       const accessToken = await LarksuiteService.getTenantAccessToken(this.env);
       const results = await Promise.all(attachments.map(async (attachment) => {
         const blob = await fetch(attachment.url, {
