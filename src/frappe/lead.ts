@@ -21,7 +21,7 @@ export async function fetchLeadInfoByPhoneNumber(
         ["phone", "like", `%${phoneNumber.replace(/^0/, "")}%`]
       ]
     });
-    if (lead && lead.length > 0) {
+    if (lead?.length) {
       return lead[0];
     }
     return null;

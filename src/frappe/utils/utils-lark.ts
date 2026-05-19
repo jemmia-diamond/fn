@@ -24,19 +24,16 @@ export async function getAllSalesPersons(
   employeeEmails: string[],
   names: string[]
 ): Promise<IFrappeSalesPerson[]> {
-  if (
-    (!employeeEmails || !employeeEmails.length) &&
-    (!names || !names.length)
-  ) {
+  if (!employeeEmails?.length && !names?.length) {
     return [];
   }
 
   try {
     const or_filters: any[] = [];
-    if (employeeEmails && employeeEmails.length > 0) {
+    if (employeeEmails?.length) {
       or_filters.push(["employee_email", "in", employeeEmails]);
     }
-    if (names && names.length > 0) {
+    if (names?.length) {
       or_filters.push(["sales_person_name", "in", names]);
     }
 

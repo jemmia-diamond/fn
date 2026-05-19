@@ -129,7 +129,7 @@ export default class AppointmentService {
   }
 
   async removeFileAttachment(attachments: IFrapperAttachment[]) {
-    if (!attachments || attachments.length === 0) {
+    if (!attachments?.length) {
       return;
     }
 
@@ -165,7 +165,7 @@ export default class AppointmentService {
       limit_page_length: 1
     });
 
-    if (existing && existing.length > 0) {
+    if (existing?.length) {
       const docName = existing[0].name;
       const payload = await mapLarkToFrappe(this.frappeClient, dataRequest, lead);
       const data = await this.frappeClient.update({
@@ -185,7 +185,7 @@ export default class AppointmentService {
       limit_start: 1
     });
 
-    if (existing && existing.length > 0) {
+    if (existing?.length) {
       const attachments = await this.getDocumentAttachments("Appointment", existing[0].name);
       await this.removeFileAttachment(attachments);
       await this.downloadFileAndUploadFrappe(dataRequest.product_images, existing[0].name);
