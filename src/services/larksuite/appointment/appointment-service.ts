@@ -170,8 +170,7 @@ export default class AppointmentService {
     await saveAppointmentToPrismaDb(this.env, dataRequest);
 
     const existing = await this.frappeClient.getList("Appointment", {
-      filters: { record_id: dataRequest.record_id },
-      limit_start: 1
+      filters: { record_id: dataRequest.record_id }
     });
 
     if (existing?.length) {
