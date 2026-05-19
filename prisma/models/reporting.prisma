@@ -7,19 +7,19 @@ model reporting_time_dim {
 }
 
 model reportingUptimeReport {
-  id               String   @id @default(cuid())
-  monitorId        String
-  monitorName      String?
-  date             DateTime @db.Date
-  totalTime        Int?
-  uptime           Int?
-  downtime         Int?
+  id          String   @id @default(cuid())
+  monitorId   String
+  monitorName String?
+  date        DateTime @db.Date
+  totalTime   Int?
+  uptime      Int?
+  downtime    Int?
   uptimePercentage Float?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  @@unique([monitorId, date])
   @@index([monitorId, date])
+  @@unique([monitorId, date])
   @@map("uptime_reports")
   @@schema("reporting")
 }

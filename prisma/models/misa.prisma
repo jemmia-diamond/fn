@@ -301,6 +301,7 @@ model warehouse_inventories {
   @@schema("misa")
 }
 
+
 model misaCustomer {
   uuid                String    @id @db.VarChar(36)
   haravan_id          String    @unique(map: "ix_misa_customers_haravan_id") @db.VarChar(50)
@@ -333,7 +334,7 @@ model misaBalanceSheetMonthlyFact {
   amount            Decimal?  @db.Decimal
   prev_amount       Decimal?  @db.Decimal
   from_date         DateTime? @db.Timestamptz(6)
-  to_date           DateTime? @db.Timestamptz(6)
+  to_date       DateTime? @db.Timestamptz(6)
   sync_at           DateTime? @db.Timestamptz(6)
 
   @@id([time_id, item_code])
@@ -399,14 +400,14 @@ model misaJournalEntry {
 }
 
 model misaInventoryDetailLog {
-  id                Int       @id @default(autoincrement())
-  session_id        String    @db.Uuid
-  year              Int
-  page_index        Int
-  stock_id          String    @db.Uuid
-  inventory_item_id String    @db.Uuid
-  history_details   Json
-  updated_at        DateTime? @default(now()) @db.Timestamp(6)
+  id                  Int       @id @default(autoincrement())
+  session_id          String    @db.Uuid
+  year                Int
+  page_index          Int
+  stock_id            String    @db.Uuid
+  inventory_item_id   String    @db.Uuid
+  history_details     Json
+  updated_at DateTime? @default(now()) @db.Timestamp(6)
 
   @@unique([year, page_index, stock_id, inventory_item_id], map: "unique_year_stock_item_log")
   @@index([year, stock_id])
@@ -416,66 +417,66 @@ model misaInventoryDetailLog {
 }
 
 model misaLoanAgreement {
-  refid                         String    @id @db.Uuid
-  refno                         String?   @db.VarChar(50)
-  credit_agreement_refid        String?   @db.Uuid
-  credit_agreement_refno        String?   @db.VarChar(100)
-  reftype                       Int?
-  account_object_id             String?   @db.Uuid
-  account_object_code           String?   @db.VarChar(50)
-  account_object_name           String?
-  branch_id                     String?   @db.Uuid
-  branch_name                   String?
-  disbursement_date             DateTime? @db.Timestamptz(6)
-  due_date                      DateTime? @db.Timestamptz(6)
-  next_interest_payment_date    DateTime? @db.Timestamptz(6)
-  next_principal_payment_date   DateTime? @db.Timestamptz(6)
-  created_date                  DateTime? @db.Timestamptz(6)
-  modified_date                 DateTime? @db.Timestamptz(6)
-  currency_id                   String?   @db.VarChar(10)
-  exchange_rate                 Decimal?  @default(1.0) @db.Decimal(18, 4)
-  loan_value                    Decimal?  @default(0) @db.Decimal(18, 4)
-  loan_value_exchange           Decimal?  @default(0) @db.Decimal(18, 4)
-  disbursed_value               Decimal?  @default(0) @db.Decimal(18, 4)
-  disbursed_value_exchange      Decimal?  @default(0) @db.Decimal(18, 4)
-  paid_principal                Decimal?  @default(0) @db.Decimal(18, 4)
-  paid_principal_exchange       Decimal?  @default(0) @db.Decimal(18, 4)
-  payable_interest              Decimal?  @default(0) @db.Decimal(18, 4)
-  paid_interest                 Decimal?  @default(0) @db.Decimal(18, 4)
-  paid_interest_exchange        Decimal?  @default(0) @db.Decimal(18, 4)
-  current_credit_limit          Decimal?  @default(0) @db.Decimal(18, 4)
-  current_credit_limit_exchange Decimal?  @default(0) @db.Decimal(18, 4)
-  principal_account             String?   @db.VarChar(20)
-  interest_account              String?   @db.VarChar(20)
-  beneficiary_account_id        String?   @db.Uuid
-  beneficiary_account           String?   @db.VarChar(100)
-  beneficiary_bank_name         String?
-  interest_rate_now             Decimal?  @default(0) @db.Decimal(10, 4)
-  daily_interest_rate           Decimal?  @default(0) @db.Decimal(10, 6)
-  payment_period                Int?
-  payment_period_unit           Int?
-  payment_period_by_month       Int?
-  payment_period_text           String?   @db.VarChar(100)
-  interest_rate_type            Int?
-  adjusting_method              Int?
-  principal_payment_period      Int?
-  interest_payment_period       Int?
-  payment_method                Int?
-  disbursement_method           Int?
-  loan_status                   Int?
-  is_facility_contract          Boolean?  @default(false)
-  facility_contract_type        Int?
-  is_parent                     Boolean?  @default(false)
-  is_bold                       Boolean?  @default(false)
-  is_old                        Boolean?  @default(false)
-  is_valid                      Boolean?  @default(false)
-  state                         Int?
-  created_by                    String?
-  modified_by                   String?
-  edit_version                  BigInt?
-  auto_refno                    Boolean?
-  force_update                  Boolean?
-  is_created_from_old_db        Boolean?
+  refid String @id @db.Uuid
+  refno                  String? @db.VarChar(50)
+  credit_agreement_refid String? @db.Uuid
+  credit_agreement_refno String? @db.VarChar(100)
+  reftype                Int?
+  account_object_id   String? @db.Uuid
+  account_object_code String? @db.VarChar(50)
+  account_object_name String?
+  branch_id           String? @db.Uuid
+  branch_name         String?
+  disbursement_date              DateTime? @db.Timestamptz(6)
+  due_date                       DateTime? @db.Timestamptz(6)
+  next_interest_payment_date     DateTime? @db.Timestamptz(6)
+  next_principal_payment_date    DateTime? @db.Timestamptz(6)
+  created_date                   DateTime? @db.Timestamptz(6)
+  modified_date                  DateTime? @db.Timestamptz(6)
+  currency_id             String?  @db.VarChar(10)
+  exchange_rate           Decimal? @default(1.0) @db.Decimal(18, 4)
+  loan_value              Decimal? @default(0) @db.Decimal(18, 4)
+  loan_value_exchange     Decimal? @default(0) @db.Decimal(18, 4)
+  disbursed_value         Decimal? @default(0) @db.Decimal(18, 4)
+  disbursed_value_exchange Decimal? @default(0) @db.Decimal(18, 4)
+  paid_principal                 Decimal? @default(0) @db.Decimal(18, 4)
+  paid_principal_exchange        Decimal? @default(0) @db.Decimal(18, 4)
+  payable_interest               Decimal? @default(0) @db.Decimal(18, 4)
+  paid_interest                  Decimal? @default(0) @db.Decimal(18, 4)
+  paid_interest_exchange         Decimal? @default(0) @db.Decimal(18, 4)
+  current_credit_limit           Decimal? @default(0) @db.Decimal(18, 4)
+  current_credit_limit_exchange  Decimal? @default(0) @db.Decimal(18, 4)
+  principal_account      String? @db.VarChar(20)
+  interest_account       String? @db.VarChar(20)
+  beneficiary_account_id String? @db.Uuid
+  beneficiary_account    String? @db.VarChar(100)
+  beneficiary_bank_name  String?
+  interest_rate_now          Decimal? @default(0) @db.Decimal(10, 4)
+  daily_interest_rate        Decimal? @default(0) @db.Decimal(10, 6)
+  payment_period             Int?
+  payment_period_unit        Int?
+  payment_period_by_month    Int?
+  payment_period_text        String?  @db.VarChar(100)
+  interest_rate_type         Int?
+  adjusting_method           Int?
+  principal_payment_period   Int?
+  interest_payment_period    Int?
+  payment_method             Int?
+  disbursement_method        Int?
+  loan_status            Int?
+  is_facility_contract   Boolean? @default(false)
+  facility_contract_type Int?
+  is_parent              Boolean? @default(false)
+  is_bold                Boolean? @default(false)
+  is_old                 Boolean? @default(false)
+  is_valid               Boolean? @default(false)
+  state                  Int?
+  created_by               String?
+  modified_by              String?
+  edit_version             BigInt?
+  auto_refno               Boolean?
+  force_update             Boolean?
+  is_created_from_old_db   Boolean?
 
   @@index([refno], map: "idx_loan_refno")
   @@map("loan_agreements")
@@ -483,51 +484,51 @@ model misaLoanAgreement {
 }
 
 model misaPendingLoanAgreement {
-  refid                         String    @id @db.Uuid
-  refno                         String?   @db.VarChar(50)
-  account_object_id             String?   @db.Uuid
-  account_object_code           String?   @db.VarChar(50)
+  refid                         String   @id @db.Uuid
+  refno                         String?  @db.VarChar(50)
+  account_object_id             String?  @db.Uuid
+  account_object_code           String?  @db.VarChar(50)
   account_object_name           String?
   description                   String?
-  branch_id                     String?   @db.Uuid
+  branch_id                     String?  @db.Uuid
   branch_name                   String?
   disbursement_date             DateTime? @db.Timestamptz(6)
   due_date                      DateTime? @db.Timestamptz(6)
   next_interest_receiving_date  DateTime? @db.Timestamptz(6)
   next_principal_receiving_date DateTime? @db.Timestamptz(6)
-  lending_value                 Decimal?  @default(0) @db.Decimal(18, 4)
-  exchange_rate                 Decimal?  @default(1.0) @db.Decimal(18, 4)
-  lending_value_exchange        Decimal?  @default(0) @db.Decimal(18, 4)
-  disbursed_value               Decimal?  @default(0) @db.Decimal(18, 4)
-  disbursed_value_exchange      Decimal?  @default(0) @db.Decimal(18, 4)
-  principal_account             String?   @db.VarChar(20)
-  interest_account              String?   @db.VarChar(20)
-  disbursement_method           Int? // ⬅ THÊM
-  received_principal            Decimal?  @default(0) @db.Decimal(18, 4)
-  received_principal_exchange   Decimal?  @default(0) @db.Decimal(18, 4)
-  receivable_interest           Decimal?  @default(0) @db.Decimal(18, 4)
-  received_interest             Decimal?  @default(0) @db.Decimal(18, 4)
-  received_interest_exchange    Decimal?  @default(0) @db.Decimal(18, 4)
-  current_credit_limit          Decimal?  @default(0) @db.Decimal(18, 4)
-  current_credit_limit_exchange Decimal?  @default(0) @db.Decimal(18, 4)
+  lending_value                 Decimal? @default(0) @db.Decimal(18, 4)
+  exchange_rate                 Decimal? @default(1.0) @db.Decimal(18, 4)
+  lending_value_exchange        Decimal? @default(0) @db.Decimal(18, 4)
+  disbursed_value               Decimal? @default(0) @db.Decimal(18, 4)
+  disbursed_value_exchange      Decimal? @default(0) @db.Decimal(18, 4)
+  principal_account             String?  @db.VarChar(20)
+  interest_account              String?  @db.VarChar(20)
+  disbursement_method           Int?     // ⬅ THÊM
+  received_principal            Decimal? @default(0) @db.Decimal(18, 4)
+  received_principal_exchange   Decimal? @default(0) @db.Decimal(18, 4)
+  receivable_interest           Decimal? @default(0) @db.Decimal(18, 4)
+  received_interest             Decimal? @default(0) @db.Decimal(18, 4)
+  received_interest_exchange    Decimal? @default(0) @db.Decimal(18, 4)
+  current_credit_limit          Decimal? @default(0) @db.Decimal(18, 4)
+  current_credit_limit_exchange Decimal? @default(0) @db.Decimal(18, 4)
   receiving_period              Int?
   receiving_period_unit         Int?
   receiving_period_by_month     Int?
-  receiving_period_text         String?   @db.VarChar(100)
+  receiving_period_text         String?  @db.VarChar(100)
   receiving_method              Int?
   interest_rate_type            Int?
-  daily_interest_rate           Decimal?  @default(0) @db.Decimal(10, 6)
+  daily_interest_rate           Decimal? @default(0) @db.Decimal(10, 6)
   adjusting_method              Int?
   principal_receiving_period    Int?
   interest_receiving_period     Int?
-  currency_id                   String?   @db.VarChar(10)
-  interest_rate_now             Decimal?  @default(0) @db.Decimal(10, 4)
-  is_facility_contract          Boolean?  @default(false)
+  currency_id                   String?  @db.VarChar(10)
+  interest_rate_now             Decimal? @default(0) @db.Decimal(10, 4)
+  is_facility_contract          Boolean? @default(false)
   facility_contract_type        Int?
-  is_parent                     Boolean?  @default(false)
-  is_bold                       Boolean?  @default(false)
-  is_old                        Boolean?  @default(false)
-  is_valid                      Boolean?  @default(false)
+  is_parent                     Boolean? @default(false)
+  is_bold                       Boolean? @default(false)
+  is_old                        Boolean? @default(false)
+  is_valid                      Boolean? @default(false)
   lending_status                Int?
   excel_row_index               Int?
   state                         Int?
@@ -578,128 +579,128 @@ model misaSalesDetailReport {
   buyer                          String?
   shipping_address               String?
 
-  inventory_item_id            String?  @db.Uuid
-  inventory_item_code          String?
-  inventory_item_name          String?
+  inventory_item_id          String? @db.Uuid
+  inventory_item_code        String?
+  inventory_item_name        String?
   inventory_item_category_code String?
   inventory_item_category_name String?
-  inventory_item_source        String?
-  inventory_item_description   String?
-  is_promotion                 Boolean?
-  stock_code                   String?
-  stock_name                   String?
-  unit_name                    String?
-  main_unit_name               String?
-  main_convert_rate            Decimal? @db.Decimal(19, 4)
+  inventory_item_source      String?
+  inventory_item_description String?
+  is_promotion               Boolean?
+  stock_code                 String?
+  stock_name                 String?
+  unit_name                  String?
+  main_unit_name             String?
+  main_convert_rate          Decimal? @db.Decimal(19, 4)
 
-  sale_quantity                      Decimal?  @db.Decimal(19, 4)
-  main_quantity                      Decimal?  @db.Decimal(19, 4)
-  promotion_sale_quantity            Decimal?  @db.Decimal(19, 4)
-  promotion_sale_main_quantity       Decimal?  @db.Decimal(19, 4)
-  promotion_return_quantity          Decimal?  @db.Decimal(19, 4)
-  promotion_return_main_quantity     Decimal?  @db.Decimal(19, 4)
-  not_promotion_sale_quantity        Decimal?  @db.Decimal(19, 4)
-  not_promotion_sale_main_quantity   Decimal?  @db.Decimal(19, 4)
-  not_promotion_return_quantity      Decimal?  @db.Decimal(19, 4)
-  not_promotion_return_main_quantity Decimal?  @db.Decimal(19, 4)
-  return_quantity                    Decimal?  @db.Decimal(19, 4)
-  return_main_quantity               Decimal?  @db.Decimal(19, 4)
-  panel_length_quantity              Decimal?  @db.Decimal(19, 4)
-  panel_height_quantity              Decimal?  @db.Decimal(19, 4)
-  panel_width_quantity               Decimal?  @db.Decimal(19, 4)
-  panel_radius_quantity              Decimal?  @db.Decimal(19, 4)
-  panel_quantity                     Decimal?  @db.Decimal(19, 4)
-  exchange_rate                      Decimal?  @db.Decimal(19, 4)
-  currency_id                        String?
-  unit_price_oc                      Decimal?  @db.Decimal(19, 4)
-  unit_price                         Decimal?  @db.Decimal(19, 4)
-  fixed_sale_unit_price              Decimal?  @db.Decimal(19, 4)
-  main_unit_price                    Decimal?  @db.Decimal(19, 4)
-  cost_unit_price                    Decimal?  @db.Decimal(19, 4)
-  sale_amount_oc                     Decimal?  @db.Decimal(19, 4)
-  return_amount_oc                   Decimal?  @db.Decimal(19, 4)
-  reduce_amount_oc                   Decimal?  @db.Decimal(19, 4)
-  discount_amount_oc                 Decimal?  @db.Decimal(19, 4)
-  item_discount_amount_oc            Decimal?  @db.Decimal(19, 4)
-  invoice_discount_amount_oc         Decimal?  @db.Decimal(19, 4)
-  vat_amount_oc                      Decimal?  @db.Decimal(19, 4)
-  receipt_amount_oc                  Decimal?  @db.Decimal(19, 4)
-  sale_amount                        Decimal?  @db.Decimal(19, 4)
-  return_amount                      Decimal?  @db.Decimal(19, 4)
-  reduce_amount                      Decimal?  @db.Decimal(19, 4)
-  discount_amount                    Decimal?  @db.Decimal(19, 4)
-  item_discount_amount               Decimal?  @db.Decimal(19, 4)
-  invoice_discount_amount            Decimal?  @db.Decimal(19, 4)
-  vat_amount                         Decimal?  @db.Decimal(19, 4)
-  receipt_amount                     Decimal?  @db.Decimal(19, 4)
-  cost_amount                        Decimal?  @db.Decimal(19, 4)
-  export_tax_amount                  Decimal?  @db.Decimal(19, 4)
-  item_discount_rate                 Decimal?  @db.Decimal(19, 4)
-  invoice_discount_rate              Decimal?  @db.Decimal(19, 4)
-  debit_account                      String?
-  credit_account                     String?
-  cost_account                       String?
-  stock_account                      String?
-  discount_account                   String?
-  vat_account                        String?
-  export_tax_account                 String?
-  employee_code                      String?
-  employee_name                      String?
-  organization_unit_code             String?
-  department_name                    String?
-  province_or_city                   String?
-  district                           String?
-  ward_or_commune                    String?
-  order_refno                        String?
-  contract_code                      String?
-  in_out_refno                       String?
-  other_sys_order_code               String?
-  reftype                            Int?
-  reftype_name                       String?
-  branch_id                          String?   @db.Uuid
-  branch_name                        String?
-  list_item_code                     String?
-  list_item_name                     String?
-  master_custom_field1               String?
-  master_custom_field2               String?
-  master_custom_field3               String?
-  master_custom_field4               String?
-  master_custom_field5               String?
-  master_custom_field6               String?
-  master_custom_field7               String?
-  master_custom_field8               String?
-  master_custom_field9               String?
-  master_custom_field10              String?
-  custom_field1                      String?
-  custom_field2                      String?
-  custom_field3                      String?
-  custom_field4                      String?
-  custom_field5                      String?
-  custom_field6                      String?
-  custom_field7                      String?
-  custom_field8                      String?
-  custom_field9                      String?
-  custom_field10                     String?
-  expand_field_customer1             String?
-  expand_field_customer2             String?
-  expand_field_customer3             String?
-  expand_field_customer4             String?
-  expand_field_customer5             String?
-  expand_field1                      String?
-  expand_field2                      String?
-  expand_field3                      String?
-  expand_field4                      String?
-  expand_field5                      String?
-  channel                            String?
-  shop_name                          String?
-  shop_id                            String?
-  store_code                         String?
-  store_name                         String?
-  project_work_code                  String?
-  project_work_name                  String?
-  lot_no                             String?
-  license_plate                      String?
-  updated_at                         DateTime? @default(now()) @db.Timestamptz(6)
+  sale_quantity                       Decimal? @db.Decimal(19, 4)
+  main_quantity                       Decimal? @db.Decimal(19, 4)
+  promotion_sale_quantity             Decimal? @db.Decimal(19, 4)
+  promotion_sale_main_quantity        Decimal? @db.Decimal(19, 4)
+  promotion_return_quantity           Decimal? @db.Decimal(19, 4)
+  promotion_return_main_quantity      Decimal? @db.Decimal(19, 4)
+  not_promotion_sale_quantity         Decimal? @db.Decimal(19, 4)
+  not_promotion_sale_main_quantity    Decimal? @db.Decimal(19, 4)
+  not_promotion_return_quantity       Decimal? @db.Decimal(19, 4)
+  not_promotion_return_main_quantity  Decimal? @db.Decimal(19, 4)
+  return_quantity                     Decimal? @db.Decimal(19, 4)
+  return_main_quantity                Decimal? @db.Decimal(19, 4)
+  panel_length_quantity               Decimal? @db.Decimal(19, 4)
+  panel_height_quantity               Decimal? @db.Decimal(19, 4)
+  panel_width_quantity                Decimal? @db.Decimal(19, 4)
+  panel_radius_quantity               Decimal? @db.Decimal(19, 4)
+  panel_quantity                      Decimal? @db.Decimal(19, 4)
+  exchange_rate          Decimal? @db.Decimal(19, 4)
+  currency_id            String?
+  unit_price_oc          Decimal? @db.Decimal(19, 4)
+  unit_price             Decimal? @db.Decimal(19, 4)
+  fixed_sale_unit_price  Decimal? @db.Decimal(19, 4)
+  main_unit_price        Decimal? @db.Decimal(19, 4)
+  cost_unit_price        Decimal? @db.Decimal(19, 4)
+  sale_amount_oc              Decimal? @db.Decimal(19, 4)
+  return_amount_oc            Decimal? @db.Decimal(19, 4)
+  reduce_amount_oc            Decimal? @db.Decimal(19, 4)
+  discount_amount_oc          Decimal? @db.Decimal(19, 4)
+  item_discount_amount_oc     Decimal? @db.Decimal(19, 4)
+  invoice_discount_amount_oc  Decimal? @db.Decimal(19, 4)
+  vat_amount_oc               Decimal? @db.Decimal(19, 4)
+  receipt_amount_oc           Decimal? @db.Decimal(19, 4)
+  sale_amount             Decimal? @db.Decimal(19, 4)
+  return_amount           Decimal? @db.Decimal(19, 4)
+  reduce_amount           Decimal? @db.Decimal(19, 4)
+  discount_amount         Decimal? @db.Decimal(19, 4)
+  item_discount_amount    Decimal? @db.Decimal(19, 4)
+  invoice_discount_amount Decimal? @db.Decimal(19, 4)
+  vat_amount              Decimal? @db.Decimal(19, 4)
+  receipt_amount          Decimal? @db.Decimal(19, 4)
+  cost_amount             Decimal? @db.Decimal(19, 4)
+  export_tax_amount       Decimal? @db.Decimal(19, 4)
+  item_discount_rate    Decimal? @db.Decimal(19, 4)
+  invoice_discount_rate Decimal? @db.Decimal(19, 4)
+  debit_account      String?
+  credit_account     String?
+  cost_account       String?
+  stock_account      String?
+  discount_account   String?
+  vat_account        String?
+  export_tax_account String?
+  employee_code          String?
+  employee_name          String?
+  organization_unit_code String?
+  department_name        String?
+  province_or_city String?
+  district         String?
+  ward_or_commune  String?
+  order_refno           String?
+  contract_code         String?
+  in_out_refno          String?
+  other_sys_order_code  String?
+  reftype      Int?
+  reftype_name String?
+  branch_id   String? @db.Uuid
+  branch_name String?
+  list_item_code String?
+  list_item_name String?
+  master_custom_field1  String?
+  master_custom_field2  String?
+  master_custom_field3  String?
+  master_custom_field4  String?
+  master_custom_field5  String?
+  master_custom_field6  String?
+  master_custom_field7  String?
+  master_custom_field8  String?
+  master_custom_field9  String?
+  master_custom_field10 String?
+  custom_field1  String?
+  custom_field2  String?
+  custom_field3  String?
+  custom_field4  String?
+  custom_field5  String?
+  custom_field6  String?
+  custom_field7  String?
+  custom_field8  String?
+  custom_field9  String?
+  custom_field10 String?
+  expand_field_customer1 String?
+  expand_field_customer2 String?
+  expand_field_customer3 String?
+  expand_field_customer4 String?
+  expand_field_customer5 String?
+  expand_field1 String?
+  expand_field2 String?
+  expand_field3 String?
+  expand_field4 String?
+  expand_field5 String?
+  channel    String?
+  shop_name  String?
+  shop_id    String?
+  store_code String?
+  store_name String?
+  project_work_code String?
+  project_work_name String?
+  lot_no        String?
+  license_plate String?
+  updated_at DateTime? @default(now()) @db.Timestamptz(6)
 
   @@index([posted_date], map: "idx_sales_posted_date")
   @@index([refdate], map: "idx_sales_refdate")
@@ -858,31 +859,31 @@ model misaCashFlowYearlyFact {
 }
 
 model misaBudgetPlan {
-  session_id          String?   @db.Uuid
-  detail_id           Int?
-  item_id             String?   @db.Uuid
-  item_code           String    @db.VarChar(50)
-  item_type           Int?
-  item_name           String?   @db.VarChar(255)
-  item_name_english   String?   @db.VarChar(255)
-  item_name_chinese   String?   @db.VarChar(255)
-  item_name_korean    String?   @db.VarChar(255)
-  is_bold             Boolean?
-  grade               Int?
-  year                Int
-  total_plan_amount   Decimal?  @db.Decimal(36, 8)
-  m01_plan_amount     Decimal?  @db.Decimal(36, 8)
-  m02_plan_amount     Decimal?  @db.Decimal(36, 8)
-  m03_plan_amount     Decimal?  @db.Decimal(36, 8)
-  m04_plan_amount     Decimal?  @db.Decimal(36, 8)
-  m05_plan_amount     Decimal?  @db.Decimal(36, 8)
-  m06_plan_amount     Decimal?  @db.Decimal(36, 8)
-  m07_plan_amount     Decimal?  @db.Decimal(36, 8)
-  m08_plan_amount     Decimal?  @db.Decimal(36, 8)
-  m09_plan_amount     Decimal?  @db.Decimal(36, 8)
-  m10_plan_amount     Decimal?  @db.Decimal(36, 8)
-  m11_plan_amount     Decimal?  @db.Decimal(36, 8)
-  m12_plan_amount     Decimal?  @db.Decimal(36, 8)
+  session_id        String?   @db.Uuid
+  detail_id         Int?
+  item_id           String?   @db.Uuid
+  item_code         String    @db.VarChar(50)
+  item_type         Int?
+  item_name         String?   @db.VarChar(255)
+  item_name_english String?   @db.VarChar(255)
+  item_name_chinese String?   @db.VarChar(255)
+  item_name_korean  String?   @db.VarChar(255)
+  is_bold           Boolean?
+  grade             Int?
+  year              Int
+  total_plan_amount Decimal?  @db.Decimal(36, 8)
+  m01_plan_amount   Decimal?  @db.Decimal(36, 8)
+  m02_plan_amount   Decimal?  @db.Decimal(36, 8)
+  m03_plan_amount   Decimal?  @db.Decimal(36, 8)
+  m04_plan_amount   Decimal?  @db.Decimal(36, 8)
+  m05_plan_amount   Decimal?  @db.Decimal(36, 8)
+  m06_plan_amount   Decimal?  @db.Decimal(36, 8)
+  m07_plan_amount   Decimal?  @db.Decimal(36, 8)
+  m08_plan_amount   Decimal?  @db.Decimal(36, 8)
+  m09_plan_amount   Decimal?  @db.Decimal(36, 8)
+  m10_plan_amount   Decimal?  @db.Decimal(36, 8)
+  m11_plan_amount   Decimal?  @db.Decimal(36, 8)
+  m12_plan_amount   Decimal?  @db.Decimal(36, 8)
   database_created_at DateTime? @default(now()) @db.Timestamp(6)
   database_updated_at DateTime? @default(now()) @db.Timestamp(6)
 
