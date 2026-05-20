@@ -19,15 +19,17 @@ export default class PancakePOSShopSyncService {
   async syncShops(): Promise<void> {
     await this.initPromise;
 
-    const shops = await this.client!.getShops();
-    if (!shops.length) return;
+    const pancakeShops = await this.client!.getShops();
+    if (!pancakeShops.length) return;
 
-    for (const shop of shops) {
-      for (const page of shop.pages ?? []) {
-        if (!page.id) continue;
+    for (const pancakeShop of pancakeShops) {
+      const accounts = pancakeShop.pages ?? [];
+
+      for (const account of accounts) {
+        if (!account.id) continue;
         await this.db.page.update({
-          where: { id: page.id },
-          data: { pos_shop_id: shop.id }
+          where: { id: account.id },
+          data: { pos_shop_id: pancakeShop.id }
         });
       }
     }
