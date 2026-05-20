@@ -6,6 +6,7 @@ import ProductQuote from "src/services/product_quote";
 import Ecommerce from "src/services/ecommerce";
 import Haravan from "src/services/haravan";
 import Misa from "src/services/misa";
+import Larksuite from "src/services/larksuite";
 
 export default {
   queue: async (batch, env) => {
@@ -58,6 +59,9 @@ export default {
       break;
     case "erpnext-payment-entry":
       await ERP.Accounting.PaymentEntryService.dequeuePaymentEntryQueue(batch, env);
+      break;
+    case "larksuite-appointment":
+      await Larksuite.AppointmentService.dequeueAppointmentQueue(batch, env);
       break;
     case "sepay-transaction":
       await ERP.Accounting.SepayTransactionService.dequeueSaveToDb(batch, env);

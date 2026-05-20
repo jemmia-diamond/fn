@@ -244,6 +244,10 @@
         "binding": "ERPNEXT_PAYMENT_ENTRY_QUEUE"
       },
       {
+        "queue": "larksuite-appointment",
+        "binding": "LARKSUITE_APPOINTMENT_QUEUE"
+      },
+      {
         "queue": "sepay-transaction",
         "binding": "SEPAY_TRANSACTION_QUEUE"
       },
@@ -326,6 +330,12 @@
       },
       {
         "queue": "erpnext-payment-entry",
+        "retry_delay": 600,
+        "max_retries": 6,
+        "max_batch_size": 1
+      },
+      {
+        "queue": "larksuite-appointment",
         "retry_delay": 600,
         "max_retries": 6,
         "max_batch_size": 1

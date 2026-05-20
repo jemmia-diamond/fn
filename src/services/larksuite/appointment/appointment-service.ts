@@ -4,7 +4,6 @@ import {
   LarksuiteAppointmentParsedFields,
   IFrappeLead,
   ILarksuiteAppointment,
-  IFrapperAttachment,
   LarksuiteAttachment
 } from "src/services/larksuite/appointment/types";
 import { PrismaClient } from "@prisma-cli";
@@ -13,6 +12,8 @@ import FrappeClient from "src/frappe/frappe-client";
 import LarksuiteService from "src/services/larksuite/lark";
 import { fetchLeadInfoByPhoneNumber } from "frappe/lead";
 import { mapLarkToFrappe } from "frappe/utils/utils-lark";
+import { saveAppointmentToPrismaDb } from "services/larksuite/appointment/appointment-save";
+import { getDocumentAttachments, removeFileAttachment } from "frappe/attachment";
 export default class AppointmentService {
   env: any;
   db: PrismaClient;
@@ -44,7 +45,9 @@ export default class AppointmentService {
     this.tableId = env.LARK_APPOINTMENT_TABLE_ID;
   }
 
-  private async syncLarkRecord(recordId: string): Promise<ILarksuiteAppointment> {
+  private async syncLarkRecord(
+    recordId: string
+  ): Promise<ILarksuiteAppointment> {
     // @ts-expect-error This RecordService was written in javascript so we can not define the type for it
     const record = await RecordService.getLarksuiteRecord({
       env: this.env,
@@ -65,7 +68,9 @@ export default class AppointmentService {
       gender: rawFields["Giới tính"] || "",
       product_images: rawFields["Hình ảnh sản phẩm (nếu có)"],
       note: rawFields["Lưu ý đặc biệt"],
-      date_time: rawFields["Ngày khách dự kiến tới CH"] ? new Date(rawFields["Ngày khách dự kiến tới CH"]) : null,
+      date_time: rawFields["Ngày khách dự kiến tới CH"]
+        ? new Date(rawFields["Ngày khách dự kiến tới CH"])
+        : null,
       conversation_greeting: rawFields["Nội dung đón tiếp tại cửa hàng"],
       customer_response: rawFields["Offlie Phản hồi"],
       main_sales: rawFields["Sale chính"],
@@ -85,41 +90,35 @@ export default class AppointmentService {
     return data;
   }
 
-  private async getDocumentAttachments(doctype: string, docname: string): Promise<IFrapperAttachment[]> {
-    try {
-      const attachments = await this.frappeClient.getList("File", {
-        fields: ["name", "file_name", "file_url", "is_private"],
-        filters: {
-          attached_to_doctype: doctype,
-          attached_to_name: docname
-        }
-      });
-      return attachments || [];
-    } catch (error) {
-      console.warn(`Error fetching attachments for ${doctype} ${docname}:`, error);
-      return [];
-    }
-  }
-
-  private async downloadFileAndUploadFrappe(attachments: LarksuiteAttachment[], docname: string) {
+  private async downloadFileAndUploadFrappe(
+    attachments: LarksuiteAttachment[],
+    docname: string
+  ) {
     try {
       if (!attachments?.length) return;
       const accessToken = await LarksuiteService.getTenantAccessToken(this.env);
-      const results = await Promise.all(attachments.map(async (attachment) => {
-        const blob = await fetch(attachment.url, {
-          headers: {
-            Authorization: `Bearer ${accessToken}`
-          }
-        })
-          .then((response) => response.blob())
-          .catch((error) => {
-            console.warn("Error downloading blob:", error);
-            throw error;
-          });
+      const results = await Promise.all(
+        attachments.map(async (attachment) => {
+          const blob = await fetch(attachment.url, {
+            headers: {
+              Authorization: `Bearer ${accessToken}`
+            }
+          })
+            .then((response) => response.blob())
+            .catch((error) => {
+              console.warn("Error downloading blob:", error);
+              throw error;
+            });
 
-        const data = await this.frappeClient.uploadFile(blob, attachment.name, "Appointment", docname);
-        return data;
-      }));
+          const data = await this.frappeClient.uploadFile(
+            blob,
+            attachment.name,
+            "Appointment",
+            docname
+          );
+          return data;
+        })
+      );
 
       return results;
     } catch (error) {
@@ -128,28 +127,20 @@ export default class AppointmentService {
     }
   }
 
-  async removeFileAttachment(attachments: IFrapperAttachment[]) {
-    if (!attachments?.length) {
-      return;
-    }
-
-    try {
-      await Promise.all(attachments.map(async (attachment) => {
-        await this.frappeClient.deleteDoc("File", attachment.name);
-      }));
-    } catch (error) {
-      console.warn("Error removing file attachments:", error);
-    }
-  }
-
   async createOrUpdateAppointment(recordId: string) {
     const record = await this.syncLarkRecord(recordId);
-    const lead = await fetchLeadInfoByPhoneNumber(this.frappeClient, record.phone_number);
+    const lead = await fetchLeadInfoByPhoneNumber(
+      this.frappeClient,
+      record.phone_number
+    );
     const erpAppointment = await this.upsertERPAppointment(record, lead);
     return erpAppointment;
   }
 
-  async createNewERPAppointment(dataRequest: ILarksuiteAppointment, lead?: IFrappeLead) {
+  async createNewERPAppointment(
+    dataRequest: ILarksuiteAppointment,
+    lead?: IFrappeLead
+  ) {
     const payload = await mapLarkToFrappe(this.frappeClient, dataRequest, lead);
     const data = await this.frappeClient.insert({
       doctype: "Appointment",
@@ -158,42 +149,63 @@ export default class AppointmentService {
     return data;
   }
 
-  async updateERPAppointment(recordId: string, dataRequest: ILarksuiteAppointment, lead?: IFrappeLead) {
+  async updateERPAppointment(
+    docName: string,
+    dataRequest: ILarksuiteAppointment,
+    lead?: IFrappeLead
+  ) {
+    const payload = await mapLarkToFrappe(this.frappeClient, dataRequest, lead);
+    const data = await this.frappeClient.update({
+      doctype: "Appointment",
+      name: docName,
+      ...payload
+    });
+    return data;
+  }
+
+  async upsertERPAppointment(
+    dataRequest: ILarksuiteAppointment,
+    lead?: IFrappeLead
+  ) {
+    await saveAppointmentToPrismaDb(this.env, dataRequest);
+
     const existing = await this.frappeClient.getList("Appointment", {
-      filters: { record_id: recordId },
-      limit_start: 0,
-      limit_page_length: 1
+      filters: { record_id: dataRequest.record_id }
     });
 
     if (existing?.length) {
       const docName = existing[0].name;
-      const payload = await mapLarkToFrappe(this.frappeClient, dataRequest, lead);
-      const data = await this.frappeClient.update({
-        doctype: "Appointment",
-        name: docName,
-        ...payload
-      });
-      return data;
+      const attachments = await getDocumentAttachments(
+        this.frappeClient,
+        "Appointment",
+        docName
+      );
+      await removeFileAttachment(this.frappeClient, attachments);
+      await this.downloadFileAndUploadFrappe(
+        dataRequest.product_images,
+        docName
+      );
+      return await this.updateERPAppointment(docName, dataRequest, lead);
     } else {
-      throw new Error(`Appointment with record_id ${recordId} not found in ERP`);
+      const appointment = await this.createNewERPAppointment(dataRequest, lead);
+      await this.downloadFileAndUploadFrappe(
+        dataRequest.product_images,
+        appointment.name
+      );
+      return appointment;
     }
   }
 
-  async upsertERPAppointment(dataRequest: ILarksuiteAppointment, lead?: IFrappeLead) {
-    const existing = await this.frappeClient.getList("Appointment", {
-      filters: { record_id: dataRequest.record_id },
-      limit_start: 1
-    });
-
-    if (existing?.length) {
-      const attachments = await this.getDocumentAttachments("Appointment", existing[0].name);
-      await this.removeFileAttachment(attachments);
-      await this.downloadFileAndUploadFrappe(dataRequest.product_images, existing[0].name);
-      return await this.updateERPAppointment(dataRequest.record_id, dataRequest, lead);
-    } else {
-      const appointment = await this.createNewERPAppointment(dataRequest, lead);
-      await this.downloadFileAndUploadFrappe(dataRequest.product_images, appointment.name);
-      return appointment;
+  static async dequeueAppointmentQueue(batch: any, env: any) {
+    const appointmentService = AppointmentService.instance(env);
+    const messages = batch.messages;
+    for (const message of messages) {
+      const messageBody = message.body;
+      const recordId = messageBody.record_id;
+      if (!recordId) {
+        continue;
+      }
+      await appointmentService.createOrUpdateAppointment(recordId);
     }
   }
 }
