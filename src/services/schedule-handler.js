@@ -15,6 +15,7 @@ import Google from "services/google";
 import Salesaya from "services/salesaya";
 import Pancake from "services/pancake";
 import Haravan from "services/haravan";
+import OneOffHandler from "services/one-off-handler";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -31,6 +32,7 @@ export default {
       await new Haravan.Collect.CollectionProductSyncService(env).syncCollectionProducts();
       break;
     case "*/5 * * * *": // At every 5th minute
+      await new OneOffHandler(env).run();
       const batchTime = dayjs().utc();
       await new Pancake.ConversationSyncService(env, _ctx).syncConversations({ batchTime });
       await new Pancake.CustomerSyncService(env).syncCustomers({ batchTime });

@@ -44,8 +44,6 @@ export default class ProductService {
         INNER JOIN workplace.designs d ON d.id = p.design_id
         LEFT JOIN workplace.ecom_360 e ON p.workplace_id = e.product_id
 
-
-        -- Subquery for pre-aggregated variants with variant-level images
         INNER JOIN LATERAL (
           SELECT
             v.haravan_product_id,
@@ -61,7 +59,7 @@ export default class ProductService {
               )
             ) AS variants
           FROM ecom.materialized_variants v
-    
+
           INNER JOIN LATERAL (
             SELECT 
               di.material_color,
@@ -200,6 +198,44 @@ export default class ProductService {
     };
   }
 
+  async getSetByIdV2(id, options = {}) {
+    const setProducts = await this.db.$queryRaw`
+      SELECT 
+        s.haravan_product_id, 
+        s.set_name as title, 
+        array_remove(array_agg(ds.design_id), NULL) as design_ids
+      FROM workplace.sets s
+      LEFT JOIN workplace.design_set ds ON ds.set_id = s.id
+      WHERE s.haravan_product_id = ${parseInt(id)}
+      GROUP BY s.id
+    `;
+
+    if (!setProducts || setProducts.length === 0) {
+      return null;
+    }
+
+    const setProduct = setProducts[0];
+    const designIds = (setProduct.design_ids || []).filter(dId => dId != null);
+
+    let linkedProductsData = [];
+    if (designIds.length > 0) {
+      const jsonParams = {
+        design_ids: designIds,
+        pagination: { from: 1, limit: 100 },
+        ...options
+      };
+      const linkedProducts = await this.getJewelryV2(jsonParams);
+      linkedProductsData = linkedProducts.data;
+    }
+
+    return {
+      id: setProduct.haravan_product_id,
+      title: setProduct.title,
+      product_type: "Bộ Trang Sức Kim Cương",
+      linked_products: linkedProductsData
+    };
+  }
+
   async getJewelryByIdV2(id, options = {}) {
     const productId = parseInt(id, 10);
     const { variantJsonBuildObject, lateralJoinClause } =
@@ -269,7 +305,7 @@ export default class ProductService {
           d.diamond_holder, d.ring_band_type, d.main_stone, d.stone_quantity, p.haravan_product_type,
           p.max_price, p.min_price, p.max_price_18, p.max_price_14,
           p.qty_onhand, p.has_360, p.estimated_gold_weight,
-          p.primary_collection, p.primary_collection_handle
+          p.primary_collection, p.primary_collection_handle, p.sold_before_2025
     `);
     return result?.[0] || null;
   }
