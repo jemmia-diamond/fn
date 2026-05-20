@@ -106,7 +106,15 @@ export function buildQueryV2(jsonParams) {
         'qty_available', v.qty_available,
         'qty_onhand', v.qty_onhand,
         'diamonds', COALESCE(v.diamonds, '[]'::json),
-        'images', design_imgs.images
+        'images', design_imgs.images,
+        'is_combo', (
+          SELECT TRUE 
+          FROM workplace.combo_serials_diamonds csd
+          INNER JOIN workplace.variant_serials vs ON csd.serial_id = vs.id
+          INNER JOIN workplace.variants wv ON vs.variant_id = wv.id
+          WHERE wv.haravan_variant_id = v.haravan_variant_id
+          LIMIT 1
+        )
       )
     `;
 
@@ -162,7 +170,15 @@ export function buildQueryV2(jsonParams) {
         'price_compare_at', CAST(v.price_compare_at AS DECIMAL),
         'qty_available', v.qty_available,
         'qty_onhand', v.qty_onhand,
-        'images', design_imgs.images
+        'images', design_imgs.images,
+        'is_combo', (
+          SELECT TRUE 
+          FROM workplace.combo_serials_diamonds csd
+          INNER JOIN workplace.variant_serials vs ON csd.serial_id = vs.id
+          INNER JOIN workplace.variants wv ON vs.variant_id = wv.id
+          WHERE wv.haravan_variant_id = v.haravan_variant_id
+          LIMIT 1
+        )
       )
     `;
 
@@ -275,7 +291,15 @@ export function buildQuerySingleV2(params = {}) {
         'qty_available', v.qty_available,
         'qty_onhand', v.qty_onhand,
         'diamonds', COALESCE(v.diamonds, '[]'::json),
-        'images', COALESCE(design_imgs.images, ARRAY[]::text[])
+        'images', COALESCE(design_imgs.images, ARRAY[]::text[]),
+        'is_combo', (
+          SELECT TRUE 
+          FROM workplace.combo_serials_diamonds csd
+          INNER JOIN workplace.variant_serials vs ON csd.serial_id = vs.id
+          INNER JOIN workplace.variants wv ON vs.variant_id = wv.id
+          WHERE wv.haravan_variant_id = v.haravan_variant_id
+          LIMIT 1
+        )
       )
     `;
 
@@ -334,7 +358,15 @@ export function buildQuerySingleV2(params = {}) {
         'estimated_gold_weight', v.estimated_gold_weight,
         'qty_available', v.qty_available,
         'qty_onhand', v.qty_onhand,
-        'images', COALESCE(design_imgs.images, ARRAY[]::text[])
+        'images', COALESCE(design_imgs.images, ARRAY[]::text[]),
+        'is_combo', (
+          SELECT TRUE 
+          FROM workplace.combo_serials_diamonds csd
+          INNER JOIN workplace.variant_serials vs ON csd.serial_id = vs.id
+          INNER JOIN workplace.variants wv ON vs.variant_id = wv.id
+          WHERE wv.haravan_variant_id = v.haravan_variant_id
+          LIMIT 1
+        )
       )
     `;
 
