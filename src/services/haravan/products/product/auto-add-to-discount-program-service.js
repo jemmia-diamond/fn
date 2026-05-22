@@ -35,6 +35,7 @@ export default class AutoAddToDiscountProgramService {
       }
       catch (error) {
         Sentry.captureException(error);
+        message.retry();
       }
     }
   }
@@ -67,109 +68,96 @@ export default class AutoAddToDiscountProgramService {
   }
 
   async addToDiamondCollection(haravanProductId) {
-    try {
-      const nocodb = new NocoDBClient(this.env);
+    const nocodb = new NocoDBClient(this.env);
 
-      const diamondsQuery = await nocodb.listRecords(NOCODB_TABLES.MARKETING.DIAMONDS, {
-        where: `(product_id,eq,${haravanProductId})`
-      });
-      const diamonds = diamondsQuery.list || [];
+    const diamondsQuery = await nocodb.listRecords(NOCODB_TABLES.MARKETING.DIAMONDS, {
+      where: `(product_id,eq,${haravanProductId})`
+    });
+    const diamonds = diamondsQuery.list || [];
 
-      if (!diamonds || diamonds.length === 0) {
-        return;
-      }
-
-      const DIAMOND_COLLECTION_ID = this.env.DEFAULT_HARAVAN_DIAMOND_DISCOUNT_COLLECTION_ID;
-      const diamondHaravanCollectionsTableId = NOCODB_TABLES.MARKETING.DIAMOND_HARAVAN_COLLECTIONS;
-
-      for (const diamond of diamonds) {
-        try {
-          const existing = await nocodb.listRecords(diamondHaravanCollectionsTableId, {
-            where: `(diamond_id,eq,${diamond.id})~and(haravan_collection_id,eq,${DIAMOND_COLLECTION_ID})`
-          });
-
-          if (existing.list?.length === 0) {
-            await nocodb.createRecords(diamondHaravanCollectionsTableId, {
-              diamonds: { id: diamond.id },
-              haravan_collections: { id: DIAMOND_COLLECTION_ID }
-            });
-          }
-        } catch (error) {
-          const errorData = error.response?.data;
-          if (errorData?.code === "23505" || errorData?.message === "This record already exists.") {
-            continue;
-          }
-          throw error;
-        }
-      }
-    } catch (error) {
-      Sentry.captureException(error);
+    if (!diamonds || diamonds.length === 0) {
+      return;
     }
-  }
 
-  async addToJewelryCollection(haravanProductId) {
-    try {
-      const nocodb = new NocoDBClient(this.env);
+    const DIAMOND_COLLECTION_ID = this.env.DEFAULT_HARAVAN_DIAMOND_DISCOUNT_COLLECTION_ID;
+    const diamondHaravanCollectionsTableId = NOCODB_TABLES.MARKETING.DIAMOND_HARAVAN_COLLECTIONS;
 
-      const productsQuery = await nocodb.listRecords(NOCODB_TABLES.MARKETING.JEWELRIES, {
-        where: `(haravan_product_id,eq,${haravanProductId})`,
-        limit: 1
-      });
-
-      const product = productsQuery.list?.[0];
-
-      if (!product) {
-        return;
-      }
-
-      if (product.design_id) {
-        try {
-          const designRes = await nocodb.listRecords(NOCODB_TABLES.MARKETING.DESIGNS, {
-            where: `(id,eq,${product.design_id})`,
-            limit: 1
-          });
-          const design = designRes.list?.[0] ?? null;
-
-          if (design && design.collections_id) {
-            const collectionRes = await nocodb.listRecords(NOCODB_TABLES.MARKETING.COLLECTIONS, {
-              where: `(id,eq,${design.collections_id})`,
-              limit: 1
-            });
-            const collection = collectionRes.list?.[0] ?? null;
-
-            if (collection && EXCLUDED_COLLECTION_TITLES.includes(collection.collection_name)) {
-              return;
-            }
-          }
-        } catch (error) {
-          Sentry.captureException(error, "addToJewelryCollection");
-        }
-      }
-
-      const JEWELRY_COLLECTION_ID = this.env.DEFAULT_HARAVAN_JEWELRY_DISCOUNT_COLLECTION_ID;
-      const jewelryHaravanCollectionsTableId = NOCODB_TABLES.MARKETING.JEWELRY_HARAVAN_COLLECTIONS;
-
+    for (const diamond of diamonds) {
       try {
-        const existing = await nocodb.listRecords(jewelryHaravanCollectionsTableId, {
-          where: `(products_id,eq,${product.id})~and(haravan_collections_id,eq,${JEWELRY_COLLECTION_ID})`
+        const existing = await nocodb.listRecords(diamondHaravanCollectionsTableId, {
+          where: `(diamond_id,eq,${diamond.id})~and(haravan_collection_id,eq,${DIAMOND_COLLECTION_ID})`
         });
 
         if (existing.list?.length === 0) {
-          await nocodb.createRecords(jewelryHaravanCollectionsTableId, {
-            products: { id: product.id },
-            haravan_collections: { id: JEWELRY_COLLECTION_ID }
+          await nocodb.createRecords(diamondHaravanCollectionsTableId, {
+            diamonds: { id: diamond.id },
+            haravan_collections: { id: DIAMOND_COLLECTION_ID }
           });
         }
       } catch (error) {
         const errorData = error.response?.data;
         if (errorData?.code === "23505" || errorData?.message === "This record already exists.") {
-          return;
+          continue;
         }
         throw error;
       }
+    }
+  }
 
+  async addToJewelryCollection(haravanProductId) {
+    const nocodb = new NocoDBClient(this.env);
+
+    const productsQuery = await nocodb.listRecords(NOCODB_TABLES.MARKETING.JEWELRIES, {
+      where: `(haravan_product_id,eq,${haravanProductId})`,
+      limit: 1
+    });
+
+    const product = productsQuery.list?.[0];
+
+    if (!product) {
+      return;
+    }
+
+    if (product.design_id) {
+      const designRes = await nocodb.listRecords(NOCODB_TABLES.MARKETING.DESIGNS, {
+        where: `(id,eq,${product.design_id})`,
+        limit: 1
+      });
+      const design = designRes.list?.[0] ?? null;
+
+      if (design && design.collections_id) {
+        const collectionRes = await nocodb.listRecords(NOCODB_TABLES.MARKETING.COLLECTIONS, {
+          where: `(id,eq,${design.collections_id})`,
+          limit: 1
+        });
+        const collection = collectionRes.list?.[0] ?? null;
+
+        if (collection && EXCLUDED_COLLECTION_TITLES.includes(collection.collection_name)) {
+          return;
+        }
+      }
+    }
+
+    const JEWELRY_COLLECTION_ID = this.env.DEFAULT_HARAVAN_JEWELRY_DISCOUNT_COLLECTION_ID;
+    const jewelryHaravanCollectionsTableId = NOCODB_TABLES.MARKETING.JEWELRY_HARAVAN_COLLECTIONS;
+
+    try {
+      const existing = await nocodb.listRecords(jewelryHaravanCollectionsTableId, {
+        where: `(products_id,eq,${product.id})~and(haravan_collections_id,eq,${JEWELRY_COLLECTION_ID})`
+      });
+
+      if (existing.list?.length === 0) {
+        await nocodb.createRecords(jewelryHaravanCollectionsTableId, {
+          products: { id: product.id },
+          haravan_collections: { id: JEWELRY_COLLECTION_ID }
+        });
+      }
     } catch (error) {
-      Sentry.captureException(error);
+      const errorData = error.response?.data;
+      if (errorData?.code === "23505" || errorData?.message === "This record already exists.") {
+        return;
+      }
+      throw error;
     }
   }
 }
