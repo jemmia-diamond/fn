@@ -1,6 +1,5 @@
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
-import timezone from "dayjs/plugin/timezone.js";
 import {
   IFrappeLead,
   IFrappeSalesPerson,
@@ -10,7 +9,6 @@ import {
 import FrappeClient from "frappe/frappe-client";
 
 dayjs.extend(utc);
-dayjs.extend(timezone);
 
 const GENDER_MAP: Record<string, string> = {
   nam: "Male",
