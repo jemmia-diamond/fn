@@ -1,7 +1,6 @@
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import timezone from "dayjs/plugin/timezone.js";
-import { TIMEZONE_VIETNAM } from "src/constants";
 import {
   IFrappeLead,
   IFrappeSalesPerson,
@@ -59,9 +58,7 @@ export async function mapLarkToFrappe(
   const gender = GENDER_MAP[genderLower] || "Male";
 
   const scheduledTime = dataRequest.date_time
-    ? dayjs(dataRequest.date_time)
-      .tz(TIMEZONE_VIETNAM)
-      .format("YYYY-MM-DD HH:mm:ss")
+    ? dayjs.utc(dataRequest.date_time).format("YYYY-MM-DD HH:mm:ss")
     : undefined;
 
   const allEmails = [
