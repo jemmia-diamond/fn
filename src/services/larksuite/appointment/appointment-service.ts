@@ -14,6 +14,7 @@ import { fetchLeadInfoByPhoneNumber } from "frappe/lead";
 import { mapLarkToFrappe } from "frappe/utils/utils-lark";
 import { saveAppointmentToPrismaDb } from "services/larksuite/appointment/appointment-save";
 import { getDocumentAttachments, removeFileAttachment } from "frappe/attachment";
+import { APPOINTMENTS } from "services/larksuite/appointment/constant";
 export default class AppointmentService {
   env: any;
   db: PrismaClient;
@@ -41,8 +42,8 @@ export default class AppointmentService {
       apiKey: env.JEMMIA_ERP_API_KEY,
       apiSecret: env.JEMMIA_ERP_API_SECRET
     });
-    this.appToken = env.LARK_APPOINTMENT_APP_TOKEN;
-    this.tableId = env.LARK_APPOINTMENT_TABLE_ID;
+    this.appToken = APPOINTMENTS.APP_TOKEN;
+    this.tableId = APPOINTMENTS.TABLE_ID;
   }
 
   private async syncLarkRecord(
