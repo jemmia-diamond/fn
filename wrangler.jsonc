@@ -326,7 +326,9 @@
         "queue": "erpnext-crm"
       },
       {
-        "queue": "erpnext-sales-order"
+        "queue": "erpnext-sales-order",
+        "max_batch_size": 1,
+        "max_concurrency": 1
       },
       {
         "queue": "erpnext-payment-entry",
