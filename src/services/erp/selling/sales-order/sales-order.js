@@ -625,7 +625,26 @@ export default class SalesOrderService {
   }
 
   async composeUpdateOrderContent(oldSalesOrderData, salesOrderData, promotionData) {
-    return composeOrderUpdateMessage(oldSalesOrderData, salesOrderData, promotionData);
+    const primarySalesPersonName = salesOrderData.primary_sales_person;
+    const primarySalesPerson = primarySalesPersonName ? await this.frappeClient.getDoc("Sales Person", primarySalesPersonName) : null;
+
+    const primarySalesUserId = await this._getLarkUserIdByEmail(primarySalesPerson?.employee_email);
+
+    return composeOrderUpdateMessage(oldSalesOrderData, salesOrderData, promotionData, primarySalesUserId);
+  }
+
+  async _getLarkUserIdByEmail(email) {
+    if (!email) return null;
+    const user = await this.db.larksuite_users.findFirst({
+      where: {
+        OR: [
+          { email: email },
+          { enterprise_email: email }
+        ]
+      },
+      select: { user_id: true }
+    });
+    return user?.user_id || null;
   }
 
   async composeNewOrderContent(salesOrderData, orderCustomer, promotionData) {
