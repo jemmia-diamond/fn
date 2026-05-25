@@ -158,7 +158,8 @@ export default class PaymentEntryService {
       customer_name_order_later: customer_name,
       payment_references,
       admin_editing: paymentEntry.admin_editing,
-      refund_amount: paymentEntry.refund_amount
+      refund_amount: paymentEntry.refund_amount,
+      contact_person: paymentEntry.contact_person
     };
 
     const result = await this.createQRService.handlePostQr(qrGeneratorPayload);
