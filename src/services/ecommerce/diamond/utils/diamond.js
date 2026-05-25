@@ -1,4 +1,5 @@
 import { Prisma } from "@prisma-cli";
+import { API_CONFIG } from "src/controllers/ecommerce/constant";
 
 export function buildFilterString(jsonParams) {
   const filterClauses = [];
@@ -122,17 +123,30 @@ export function buildSortString(jsonParams) {
 }
 
 export function buildPaginationString(jsonParams) {
+  let limit = API_CONFIG.DEFAULT_LIMIT;
+  let offset = 0;
+
   if (jsonParams.pagination) {
-    const limit = parseInt(jsonParams.pagination.limit, 10);
-    const from = parseInt(jsonParams.pagination.from, 10);
-    if (!isNaN(limit) && limit > 0) {
-      if (!isNaN(from) && from > 1) {
-        return Prisma.sql`LIMIT ${limit} OFFSET ${from - 1}\n`;
+    if (jsonParams.pagination.limit !== undefined) {
+      const parsedLimit = parseInt(jsonParams.pagination.limit, 10);
+      if (!isNaN(parsedLimit) && parsedLimit > 0) {
+        limit = parsedLimit;
       }
-      return Prisma.sql`LIMIT ${limit}\n`;
+    }
+
+    if (limit > API_CONFIG.MAX_LIMIT) {
+      limit = API_CONFIG.MAX_LIMIT;
+    }
+
+    if (jsonParams.pagination.from !== undefined) {
+      const from = parseInt(jsonParams.pagination.from, 10);
+      if (!isNaN(from) && from > 1) {
+        offset = from - 1;
+      }
     }
   }
-  return Prisma.empty;
+
+  return Prisma.sql`LIMIT ${limit} OFFSET ${offset}\n`;
 }
 
 export function buildGetDiamondsQuery(jsonParams) {

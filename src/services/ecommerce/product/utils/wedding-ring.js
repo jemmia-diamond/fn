@@ -1,4 +1,5 @@
 import { Prisma } from "@prisma-cli";
+import { API_CONFIG } from "src/controllers/ecommerce/constant";
 
 export function buildWeddingRingsQuery(jsonParams) {
   const { filterSql, sortSql, paginationSql } = aggregateQuery(jsonParams);
@@ -114,12 +115,26 @@ export function aggregateQuery(jsonParams) {
   let sortSql = Prisma.empty;
   let filterSql = Prisma.empty;
 
+  let limit = API_CONFIG.DEFAULT_LIMIT;
+  let offset = 0;
+
   if (jsonParams.pagination) {
-    paginationSql = Prisma.sql`LIMIT ${jsonParams.pagination.limit} `;
-    if (jsonParams.pagination.from !== 1) {
-      paginationSql = Prisma.sql`${paginationSql} OFFSET ${jsonParams.pagination.from - 1}\n`;
+    if (jsonParams.pagination.limit !== undefined) {
+      limit = parseInt(jsonParams.pagination.limit, 10) || API_CONFIG.DEFAULT_LIMIT;
+    }
+    if (limit > API_CONFIG.MAX_LIMIT) {
+      limit = API_CONFIG.MAX_LIMIT;
+    }
+
+    if (jsonParams.pagination.from !== undefined) {
+      const from = parseInt(jsonParams.pagination.from, 10) || 1;
+      if (from > 1) {
+        offset = from - 1;
+      }
     }
   }
+
+  paginationSql = Prisma.sql`LIMIT ${limit} OFFSET ${offset}\n`;
 
   if (jsonParams.fineness && jsonParams.fineness.length > 0) {
     const patterns = jsonParams.fineness.map((f) => `%${f}%`);

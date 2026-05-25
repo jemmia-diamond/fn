@@ -7,7 +7,7 @@ import {
   buildInventoryMetricsSql
 } from "services/ecommerce/product/utils/jewelry-v2";
 import { buildWeddingRingByIdQuery, buildWeddingRingsQuery } from "services/ecommerce/product/utils/wedding-ring";
-import { JEWELRY_IMAGE } from "src/controllers/ecommerce/constant";
+import { JEWELRY_IMAGE, API_CONFIG } from "src/controllers/ecommerce/constant";
 
 export default class ProductService {
   constructor(env) {
@@ -221,7 +221,7 @@ export default class ProductService {
     if (designIds.length > 0) {
       const jsonParams = {
         design_ids: designIds,
-        pagination: { from: 1, limit: 100 },
+        pagination: { from: 1, limit: API_CONFIG.MAX_LIMIT },
         ...options
       };
       const linkedProducts = await this.getJewelryV2(jsonParams);
