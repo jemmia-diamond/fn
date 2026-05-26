@@ -314,10 +314,16 @@ export const findMainOrder = (orders) => {
  */
 const isPrimaryOrder = (salesOrder) => {
   const items = salesOrder.items || [];
+  if (items.length === 0) return false;
   return items.every(
-    (item) =>
-      item.sku?.startsWith(SKU_PREFIX.GIFT)
-    || item.sku?.startsWith(SKU_PREFIX.TEMPORARY_JEWELRY)
-    || item.sku?.length === SKU_LENGTH.JEWELRY
+    (item) => item.sku?.startsWith(SKU_PREFIX.GIFT) || isJewelryItem(item)
   );
+};
+
+const isJewelryItem = (item) => {
+  return item.sku?.startsWith(SKU_PREFIX.TEMPORARY_JEWELRY) || item.sku?.length === SKU_LENGTH.JEWELRY;
+};
+
+export const isMissingJewelrySerial = (item) => {
+  return isJewelryItem(item) && (!item.serial_numbers || item.serial_numbers.trim() === "");
 };
