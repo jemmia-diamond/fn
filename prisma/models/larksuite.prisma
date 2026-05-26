@@ -271,3 +271,23 @@ model larksuiteTechTicket {
   @@index([created_time])
   @@index([updated_time])
 }
+
+model larksuiteAppointment {
+  record_id             String    @id
+  store                 String?
+  name                  String?
+  phone_number          String?
+  gender                String?
+  product_images        Json?
+  note                  String?
+  date_time             DateTime?
+  conversation_greeting String?
+  customer_response     String?
+  main_sales            Json?
+  offline_sales         Json?
+  status                String?
+  policy                String?
+
+  @@map("appointments")
+  @@schema("larksuite")
+}

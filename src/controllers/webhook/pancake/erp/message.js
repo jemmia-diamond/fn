@@ -16,10 +16,9 @@ export default class PancakeERPMessageController {
 
       const conversationId = data?.data?.conversation?.id;
 
-      const key = `conversation-${conversationId}`;
       await DebounceService.debounce({
         env: ctx.env,
-        key: key,
+        key: `summary-conversation-${conversationId}`,
         data: data,
         actionType: DebounceActions.SEND_TO_MESSAGE_SUMMARY_QUEUE,
         delay: 30000
@@ -27,7 +26,7 @@ export default class PancakeERPMessageController {
 
       await DebounceService.debounce({
         env: ctx.env,
-        key: key,
+        key: `interaction-conversation-${conversationId}`,
         data: data,
         actionType: DebounceActions.SEND_TO_PANCAKE_MESSAGE_LAST_INTERACTION_QUEUE,
         delay: 30000

@@ -77,7 +77,7 @@ export function buildQueryV2(jsonParams) {
                 REPLACE(item.value->>'url', ${workplaceFullUrl}, ${cdnUrl})
               ELSE item.value->>'url'
             END
-          ) FILTER (WHERE jsonb_typeof(item.value) = 'object' AND item.value->>'url' IS NOT NULL),
+          ) FILTER (WHERE jsonb_typeof(item.value) = 'object' AND item.value->>'url' IS NOT NULL AND item.value->>'url' != ''),
           ARRAY[]::text[]
         ) as images
       FROM workplace.design_images di
