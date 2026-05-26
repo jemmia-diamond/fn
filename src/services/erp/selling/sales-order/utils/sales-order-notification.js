@@ -75,7 +75,7 @@ export const composeSalesOrderNotification = (salesOrder, promotionData, leadSou
 
 const composeItemContent = (item, idx, promotionData) => {
   const parentOrderInfo = `#${item.parent_order_number || "N/A"} <i>(tổng đơn: ${numberToCurrency(item.parent_grand_total || 0)})</i>`;
-  if (item.sku?.startsWith(SKU_PREFIX.GIFT)) {
+  if (isGiftItem(item)) {
     return `
       ${parentOrderInfo}
       ${idx}. ${item.item_name}
@@ -316,8 +316,12 @@ const isPrimaryOrder = (salesOrder) => {
   const items = salesOrder.items || [];
   if (items.length === 0) return false;
   return items.every(
-    (item) => item.sku?.startsWith(SKU_PREFIX.GIFT) || isJewelryItem(item)
+    (item) => isGiftItem(item) || isJewelryItem(item)
   );
+};
+
+const isGiftItem = (item) => {
+  return item.sku?.startsWith(SKU_PREFIX.GIFT);
 };
 
 const isJewelryItem = (item) => {
