@@ -414,7 +414,8 @@ export default class SalesOrderService {
                   order_data: {
                     items: salesOrderData.items,
                     attachments: salesOrderData.attachments,
-                    paid_amount: salesOrderData.paid_amount
+                    paid_amount: salesOrderData.paid_amount,
+                    deposit_amount: salesOrderData.deposit_amount
                   }
                 }
               });
@@ -429,7 +430,8 @@ export default class SalesOrderService {
               order_data: {
                 items: salesOrderData.items,
                 attachments: salesOrderData.attachments,
-                paid_amount: salesOrderData.paid_amount
+                paid_amount: salesOrderData.paid_amount,
+                deposit_amount: salesOrderData.deposit_amount
               }
             }
           }));
@@ -489,7 +491,8 @@ export default class SalesOrderService {
               order_data: {
                 items: salesOrderData.items,
                 attachments: salesOrderData.attachments,
-                paid_amount: salesOrderData.paid_amount
+                paid_amount: salesOrderData.paid_amount,
+                deposit_amount: salesOrderData.deposit_amount
               }
             }
           });
@@ -538,7 +541,8 @@ export default class SalesOrderService {
         order_data: {
           items: salesOrderData.items,
           attachments: salesOrderData.attachments,
-          paid_amount: salesOrderData.paid_amount
+          paid_amount: salesOrderData.paid_amount,
+          deposit_amount: salesOrderData.deposit_amount
         }
       }
     }));
