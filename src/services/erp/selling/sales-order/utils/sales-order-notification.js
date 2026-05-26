@@ -133,7 +133,7 @@ function extractVariantNameForJewelry(text) {
   return match ? match[1] : "";
 }
 
-export const composeOrderUpdateMessage = (prevOrder, salesOrder, promotionData, primarySalesUserId) => {
+export const composeOrderUpdateMessage = (prevOrder, salesOrder, promotionData) => {
   const diffAttachments = diffInAttachments(prevOrder.attachments || [], salesOrder.attachments || []);
   const lineItemMessage = composeLineItemsChangeMessage(prevOrder.items || [], salesOrder.items || [], promotionData);
 
@@ -148,14 +148,6 @@ export const composeOrderUpdateMessage = (prevOrder, salesOrder, promotionData, 
     content += "* <b>Cập nhật thanh toán:</b>\n";
     content += `- Số tiền đã cọc: ${numberToCurrency(oldPaidAmount)} → ${numberToCurrency(newPaidAmount)}\n`;
     content += `- Số tiền còn lại: ${numberToCurrency(salesOrder.grand_total - oldPaidAmount)} → ${numberToCurrency(salesOrder.grand_total - newPaidAmount)}\n\n`;
-  }
-
-  const hasMissingSerial = salesOrder.items?.some(item => isMissingJewelrySerial(item));
-  if (hasMissingSerial) {
-    if (primarySalesUserId) {
-      content += "* <b>Thiếu thông tin:</b>\n";
-      content += `- <at user_id="${primarySalesUserId}"></at> Vui lòng bổ sung số serial cho các sản phẩm trang sức còn thiếu!\n\n`;
-    }
   }
 
   return { content, diffAttachments };
@@ -332,6 +324,6 @@ const isJewelryItem = (item) => {
   return item.sku?.startsWith(SKU_PREFIX.TEMPORARY_JEWELRY) || item.sku?.length === SKU_LENGTH.JEWELRY;
 };
 
-const isMissingJewelrySerial = (item) => {
+export const isMissingJewelrySerial = (item) => {
   return isJewelryItem(item) && (!item.serial_numbers || item.serial_numbers.trim() === "");
 };

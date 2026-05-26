@@ -6,7 +6,7 @@ import Database from "src/services/database";
 import AddressService from "src/services/erp/contacts/address/address";
 import ContactService from "src/services/erp/contacts/contact/contact";
 import CustomerService from "src/services/erp/selling/customer/customer";
-import { composeOrderUpdateMessage, composeSalesOrderNotification, extractPromotions, findMainOrder } from "services/erp/selling/sales-order/utils/sales-order-notification";
+import { composeOrderUpdateMessage, composeSalesOrderNotification, extractPromotions, findMainOrder, isMissingJewelrySerial } from "services/erp/selling/sales-order/utils/sales-order-notification";
 import { validateSalesOrder } from "services/erp/selling/sales-order/utils/sales-order-validator";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
@@ -376,6 +376,17 @@ export default class SalesOrderService {
           ));
         } else {
           content = await this.composeNewOrderContent(salesOrderData, customer, promotionData);
+
+          const hasMissingSerial = salesOrderData.items?.some(item => isMissingJewelrySerial(item));
+          if (hasMissingSerial) {
+            const primarySalesPersonName = salesOrderData.primary_sales_person;
+            const primarySalesPerson = primarySalesPersonName ? await this.frappeClient.getDoc("Sales Person", primarySalesPersonName) : null;
+            const primarySalesUserId = await this._getLarkUserIdByEmail(primarySalesPerson?.employee_email);
+
+            if (primarySalesUserId) {
+              content += `\n* <b>Thiếu thông tin:</b>\n- <at user_id="${primarySalesUserId}"></at> Vui lòng bổ sung số serial cho các sản phẩm trang sức còn thiếu!\n\n`;
+            }
+          }
         }
 
         if (!content && !diffAttachments) {
@@ -625,12 +636,7 @@ export default class SalesOrderService {
   }
 
   async composeUpdateOrderContent(oldSalesOrderData, salesOrderData, promotionData) {
-    const primarySalesPersonName = salesOrderData.primary_sales_person;
-    const primarySalesPerson = primarySalesPersonName ? await this.frappeClient.getDoc("Sales Person", primarySalesPersonName) : null;
-
-    const primarySalesUserId = await this._getLarkUserIdByEmail(primarySalesPerson?.employee_email);
-
-    return composeOrderUpdateMessage(oldSalesOrderData, salesOrderData, promotionData, primarySalesUserId);
+    return composeOrderUpdateMessage(oldSalesOrderData, salesOrderData, promotionData);
   }
 
   async _getLarkUserIdByEmail(email) {
