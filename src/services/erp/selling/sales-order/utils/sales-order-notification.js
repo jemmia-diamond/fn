@@ -320,12 +320,16 @@ const isPrimaryOrder = (salesOrder) => {
   );
 };
 
-const isGiftItem = (item) => {
+export const isGiftItem = (item) => {
   return item.sku?.startsWith(SKU_PREFIX.GIFT);
 };
 
-const isJewelryItem = (item) => {
+export const isJewelryItem = (item) => {
   return item.sku?.startsWith(SKU_PREFIX.TEMPORARY_JEWELRY) || item.sku?.length === SKU_LENGTH.JEWELRY;
+};
+
+export const isDiamondItem = (item) => {
+  return item.sku?.startsWith(SKU_PREFIX.DIAMOND) || item.sku?.startsWith(SKU_PREFIX.DIAMOND_TEMPORARY);
 };
 
 export const isMissingJewelrySerial = (item) => {

@@ -116,6 +116,10 @@ export default {
         toDate: dayjs().tz(TIMEZONE_VIETNAM).hour(17).minute(0).second(0).toISOString()
       });
       await new ERP.Accounting.PaymentEntryNotificationService(env).runAfternoonBatch();
+      await new ERP.Selling.MissingSerialNotificationService(env).notify({
+        fromDate: dayjs().tz(TIMEZONE_VIETNAM).hour(9).minute(0).second(0).toISOString(),
+        toDate: dayjs().tz(TIMEZONE_VIETNAM).hour(17).minute(0).second(0).toISOString()
+      });
       break;
     case "0 11 * * *": // 18:00
       break;
@@ -127,6 +131,10 @@ export default {
       await Larksuite.Ticket.TechTicketService.syncTechTickets(env, { mode: "daily" });
       await new Google.GoogleMerchantProductSyncService(env).sync();
       await new ERP.Accounting.PaymentEntryNotificationService(env).runMorningBatch();
+      await new ERP.Selling.MissingSerialNotificationService(env).notify({
+        fromDate: dayjs().tz(TIMEZONE_VIETNAM).subtract(1, "day").hour(17).minute(0).second(0).toISOString(),
+        toDate: dayjs().tz(TIMEZONE_VIETNAM).hour(9).minute(0).second(0).toISOString()
+      });
       break;
     case "0 14 * * *": // 21:00
       await ERP.Automation.AssignmentRuleService.enableAssignmentRuleOffHour(env);
