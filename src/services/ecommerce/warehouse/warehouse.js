@@ -7,6 +7,7 @@ export default class WarehouseService {
   }
 
   async getAvailableWarehouses(productId) {
+    if (!productId || isNaN(Number(productId))) return [];
     const dataSql = buildQuery(productId);
     const results = await this.db.$queryRaw(dataSql);
 

@@ -35,6 +35,7 @@ export default class DiamondService {
   }
 
   async getDiamondByVariantId(variantId) {
+    if (!variantId || isNaN(Number(variantId))) return null;
     try {
       const result = await retryQuery(
         () => this.db.$queryRaw`

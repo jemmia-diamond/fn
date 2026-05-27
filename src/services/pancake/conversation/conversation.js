@@ -14,6 +14,7 @@ export default class ConversationService {
   }
 
   async updateConversation(conversationId, pageId, insertedAt) {
+    if (!conversationId || !pageId || !insertedAt) return null;
     const result = await this.db.$queryRaw`
       UPDATE pancake.conversation c
       SET last_sent_at = ${insertedAt}
@@ -26,6 +27,7 @@ export default class ConversationService {
     conversationId,
     frappeNameId
   ) {
+    if (!conversationId || !frappeNameId) return null;
     const result = await this.db.$queryRaw`
       INSERT INTO pancake.frappe_lead_conversation (conversation_id, frappe_name_id, updated_at, created_at)
       VALUES (${conversationId}, ${frappeNameId}, NOW(), NOW())
@@ -39,6 +41,7 @@ export default class ConversationService {
   async findExistingLead({
     conversationId
   }) {
+    if (!conversationId) return null;
     const result = await this.db.$queryRaw`
       SELECT * FROM pancake.frappe_lead_conversation AS flc
       WHERE flc.conversation_id = ${conversationId}
@@ -53,6 +56,7 @@ export default class ConversationService {
   async findPageInfo({
     pageId
   }) {
+    if (!pageId) return null;
     const result = await this.db.$queryRaw`
       SELECT * FROM pancake.page AS p
       WHERE p.id = ${pageId}
@@ -81,8 +85,9 @@ export default class ConversationService {
     const pageId = message.page_id;
     const insertedAt = message.inserted_at;
 
-    if (!insertedAt) {
-      throw new Error("Page ID: " + pageId + ", Conversation ID: " + conversationId + ", Inserted At: " + insertedAt);
+    if (!insertedAt || !conversationId || !pageId) {
+      console.warn("Missing required fields for processLastCustomerMessage. Page ID: " + pageId + ", Conversation ID: " + conversationId + ", Inserted At: " + insertedAt);
+      return;
     }
     // Store the time of the last customer message
     const result = await this.updateConversation(conversationId, pageId, insertedAt);
@@ -101,7 +106,7 @@ export default class ConversationService {
     const pageId = body?.page_id;
 
     const hasPhone = body?.data?.message?.has_phone;
-    if (!hasPhone) {
+    if (!hasPhone || !conversationId || !pageId) {
       return;
     }
 
@@ -161,10 +166,11 @@ export default class ConversationService {
       return;
     }
 
-    const { data } = body;
-    const { message } = data;
+    const data = body?.data;
+    const message = data?.message;
 
     const conversationId = message?.conversation_id;
+    if (!conversationId) return;
 
     const existingDocName = await this.findExistingLead({
       conversationId: conversationId
