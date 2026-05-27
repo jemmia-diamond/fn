@@ -23,7 +23,8 @@ export default class MissingSerialNotificationService {
 
     const filters = [
       ["cancelled_status", "=", "Uncancelled"],
-      ["grand_total", ">", 1000]
+      ["grand_total", ">", 1000],
+      ["source_name", "!=", "web"]
     ];
 
     if (fromDate && toDate) {
@@ -113,7 +114,7 @@ export default class MissingSerialNotificationService {
 
     ordersWithIssues.forEach((order, idx) => {
       const link = `https://erp.jemmia.vn/desk/sales-order/${order.name}`;
-      message += `\n${idx + 1}. #${order.order_number || order.name}`;
+      message += `\n**${idx + 1}. #${order.order_number || order.name}**`;
 
       if (order.missingSerialItems.length > 0) {
         message += "\n* Sản phẩm thiếu serial:";
