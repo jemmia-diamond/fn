@@ -126,10 +126,10 @@ export default class SalesOrderService {
       skip_delivery_note: 1,
       financial_status: this.financialStatusMapper[haravanOrderData.financial_status],
       fulfillment_status: this.fulfillmentStatusMapper[haravanOrderData.fulfillment_status],
-      fulfillment_completion_date: haravanOrderData.fulfillments.length && haravanOrderData.fulfillments[0].delivered_date ? dayjs(haravanOrderData.fulfillments[0].delivered_date).format("YYYY-MM-DD HH:mm:ss") : null,
+      fulfillment_completion_date: haravanOrderData.fulfillments.length && haravanOrderData.fulfillments[0].delivered_date ? dayjs(haravanOrderData.fulfillments[0].delivered_date).utc().format("YYYY-MM-DD HH:mm:ss") : null,
       cancelled_status: this.cancelledStatusMapper[haravanOrderData.cancelled_status],
       carrier_status: haravanOrderData.fulfillments.length ? this.carrierStatusMapper[haravanOrderData.fulfillments[0].carrier_status_code] : this.carrierStatusMapper.notdelivered,
-      transaction_date: dayjs(haravanOrderData.created_at).add(7, "hour").format("YYYY-MM-DD"),
+      transaction_date: dayjs(haravanOrderData.created_at).utc().add(7, "hour").format("YYYY-MM-DD"),
       haravan_created_at: convertIsoToDatetime(haravanOrderData.created_at, "datetime"),
       total: haravanOrderData.total_line_items_price,
       payment_records: paymentTransactions.map(this.mapPaymentRecordFields),
@@ -137,7 +137,7 @@ export default class SalesOrderService {
       customer_address: customerDefaultAdress.name,
       total_amount: haravanOrderData.total_price,
       grand_total: haravanOrderData.total_price,
-      real_order_date: await this.getRealOrderDate(haravanOrderData.id) || dayjs(haravanOrderData.created_at).add(7, "hour").format("YYYY-MM-DD"),
+      real_order_date: await this.getRealOrderDate(haravanOrderData.id) || dayjs(haravanOrderData.created_at).utc().add(7, "hour").format("YYYY-MM-DD"),
       ref_sales_orders: await this.mapRefSalesOrder(haravanOrderData.id),
       tracking_number: trackingNumber
     };
@@ -218,7 +218,7 @@ export default class SalesOrderService {
 
     // getRefOrderChain returns orders sorted by created_at ASC, so the first one is the original order
     const firstOrder = refOrders[0];
-    return dayjs(firstOrder.created_at).add(7, "hour").format("YYYY-MM-DD");
+    return dayjs(firstOrder.created_at).utc().add(7, "hour").format("YYYY-MM-DD");
   };
 
   mapLineItemsFields = (lineItemData) => {
@@ -989,6 +989,10 @@ export default class SalesOrderService {
   }
 
   async syncHaravanFinancialStatus(salesOrderData) {
+    if (!salesOrderData.haravan_order_id) {
+      return;
+    }
+
     if (Math.abs(salesOrderData.grand_total - salesOrderData.paid_amount) <= 1000) {
       const HRV_API_KEY = await this.env.HARAVAN_TOKEN_SECRET.get();
       if (!HRV_API_KEY) {
