@@ -70,6 +70,7 @@ export default {
       await DatabaseOperations.DatabaseFunctionService.runWorkplaceUpdateLastRfidScanTime(env);
       await WorkshopOrderServices.WorkshopOrderServices.cronJobSyncLarkToNocoDB(env);
       await DatabaseOperations.MaterializedViewService.refresh3Hours(env);
+      await DatabaseOperations.DatabaseFunctionService.runUpdateOrderReferencesInVariantSerials(env);
       break;
     case "0 */6 * * *": // At every 6th hour
       await DatabaseOperations.MaterializedViewService.refresh6Hours(env);
