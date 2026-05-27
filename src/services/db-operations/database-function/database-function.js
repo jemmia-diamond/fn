@@ -17,7 +17,7 @@ export default class DatabaseFunctionService {
     }
   }
 
-  // Run every 10 minutes
+  // Run every 3 hours
   static async runUpdateOrderReferencesInVariantSerials(env) {
     const db = Database.instance(env);
     try {

@@ -49,7 +49,6 @@ export default {
       await new Ecommerce.VariantSyncService(env).syncVariants();
       await ERP.Selling.BuybackExchangeSyncService.cronSync(env);
       await new Haravan.Customer.DatabaseSyncService(env).sync();
-      await DatabaseOperations.DatabaseFunctionService.runUpdateOrderReferencesInVariantSerials(env);
       break;
     case "*/15 * * * *": // At every 15th minute
       await ERP.Contacts.ContactService.cronSyncContactsToDatabase(env);
@@ -71,6 +70,7 @@ export default {
       await DatabaseOperations.DatabaseFunctionService.runWorkplaceUpdateLastRfidScanTime(env);
       await WorkshopOrderServices.WorkshopOrderServices.cronJobSyncLarkToNocoDB(env);
       await DatabaseOperations.MaterializedViewService.refresh3Hours(env);
+      await DatabaseOperations.DatabaseFunctionService.runUpdateOrderReferencesInVariantSerials(env);
       break;
     case "0 */6 * * *": // At every 6th hour
       await DatabaseOperations.MaterializedViewService.refresh6Hours(env);
