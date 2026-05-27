@@ -10,7 +10,7 @@ import Reporting from "services/reporting";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import timezone from "dayjs/plugin/timezone.js";
-import { TIMEZONE_VIETNAM } from "src/constants";
+import { TIMEZONE_VIETNAM, MISSING_SERIAL_START_DATE } from "src/constants";
 import Google from "services/google";
 import Salesaya from "services/salesaya";
 import Pancake from "services/pancake";
@@ -117,6 +117,10 @@ export default {
         toDate: dayjs().tz(TIMEZONE_VIETNAM).hour(17).minute(0).second(0).toISOString()
       });
       await new ERP.Accounting.PaymentEntryNotificationService(env).runAfternoonBatch();
+      await new ERP.Selling.MissingSerialNotificationService(env).notify({
+        fromDate: dayjs.tz(MISSING_SERIAL_START_DATE, TIMEZONE_VIETNAM).toISOString(),
+        toDate: dayjs().toISOString()
+      });
       break;
     case "0 11 * * *": // 18:00
       break;
@@ -128,6 +132,10 @@ export default {
       await Larksuite.Ticket.TechTicketService.syncTechTickets(env, { mode: "daily" });
       await new Google.GoogleMerchantProductSyncService(env).sync();
       await new ERP.Accounting.PaymentEntryNotificationService(env).runMorningBatch();
+      await new ERP.Selling.MissingSerialNotificationService(env).notify({
+        fromDate: dayjs.tz(MISSING_SERIAL_START_DATE, TIMEZONE_VIETNAM).toISOString(),
+        toDate: dayjs().toISOString()
+      });
       break;
     case "0 14 * * *": // 21:00
       await ERP.Automation.AssignmentRuleService.enableAssignmentRuleOffHour(env);

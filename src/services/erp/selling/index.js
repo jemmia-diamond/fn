@@ -7,6 +7,7 @@ import ProductCategoryService from "services/erp/selling/product-category/produc
 import PromotionService from "services/erp/selling/promotion/promotion";
 import SalesOrderItemService from "services/erp/selling/sales-order-item/sales-order-item";
 import BuybackExchangeSyncService from "services/erp/selling/buyback-exchange/buyback-exchange-sync-service";
+import MissingSerialNotificationService from "services/erp/selling/sales-order/missing-serial-notification";
 
 export default {
   SalesOrderService: SalesOrderService,
@@ -17,5 +18,6 @@ export default {
   ProductCategoryService: ProductCategoryService,
   PromotionService: PromotionService,
   SalesOrderItemService: SalesOrderItemService,
-  BuybackExchangeSyncService: BuybackExchangeSyncService
+  BuybackExchangeSyncService: BuybackExchangeSyncService,
+  MissingSerialNotificationService: MissingSerialNotificationService
 };
