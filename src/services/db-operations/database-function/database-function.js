@@ -17,4 +17,13 @@ export default class DatabaseFunctionService {
     }
   }
 
+  // Run every 10 minutes
+  static async runUpdateOrderReferencesInVariantSerials(env) {
+    const db = Database.instance(env);
+    try {
+      await db.$executeRaw`${Prisma.raw("SELECT workplace.update_order_references_in_variant_serials();")}`;
+    } catch (error) {
+      Sentry.captureException(error);
+    }
+  }
 }
