@@ -375,18 +375,7 @@ export default class SalesOrderService {
             promotionData
           ));
         } else {
-          content = await this.composeNewOrderContent(salesOrderData, customer, promotionData);
-
-          const hasMissingSerial = salesOrderData.items?.some(item => isMissingJewelrySerial(item));
-          if (hasMissingSerial) {
-            const primarySalesPersonName = salesOrderData.primary_sales_person;
-            const primarySalesPerson = primarySalesPersonName ? await this.frappeClient.getDoc("Sales Person", primarySalesPersonName) : null;
-            const primarySalesUserId = await this._getLarkUserIdByEmail(primarySalesPerson?.employee_email);
-
-            if (primarySalesUserId) {
-              content += `\n* <b>Thiếu thông tin:</b>\n- <at user_id="${primarySalesUserId}"></at> Vui lòng bổ sung số serial cho các sản phẩm trang sức còn thiếu!\n\n`;
-            }
-          }
+          content = await this.composeNewOrderContent(salesOrderData, customer, promotionData, true);
         }
 
         if (!content && !diffAttachments) {
@@ -425,7 +414,8 @@ export default class SalesOrderService {
                   order_data: {
                     items: salesOrderData.items,
                     attachments: salesOrderData.attachments,
-                    paid_amount: salesOrderData.paid_amount
+                    paid_amount: salesOrderData.paid_amount,
+                    deposit_amount: salesOrderData.deposit_amount
                   }
                 }
               });
@@ -440,7 +430,8 @@ export default class SalesOrderService {
               order_data: {
                 items: salesOrderData.items,
                 attachments: salesOrderData.attachments,
-                paid_amount: salesOrderData.paid_amount
+                paid_amount: salesOrderData.paid_amount,
+                deposit_amount: salesOrderData.deposit_amount
               }
             }
           }));
@@ -500,7 +491,8 @@ export default class SalesOrderService {
               order_data: {
                 items: salesOrderData.items,
                 attachments: salesOrderData.attachments,
-                paid_amount: salesOrderData.paid_amount
+                paid_amount: salesOrderData.paid_amount,
+                deposit_amount: salesOrderData.deposit_amount
               }
             }
           });
@@ -549,7 +541,8 @@ export default class SalesOrderService {
         order_data: {
           items: salesOrderData.items,
           attachments: salesOrderData.attachments,
-          paid_amount: salesOrderData.paid_amount
+          paid_amount: salesOrderData.paid_amount,
+          deposit_amount: salesOrderData.deposit_amount
         }
       }
     }));
@@ -653,7 +646,7 @@ export default class SalesOrderService {
     return user?.user_id || null;
   }
 
-  async composeNewOrderContent(salesOrderData, orderCustomer, promotionData) {
+  async composeNewOrderContent(salesOrderData, orderCustomer, promotionData, isReorder = false) {
     const customer = orderCustomer ?? (await this.frappeClient.getDoc("Customer", salesOrderData.customer));
 
     const leadSource = await this.frappeClient.getDoc("Lead Source", customer.first_source);
@@ -684,7 +677,17 @@ export default class SalesOrderService {
       filters: [["name", "in", secondarySalesPersonNames]]
     });
 
-    const content = composeSalesOrderNotification(salesOrderData, promotionData, leadSource, policyData, productCategoryData, purposeData, customer, primarySalesPerson, secondarySalesPeople);
+    let content = composeSalesOrderNotification(salesOrderData, promotionData, leadSource, policyData, productCategoryData, purposeData, customer, primarySalesPerson, secondarySalesPeople);
+
+    if (isReorder) {
+      const hasMissingSerial = salesOrderData.items?.some(item => isMissingJewelrySerial(item));
+      if (hasMissingSerial) {
+        const primarySalesUserId = await this._getLarkUserIdByEmail(primarySalesPerson?.employee_email);
+        if (primarySalesUserId) {
+          content += `\n* <b>Thiếu thông tin:</b>\n- <at user_id="${primarySalesUserId}"></at> Vui lòng bổ sung số serial cho các sản phẩm trang sức còn thiếu!\n\n`;
+        }
+      }
+    }
 
     return content;
   }
