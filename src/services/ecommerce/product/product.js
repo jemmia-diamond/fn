@@ -238,6 +238,7 @@ export default class ProductService {
 
   async getJewelryByIdV2(id, options = {}) {
     const productId = parseInt(id, 10);
+    if (isNaN(productId)) return null;
     const { variantJsonBuildObject, lateralJoinClause } =
       buildQuerySingleV2(options);
     const workplaceUrlPrefix = JEWELRY_IMAGE.WORKPLACE_URL_PREFIX;
