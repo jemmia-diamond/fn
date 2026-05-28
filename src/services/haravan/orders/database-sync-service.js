@@ -34,7 +34,7 @@ export default class OrderDatabaseSyncService {
       : dayjs().utc().subtract(1, "hour").format("YYYY-MM-DDTHH:mm:ss[Z]");
 
     try {
-      const HRV_API_KEY = await this.env.HARAVAN_TOKEN_SECRET.get();
+      const HRV_API_KEY = this.env.HARAVAN_TOKEN;
       const haravanClient = new HaravanAPI(HRV_API_KEY);
 
       await this._fetchAndProcessOrders(haravanClient, fromDate);

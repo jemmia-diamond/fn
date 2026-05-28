@@ -167,7 +167,7 @@ export default class CustomerService {
       }
     }
 
-    const accessToken = await this.env.HARAVAN_TOKEN_SECRET.get();
+    const accessToken = this.env.HARAVAN_TOKEN;
     if (!accessToken) {
       throw new Error("Haravan access token not found");
     }

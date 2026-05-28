@@ -14,7 +14,7 @@ export default class ProductG1PromotionSyncService {
 
   async syncPromotions() {
     try {
-      const HRV_API_KEY = await this.env.HARAVAN_TOKEN_SECRET.get();
+      const HRV_API_KEY = this.env.HARAVAN_TOKEN;
       const haravanClient = new HaravanAPI(HRV_API_KEY);
 
       await this._syncCreateCollects(haravanClient);

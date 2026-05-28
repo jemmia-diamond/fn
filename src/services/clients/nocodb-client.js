@@ -26,12 +26,7 @@ export default class NocoDBClient {
       return this.#apiToken;
     }
 
-    try {
-      const secretToken = await this.#env.NOCODB_API_TOKEN_SECRET?.get();
-      this.#apiToken = secretToken || this.#env.NOCODB_API_TOKEN;
-    } catch {
-      this.#apiToken = this.#env.NOCODB_API_TOKEN;
-    }
+    this.#apiToken = this.#env.NOCODB_API_TOKEN;
 
     if (!this.#apiToken) {
       console.warn("NocoDBClient: apiToken is missing.");

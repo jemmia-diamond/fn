@@ -7,15 +7,8 @@ let clientV2Instance = null;
 export default class LarksuiteService {
 
   static async _getCredentials(env) {
-    const appId = env.LARK_APP_ID || env.LARKSUITE_APP_ID;
-    let appSecret;
-
-    try {
-      appSecret = await env.LARK_APP_SECRET_SECRET?.get();
-    } catch {
-      appSecret = env.LARKSUITE_APP_SECRET;
-    }
-    appSecret = appSecret || env.LARKSUITE_APP_SECRET;
+    const appId = env.LARK_APP_ID;
+    const appSecret = env.LARK_APP_SECRET;
 
     return { appId, appSecret };
   }

@@ -33,12 +33,7 @@ export default class LarkBaseClient {
 
     this.#appId = this.#env.LARK_APP_ID;
 
-    try {
-      const secret = await this.#env.LARK_APP_SECRET_SECRET?.get();
-      this.#appSecret = secret || this.#env.LARK_APP_SECRET;
-    } catch {
-      this.#appSecret = this.#env.LARK_APP_SECRET;
-    }
+    this.#appSecret = this.#env.LARK_APP_SECRET;
 
     if (!this.#appId || !this.#appSecret) {
       throw new Error(`LARK_APP_ID or LARK_APP_SECRET is missing. AppID: ${this.#appId}, Secret defined: ${!!this.#appSecret}`);
