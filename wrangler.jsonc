@@ -112,11 +112,6 @@
       "secret_name": "NHAT_TIN_JEMMIA_CT_PASSWORD"
     },
     {
-      "binding": "INVENTORY_CMS_STATIC_TOKEN_SECRET",
-      "store_id": "dff6fef7003446178302a7874af64fde",
-      "secret_name": "INVENTORY_CMS_STATIC_TOKEN"
-    },
-    {
       "binding": "GEMINI_API_KEY_SECRET",
       "store_id": "dff6fef7003446178302a7874af64fde",
       "secret_name": "GEMINI_API_KEY"
