@@ -20,7 +20,7 @@ export default class OrderTrackingService {
   async trackOrder(orderId, reqBearerToken) {
     try {
       let isAuthorized = false;
-      const bearerToken = await this.env.BEARER_TOKEN_SECRET.get();
+      const bearerToken = this.env.BEARER_TOKEN;
       if (reqBearerToken) {
         const firstOrder = await getInitialOrder(this.db, orderId);
         if (firstOrder) {

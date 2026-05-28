@@ -5,7 +5,7 @@ export default class LarkApprovalOrdersController {
     try {
       const { token, linkage_params } = await ctx.req.json() || {};
 
-      const expectedToken = await ctx.env.BEARER_TOKEN_SECRET.get();
+      const expectedToken = ctx.env.BEARER_TOKEN;
       if (token !== expectedToken) {
         return ctx.json({
           code: 1,

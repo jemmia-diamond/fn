@@ -24,7 +24,7 @@ export default class AIHUBClient {
     }
 
     try {
-      const secretToken = await this.#env.BEARER_TOKEN_SECRET?.get();
+      const secretToken = this.#env.BEARER_TOKEN;
       this.#bearerToken = secretToken || this.#env.BEARER_TOKEN;
     } catch {
       this.#bearerToken = this.#env.BEARER_TOKEN;

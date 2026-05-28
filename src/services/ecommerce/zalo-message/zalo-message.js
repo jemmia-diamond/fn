@@ -109,7 +109,7 @@ export default class SendZaloMessage {
 
         const templateId = ZALO_TEMPLATE.delivering;
 
-        const bearerToken = await env.BEARER_TOKEN_SECRET.get();
+        const bearerToken = env.BEARER_TOKEN;
         const accessToken = await this.createTokenForOrderTracking({
           order_id: firstOrder.id,
           order_number: firstOrder.order_number
