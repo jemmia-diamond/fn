@@ -31,6 +31,9 @@ export default {
     case "erpnext-order-creation":
       await ERP.Selling.SalesOrderService.dequeueOrderQueue(batch, env);
       break;
+    case "pancake-pos-sync":
+      await Pancake.PancakePOSSyncService.dequeueOrderQueue(batch, env);
+      break;
     case "message":
       await Pancake.ConversationService.dequeueMessageSyncCustomerToLeadCRM(batch, env);
       break;
