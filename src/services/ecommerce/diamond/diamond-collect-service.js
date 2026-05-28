@@ -50,7 +50,7 @@ export default class DiamondCollectService {
   }
 
   async _initializeClients() {
-    const HRV_API_KEY = await this.env.HARAVAN_TOKEN_SECRET.get();
+    const HRV_API_KEY = this.env.HARAVAN_TOKEN;
 
     return {
       haravanApi: new HaravanAPI(HRV_API_KEY),

@@ -88,7 +88,7 @@ export default class VoucherMappingService {
   static async fetchCustomer(v, haravanOrder, env) {
     if(haravanOrder && haravanOrder?.customer_id) return haravanOrder;
 
-    const accessToken = await env.HARAVAN_TOKEN_SECRET.get();
+    const accessToken = env.HARAVAN_TOKEN;
     const haravanClient = new HaravanAPI(accessToken);
     const haravanResult = await haravanClient.order.getOrder(v.haravan_order_id);
     const customerData = haravanResult?.order?.customer;

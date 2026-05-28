@@ -132,7 +132,7 @@ export default class OrderTrackingService {
 
   async getOrder(orderId) {
     const endpoint = `/com/orders/${orderId}.json`;
-    const haravanApiKey = await this.env.HARAVAN_TOKEN_SECRET.get();
+    const haravanApiKey = this.env.HARAVAN_TOKEN;
     const haravanClient = new HaravanClient(
       haravanApiKey,
       this.env.HARAVAN_API_BASE_URL

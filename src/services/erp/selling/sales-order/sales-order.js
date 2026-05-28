@@ -997,7 +997,7 @@ export default class SalesOrderService {
     }
 
     if (Math.abs(salesOrderData.grand_total - salesOrderData.paid_amount) <= 1000) {
-      const HRV_API_KEY = await this.env.HARAVAN_TOKEN_SECRET.get();
+      const HRV_API_KEY = this.env.HARAVAN_TOKEN;
       if (!HRV_API_KEY) {
         return;
       }

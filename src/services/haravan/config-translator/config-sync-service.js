@@ -224,7 +224,7 @@ export default class ConfigTranslatorService {
 
   async sync() {
     try {
-      const HRV_API_KEY = await this.env.HARAVAN_TOKEN_SECRET.get();
+      const HRV_API_KEY = this.env.HARAVAN_TOKEN;
       const haravanClient = new HaravanClient(HRV_API_KEY, this.env.HARAVAN_API_BASE_URL);
       const imageService = new ImageTranslationService();
 

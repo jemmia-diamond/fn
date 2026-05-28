@@ -117,7 +117,7 @@ export default class OrderService {
       return;
     }
 
-    const HRV_API_KEY = await this.env.HARAVAN_TOKEN_SECRET.get();
+    const HRV_API_KEY = this.env.HARAVAN_TOKEN;
     if (!HRV_API_KEY) {
       throw new BadRequestException("Haravan API credentials or base URL are not configured in the environment.");
     }
