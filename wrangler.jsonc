@@ -77,11 +77,6 @@
   },
   "secrets_store_secrets": [
     {
-      "binding": "BEARER_TOKEN_SECRET",
-      "store_id": "dff6fef7003446178302a7874af64fde",
-      "secret_name": "BEARER_TOKEN"
-    },
-    {
       "binding": "STRINGEE_KEY_SECRET",
       "store_id": "dff6fef7003446178302a7874af64fde",
       "secret_name": "STRINGEE_KEY"
@@ -117,39 +112,14 @@
       "secret_name": "NHAT_TIN_JEMMIA_CT_PASSWORD"
     },
     {
-      "binding": "JEMMIA_BOT_LARK_ENCRYPT_KEY_SECRET",
-      "store_id": "dff6fef7003446178302a7874af64fde",
-      "secret_name": "JEMMIA_BOT_LARK_ENCRYPT_KEY"
-    },
-    {
       "binding": "INVENTORY_CMS_STATIC_TOKEN_SECRET",
       "store_id": "dff6fef7003446178302a7874af64fde",
       "secret_name": "INVENTORY_CMS_STATIC_TOKEN"
     },
     {
-      "binding": "LARK_APP_SHIELD_SECRET_SECRET",
-      "store_id": "dff6fef7003446178302a7874af64fde",
-      "secret_name": "LARK_APP_SHIELD_SECRET"
-    },
-    {
-      "binding": "LARK_SHIELD_ENCRYPT_KEY_SECRET",
-      "store_id": "dff6fef7003446178302a7874af64fde",
-      "secret_name": "LARK_SHIELD_ENCRYPT_KEY"
-    },
-    {
-      "binding": "AI_PROXY_TOKEN_SECRET",
-      "store_id": "dff6fef7003446178302a7874af64fde",
-      "secret_name": "AI_PROXY_TOKEN"
-    },
-    {
       "binding": "GEMINI_API_KEY_SECRET",
       "store_id": "dff6fef7003446178302a7874af64fde",
       "secret_name": "GEMINI_API_KEY"
-    },
-    {
-      "binding": "PANCAKE_POS_API_KEY_SECRET",
-      "store_id": "dff6fef7003446178302a7874af64fde",
-      "secret_name": "PANCAKE_POS_API_KEY"
     }
   ],
   "kv_namespaces": [

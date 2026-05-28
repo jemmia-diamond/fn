@@ -2,7 +2,7 @@ const verifyLarkWebhook = async (ctx, next) => {
   const deliveryToken = ctx.req.header("X-LARK-AUTH-TOKEN");
   if (!deliveryToken) return ctx.json({ error: "Invalid access token" }, 401);
 
-  const bearerToken = await ctx.env.BEARER_TOKEN_SECRET.get();
+  const bearerToken = ctx.env.BEARER_TOKEN;
   if ((deliveryToken !== bearerToken) && (deliveryToken !== ctx.env.BEARER_TOKEN)) {
     return ctx.json({ error: "Invalid access token" }, 401);
   }

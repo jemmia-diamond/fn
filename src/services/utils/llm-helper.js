@@ -9,7 +9,7 @@ import { createGoogleGenerativeAI } from "@ai-sdk/google";
  * @returns {Promise<Object>} The AI model instance.
  */
 export async function getOpenAICompatibleModel(env) {
-  const token = await env.AI_PROXY_TOKEN_SECRET.get();
+  const token = env.AI_PROXY_TOKEN;
   const baseUrl = env.AI_PROXY_URL + "/v1";
 
   const provider = createOpenAICompatible({

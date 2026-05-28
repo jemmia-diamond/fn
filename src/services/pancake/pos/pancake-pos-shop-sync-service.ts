@@ -12,7 +12,7 @@ export default class PancakePOSShopSyncService {
   }
 
   private async initializeClient(env: any) {
-    this.client = new PancakePosClient(env.PANCAKE_POS_API_KEY_SECRET);
+    this.client = new PancakePosClient(env.PANCAKE_POS_API_KEY);
   }
 
   async syncShops(): Promise<void> {

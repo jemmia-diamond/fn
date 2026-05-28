@@ -10,7 +10,7 @@ export default class EventRedirectController {
     let eventBody = body;
 
     if (body.encrypt) {
-      const secret = await c.env.JEMMIA_BOT_LARK_ENCRYPT_KEY_SECRET.get();
+      const secret = c.env.JEMMIA_BOT_LARK_ENCRYPT_KEY;
       const decryptedData = await LarkCipher.decryptEvent(body.encrypt, secret);
       eventBody = JSON.parse(decryptedData);
     }

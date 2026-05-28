@@ -48,7 +48,7 @@ export default class PancakePosClient {
 
   private async getClient(): Promise<AxiosInstance> {
     if (!this.httpClient) {
-      const apiKey = await this.apiKeySecret.get();
+      const apiKey = this.apiKeySecret;
       this.httpClient = axios.create({
         baseURL: "https://pos.pages.fm/api/v1",
         params: { api_key: apiKey }
