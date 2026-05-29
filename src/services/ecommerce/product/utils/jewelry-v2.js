@@ -1,7 +1,32 @@
-// Import aggregateQuery from jewelry.js to reuse filter logic
 import { aggregateQuery } from "services/ecommerce/product/utils/jewelry";
 import { JEWELRY_IMAGE } from "src/controllers/ecommerce/constant";
 import { Prisma } from "@prisma-cli";
+
+export function buildInventoryMetricsSql(opts = {}) {
+  if (!opts.return_inventory_metrics) {
+    return Prisma.sql``;
+  }
+  const limitSql = opts.limit_selling_quantity !== null && opts.limit_selling_quantity !== undefined
+    ? Prisma.sql`CAST(${opts.limit_selling_quantity} AS INT)`
+    : Prisma.sql`NULL`;
+  return Prisma.sql`
+    , CAST(
+        COALESCE(
+          (
+            SELECT CASE 
+              WHEN p.haravan_product_type = ANY (ARRAY['Bông Tai'::text, 'Bông Tai Nguyên Chiếc'::text]) 
+              THEN SUM(ln.quantity) / 2
+              ELSE SUM(ln.quantity)
+            END
+            FROM haravan.line_items ln 
+            INNER JOIN haravan.orders o ON ln.order_id = o.id 
+            WHERE ln.product_id = p.haravan_product_id 
+              AND o.cancelled_status = 'uncancelled'
+          ), 0
+        ) + COALESCE(p.sold_before_2025, 0) 
+      AS INT) AS sold_quantity, ${limitSql} AS limit_selling_quantity
+  `;
+}
 
 export function buildQueryV2(jsonParams) {
   const {
@@ -35,7 +60,6 @@ export function buildQueryV2(jsonParams) {
 
   let lateralJoinClause;
   let variantJsonBuildObject;
-  let diamondJoinsForCount = "";
 
   const workplaceUrlPrefix = JEWELRY_IMAGE.WORKPLACE_URL_PREFIX;
   const workplaceFullUrl = JEWELRY_IMAGE.WORKPLACE_FULL_URL;
@@ -53,7 +77,7 @@ export function buildQueryV2(jsonParams) {
                 REPLACE(item.value->>'url', ${workplaceFullUrl}, ${cdnUrl})
               ELSE item.value->>'url'
             END
-          ) FILTER (WHERE jsonb_typeof(item.value) = 'object' AND item.value->>'url' IS NOT NULL),
+          ) FILTER (WHERE jsonb_typeof(item.value) = 'object' AND item.value->>'url' IS NOT NULL AND item.value->>'url' != ''),
           ARRAY[]::text[]
         ) as images
       FROM workplace.design_images di
@@ -162,7 +186,7 @@ export function buildQueryV2(jsonParams) {
       d.main_stone,
       d.ring_band_type,
       p.haravan_product_type AS product_type,
-      p.has_360,
+      p.has_360${buildInventoryMetricsSql(jsonParams)},
       JSON_AGG(
         ${variantJsonBuildObject}
       ) AS variants
@@ -182,7 +206,8 @@ export function buildQueryV2(jsonParams) {
       p.haravan_product_id, p.title, d.design_code, p.handle,
       d.diamond_holder, d.main_stone, d.ring_band_type, p.haravan_product_type,
       p.max_price, p.min_price, p.max_price_18, p.max_price_14, 
-      p.has_360 ${collectionJoinEcomProductsClause ? Prisma.raw(", p2.image_updated_at") : Prisma.empty}
+      p.has_360, p.sold_before_2025 ${collectionJoinEcomProductsClause ? Prisma.raw(", p2.image_updated_at") : Prisma.empty}
+
     ${havingSql}
     ${sortSql}
     ${paginationSql}
@@ -201,7 +226,7 @@ export function buildQueryV2(jsonParams) {
             ${Prisma.raw(linkedCollectionJoinEcomProductsClause)}
             INNER JOIN ecom.materialized_variants v ON v.haravan_product_id = p.haravan_product_id
             ${designImagesJoin}
-            ${Prisma.raw(diamondJoinsForCount)}
+
             ${Prisma.raw(warehouseJoinClause)}
         WHERE 1 = 1 
           AND p.haravan_product_type != 'Nhẫn Cưới'

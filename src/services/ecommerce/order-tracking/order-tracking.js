@@ -20,7 +20,7 @@ export default class OrderTrackingService {
   async trackOrder(orderId, reqBearerToken) {
     try {
       let isAuthorized = false;
-      const bearerToken = await this.env.BEARER_TOKEN_SECRET.get();
+      const bearerToken = this.env.BEARER_TOKEN;
       if (reqBearerToken) {
         const firstOrder = await getInitialOrder(this.db, orderId);
         if (firstOrder) {
@@ -132,7 +132,7 @@ export default class OrderTrackingService {
 
   async getOrder(orderId) {
     const endpoint = `/com/orders/${orderId}.json`;
-    const haravanApiKey = await this.env.HARAVAN_TOKEN_SECRET.get();
+    const haravanApiKey = this.env.HARAVAN_TOKEN;
     const haravanClient = new HaravanClient(
       haravanApiKey,
       this.env.HARAVAN_API_BASE_URL

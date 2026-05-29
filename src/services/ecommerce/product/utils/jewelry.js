@@ -60,6 +60,11 @@ export function aggregateQuery(jsonParams) {
     filterClauses.push(Prisma.sql`AND d.tag = ANY(${jsonParams.design_tags})\n`);
   }
 
+  if (jsonParams.design_ids && jsonParams.design_ids.length > 0) {
+    const designIds = jsonParams.design_ids.map(id => BigInt(id));
+    filterClauses.push(Prisma.sql`AND p.design_id = ANY(${designIds})\n`);
+  }
+
   if (jsonParams.linked_collections && jsonParams.linked_collections.length > 0) {
     linkedCollectionJoinEcomProductsClause +=
       "INNER JOIN workplace.products_haravan_collection linked_cp ON linked_cp.products_id = p.workplace_id \n";
@@ -138,7 +143,8 @@ export function aggregateQuery(jsonParams) {
   }
 
   if (jsonParams.product_ids && jsonParams.product_ids.length > 0) {
-    filterClauses.push(Prisma.sql`AND p.haravan_product_id = ANY(${jsonParams.product_ids})\n`);
+    const productIds = jsonParams.product_ids.map(id => typeof id === "string" ? BigInt(id) : id);
+    filterClauses.push(Prisma.sql`AND p.haravan_product_id = ANY(${productIds})\n`);
   }
 
   if (jsonParams.main_holder_size?.lower || jsonParams.main_holder_size?.upper) {

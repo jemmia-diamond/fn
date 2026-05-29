@@ -6,23 +6,42 @@ import ProductQuote from "src/services/product_quote";
 import Ecommerce from "src/services/ecommerce";
 import Haravan from "src/services/haravan";
 import Misa from "src/services/misa";
+import Larksuite from "src/services/larksuite";
 
 export default {
   queue: async (batch, env) => {
     console.log(`[CLOUDFLARE DEQUEUING]: ${JSON.stringify(batch)}`);
 
     switch (batch.queue) {
-    case "order":
+    case "haravan-order-notification":
       await Ecommerce.OrderNotificationService.orderNotificationDequeue(batch, env);
-      await Haravan.OrderModule.OrderService.dequeueOrderQueue(batch, env);
+      break;
+    case "order":
+      await Haravan.OrderModule.OrderService.dequeueUpsertOrder(batch, env);
+      break;
+    case "haravan-order-stock-control":
+      await Haravan.OrderModule.OrderService.dequeueStockNotification(batch, env);
+      break;
+    case "haravan-order-transaction-sync":
+      await Haravan.OrderModule.OrderService.dequeueTransactionSync(batch, env);
+      break;
+    case "haravan-order-product-quote-sync":
       await ProductQuote.ProductQuoteOrderService.dequeueOrderQueue(batch, env);
+      break;
+    case "erpnext-order-creation":
+      await ERP.Selling.SalesOrderService.dequeueOrderQueue(batch, env);
       break;
     case "message":
       await Pancake.ConversationService.dequeueMessageSyncCustomerToLeadCRM(batch, env);
       break;
+    case "pancake-message-webhook-dispatch":
+      await Pancake.ConversationService.dequeueExtraHooksQueue(batch, env);
+      break;
     case "message-summary":
-      await Pancake.ConversationService.dequeueMessageQueue(batch, env);
       await Pancake.ConversationService.dequeueMessageSummaryQueue(batch, env);
+      break;
+    case "pancake-message-last-interaction":
+      await Pancake.ConversationService.dequeueMessageLastCustomerQueue(batch, env);
       break;
     case "zalo-message":
       await Ecommerce.SendZaloMessage.dequeueSendZaloDeliveryMessageQueue(batch, env);
@@ -40,6 +59,9 @@ export default {
       break;
     case "erpnext-payment-entry":
       await ERP.Accounting.PaymentEntryService.dequeuePaymentEntryQueue(batch, env);
+      break;
+    case "larksuite-appointment":
+      await Larksuite.AppointmentService.dequeueAppointmentQueue(batch, env);
       break;
     case "sepay-transaction":
       await ERP.Accounting.SepayTransactionService.dequeueSaveToDb(batch, env);
@@ -61,9 +83,6 @@ export default {
       } else {
         await new ERP.Selling.CustomerService(env).dequeueCustomerQueue(batch);
       }
-      break;
-    case "erpnext-order-creation":
-      await ERP.Selling.SalesOrderService.dequeueOrderQueue(batch, env);
       break;
     case "promotion-diamond-collect-sync":
       await new Ecommerce.DiamondCollectService(env).syncDiamondsToCollects();

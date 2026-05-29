@@ -35,7 +35,7 @@ export class ShieldUtils {
   }
 
   static async decryptViewPayload(env: any, data: string): Promise<any> {
-    const encryptKey = await env.LARK_SHIELD_ENCRYPT_KEY_SECRET.get();
+    const encryptKey = env.LARK_SHIELD_ENCRYPT_KEY;
     const decrypted = await LarkCipher.decryptEvent(data, encryptKey);
     return JSON.parse(decrypted);
   }

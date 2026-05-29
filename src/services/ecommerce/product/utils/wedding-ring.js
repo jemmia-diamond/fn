@@ -152,6 +152,7 @@ export function aggregateQuery(jsonParams) {
   }
 
   if (jsonParams.product_ids && jsonParams.product_ids.length > 0) {
+    const productIds = jsonParams.product_ids.map(id => typeof id === "string" ? BigInt(id) : id);
     filterSql = Prisma.sql`
       ${filterSql}
             AND d.wedding_ring_id IN (
@@ -159,7 +160,7 @@ export function aggregateQuery(jsonParams) {
               d.wedding_ring_id 
               FROM workplace.products p 
               INNER JOIN workplace.designs d ON p.design_id = d.id 
-             WHERE p.haravan_product_id = ANY(${jsonParams.product_ids})
+             WHERE p.haravan_product_id = ANY(${productIds})
             )
     `;
   }

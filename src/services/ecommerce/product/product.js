@@ -3,12 +3,10 @@ import { retryQuery } from "services/utils/retry-utils";
 
 import {
   buildQueryV2,
-  buildQuerySingleV2
+  buildQuerySingleV2,
+  buildInventoryMetricsSql
 } from "services/ecommerce/product/utils/jewelry-v2";
-import {
-  buildWeddingRingByIdQuery,
-  buildWeddingRingsQuery
-} from "services/ecommerce/product/utils/wedding-ring";
+import { buildWeddingRingByIdQuery, buildWeddingRingsQuery } from "services/ecommerce/product/utils/wedding-ring";
 import { JEWELRY_IMAGE } from "src/controllers/ecommerce/constant";
 
 export default class ProductService {
@@ -16,7 +14,7 @@ export default class ProductService {
     this.db = Database.instance(env);
   }
 
-  async searchJewelry(searchKey, limit, page) {
+  async searchJewelry(searchKey, limit, page, options = {}) {
     if (!searchKey || typeof searchKey !== "string") {
       return [];
     }
@@ -40,14 +38,12 @@ export default class ProductService {
         CASE
           WHEN e.product_id IS NULL THEN FALSE
           ELSE TRUE
-        END AS has_360,
+        END AS has_360${buildInventoryMetricsSql(options)},
         var.variants
       FROM ecom.materialized_products p
         INNER JOIN workplace.designs d ON d.id = p.design_id
         LEFT JOIN workplace.ecom_360 e ON p.workplace_id = e.product_id
 
-
-        -- Subquery for pre-aggregated variants with variant-level images
         INNER JOIN LATERAL (
           SELECT
             v.haravan_product_id,
@@ -63,7 +59,7 @@ export default class ProductService {
               )
             ) AS variants
           FROM ecom.materialized_variants v
-    
+
           INNER JOIN LATERAL (
             SELECT 
               di.material_color,
@@ -74,7 +70,7 @@ export default class ProductService {
                       REPLACE(item.value->>'url', ${workplaceFullUrl}, ${cdnUrl})
                     ELSE item.value->>'url'
                   END
-                ) FILTER (WHERE jsonb_typeof(item.value) = 'object' AND item.value->>'url' IS NOT NULL),
+                ) FILTER (WHERE jsonb_typeof(item.value) = 'object' AND item.value->>'url' IS NOT NULL AND item.value->>'url' != ''),
                 ARRAY[]::text[]
               ) as images
             FROM workplace.design_images di
@@ -98,6 +94,7 @@ export default class ProductService {
       LIMIT ${limit}
       OFFSET ${offset};
     `;
+
     return result;
   }
 
@@ -201,10 +198,49 @@ export default class ProductService {
     };
   }
 
-  async getJewelryByIdV2(id, params = {}) {
+  async getSetByIdV2(id, options = {}) {
+    const setProducts = await this.db.$queryRaw`
+      SELECT 
+        s.haravan_product_id, 
+        s.set_name as title, 
+        array_remove(array_agg(ds.design_id), NULL) as design_ids
+      FROM workplace.sets s
+      LEFT JOIN workplace.design_set ds ON ds.set_id = s.id
+      WHERE s.haravan_product_id = ${parseInt(id)}
+      GROUP BY s.id
+    `;
+
+    if (!setProducts || setProducts.length === 0) {
+      return null;
+    }
+
+    const setProduct = setProducts[0];
+    const designIds = (setProduct.design_ids || []).filter(dId => dId != null);
+
+    let linkedProductsData = [];
+    if (designIds.length > 0) {
+      const jsonParams = {
+        design_ids: designIds,
+        pagination: { from: 1, limit: 100 },
+        ...options
+      };
+      const linkedProducts = await this.getJewelryV2(jsonParams);
+      linkedProductsData = linkedProducts.data;
+    }
+
+    return {
+      id: setProduct.haravan_product_id,
+      title: setProduct.title,
+      product_type: "Bộ Trang Sức Kim Cương",
+      linked_products: linkedProductsData
+    };
+  }
+
+  async getJewelryByIdV2(id, options = {}) {
     const productId = parseInt(id, 10);
+    if (isNaN(productId)) return null;
     const { variantJsonBuildObject, lateralJoinClause } =
-      buildQuerySingleV2(params);
+      buildQuerySingleV2(options);
     const workplaceUrlPrefix = JEWELRY_IMAGE.WORKPLACE_URL_PREFIX;
     const workplaceFullUrl = JEWELRY_IMAGE.WORKPLACE_FULL_URL;
     const cdnUrl = JEWELRY_IMAGE.CDN_URL;
@@ -225,7 +261,7 @@ export default class ProductService {
         p.haravan_product_type AS product_type,
         'Round' AS shape_of_main_stone,
         p.has_360,
-        p.estimated_gold_weight,
+        p.estimated_gold_weight${buildInventoryMetricsSql(options)},
         JSON_AGG(
           ${variantJsonBuildObject}
         ) AS variants,
@@ -238,7 +274,7 @@ export default class ProductService {
 
         ${lateralJoinClause}
 
-        LEFT JOIN LATERAL (
+        INNER JOIN LATERAL (
           SELECT 
             di.material_color,
             COALESCE(
@@ -248,7 +284,7 @@ export default class ProductService {
                     REPLACE(item.value->>'url', ${workplaceFullUrl}, ${cdnUrl})
                   ELSE item.value->>'url'
                 END
-              ) FILTER (WHERE jsonb_typeof(item.value) = 'object' AND item.value->>'url' IS NOT NULL),
+              ) FILTER (WHERE jsonb_typeof(item.value) = 'object' AND item.value->>'url' IS NOT NULL AND item.value->>'url' != ''),
               ARRAY[]::text[]
             ) as images
           FROM workplace.design_images di
@@ -265,12 +301,13 @@ export default class ProductService {
 
         WHERE 1 = 1
           AND p.haravan_product_id = ${productId}
+          AND cardinality(design_imgs.images) > 0
         GROUP BY
           p.haravan_product_id, p.title, d.design_code, p.handle,
           d.diamond_holder, d.ring_band_type, d.main_stone, d.stone_quantity, p.haravan_product_type,
           p.max_price, p.min_price, p.max_price_18, p.max_price_14,
           p.qty_onhand, p.has_360, p.estimated_gold_weight,
-          p.primary_collection, p.primary_collection_handle
+          p.primary_collection, p.primary_collection_handle, p.sold_before_2025
     `);
     return result?.[0] || null;
   }

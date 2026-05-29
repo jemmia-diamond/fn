@@ -8,7 +8,7 @@ export default class JemmiaShieldLarkService {
   static async getAppAccessToken(env: any): Promise<string> {
     try {
       const LARK_APP_ID = env.LARK_APP_SHIELD_ID;
-      const LARK_APP_SECRET = await env.LARK_APP_SHIELD_SECRET_SECRET.get();
+      const LARK_APP_SECRET = env.LARK_APP_SHIELD_SECRET;
 
       const response = await axios.post(
         `${this.API_BASE}/auth/v3/app_access_token/internal`,
@@ -284,7 +284,7 @@ export default class JemmiaShieldLarkService {
   }
 
   static async decryptEvent(env: any, encrypted: string): Promise<string> {
-    const encryptKey = await env.LARK_SHIELD_ENCRYPT_KEY_SECRET.get();
+    const encryptKey = env.LARK_SHIELD_ENCRYPT_KEY;
     if (!encryptKey) {
       throw new Error("LARK_ENCRYPT_KEY is not set");
     }
@@ -583,7 +583,7 @@ export default class JemmiaShieldLarkService {
   ): Promise<string> {
     const redirectUri = env.LARK_RECALL_VIEW_URL;
 
-    const encryptKey = await env.LARK_SHIELD_ENCRYPT_KEY_SECRET.get();
+    const encryptKey = env.LARK_SHIELD_ENCRYPT_KEY;
 
     // Prepare payload for ViewMessageController
     let payload: any = content;

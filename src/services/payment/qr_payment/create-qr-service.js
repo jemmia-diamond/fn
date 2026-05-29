@@ -1,6 +1,7 @@
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import Database from "services/database";
+import FrappeClient from "src/frappe/frappe-client";
 
 dayjs.extend(utc);
 
@@ -13,6 +14,11 @@ export default class CreateQRService {
   constructor(env) {
     this.env = env;
     this.db = Database.instance(env);
+    this.frappeClient = new FrappeClient({
+      url: env.JEMMIA_ERP_BASE_URL,
+      apiKey: env.JEMMIA_ERP_API_KEY,
+      apiSecret: env.JEMMIA_ERP_API_SECRET
+    });
   }
 
   /**
@@ -61,7 +67,10 @@ export default class CreateQRService {
 
     if (isOrderLater) {
       if (!body.customer_phone_order_later) {
-        throw new Error(JSON.stringify({ error_msg: "'customer_phone_order_later' cannot be empty for 'Đơn hàng cọc' order", error_code: CreateQRService.MISSING_FIELD }));
+        body.customer_phone_order_later = await this.fetchFromContact(body.contact_person);
+        if (!body.customer_phone_order_later) {
+          throw new Error(JSON.stringify({ error_msg: "'customer_phone_order_later' cannot be empty for 'Đơn hàng cọc' order", error_code: CreateQRService.MISSING_FIELD }));
+        }
       }
       if (!body.customer_name_order_later) {
         throw new Error(JSON.stringify({ error_msg: "'customer_name_order_later' cannot be empty for 'Đơn hàng cọc' order", error_code: CreateQRService.MISSING_FIELD }));
@@ -142,5 +151,15 @@ export default class CreateQRService {
     return await this.db.qrPaymentTransaction.create({
       data: transactionBody
     });
+  }
+
+  async fetchFromContact(contactName) {
+    if (!contactName) return null;
+    try {
+      const contact = await this.frappeClient.getDoc("Contact", contactName);
+      return contact.phone || contact?.phone_nos[0]?.phone;
+    } catch {
+      return null;
+    }
   }
 }

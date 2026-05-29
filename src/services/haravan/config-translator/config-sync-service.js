@@ -2,7 +2,7 @@ import * as Sentry from "@sentry/cloudflare";
 
 import { generateText } from "ai";
 
-import HaravanClient from "services/clients/haravan-client";
+import HaravanClient from "services/haravan/haravan-client";
 import ImageTranslationService from "services/media/image-translation-service";
 
 import { getOpenAICompatibleModel } from "services/utils/llm-helper";
@@ -224,7 +224,7 @@ export default class ConfigTranslatorService {
 
   async sync() {
     try {
-      const HRV_API_KEY = await this.env.HARAVAN_TOKEN_SECRET.get();
+      const HRV_API_KEY = this.env.HARAVAN_TOKEN;
       const haravanClient = new HaravanClient(HRV_API_KEY, this.env.HARAVAN_API_BASE_URL);
       const imageService = new ImageTranslationService();
 

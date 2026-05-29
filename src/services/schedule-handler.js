@@ -10,11 +10,12 @@ import Reporting from "services/reporting";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import timezone from "dayjs/plugin/timezone.js";
-import { TIMEZONE_VIETNAM } from "src/constants";
+import { TIMEZONE_VIETNAM, MISSING_SERIAL_START_DATE } from "src/constants";
 import Google from "services/google";
 import Salesaya from "services/salesaya";
 import Pancake from "services/pancake";
 import Haravan from "services/haravan";
+import OneOffHandler from "services/one-off-handler";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -33,6 +34,7 @@ export default {
       // await ERP.Selling.SalesOrderService.cronBackfillSalesOrderItemPromotionsFromRefOrders(env);
       break;
     case "*/5 * * * *": // At every 5th minute
+      await new OneOffHandler(env).run();
       const batchTime = dayjs().utc();
       await new Pancake.ConversationSyncService(env, _ctx).syncConversations({ batchTime });
       await new Pancake.CustomerSyncService(env).syncCustomers({ batchTime });
@@ -70,6 +72,7 @@ export default {
       await DatabaseOperations.DatabaseFunctionService.runWorkplaceUpdateLastRfidScanTime(env);
       await WorkshopOrderServices.WorkshopOrderServices.cronJobSyncLarkToNocoDB(env);
       await DatabaseOperations.MaterializedViewService.refresh3Hours(env);
+      await DatabaseOperations.DatabaseFunctionService.runUpdateOrderReferencesInVariantSerials(env);
       break;
     case "0 */6 * * *": // At every 6th hour
       await DatabaseOperations.MaterializedViewService.refresh6Hours(env);
@@ -81,7 +84,6 @@ export default {
       await ERP.Core.UserService.syncUsersToDatabase(env);
       await ERP.Setup.EmployeeService.syncEmployeesToDatabase(env);
       await ERP.Selling.SalesPersonService.syncSalesPersonToDatabase(env);
-      await Larksuite.Docs.Base.RecordService.syncRecordsToDatabase(env);
       await Salesaya.LarkChatSyncMediaService.syncMedia(env);
       await new Pancake.PageSyncService(env).syncPages();
       await new Haravan.Users.UserSyncService(env).sync().catch(() => {});
@@ -117,6 +119,10 @@ export default {
         toDate: dayjs().tz(TIMEZONE_VIETNAM).hour(17).minute(0).second(0).toISOString()
       });
       await new ERP.Accounting.PaymentEntryNotificationService(env).runAfternoonBatch();
+      await new ERP.Selling.MissingSerialNotificationService(env).notify({
+        fromDate: dayjs.tz(MISSING_SERIAL_START_DATE, TIMEZONE_VIETNAM).toISOString(),
+        toDate: dayjs().toISOString()
+      });
       break;
     case "0 11 * * *": // 18:00
       break;
@@ -128,6 +134,10 @@ export default {
       await Larksuite.Ticket.TechTicketService.syncTechTickets(env, { mode: "daily" });
       await new Google.GoogleMerchantProductSyncService(env).sync();
       await new ERP.Accounting.PaymentEntryNotificationService(env).runMorningBatch();
+      await new ERP.Selling.MissingSerialNotificationService(env).notify({
+        fromDate: dayjs.tz(MISSING_SERIAL_START_DATE, TIMEZONE_VIETNAM).toISOString(),
+        toDate: dayjs().toISOString()
+      });
       break;
     case "0 14 * * *": // 21:00
       await ERP.Automation.AssignmentRuleService.enableAssignmentRuleOffHour(env);

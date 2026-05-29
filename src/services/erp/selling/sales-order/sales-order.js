@@ -6,7 +6,7 @@ import Database from "src/services/database";
 import AddressService from "src/services/erp/contacts/address/address";
 import ContactService from "src/services/erp/contacts/contact/contact";
 import CustomerService from "src/services/erp/selling/customer/customer";
-import { composeOrderUpdateMessage, composeSalesOrderNotification, extractPromotions, findMainOrder } from "services/erp/selling/sales-order/utils/sales-order-notification";
+import { composeOrderUpdateMessage, composeSalesOrderNotification, extractPromotions, findMainOrder, isMissingJewelrySerial } from "services/erp/selling/sales-order/utils/sales-order-notification";
 import { validateSalesOrder } from "services/erp/selling/sales-order/utils/sales-order-validator";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
@@ -126,10 +126,10 @@ export default class SalesOrderService {
       skip_delivery_note: 1,
       financial_status: this.financialStatusMapper[haravanOrderData.financial_status],
       fulfillment_status: this.fulfillmentStatusMapper[haravanOrderData.fulfillment_status],
-      fulfillment_completion_date: haravanOrderData.fulfillments.length && haravanOrderData.fulfillments[0].delivered_date ? dayjs(haravanOrderData.fulfillments[0].delivered_date).format("YYYY-MM-DD HH:mm:ss") : null,
+      fulfillment_completion_date: haravanOrderData.fulfillments.length && haravanOrderData.fulfillments[0].delivered_date ? dayjs(haravanOrderData.fulfillments[0].delivered_date).utc().format("YYYY-MM-DD HH:mm:ss") : null,
       cancelled_status: this.cancelledStatusMapper[haravanOrderData.cancelled_status],
       carrier_status: haravanOrderData.fulfillments.length ? this.carrierStatusMapper[haravanOrderData.fulfillments[0].carrier_status_code] : this.carrierStatusMapper.notdelivered,
-      transaction_date: dayjs(haravanOrderData.created_at).add(7, "hour").format("YYYY-MM-DD"),
+      transaction_date: dayjs(haravanOrderData.created_at).utc().add(7, "hour").format("YYYY-MM-DD"),
       haravan_created_at: convertIsoToDatetime(haravanOrderData.created_at, "datetime"),
       total: haravanOrderData.total_line_items_price,
       payment_records: paymentTransactions.map(this.mapPaymentRecordFields),
@@ -137,7 +137,7 @@ export default class SalesOrderService {
       customer_address: customerDefaultAdress.name,
       total_amount: haravanOrderData.total_price,
       grand_total: haravanOrderData.total_price,
-      real_order_date: await this.getRealOrderDate(haravanOrderData.id) || dayjs(haravanOrderData.created_at).add(7, "hour").format("YYYY-MM-DD"),
+      real_order_date: await this.getRealOrderDate(haravanOrderData.id) || dayjs(haravanOrderData.created_at).utc().add(7, "hour").format("YYYY-MM-DD"),
       ref_sales_orders: await this.mapRefSalesOrder(haravanOrderData.id),
       tracking_number: trackingNumber
     };
@@ -160,14 +160,10 @@ export default class SalesOrderService {
   static async dequeueSalesOrderNotificationQueue(batch, env) {
     const salesOrderService = new SalesOrderService(env);
     for (const message of batch.messages) {
-      try {
-        const orderData = message.body;
-        await salesOrderService.sendNotificationToLark(orderData, true);
-        const updatedOrderData = await salesOrderService.updateSalesOrderPaidAmount(orderData.name);
-        await salesOrderService.syncHaravanFinancialStatus(updatedOrderData || orderData);
-      } catch (error) {
-        Sentry.captureException(error);
-      }
+      const orderData = message.body;
+      await salesOrderService.sendNotificationToLark(orderData, true);
+      const updatedOrderData = await salesOrderService.updateSalesOrderPaidAmount(orderData.name);
+      await salesOrderService.syncHaravanFinancialStatus(updatedOrderData || orderData);
     }
   }
 
@@ -222,7 +218,7 @@ export default class SalesOrderService {
 
     // getRefOrderChain returns orders sorted by created_at ASC, so the first one is the original order
     const firstOrder = refOrders[0];
-    return dayjs(firstOrder.created_at).add(7, "hour").format("YYYY-MM-DD");
+    return dayjs(firstOrder.created_at).utc().add(7, "hour").format("YYYY-MM-DD");
   };
 
   mapLineItemsFields = (lineItemData) => {
@@ -379,7 +375,7 @@ export default class SalesOrderService {
             promotionData
           ));
         } else {
-          content = await this.composeNewOrderContent(salesOrderData, customer, promotionData);
+          content = await this.composeNewOrderContent(salesOrderData, customer, promotionData, true);
         }
 
         if (!content && !diffAttachments) {
@@ -418,7 +414,8 @@ export default class SalesOrderService {
                   order_data: {
                     items: salesOrderData.items,
                     attachments: salesOrderData.attachments,
-                    paid_amount: salesOrderData.paid_amount
+                    paid_amount: salesOrderData.paid_amount,
+                    deposit_amount: salesOrderData.deposit_amount
                   }
                 }
               });
@@ -433,7 +430,8 @@ export default class SalesOrderService {
               order_data: {
                 items: salesOrderData.items,
                 attachments: salesOrderData.attachments,
-                paid_amount: salesOrderData.paid_amount
+                paid_amount: salesOrderData.paid_amount,
+                deposit_amount: salesOrderData.deposit_amount
               }
             }
           }));
@@ -493,7 +491,8 @@ export default class SalesOrderService {
               order_data: {
                 items: salesOrderData.items,
                 attachments: salesOrderData.attachments,
-                paid_amount: salesOrderData.paid_amount
+                paid_amount: salesOrderData.paid_amount,
+                deposit_amount: salesOrderData.deposit_amount
               }
             }
           });
@@ -542,7 +541,8 @@ export default class SalesOrderService {
         order_data: {
           items: salesOrderData.items,
           attachments: salesOrderData.attachments,
-          paid_amount: salesOrderData.paid_amount
+          paid_amount: salesOrderData.paid_amount,
+          deposit_amount: salesOrderData.deposit_amount
         }
       }
     }));
@@ -632,7 +632,21 @@ export default class SalesOrderService {
     return composeOrderUpdateMessage(oldSalesOrderData, salesOrderData, promotionData);
   }
 
-  async composeNewOrderContent(salesOrderData, orderCustomer, promotionData) {
+  async _getLarkUserIdByEmail(email) {
+    if (!email) return null;
+    const user = await this.db.larksuite_users.findFirst({
+      where: {
+        OR: [
+          { email: email },
+          { enterprise_email: email }
+        ]
+      },
+      select: { user_id: true }
+    });
+    return user?.user_id || null;
+  }
+
+  async composeNewOrderContent(salesOrderData, orderCustomer, promotionData, isReorder = false) {
     const customer = orderCustomer ?? (await this.frappeClient.getDoc("Customer", salesOrderData.customer));
 
     const leadSource = await this.frappeClient.getDoc("Lead Source", customer.first_source);
@@ -663,7 +677,17 @@ export default class SalesOrderService {
       filters: [["name", "in", secondarySalesPersonNames]]
     });
 
-    const content = composeSalesOrderNotification(salesOrderData, promotionData, leadSource, policyData, productCategoryData, purposeData, customer, primarySalesPerson, secondarySalesPeople);
+    let content = composeSalesOrderNotification(salesOrderData, promotionData, leadSource, policyData, productCategoryData, purposeData, customer, primarySalesPerson, secondarySalesPeople);
+
+    if (isReorder) {
+      const hasMissingSerial = salesOrderData.items?.some(item => isMissingJewelrySerial(item));
+      if (hasMissingSerial) {
+        const primarySalesUserId = await this._getLarkUserIdByEmail(primarySalesPerson?.employee_email);
+        if (primarySalesUserId) {
+          content += `\n* <b>Thiếu thông tin:</b>\n- <at user_id="${primarySalesUserId}"></at> Vui lòng bổ sung số serial cho các sản phẩm trang sức còn thiếu!\n\n`;
+        }
+      }
+    }
 
     return content;
   }
@@ -968,8 +992,12 @@ export default class SalesOrderService {
   }
 
   async syncHaravanFinancialStatus(salesOrderData) {
+    if (!salesOrderData.haravan_order_id) {
+      return;
+    }
+
     if (Math.abs(salesOrderData.grand_total - salesOrderData.paid_amount) <= 1000) {
-      const HRV_API_KEY = await this.env.HARAVAN_TOKEN_SECRET.get();
+      const HRV_API_KEY = this.env.HARAVAN_TOKEN;
       if (!HRV_API_KEY) {
         return;
       }

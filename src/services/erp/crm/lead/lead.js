@@ -27,6 +27,7 @@ export default class LeadService {
     this.PartnerLeadSource = "CRM-LEAD-SOURCE-0000107";
     this.defaultLeadOwner = "tech@jemmia.vn";
     this.CallLogLeadSource = "CRM-LEAD-SOURCE-0000022";
+    this.DiamondConf2026LeadSource = "CRM-LEAD-SOURCE-0000116";
   }
 
   async updateLeadInfoFromSummary(data, conversationId) {
@@ -233,6 +234,19 @@ export default class LeadService {
     return result;
   }
 
+  async getLeadSource(sourceCode) {
+    if (!sourceCode) return null;
+    const existing = await this.frappeClient.getList("Lead Source", {
+      filters: [["code", "=", sourceCode]],
+      fields: ["name"]
+    });
+
+    if (existing && existing.length > 0) {
+      return existing[0].name;
+    }
+    return null;
+  }
+
   async processWebsiteLead(data) {
     if (!data.raw_data) return;
 
@@ -243,7 +257,10 @@ export default class LeadService {
     try {
       const contactService = new ContactService(this.env);
       const phone = normalizeToStandardFormat(data.raw_data.phone);
-      const source = data.source === "Partner" ? this.PartnerLeadSource : this.WebsiteFormLeadSource;
+      const source = await this.getLeadSource(data.source);
+      if (!source) {
+        return;
+      }
 
       const dataBuilder = async () => {
         const location = data.raw_data.location;
@@ -251,13 +268,22 @@ export default class LeadService {
           filters: [["province_name", "LIKE", `%${location}%`]]
         });
 
+        let fullName = data.raw_data.name?.trim();
+        if (!fullName && (data.raw_data.lastname || data.raw_data.firstname)) {
+          fullName = [data.raw_data.lastname?.trim(), data.raw_data.firstname?.trim()].filter(Boolean).join(" ");
+        }
+        if (!fullName) {
+          fullName = "Chưa rõ";
+        }
+
         const leadData = {
           doctype: this.doctype,
           status: "Lead",
           naming_series: "CRM-LEAD-.YYYY.-",
           source: source,
-          first_name: data.raw_data.name?.trim() || "Chưa rõ",
+          first_name: fullName,
           phone: phone,
+          email_id: data.raw_data.email?.trim() || null,
           lead_owner: this.defaultLeadOwner,
           province: provinces.length ? provinces[0].name : null,
           first_reach_at: dayjs(data.database_created_at).utc().format("YYYY-MM-DD HH:mm:ss")
@@ -279,6 +305,32 @@ export default class LeadService {
         if (data.raw_data.diamond_note) {
           notes.push({
             note: "Diamond: " + data.raw_data.diamond_note
+          });
+        }
+
+        if (data.raw_data.company) {
+          notes.push({
+            note: "Company: " + data.raw_data.company
+          });
+        }
+        if (data.raw_data.title) {
+          notes.push({
+            note: "Job Title: " + data.raw_data.title
+          });
+        }
+        if (data.raw_data.role) {
+          notes.push({
+            note: "Role: " + data.raw_data.role
+          });
+        }
+        if (data.raw_data.guests) {
+          notes.push({
+            note: "Guests: " + data.raw_data.guests
+          });
+        }
+        if (data.raw_data.note) {
+          notes.push({
+            note: "Additional Notes: " + data.raw_data.note
           });
         }
 
@@ -316,13 +368,17 @@ export default class LeadService {
     if (!initialPhone) return;
 
     const phone = normalizeToStandardFormat(initialPhone);
+    const source = await this.getLeadSource("CallLog");
+    if (!source) {
+      return;
+    }
 
     const dataBuilder = async () => {
       const leadData = {
         doctype: this.doctype,
         status: "Lead",
         naming_series: "CRM-LEAD-.YYYY.-",
-        source: this.CallLogLeadSource,
+        source: source,
         first_name: phone,
         phone: phone,
         lead_owner: this.defaultLeadOwner,
@@ -333,7 +389,7 @@ export default class LeadService {
 
     const lead = await this.getOrCreateLead(phone, dataBuilder);
     if (lead) {
-      await contactService.processCallLogContact(data, lead, this.CallLogLeadSource);
+      await contactService.processCallLogContact(data, lead, source);
     }
   }
 

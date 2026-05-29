@@ -18,7 +18,7 @@ export default class ProductVariantService {
 
       if (qty > 0) {
         const res = await nocodb.listRecords(diamondTableId, {
-          where: `(product_id,eq,${product.id})~and(variant_id,eq,${variant.id})~and(is_incoming,is,true)`,
+          where: `(product_id,eq,${product.id})~and(variant_id,eq,${variant.id})~and(is_incoming,eq,true)`,
           limit: 1
         });
         const diamond = res.list?.[0] ?? null;
@@ -89,6 +89,7 @@ export default class ProductVariantService {
       }
       catch (error) {
         Sentry.captureException(error);
+        message.retry();
       }
     }
   }

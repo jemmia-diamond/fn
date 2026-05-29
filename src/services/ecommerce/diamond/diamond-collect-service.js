@@ -50,7 +50,7 @@ export default class DiamondCollectService {
   }
 
   async _initializeClients() {
-    const HRV_API_KEY = await this.env.HARAVAN_TOKEN_SECRET.get();
+    const HRV_API_KEY = this.env.HARAVAN_TOKEN;
 
     return {
       haravanApi: new HaravanAPI(HRV_API_KEY),
@@ -195,7 +195,7 @@ export default class DiamondCollectService {
         const entriesLimit = 1000;
 
         while (true) {
-          const relatedCollections = await nocoClient.listRecords(NOCODB_TABLES.SUPPLY.DIAMOND_HARAVAN_COLLECTIONS, {
+          const relatedCollections = await nocoClient.listRecords(NOCODB_TABLES.MARKETING.DIAMOND_HARAVAN_COLLECTIONS, {
             where,
             limit: entriesLimit,
             offset: entriesOffset
@@ -292,7 +292,7 @@ export default class DiamondCollectService {
 
       if (!isTargetCollection && !isDefaultCollection) {
         console.warn("Removing discount collection for diamond:", diamond.id, entry.haravan_collection_id);
-        await nocoClient.deleteRecords(NOCODB_TABLES.SUPPLY.DIAMOND_HARAVAN_COLLECTIONS, [{
+        await nocoClient.deleteRecords(NOCODB_TABLES.MARKETING.DIAMOND_HARAVAN_COLLECTIONS, [{
           diamond_id: diamond.id,
           haravan_collection_id: entry.haravan_collection_id
         }]);
@@ -309,7 +309,7 @@ export default class DiamondCollectService {
     if (!exists) {
       try {
         console.warn("Adding discount collection for diamond:", diamond.id, targetNocodbCollectionId);
-        await nocoClient.createRecords(NOCODB_TABLES.SUPPLY.DIAMOND_HARAVAN_COLLECTIONS, {
+        await nocoClient.createRecords(NOCODB_TABLES.MARKETING.DIAMOND_HARAVAN_COLLECTIONS, {
           diamonds: { id: diamond.id },
           haravan_collections: { id: targetNocodbCollectionId }
         });
