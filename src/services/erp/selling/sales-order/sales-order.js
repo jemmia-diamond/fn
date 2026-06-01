@@ -11,7 +11,7 @@ import { validateSalesOrder } from "services/erp/selling/sales-order/utils/sales
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/constant";
-import { fetchSalesOrdersFromERP, saveSalesOrdersToDatabase, calculateGroupOrderPaymentRecordsTotal, calculateOrderPaymentRecordsTotal, ensureSelfReference, getAllRelatedPaymentEntries, shouldSkipSharedPayment } from "src/services/erp/selling/sales-order/utils/sales-order-helpers";
+import { fetchSalesOrdersFromERP, saveSalesOrdersToDatabase, calculateGroupOrderPaymentRecordsTotal, calculateOrderPaymentRecordsTotal, ensureSelfReference, getAllRelatedPaymentEntries, shouldSkipSharedPayment, getDocAttachments } from "src/services/erp/selling/sales-order/utils/sales-order-helpers";
 import { getRefOrderChain } from "services/ecommerce/order-tracking/queries/get-initial-order";
 import Larksuite from "services/larksuite";
 import { ERPR2StorageService } from "services/r2-object/erp/erp-r2-storage-service";
@@ -250,6 +250,8 @@ export default class SalesOrderService {
     const splitOrderGroupId = salesOrderData.split_order_group;
     const isSplitOrder = salesOrderData.is_split_order;
 
+    salesOrderData.attachments = await getDocAttachments(this.frappeClient, this.env, "Sales Order", salesOrderData.name);
+
     let childOrders = [];
     if (splitOrderGroupId && Number(splitOrderGroupId) > 0 && isSplitOrder) {
       const splitOrders = allRelatedOrders.filter(o =>
@@ -262,19 +264,7 @@ export default class SalesOrderService {
         // For each order, find its attachments
         for (const splitOrder of splitOrders) {
           const childOrder = await this.frappeClient.getDoc("Sales Order", splitOrder.name);
-          let attachments = await this.frappeClient.getList("File", {
-            filters: [
-              ["attached_to_doctype", "=", "Sales Order"],
-              ["attached_to_name", "=", childOrder.name]
-            ],
-            fields: ["file_name", "file_url", "is_private"]
-          });
-          attachments = attachments.map(file => ({
-            file_name: file.file_name,
-            file_url: `${this.env.JEMMIA_ERP_BASE_URL}${file.file_url}`,
-            is_private: file.is_private
-          }));
-          childOrder.attachments = attachments;
+          childOrder.attachments = await getDocAttachments(this.frappeClient, this.env, "Sales Order", childOrder.name);
           childOrders.push(childOrder);
         }
       }

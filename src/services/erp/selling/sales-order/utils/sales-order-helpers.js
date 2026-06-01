@@ -240,3 +240,18 @@ export async function getSalesOrdersByHaravanOrderId(
 
   return Array.isArray(salesOrders) ? salesOrders : [];
 }
+
+export const getDocAttachments = async (frappeClient, env, doctype, docname) => {
+  const files = await frappeClient.getList("File", {
+    filters: [
+      ["attached_to_doctype", "=", doctype],
+      ["attached_to_name", "=", docname]
+    ],
+    fields: ["file_name", "file_url", "is_private"]
+  });
+  return files.map(file => ({
+    file_name: file.file_name,
+    file_url: `${env.JEMMIA_ERP_BASE_URL}${encodeURI(decodeURIComponent(file.file_url))}`,
+    is_private: file.is_private
+  }));
+};
