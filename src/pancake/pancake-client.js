@@ -23,11 +23,6 @@ export default class PancakeClient {
         }
       }
 
-      if (Object.keys(combinedPats).length === 0 && env.PANCAKE_PATS_CONFIG) {
-        try { Object.assign(combinedPats, JSON.parse(env.PANCAKE_PATS_CONFIG)); } catch (e) {
-          console.warn("Failed to parse PANCAKE_PATS_CONFIG", e);
-        }
-      }
       this.pancakePatsConfig = combinedPats;
     }
 
