@@ -5,7 +5,7 @@ export default class PancakeClient {
     this.baseUrl = "https://pages.fm/api";
     if (typeof env === "string") {
       this.accessToken = env;
-      this.pancakePatsConfig = "{}";
+      this.pancakePatsConfig = {};
     } else {
       this.accessToken = env.PANCAKE_ACCESS_TOKEN;
 
@@ -28,7 +28,7 @@ export default class PancakeClient {
           console.warn("Failed to parse PANCAKE_PATS_CONFIG", e);
         }
       }
-      this.pancakePatsConfig = JSON.stringify(combinedPats);
+      this.pancakePatsConfig = combinedPats;
     }
 
     this.client = createAxiosClient({
@@ -63,21 +63,13 @@ export default class PancakeClient {
   }
 
   async getPageAccessToken(pageId) {
-    let patConfig = {};
-    try {
-      patConfig = JSON.parse(this.pancakePatsConfig || "{}");
-    } catch (e) {
-      console.warn("Invalid PANCAKE_PATS_CONFIG JSON format:", e.message);
-    }
-
-    const pageAccessToken = patConfig[pageId];
+    const pageAccessToken = this.pancakePatsConfig[pageId];
 
     if (pageAccessToken) {
       return pageAccessToken;
     }
 
-    console.warn(`Page Access Token for page ${pageId} not found in PANCAKE_PATS_CONFIG`);
-    return null;
+    throw new Error(`Page Access Token for page ${pageId} not found in PANCAKE_PATS_CONFIG`);
   }
 
   async generateNewPageAccessToken(pageId) {
