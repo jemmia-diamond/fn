@@ -1,10 +1,30 @@
 import { createAxiosClient } from "services/utils/http-client";
 
 export default class PancakeClient {
-  constructor(accessToken) {
+  constructor(env) {
     this.baseUrl = "https://pages.fm/api";
-    this.accessToken = accessToken;
-    this.pageAccessTokensCache = new Map();
+    if (typeof env === "string") {
+      this.accessToken = env;
+      this.pancakePatsConfig = {};
+    } else {
+      this.accessToken = env.PANCAKE_ACCESS_TOKEN;
+
+      let combinedPats = {};
+      for (let i = 1; i <= 20; i++) {
+        const chunk = env[`PANCAKE_PATS_CONFIG_${i}`];
+        if (chunk) {
+          try {
+            Object.assign(combinedPats, JSON.parse(chunk));
+          } catch (e) {
+            console.warn(`Failed to parse PANCAKE_PATS_CONFIG_${i}`, e);
+          }
+        } else {
+          break;
+        }
+      }
+
+      this.pancakePatsConfig = combinedPats;
+    }
 
     this.client = createAxiosClient({
       baseURL: this.baseUrl,
@@ -38,23 +58,24 @@ export default class PancakeClient {
   }
 
   async getPageAccessToken(pageId) {
-    if (this.pageAccessTokensCache.has(pageId)) {
-      return this.pageAccessTokensCache.get(pageId);
+    const pageAccessToken = this.pancakePatsConfig[pageId];
+
+    if (pageAccessToken) {
+      return pageAccessToken;
     }
 
+    console.warn(`Page Access Token for page ${pageId} not found in PANCAKE_PATS_CONFIG. Skipping.`);
+    return null;
+  }
+
+  async generateNewPageAccessToken(pageId) {
     const params = new URLSearchParams({
       access_token: this.accessToken
     });
     const path = `/v1/pages/${pageId}/generate_page_access_token?${params}`;
 
     const response = await this.client.post(path);
-    const pageAccessToken = response.data?.page_access_token;
-
-    if (pageAccessToken) {
-      this.pageAccessTokensCache.set(pageId, pageAccessToken);
-    }
-
-    return pageAccessToken;
+    return response.data?.page_access_token;
   }
 
   async postRequest(pageId, path, data) {
