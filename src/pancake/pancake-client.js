@@ -81,7 +81,6 @@ export default class PancakeClient {
   }
 
   async generateNewPageAccessToken(pageId) {
-    // Specifically used by the Token Refresher Cronjob to generate fresh PATs
     const params = new URLSearchParams({
       access_token: this.accessToken
     });
