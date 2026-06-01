@@ -1,12 +1,13 @@
 import DiamondService from "services/ecommerce/diamond/diamond";
+import { API_CONFIG } from "src/controllers/ecommerce/constant";
 
 export default class DiamondController {
 
   static async show(ctx) {
     const params = await ctx.req.query();
 
-    const limit = params.limit ? parseInt(params.limit, 10) : 20;
-    const from = params.from ? parseInt(params.from, 10) : 1;
+    const limit = params.limit ? parseInt(params.limit, 10) : API_CONFIG.DEFAULT_LIMIT;
+    const from = params.from ? parseInt(params.from, 10) : API_CONFIG.MIN_FROM;
 
     const jsonParams = {
       shapes: params.shapes ? params.shapes.split(",") : undefined,
@@ -26,8 +27,8 @@ export default class DiamondController {
         order: params["sort.order"]
       },
       pagination: {
-        limit: isNaN(limit) || limit <= 0 ? 20 : Math.min(limit, 100),
-        from: isNaN(from) || from <= 0 ? 1 : from
+        limit: isNaN(limit) || limit <= 0 ? API_CONFIG.DEFAULT_LIMIT : Math.min(limit, API_CONFIG.MAX_LIMIT),
+        from: isNaN(from) || from <= 0 ? API_CONFIG.MIN_FROM : from
       },
       linked_collections: params.linked_collections ? params.linked_collections.split(",") : []
     };
