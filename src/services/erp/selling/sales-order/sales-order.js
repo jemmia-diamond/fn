@@ -11,7 +11,7 @@ import { validateSalesOrder } from "services/erp/selling/sales-order/utils/sales
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/constant";
-import { fetchSalesOrdersFromERP, saveSalesOrdersToDatabase, calculateGroupOrderPaymentRecordsTotal, calculateOrderPaymentRecordsTotal, ensureSelfReference, getAllRelatedPaymentEntries, shouldSkipSharedPayment } from "src/services/erp/selling/sales-order/utils/sales-order-helpers";
+import { fetchSalesOrdersFromERP, saveSalesOrdersToDatabase, calculateGroupOrderPaymentRecordsTotal, calculateOrderPaymentRecordsTotal, ensureSelfReference, getAllRelatedPaymentEntries, shouldSkipSharedPayment, getLeadSource } from "src/services/erp/selling/sales-order/utils/sales-order-helpers";
 import { getRefOrderChain } from "services/ecommerce/order-tracking/queries/get-initial-order";
 import Larksuite from "services/larksuite";
 import { ERPR2StorageService } from "services/r2-object/erp/erp-r2-storage-service";
@@ -26,7 +26,6 @@ export default class SalesOrderService {
   static ERPNEXT_PAGE_SIZE = 100;
   static SYNC_TYPE_AUTO = 1; // auto sync when deploy app
   static SYNC_TYPE_MANUAL = 0; // manual sync when call function
-  static WEBSITE_DEFAULT_FIRST_SOURCE = "CRM-LEAD-SOURCE-0000023";
   static PAYMENT_GATEWAY_ERP = "Thanh toán qua ERP";
 
   constructor(env) {
@@ -89,7 +88,7 @@ export default class SalesOrderService {
     // Create contact and customer with default address
     const contact = await contactService.processHaravanContact(haravanOrderData.customer);
 
-    const websiteDefaultFirstSource = haravanOrderData.source === "web" ? SalesOrderService.WEBSITE_DEFAULT_FIRST_SOURCE : null;
+    const websiteDefaultFirstSource = await getLeadSource(this.frappeClient, haravanOrderData.source);
     const customer = await customerService.processHaravanCustomer(
       haravanOrderData.customer,
       contact,
