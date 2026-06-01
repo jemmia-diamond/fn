@@ -8,7 +8,7 @@ import { EXTRA_HOOKS } from "services/pancake/constants/extra-hook.constant";
 export default class ConversationService {
   constructor(env) {
     this.env = env;
-    this.pancakeClient = new PancakeClient(env.PANCAKE_ACCESS_TOKEN);
+    this.pancakeClient = new PancakeClient(env);
     this.leadService = new LeadService(env);
     this.db = Database.instance(env);
   }

@@ -4,6 +4,7 @@ import ConversationSyncService from "services/pancake/sync/conversation-sync-ser
 import PageSyncService from "services/pancake/sync/page-sync-service";
 import CustomerSyncService from "services/pancake/sync/customer-sync-service";
 import TagSyncService from "services/pancake/sync/tag-sync-service";
+import TokenRefresherService from "services/pancake/sync/token-refresher-service";
 import { PancakePOSShopSyncService } from "services/pancake/pos/index";
 
 export default {
@@ -13,5 +14,6 @@ export default {
   PageSyncService,
   CustomerSyncService,
   TagSyncService,
+  TokenRefresherService,
   PancakePOSShopSyncService
 };
