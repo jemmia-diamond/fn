@@ -69,7 +69,8 @@ export default class PancakeClient {
       return pageAccessToken;
     }
 
-    throw new Error(`Page Access Token for page ${pageId} not found in PANCAKE_PATS_CONFIG`);
+    console.warn(`Page Access Token for page ${pageId} not found in PANCAKE_PATS_CONFIG. Skipping.`);
+    return null;
   }
 
   async generateNewPageAccessToken(pageId) {
