@@ -23,11 +23,6 @@ export default class PancakeClient {
         }
       }
 
-      if (Object.keys(combinedPats).length === 0 && env.PANCAKE_PATS_CONFIG) {
-        try { Object.assign(combinedPats, JSON.parse(env.PANCAKE_PATS_CONFIG)); } catch (e) {
-          console.warn("Failed to parse PANCAKE_PATS_CONFIG", e);
-        }
-      }
       this.pancakePatsConfig = combinedPats;
     }
 
@@ -69,7 +64,8 @@ export default class PancakeClient {
       return pageAccessToken;
     }
 
-    throw new Error(`Page Access Token for page ${pageId} not found in PANCAKE_PATS_CONFIG`);
+    console.warn(`Page Access Token for page ${pageId} not found in PANCAKE_PATS_CONFIG. Skipping.`);
+    return null;
   }
 
   async generateNewPageAccessToken(pageId) {
