@@ -1,4 +1,4 @@
-import HaravanClient from "src/services/haravan/haravan-client";
+import HaravanAPI from "services/clients/haravan-client";
 import Orders from "services/haravan/orders";
 import Product from "services/haravan/products";
 import Collect from "services/haravan/collects";
@@ -10,7 +10,7 @@ import AccountingSalesOrders from "services/haravan/accounting-sales-orders";
 import ConfigTranslator from "services/haravan/config-translator";
 
 export default {
-  HaravanClient: HaravanClient,
+  HaravanAPI: HaravanAPI,
   OrderModule: Orders,
   Product: Product,
   Collect: Collect,

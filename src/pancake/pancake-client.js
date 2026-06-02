@@ -35,7 +35,13 @@ export default class PancakeClient {
       retryDelay: (retryCount) => retryCount * 1000,
       shouldResetTimeout: true,
       retryCondition: (error) => {
-        return error.response?.status === 429 || error.response?.status >= 500 || error.code === "ECONNABORTED";
+        return (
+          error.response?.status === 429 ||
+          error.response?.status >= 500 ||
+          error.code === "ECONNABORTED" ||
+          error.code === "ETIMEDOUT" ||
+          error.message?.includes("timeout")
+        );
       }
     });
 

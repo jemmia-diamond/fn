@@ -7,7 +7,7 @@ import NhattinClient from "services/nhattin/nhattin-client";
 import { HaravanDeliverySendLocation, NhattinDeliveryStatus, NhattinPaymentMethod, OrderOverallStatus } from "services/ecommerce/order-tracking/enums/order-delivery-status.enum";
 import { TrackingLog } from "services/ecommerce/order-tracking/dtos/tracking-log";
 import { OrderTimelineStatus } from "services/ecommerce/order-tracking/enums/order-step-status.enum";
-import HaravanClient from "services/haravan/haravan-client";
+import HaravanAPI from "services/clients/haravan-client";
 import { getInitialOrder } from "services/ecommerce/order-tracking/queries/get-initial-order";
 import crypto from "crypto";
 
@@ -131,13 +131,9 @@ export default class OrderTrackingService {
   }
 
   async getOrder(orderId) {
-    const endpoint = `/com/orders/${orderId}.json`;
     const haravanApiKey = this.env.HARAVAN_TOKEN;
-    const haravanClient = new HaravanClient(
-      haravanApiKey,
-      this.env.HARAVAN_API_BASE_URL
-    );
-    return haravanClient.makeRequest(endpoint);
+    const haravanClient = new HaravanAPI(haravanApiKey);
+    return haravanClient.order.getOrder(orderId);
   }
 
   async getOrderDeliveryStatus(orderId, bearerToken) {
