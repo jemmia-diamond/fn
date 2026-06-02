@@ -98,7 +98,6 @@ export default class PancakeTokenRefresherService {
     } catch (error) {
       console.warn("Error running Pancake Token Refresher:", error);
       Sentry.captureException(error);
-      throw error;
     }
   }
 }
