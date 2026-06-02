@@ -16,6 +16,7 @@ import CollectConnector from "services/clients/haravan-client/collect";
 import CustomCollectConnector from "services/clients/haravan-client/collect-custom";
 import UserConnector from "services/clients/haravan-client/user";
 import ArticleConnector from "services/clients/haravan-client/article";
+import ThemeConnector from "services/clients/haravan-client/theme";
 
 class HaravanAPI {
   constructor(accessToken) {
@@ -37,6 +38,7 @@ class HaravanAPI {
     this.collectCustom = new CustomCollectConnector(accessToken);
     this.user = new UserConnector(accessToken);
     this.article = new ArticleConnector(accessToken);
+    this.theme = new ThemeConnector(accessToken);
   }
 }
 
