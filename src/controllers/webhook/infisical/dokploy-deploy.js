@@ -7,7 +7,7 @@ export default class InfisicalDokployDeployController {
       return c.json({ error: "Missing deployId" }, 400);
     }
 
-    await DokployService.triggerComposeDeploy(deployId);
+    await DokployService.triggerComposeDeploy(c.env, deployId);
 
     return c.json({ message: "Dokploy deploy triggered successfully", deployPath: `compose/${deployId}` }, 200);
   }

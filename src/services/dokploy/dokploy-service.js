@@ -3,11 +3,13 @@ import { createAxiosClient } from "services/utils/http-client";
 export default class DokployService {
   /**
    * Triggers a Dokploy deployment
+   * @param {Object} env Cloudflare environment bindings
    * @param {string} deployId The Dokploy deployment ID
    */
-  static async triggerComposeDeploy(deployId) {
+  static async triggerComposeDeploy(env, deployId) {
+    const baseURL = env.DOKPLOY_BASE_URL || "https://dokploy.jemmia.vn";
     const client = createAxiosClient({
-      baseURL: "https://dokploy.jemmia.vn",
+      baseURL,
       headers: {
         "Content-Type": "application/json",
         "X-GitHub-Event": "push"
