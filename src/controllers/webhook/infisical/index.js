@@ -3,6 +3,6 @@ import InfisicalDokployDeployController from "controllers/webhook/infisical/dokp
 export default class InfisicalWebhook {
   static register(webhook) {
     const infisicalWebhookNamespace = webhook.basePath("/infisical");
-    infisicalWebhookNamespace.post("/dokploy/compose/:deployId", InfisicalDokployDeployController.deploy);
+    infisicalWebhookNamespace.post("/dokploy/compose/:deployId", InfisicalDokployDeployController.create);
   }
 }

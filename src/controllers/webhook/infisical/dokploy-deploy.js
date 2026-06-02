@@ -1,7 +1,7 @@
 import DokployService from "services/dokploy/dokploy-service";
 
 export default class InfisicalDokployDeployController {
-  static async deploy(c) {
+  static async create(c) {
     const deployId = c.req.param("deployId");
     if (!deployId) {
       return c.json({ error: "Missing deployId" }, 400);
