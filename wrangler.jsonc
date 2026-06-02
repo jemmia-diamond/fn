@@ -4,12 +4,9 @@
   "main": "src/index.js",
   "compatibility_date": "2025-05-20",
   "upload_source_maps": true,
-  "compatibility_flags": [
-    "nodejs_compat",
-    "durable_object_alarms"
-  ],
+  "compatibility_flags": ["nodejs_compat", "durable_object_alarms"],
   "limits": {
-    "cpu_ms": 300000, // 300 seconds = 5 minutes
+    "cpu_ms": 300000 // 300 seconds = 5 minutes
   },
   "assets": {
     "binding": "ASSETS",
@@ -67,10 +64,10 @@
     "DEFAULT_HARAVAN_JEWELRY_DISCOUNT_COLLECTION_ID": 31,
     "UPTIMEROBOT_API_KEY": "ur3236830-be8be169403c7dd3a91daeca",
     "GOOGLE_MERCHANT_ID": "183425778",
-    "LARK_RECALL_REDIRECT_URI":"https://fn.jemmia.vn/jemmia-shield/callback",
+    "LARK_RECALL_REDIRECT_URI": "https://fn.jemmia.vn/jemmia-shield/callback",
     "LARK_RECALL_VIEW_URL": "https://fn.jemmia.vn/jemmia-shield/message-recall/view",
-    "LARK_APP_SHIELD_ID":"cli_a9fd9bc9f7b9ded0",
-    "OAUTH_REDIRECT_ENDPOINT":"https://fn.jemmia.vn",
+    "LARK_APP_SHIELD_ID": "cli_a9fd9bc9f7b9ded0",
+    "OAUTH_REDIRECT_ENDPOINT": "https://fn.jemmia.vn",
     "HARAVAN_APP_URL": "https://jemmiavn.myharavan.com",
     "AI_PROXY_URL": "https://aiproxy.jemmia.vn",
     "GOOGLE_GENERATIVE_AI_URL": "https://generativelanguage.googleapis.com/v1beta"
@@ -102,7 +99,7 @@
     "bindings": [
       {
         "name": "DEBOUNCE",
-        "class_name": "DebounceDurableObject",
+        "class_name": "DebounceDurableObject"
       }
     ]
   },
@@ -195,6 +192,10 @@
       {
         "queue": "promotion-diamond-collect-sync",
         "binding": "PROMOTION_DIAMOND_COLLECT_SYNC_QUEUE"
+      },
+      {
+        "queue": "pancake-pos-sync",
+        "binding": "PANCAKE_POS_SYNC_QUEUE"
       }
     ],
     "consumers": [
@@ -333,12 +334,10 @@
   "migrations": [
     {
       "tag": "v1",
-      "new_classes": [
-        "DebounceDurableObject"
-      ]
+      "new_classes": ["DebounceDurableObject"]
     }
   ],
   "version_metadata": {
-    "binding": "CF_VERSION_METADATA",
-  },
+    "binding": "CF_VERSION_METADATA"
+  }
 }
