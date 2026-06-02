@@ -4,9 +4,9 @@ export default class DokployService {
   /**
    * Triggers a Dokploy deployment
    * @param {Object} env Cloudflare environment bindings
-   * @param {string} deployId The Dokploy deployment ID
+   * @param {string} deployPath The Dokploy deployment path (e.g., 'compose/123' or '123')
    */
-  static async triggerComposeDeploy(env, deployId) {
+  static async triggerDeploy(env, deployPath) {
     const baseURL = env.DOKPLOY_BASE_URL || "https://dokploy.jemmia.vn";
     const client = createAxiosClient({
       baseURL,
@@ -16,7 +16,7 @@ export default class DokployService {
       }
     });
 
-    const response = await client.post(`/api/deploy/compose/${deployId}`, {
+    const response = await client.post(`/api/deploy/${deployPath}`, {
       ref: "refs/heads/main"
     });
 
