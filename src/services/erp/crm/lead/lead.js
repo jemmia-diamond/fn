@@ -23,11 +23,7 @@ export default class LeadService {
       apiSecret: this.env.JEMMIA_ERP_API_SECRET
     });
     this.db = Database.instance(env);
-    this.WebsiteFormLeadSource = "CRM-LEAD-SOURCE-0000023";
-    this.PartnerLeadSource = "CRM-LEAD-SOURCE-0000107";
     this.defaultLeadOwner = "tech@jemmia.vn";
-    this.CallLogLeadSource = "CRM-LEAD-SOURCE-0000022";
-    this.DiamondConf2026LeadSource = "CRM-LEAD-SOURCE-0000116";
   }
 
   async updateLeadInfoFromSummary(data, conversationId) {
