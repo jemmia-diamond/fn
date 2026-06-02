@@ -23,7 +23,7 @@ const DRAFT_RECORD = 0;
 export default class PaymentEntryNotificationService {
   constructor(env) {
     this.env = env;
-    this.erpPEUrl = `${env.JEMMIA_ERP_BASE_URL}/app/payment-entry`;
+    this.erpPEUrl = `${env.JEMMIA_ERP_BASE_URL}app/payment-entry`;
     this.frappeClient = new FrappeClient({
       url: env.JEMMIA_ERP_BASE_URL,
       apiKey: env.JEMMIA_ERP_API_KEY,
