@@ -23,12 +23,38 @@ export default class PancakeTokenRefresherService {
         return;
       }
 
-      const patsConfig = {};
+      const patsConfig = { ...this.pancakeClient.pancakePatsConfig };
+      let anyTokenRefreshed = false;
+
       for (const page of pages) {
         try {
-          const pat = await this.pancakeClient.generateNewPageAccessToken(page.id);
-          if (pat) {
-            patsConfig[page.id] = pat;
+          let needsRefresh = true;
+          const currentToken = patsConfig[page.id];
+
+          if (currentToken) {
+            try {
+              const testRes = await this.pancakeClient.getPageUsers(page.id);
+              if (testRes === null) {
+                needsRefresh = true;
+              } else if (testRes && (testRes.error_code || testRes.success === false)) {
+                console.warn(`Token for page ${page.id} returned error_code ${testRes.error_code || "unknown"}. Refreshing...`);
+                needsRefresh = true;
+              } else {
+                needsRefresh = false;
+              }
+            } catch (err) {
+              console.warn(`Test request for page ${page.id} failed, assuming expired. Error: ${err.message}`);
+              needsRefresh = true;
+            }
+          }
+
+          if (needsRefresh) {
+            console.warn(`Generating new PAT for page ${page.id}...`);
+            const pat = await this.pancakeClient.generateNewPageAccessToken(page.id);
+            if (pat) {
+              patsConfig[page.id] = pat;
+              anyTokenRefreshed = true;
+            }
           }
         } catch (err) {
           console.warn(`Failed to generate PAT for page ${page.id}:`, err);
@@ -36,8 +62,8 @@ export default class PancakeTokenRefresherService {
         }
       }
 
-      if (Object.keys(patsConfig).length === 0) {
-        console.warn("Failed to generate any new PATs, aborting sync to Infisical.");
+      if (!anyTokenRefreshed) {
+        console.warn("No tokens needed refreshing, aborting sync to Infisical.");
         return;
       }
 
@@ -51,7 +77,7 @@ export default class PancakeTokenRefresherService {
       }
 
       const entries = Object.entries(patsConfig);
-      console.warn(`Generated ${entries.length} new PATs. Syncing to Infisical...`);
+      console.warn(`Syncing ${entries.length} valid PATs to Infisical...`);
 
       const CHUNK_SIZE = 20;
       let chunkIndex = 1;
