@@ -240,3 +240,26 @@ export async function getSalesOrdersByHaravanOrderId(
 
   return Array.isArray(salesOrders) ? salesOrders : [];
 }
+
+/**
+ * Fetch Lead Source by code
+ * @param {FrappeClient} frappeClient - Frappe Client instance
+ * @param {string} sourceCode - The lead source code
+ * @returns {Promise<string|null>} The name of the lead source
+ */
+export async function getLeadSource(frappeClient, sourceCode) {
+  if (!sourceCode) return null;
+  try {
+    const existing = await frappeClient.getList("Lead Source", {
+      filters: [["code", "=", sourceCode]],
+      fields: ["name"]
+    });
+
+    if (existing && existing.length > 0) {
+      return existing[0].name;
+    }
+  } catch (e) {
+    Sentry.captureException(e);
+  }
+  return null;
+}
