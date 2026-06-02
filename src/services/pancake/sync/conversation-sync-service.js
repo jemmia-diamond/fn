@@ -9,7 +9,7 @@ import { createAxiosClient } from "services/utils/http-client";
 
 dayjs.extend(utc);
 
-const EXCLUDED_PAGE_IDS = [
+const PAGES_EXCLUDED_FROM_LAST_SENT_AT_UPDATE = [
   "zl_2838947343790196672",
   "110263770893806",
   "114459901519364",
@@ -192,7 +192,7 @@ export default class ConversationSyncService {
     }
 
     let lastSentAt = null;
-    if (item.page_id && !EXCLUDED_PAGE_IDS.includes(item.page_id)) {
+    if (item.page_id && !PAGES_EXCLUDED_FROM_LAST_SENT_AT_UPDATE.includes(item.page_id)) {
       lastSentAt = item.updated_at ? dayjs.utc(item.updated_at).toDate() : null;
     }
 
