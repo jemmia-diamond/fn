@@ -2,7 +2,7 @@ import * as Sentry from "@sentry/cloudflare";
 
 import { generateText } from "ai";
 
-import HaravanClient from "services/haravan/haravan-client";
+import HaravanAPI from "services/clients/haravan-client";
 import ImageTranslationService from "services/media/image-translation-service";
 
 import { getOpenAICompatibleModel } from "services/utils/llm-helper";
@@ -26,28 +26,20 @@ export default class ConfigTranslatorService {
   }
 
   async fetchHaravanConfig(haravanClient) {
-    const endpoint = `/web/themes/${ConfigTranslatorService.CONFIG.THEME_ID}/assets.json?asset[key]=config/settings_data.json`;
-
     return retryQuery(async () => {
-      const response = await haravanClient.makeRequest(endpoint, { method: "GET" });
+      const response = await haravanClient.theme.getAssets(ConfigTranslatorService.CONFIG.THEME_ID, { "asset[key]": "config/settings_data.json" });
       return response;
     });
   }
 
   async updateHaravanConfig(haravanClient, configValue) {
-    const endpoint = `/web/themes/${ConfigTranslatorService.CONFIG.THEME_ID}/assets.json`;
     const payload = {
-      asset: {
-        key: "config/settings_data.json",
-        value: configValue
-      }
+      key: "config/settings_data.json",
+      value: configValue
     };
 
     return retryQuery(async () => {
-      const response = await haravanClient.makeRequest(endpoint, {
-        method: "PUT",
-        body: payload
-      });
+      const response = await haravanClient.theme.updateAsset(ConfigTranslatorService.CONFIG.THEME_ID, payload);
       return response;
     });
   }
@@ -225,7 +217,7 @@ export default class ConfigTranslatorService {
   async sync() {
     try {
       const HRV_API_KEY = this.env.HARAVAN_TOKEN;
-      const haravanClient = new HaravanClient(HRV_API_KEY, this.env.HARAVAN_API_BASE_URL);
+      const haravanClient = new HaravanAPI(HRV_API_KEY);
       const imageService = new ImageTranslationService();
 
       const response = await this.fetchHaravanConfig(haravanClient);
