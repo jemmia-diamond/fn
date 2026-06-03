@@ -66,21 +66,24 @@ export default class MissingSerialNotificationService {
         return false;
       });
 
-      if (missingSerialItems.length > 0 || missingPromotionItems.length > 0) {
+      const isOrderMissingPromotion = (fullOrder.discount_amount || 0) > 5000 && (!fullOrder.promotions || fullOrder.promotions.length === 0);
+
+      if (missingSerialItems.length > 0 || missingPromotionItems.length > 0 || isOrderMissingPromotion) {
         const larkUserId = await this.getLarkUserIdBySalesPerson(order.primary_sales_person);
         ordersWithIssues.push({
           name: order.name,
           order_number: order.order_number,
           larkUserId,
           missingSerialItems,
-          missingPromotionItems
+          missingPromotionItems,
+          isOrderMissingPromotion
         });
       }
     }
 
     if (ordersWithIssues.length === 0) return;
 
-    const message = this.formatMessage(ordersWithIssues);
+    const message = this.formatMessage(ordersWithIssues, fromDate, toDate);
 
     const larkClient = await LarksuiteService.createClientV2(this.env);
     await larkClient.im.message.create({
@@ -109,8 +112,16 @@ export default class MissingSerialNotificationService {
     return user?.user_id || null;
   }
 
-  formatMessage(ordersWithIssues) {
-    let message = `⚠️ Có ${ordersWithIssues.length} đơn hàng cần bổ sung thông tin (Serial/CTKM) ⚠️\n`;
+  formatMessage(ordersWithIssues, fromDate, toDate) {
+    let dateStr = "";
+    if (fromDate && toDate) {
+      const from = dayjs(fromDate).utcOffset(7).format("DD/MM/YYYY");
+      const to = dayjs(toDate).utcOffset(7).format("DD/MM/YYYY");
+      dateStr = `Từ ngày ${from} đến ngày ${to}, c`;
+    } else {
+      dateStr = "C";
+    }
+    let message = `⚠️ ${dateStr}ó ${ordersWithIssues.length} đơn hàng cần bổ sung thông tin (Serial/CTKM) ⚠️\n`;
 
     ordersWithIssues.forEach((order, idx) => {
       const link = `https://erp.jemmia.vn/desk/sales-order/${order.name}`;
@@ -128,6 +139,10 @@ export default class MissingSerialNotificationService {
         order.missingPromotionItems.forEach((item) => {
           message += `\n - ${item.item_name || item.sku} (SKU: ${item.sku})`;
         });
+      }
+
+      if (order.isOrderMissingPromotion) {
+        message += "\n* Đơn hàng thiếu CTKM (áp dụng cho toàn đơn)";
       }
 
       message += `\n - Link: ${link}`;
