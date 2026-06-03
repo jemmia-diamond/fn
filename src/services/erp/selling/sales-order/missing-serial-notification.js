@@ -125,7 +125,7 @@ export default class MissingSerialNotificationService {
 
     ordersWithIssues.forEach((order, idx) => {
       const link = `https://erp.jemmia.vn/desk/sales-order/${order.name}`;
-      message += `\n**${idx + 1}. #${order.order_number || order.name}**`;
+      message += `\n<b>${idx + 1}. #${order.order_number || order.name}</b>`;
 
       if (order.missingSerialItems.length > 0) {
         message += "\n* Sản phẩm thiếu serial:";
