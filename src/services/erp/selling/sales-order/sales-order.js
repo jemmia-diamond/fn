@@ -6,7 +6,7 @@ import Database from "src/services/database";
 import AddressService from "src/services/erp/contacts/address/address";
 import ContactService from "src/services/erp/contacts/contact/contact";
 import CustomerService from "src/services/erp/selling/customer/customer";
-import { composeOrderUpdateMessage, composeSalesOrderNotification, extractPromotions, findMainOrder, isMissingJewelrySerial } from "services/erp/selling/sales-order/utils/sales-order-notification";
+import { composeOrderUpdateMessage, composeSalesOrderNotification, findMainOrder, isMissingJewelrySerial, extractPromotions } from "services/erp/selling/sales-order/utils/sales-order-notification";
 import { validateSalesOrder } from "services/erp/selling/sales-order/utils/sales-order-validator";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
@@ -319,19 +319,23 @@ export default class SalesOrderService {
 
     const customer = await this.frappeClient.getDoc("Customer", salesOrderData.customer);
 
-    // Fetch promotions for validation
-    const promotionNames = extractPromotions(salesOrderData);
-    let promotionData = [];
-    if (promotionNames.length > 0) {
-      promotionData = await this.frappeClient.getList("Promotion", {
-        filters: [["name", "in", promotionNames]],
-        fields: ["*"]
-      });
-    }
-
-    const { isValid, message } = validateSalesOrder(salesOrderData, customer, promotionData);
+    const { isValid, message } = validateSalesOrder(salesOrderData, customer);
     if (!isValid) {
       return { success: false, message: message };
+    }
+
+    const allOrdersToProcess = [salesOrderData, ...childOrders];
+    const allPromotionNames = new Set();
+    allOrdersToProcess.forEach(order => {
+      extractPromotions(order).forEach(p => allPromotionNames.add(p));
+    });
+
+    let promotionData = [];
+    if (allPromotionNames.size > 0) {
+      promotionData = await this.frappeClient.getList("Promotion", {
+        filters: [["name", "in", Array.from(allPromotionNames)]],
+        fields: ["*"]
+      });
     }
 
     if (haravanRefOrderId && Number(haravanRefOrderId) > 0) {
