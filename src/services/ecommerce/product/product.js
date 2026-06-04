@@ -173,8 +173,8 @@ export default class ProductService {
   async getJewelryDataV2(jsonParams) {
     const { dataSql, countSql } = buildQueryV2(jsonParams);
 
-    const data = await retryQuery(() => this.db.$queryRaw`${dataSql}`);
-    const count = await retryQuery(() => this.db.$queryRaw`${countSql}`);
+    const data = await retryQuery(() => this.db.$queryRaw(dataSql));
+    const count = await retryQuery(() => this.db.$queryRaw(countSql));
 
     return {
       data,

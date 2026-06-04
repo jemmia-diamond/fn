@@ -65,7 +65,7 @@ export default class PancakePOSSyncService {
 
     const pageCustomer = await this.db.page_customer.findFirst({
       where: {
-        phone_numbers_normalize: {
+        normalized_phone_numbers: {
           array_contains: [target]
         }
       },
