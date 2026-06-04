@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/cloudflare";
 import Database from "services/database";
 import PancakePosClient, { CreateOrderPayload, OrderItem } from "services/pancake/pos/pancake-pos-client";
 import { haravanMoneyToNumber, HaravanOrderPayload } from "services/haravan/webhook-order";
@@ -28,40 +29,68 @@ export default class PancakePOSSyncService {
   static async dequeueOrderQueue(batch: any, env: any): Promise<void> {
     const service = new PancakePOSSyncService(env);
     for (const msg of batch.messages) {
-      await service.processOrder(msg.body);
-      msg.ack();
+      try {
+        await service.processOrder(msg.body);
+        msg.ack();
+      } catch (e) {
+        console.error(`[PancakePOSSync] dequeueOrderQueue error order=${msg.body?.id}`, e);
+        Sentry.captureException(e);
+        msg.retry();
+      }
     }
   }
 
   async processOrder(order: HaravanOrderPayload): Promise<void> {
+    const tag = `[PancakePOSSync] order=${order.id} topic=${order.haravan_topic}`;
+    console.log(`${tag} start`);
+
     const ctx = await this.resolveSyncContext(order);
-    if (!ctx) return;
+    if (!ctx) {
+      console.log(`${tag} skip: resolveSyncContext returned null`);
+      return;
+    }
     const { shopId, lead } = ctx;
 
     if (order.haravan_topic === HARAVAN_TOPIC.CREATED) {
       await this.syncOrderCreate(order, shopId, lead);
     } else if (order.haravan_topic === HARAVAN_TOPIC.UPDATED) {
       await this.syncOrderUpdate(order, shopId);
+    } else {
+      console.log(`${tag} skip: topic not handled`);
     }
   }
 
   private async resolveSyncContext(order: HaravanOrderPayload) {
-    if (!order.customer?.phone) return;
+    const tag = `[PancakePOSSync] order=${order.id}`;
+
+    if (!order.customer?.phone) {
+      console.log(`${tag} skip: no customer phone`);
+      return;
+    }
 
     const lead = await this.resolveAdsId(order.customer.phone);
-    if (!lead) return;
+    if (!lead) {
+      console.log(`${tag} skip: resolveAdsId returned null for phone=${order.customer.phone}`);
+      return;
+    }
 
     const shopId = await this.resolveShopId(lead.pageId);
-    if (!shopId) return;
+    if (!shopId) {
+      console.log(`${tag} skip: no pos_shop_id for pageId=${lead.pageId}`);
+      return;
+    }
 
-    return {
-      lead, shopId
-    };
+    return { lead, shopId };
   }
 
   private async resolveAdsId(customerPhone: string): Promise<ResolvedLead | null> {
+    const tag = `[PancakePOSSync] resolveAdsId phone=${customerPhone}`;
+
     const target = normalizeToStandardFormat(customerPhone);
-    if (!target) return null;
+    if (!target) {
+      console.log(`${tag} skip: normalizeToStandardFormat returned empty`);
+      return null;
+    }
 
     const pageCustomer = await this.db.page_customer.findFirst({
       where: {
@@ -72,7 +101,10 @@ export default class PancakePOSSyncService {
       orderBy: { updated_at: "desc" },
       select: { customer_id: true }
     });
-    if (!pageCustomer?.customer_id) return null;
+    if (!pageCustomer?.customer_id) {
+      console.log(`${tag} skip: no page_customer found for normalized=${target}`);
+      return null;
+    }
 
     const conversation = await this.db.conversation.findFirst({
       where: {
@@ -82,12 +114,18 @@ export default class PancakePOSSyncService {
       orderBy: { updated_at: "desc" },
       select: { id: true, page_id: true, ad_ids: true }
     });
-    if (!conversation?.ad_ids) return null;
+    if (!conversation?.ad_ids) {
+      console.log(`${tag} skip: no conversation with ad_ids for customer_id=${pageCustomer.customer_id}`);
+      return null;
+    }
 
     const adIds: string[] = Array.isArray(conversation.ad_ids)
       ? (conversation.ad_ids as string[]).filter(Boolean)
       : [];
-    if (adIds.length === 0) return null;
+    if (adIds.length === 0) {
+      console.log(`${tag} skip: ad_ids is empty for customer_id=${pageCustomer.customer_id}`);
+      return null;
+    }
 
     return {
       conversationId: conversation.id ?? "",
@@ -105,14 +143,22 @@ export default class PancakePOSSyncService {
   }
 
   private async syncOrderCreate(order: HaravanOrderPayload, shopId: number, lead: ResolvedLead): Promise<void> {
+    const tag = `[PancakePOSSync] syncOrderCreate order=${order.id} shopId=${shopId}`;
+
     const existing = await this.db.pancakePOSOrderSync.findUnique({
       where: { haravan_order_id: BigInt(order.id) }
     });
-    if (existing?.pancake_order_id) return;
+    if (existing?.pancake_order_id) {
+      console.log(`${tag} skip: already synced pancake_order_id=${existing.pancake_order_id}`);
+      return;
+    }
 
     const status = this.mapStatus(order.cancelled_status);
     const payload = this.buildCreatePayload({ order, lead, status });
+
+    console.log(`${tag} creating POS order conversationId=${lead.conversationId} adId=${lead.adIds[0]}`);
     const posOrder = await this.client.createOrder(shopId, payload);
+    console.log(`${tag} created pancake_order_id=${posOrder.id}`);
 
     await this.db.pancakePOSOrderSync.upsert({
       where: { haravan_order_id: BigInt(order.id) },
@@ -178,14 +224,23 @@ export default class PancakePOSSyncService {
   }
 
   private async syncOrderUpdate(order: HaravanOrderPayload, shopId: number): Promise<void> {
+    const tag = `[PancakePOSSync] syncOrderUpdate order=${order.id}`;
+
     const sync = await this.db.pancakePOSOrderSync.findUnique({
       where: { haravan_order_id: BigInt(order.id) }
     });
-    if (!sync?.pancake_order_id) return;
+    if (!sync?.pancake_order_id) {
+      console.log(`${tag} skip: no pancake_pos_order_syncs record found`);
+      return;
+    }
 
     const status = this.mapStatus(order.cancelled_status);
-    if (sync.status === status) return;
+    if (sync.status === status) {
+      console.log(`${tag} skip: status unchanged (${status})`);
+      return;
+    }
 
+    console.log(`${tag} updating status ${sync.status} → ${status} pancake_order_id=${sync.pancake_order_id}`);
     await this.client.updateOrderStatus(sync.shop_id ?? shopId, sync.pancake_order_id, status);
     await this.db.pancakePOSOrderSync.update({
       where: { haravan_order_id: BigInt(order.id) },
