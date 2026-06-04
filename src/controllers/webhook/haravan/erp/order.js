@@ -1,8 +1,5 @@
 import * as Sentry from "@sentry/cloudflare";
-import {
-  HARAVAN_DISPATCH_TYPE_ZALO_MSG,
-  HARAVAN_TOPIC
-} from "services/ecommerce/enum";
+import { HARAVAN_DISPATCH_TYPE_ZALO_MSG, HARAVAN_TOPIC } from "services/ecommerce/enum";
 
 export default class HaravanERPOrderController {
   static async create(ctx) {
@@ -10,20 +7,11 @@ export default class HaravanERPOrderController {
     const data = await ctx.req.json();
     data.haravan_topic = ctx.req.header("x-haravan-topic");
     try {
-      if (data.haravan_topic === HARAVAN_TOPIC.PAID) {
-        await HaravanERPOrderController.sendToZaloMessageQueue(
-          ctx,
-          data,
-          HARAVAN_DISPATCH_TYPE_ZALO_MSG.PAID
-        );
+      if (data.haravan_topic === HARAVAN_TOPIC.PAID ) {
+        await HaravanERPOrderController.sendToZaloMessageQueue(ctx, data, HARAVAN_DISPATCH_TYPE_ZALO_MSG.PAID);
       } else if (data.haravan_topic === HARAVAN_TOPIC.CREATED) {
         const delayInSeconds = 1800; // 1800 seconds ~ 30 mins
-        await HaravanERPOrderController.sendToZaloMessageQueue(
-          ctx,
-          data,
-          HARAVAN_DISPATCH_TYPE_ZALO_MSG.REMIND_PAY,
-          delayInSeconds
-        );
+        await HaravanERPOrderController.sendToZaloMessageQueue(ctx, data, HARAVAN_DISPATCH_TYPE_ZALO_MSG.REMIND_PAY, delayInSeconds);
       } else {
         await HaravanERPOrderController.sendToZaloMessageQueue(ctx, data);
       }
@@ -37,20 +25,14 @@ export default class HaravanERPOrderController {
       }
 
       await ctx.env["ERPNEXT_ORDER_CREATION_QUEUE"].send(data);
-      await ctx.env["PANCAKE_POS_SYNC_QUEUE"].send(data);
       return ctx.json({ message: "Message sent to queue", status: 200 });
     } catch (e) {
       Sentry.captureException(e);
       return ctx.json({ message: e.message, status: 500 });
-    }
-  }
+    };
+  };
 
-  static async sendToZaloMessageQueue(
-    ctx,
-    data,
-    dispatchType = null,
-    delayInSeconds = 0
-  ) {
+  static async sendToZaloMessageQueue(ctx, data, dispatchType = null, delayInSeconds = 0) {
     data.dispatchType = dispatchType;
 
     const scheduleOptions = this.getZaloMessageSchedule(delayInSeconds);
@@ -71,21 +53,14 @@ export default class HaravanERPOrderController {
       second: "2-digit"
     });
     const parts = formatter.formatToParts(now);
-    const get = (t) => parts.find((p) => p.type === t).value;
-    const localNow = new Date(
-      `${get("year")}-${get("month")}-${get("day")}T${get("hour")}:${get("minute")}:${get("second")}+07:00`
-    );
+    const get = (t) => parts.find(p => p.type === t).value;
+    const localNow = new Date(`${get("year")}-${get("month")}-${get("day")}T${get("hour")}:${get("minute")}:${get("second")}+07:00`);
 
-    const scheduledTime = new Date(
-      localNow.getTime() + initialDelayInSeconds * 1000
-    );
+    const scheduledTime = new Date(localNow.getTime() + initialDelayInSeconds * 1000);
     const scheduledHour = scheduledTime.getHours();
     const scheduledMinute = scheduledTime.getMinutes();
 
-    if (
-      (scheduledHour < 21 || (scheduledHour === 21 && scheduledMinute <= 55)) &&
-      (scheduledHour > 6 || (scheduledHour === 6 && scheduledMinute >= 5))
-    ) {
+    if (((scheduledHour < 21) || (scheduledHour === 21 && scheduledMinute <= 55)) && ((scheduledHour > 6) || (scheduledHour === 6 && scheduledMinute >= 5)))  {
       return { delaySeconds: initialDelayInSeconds };
     }
 
@@ -98,4 +73,4 @@ export default class HaravanERPOrderController {
 
     return { delaySeconds: Math.floor((nextAvailableTime - localNow) / 1000) };
   }
-}
+};
