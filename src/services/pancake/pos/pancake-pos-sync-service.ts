@@ -33,7 +33,7 @@ export default class PancakePOSSyncService {
         await service.processOrder(msg.body);
         msg.ack();
       } catch (e) {
-        console.error(`[PancakePOSSync] dequeueOrderQueue error order=${msg.body?.id}`, e);
+        console.warn(`[PancakePOSSync] dequeueOrderQueue error order=${msg.body?.id}`, e);
         Sentry.captureException(e);
         msg.retry();
       }
