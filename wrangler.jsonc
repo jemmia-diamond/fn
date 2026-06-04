@@ -87,7 +87,7 @@
       "binding": "NHAT_TIN_JEMMIA_CT_PASSWORD_SECRET",
       "store_id": "dff6fef7003446178302a7874af64fde",
       "secret_name": "NHAT_TIN_JEMMIA_CT_PASSWORD"
-    },
+    }
   ],
   "kv_namespaces": [
     {
@@ -290,6 +290,10 @@
         "queue": "erpnext-order-creation",
         "retry_delay": 600,
         "max_retries": 6,
+        "max_batch_size": 1
+      },
+      {
+        "queue": "pancake-pos-sync",
         "max_batch_size": 1
       },
       {
