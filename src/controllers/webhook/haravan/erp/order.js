@@ -25,6 +25,7 @@ export default class HaravanERPOrderController {
       }
 
       await ctx.env["ERPNEXT_ORDER_CREATION_QUEUE"].send(data);
+      await ctx.env["PANCAKE_POS_SYNC_QUEUE"].send(data);
       return ctx.json({ message: "Message sent to queue", status: 200 });
     } catch (e) {
       Sentry.captureException(e);
