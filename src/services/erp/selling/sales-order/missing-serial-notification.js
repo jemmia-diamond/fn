@@ -28,56 +28,74 @@ export default class MissingSerialNotificationService {
     ];
 
     if (fromDate && toDate) {
-      filters.push(["creation", ">=", dayjs(fromDate).utc().format("YYYY-MM-DD HH:mm:ss")]);
-      filters.push(["creation", "<=", dayjs(toDate).utc().format("YYYY-MM-DD HH:mm:ss")]);
+      filters.push(["real_order_date", ">=", dayjs(fromDate).format("YYYY-MM-DD")]);
+      filters.push(["real_order_date", "<=", dayjs(toDate).format("YYYY-MM-DD")]);
     }
 
-    const salesOrders = await this.frappeClient.getList("Sales Order", {
-      filters,
-      fields: ["name", "order_number", "customer_name", "primary_sales_person"],
-      limit_page_length: 200
-    });
-
-    if (!salesOrders || salesOrders.length === 0) return;
-
+    let limit_start = 0;
+    const limit_page_length = 100;
+    let hasMore = true;
     const ordersWithIssues = [];
-    for (const order of salesOrders) {
-      const fullOrder = await this.frappeClient.getDoc("Sales Order", order.name);
-      const items = fullOrder.items || [];
 
-      const missingSerialItems = items.filter(isMissingJewelrySerial);
-
-      const missingPromotionItems = items.filter(item => {
-        if (!isJewelryItem(item) && !isDiamondItem(item)) return false;
-
-        // Check if there is a price difference (meaning it was discounted)
-        const priceDiff = Math.abs((item.price_list_rate || 0) - (item.rate || 0));
-        if (priceDiff <= 5000) return false;
-
-        // Check if new_promotions is empty or "[]"
-        if (!item.new_promotions) return true;
-        try {
-          const parsed = JSON.parse(item.new_promotions);
-          if (Array.isArray(parsed) && parsed.length === 0) return true;
-        } catch {
-          if (item.new_promotions.trim() === "[]") return true;
-        }
-
-        return false;
+    while (hasMore) {
+      const salesOrders = await this.frappeClient.getList("Sales Order", {
+        filters,
+        fields: ["name", "order_number", "customer_name", "primary_sales_person"],
+        order_by: "creation desc",
+        limit_start,
+        limit_page_length
       });
 
-      const isOrderMissingPromotion = (fullOrder.discount_amount || 0) > 5000 && (!fullOrder.promotions || fullOrder.promotions.length === 0);
+      if (!salesOrders || salesOrders.length === 0) {
+        hasMore = false;
+        break;
+      }
 
-      if (missingSerialItems.length > 0 || missingPromotionItems.length > 0 || isOrderMissingPromotion) {
-        const larkUserId = await this.getLarkUserIdBySalesPerson(order.primary_sales_person);
-        ordersWithIssues.push({
-          name: order.name,
-          order_number: order.order_number,
-          larkUserId,
-          missingSerialItems,
-          missingPromotionItems,
-          isOrderMissingPromotion
+      for (const order of salesOrders) {
+        const fullOrder = await this.frappeClient.getDoc("Sales Order", order.name);
+        const items = fullOrder.items || [];
+
+        const missingSerialItems = items.filter(isMissingJewelrySerial);
+
+        const missingPromotionItems = items.filter(item => {
+          if (!isJewelryItem(item) && !isDiamondItem(item)) return false;
+
+          // Check if there is a price difference (meaning it was discounted)
+          const priceDiff = Math.abs((item.price_list_rate || 0) - (item.rate || 0));
+          if (priceDiff <= 5000) return false;
+
+          // Check if new_promotions is empty, "[]", or {}
+          if (!item.new_promotions) return true;
+          try {
+            const parsed = typeof item.new_promotions === "string" ? JSON.parse(item.new_promotions) : item.new_promotions;
+            if (Array.isArray(parsed) && parsed.length === 0) return true;
+            if (parsed && typeof parsed === "object" && Object.keys(parsed).length === 0) return true;
+          } catch {
+            if (typeof item.new_promotions === "string" && item.new_promotions.trim() === "[]") return true;
+          }
+
+          return false;
         });
+
+        const isOrderMissingPromotion = (fullOrder.discount_amount || 0) > 5000 && (!fullOrder.promotions || fullOrder.promotions.length === 0);
+
+        if (missingSerialItems.length > 0 || missingPromotionItems.length > 0 || isOrderMissingPromotion) {
+          const larkUserId = await this.getLarkUserIdBySalesPerson(order.primary_sales_person);
+          ordersWithIssues.push({
+            name: order.name,
+            order_number: order.order_number,
+            larkUserId,
+            missingSerialItems,
+            missingPromotionItems,
+            isOrderMissingPromotion
+          });
+        }
+      }
+
+      if (salesOrders.length < limit_page_length) {
+        hasMore = false;
+      } else {
+        limit_start += limit_page_length;
       }
     }
 
