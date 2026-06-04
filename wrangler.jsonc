@@ -294,6 +294,8 @@
       },
       {
         "queue": "pancake-pos-sync",
+        "retry_delay": 600,
+        "max_retries": 3,
         "max_batch_size": 1
       },
       {
