@@ -6,6 +6,7 @@ import CustomerSyncService from "services/pancake/sync/customer-sync-service";
 import TagSyncService from "services/pancake/sync/tag-sync-service";
 import TokenRefresherService from "services/pancake/sync/token-refresher-service";
 import { PancakePOSShopSyncService } from "services/pancake/pos/index";
+import PancakePOSSyncService from "services/pancake/pos/pancake-pos-sync-service";
 
 export default {
   ConversationAssignmentService,
@@ -15,5 +16,6 @@ export default {
   CustomerSyncService,
   TagSyncService,
   TokenRefresherService,
-  PancakePOSShopSyncService
+  PancakePOSShopSyncService,
+  PancakePOSSyncService
 };
