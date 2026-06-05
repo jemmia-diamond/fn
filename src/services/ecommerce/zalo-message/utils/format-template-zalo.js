@@ -45,6 +45,14 @@ export class GetTemplateZalo {
           bank_transfer_note: bankTransferNote
         }
       };
+    case ZALO_TEMPLATE.birthdayPromotion:
+      return {
+        phone: this.convertPhoneNumber(data.phone || data.mobile_no),
+        templateData: {
+          customer_name: data.customer_name || data.name || "Quý khách",
+          discount_code: "SINHNHATKH"
+        }
+      };
     default:
       return null;
     }

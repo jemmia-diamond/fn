@@ -143,6 +143,9 @@ export default {
       await new Haravan.Articles.ArticleSyncService(env).sync();
       await new Haravan.ConfigTranslator.ConfigTranslatorService(env).sync();
       break;
+    case "0 2 5 * *": // 09:00 on the 5th of every month
+      await new Ecommerce.BirthdayPromotionService(env).sendMonthlyBirthdayMessages();
+      break;
     default:
       break;
     };
