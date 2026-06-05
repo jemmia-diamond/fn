@@ -133,19 +133,27 @@ export default class OrderService {
         return;
       }
 
+      let remainingBalance = parseFloat(order.total_price);
+
       for (const refTransac of refTransactions) {
+        if (remainingBalance <= 0) break;
+
         const refTransactionAmount = parseFloat(refTransac.amount);
         const refTransactionKind = refTransac.kind;
         const refTransactionGateway = refTransac.gateway;
 
-        if (refTransactionAmount > 0 && ["capture", "authorization"].includes(refTransactionKind.toLowerCase())) {
+        if (refTransactionAmount > 0 && ["capture", "authorization", "sale"].includes(refTransactionKind?.toLowerCase())) {
+
+          const syncAmount = Math.min(refTransactionAmount, remainingBalance);
+
           const transactionData = {
-            amount: refTransactionAmount,
+            amount: syncAmount,
             kind: refTransactionKind,
             gateway: refTransactionGateway
           };
 
           await hrvClient.orderTransaction.createTransaction(order.id, transactionData);
+          remainingBalance -= syncAmount;
         }
       }
     } catch (error) {

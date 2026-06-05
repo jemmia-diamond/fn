@@ -852,20 +852,6 @@ export default class SalesOrderService {
         };
       }
 
-      const currentLinkedPaymentEntries = currentSalesOrder.payment_entries || [];
-      const isPaymentEntriesChanged = currentLinkedPaymentEntries.length !== linkedPaymentEntries.length ||
-        !linkedPaymentEntries.every(l => {
-          const matched = currentLinkedPaymentEntries.find(c => c.reference_name === l.reference_name);
-          return matched && parseFloat(matched.allocated_amount) === parseFloat(l.allocated_amount);
-        });
-
-      const currentGroupLinkedPaymentEntries = currentSalesOrder.group_payment_entries || [];
-      const isGroupPaymentEntriesChanged = currentGroupLinkedPaymentEntries.length !== groupLinkedPaymentEntries.length ||
-        !groupLinkedPaymentEntries.every(l => {
-          const matched = currentGroupLinkedPaymentEntries.find(c => c.reference_name === l.reference_name);
-          return matched && parseFloat(matched.allocated_amount) === parseFloat(l.allocated_amount);
-        });
-
       // Calculate group grand total
       const splitOrderDocs = splitOrders.map(order => allRelatedOrders.find(r => r.name === order.name) || order);
 
@@ -884,17 +870,19 @@ export default class SalesOrderService {
           const currentTotalAllocated = parseFloat(doc.total_allocated_group_payment || 0);
           const currentBalanceGroup = parseFloat(doc.balance_group_payment || 0);
           const newBalanceGroup = groupGrandTotal - groupPaymentTotal;
-          const hasChangeAmount = docPaid !== docTotal || currentTotalAllocated !== groupPaymentTotal || currentBalanceGroup !== newBalanceGroup;
+
+          const hasChangeAmount =
+            Math.abs(docPaid - docTotal) > 0.01 ||
+            Math.abs(currentTotalAllocated - groupPaymentTotal) > 0.01 ||
+            Math.abs(currentBalanceGroup - newBalanceGroup) > 0.01;
 
           if (order.name === salesOrderName) {
-            if (hasChangeAmount || isPaymentEntriesChanged || isGroupPaymentEntriesChanged) {
+            if (hasChangeAmount) {
               const updated = await this.frappeClient.update({
                 doctype: "Sales Order",
                 name: doc.name,
                 paid_amount: docTotal,
                 balance: 0,
-                payment_entries: linkedPaymentEntries,
-                group_payment_entries: groupLinkedPaymentEntries,
                 total_allocated_group_payment: groupPaymentTotal,
                 balance_group_payment: newBalanceGroup
               });
@@ -937,20 +925,16 @@ export default class SalesOrderService {
       const currentBalanceGroupPayment = parseFloat(currentSalesOrder.balance_group_payment || 0);
       const newBalanceGroupPayment = parseFloat(groupGrandTotal - groupPaymentTotal);
 
-      if (parseFloat(totalPaid) !== parseFloat(currentPaidAmount) ||
-          parseFloat(currentBalance) !== parseFloat(balance) ||
-          isPaymentEntriesChanged ||
-          isGroupPaymentEntriesChanged ||
-          currentTotalAllocatedGroupPayment !== parseFloat(groupPaymentTotal) ||
-          currentBalanceGroupPayment !== newBalanceGroupPayment
+      if (Math.abs(parseFloat(totalPaid) - parseFloat(currentPaidAmount)) > 0.01 ||
+        Math.abs(parseFloat(currentBalance) - parseFloat(balance)) > 0.01 ||
+        Math.abs(currentTotalAllocatedGroupPayment - parseFloat(groupPaymentTotal)) > 0.01 ||
+        Math.abs(currentBalanceGroupPayment - newBalanceGroupPayment) > 0.01
       ) {
         const updatedDoc = await this.frappeClient.update({
           doctype: "Sales Order",
           name: salesOrderName,
           paid_amount: totalPaid,
           balance: balance,
-          payment_entries: linkedPaymentEntries,
-          group_payment_entries: groupLinkedPaymentEntries,
           total_allocated_group_payment: groupPaymentTotal,
           balance_group_payment: newBalanceGroupPayment
         });
@@ -1016,10 +1000,10 @@ export default class SalesOrderService {
         const transactions = haravanOrder.transactions || [];
 
         const paidAmount = transactions
-          .filter(t => ["capture", "authorization"].includes(t.kind?.toLowerCase()))
+          .filter(t => ["capture", "sale", "authorization"].includes(t.kind?.toLowerCase()))
           .reduce((total, t) => total + parseFloat(t.amount || 0), 0);
 
-        const remainingAmount = salesOrderData.grand_total - paidAmount;
+        const remainingAmount = haravanOrder.total_price - paidAmount;
 
         if (remainingAmount > 0) {
           await haravanClient.orderTransaction.createTransaction(salesOrderData.haravan_order_id, {
