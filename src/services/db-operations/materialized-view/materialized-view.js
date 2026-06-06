@@ -7,6 +7,21 @@ export default class MaterializedViewService {
     this.db = Database.instance(env);
   }
 
+  static async refreshMorningViews(env) {
+    const db = Database.instance(env);
+    const views = [
+      "promotion.promotions_item_view",
+      "promotion.promotions_order_view"
+    ];
+    for (const view of views) {
+      try {
+        await db.$queryRaw`${Prisma.raw(`REFRESH MATERIALIZED VIEW ${view};`)}`;
+      } catch (error) {
+        Sentry.captureException(error);
+      }
+    }
+  }
+
   // Refresh each 20 minutes
   static async refresh20Minutes(env) {
     const db = Database.instance(env);
