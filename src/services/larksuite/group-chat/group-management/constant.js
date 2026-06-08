@@ -34,5 +34,9 @@ export const CHAT_GROUPS = {
   PROMOTION_SYNC_NOTIFICATION: {
     chat_id: "oc_0c56ab7868f6f90b3f3f6e0fdfd03482",
     group_name: "Hỗ trợ công thức tính CTKM"
+  },
+  SALESAYA: {
+    chat_id: "oc_63fa726af001dd2619008711dc96f33b",
+    group_name: "[PRJ] Salesaya"
   }
 };

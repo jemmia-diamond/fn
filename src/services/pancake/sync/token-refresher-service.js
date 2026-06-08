@@ -1,5 +1,14 @@
 import PancakeClient from "pancake/pancake-client";
 import * as Sentry from "@sentry/cloudflare";
+import LarksuiteService from "services/larksuite/lark";
+import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/constant";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc.js";
+import timezone from "dayjs/plugin/timezone.js";
+import { TIMEZONE_VIETNAM } from "src/constants";
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 export default class PancakeTokenRefresherService {
   constructor(env) {
@@ -23,6 +32,9 @@ export default class PancakeTokenRefresherService {
         return;
       }
 
+      let larkClient = null;
+      let parentMessageId = null;
+
       const patsConfig = {};
       for (const page of pages) {
         try {
@@ -33,6 +45,16 @@ export default class PancakeTokenRefresherService {
         } catch (err) {
           console.warn(`Failed to generate PAT for page ${page.id}:`, err);
           Sentry.captureException(err);
+
+          try {
+            const message = `Không thể tạo mới PAT cho page: ${page.name || "Không rõ"} (${page.id}). Vui lòng kiểm tra lại kết nối với page này trên Pancake!\nChi tiết lỗi: ${err.message}`;
+            if (!larkClient) {
+              larkClient = await LarksuiteService.createClientV2(this.env);
+            }
+            parentMessageId = await this.notifyLark(larkClient, parentMessageId, message);
+          } catch (larkErr) {
+            console.warn(`Failed to send Lark notification for page ${page.id}:`, larkErr);
+          }
         }
       }
 
@@ -99,5 +121,54 @@ export default class PancakeTokenRefresherService {
       console.warn("Error running Pancake Token Refresher:", error);
       Sentry.captureException(error);
     }
+  }
+
+  async notifyLark(larkClient, parentMessageId, message) {
+    if (!parentMessageId) {
+      const res = await larkClient.im.message.create({
+        params: {
+          receive_id_type: "chat_id"
+        },
+        data: {
+          receive_id: CHAT_GROUPS.SALESAYA.chat_id,
+          msg_type: "text",
+          content: JSON.stringify({
+            text: `Các lỗi phát sinh ngày ${dayjs().tz(TIMEZONE_VIETNAM).format("DD/MM/YYYY")}`
+          })
+        }
+      });
+      parentMessageId = res?.data?.message_id;
+    }
+
+    if (parentMessageId) {
+      await larkClient.im.message.reply({
+        path: {
+          message_id: parentMessageId
+        },
+        data: {
+          receive_id: CHAT_GROUPS.SALESAYA.chat_id,
+          msg_type: "text",
+          reply_in_thread: true,
+          content: JSON.stringify({
+            text: message
+          })
+        }
+      });
+    } else {
+      await larkClient.im.message.create({
+        params: {
+          receive_id_type: "chat_id"
+        },
+        data: {
+          receive_id: CHAT_GROUPS.SALESAYA.chat_id,
+          msg_type: "text",
+          content: JSON.stringify({
+            text: message
+          })
+        }
+      });
+    }
+
+    return parentMessageId;
   }
 }
