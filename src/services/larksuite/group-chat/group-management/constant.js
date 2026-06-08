@@ -34,5 +34,9 @@ export const CHAT_GROUPS = {
   PROMOTION_SYNC_NOTIFICATION: {
     chat_id: "oc_0c56ab7868f6f90b3f3f6e0fdfd03482",
     group_name: "Hỗ trợ công thức tính CTKM"
+  },
+  ACCOUNTS_RECEIVABLE: {
+    chat_id: "oc_4117da9b37c4b5a82d92f1e712505c3c",
+    group_name: "[OPS] Công nợ khách hàng"
   }
 };
