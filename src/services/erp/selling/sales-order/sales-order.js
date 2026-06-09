@@ -14,6 +14,7 @@ import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/cons
 import { fetchSalesOrdersFromERP, saveSalesOrdersToDatabase, calculateGroupOrderPaymentRecordsTotal, ensureSelfReference, getAllRelatedPaymentEntries, getLeadSource } from "src/services/erp/selling/sales-order/utils/sales-order-helpers";
 import { getRefOrderChain } from "services/ecommerce/order-tracking/queries/get-initial-order";
 import Larksuite from "services/larksuite";
+import { getOrderFinancials } from "services/haravan/orders/order-service/helpers/order-financials";
 import { ERPR2StorageService } from "services/r2-object/erp/erp-r2-storage-service";
 import HaravanAPI from "services/clients/haravan-client";
 import { retryQuery } from "src/services/utils/retry-utils";
@@ -767,13 +768,7 @@ export default class SalesOrderService {
           return;
         }
 
-        const transactions = haravanOrder.transactions || [];
-
-        const paidAmount = transactions
-          .filter(t => ["capture", "sale", "authorization"].includes(t.kind?.toLowerCase()))
-          .reduce((total, t) => total + parseFloat(t.amount || 0), 0);
-
-        const remainingAmount = haravanOrder.total_price - paidAmount;
+        const { remainingBalance: remainingAmount } = getOrderFinancials(haravanOrder);
 
         if (remainingAmount > 0) {
           await haravanClient.orderTransaction.createTransaction(salesOrderData.haravan_order_id, {
