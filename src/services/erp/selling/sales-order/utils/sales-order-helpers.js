@@ -142,7 +142,7 @@ const PAYMENT_GATEWAY_ERP = "Thanh toán qua ERP";
 const PAYMENT_GATEWAY_QR_MB = "Chuyển khoản qua QR - MBBank";
 const PAYMENT_BEFORE_RELEASE_DATE = "2025-12-14 16:59:59.999";
 
-export function calculateOrderPaymentRecordsTotal(orderDoc) {
+function calculateOrderPaymentRecordsTotal(orderDoc) {
   if (!orderDoc) return 0;
 
   const paymentRecords = (orderDoc.payment_records || []).filter(r => {
@@ -160,8 +160,7 @@ export function calculateOrderPaymentRecordsTotal(orderDoc) {
 
     return true;
   });
-  const paymentRecordsTotal = paymentRecords.reduce((sum, r) => sum + parseFloat(r.amount || 0), 0);
-  return paymentRecordsTotal;
+  return paymentRecords.reduce((sum, r) => sum + parseFloat(r.amount || 0), 0);
 }
 
 export function calculateGroupOrderPaymentRecordsTotal(orderDocs) {
@@ -208,11 +207,6 @@ export async function getAllRelatedPaymentEntries(frappeClient, relatedOrderName
     fields: ["name", "payment_type"]
   });
   return paymentEntries;
-}
-
-export function shouldSkipSharedPayment(referenceName, currentOrderName, isSplitOrder, isFirstSplitOrder) {
-  const isShared = referenceName !== currentOrderName;
-  return isShared && isSplitOrder && !isFirstSplitOrder;
 }
 
 /**

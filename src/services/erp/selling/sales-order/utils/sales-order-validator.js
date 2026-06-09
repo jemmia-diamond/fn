@@ -4,7 +4,7 @@ import { SKU_LENGTH, SKU_PREFIX } from "services/haravan/products/product-varian
  * Validates the completeness of the sales order data.
  * Checks for missing required fields like sales team, customer info, etc.
  */
-export const validateOrderCompleteness = (salesOrderData, customer) => {
+const validateOrderCompleteness = (salesOrderData, customer) => {
   let message = null;
 
   if (!salesOrderData.sales_team.length) {
