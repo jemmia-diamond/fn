@@ -19,15 +19,19 @@ export default class PancakeLeadSyncService {
   async getSyncTimeframe(batchTime) {
     const kv = this.env.FN_KV;
     const KV_KEY = "pancake_lead_sync_last_time";
-    const now = batchTime ? batchTime : dayjs().utc();
+    const now = dayjs().utc();
 
-    const lastSyncTimeStr = await kv.get(KV_KEY);
     let updatedTime;
 
-    if (lastSyncTimeStr) {
-      updatedTime = lastSyncTimeStr;
+    if (batchTime) {
+      updatedTime = batchTime.format("YYYY-MM-DD HH:mm:ss");
     } else {
-      updatedTime = now.subtract(5, "minutes").subtract(1, "minute").format("YYYY-MM-DD HH:mm:ss");
+      const lastSyncTimeStr = await kv.get(KV_KEY);
+      if (lastSyncTimeStr) {
+        updatedTime = lastSyncTimeStr;
+      } else {
+        updatedTime = now.subtract(5, "minutes").subtract(1, "minute").format("YYYY-MM-DD HH:mm:ss");
+      }
     }
 
     return { now, updatedTime, KV_KEY };

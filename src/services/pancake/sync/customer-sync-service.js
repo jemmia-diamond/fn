@@ -138,16 +138,20 @@ export default class CustomerSyncService {
   async getSyncTimeframe(batchTime) {
     const kv = this.env.FN_KV;
     const KV_KEY = "pancake_customer_sync_last_time";
-    const now = batchTime ? batchTime : dayjs().utc();
+    const now = dayjs().utc();
     const untilUnix = now.unix();
 
-    const lastSyncTimeStr = await kv.get(KV_KEY);
     let sinceUnix;
 
-    if (lastSyncTimeStr) {
-      sinceUnix = dayjs.utc(lastSyncTimeStr).unix();
+    if (batchTime) {
+      sinceUnix = batchTime.unix();
     } else {
-      sinceUnix = now.subtract(10, "minutes").unix();
+      const lastSyncTimeStr = await kv.get(KV_KEY);
+      if (lastSyncTimeStr) {
+        sinceUnix = dayjs.utc(lastSyncTimeStr).unix();
+      } else {
+        sinceUnix = now.subtract(10, "minutes").unix();
+      }
     }
 
     return { now, untilUnix, sinceUnix, KV_KEY };
