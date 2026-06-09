@@ -131,13 +131,7 @@ export default class OrderService {
         return;
       }
 
-      const currentTransactionsResponse = await hrvClient.orderTransaction.getTransactions(order.id);
-      const orderWithTransactions = {
-        ...order,
-        transactions: currentTransactionsResponse.transactions
-      };
-
-      let { remainingBalance } = getOrderFinancials(orderWithTransactions);
+      let { remainingBalance } = getOrderFinancials(order);
 
       for (const refTransac of refTransactions) {
         if (remainingBalance <= 0) break;
