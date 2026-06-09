@@ -51,7 +51,7 @@ export default class DebtTrackingNotificationService {
 
     await this._sendToLarksuite(message, {
       text: "👉 Kiểm tra đơn hàng trên ERP",
-      url: `${this.erpBaseUrl}/desk/admin`
+      url: `${this.erpBaseUrl}desk/admin`
     });
   }
 
@@ -78,7 +78,7 @@ export default class DebtTrackingNotificationService {
 
     await this._sendToLarksuite(message, {
       text: "👉 Kiểm tra đơn hàng trên ERP",
-      url: `${this.erpBaseUrl}/desk/admin`
+      url: `${this.erpBaseUrl}desk/admin`
     });
   }
 
