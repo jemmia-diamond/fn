@@ -8,6 +8,7 @@ import { negativeStockOrderMessage } from "services/haravan/orders/order-service
 import { HARAVAN_TOPIC } from "services/ecommerce/enum";
 import { toUnixTimestamp } from "services/utils/date-helper";
 import { getFinancialStatus } from "services/haravan/orders/order-service/helpers/financial-status";
+import { getOrderFinancials } from "services/haravan/orders/order-service/helpers/order-financials";
 import { TABLES } from "services/larksuite/docs/constant";
 import { BadRequestException } from "src/exception/exceptions";
 import HaravanAPI from "services/clients/haravan-client";
@@ -57,10 +58,7 @@ export default class OrderService {
         haravan_order_id: order.id
       }
     });
-    const paidAmount =
-      order.transactions
-        ?.filter(t => ["capture", "authorization"].includes(t.kind))
-        .reduce((sum, t) => sum + (t.amount || 0), 0) || 0;
+    const { paidAmount, remainingBalance } = getOrderFinancials(order);
 
     const recordFields = {
       "ID": String(order.order_number),
@@ -77,7 +75,7 @@ export default class OrderService {
       "Trạng thái đóng": order.closed_status === "closed" ? "Đã đóng" : "Chưa đóng",
       "Thời gian tạo": toUnixTimestamp(order.created_at),
       "Đã thanh toán": parseInt(paidAmount),
-      "Cần thanh toán": parseInt(order.total_price - paidAmount),
+      "Cần thanh toán": parseInt(remainingBalance),
       "Đơn mới nhất": order.customer.last_order_name
     };
 
@@ -133,19 +131,27 @@ export default class OrderService {
         return;
       }
 
+      let { remainingBalance } = getOrderFinancials(order);
+
       for (const refTransac of refTransactions) {
+        if (remainingBalance <= 0) break;
+
         const refTransactionAmount = parseFloat(refTransac.amount);
         const refTransactionKind = refTransac.kind;
         const refTransactionGateway = refTransac.gateway;
 
-        if (refTransactionAmount > 0 && ["capture", "authorization"].includes(refTransactionKind.toLowerCase())) {
+        if (refTransactionAmount > 0 && ["capture", "authorization", "sale"].includes(refTransactionKind?.toLowerCase())) {
+
+          const syncAmount = Math.min(refTransactionAmount, remainingBalance);
+
           const transactionData = {
-            amount: refTransactionAmount,
+            amount: syncAmount,
             kind: refTransactionKind,
             gateway: refTransactionGateway
           };
 
           await hrvClient.orderTransaction.createTransaction(order.id, transactionData);
+          remainingBalance -= syncAmount;
         }
       }
     } catch (error) {
