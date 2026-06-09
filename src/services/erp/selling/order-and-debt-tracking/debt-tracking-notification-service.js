@@ -11,12 +11,6 @@ import { stringSquishLarkMessage } from "services/utils/string-helper";
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
-const SPECIFIC_SALES_ADMIN = [
-  "tien.chau@jemmia.vn",
-  "trinh.ngo@jemmia.vn",
-  "thao.nguyen@jemmia.vn",
-  "hue.phan@jemmia.vn"
-];
 const VIETNAM_THURSDAY = 4;
 
 export default class DebtTrackingNotificationService {
@@ -41,19 +35,18 @@ export default class DebtTrackingNotificationService {
     const orders = await this._fetchDebtList(nextWednesday, false);
     if (!orders?.length) return;
 
-    const dynamicAdmins = orders.map(o => o.sales_person || o.owner).filter(Boolean);
-    const salesAdmins = [...new Set([...dynamicAdmins, ...SPECIFIC_SALES_ADMIN])];
-    const larkTags = await this._getLarkTagsForUsers(salesAdmins);
-
     const count = orders.length;
-    const tagString = larkTags?.length ? `${larkTags.join(" ")}\n` : "";
+    const stats = await this._getBranchStatsAndTags(orders);
 
     const message = stringSquishLarkMessage(`
-      ${tagString}
-      Jemmia Bot đã cập nhật danh sách công nợ tuần này,
-      các chị vào ERP cập nhật tình hình thu công nợ giúp Bot nha.
+      Jemmia Bot vừa cập nhật danh sách công nợ tuần này. Hiện có **${count}** đơn hàng cần cập nhật tình trạng thu tiền:
 
-      Có tổng cộng **${count}** đơn hàng cần check.
+      TP.HCM: **${stats.hcmCount}** đơn — ${stats.hcmTag}
+      Hà Nội: **${stats.hnCount}** đơn — ${stats.hnTag}
+      Cần Thơ: **${stats.ctCount}** đơn — ${stats.ctTag}
+      Khác: **${stats.otherCount}** đơn — ${stats.allTags}
+
+      Các chị vào ERP cập nhật giúp Bot nhé!
     `);
 
     await this._sendToLarksuite(message, {
@@ -72,13 +65,19 @@ export default class DebtTrackingNotificationService {
     const remainingOrders = orders?.length;
     if (!remainingOrders) return;
 
+    const stats = await this._getBranchStatsAndTags(orders);
+
     const message = stringSquishLarkMessage(`
-      Hôm nay còn **${remainingOrders}** đơn chưa cập nhật.
-      Mời các admin vào trang Admin để kiểm tra và cập nhật nhé!
+      ⏰ Hôm nay còn **${remainingOrders}** đơn chưa được cập nhật. Các chị hoàn thành trước **14:00** giúp Bot nha, để kịp tổng hợp báo cáo cuối ngày!
+
+      TP.HCM: **${stats.hcmCount}** đơn — ${stats.hcmTag}
+      Hà Nội: **${stats.hnCount}** đơn — ${stats.hnTag}
+      Cần Thơ: **${stats.ctCount}** đơn — ${stats.ctTag}
+      Khác: **${stats.otherCount}** đơn — ${stats.allTags}
     `);
 
     await this._sendToLarksuite(message, {
-      text: "👉 Trang Admin",
+      text: "👉 Kiểm tra đơn hàng trên ERP",
       url: `${this.erpBaseUrl}/desk/admin`
     });
   }
@@ -94,15 +93,38 @@ export default class DebtTrackingNotificationService {
     return res?.data;
   }
 
-  async _getLarkTagsForUsers(userIdentifiers) {
-    if (!userIdentifiers?.length) return [];
+  async _getBranchStatsAndTags(orders) {
+    let hcmCount = 0;
+    let hnCount = 0;
+    let ctCount = 0;
+    let otherCount = 0;
 
-    const users = await this.db.larksuite_users.findMany({
-      where: { enterprise_email: { in: userIdentifiers } },
-      select: { user_id: true }
+    orders.forEach(order => {
+      const address = order.billing_address || "";
+      if (address.includes("72 Nguyễn Cư Trinh")) hcmCount++;
+      else if (address.includes("63 Kim Mã")) hnCount++;
+      else if (address.includes("209 Đường 30 Tháng 4")) ctCount++;
+      else otherCount++;
     });
 
-    return users.filter(u => u.user_id).map(u => `<at id="${u.user_id}"></at>`);
+    const adminEmails = ["trinh.ngo@jemmia.vn", "hue.phan@jemmia.vn", "tien.chau@jemmia.vn"];
+    const users = await this.db.larksuite_users.findMany({
+      where: { enterprise_email: { in: adminEmails } },
+      select: { enterprise_email: true, user_id: true }
+    });
+
+    const adminTags = {};
+    users.forEach(u => { adminTags[u.enterprise_email] = `<at id="${u.user_id}"></at>`; });
+
+    const hcmTag = adminTags["trinh.ngo@jemmia.vn"];
+    const hnTag = adminTags["hue.phan@jemmia.vn"];
+    const ctTag = adminTags["tien.chau@jemmia.vn"];
+    const allTags = `${hcmTag} ${hnTag} ${ctTag}`;
+
+    return {
+      hcmCount, hnCount, ctCount, otherCount,
+      hcmTag, hnTag, ctTag, allTags
+    };
   }
 
   async _sendToLarksuite(messageText, buttonConfig = null) {
