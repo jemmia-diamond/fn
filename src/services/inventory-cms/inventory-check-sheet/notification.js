@@ -103,11 +103,11 @@ export default class CheckSheetNotificationService {
 
   static getTargetChatId(warehouse) {
     if (!warehouse) return CHAT_IDS["[TEST]"];
-    if (warehouse.includes("[HCM]")) return CHAT_IDS["[HCM]"];
-    if (warehouse.includes("[HN]")) return CHAT_IDS["[HN]"];
-    if (warehouse.includes("[CT]")) return CHAT_IDS["[CT]"];
-    if (warehouse.includes("[SC]")) return CHAT_IDS["[SC]"];
-    return CHAT_IDS["[ALL]"];
+
+    const match = Object.keys(CHAT_IDS)
+      .filter(k => !["[TEST]", "[ALL]"].includes(k))
+      .find(k => warehouse.includes(k));
+    return CHAT_IDS[match] || CHAT_IDS["[ALL]"];
   }
 
   static async sendNotification(env, chatId, messageText) {
