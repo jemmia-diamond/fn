@@ -145,37 +145,37 @@ export default class PancakePOSSyncService {
   private async syncOrderCreate(order: HaravanOrderPayload, shopId: number, lead: ResolvedLead): Promise<void> {
     const tag = `[PancakePOSSync] syncOrderCreate order=${order.id} shopId=${shopId}`;
 
-    const existing = await this.db.pancakePOSOrderSync.findUnique({
-      where: { haravan_order_id: BigInt(order.id) }
+    const status = this.mapStatus(order.cancelled_status);
+
+    // Claim the record before calling the API to prevent duplicate creates
+    // when the same order is queued more than once (e.g. Haravan webhook retries).
+    const record = await this.db.pancakePOSOrderSync.upsert({
+      where: { haravan_order_id: BigInt(order.id) },
+      create: {
+        haravan_order_id: BigInt(order.id),
+        shop_id: shopId,
+        ads_id: lead.adIds[0],
+        status,
+        synced_at: new Date()
+      },
+      update: {}
     });
-    if (existing?.pancake_order_id) {
-      console.warn(`${tag} skip: already synced pancake_order_id=${existing.pancake_order_id}`);
+
+    if (record.pancake_order_id) {
+      console.warn(`${tag} skip: already synced pancake_order_id=${record.pancake_order_id}`);
       return;
     }
 
-    const status = this.mapStatus(order.cancelled_status);
     const payload = this.buildCreatePayload({ order, lead, status });
 
     console.warn(`${tag} creating POS order conversationId=${lead.conversationId} adId=${lead.adIds[0]}`);
     const posOrder = await this.client.createOrder(shopId, payload);
     console.warn(`${tag} created pancake_order_id=${posOrder.id}`);
 
-    await this.db.pancakePOSOrderSync.upsert({
+    await this.db.pancakePOSOrderSync.update({
       where: { haravan_order_id: BigInt(order.id) },
-      create: {
-        haravan_order_id: BigInt(order.id),
+      data: {
         pancake_order_id: posOrder.id,
-        shop_id: shopId,
-        ads_id: lead.adIds[0],
-        status,
-        synced_at: new Date()
-      },
-      update: {
-        pancake_order_id: posOrder.id,
-        shop_id: shopId,
-        ads_id: lead.adIds[0],
-        status,
-        synced_at: new Date(),
         updated_at: new Date()
       }
     });
