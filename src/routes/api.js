@@ -60,6 +60,7 @@ export default class APIRoutes {
     paymentApi.patch("/qr-payments/:id/map-bank-transaction", Payment.QRPaymentsMapBankTransactionController.create);
     paymentApi.patch("/qr-payments/:id/link-order", Payment.QRPaymentsLinkOrderController.create);
     paymentApi.get("/qr-payments/:id", Payment.QRPaymentsController.show);
+    paymentApi.get("/bank-options", Payment.BankOptionsController.index);
 
     const salesayaNamespaceApi = api.basePath("/salesaya");
     salesayaNamespaceApi.get("/product-searches", Salesaya.ProductSearchController.index);
