@@ -6,6 +6,7 @@ import CreateQRService from "services/payment/qr_payment/create-qr-service";
 import FindQRService from "services/payment/qr_payment/find-qr-service";
 import MapQRWithBankTransactionService from "services/payment/qr_payment/map-qr-with-bank-transaction-service";
 import LinkQRWithRealOrderService from "services/payment/qr_payment/link-qr-with-real-order-service";
+import BankOptionsService from "services/payment/bank-options-service";
 
 export default {
   ManualPaymentService: ManualPaymentService,
@@ -15,5 +16,6 @@ export default {
   CreateQRService: CreateQRService,
   FindQRService: FindQRService,
   MapQRWithBankTransactionService: MapQRWithBankTransactionService,
-  LinkQRWithRealOrderService: LinkQRWithRealOrderService
+  LinkQRWithRealOrderService: LinkQRWithRealOrderService,
+  BankOptionsService
 };
