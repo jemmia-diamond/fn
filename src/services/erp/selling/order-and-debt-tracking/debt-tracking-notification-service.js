@@ -16,7 +16,7 @@ const VIETNAM_THURSDAY = 4;
 export default class DebtTrackingNotificationService {
   constructor(env) {
     this.env = env;
-    this.erpBaseUrl = env.JEMMIA_ERP_BASE_URL.replace(/\/$/, "");
+    this.erpBaseUrl = env.JEMMIA_ERP_BASE_URL;
     this.frappeClient = new FrappeClient({
       url: env.JEMMIA_ERP_BASE_URL,
       apiKey: env.JEMMIA_ERP_API_KEY,
