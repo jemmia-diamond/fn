@@ -8,18 +8,21 @@ export default class ProductVariantService {
   }
 
   async clearIncomingStockTag(product) {
+    if (!product || !product.id) return;
     const variants = product.variants || [];
 
     const nocodb = new NocoDBClient(this.env);
     const diamondTableId = NOCODB_TABLES.SUPPLY.DIAMONDS;
 
     for (const variant of variants) {
+      if (!variant || !variant.id) continue;
       const qty = variant?.inventory_advance?.qty_available ?? 0;
 
       if (qty > 0) {
         const res = await nocodb.listRecords(diamondTableId, {
           where: `(product_id,eq,${product.id})~and(variant_id,eq,${variant.id})~and(is_incoming,eq,true)`,
-          limit: 1
+          limit: 1,
+          fields: "id"
         });
         const diamond = res.list?.[0] ?? null;
 
@@ -53,17 +56,20 @@ export default class ProductVariantService {
   }
 
   async clearFinalDiscountValueIfOutOfStock(product) {
+    if (!product || !product.id) return;
     const variants = product.variants || [];
 
     const nocodb = new NocoDBClient(this.env);
     const variantsTableId = NOCODB_TABLES.SUPPLY.VARIANTS;
 
     for (const variant of variants) {
+      if (!variant || !variant.id) continue;
       const qty = variant?.inventory_advance?.qty_available ?? 0;
 
       if (qty === 0) {
         const records = await nocodb.listRecords(variantsTableId, {
-          where: `(haravan_product_id,eq,${product.id})~and(haravan_variant_id,eq,${variant.id})~and(final_discount_price,gt,0)`
+          where: `(haravan_product_id,eq,${product.id})~and(haravan_variant_id,eq,${variant.id})~and(final_discount_price,gt,0)`,
+          fields: "id"
         });
 
         if (records?.list?.length > 0) {

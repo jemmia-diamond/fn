@@ -27,7 +27,7 @@ export default class CollectService {
     const nocodb = new NocoDBClient(this.env);
 
     // Get Haravan Collection ID from ID
-    const collectionRes = await nocodb.listRecords(NOCODB_TABLES.MARKETING.HARAVAN_COLLECTIONS, { where: `(id,eq,${haravan_collection_id})`, limit: 1 });
+    const collectionRes = await nocodb.listRecords(NOCODB_TABLES.MARKETING.HARAVAN_COLLECTIONS, { where: `(id,eq,${haravan_collection_id})`, limit: 1, fields: "id,haravan_id" });
     const collection = collectionRes.list?.[0] ?? null;
 
     if (!collection) {
@@ -38,13 +38,13 @@ export default class CollectService {
     // Get Haravan Product ID from ID
     let realProductId;
     if (diamond_id) {
-      const diamondRes = await nocodb.listRecords(NOCODB_TABLES.MARKETING.DIAMONDS, { where: `(id,eq,${diamond_id})`, limit: 1 });
+      const diamondRes = await nocodb.listRecords(NOCODB_TABLES.MARKETING.DIAMONDS, { where: `(id,eq,${diamond_id})`, limit: 1, fields: "id,product_id" });
       const diamond = diamondRes.list?.[0] ?? null;
       if (diamond) {
         realProductId = diamond.product_id;
       }
     } else if (product_id) {
-      const jewelryRes = await nocodb.listRecords(NOCODB_TABLES.MARKETING.JEWELRIES, { where: `(id,eq,${product_id})`, limit: 1 });
+      const jewelryRes = await nocodb.listRecords(NOCODB_TABLES.MARKETING.JEWELRIES, { where: `(id,eq,${product_id})`, limit: 1, fields: "id,haravan_product_id" });
       const jewelry = jewelryRes.list?.[0] ?? null;
       if (jewelry) {
         realProductId = jewelry.haravan_product_id;
@@ -89,7 +89,7 @@ export default class CollectService {
     const nocodb = new NocoDBClient(this.env);
 
     // Get Haravan Collection ID
-    const collectionRes2 = await nocodb.listRecords(NOCODB_TABLES.MARKETING.HARAVAN_COLLECTIONS, { where: `(id,eq,${haravan_collection_id})`, limit: 1 });
+    const collectionRes2 = await nocodb.listRecords(NOCODB_TABLES.MARKETING.HARAVAN_COLLECTIONS, { where: `(id,eq,${haravan_collection_id})`, limit: 1, fields: "id,haravan_id" });
     const collection = collectionRes2.list?.[0] ?? null;
 
     if (!collection) {
@@ -100,13 +100,13 @@ export default class CollectService {
     // Get Haravan Product ID
     let realProductId;
     if (diamond_id) {
-      const diamondRes2 = await nocodb.listRecords(NOCODB_TABLES.MARKETING.DIAMONDS, { where: `(id,eq,${diamond_id})`, limit: 1 });
+      const diamondRes2 = await nocodb.listRecords(NOCODB_TABLES.MARKETING.DIAMONDS, { where: `(id,eq,${diamond_id})`, limit: 1, fields: "id,product_id" });
       const diamond = diamondRes2.list?.[0] ?? null;
       if (diamond) {
         realProductId = diamond.product_id;
       }
     } else if (product_id) {
-      const jewelryRes2 = await nocodb.listRecords(NOCODB_TABLES.MARKETING.JEWELRIES, { where: `(id,eq,${product_id})`, limit: 1 });
+      const jewelryRes2 = await nocodb.listRecords(NOCODB_TABLES.MARKETING.JEWELRIES, { where: `(id,eq,${product_id})`, limit: 1, fields: "id,haravan_product_id" });
       const jewelry = jewelryRes2.list?.[0] ?? null;
       if (jewelry) {
         realProductId = jewelry.haravan_product_id;

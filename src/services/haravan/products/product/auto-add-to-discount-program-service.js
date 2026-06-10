@@ -71,7 +71,8 @@ export default class AutoAddToDiscountProgramService {
     const nocodb = new NocoDBClient(this.env);
 
     const diamondsQuery = await nocodb.listRecords(NOCODB_TABLES.MARKETING.DIAMONDS, {
-      where: `(product_id,eq,${haravanProductId})`
+      where: `(product_id,eq,${haravanProductId})`,
+      fields: "id"
     });
     const diamonds = diamondsQuery.list || [];
 
@@ -85,7 +86,9 @@ export default class AutoAddToDiscountProgramService {
     for (const diamond of diamonds) {
       try {
         const existing = await nocodb.listRecords(diamondHaravanCollectionsTableId, {
-          where: `(diamond_id,eq,${diamond.id})~and(haravan_collection_id,eq,${DIAMOND_COLLECTION_ID})`
+          where: `(diamond_id,eq,${diamond.id})~and(haravan_collection_id,eq,${DIAMOND_COLLECTION_ID})`,
+          limit: 1,
+          fields: "id"
         });
 
         if (existing.list?.length === 0) {
@@ -109,7 +112,8 @@ export default class AutoAddToDiscountProgramService {
 
     const productsQuery = await nocodb.listRecords(NOCODB_TABLES.MARKETING.JEWELRIES, {
       where: `(haravan_product_id,eq,${haravanProductId})`,
-      limit: 1
+      limit: 1,
+      fields: "id,design_id"
     });
 
     const product = productsQuery.list?.[0];
@@ -121,14 +125,16 @@ export default class AutoAddToDiscountProgramService {
     if (product.design_id) {
       const designRes = await nocodb.listRecords(NOCODB_TABLES.MARKETING.DESIGNS, {
         where: `(id,eq,${product.design_id})`,
-        limit: 1
+        limit: 1,
+        fields: "id,collections_id"
       });
       const design = designRes.list?.[0] ?? null;
 
       if (design && design.collections_id) {
         const collectionRes = await nocodb.listRecords(NOCODB_TABLES.MARKETING.COLLECTIONS, {
           where: `(id,eq,${design.collections_id})`,
-          limit: 1
+          limit: 1,
+          fields: "id,collection_name"
         });
         const collection = collectionRes.list?.[0] ?? null;
 
@@ -143,7 +149,9 @@ export default class AutoAddToDiscountProgramService {
 
     try {
       const existing = await nocodb.listRecords(jewelryHaravanCollectionsTableId, {
-        where: `(products_id,eq,${product.id})~and(haravan_collections_id,eq,${JEWELRY_COLLECTION_ID})`
+        where: `(products_id,eq,${product.id})~and(haravan_collections_id,eq,${JEWELRY_COLLECTION_ID})`,
+        limit: 1,
+        fields: "id"
       });
 
       if (existing.list?.length === 0) {
