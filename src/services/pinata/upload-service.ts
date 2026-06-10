@@ -1,4 +1,3 @@
-import * as Sentry from "@sentry/cloudflare";
 import PinataClient, {
   type PinataUploadOptions,
   type PinataUploadResult
@@ -11,39 +10,17 @@ export default class PinataUploadService {
     this.client = new PinataClient(env);
   }
 
-  async uploadFile(
+  uploadFile(
     file: File,
     options: PinataUploadOptions = {}
   ): Promise<PinataUploadResult> {
-    try {
-      return await this.client.uploadFile(file, options);
-    } catch (error) {
-      Sentry.captureException(error, {
-        extra: {
-          action: "PinataUploadService.uploadFile",
-          fileName: file.name,
-          fileSize: file.size,
-          fileType: file.type
-        }
-      });
-      throw error;
-    }
+    return this.client.uploadFile(file, options);
   }
 
-  async uploadJson<T extends Record<string, unknown>>(
+  uploadJson<T extends Record<string, unknown>>(
     data: T,
     options: PinataUploadOptions = {}
   ): Promise<PinataUploadResult> {
-    try {
-      return await this.client.uploadJson(data, options);
-    } catch (error) {
-      Sentry.captureException(error, {
-        extra: {
-          action: "PinataUploadService.uploadJson",
-          dataKeys: Object.keys(data)
-        }
-      });
-      throw error;
-    }
+    return this.client.uploadJson(data, options);
   }
 }
