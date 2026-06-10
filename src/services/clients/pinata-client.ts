@@ -21,31 +21,60 @@ export interface PinataUploadOptions {
   groupId?: string;
 }
 
+interface PinataSecrets {
+  jwt: string;
+  gateway: string;
+}
+
 export default class PinataClient {
-  private pinata: PinataSDK;
-  private gateway: string;
+  private env: any;
+  private pinata: PinataSDK | null = null;
+  private secrets: PinataSecrets | null = null;
 
-  constructor(env: { PINATA_JWT: string; PINATA_GATEWAY: string }) {
-    if (!env.PINATA_JWT) {
-      throw new Error("PinataClient: PINATA_JWT is required");
+  constructor(env: any) {
+    this.env = env;
+  }
+
+  private async getSecrets(): Promise<PinataSecrets> {
+    if (this.secrets) {
+      return this.secrets;
     }
 
-    if (!env.PINATA_GATEWAY) {
-      throw new Error("PinataClient: PINATA_GATEWAY is required");
+    if (!this.env.PINATA_JWT_SECRET) {
+      throw new Error("PinataClient: PINATA_JWT_SECRET binding is required");
     }
 
-    this.gateway = env.PINATA_GATEWAY;
+    if (!this.env.PINATA_GATEWAY_SECRET) {
+      throw new Error("PinataClient: PINATA_GATEWAY_SECRET binding is required");
+    }
+
+    const jwt = await this.env.PINATA_JWT_SECRET.get();
+    const gateway = await this.env.PINATA_GATEWAY_SECRET.get();
+
+    this.secrets = { jwt, gateway };
+    return this.secrets;
+  }
+
+  private async getPinata(): Promise<PinataSDK> {
+    if (this.pinata) {
+      return this.pinata;
+    }
+
+    const { jwt, gateway } = await this.getSecrets();
     this.pinata = new PinataSDK({
-      pinataJwt: env.PINATA_JWT,
-      pinataGateway: env.PINATA_GATEWAY
+      pinataJwt: jwt,
+      pinataGateway: gateway
     });
+
+    return this.pinata;
   }
 
   async uploadFile(
     file: File,
     options: PinataUploadOptions = {}
   ): Promise<PinataUploadResult> {
-    let builder = this.pinata.upload.public.file(file);
+    const pinata = await this.getPinata();
+    let builder = pinata.upload.public.file(file);
 
     if (options.name) {
       builder = builder.name(options.name);
@@ -71,7 +100,8 @@ export default class PinataClient {
     data: T,
     options: PinataUploadOptions = {}
   ): Promise<PinataUploadResult> {
-    let builder = this.pinata.upload.public.json(data);
+    const pinata = await this.getPinata();
+    let builder = pinata.upload.public.json(data);
 
     if (options.name) {
       builder = builder.name(options.name);
@@ -94,6 +124,10 @@ export default class PinataClient {
   }
 
   buildIpfsUrl(cid: string): string {
-    return `https://${this.gateway}/ipfs/${cid}`;
+    if (!this.secrets) {
+      throw new Error("PinataClient: gateway not initialized");
+    }
+
+    return `https://${this.secrets.gateway}/ipfs/${cid}`;
   }
 }
