@@ -10,6 +10,7 @@ import Payment from "controllers/payment";
 import Salesaya from "controllers/salesaya";
 import Larksuite from "controllers/larksuite";
 import Media from "controllers/media";
+import Pinata from "controllers/pinata";
 
 export default class APIRoutes {
   static register(api) {
@@ -71,5 +72,9 @@ export default class APIRoutes {
 
     const mediaApi = api.basePath("/media");
     mediaApi.post("/image-translation", Media.ImageTranslationController.create);
+
+    const pinataApi = api.basePath("/pinata");
+    pinataApi.post("/upload/file", Pinata.PinataFileUploadController.create);
+    pinataApi.post("/upload/json", Pinata.PinataJsonUploadController.create);
   };
 };
