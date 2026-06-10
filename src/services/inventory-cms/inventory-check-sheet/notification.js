@@ -17,7 +17,8 @@ const CHAT_IDS = {
   "[HCM]": "oc_189a0d4b8f7a2baf3dad242e3599a7f0",
   "[HN]": "oc_3770845e35194dde3e0ba76def59d1fe",
   "[CT]": "oc_25b872e3207f071d8c8aa064f895466c",
-  "[TEST]": "oc_7f6dd355251aa766220a84dcae2403e1"
+  "[TEST]": "oc_7f6dd355251aa766220a84dcae2403e1",
+  "[SC]": "oc_13bac658491436e37863e39a3af81e36"
 };
 
 export default class CheckSheetNotificationService {
@@ -105,6 +106,7 @@ export default class CheckSheetNotificationService {
     if (warehouse.includes("[HCM]")) return CHAT_IDS["[HCM]"];
     if (warehouse.includes("[HN]")) return CHAT_IDS["[HN]"];
     if (warehouse.includes("[CT]")) return CHAT_IDS["[CT]"];
+    if (warehouse.includes("[SC]")) return CHAT_IDS["[SC]"];
     return CHAT_IDS["[ALL]"];
   }
 
