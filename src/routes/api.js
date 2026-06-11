@@ -11,6 +11,7 @@ import Salesaya from "controllers/salesaya";
 import Larksuite from "controllers/larksuite";
 import Media from "controllers/media";
 import Pinata from "controllers/pinata";
+import DigitalCertificates from "controllers/digital-certificates";
 
 export default class APIRoutes {
   static register(api) {
@@ -76,5 +77,8 @@ export default class APIRoutes {
     const pinataApi = api.basePath("/pinata");
     pinataApi.post("/upload/file", Pinata.PinataFileUploadController.create);
     pinataApi.post("/upload/json", Pinata.PinataJsonUploadController.create);
+
+    const digitalCertificateApi = api.basePath("/digital-certificates");
+    digitalCertificateApi.post("/diamond", DigitalCertificates.DiamondCertificateController.create);
   };
 };

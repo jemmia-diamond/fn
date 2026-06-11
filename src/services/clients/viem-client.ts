@@ -2,23 +2,32 @@ import { bsc } from "viem/chains";
 import { createPublicClient, createWalletClient, http } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 
+export interface ChainConfig {
+  chain: typeof bsc;
+  rpcUrl: string;
+  explorerApiUrl: string;
+  explorerApiKeyEnvVar: string;
+}
+
 export const CHAINS = {
   bsc: {
     chain: bsc,
-    rpcUrl: "https://bsc-dataseed.binance.org/"
+    rpcUrl: "https://bsc-dataseed.binance.org/",
+    explorerApiUrl: "https://api.bscscan.com/api",
+    explorerApiKeyEnvVar: "BSCSCAN_API_KEY_SECRET"
   }
-} as const;
+} as const satisfies Record<string, ChainConfig>;
 
 export type ChainKey = keyof typeof CHAINS;
 
 export const ACTIVE_CHAIN_KEY: ChainKey = "bsc";
 
-export function getActiveChainConfig() {
-  return CHAINS[ACTIVE_CHAIN_KEY];
+export function getActiveChainConfig(): ChainConfig {
+  return CHAINS[ACTIVE_CHAIN_KEY] as ChainConfig;
 }
 
-export function getChainConfig(key: ChainKey) {
-  return CHAINS[key];
+export function getChainConfig(key: ChainKey): ChainConfig {
+  return CHAINS[key] as ChainConfig;
 }
 
 export class ViemClient {
