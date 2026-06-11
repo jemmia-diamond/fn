@@ -796,30 +796,20 @@ export default class SalesOrderService {
       split_order_group: initialOrder.split_order_group
     });
 
-    let allSplitOrders = [];
-
     if (initialOrder.is_split_order && initialOrder.split_order_group) {
       const groupOrders = await this.frappeClient.getList("Sales Order", {
         filters: [
           ["split_order_group", "=", initialOrder.split_order_group],
           ["is_split_order", "=", 1]
         ],
-        fields: ["name", "cancelled_status", "split_order_group", "grand_total", "paid_amount", "total_allocated_group_payment", "balance_group_payment"]
+        fields: ["name", "cancelled_status", "split_order_group"]
       });
-
-      allSplitOrders = groupOrders;
 
       groupOrders.forEach(o => relatedOrdersMap.set(o.name, {
         name: o.name,
         cancelled_status: o.cancelled_status,
         split_order_group: o.split_order_group
       }));
-    } else {
-      allSplitOrders = [{
-        name: initialOrder.name,
-        cancelled_status: initialOrder.cancelled_status,
-        split_order_group: initialOrder.split_order_group
-      }];
     }
 
     const toVisit = Array.from(relatedOrdersMap.keys());
@@ -866,8 +856,7 @@ export default class SalesOrderService {
     }
 
     return {
-      allRelatedOrders: Array.from(relatedOrdersMap.values()),
-      allSplitOrders: allSplitOrders
+      allRelatedOrders: Array.from(relatedOrdersMap.values())
     };
   }
 
