@@ -154,7 +154,12 @@ export const composeOrderUpdateMessage = (prevOrder, salesOrder, promotionData) 
 };
 
 const diffInAttachments = (prevAttachments, attachments) => {
-  const normalizeUrlForCompare = (url) => url ? url.replace(/([^:]\/)\/+/g, "$1") : url;
+  const normalizeUrlForCompare = (url) => {
+    if (!url) return url;
+    const [baseUrl, ...queryParts] = url.split("?");
+    const cleanBaseUrl = baseUrl.replace(/([^:]\/)\/+/g, "$1");
+    return queryParts.length > 0 ? `${cleanBaseUrl}?${queryParts.join("?")}` : cleanBaseUrl;
+  };
   const prevAttachmentUrls = (prevAttachments || []).map((attachment) => normalizeUrlForCompare(attachment.file_url));
   const newAttachmentUrls = (attachments || []).map((attachment) => normalizeUrlForCompare(attachment.file_url));
 
