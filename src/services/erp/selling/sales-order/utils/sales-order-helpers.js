@@ -6,6 +6,8 @@ import { randomUUID } from "crypto";
 import { escapeSqlValue } from "src/services/utils/sql-helpers";
 import { mapSalesOrdersToDatabase } from "src/services/erp/selling/sales-order/utils/sales-order-mappers";
 import { fetchChildRecordsFromERP } from "src/services/utils/sql-helpers";
+import HaravanAPI from "services/clients/haravan-client";
+import { getOrderFinancials } from "services/haravan/orders/order-service/helpers/order-financials";
 
 dayjs.extend(utc);
 
@@ -269,4 +271,133 @@ export function calculateGroupPayments(salesOrderData, childOrders = []) {
   }
 
   return result;
+}
+
+export async function getAllRelatedSalesOrders(frappeClient, initialOrderName, initialOrderDoc = null) {
+  const relatedOrdersMap = new Map();
+  const initialOrder = initialOrderDoc || await frappeClient.getDoc("Sales Order", initialOrderName);
+
+  if (!initialOrder) return {
+    allRelatedOrders: []
+  };
+
+  relatedOrdersMap.set(initialOrderName, {
+    name: initialOrder.name,
+    cancelled_status: initialOrder.cancelled_status,
+    split_order_group: initialOrder.split_order_group
+  });
+
+  if (initialOrder.is_split_order && initialOrder.split_order_group) {
+    const groupOrders = await frappeClient.getList("Sales Order", {
+      filters: [
+        ["split_order_group", "=", initialOrder.split_order_group],
+        ["is_split_order", "=", 1]
+      ],
+      fields: ["name", "cancelled_status", "split_order_group"]
+    });
+
+    groupOrders.forEach(o => relatedOrdersMap.set(o.name, {
+      name: o.name,
+      cancelled_status: o.cancelled_status,
+      split_order_group: o.split_order_group
+    }));
+  }
+
+  const toVisit = Array.from(relatedOrdersMap.keys());
+  const visited = new Set(relatedOrdersMap.keys());
+
+  while (toVisit.length > 0) {
+    const currentSoName = toVisit.pop();
+    let currentOrderDoc = null;
+    if (currentSoName === initialOrderName) {
+      currentOrderDoc = initialOrder;
+    } else {
+      try {
+        currentOrderDoc = await frappeClient.getDoc("Sales Order", currentSoName);
+      } catch (e) {
+        console.warn(`Could not fetch Sales Order ${currentSoName} for traversal`, e);
+        continue;
+      }
+    }
+
+    if (currentOrderDoc) {
+      relatedOrdersMap.set(currentSoName, currentOrderDoc);
+    }
+
+    if (currentOrderDoc && currentOrderDoc.ref_sales_orders) {
+      for (const ref of currentOrderDoc.ref_sales_orders) {
+        if (ref.sales_order && !visited.has(ref.sales_order)) {
+          visited.add(ref.sales_order);
+          toVisit.push(ref.sales_order);
+        }
+      }
+    }
+
+    const refsUp = await frappeClient.getList("Sales Order", {
+      filters: [["Sales Order Reference", "sales_order", "=", currentSoName]],
+      fields: ["name"]
+    });
+
+    for (const parentOrder of refsUp) {
+      if (parentOrder.name && !visited.has(parentOrder.name)) {
+        visited.add(parentOrder.name);
+        toVisit.push(parentOrder.name);
+      }
+    }
+  }
+
+  return {
+    allRelatedOrders: Array.from(relatedOrdersMap.values())
+  };
+}
+
+export function extractR2KeyFromUrl(url) {
+  try {
+    const urlObj = new URL(url);
+    const r2KeyParam = urlObj.searchParams.get("key");
+    if (r2KeyParam) {
+      return decodeURIComponent(r2KeyParam);
+    }
+    if (urlObj.pathname.length > 1) {
+      return decodeURIComponent(urlObj.pathname.substring(1));
+    }
+    return null;
+  } catch (e) {
+    Sentry.captureException(e);
+    return null;
+  }
+}
+
+export async function syncHaravanFinancialStatus(env, salesOrderData) {
+  if (!salesOrderData.haravan_order_id) {
+    return;
+  }
+
+  if (Math.abs(salesOrderData.grand_total - salesOrderData.paid_amount) <= 1000) {
+    const HRV_API_KEY = env.HARAVAN_TOKEN;
+    if (!HRV_API_KEY) {
+      return;
+    }
+    const haravanClient = new HaravanAPI(HRV_API_KEY);
+    try {
+      const response = await haravanClient.order.getOrder(salesOrderData.haravan_order_id);
+      const haravanOrder = response.order;
+
+      if (haravanOrder.financial_status === "paid") {
+        return;
+      }
+
+      const { remainingBalance: remainingAmount } = getOrderFinancials(haravanOrder);
+
+      if (remainingAmount > 0) {
+        await haravanClient.orderTransaction.createTransaction(salesOrderData.haravan_order_id, {
+          amount: remainingAmount,
+          kind: "capture",
+          gateway: "Thanh toán qua ERP"
+        });
+      }
+    } catch (error) {
+      Sentry.captureException(error);
+    }
+  }
 }
