@@ -80,5 +80,6 @@ export default class APIRoutes {
 
     const digitalCertificateApi = api.basePath("/digital-certificates");
     digitalCertificateApi.post("/diamond", DigitalCertificates.DiamondCertificateController.create);
+    digitalCertificateApi.post("/diamond/:tokenId/timeline", DigitalCertificates.DiamondCertificateTimelineController.create);
   };
 };

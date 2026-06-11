@@ -75,6 +75,29 @@ export interface CertificateResponse extends MintResult {
   attachments: OnChainAttachment[];
 }
 
+export interface AddTimelineLogInput {
+  description: string;
+  data?: string;
+  attachments: Array<{
+    id: string;
+    title: string;
+    fileUrl: string;
+    description?: string;
+  }>;
+}
+
+export interface TimelineLogResponse {
+  tokenId: bigint;
+  logIndex: bigint;
+  timestamp: bigint;
+  txHash: `0x${string}`;
+  blockNumber: bigint;
+  contractAddress: `0x${string}`;
+  description: string;
+  data: string;
+  attachments: OnChainAttachment[];
+}
+
 export default class DiamondCertificateService {
   private env: any;
   private pinata: PinataUploadService;
@@ -202,6 +225,57 @@ export default class DiamondCertificateService {
       functionName: "totalMinted"
     });
     return result as bigint;
+  }
+
+  async addTimelineLog(
+    tokenId: bigint,
+    input: AddTimelineLogInput
+  ): Promise<TimelineLogResponse> {
+    const { chain } = getActiveChainConfig();
+    const contractAddress = getDiamondCertificateSmartContractAddress(this.env);
+    const walletClient = this.viem.getWalletClient() as any;
+    const publicClient = this.viem.getPublicClient();
+    const account = this.viem.getAccount();
+    const abi = await this.nftContract.fetchAbi(contractAddress);
+
+    const onChainAttachments = await this.uploadAttachmentsToPinata(input.attachments);
+
+    const { request } = await publicClient.simulateContract({
+      address: contractAddress,
+      abi,
+      functionName: "addTimelineLog",
+      args: [tokenId, input.description, input.data ?? "", onChainAttachments],
+      account,
+      chain
+    });
+
+    const txHash = await walletClient.writeContract({ ...request, chain });
+    const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
+
+    const logs = await publicClient.getContractEvents({
+      address: contractAddress,
+      abi,
+      eventName: "TimelineLogAdded",
+      args: { tokenId },
+      fromBlock: receipt.blockNumber,
+      toBlock: receipt.blockNumber
+    });
+
+    const args = logs[0]?.args as
+      | { logIndex?: bigint; timestamp?: bigint }
+      | undefined;
+
+    return {
+      tokenId,
+      logIndex: args?.logIndex ?? BigInt(0),
+      timestamp: args?.timestamp ?? BigInt(0),
+      txHash,
+      blockNumber: receipt.blockNumber,
+      contractAddress,
+      description: input.description,
+      data: input.data ?? "",
+      attachments: onChainAttachments
+    };
   }
 
   async createCertificate(input: CreateCertificateInput): Promise<CertificateResponse> {
