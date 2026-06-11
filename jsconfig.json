@@ -5,6 +5,9 @@
       "auth/*": [
         "src/auth/*"
       ],
+      "clients/*": [
+        "src/clients/*"
+      ],
       "controllers/*": [
         "src/controllers/*"
       ],
