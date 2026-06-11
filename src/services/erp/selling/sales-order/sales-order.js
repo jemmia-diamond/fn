@@ -11,7 +11,7 @@ import { validateSalesOrder } from "services/erp/selling/sales-order/utils/sales
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/constant";
-import { fetchSalesOrdersFromERP, saveSalesOrdersToDatabase, ensureSelfReference, getLeadSource, fetchAndNormalizeAttachments } from "src/services/erp/selling/sales-order/utils/sales-order-helpers";
+import { fetchSalesOrdersFromERP, saveSalesOrdersToDatabase, ensureSelfReference, getLeadSource, fetchAndNormalizeAttachments, calculateGroupPayments } from "src/services/erp/selling/sales-order/utils/sales-order-helpers";
 import { getRefOrderChain } from "services/ecommerce/order-tracking/queries/get-initial-order";
 import Larksuite from "services/larksuite";
 import { getOrderFinancials } from "services/haravan/orders/order-service/helpers/order-financials";
@@ -304,15 +304,9 @@ export default class SalesOrderService {
       salesOrderData.discount_amount += childOrder.discount_amount;
     }
 
-    if (salesOrderData.is_split_order && salesOrderData.total_allocated_group_payment !== undefined && salesOrderData.total_allocated_group_payment !== null) {
-      salesOrderData.paid_amount = salesOrderData.total_allocated_group_payment;
-      salesOrderData.deposit_amount = salesOrderData.total_allocated_group_payment;
-    } else {
-      for (const childOrder of childOrders) {
-        salesOrderData.paid_amount += (childOrder.paid_amount || 0);
-      }
-      salesOrderData.deposit_amount = salesOrderData.paid_amount;
-    }
+    const payments = calculateGroupPayments(salesOrderData, childOrders);
+    salesOrderData.paid_amount = payments.paid_amount;
+    salesOrderData.deposit_amount = payments.deposit_amount;
 
     const customer = await this.frappeClient.getDoc("Customer", salesOrderData.customer);
 
@@ -709,7 +703,7 @@ export default class SalesOrderService {
               msg_type: "text",
               reply_in_thread: true,
               content: JSON.stringify({
-                text: `Hình ảnh đính kèm (có tính bảo mật): ${file.file_url}`
+                text: file.file_url
               })
             }
           });
@@ -786,8 +780,7 @@ export default class SalesOrderService {
     const initialOrder = initialOrderDoc || await this.frappeClient.getDoc("Sales Order", initialOrderName);
 
     if (!initialOrder) return {
-      allRelatedOrders: [],
-      allSplitOrders: []
+      allRelatedOrders: []
     };
 
     relatedOrdersMap.set(initialOrderName, {

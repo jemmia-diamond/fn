@@ -209,6 +209,24 @@ export async function getLeadSource(frappeClient, sourceCode) {
   return null;
 }
 
+export function normalizeUrlForAttachments(urlStr, envBaseUrl) {
+  if (!urlStr) return urlStr;
+
+  let finalUrl = urlStr;
+  if (envBaseUrl && !urlStr.startsWith("http")) {
+    finalUrl = `${envBaseUrl.replace(/\/+$/, "")}/${urlStr.replace(/^\/+/, "")}`;
+  }
+
+  try {
+    const urlObj = new URL(finalUrl);
+    urlObj.pathname = urlObj.pathname.replace(/\/+/g, "/");
+    return urlObj.toString();
+  } catch (error) {
+    console.warn(`[URL Normalization Failed] original: "${urlStr}", base: "${envBaseUrl}". Error:`, error);
+    return finalUrl;
+  }
+}
+
 export async function fetchAndNormalizeAttachments(frappeClient, orderName, envBaseUrl) {
   const attachments = await frappeClient.getList("File", {
     filters: [
@@ -219,17 +237,7 @@ export async function fetchAndNormalizeAttachments(frappeClient, orderName, envB
   });
 
   return (attachments || []).map(file => {
-    let finalUrl = file.file_url.startsWith("http")
-      ? file.file_url
-      : `${envBaseUrl.replace(/\/+$/, "")}/${file.file_url.replace(/^\/+/, "")}`;
-
-    try {
-      const urlObj = new URL(finalUrl);
-      urlObj.pathname = urlObj.pathname.replace(/\/+/g, "/");
-      finalUrl = urlObj.toString();
-    } catch {
-      // Fallback for invalid URLs
-    }
+    const finalUrl = normalizeUrlForAttachments(file.file_url, envBaseUrl);
 
     return {
       file_name: file.file_name,
@@ -239,3 +247,26 @@ export async function fetchAndNormalizeAttachments(frappeClient, orderName, envB
   });
 }
 
+export function calculateGroupPayments(salesOrderData, childOrders = []) {
+  const result = {
+    paid_amount: salesOrderData.paid_amount || 0,
+    deposit_amount: salesOrderData.deposit_amount || 0
+  };
+  if (
+    salesOrderData.is_split_order &&
+    salesOrderData.total_allocated_group_payment !== undefined &&
+    salesOrderData.total_allocated_group_payment !== null
+  ) {
+    result.paid_amount = salesOrderData.total_allocated_group_payment;
+    result.deposit_amount = salesOrderData.total_allocated_group_payment;
+  } else {
+    let totalPaid = result.paid_amount;
+    for (const childOrder of childOrders) {
+      totalPaid += (childOrder.paid_amount || 0);
+    }
+    result.paid_amount = totalPaid;
+    result.deposit_amount = totalPaid;
+  }
+
+  return result;
+}
