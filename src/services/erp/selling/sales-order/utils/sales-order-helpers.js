@@ -223,14 +223,17 @@ export async function fetchAndNormalizeAttachments(frappeClient, orderName, envB
       ? file.file_url
       : `${envBaseUrl.replace(/\/+$/, "")}/${file.file_url.replace(/^\/+/, "")}`;
 
-    // Only normalize the base path to prevent modifying query strings (e.g., S3 keys)
-    const [baseUrl, ...queryParts] = finalUrl.split("?");
-    const cleanBaseUrl = baseUrl.replace(/([^:]\/)\/+/g, "$1");
-    const normalizedUrl = queryParts.length > 0 ? `${cleanBaseUrl}?${queryParts.join("?")}` : cleanBaseUrl;
+    try {
+      const urlObj = new URL(finalUrl);
+      urlObj.pathname = urlObj.pathname.replace(/\/+/g, "/");
+      finalUrl = urlObj.toString();
+    } catch {
+      // Fallback for invalid URLs
+    }
 
     return {
       file_name: file.file_name,
-      file_url: normalizedUrl,
+      file_url: finalUrl,
       is_private: file.is_private
     };
   });
