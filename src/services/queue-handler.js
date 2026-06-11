@@ -88,7 +88,7 @@ export default {
       }
       break;
     case "promotion-diamond-collect-sync":
-      await new Ecommerce.DiamondCollectService(env).syncDiamondsToCollects();
+      await new Ecommerce.DiamondCollectService(env).syncDiamondsToCollects(true);
       break;
     default:
       break;
