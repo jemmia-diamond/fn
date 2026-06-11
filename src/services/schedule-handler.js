@@ -40,6 +40,7 @@ export default {
       await new Ecommerce.JewelryDiamondPairService(env).processOutOfStockDiamonds();
       await new Misa.InventoryItemSyncService(env).syncInventoryItems();
       await new Haravan.OrderModule.DatabaseSyncService(env).sync();
+      await new Haravan.OrderModule.ERPNextOrderCreationSyncService(env).sync();
       await new Haravan.Product.DatabaseSyncService(env).sync();
       break;
     case "*/10 * * * *": // At every 10th minute
