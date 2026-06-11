@@ -220,7 +220,9 @@ export async function fetchAndNormalizeAttachments(frappeClient, orderName, envB
 
   return (attachments || []).map(file => ({
     file_name: file.file_name,
-    file_url: file.file_url.startsWith("http") ? file.file_url : `${envBaseUrl}${file.file_url}`,
+    file_url: file.file_url.startsWith("http")
+      ? file.file_url
+      : `${envBaseUrl.replace(/\/+$/, "")}/${file.file_url.replace(/^\/+/, "")}`,
     is_private: file.is_private
   }));
 }
