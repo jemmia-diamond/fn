@@ -38,13 +38,14 @@ export class ViemContractService {
     const cached = this.abiCache.get(contractAddress);
     if (cached) return cached;
 
-    const { explorerApiUrl, explorerApiKeyEnvVar } = getActiveChainConfig();
+    const { chain, explorerApiUrl, explorerApiKeyEnvVar } = getActiveChainConfig();
     const apiKey = await this.getExplorerApiKey(explorerApiKeyEnvVar);
 
     const url = new URL(explorerApiUrl);
     url.searchParams.set("module", "contract");
     url.searchParams.set("action", "getabi");
     url.searchParams.set("address", contractAddress);
+    url.searchParams.set("chainid", String(chain.id));
     if (apiKey) {
       url.searchParams.set("apikey", apiKey);
     }

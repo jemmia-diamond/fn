@@ -1,9 +1,9 @@
-import { bsc } from "viem/chains";
-import { createPublicClient, createWalletClient, http } from "viem";
+import { bsc, polygon, polygonAmoy } from "viem/chains";
+import { createPublicClient, createWalletClient, http, type Chain } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 
 export interface ChainConfig {
-  chain: typeof bsc;
+  chain: Chain;
   rpcUrl: string;
   explorerApiUrl: string;
   explorerApiKeyEnvVar: string;
@@ -14,13 +14,25 @@ export const CHAINS = {
     chain: bsc,
     rpcUrl: "https://bsc-dataseed.binance.org/",
     explorerApiUrl: "https://api.bscscan.com/api",
-    explorerApiKeyEnvVar: "BSCSCAN_API_KEY_SECRET"
+    explorerApiKeyEnvVar: "BSCSCAN_API_KEY"
+  },
+  polygon: {
+    chain: polygon,
+    rpcUrl: "https://polygon.drpc.org",
+    explorerApiUrl: "https://api.etherscan.io/v2/api",
+    explorerApiKeyEnvVar: "ETHERSCAN_API_KEY"
+  },
+  polygonAmoy: {
+    chain: polygonAmoy,
+    rpcUrl: "https://rpc-amoy.polygon.technology",
+    explorerApiUrl: "https://api.etherscan.io/v2/api",
+    explorerApiKeyEnvVar: "ETHERSCAN_API_KEY"
   }
 } as const satisfies Record<string, ChainConfig>;
 
 export type ChainKey = keyof typeof CHAINS;
 
-export const ACTIVE_CHAIN_KEY: ChainKey = "bsc";
+export const ACTIVE_CHAIN_KEY: ChainKey = "polygonAmoy";
 
 export function getActiveChainConfig(): ChainConfig {
   return CHAINS[ACTIVE_CHAIN_KEY] as ChainConfig;

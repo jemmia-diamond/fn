@@ -40,16 +40,16 @@ export default class PinataClient {
       return this.secrets;
     }
 
-    if (!this.env.PINATA_JWT_SECRET) {
-      throw new Error("PinataClient: PINATA_JWT_SECRET binding is required");
+    if (!this.env.PINATA_JWT) {
+      throw new Error("PinataClient: PINATA_JWT binding is required");
     }
 
-    if (!this.env.PINATA_GATEWAY_SECRET) {
-      throw new Error("PinataClient: PINATA_GATEWAY_SECRET binding is required");
+    if (!this.env.PINATA_GATEWAY) {
+      throw new Error("PinataClient: PINATA_GATEWAY binding is required");
     }
 
-    const jwt = await this.env.PINATA_JWT_SECRET.get();
-    const gateway = await this.env.PINATA_GATEWAY_SECRET.get();
+    const jwt = this.env.PINATA_JWT;
+    const gateway = this.env.PINATA_GATEWAY;
 
     this.secrets = { jwt, gateway };
     return this.secrets;
