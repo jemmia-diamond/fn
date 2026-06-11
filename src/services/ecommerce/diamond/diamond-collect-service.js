@@ -13,12 +13,14 @@ export default class DiamondCollectService {
 
   static DEFAULT_DISCOUNT_PERCENT = 8;
 
-  async syncDiamondsToCollects() {
+  async syncDiamondsToCollects(notify) {
     try {
-      await sendPromotionSyncNotification(
-        this.env,
-        "🚀 [CTKM nền] Bắt đầu đồng bộ CTKM nền Kim Cương sang Haravan & Nocodb..."
-      );
+      if (notify) {
+        await sendPromotionSyncNotification(
+          this.env,
+          "🚀 [CTKM nền] Bắt đầu đồng bộ CTKM nền Kim Cương sang Haravan & Nocodb..."
+        );
+      }
 
       const { haravanApi, db, nocoClient } = await this._initializeClients();
       const activeRules = await DiamondDiscountService.getActiveRules(this.env);
@@ -35,17 +37,21 @@ export default class DiamondCollectService {
         allPercentCollectionIds
       });
 
-      await sendPromotionSyncNotification(
-        this.env,
-        "✅ [CTKM nền] Hoàn tất đồng bộ CTKM nền Kim Cương. Dữ liệu đã được cập nhật trên Haravan và Nocodb."
-      );
+      if (notify) {
+        await sendPromotionSyncNotification(
+          this.env,
+          "✅ [CTKM nền] Hoàn tất đồng bộ CTKM nền Kim Cương. Dữ liệu đã được cập nhật trên Haravan và Nocodb."
+        );
+      }
 
     } catch (error) {
       Sentry.captureException(error);
-      await sendPromotionSyncNotification(
-        this.env,
-        `❌ [CTKM nền] Lỗi đồng bộ: ${error.message || "Unknown error"}`
-      );
+      if (notify) {
+        await sendPromotionSyncNotification(
+          this.env,
+          `❌ [CTKM nền] Lỗi đồng bộ: ${error.message || "Unknown error"}`
+        );
+      }
     }
   }
 
@@ -292,10 +298,18 @@ export default class DiamondCollectService {
 
       if (!isTargetCollection && !isDefaultCollection) {
         console.warn("Removing discount collection for diamond:", diamond.id, entry.haravan_collection_id);
-        await nocoClient.deleteRecords(NOCODB_TABLES.MARKETING.DIAMOND_HARAVAN_COLLECTIONS, [{
-          diamond_id: diamond.id,
-          haravan_collection_id: entry.haravan_collection_id
-        }]);
+        try {
+          await nocoClient.deleteRecords(NOCODB_TABLES.MARKETING.DIAMOND_HARAVAN_COLLECTIONS, [{
+            diamond_id: diamond.id,
+            haravan_collection_id: entry.haravan_collection_id
+          }]);
+        } catch (e) {
+          const cause = e.cause || e.response?.data;
+          if (cause?.error !== "ERR_RECORD_NOT_FOUND" && e.response?.status !== 404) {
+            throw e;
+          }
+          console.warn("Record already removed or not found:", diamond.id, entry.haravan_collection_id);
+        }
         await new Promise(resolve => setTimeout(resolve, 1500));
       }
     }
