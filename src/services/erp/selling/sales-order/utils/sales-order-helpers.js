@@ -209,3 +209,19 @@ export async function getLeadSource(frappeClient, sourceCode) {
   return null;
 }
 
+export async function fetchAndNormalizeAttachments(frappeClient, orderName, envBaseUrl) {
+  const attachments = await frappeClient.getList("File", {
+    filters: [
+      ["attached_to_doctype", "=", "Sales Order"],
+      ["attached_to_name", "=", orderName]
+    ],
+    fields: ["file_name", "file_url", "is_private"]
+  });
+
+  return (attachments || []).map(file => ({
+    file_name: file.file_name,
+    file_url: file.file_url.startsWith("http") ? file.file_url : `${envBaseUrl}${file.file_url}`,
+    is_private: file.is_private
+  }));
+}
+
