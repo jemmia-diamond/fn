@@ -138,39 +138,6 @@ export async function saveSalesOrdersToDatabase(db, salesOrders) {
   }
 }
 
-const PAYMENT_GATEWAY_ERP = "Thanh toán qua ERP";
-const PAYMENT_GATEWAY_QR_MB = "Chuyển khoản qua QR - MBBank";
-const PAYMENT_BEFORE_RELEASE_DATE = "2025-12-14 16:59:59.999";
-
-function calculateOrderPaymentRecordsTotal(orderDoc) {
-  if (!orderDoc) return 0;
-
-  const paymentRecords = (orderDoc.payment_records || []).filter(r => {
-    if (typeof r.kind !== "string" || !["capture", "authorization"].includes(r.kind.toLowerCase())) {
-      return false;
-    }
-
-    if (r.gateway === PAYMENT_GATEWAY_ERP) return false;
-
-    if (r.gateway === PAYMENT_GATEWAY_QR_MB) {
-      if (dayjs(r.date).isAfter(dayjs(PAYMENT_BEFORE_RELEASE_DATE))) {
-        return false;
-      }
-    }
-
-    return true;
-  });
-  return paymentRecords.reduce((sum, r) => sum + parseFloat(r.amount || 0), 0);
-}
-
-export function calculateGroupOrderPaymentRecordsTotal(orderDocs) {
-  if (!orderDocs || orderDocs.length === 0) return 0;
-
-  return orderDocs.reduce((total, order) => {
-    return total + calculateOrderPaymentRecordsTotal(order);
-  }, 0);
-}
-
 export async function ensureSelfReference(frappeClient, order, doctype = "Sales Order") {
   // Update self-reference if missing (e.g. new order)
   if (order && order.name) {
@@ -191,22 +158,6 @@ export async function ensureSelfReference(frappeClient, order, doctype = "Sales 
     }
   }
   return order;
-}
-
-export async function getAllRelatedPaymentEntries(frappeClient, relatedOrderNames) {
-  if (!relatedOrderNames || relatedOrderNames.length === 0) {
-    return [];
-  }
-  const paymentEntries = await frappeClient.getList("Payment Entry", {
-    filters: [
-      ["Payment Entry Reference", "reference_doctype", "=", "Sales Order"],
-      ["Payment Entry Reference", "reference_name", "in", relatedOrderNames],
-      ["docstatus", "<", 2],
-      ["payment_order_status", "=", "Success"]
-    ],
-    fields: ["name", "payment_type"]
-  });
-  return paymentEntries;
 }
 
 /**
@@ -258,6 +209,24 @@ export async function getLeadSource(frappeClient, sourceCode) {
   return null;
 }
 
+export function normalizeUrlForAttachments(urlStr, envBaseUrl) {
+  if (!urlStr) return urlStr;
+
+  let finalUrl = urlStr;
+  if (envBaseUrl && !urlStr.startsWith("http")) {
+    finalUrl = `${envBaseUrl.replace(/\/+$/, "")}/${urlStr.replace(/^\/+/, "")}`;
+  }
+
+  try {
+    const urlObj = new URL(finalUrl);
+    urlObj.pathname = urlObj.pathname.replace(/\/+/g, "/");
+    return urlObj.toString();
+  } catch (error) {
+    console.warn(`[URL Normalization Failed] original: "${urlStr}", base: "${envBaseUrl}". Error:`, error);
+    return finalUrl;
+  }
+}
+
 export async function fetchAndNormalizeAttachments(frappeClient, orderName, envBaseUrl) {
   const attachments = await frappeClient.getList("File", {
     filters: [
@@ -267,10 +236,37 @@ export async function fetchAndNormalizeAttachments(frappeClient, orderName, envB
     fields: ["file_name", "file_url", "is_private"]
   });
 
-  return (attachments || []).map(file => ({
-    file_name: file.file_name,
-    file_url: file.file_url.startsWith("http") ? file.file_url : `${envBaseUrl}${file.file_url}`,
-    is_private: file.is_private
-  }));
+  return (attachments || []).map(file => {
+    const finalUrl = normalizeUrlForAttachments(file.file_url, envBaseUrl);
+
+    return {
+      file_name: file.file_name,
+      file_url: finalUrl,
+      is_private: file.is_private
+    };
+  });
 }
 
+export function calculateGroupPayments(salesOrderData, childOrders = []) {
+  const result = {
+    paid_amount: salesOrderData.paid_amount || 0,
+    deposit_amount: salesOrderData.deposit_amount || 0
+  };
+  if (
+    salesOrderData.is_split_order &&
+    salesOrderData.total_allocated_group_payment !== undefined &&
+    salesOrderData.total_allocated_group_payment !== null
+  ) {
+    result.paid_amount = salesOrderData.total_allocated_group_payment;
+    result.deposit_amount = salesOrderData.total_allocated_group_payment;
+  } else {
+    let totalPaid = result.paid_amount;
+    for (const childOrder of childOrders) {
+      totalPaid += (childOrder.paid_amount || 0);
+    }
+    result.paid_amount = totalPaid;
+    result.deposit_amount = totalPaid;
+  }
+
+  return result;
+}
