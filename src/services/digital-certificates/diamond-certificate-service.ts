@@ -98,6 +98,30 @@ export interface TimelineLogResponse {
   attachments: OnChainAttachment[];
 }
 
+export interface TimelineLogView {
+  logIndex: string;
+  timestamp: string;
+  description: string;
+  data: string;
+  attachments: OnChainAttachment[];
+}
+
+export interface CertificateDetailResponse {
+  tokenId: string;
+  owner: `0x${string}`;
+  tokenURI: string;
+  productName: string;
+  designStory: string;
+  traceId: string;
+  diamond: DiamondInfo;
+  photos: string[];
+  videos: string[];
+  attachments: OnChainAttachment[];
+  mintedAt: string;
+  mintedBy: `0x${string}`;
+  timeline: TimelineLogView[];
+}
+
 export default class DiamondCertificateService {
   private env: any;
   private pinata: PinataUploadService;
@@ -225,6 +249,91 @@ export default class DiamondCertificateService {
       functionName: "totalMinted"
     });
     return result as bigint;
+  }
+
+  async getCertificateDetail(tokenId: bigint): Promise<CertificateDetailResponse> {
+    const contractAddress = getDiamondCertificateSmartContractAddress(this.env);
+    const publicClient = this.viem.getPublicClient();
+    const abi = await this.nftContract.fetchAbi(contractAddress);
+
+    const readArgs = { address: contractAddress, abi };
+
+    const [owner, tokenURI, cert, photos, videos, attachments, timelineLogs] = await Promise.all([
+      (publicClient.readContract as any)({
+        ...readArgs,
+        functionName: "ownerOf",
+        args: [tokenId]
+      }),
+      (publicClient.readContract as any)({
+        ...readArgs,
+        functionName: "tokenURI",
+        args: [tokenId]
+      }),
+      (publicClient.readContract as any)({
+        ...readArgs,
+        functionName: "getCertificate",
+        args: [tokenId]
+      }),
+      (publicClient.readContract as any)({
+        ...readArgs,
+        functionName: "getPhotos",
+        args: [tokenId]
+      }),
+      (publicClient.readContract as any)({
+        ...readArgs,
+        functionName: "getVideos",
+        args: [tokenId]
+      }),
+      (publicClient.readContract as any)({
+        ...readArgs,
+        functionName: "getAttachments",
+        args: [tokenId]
+      }),
+      (publicClient.readContract as any)({
+        ...readArgs,
+        functionName: "getTimelineLogs",
+        args: [tokenId]
+      })
+    ]);
+
+    const [productName, designStory, traceId, diamond, mintedAt, mintedBy] = cert as [
+      string,
+      string,
+      string,
+      DiamondInfo,
+      bigint,
+      `0x${string}`
+    ];
+
+    const rawLogs = timelineLogs as Array<{
+      timestamp: bigint;
+      description: string;
+      data: string;
+      attachments: OnChainAttachment[];
+    }>;
+    const timeline: TimelineLogView[] = rawLogs.map((log, index) => ({
+      logIndex: index.toString(),
+      timestamp: log.timestamp.toString(),
+      description: log.description,
+      data: log.data,
+      attachments: log.attachments
+    }));
+
+    return {
+      tokenId: tokenId.toString(),
+      owner: owner as `0x${string}`,
+      tokenURI: tokenURI as string,
+      productName,
+      designStory,
+      traceId,
+      diamond,
+      photos: photos as string[],
+      videos: videos as string[],
+      attachments: attachments as OnChainAttachment[],
+      mintedAt: mintedAt.toString(),
+      mintedBy,
+      timeline
+    };
   }
 
   async addTimelineLog(

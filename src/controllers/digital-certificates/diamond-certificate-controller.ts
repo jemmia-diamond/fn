@@ -50,4 +50,24 @@ export default class DiamondCertificateController {
     const certificate = await service.createCertificate(validated.data);
     return c.json({ data: certificate }, 201);
   }
+
+  static async show(c: any) {
+    const tokenIdParam = c.req.param("tokenId");
+    if (!tokenIdParam || !/^\d+$/.test(tokenIdParam)) {
+      return c.json({ error: "Invalid tokenId path parameter" }, 400);
+    }
+    const tokenId = BigInt(tokenIdParam);
+
+    const service = new DiamondCertificateService(c.env);
+    try {
+      const detail = await service.getCertificateDetail(tokenId);
+      return c.json({ data: detail });
+    } catch (err: any) {
+      const message = err?.shortMessage ?? err?.message ?? String(err);
+      if (message.includes("TokenDoesNotExist")) {
+        return c.json({ error: "Token does not exist", tokenId: tokenIdParam }, 404);
+      }
+      throw err;
+    }
+  }
 }
