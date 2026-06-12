@@ -1,4 +1,3 @@
-import * as Sentry from "@sentry/cloudflare";
 import NocoDBClient from "services/clients/nocodb-client";
 import { HARAVAN_TOPIC } from "services/ecommerce/enum";
 import { SKU_LENGTH, HRV_PRODUCT_TYPE } from "services/haravan/products/product-variant/constant";
@@ -22,20 +21,14 @@ export default class AutoAddToDiscountProgramService {
     this.env = env;
   }
 
-  static async dequeueProductQueue(batch, env) {
+  static async dequeue(batch, env) {
     const service = new AutoAddToDiscountProgramService(env);
     for (const message of batch.messages) {
-      try {
-        const body = message.body;
-        const haravanTopic = body.haravan_topic;
+      const body = message.body;
+      const haravanTopic = body.haravan_topic;
 
-        if (haravanTopic === HARAVAN_TOPIC.PRODUCT_UPDATE || haravanTopic === HARAVAN_TOPIC.PRODUCT_CREATED) {
-          await service.processProduct(body);
-        }
-      }
-      catch (error) {
-        Sentry.captureException(error);
-        message.retry();
+      if (haravanTopic === HARAVAN_TOPIC.PRODUCT_UPDATE || haravanTopic === HARAVAN_TOPIC.PRODUCT_CREATED) {
+        await service.processProduct(body);
       }
     }
   }
