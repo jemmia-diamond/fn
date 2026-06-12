@@ -1,4 +1,3 @@
-import * as Sentry from "@sentry/cloudflare";
 import NocoDBClient from "services/clients/nocodb-client";
 import { NOCODB_TABLES } from "src/constants/nocodb-tables";
 
@@ -87,16 +86,10 @@ export default class ProductVariantService {
   static async dequeueProductQueue(batch, env) {
     const service = new ProductVariantService(env);
     for (const message of batch.messages) {
-      try {
-        const body = message.body;
+      const body = message.body;
 
-        await service.clearIncomingStockTag(body);
-        await service.clearFinalDiscountValueIfOutOfStock(body);
-      }
-      catch (error) {
-        Sentry.captureException(error);
-        message.retry();
-      }
+      await service.clearIncomingStockTag(body);
+      await service.clearFinalDiscountValueIfOutOfStock(body);
     }
   }
 }
