@@ -11,7 +11,7 @@ import { validateSalesOrder } from "services/erp/selling/sales-order/utils/sales
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/constant";
-import { fetchSalesOrdersFromERP, saveSalesOrdersToDatabase, calculateGroupOrderPaymentRecordsTotal, ensureSelfReference, getAllRelatedPaymentEntries, getLeadSource } from "src/services/erp/selling/sales-order/utils/sales-order-helpers";
+import { fetchSalesOrdersFromERP, saveSalesOrdersToDatabase, ensureSelfReference, getLeadSource, fetchAndNormalizeAttachments, calculateGroupPayments } from "src/services/erp/selling/sales-order/utils/sales-order-helpers";
 import { getRefOrderChain } from "services/ecommerce/order-tracking/queries/get-initial-order";
 import Larksuite from "services/larksuite";
 import { getOrderFinancials } from "services/haravan/orders/order-service/helpers/order-financials";
@@ -240,10 +240,15 @@ export default class SalesOrderService {
     const dbConnection = { timeout: 30000, maxWait: 10000 };
     const larkClient = await LarksuiteService.createClientV2(this.env);
 
+    salesOrderData.attachments = await fetchAndNormalizeAttachments(
+      this.frappeClient,
+      salesOrderData.name,
+      this.env.JEMMIA_ERP_BASE_URL
+    );
+
     const haravanRefOrderId = salesOrderData.haravan_ref_order_id;
 
     const { allRelatedOrders } = await this.getAllRelatedSalesOrders(salesOrderData.name, salesOrderData);
-    const allOrderNames = allRelatedOrders.map(o => o.name);
 
     const splitOrderGroupId = salesOrderData.split_order_group;
     const isSplitOrder = salesOrderData.is_split_order;
@@ -260,19 +265,11 @@ export default class SalesOrderService {
         // For each order, find its attachments
         for (const splitOrder of splitOrders) {
           const childOrder = await this.frappeClient.getDoc("Sales Order", splitOrder.name);
-          let attachments = await this.frappeClient.getList("File", {
-            filters: [
-              ["attached_to_doctype", "=", "Sales Order"],
-              ["attached_to_name", "=", childOrder.name]
-            ],
-            fields: ["file_name", "file_url", "is_private"]
-          });
-          attachments = attachments.map(file => ({
-            file_name: file.file_name,
-            file_url: `${this.env.JEMMIA_ERP_BASE_URL}${file.file_url}`,
-            is_private: file.is_private
-          }));
-          childOrder.attachments = attachments;
+          childOrder.attachments = await fetchAndNormalizeAttachments(
+            this.frappeClient,
+            childOrder.name,
+            this.env.JEMMIA_ERP_BASE_URL
+          );
           childOrders.push(childOrder);
         }
       }
@@ -307,14 +304,9 @@ export default class SalesOrderService {
       salesOrderData.discount_amount += childOrder.discount_amount;
     }
 
-    // Calculate Payment Entries Total
-    const relatedPaymentEntries = await getAllRelatedPaymentEntries(this.frappeClient, allOrderNames);
-    const paymentEntriesTotal = await this.calculateGroupPaymentTotal(allOrderNames, relatedPaymentEntries);
-    const paymentRecordsTotal = calculateGroupOrderPaymentRecordsTotal([salesOrderData, ...childOrders]);
-
-    // Set Paid Amount
-    salesOrderData.paid_amount = paymentEntriesTotal + paymentRecordsTotal;
-    salesOrderData.deposit_amount = paymentEntriesTotal + paymentRecordsTotal;
+    const payments = calculateGroupPayments(salesOrderData, childOrders);
+    salesOrderData.paid_amount = payments.paid_amount;
+    salesOrderData.deposit_amount = payments.deposit_amount;
 
     const customer = await this.frappeClient.getDoc("Customer", salesOrderData.customer);
 
@@ -711,7 +703,7 @@ export default class SalesOrderService {
               msg_type: "text",
               reply_in_thread: true,
               content: JSON.stringify({
-                text: `Hình ảnh đính kèm (có tính bảo mật): ${file.file_url}`
+                text: file.file_url
               })
             }
           });
@@ -788,8 +780,7 @@ export default class SalesOrderService {
     const initialOrder = initialOrderDoc || await this.frappeClient.getDoc("Sales Order", initialOrderName);
 
     if (!initialOrder) return {
-      allRelatedOrders: [],
-      allSplitOrders: []
+      allRelatedOrders: []
     };
 
     relatedOrdersMap.set(initialOrderName, {
@@ -798,30 +789,20 @@ export default class SalesOrderService {
       split_order_group: initialOrder.split_order_group
     });
 
-    let allSplitOrders = [];
-
     if (initialOrder.is_split_order && initialOrder.split_order_group) {
       const groupOrders = await this.frappeClient.getList("Sales Order", {
         filters: [
           ["split_order_group", "=", initialOrder.split_order_group],
           ["is_split_order", "=", 1]
         ],
-        fields: ["name", "cancelled_status", "split_order_group", "grand_total", "paid_amount", "total_allocated_group_payment", "balance_group_payment"]
+        fields: ["name", "cancelled_status", "split_order_group"]
       });
-
-      allSplitOrders = groupOrders;
 
       groupOrders.forEach(o => relatedOrdersMap.set(o.name, {
         name: o.name,
         cancelled_status: o.cancelled_status,
         split_order_group: o.split_order_group
       }));
-    } else {
-      allSplitOrders = [{
-        name: initialOrder.name,
-        cancelled_status: initialOrder.cancelled_status,
-        split_order_group: initialOrder.split_order_group
-      }];
     }
 
     const toVisit = Array.from(relatedOrdersMap.keys());
@@ -868,44 +849,8 @@ export default class SalesOrderService {
     }
 
     return {
-      allRelatedOrders: Array.from(relatedOrdersMap.values()),
-      allSplitOrders: allSplitOrders
+      allRelatedOrders: Array.from(relatedOrdersMap.values())
     };
-  }
-
-  async calculateGroupPaymentTotal(relatedOrderNames, paymentEntries) {
-    if (!paymentEntries || paymentEntries.length === 0) return 0;
-
-    let totalAllocated = 0;
-    const processedPeIds = new Set();
-
-    for (const peStub of paymentEntries) {
-      if (processedPeIds.has(peStub.name)) continue;
-      processedPeIds.add(peStub.name);
-
-      try {
-        const fullPe = await this.frappeClient.getDoc("Payment Entry", peStub.name);
-        if (fullPe && fullPe.references) {
-          const relevantRefs = fullPe.references.filter(r =>
-            r.reference_doctype === "Sales Order" &&
-            relatedOrderNames.includes(r.reference_name)
-          );
-
-          for (const ref of relevantRefs) {
-            const amount = parseFloat(ref.allocated_amount || 0);
-            if (fullPe.payment_type === "Pay") {
-              totalAllocated -= amount;
-            } else {
-              totalAllocated += amount;
-            }
-          }
-        }
-      } catch (e) {
-        console.warn(`Could not fetch Payment Entry ${peStub.name}`, e);
-      }
-    }
-
-    return totalAllocated;
   }
 
 }

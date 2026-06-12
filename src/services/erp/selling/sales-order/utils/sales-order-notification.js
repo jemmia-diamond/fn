@@ -3,7 +3,7 @@ import utc from "dayjs/plugin/utc.js";
 import { SKU_LENGTH, SKU_PREFIX } from "services/haravan/products/product-variant/constant";
 import { numberToCurrency } from "services/utils/number-helper";
 import { stringSquishLarkMessage } from "services/utils/string-helper";
-import { getItemPromotions } from "services/erp/selling/sales-order/utils/sales-order-helpers";
+import { getItemPromotions, normalizeUrlForAttachments } from "services/erp/selling/sales-order/utils/sales-order-helpers";
 
 dayjs.extend(utc);
 
@@ -153,15 +153,18 @@ export const composeOrderUpdateMessage = (prevOrder, salesOrder, promotionData) 
   return { content, diffAttachments };
 };
 
-const diffInAttachments = (prevAttachments, attachments) => {
-  const prevAttachmentUrls = (prevAttachments || []).map((attachment) => attachment.file_url);
-  const newAttachmentUrls = (attachments || []).map((attachment) => attachment.file_url);
+export const diffInAttachments = (prevAttachments, attachments) => {
+  const validPrev = (prevAttachments || []).filter(a => a && a.file_url);
+  const validNew = (attachments || []).filter(a => a && a.file_url);
 
-  const addedAttachments = (attachments || []).filter(
-    (attachment) => !prevAttachmentUrls.includes(attachment.file_url)
+  const prevAttachmentUrls = validPrev.map((attachment) => normalizeUrlForAttachments(attachment.file_url));
+  const newAttachmentUrls = validNew.map((attachment) => normalizeUrlForAttachments(attachment.file_url));
+
+  const addedAttachments = validNew.filter(
+    (attachment) => !prevAttachmentUrls.includes(normalizeUrlForAttachments(attachment.file_url))
   );
-  const removedAttachments = (prevAttachments || []).filter(
-    (attachment) => !newAttachmentUrls.includes(attachment.file_url)
+  const removedAttachments = validPrev.filter(
+    (attachment) => !newAttachmentUrls.includes(normalizeUrlForAttachments(attachment.file_url))
   );
   const modifiedAttachments = {};
 
