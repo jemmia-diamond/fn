@@ -21,7 +21,7 @@ export default class AutoAddToDiscountProgramService {
     this.env = env;
   }
 
-  static async dequeueProductQueue(batch, env) {
+  static async dequeue(batch, env) {
     const service = new AutoAddToDiscountProgramService(env);
     for (const message of batch.messages) {
       const body = message.body;
