@@ -3,6 +3,7 @@ import utc from "dayjs/plugin/utc.js";
 import HaravanAPI from "services/clients/haravan-client";
 import { sleep } from "services/utils/sleep";
 import { isTestOrder } from "services/utils/order-intercepter";
+import { processHaravanOrder } from "services/haravan/orders/order-service";
 
 dayjs.extend(utc);
 
@@ -17,8 +18,7 @@ export default class ERPNextOrderCreationSyncService {
   async sync() {
     const toDate = dayjs().utc().toISOString();
     const fromDate = dayjs().utc().subtract(10, "minutes").toISOString();
-    const HRV_API_KEY = this.env.HARAVAN_TOKEN;
-    const haravanClient = new HaravanAPI(HRV_API_KEY);
+    const haravanClient = new HaravanAPI(this.env.HARAVAN_TOKEN);
 
     await this._fetchAndProcessOrders(haravanClient, fromDate, toDate);
   }
@@ -80,7 +80,8 @@ export default class ERPNextOrderCreationSyncService {
     if (validOrders.length === 0) return;
 
     for (const order of validOrders) {
-      await this.env["ERPNEXT_ORDER_CREATION_QUEUE"].send(order);
+      await processHaravanOrder(order, this.env);
+      await sleep(ERPNextOrderCreationSyncService.RATE_LIMIT_DELAY_MS);
     }
   }
 }
