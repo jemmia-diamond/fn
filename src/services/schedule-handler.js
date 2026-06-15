@@ -120,6 +120,12 @@ export default {
         toDate: dayjs().toISOString()
       });
       break;
+    case "30 2 * * *": // 09:30
+      await new ERP.Selling.DebtTrackingNotificationService(env).notifyWeeklyAnnouncement();
+      break;
+    case "30 4 * * *": // 11:30
+      await new ERP.Selling.DebtTrackingNotificationService(env).notifyUncheckedOrdersReminder();
+      break;
     case "30 5 * * *": // 12:30
       await ERP.Automation.AssignmentRuleService.updateAssignmentRulesMidDay(env);
       break;
