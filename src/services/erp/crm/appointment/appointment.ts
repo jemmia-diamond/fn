@@ -31,7 +31,6 @@ export default class ERPNextCRMAppointmentService {
 
   static async syncAppointment(payload: IERPNextAppointment, env: Env): Promise<void> {
     try {
-      console.log(`[ERP-SYNC-START] Processing appointment sync: ${payload.name}`);
 
       const botEmail = env.ERPNEXT_BOT_EMAIL || "tech@jemmia.vn";
 
@@ -40,7 +39,6 @@ export default class ERPNextCRMAppointmentService {
       if (env.FN_KV) {
         const isSynced = await env.FN_KV.get(nameLockKey);
         if (isSynced) {
-          console.log(`[ERP-SYNC] Blocked loop by name lock: ${nameLockKey}`);
           return;
         }
       }
@@ -50,14 +48,12 @@ export default class ERPNextCRMAppointmentService {
       if (lockKey && env.FN_KV) {
         const isLocked = await env.FN_KV.get(lockKey);
         if (isLocked) {
-          console.log(`[ERP-SYNC] Blocked loop by KV lock: ${lockKey}`);
           return;
         }
         await env.FN_KV.put(lockKey, "true", { expirationTtl: 60 });
       }
 
       if (payload.modified_by === botEmail || payload.owner === botEmail) {
-        console.log(`[ERP-SYNC] Blocked loop by Bot email filter: ${payload.modified_by || payload.owner}`);
         if (env.FN_KV && lockKey) await env.FN_KV.delete(lockKey);
         return;
       }
@@ -97,7 +93,6 @@ export default class ERPNextCRMAppointmentService {
 
       if (payload.record_id) {
         // Update existing record
-        console.log(`[ERP-SYNC] Updating existing Lark record: ${payload.record_id}`);
 
         // Data diff check
         try {
@@ -129,7 +124,6 @@ export default class ERPNextCRMAppointmentService {
               (currentFields["Chính sách thu mua thu đổi"] || "") === fields["Chính sách thu mua thu đổi"];
 
             if (isSame) {
-              console.log(`[ERP-SYNC] No data change detected between ERPNext and Lark for record: ${payload.record_id}`);
               if (env.FN_KV && lockKey) await env.FN_KV.delete(lockKey);
               return;
             }
@@ -148,28 +142,52 @@ export default class ERPNextCRMAppointmentService {
           userIdType: "open_id"
         });
 
-        console.log(`[ERP-SYNC-SUCCESS] Updated Lark record successfully: ${payload.record_id}`);
       } else {
-        // Create new record
-        console.log(`[ERP-SYNC] Creating new record on Larkbase for: ${payload.name}`);
+        // 1. Check whether record already exists on Lark with the corresponding Appointment Name (avoid duplicate creation when retrying)
+        let existingRecordId: string | null = null;
+        try {
+          const existingRecords = await RecordService.fetchRecords(
+            env,
+            { app_token: APPOINTMENTS.APP_TOKEN, table_id: APPOINTMENTS.TABLE_ID },
+            {
+              filter: {
+                conjunction: "and",
+                conditions: [
+                  {
+                    field_name: "Appointment Name",
+                    operator: "is",
+                    value: [payload.name]
+                  }
+                ]
+              },
+              userIdType: "open_id",
+              pageSize: 1,
+              sort: null
+            }
+          );
 
-        // @ts-expect-error
-        const newRecord = await RecordService.createLarksuiteRecord({
-          env,
-          appToken: APPOINTMENTS.APP_TOKEN,
-          tableId: APPOINTMENTS.TABLE_ID,
-          fields,
-          userIdType: "open_id"
-        });
+          if (existingRecords && existingRecords.length > 0) {
+            existingRecordId = existingRecords[0].record_id;
+          }
+        } catch (searchError) {
+          console.warn(`[ERP-SYNC] Failed to search existing Lark record for ${payload.name}:`, searchError);
+        }
 
-        if (newRecord && newRecord.record_id) {
-          const newRecordId = newRecord.record_id;
-          console.log(`[ERP-SYNC] Created new Lark record: ${newRecordId}. Syncing back to ERPNext.`);
+        if (existingRecordId) {
+          // 2. If exists, sync
+          // @ts-expect-error
+          await RecordService.updateLarksuiteRecord({
+            env,
+            appToken: APPOINTMENTS.APP_TOKEN,
+            tableId: APPOINTMENTS.TABLE_ID,
+            recordId: existingRecordId,
+            fields,
+            userIdType: "open_id"
+          });
 
-          // 2. Lock both name and record_id to prevent webhook feedback loop
           if (env.FN_KV) {
             await env.FN_KV.put(nameLockKey, "true", { expirationTtl: 60 });
-            await env.FN_KV.put(`lock:appointment:${newRecordId}`, "true", { expirationTtl: 60 });
+            await env.FN_KV.put(`lock:appointment:${existingRecordId}`, "true", { expirationTtl: 60 });
           }
 
           // @ts-expect-error
@@ -182,21 +200,54 @@ export default class ERPNextCRMAppointmentService {
           await frappeClient.update({
             doctype: "Appointment",
             name: payload.name,
-            record_id: newRecordId
+            record_id: existingRecordId
           });
 
-          console.log(`[ERP-SYNC-SUCCESS] Synced back record_id ${newRecordId} to ERPNext Appointment ${payload.name}`);
         } else {
-          throw new Error("Larkbase record creation failed or did not return record_id");
+          // 3. If not existing, create new record
+          // @ts-expect-error
+          const newRecord = await RecordService.createLarksuiteRecord({
+            env,
+            appToken: APPOINTMENTS.APP_TOKEN,
+            tableId: APPOINTMENTS.TABLE_ID,
+            fields,
+            userIdType: "open_id"
+          });
+
+          if (newRecord && newRecord.record_id) {
+            const newRecordId = newRecord.record_id;
+
+            // 2. Lock both name and record_id to prevent webhook feedback loop
+            if (env.FN_KV) {
+              await env.FN_KV.put(nameLockKey, "true", { expirationTtl: 60 });
+              await env.FN_KV.put(`lock:appointment:${newRecordId}`, "true", { expirationTtl: 60 });
+            }
+
+            // @ts-expect-error
+            const frappeClient = new FrappeClient({
+              url: env.JEMMIA_ERP_BASE_URL,
+              apiKey: env.JEMMIA_ERP_API_KEY,
+              apiSecret: env.JEMMIA_ERP_API_SECRET
+            });
+
+            await frappeClient.update({
+              doctype: "Appointment",
+              name: payload.name,
+              record_id: newRecordId
+            });
+
+          } else {
+            throw new Error("Larkbase record creation failed or did not return record_id");
+          }
         }
       }
+
     } catch (error) {
       // Release locks on error
       if (env.FN_KV) {
         if (payload.record_id) await env.FN_KV.delete(`lock:appointment:${payload.record_id}`);
         await env.FN_KV.delete(`lock:appointment-synced:${payload.name}`);
       }
-      console.error(`[ERP-SYNC-ERROR] Failed to sync appointment ${payload.name || "unknown"}:`, error);
       throw error;
     }
   }
