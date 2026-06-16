@@ -5,6 +5,7 @@ import FrappeERPSalesOrderController from "controllers/webhook/frappe/erp/sales-
 import FrappeERPPaymentEntryController from "controllers/webhook/frappe/erp/payment-entry/payment-entry";
 import FrappeERPCustomerController from "controllers/webhook/frappe/erp/customer/customer";
 import FrappeERPSalesOrderItemController from "controllers/webhook/frappe/erp/sales-order-item/sales-order-item";
+import FrappeERPAppointmentController from "controllers/webhook/frappe/erp/appointment/appointment-saved";
 
 export default class FrappeWebhook {
   static register(webhook) {
@@ -16,5 +17,6 @@ export default class FrappeWebhook {
     frappeWebhookNamespace.post("/erp/payment-entries", FrappeERPPaymentEntryController.create);
     frappeWebhookNamespace.post("/erp/customers", FrappeERPCustomerController.create);
     frappeWebhookNamespace.post("/erp/sales-order-items", FrappeERPSalesOrderItemController.create);
+    frappeWebhookNamespace.post("/erp/appointments", FrappeERPAppointmentController.create);
   }
 }
