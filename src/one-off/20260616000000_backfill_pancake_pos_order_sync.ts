@@ -3,6 +3,7 @@ import Database from "services/database";
 import PancakePOSSyncService from "services/pancake/pos/pancake-pos-sync-service";
 import { HaravanOrderPayload } from "services/haravan/webhook-order";
 import { HARAVAN_TOPIC } from "services/ecommerce/enum";
+import * as Sentry from "@sentry/cloudflare";
 
 const BATCH_SIZE = 300;
 const CONCURRENCY_LIMIT = 10;
@@ -15,10 +16,6 @@ export default async function backfillPancakePosOrderSync(env: any): Promise<voi
   const limit = pLimit(CONCURRENCY_LIMIT);
 
   let offset = 0;
-  let totalProcessed = 0;
-  let totalSuccess = 0;
-  let totalSkipped = 0;
-  let totalFailed = 0;
 
   while (true) {
     const orders = await db.order.findMany({
@@ -73,23 +70,16 @@ export default async function backfillPancakePosOrderSync(env: any): Promise<voi
     await Promise.all(
       orders.map((order) =>
         limit(async () => {
-          totalProcessed++;
-          const tag = `[BackfillPancakePOS] order=${order.id}`;
           try {
             const payload = mapOrderToPayload(order);
 
             if (!payload.customer?.phone) {
-              console.warn(`${tag} skip: no customer phone`);
-              totalSkipped++;
               return;
             }
 
             await service.processOrder(payload);
-            console.warn(`${tag} synced`);
-            totalSuccess++;
           } catch (e) {
-            totalFailed++;
-            console.warn(`${tag} failed`, e);
+            Sentry.captureException(e);
           } finally {
             await new Promise((resolve) => setTimeout(resolve, REQUEST_DELAY_MS));
           }
@@ -98,14 +88,7 @@ export default async function backfillPancakePosOrderSync(env: any): Promise<voi
     );
 
     offset += orders.length;
-    console.warn(
-      `[BackfillPancakePOS] progress: processed=${totalProcessed} success=${totalSuccess} skipped=${totalSkipped} failed=${totalFailed} offset=${offset}`
-    );
   }
-
-  console.warn(
-    `[BackfillPancakePOS] done: total=${totalProcessed} success=${totalSuccess} skipped=${totalSkipped} failed=${totalFailed}`
-  );
 }
 
 function mapOrderToPayload(order: any): HaravanOrderPayload {
