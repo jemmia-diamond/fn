@@ -208,5 +208,3 @@ To prevent data garbage, if a Lead sync attempt tries to update a phone number t
 - **Exception Handling**: All batch processes record failures (log failures) and gracefully skip them (but set `hasError = true` in JS to log the error). Frappe returns an array of `failed_docs`. *Do not break/throw the entire batch* if only one row fails; ensure errors are caught (try/catch) for each iteration.
 - **Database Indexing**: The `ecom.leads` table and the `tabLead.phone` column in Frappe must always be indexed, as they are queried extremely frequently in `getOrCreateLead`.
 
----
-*Created by Antigravity*
