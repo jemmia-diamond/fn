@@ -50,7 +50,10 @@ sequenceDiagram
 
 ### Key Behaviors
 - **Batch Processing**: Leads are fetched in chunks (default 50) based on `updated_at` checkpoints stored in Cloudflare KV (`pancake_lead_sync_last_time`).
-- **Frappe Validation**: On insertion, the ERPNext backend (`insert_lead`) checks if a Lead with this `conversation_id` or `phone` already exists. If found, it returns the existing document instead of duplicating.
+- **Frappe Validation**: On insertion/update, the ERPNext backend (`validate` & `insert_lead` hooks) runs several critical checks:
+  - **Deduplication**: Checks if a Lead with this `conversation_id` or `phone` already exists. It also checks for `email_id` uniqueness (unless `allow_lead_duplication_based_on_emails` is enabled in CRM Settings).
+  - **Email Rules**: Validates the email format and ensures the `email_id` is not exactly the same as the `lead_owner`'s email.
+  - **Name Formatting**: Automatically parses `first_name`, `middle_name`, and `last_name` from `lead_name`. If no name or company name is provided, it blocks the creation.
 - **Contact Creation**: A `Contact` document is automatically created (`create_contact`) and linked to the `Lead`, storing tracking data such as `pancake_conversation_id`, `pancake_page_id`, and `ad_ids`.
 - **Assignment**: The Lead owner (`lead_owner`) is assigned based on the `pancake_user_id`. If the user is not found (e.g., resigned employee), it defaults to `tech@jemmia.vn`.
 

@@ -59,7 +59,9 @@ The FN Middleware acts as the orchestrator for Sales Orders:
 **Path:** `erp/apps/erpnext/erpnext/selling/doctype/sales_order/sales_order.py`
 
 When the FN Middleware upserts a Sales Order, ERPNext takes over the core business logic:
-*   **Validation & State Machine**: Runs extensive validations on delivery dates, purchase orders, dropshipping, subcontracting BOMs, and reserved stock (`validate()` method).
+*   **Validation & State Machine**: Runs extensive validations (`validate()` method) on delivery dates, purchase orders, dropshipping, subcontracting BOMs, and reserved stock. It also explicitly validates:
+    *   **Serial Numbers**: Ensures items marked for serial number delivery have active BOMs and validates that the specific serial numbers are not duplicated across unrelated orders (`validate_serial_no_based_delivery`, `validate_serial_number`).
+    *   **Coupons & Promotions**: Validates Partner/sensitive coupons to ensure KYC (Customer Identity Image) is provided before allowing the order. Standard promotions are synced but not strictly rejected during this phase.
 *   **Payment Aggregation**: 
     *   `set_payment_entries()` and `set_group_payment_entries()` functions dynamically fetch linked `Payment Entry Reference`s.
     *   It calculates total allocated payments even across complex "Split Order" relationships or reference trees.

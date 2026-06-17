@@ -94,3 +94,38 @@ Retrieve detailed information for a specific diamond.
 
 **Path Parameters:**
 - `id` (number, required): The Variant ID of the diamond.
+
+---
+
+## 3. Wedding Rings API
+
+### 3.1. Get Wedding Ring List
+Retrieve a paginated, filtered list of wedding rings.
+
+**Endpoint:**
+`GET /ecommerce/products/wedding_rings`
+
+**Query Parameters:**
+- `from` (number): Pagination start index.
+- `limit` (number): Number of items per page.
+- `fineness` (string/array): Filter by material fineness.
+- `material_colors` (string/array): Filter by material colors.
+- `is_in_stock` (string "true"|"false"): Filter by stock availability.
+- `sort_by` (string): Field to sort by (default: "price").
+- `sort_order` (string): Sort direction, e.g., "asc" or "desc" (default: "asc").
+- `min_price` (number): Minimum price.
+- `max_price` (number): Maximum price.
+- `product_ids` (string/array): Fetch specific products by their IDs.
+- `ring_band_styles` (string/array): Filter by ring band styles.
+- `excluded_ring_band_styles` (string/array): Exclude specific ring band styles.
+
+---
+
+### 3.2. Get Wedding Ring Detail
+Retrieve detailed information for a specific wedding ring.
+
+**Endpoint:**
+`GET /ecommerce/products/wedding_rings/:id`
+
+**Path Parameters:**
+- `id` (number, required): The ID of the wedding ring.
