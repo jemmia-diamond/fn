@@ -69,6 +69,11 @@ export default class PancakePosClient {
     await client.put(`/shops/${shopId}/orders/${orderId}`, { status });
   }
 
+  async updateOrderInsertedAt(shopId: number, orderId: number, insertedAt: string): Promise<void> {
+    const client = await this.getClient();
+    await client.put(`/shops/${shopId}/orders/${orderId}`, { inserted_at: insertedAt });
+  }
+
   async getShops(): Promise<PancakePosShop[]> {
     const client = await this.getClient();
     const response = await client.get("/shops");
