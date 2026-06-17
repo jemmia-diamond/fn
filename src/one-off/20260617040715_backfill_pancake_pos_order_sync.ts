@@ -1,86 +1,65 @@
 import pLimit from "p-limit";
 import Database from "services/database";
-import PancakePOSSyncService from "services/pancake/pos/pancake-pos-sync-service";
-import { HaravanOrderPayload } from "services/haravan/webhook-order";
-import { HARAVAN_TOPIC } from "services/ecommerce/enum";
+import PancakePosClient from "services/pancake/pos/pancake-pos-client";
 import * as Sentry from "@sentry/cloudflare";
 
 const BATCH_SIZE = 300;
 const CONCURRENCY_LIMIT = 10;
 const REQUEST_DELAY_MS = 200;
 const SINCE_DATE = new Date("2026-01-01T00:00:00Z");
+const UNTIL_DATE = new Date("2026-06-17T23:59:59Z");
 
-export default async function backfillPancakePosOrderSync(env: any): Promise<void> {
+export default async function backfillPancakePosInsertedAt(env: any): Promise<void> {
   const db = Database.instance(env);
-  const service = new PancakePOSSyncService(env);
+  const client = new PancakePosClient(env.PANCAKE_POS_API_KEY);
   const limit = pLimit(CONCURRENCY_LIMIT);
 
   let offset = 0;
 
   while (true) {
-    const orders = await db.order.findMany({
+    const syncs = await db.pancakePOSOrderSync.findMany({
       take: BATCH_SIZE,
       skip: offset,
       where: {
-        created_at: { gte: SINCE_DATE }
+        created_at: { gte: SINCE_DATE, lte: UNTIL_DATE },
+        pancake_order_id: { not: null },
+        shop_id: { not: null }
       },
-      orderBy: { id: "asc" },
+      orderBy: { created_at: "asc" },
       select: {
-        id: true,
-        order_number: true,
-        name: true,
-        note: true,
-        cancelled_status: true,
-        financial_status: true,
-        confirmed_at: true,
-        total_price: true,
-        total_discounts: true,
-        total_line_items_price: true,
-        subtotal_price: true,
-        total_tax: true,
-        total_weight: true,
-        shipping_lines: true,
-        customer_phone: true,
-        customer_first_name: true,
-        customer_last_name: true,
-        customer_email: true,
-        created_at: true,
-        updated_at: true,
-        ref_order_id: true,
-        ref_order_number: true,
-        ref_order_date: true,
-        utm_source: true,
-        utm_medium: true,
-        utm_campaign: true,
-        utm_term: true,
-        utm_content: true,
-        tags: true,
-        currency: true,
-        email: true,
-        contact_email: true,
-        gateway: true,
-        source: true,
-        closed_status: true,
-        confirmed_status: true,
-        fulfillment_status: true
+        haravan_order_id: true,
+        pancake_order_id: true,
+        shop_id: true
       }
     });
 
-    if (!orders.length) break;
+    if (!syncs.length) break;
 
     await Promise.all(
-      orders.map((order) =>
+      syncs.map((sync) =>
         limit(async () => {
+          if (!sync.pancake_order_id || !sync.shop_id) {
+            return;
+          }
+
+          const order = await db.order.findFirst({
+            where: { id: Number(sync.haravan_order_id) },
+            select: { created_at: true }
+          });
+
+          if (!order?.created_at) {
+            return;
+          }
+
           try {
-            const payload = mapOrderToPayload(order);
-
-            if (!payload.customer?.phone) {
-              return;
-            }
-
-            await service.processOrder(payload);
+            await client.updateOrderInsertedAt(sync.shop_id, sync.pancake_order_id, order.created_at.toISOString());
           } catch (e) {
-            Sentry.captureException(e);
+            Sentry.captureException(e, {
+              tags: {
+                haravan_order_id: String(sync.haravan_order_id),
+                pancake_order_id: String(sync.pancake_order_id)
+              }
+            });
           } finally {
             await new Promise((resolve) => setTimeout(resolve, REQUEST_DELAY_MS));
           }
@@ -88,51 +67,6 @@ export default async function backfillPancakePosOrderSync(env: any): Promise<voi
       )
     );
 
-    offset += orders.length;
+    offset += syncs.length;
   }
-}
-
-function mapOrderToPayload(order: any): HaravanOrderPayload {
-  return {
-    id: order.id,
-    order_number: order.order_number,
-    name: order.name,
-    note: order.note,
-    cancelled_status: order.cancelled_status,
-    financial_status: order.financial_status ?? "pending",
-    confirmed_at: order.confirmed_at?.toISOString(),
-    total_price: order.total_price,
-    total_discounts: order.total_discounts,
-    total_line_items_price: order.total_line_items_price,
-    subtotal_price: order.subtotal_price,
-    total_tax: order.total_tax,
-    total_weight: order.total_weight,
-    shipping_lines: order.shipping_lines ?? [],
-    customer: {
-      phone: order.customer_phone,
-      first_name: order.customer_first_name,
-      last_name: order.customer_last_name,
-      email: order.customer_email
-    },
-    created_at: order.created_at?.toISOString(),
-    updated_at: order.updated_at?.toISOString(),
-    ref_order_id: order.ref_order_id,
-    ref_order_number: order.ref_order_number,
-    ref_order_date: order.ref_order_date?.toISOString(),
-    utm_source: order.utm_source,
-    utm_medium: order.utm_medium,
-    utm_campaign: order.utm_campaign,
-    utm_term: order.utm_term,
-    utm_content: order.utm_content,
-    tags: order.tags,
-    currency: order.currency,
-    email: order.email,
-    contact_email: order.contact_email,
-    gateway: order.gateway,
-    source: order.source,
-    closed_status: order.closed_status,
-    confirmed_status: order.confirmed_status,
-    fulfillment_status: order.fulfillment_status,
-    haravan_topic: HARAVAN_TOPIC.CREATED
-  };
 }
