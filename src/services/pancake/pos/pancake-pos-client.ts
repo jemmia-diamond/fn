@@ -27,6 +27,7 @@ export interface CreateOrderPayload {
   ad_id?: string;
   page_id?: string;
   items?: OrderItem[];
+  inserted_at?: string;
 }
 
 export interface PancakePosOrder {

@@ -11,6 +11,7 @@ import { normalizeToStandardFormat } from "services/utils/phone-utils";
 
 const POS_STATUS = {
   NEW: 0,
+  CONFIRMED: 1,
   CANCELED: 6
 } as const;
 
@@ -149,11 +150,12 @@ export default class PancakePOSSyncService {
       where: { haravan_order_id: BigInt(order.id) }
     });
     if (existing?.pancake_order_id) {
-      console.warn(`${tag} skip: already synced pancake_order_id=${existing.pancake_order_id}`);
+      console.warn(`${tag} already synced pancake_order_id=${existing.pancake_order_id}, updating instead`);
+      await this.syncOrderUpdate(order, shopId);
       return;
     }
 
-    const status = this.mapStatus(order.cancelled_status);
+    const status = this.mapStatus(order);
     const payload = this.buildCreatePayload({ order, lead, status });
 
     console.warn(`${tag} creating POS order conversationId=${lead.conversationId} adId=${lead.adIds[0]}`);
@@ -206,7 +208,8 @@ export default class PancakePOSSyncService {
       shipping_fee: shippingFee,
       ad_id: lead.adIds[0],
       page_id: lead.pageId,
-      items: [this.buildBaseProductItem(order)]
+      items: [this.buildBaseProductItem(order)],
+      inserted_at: order.created_at ?? undefined
     };
   }
 
@@ -234,7 +237,7 @@ export default class PancakePOSSyncService {
       return;
     }
 
-    const status = this.mapStatus(order.cancelled_status);
+    const status = this.mapStatus(order);
     if (sync.status === status) {
       console.warn(`${tag} skip: status unchanged (${status})`);
       return;
@@ -248,11 +251,9 @@ export default class PancakePOSSyncService {
     });
   }
 
-  private mapStatus(cancelledStatus: string | null): number {
-    const normalizedCancelledStatus = cancelledStatus?.toLowerCase() ?? null;
-
-    if (normalizedCancelledStatus === HARAVAN_CANCELLED_STATUS.CANCELLED) return POS_STATUS.CANCELED;
-
+  private mapStatus(order: HaravanOrderPayload): number {
+    if (order.cancelled_status?.toLowerCase() === HARAVAN_CANCELLED_STATUS.CANCELLED) return POS_STATUS.CANCELED;
+    if (order.confirmed_at) return POS_STATUS.CONFIRMED;
     return POS_STATUS.NEW;
   }
 }
