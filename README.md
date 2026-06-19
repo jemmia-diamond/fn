@@ -199,3 +199,17 @@ Push to Github to trigger the deployment process.
 - [Hono](https://hono.dev/) - Lightweight web framework
 - [Sentry](https://sentry.io/) - Error tracking
 
+## AI Agents / Skills
+
+This project includes AI agent skills in the `.agents/skills` directory to help with development and debugging.
+
+### Sentry Investigator
+
+To use the `sentry-investigator` skill for automated error debugging, your AI agent needs a Sentry authentication token.
+
+1. Go to the Sentry dashboard and navigate to **Settings > Account > API > Auth Tokens**.
+2. Click **Create New Token** and ensure it has `project:read`, `event:read`, and `issue:read` permissions.
+3. Export the token in your terminal environment before running your AI agent:
+   ```bash
+   export SENTRY_AUTH_TOKEN="your_token_here"
+   ```
