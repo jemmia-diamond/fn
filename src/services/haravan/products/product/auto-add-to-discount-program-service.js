@@ -81,7 +81,7 @@ export default class AutoAddToDiscountProgramService {
         const existing = await nocodb.listRecords(diamondHaravanCollectionsTableId, {
           where: `(diamond_id,eq,${diamond.id})~and(haravan_collection_id,eq,${DIAMOND_COLLECTION_ID})`,
           limit: 1,
-          fields: "id"
+          fields: "diamond_id"
         });
 
         if (existing.list?.length === 0) {
@@ -144,7 +144,7 @@ export default class AutoAddToDiscountProgramService {
       const existing = await nocodb.listRecords(jewelryHaravanCollectionsTableId, {
         where: `(products_id,eq,${product.id})~and(haravan_collections_id,eq,${JEWELRY_COLLECTION_ID})`,
         limit: 1,
-        fields: "id"
+        fields: "products_id"
       });
 
       if (existing.list?.length === 0) {
