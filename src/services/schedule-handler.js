@@ -30,6 +30,7 @@ export default {
       await new Pancake.TagSyncService(env).syncTags();
       await new Ecommerce.ProductG1PromotionSyncService(env).syncPromotions();
       await new Haravan.Collect.CollectionProductSyncService(env).syncCollectionProducts();
+      await new Ecommerce.ProductVariantPromotionSyncService(env).syncVariantPromotions();
       break;
     case "*/5 * * * *": // At every 5th minute
       await new OneOffHandler(env).run();
