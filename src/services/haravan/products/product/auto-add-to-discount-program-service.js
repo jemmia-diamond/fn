@@ -1,6 +1,8 @@
 import NocoDBClient from "services/clients/nocodb-client";
+import DiamondCollectService from "services/ecommerce/diamond/diamond-collect-service";
+import DiamondDiscountService from "services/ecommerce/diamond/diamond-discount-service";
 import { HARAVAN_TOPIC } from "services/ecommerce/enum";
-import { SKU_LENGTH, HRV_PRODUCT_TYPE } from "services/haravan/products/product-variant/constant";
+import { HRV_PRODUCT_TYPE, SKU_LENGTH } from "services/haravan/products/product-variant/constant";
 import { NOCODB_TABLES } from "src/constants/nocodb-tables";
 
 const EXCLUDED_COLLECTION_TITLES = [
@@ -65,7 +67,7 @@ export default class AutoAddToDiscountProgramService {
 
     const diamondsQuery = await nocodb.listRecords(NOCODB_TABLES.MARKETING.DIAMONDS, {
       where: `(product_id,eq,${haravanProductId})`,
-      fields: "id"
+      fields: "id,edge_size_2"
     });
     const diamonds = diamondsQuery.list || [];
 
@@ -73,30 +75,29 @@ export default class AutoAddToDiscountProgramService {
       return;
     }
 
-    const DIAMOND_COLLECTION_ID = this.env.DEFAULT_HARAVAN_DIAMOND_DISCOUNT_COLLECTION_ID;
-    const diamondHaravanCollectionsTableId = NOCODB_TABLES.MARKETING.DIAMOND_HARAVAN_COLLECTIONS;
+    const activeRules = await DiamondDiscountService.getActiveRules(this.env);
+
+    const dcs = new DiamondCollectService(this.env);
+    const collections = await dcs._fetchCollections(nocodb, activeRules);
+    const dcsContext = dcs._buildRuleCollectionsMap(collections);
+    const { ruleCollections } = dcsContext;
 
     for (const diamond of diamonds) {
-      try {
-        const existing = await nocodb.listRecords(diamondHaravanCollectionsTableId, {
-          where: `(diamond_id,eq,${diamond.id})~and(haravan_collection_id,eq,${DIAMOND_COLLECTION_ID})`,
-          limit: 1,
-          fields: "diamond_id"
-        });
+      const discountPercent = DiamondDiscountService.calculateDiscountPercent({
+        diamondSize: parseFloat(diamond.edge_size_2 || 0),
+        rules: activeRules
+      });
 
-        if (existing.list?.length === 0) {
-          await nocodb.createRecords(diamondHaravanCollectionsTableId, {
-            diamonds: { id: diamond.id },
-            haravan_collections: { id: DIAMOND_COLLECTION_ID }
-          });
-        }
-      } catch (error) {
-        const errorData = error.response?.data;
-        if (errorData?.code === "23505" || errorData?.message === "This record already exists.") {
-          continue;
-        }
-        throw error;
-      }
+      const DIAMOND_COLLECTION_ID = ruleCollections[discountPercent]?.nocodbId;
+      const defaultCollectionId = this.env.DEFAULT_HARAVAN_DIAMOND_DISCOUNT_COLLECTION_ID;
+
+      await DiamondDiscountService.syncNocoDBDiscountCollections({
+        diamond,
+        targetCollectionId: DIAMOND_COLLECTION_ID || defaultCollectionId,
+        allPercentCollectionIds: dcsContext.allPercentCollectionIds,
+        defaultCollectionId: defaultCollectionId,
+        nocodb
+      });
     }
   }
 
