@@ -4,6 +4,8 @@ import { NOCODB_TABLES } from "src/constants/nocodb-tables";
 import * as Sentry from "@sentry/cloudflare";
 import { sleep } from "services/utils/sleep";
 
+const JEWELRY_PROMOTION_COLLECTION_ID = "1004602299";
+
 export default class ProductVariantPromotionSyncService {
   constructor(env) {
     this.env = env;
@@ -317,7 +319,6 @@ export default class ProductVariantPromotionSyncService {
    * Remove affected jewelry products from the specific Haravan collection (ID 1004602299).
    */
   async #cleanupJewelryHaravanCollects(haravanClient, affectedJewelryHaravanProductIds) {
-    const TARGET_COLLECTION_ID = "1004602299";
 
     for (const hProductId of affectedJewelryHaravanProductIds) {
       try {
@@ -325,7 +326,7 @@ export default class ProductVariantPromotionSyncService {
         const collects = collectsResponse?.collects || [];
 
         for (const collect of collects) {
-          if (String(collect.collection_id) === TARGET_COLLECTION_ID) {
+          if (String(collect.collection_id) === JEWELRY_PROMOTION_COLLECTION_ID) {
             await haravanClient.collect.deleteCollect(collect.id);
             await sleep(200);
           }
