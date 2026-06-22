@@ -145,6 +145,7 @@ export default class SepayTransactionService {
           where: { id: qrRecord.id },
           data: { transfer_status: "success" }
         });
+        const paymentEntry = await this.frappeClient.getDoc("Payment Entry", paymentEntryName);
 
         // Assume we allocate the full unallocated amount or deposit if unallocated is not set/zero but it should be valid
         const amountToAllocate = bankTransaction.unallocated_amount > 0 ? bankTransaction.unallocated_amount : bankTransaction.deposit;
@@ -158,6 +159,7 @@ export default class SepayTransactionService {
         await this.frappeClient.update({
           doctype: "Bank Transaction",
           name: bankTransactionName,
+          bank_account: paymentEntry.bank_account,
           payment_entries: paymentEntries
         });
       }
@@ -219,7 +221,7 @@ export default class SepayTransactionService {
           "Bank",
           { filters: [["bank_name", "=", sepayTransaction.bank_brand_name]] }
         );
-        const bankAccount = bank && bank[0] && sepayTransaction.account_number && await this.frappeClient.getList(
+        const bankAccountList = bank && bank[0] && sepayTransaction.account_number && await this.frappeClient.getList(
           "Bank Account",
           {
             filters: [
@@ -228,6 +230,8 @@ export default class SepayTransactionService {
             ]
           }
         );
+        const bankAccountName = bankAccountList?.length === 1 ? bankAccountList[0].name : null;
+
         const upsertedBankTransaction = await this.frappeClient.upsert(
           {
             doctype: "Bank Transaction",
@@ -250,7 +254,7 @@ export default class SepayTransactionService {
             deposit: sepayTransaction.amount_in,
             reference_number: sepayTransaction.reference_number,
             date: dayjs(rawSepayTransaction.transactionDate, "YYYY-MM-DD HH:mm:ss").format("YYYY-MM-DD"),
-            bank_account: bankAccount && bankAccount[0] ? bankAccount[0].name : null
+            bank_account: bankAccountName
           },
           "name"
         );
