@@ -201,11 +201,13 @@ export default class CustomerService {
         if (isDuplicate) {
           const searchPhone = rawPhone.replace(/^\+/, "");
           const hrvCustomers = await haravanClient.customer.getCustomers(searchPhone);
+          await contactService.processHaravanContact(hrvCustomers.customers[0], null,
+            { phone: rawPhone, is_new: true }
+          );
           const customer = await this.frappeClient.getDoc(this.doctype, customerData.name);
 
           if (customer && hrvCustomers?.customers?.[0]) {
             customer.haravan_id = String(hrvCustomers.customers[0].id);
-            customer.customer_primary_contact = hrvCustomers.customers[0].phone;
             await this.frappeClient.update(customer);
           }
           return;
