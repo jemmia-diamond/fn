@@ -17,7 +17,7 @@ import CustomCollectConnector from "services/clients/haravan-client/collect-cust
 import UserConnector from "services/clients/haravan-client/user";
 import ArticleConnector from "services/clients/haravan-client/article";
 import ThemeConnector from "services/clients/haravan-client/theme";
-import PromotionConnector from "services/clients/haravan-client/promotion";
+import PromotionConnector from "services/clients/haravan-client/promotion-connector";
 
 class HaravanAPI {
   constructor(accessToken) {
