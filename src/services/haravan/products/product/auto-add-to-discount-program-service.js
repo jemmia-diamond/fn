@@ -1,9 +1,9 @@
 import NocoDBClient from "services/clients/nocodb-client";
-import { HARAVAN_TOPIC } from "services/ecommerce/enum";
-import { SKU_LENGTH, HRV_PRODUCT_TYPE } from "services/haravan/products/product-variant/constant";
-import { NOCODB_TABLES } from "src/constants/nocodb-tables";
-import DiamondDiscountService from "services/ecommerce/diamond/diamond-discount-service";
 import DiamondCollectService from "services/ecommerce/diamond/diamond-collect-service";
+import DiamondDiscountService from "services/ecommerce/diamond/diamond-discount-service";
+import { HARAVAN_TOPIC } from "services/ecommerce/enum";
+import { HRV_PRODUCT_TYPE, SKU_LENGTH } from "services/haravan/products/product-variant/constant";
+import { NOCODB_TABLES } from "src/constants/nocodb-tables";
 
 const EXCLUDED_COLLECTION_TITLES = [
   "Lotus Essence",
