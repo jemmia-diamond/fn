@@ -623,7 +623,21 @@ export default class SalesOrderService {
   }
 
   async composeUpdateOrderContent(oldSalesOrderData, salesOrderData, promotionData) {
-    return composeOrderUpdateMessage(oldSalesOrderData, salesOrderData, promotionData);
+    const { content, diffAttachments } = composeOrderUpdateMessage(oldSalesOrderData, salesOrderData, promotionData);
+    if (content) {
+      const kv = this.env.FN_KV;
+      const lastSentKey = `lark_last_sent_hash:${salesOrderData.name}`;
+
+      const currentHash = await this.sha256(content);
+      const lastSentHash = await kv.get(lastSentKey);
+      if (lastSentHash === currentHash) {
+        // If text content is same with last sent message
+        return { content: "", diffAttachments };
+      }
+      // Save latest hash to KV, expire after 5 minutes
+      await kv.put(lastSentKey, currentHash, { expirationTtl: 300 });
+    }
+    return { content, diffAttachments };
   }
 
   async _getLarkUserIdByEmail(email) {
@@ -853,4 +867,10 @@ export default class SalesOrderService {
     };
   }
 
+  async sha256(message) {
+    const msgBuffer = new TextEncoder().encode(message);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", msgBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+  }
 }
