@@ -73,10 +73,42 @@ export default class AutoAddToDiscountProgramService {
       return;
     }
 
-    const DIAMOND_COLLECTION_ID = this.env.DEFAULT_HARAVAN_DIAMOND_DISCOUNT_COLLECTION_ID;
+    let DIAMOND_COLLECTION_ID = this.env.DEFAULT_HARAVAN_DIAMOND_DISCOUNT_COLLECTION_ID;
+
+    const { matchedCollectionId, allDiscountCollectionIds } = await DiamondDiscountService.getCollectionIdFromRules(haravanProductId, "Kim Cương Viên", this.env);
+    if (matchedCollectionId) {
+      DIAMOND_COLLECTION_ID = matchedCollectionId;
+    }
+
     const diamondHaravanCollectionsTableId = NOCODB_TABLES.MARKETING.DIAMOND_HARAVAN_COLLECTIONS;
 
     for (const diamond of diamonds) {
+      if (matchedCollectionId) {
+        try {
+          const currentLinksRes = await nocodb.listRecords(diamondHaravanCollectionsTableId, {
+            where: `(diamond_id,eq,${diamond.id})`,
+            limit: 100,
+            fields: "diamond_id,haravan_collection_id"
+          });
+
+          const currentLinks = currentLinksRes.list || [];
+          const linksToDelete = [];
+
+          for (const link of currentLinks) {
+            const linkedColId = link.haravan_collection_id?.toString();
+            if (linkedColId && allDiscountCollectionIds.has(linkedColId) && linkedColId !== DIAMOND_COLLECTION_ID?.toString()) {
+              linksToDelete.push({ diamond_id: diamond.id, haravan_collection_id: link.haravan_collection_id });
+            }
+          }
+
+          if (linksToDelete.length > 0) {
+            await nocodb.deleteRecords(diamondHaravanCollectionsTableId, linksToDelete);
+          }
+        } catch (err) {
+          console.warn("Failed to cleanup old diamond discount collections:", err);
+        }
+      }
+
       try {
         const existing = await nocodb.listRecords(diamondHaravanCollectionsTableId, {
           where: `(diamond_id,eq,${diamond.id})~and(haravan_collection_id,eq,${DIAMOND_COLLECTION_ID})`,
@@ -137,8 +169,40 @@ export default class AutoAddToDiscountProgramService {
       }
     }
 
-    const JEWELRY_COLLECTION_ID = this.env.DEFAULT_HARAVAN_JEWELRY_DISCOUNT_COLLECTION_ID;
+    let JEWELRY_COLLECTION_ID = this.env.DEFAULT_HARAVAN_JEWELRY_DISCOUNT_COLLECTION_ID;
+
+    const { matchedCollectionId, allDiscountCollectionIds } = await DiamondDiscountService.getCollectionIdFromRules(haravanProductId, "Vỏ Trang Sức", this.env);
+    if (matchedCollectionId) {
+      JEWELRY_COLLECTION_ID = matchedCollectionId;
+    }
+
     const jewelryHaravanCollectionsTableId = NOCODB_TABLES.MARKETING.JEWELRY_HARAVAN_COLLECTIONS;
+
+    if (matchedCollectionId) {
+      try {
+        const currentLinksRes = await nocodb.listRecords(jewelryHaravanCollectionsTableId, {
+          where: `(products_id,eq,${product.id})`,
+          limit: 100,
+          fields: "products_id,haravan_collections_id"
+        });
+
+        const currentLinks = currentLinksRes.list || [];
+        const linksToDelete = [];
+
+        for (const link of currentLinks) {
+          const linkedColId = link.haravan_collections_id?.toString();
+          if (linkedColId && allDiscountCollectionIds.has(linkedColId) && linkedColId !== JEWELRY_COLLECTION_ID?.toString()) {
+            linksToDelete.push({ products_id: product.id, haravan_collections_id: link.haravan_collections_id });
+          }
+        }
+
+        if (linksToDelete.length > 0) {
+          await nocodb.deleteRecords(jewelryHaravanCollectionsTableId, linksToDelete);
+        }
+      } catch (err) {
+        console.warn("Failed to cleanup old jewelry discount collections:", err);
+      }
+    }
 
     try {
       const existing = await nocodb.listRecords(jewelryHaravanCollectionsTableId, {

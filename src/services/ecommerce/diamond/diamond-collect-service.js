@@ -264,16 +264,33 @@ export default class DiamondCollectService {
     try {
       const { activeRules, ruleCollections, nocoClient, haravanApi } = context;
 
-      const discountPercent = DiamondDiscountService.calculateDiscountPercent({
-        diamondSize: parseFloat(diamond.edge_size_2 || 0),
-        rules: activeRules
-      });
+      const { matchedCollectionId } = await DiamondDiscountService.getCollectionIdFromRules(diamond.product_id, "Kim Cương Viên", this.env);
 
-      const rules = ruleCollections[discountPercent] || {};
-      const targetNocodbCollectionId = rules.nocodbId || null;
+      let targetNocodbCollectionId = matchedCollectionId;
+      let targetHaravanCollectionId = null;
+      let isSqlOverride = false;
 
-      await this._syncNocoDBCollections(diamond, targetNocodbCollectionId, context, existingEntries);
-      await this._syncHaravanCollections(diamond, targetNocodbCollectionId, rules.haravanId, nocoClient, haravanApi, existingEntries);
+      if (matchedCollectionId) {
+        isSqlOverride = true;
+        for (const [_percent, rules] of Object.entries(ruleCollections)) {
+          if (rules.nocodbId?.toString() === matchedCollectionId?.toString()) {
+            targetHaravanCollectionId = rules.haravanId;
+            break;
+          }
+        }
+      } else {
+        const discountPercent = DiamondDiscountService.calculateDiscountPercent({
+          diamondSize: parseFloat(diamond.edge_size_2 || 0),
+          rules: activeRules
+        });
+
+        const rules = ruleCollections[discountPercent] || {};
+        targetNocodbCollectionId = rules.nocodbId || null;
+        targetHaravanCollectionId = rules.haravanId || null;
+      }
+
+      await this._syncNocoDBCollections(diamond, targetNocodbCollectionId, isSqlOverride, context, existingEntries);
+      await this._syncHaravanCollections(diamond, targetNocodbCollectionId, targetHaravanCollectionId, nocoClient, haravanApi, existingEntries);
 
     } catch (error) {
       if (this._isIgnorableError(error)) {
@@ -284,7 +301,7 @@ export default class DiamondCollectService {
     }
   }
 
-  async _syncNocoDBCollections(diamond, targetCollectionId, context, existingEntries) {
+  async _syncNocoDBCollections(diamond, targetCollectionId, isSqlOverride, context, existingEntries) {
     const { ruleCollections, nocoClient, allPercentCollectionIds } = context;
     const existingList = existingEntries || [];
     const defaultDiscountCollectionId = ruleCollections[DiamondCollectService.DEFAULT_DISCOUNT_PERCENT]?.nocodbId;
@@ -293,8 +310,8 @@ export default class DiamondCollectService {
       if (!allPercentCollectionIds.has(entry.haravan_collection_id)) {
         continue;
       }
-      const isTargetCollection = entry.haravan_collection_id === targetCollectionId;
-      const isDefaultCollection = entry.haravan_collection_id === defaultDiscountCollectionId;
+      const isTargetCollection = entry.haravan_collection_id?.toString() === targetCollectionId?.toString();
+      const isDefaultCollection = !isSqlOverride && entry.haravan_collection_id?.toString() === defaultDiscountCollectionId?.toString();
 
       if (!isTargetCollection && !isDefaultCollection) {
         console.warn("Removing discount collection for diamond:", diamond.id, entry.haravan_collection_id);
