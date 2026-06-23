@@ -34,7 +34,7 @@ export default class ProductVariantPromotionSyncService {
   /**
    * Paginate through all records in a NocoDB table, returning a flat array.
    */
-  private async fetchAllRecords(nocodb: any, table: string, params: Record<string, any> = {}, pageSize = 100): Promise<any[]> {
+  private async fetchAllRecords(nocodb: NocoDBClient, table: string, params: Record<string, any> = {}, pageSize = 100): Promise<any[]> {
     const results: any[] = [];
     let offset = 0;
 
@@ -54,7 +54,7 @@ export default class ProductVariantPromotionSyncService {
    * Fetch the first valid custom target from variant_serials_diamonds,
    * resolving diamond → serial → variant chain.
    */
-  private async fetchCustomTargets(nocodb: any): Promise<CustomTarget[]> {
+  private async fetchCustomTargets(nocodb: NocoDBClient): Promise<CustomTarget[]> {
     const allVsd = await this.fetchAllRecords(
       nocodb,
       NOCODB_TABLES.SUPPLY.VARIANT_SERIALS_DIAMONDS,
@@ -104,7 +104,7 @@ export default class ProductVariantPromotionSyncService {
     return targets;
   }
 
-  private async fetchBatchRecords(nocodb: any, table: string, ids: any[], fields: string): Promise<any[]> {
+  private async fetchBatchRecords(nocodb: NocoDBClient, table: string, ids: any[], fields: string): Promise<any[]> {
     if (!ids.length) return [];
     const res = await nocodb.listRecords(table, {
       where: `(id,in,${ids.join(",")})`,
@@ -162,7 +162,7 @@ export default class ProductVariantPromotionSyncService {
    * Query collection links and resolve discount values per jewelry product.
    * Returns { originalDiscounts, jewelryProductPromoCollectionHaravanIds }
    */
-  private async fetchOriginalDiscounts(nocodb: any, affectedProductIdsArray: number[]) {
+  private async fetchOriginalDiscounts(nocodb: NocoDBClient, affectedProductIdsArray: number[]) {
     const originalDiscounts = new Map<number, number>();
     const jewelryProductPromoCollectionHaravanIds = new Map<number, Set<string>>();
 
@@ -202,7 +202,7 @@ export default class ProductVariantPromotionSyncService {
    * collection-based original discount.
    */
   private async buildDiscountGroups(
-    nocodb: any,
+    nocodb: NocoDBClient,
     affectedProductIdsArray: number[],
     targetVariants: { product_id: number; variant_id: number }[],
     targetVariantIds: Set<number>,
@@ -304,7 +304,7 @@ export default class ProductVariantPromotionSyncService {
    * Remove affected jewelry products from collection-based promotions in DB
    * and mark g1_promotion as 'None' to prevent re-sync.
    */
-  private async cleanupJewelryCollectionLinks(nocodb: any, affectedJewelryProductWorkplaceIds: Set<number>) {
+  private async cleanupJewelryCollectionLinks(nocodb: NocoDBClient, affectedJewelryProductWorkplaceIds: Set<number>) {
     if (!affectedJewelryProductWorkplaceIds.size) return;
 
     const idsArray = Array.from(affectedJewelryProductWorkplaceIds);
