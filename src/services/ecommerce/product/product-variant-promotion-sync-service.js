@@ -8,11 +8,13 @@ export default class ProductVariantPromotionSyncService {
   static CONFIG = {
     API_REQUEST_DELAY: 200,
     JEWELRY_PROMOTION_COLLECTION_ID: "1004602299",
-    PROMOTION_NAME_PREFIX: "CTKM Biến Thể"
+    PROMOTION_NAME_PREFIX: "CTKM Biến Thể",
+    DEFAULT_TARGET_COMBO_DISCOUNT: 12
   };
 
   constructor(env) {
     this.env = env;
+    this.targetDiscount = Number(this.env.TARGET_COMBO_DISCOUNT || ProductVariantPromotionSyncService.CONFIG.DEFAULT_TARGET_COMBO_DISCOUNT);
   }
 
   /**
@@ -102,8 +104,8 @@ export default class ProductVariantPromotionSyncService {
    * Extract structured sets/maps from raw custom targets for downstream use.
    */
   #extractTargetMetadata(customTargets) {
-    const target12PercentVariants = [];
-    const target12PercentVariantIds = new Set();
+    const targetVariants = [];
+    const targetVariantIds = new Set();
     const affectedJewelryProductWorkplaceIds = new Set();
     const affectedJewelryHaravanProductIds = new Set();
     const affectedDiamonds = [];
@@ -115,11 +117,11 @@ export default class ProductVariantPromotionSyncService {
       const dVariantId = Number(target.diamond_haravan_variant_id);
       const dProductId = Number(target.diamond_haravan_product_id);
 
-      target12PercentVariants.push({ product_id: jProductId, variant_id: jVariantId });
-      target12PercentVariants.push({ product_id: dProductId, variant_id: dVariantId });
+      targetVariants.push({ product_id: jProductId, variant_id: jVariantId });
+      targetVariants.push({ product_id: dProductId, variant_id: dVariantId });
 
-      target12PercentVariantIds.add(jVariantId);
-      target12PercentVariantIds.add(dVariantId);
+      targetVariantIds.add(jVariantId);
+      targetVariantIds.add(dVariantId);
 
       affectedJewelryProductWorkplaceIds.add(Number(target.jewelry_product_workplace_id));
       affectedJewelryHaravanProductIds.add(jProductId);
@@ -133,8 +135,8 @@ export default class ProductVariantPromotionSyncService {
     }
 
     return {
-      target12PercentVariants,
-      target12PercentVariantIds,
+      targetVariants,
+      targetVariantIds,
       affectedJewelryProductWorkplaceIds,
       affectedJewelryHaravanProductIds,
       affectedDiamonds,
@@ -185,7 +187,7 @@ export default class ProductVariantPromotionSyncService {
    * Build discount groups: { [percentage]: [{ product_id, variant_id }] }
    * collection-based original discount.
    */
-  async #buildDiscountGroups(nocodb, affectedProductIdsArray, target12PercentVariants, target12PercentVariantIds, originalDiscounts) {
+  async #buildDiscountGroups(nocodb, affectedProductIdsArray, targetVariants, targetVariantIds, originalDiscounts) {
     const allJewelryVariantsRes = await nocodb.listRecords(NOCODB_TABLES.SUPPLY.VARIANTS, {
       where: `(product_id,in,${affectedProductIdsArray.join(",")})`,
       fields: "haravan_product_id,haravan_variant_id,product_id"
@@ -199,11 +201,11 @@ export default class ProductVariantPromotionSyncService {
         product_workplace_id: v.product_id
       }));
 
-    const discountGroups = { 12: target12PercentVariants };
+    const discountGroups = { [this.targetDiscount]: targetVariants };
 
     for (const variant of allJewelryVariants) {
       const vId = Number(variant.haravan_variant_id);
-      if (target12PercentVariantIds.has(vId)) continue;
+      if (targetVariantIds.has(vId)) continue;
 
       const pWorkplaceId = Number(variant.product_workplace_id);
       const originalDiscount = originalDiscounts.get(pWorkplaceId) || 0;
