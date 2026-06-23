@@ -104,6 +104,10 @@ export default class AutoAddToDiscountProgramService {
   async addToJewelryCollection(haravanProductId) {
     const nocodb = new NocoDBClient(this.env);
 
+    if (await this._isComboJewelryProduct(nocodb, haravanProductId)) {
+      return;
+    }
+
     const productsQuery = await nocodb.listRecords(NOCODB_TABLES.MARKETING.JEWELRIES, {
       where: `(haravan_product_id,eq,${haravanProductId})`,
       limit: 1,
@@ -161,5 +165,35 @@ export default class AutoAddToDiscountProgramService {
       }
       throw error;
     }
+  }
+
+  async _isComboJewelryProduct(nocodb, haravanProductId) {
+    const variantsRes = await nocodb.listRecords(NOCODB_TABLES.SUPPLY.VARIANTS, {
+      where: `(haravan_product_id,eq,${haravanProductId})`,
+      fields: "id"
+    });
+    const variantIds = variantsRes.list?.map(v => v.id) || [];
+
+    if (variantIds.length === 0) {
+      return false;
+    }
+
+    const serialsRes = await nocodb.listRecords(NOCODB_TABLES.SUPPLY.SERIALS, {
+      where: `(variant_id,in,${variantIds.join(",")})`,
+      fields: "id"
+    });
+    const serialIds = serialsRes.list?.map(s => s.id) || [];
+
+    if (serialIds.length === 0) {
+      return false;
+    }
+
+    const comboRes = await nocodb.listRecords(NOCODB_TABLES.SUPPLY.VARIANT_SERIALS_DIAMONDS, {
+      where: `(variant_serials_id,in,${serialIds.join(",")})`,
+      limit: 1,
+      fields: "variant_serials_id"
+    });
+
+    return !!(comboRes.list && comboRes.list.length > 0);
   }
 }
