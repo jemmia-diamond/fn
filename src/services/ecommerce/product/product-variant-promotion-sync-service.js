@@ -4,9 +4,13 @@ import { NOCODB_TABLES } from "src/constants/nocodb-tables";
 import * as Sentry from "@sentry/cloudflare";
 import { sleep } from "services/utils/sleep";
 
-const JEWELRY_PROMOTION_COLLECTION_ID = "1004602299";
-
 export default class ProductVariantPromotionSyncService {
+  static CONFIG = {
+    API_REQUEST_DELAY: 200,
+    JEWELRY_PROMOTION_COLLECTION_ID: "1004602299",
+    PROMOTION_NAME_PREFIX: "CTKM Biến Thể"
+  };
+
   constructor(env) {
     this.env = env;
   }
@@ -41,17 +45,34 @@ export default class ProductVariantPromotionSyncService {
       { sort: "variant_serials_id" }
     );
 
+    if (!allVsd.length) return [];
+
+    const diamondIds = [...new Set(allVsd.map(v => v.diamonds_id).filter(Boolean))];
+    const serialIds = [...new Set(allVsd.map(v => v.variant_serials_id).filter(Boolean))];
+
+    // Batch fetch Diamonds and Serials
+    const [diamondsRes, serialsRes] = await Promise.all([
+      this.#fetchBatchRecords(nocodb, NOCODB_TABLES.SUPPLY.DIAMONDS, diamondIds, "id,variant_id,product_id"),
+      this.#fetchBatchRecords(nocodb, NOCODB_TABLES.SUPPLY.SERIALS, serialIds, "id,variant_id")
+    ]);
+
+    const diamondMap = new Map(diamondsRes.map(d => [d.id, d]));
+    const serialMap = new Map(serialsRes.map(s => [s.id, s]));
+
+    const variantIds = [...new Set(serialsRes.map(s => s.variant_id).filter(Boolean))];
+    const variantsRes = await this.#fetchBatchRecords(nocodb, NOCODB_TABLES.SUPPLY.VARIANTS, variantIds, "id,haravan_variant_id,haravan_product_id,product_id");
+    const variantMap = new Map(variantsRes.map(v => [v.id, v]));
+
     const targets = [];
-
     for (const vsd of allVsd) {
-      const diamond = await this.#fetchDiamond(nocodb, vsd.diamonds_id);
-      if (!diamond) continue;
+      const diamond = diamondMap.get(vsd.diamonds_id);
+      if (!diamond || !diamond.variant_id || diamond.variant_id <= 0 || !diamond.product_id || diamond.product_id <= 0) continue;
 
-      const serial = await this.#fetchSerial(nocodb, vsd.variant_serials_id);
-      if (!serial) continue;
+      const serial = serialMap.get(vsd.variant_serials_id);
+      if (!serial || !serial.variant_id) continue;
 
-      const variant = await this.#fetchVariant(nocodb, serial.variant_id);
-      if (!variant) continue;
+      const variant = variantMap.get(serial.variant_id);
+      if (!variant || !variant.haravan_variant_id || variant.haravan_variant_id <= 0 || !variant.haravan_product_id || variant.haravan_product_id <= 0) continue;
 
       targets.push({
         diamonds_id: vsd.diamonds_id,
@@ -64,45 +85,17 @@ export default class ProductVariantPromotionSyncService {
         diamond_workplace_id: diamond.id
       });
     }
-
     return targets;
   }
 
-  async #fetchDiamond(nocodb, diamondsId) {
-    const res = await nocodb.listRecords(NOCODB_TABLES.SUPPLY.DIAMONDS, {
-      where: `(id,eq,${diamondsId})`,
-      limit: 1,
-      fields: "id,variant_id,product_id"
+  async #fetchBatchRecords(nocodb, table, ids, fields) {
+    if (!ids.length) return [];
+    const res = await nocodb.listRecords(table, {
+      where: `(id,in,${ids.join(",")})`,
+      limit: ids.length,
+      fields
     });
-    const diamond = res.list?.[0];
-    if (!diamond?.variant_id || diamond.variant_id <= 0 || !diamond.product_id || diamond.product_id <= 0) {
-      return null;
-    }
-    return diamond;
-  }
-
-  async #fetchSerial(nocodb, variantSerialsId) {
-    const res = await nocodb.listRecords(NOCODB_TABLES.SUPPLY.SERIALS, {
-      where: `(id,eq,${variantSerialsId})`,
-      limit: 1,
-      fields: "id,variant_id"
-    });
-    const serial = res.list?.[0];
-    return serial?.variant_id ? serial : null;
-  }
-
-  async #fetchVariant(nocodb, variantId) {
-    const res = await nocodb.listRecords(NOCODB_TABLES.SUPPLY.VARIANTS, {
-      where: `(id,eq,${variantId})`,
-      limit: 1,
-      fields: "id,haravan_variant_id,haravan_product_id,product_id"
-    });
-    const variant = res.list?.[0];
-    if (!variant?.haravan_variant_id || variant.haravan_variant_id <= 0 ||
-      !variant?.haravan_product_id || variant.haravan_product_id <= 0) {
-      return null;
-    }
-    return variant;
+    return res.list || [];
   }
 
   /**
@@ -190,7 +183,6 @@ export default class ProductVariantPromotionSyncService {
 
   /**
    * Build discount groups: { [percentage]: [{ product_id, variant_id }] }
-   * 12% group is seeded from customTargets; remaining variants use their
    * collection-based original discount.
    */
   async #buildDiscountGroups(nocodb, affectedProductIdsArray, target12PercentVariants, target12PercentVariantIds, originalDiscounts) {
@@ -236,16 +228,15 @@ export default class ProductVariantPromotionSyncService {
     const existingPromotions = promotionsResponse?.promotions || [];
 
     const percentagesToSync = Object.keys(discountGroups).map(Number);
-
     for (const pct of percentagesToSync) {
       const variantsList = discountGroups[pct] || [];
-      const promoName = `CTKM Biến Thể ${pct}%`;
+      const promoName = `${ProductVariantPromotionSyncService.CONFIG.PROMOTION_NAME_PREFIX} ${pct}%`;
       const existingPromoSummary = existingPromotions.find(p => p.name === promoName);
 
       if (variantsList.length === 0) {
         if (existingPromoSummary) {
           await haravanClient.promotion.deletePromotion(existingPromoSummary.id);
-          await sleep(500);
+          await sleep(ProductVariantPromotionSyncService.CONFIG.API_REQUEST_DELAY);
         }
         continue;
       }
@@ -253,14 +244,13 @@ export default class ProductVariantPromotionSyncService {
       const payload = {
         name: promoName,
         ends_at: null,
-        starts_at: new Date(Date.now() - 60000).toISOString(),
+        starts_at: new Date(Date.now()).toISOString(),
         value: pct,
         discount_type: "percentage",
         applies_to_quantity: 1,
         applies_to_resource: "product_variant",
         variants: variantsList
       };
-
       if (existingPromoSummary) {
         const existingVariantIds = new Set((existingPromoSummary.entitled_variant_ids || []).map(Number));
 
@@ -269,11 +259,11 @@ export default class ProductVariantPromotionSyncService {
         }
 
         await haravanClient.promotion.deletePromotion(existingPromoSummary.id);
-        await sleep(500);
+        await sleep(ProductVariantPromotionSyncService.CONFIG.API_REQUEST_DELAY);
       }
 
       await haravanClient.promotion.createPromotion(payload);
-      await sleep(500);
+      await sleep(ProductVariantPromotionSyncService.CONFIG.API_REQUEST_DELAY);
     }
   }
 
@@ -291,23 +281,24 @@ export default class ProductVariantPromotionSyncService {
    * and mark g1_promotion as 'None' to prevent re-sync.
    */
   async #cleanupJewelryCollectionLinks(nocodb, affectedJewelryProductWorkplaceIds) {
+    if (!affectedJewelryProductWorkplaceIds.size) return;
+
+    const idsArray = Array.from(affectedJewelryProductWorkplaceIds);
+
+    const linksToDeleteRes = await nocodb.listRecords(NOCODB_TABLES.MARKETING.JEWELRY_HARAVAN_COLLECTIONS, {
+      where: `(products_id,in,${idsArray.join(",")})`,
+      fields: "id"
+    });
+    const linksToDelete = linksToDeleteRes.list || [];
+    if (linksToDelete.length > 0) {
+      const deletePayload = linksToDelete.map(link => ({
+        products_id: link.products_id,
+        haravan_collections_id: link.haravan_collections_id
+      }));
+      await nocodb.deleteRecords(NOCODB_TABLES.MARKETING.JEWELRY_HARAVAN_COLLECTIONS, deletePayload);
+    }
+
     for (const pWorkplaceId of affectedJewelryProductWorkplaceIds) {
-
-      const linksToDeleteRes = await nocodb.listRecords(NOCODB_TABLES.MARKETING.JEWELRY_HARAVAN_COLLECTIONS, {
-        where: `(products_id,eq,${pWorkplaceId})`,
-        fields: "products_id,haravan_collections_id",
-        sort: "products_id"
-      });
-
-      const linksToDelete = linksToDeleteRes.list || [];
-      if (linksToDelete.length > 0) {
-        const deletePayload = linksToDelete.map(link => ({
-          products_id: link.products_id,
-          haravan_collections_id: link.haravan_collections_id
-        }));
-        await nocodb.deleteRecords(NOCODB_TABLES.MARKETING.JEWELRY_HARAVAN_COLLECTIONS, deletePayload);
-      }
-
       await nocodb.updateRecords(NOCODB_TABLES.MARKETING.JEWELRIES, {
         id: pWorkplaceId,
         g1_promotion: "None"
@@ -326,9 +317,9 @@ export default class ProductVariantPromotionSyncService {
         const collects = collectsResponse?.collects || [];
 
         for (const collect of collects) {
-          if (String(collect.collection_id) === JEWELRY_PROMOTION_COLLECTION_ID) {
+          if (String(collect.collection_id) === ProductVariantPromotionSyncService.CONFIG.JEWELRY_PROMOTION_COLLECTION_ID) {
             await haravanClient.collect.deleteCollect(collect.id);
-            await sleep(200);
+            await sleep(ProductVariantPromotionSyncService.CONFIG.API_REQUEST_DELAY);
           }
         }
       } catch (err) {
