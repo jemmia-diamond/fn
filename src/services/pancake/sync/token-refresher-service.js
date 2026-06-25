@@ -9,7 +9,7 @@ export default class PancakeTokenRefresherService {
 
   async run() {
     const tokenRefresh = await this.env.FN_KV.get("PANCAKE_TOKEN_REFRESH");
-    if (tokenRefresh == "0") {
+    if (tokenRefresh == "-1") {
       return;
     }
     try {
