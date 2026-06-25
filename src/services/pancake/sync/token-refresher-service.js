@@ -1,5 +1,5 @@
-import PancakeClient from "pancake/pancake-client";
 import * as Sentry from "@sentry/cloudflare";
+import PancakeClient from "pancake/pancake-client";
 
 export default class PancakeTokenRefresherService {
   constructor(env) {
@@ -8,6 +8,10 @@ export default class PancakeTokenRefresherService {
   }
 
   async run() {
+    const tokenRefresh = await this.env.FN_KV.get("PANCAKE_TOKEN_REFRESH");
+    if (tokenRefresh == "-1") {
+      return;
+    }
     try {
       console.warn("Starting Pancake Token Refresher...");
 
