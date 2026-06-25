@@ -1,21 +1,21 @@
-import Larksuite from "services/larksuite";
-import ERP from "services/erp";
-import Ecommerce from "services/ecommerce";
-import InventoryCMS from "services/inventory-cms";
-import DatabaseOperations from "services/db-operations";
-import Misa from "services/misa";
-import ProductQuote from "services/product_quote";
-import WorkshopOrderServices from "services/sync/lark-to-nocodb/workshop-orders";
-import Reporting from "services/reporting";
 import dayjs from "dayjs";
-import utc from "dayjs/plugin/utc.js";
 import timezone from "dayjs/plugin/timezone.js";
-import { TIMEZONE_VIETNAM, MISSING_SERIAL_START_DATE } from "src/constants";
+import utc from "dayjs/plugin/utc.js";
+import DatabaseOperations from "services/db-operations";
+import Ecommerce from "services/ecommerce";
+import ERP from "services/erp";
 import Google from "services/google";
-import Salesaya from "services/salesaya";
-import Pancake from "services/pancake";
 import Haravan from "services/haravan";
+import InventoryCMS from "services/inventory-cms";
+import Larksuite from "services/larksuite";
+import Misa from "services/misa";
 import OneOffHandler from "services/one-off-handler";
+import Pancake from "services/pancake";
+import ProductQuote from "services/product_quote";
+import Reporting from "services/reporting";
+import Salesaya from "services/salesaya";
+import WorkshopOrderServices from "services/sync/lark-to-nocodb/workshop-orders";
+import { MISSING_SERIAL_START_DATE, TIMEZONE_VIETNAM } from "src/constants";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -86,7 +86,7 @@ export default {
       await Salesaya.LarkChatSyncMediaService.syncMedia(env);
       await new Pancake.PageSyncService(env).syncPages();
       await new Haravan.Users.UserSyncService(env).sync().catch(() => {});
-      await new Pancake.TokenRefresherService(env).run();
+      // await new Pancake.TokenRefresherService(env).run();
       await new Ecommerce.DiamondCollectService(env).syncDiamondsToCollects(false);
       break;
     case "30 0 * * *": // 07:30
