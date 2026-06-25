@@ -1,5 +1,6 @@
 import * as Sentry from "@sentry/cloudflare";
 import PancakeClient from "pancake/pancake-client";
+import { DISABLE_FEATURE_FLAG } from "src/constants";
 
 export default class PancakeTokenRefresherService {
   constructor(env) {
@@ -8,8 +9,8 @@ export default class PancakeTokenRefresherService {
   }
 
   async run() {
-    const tokenRefresh = await this.env.FN_KV.get("PANCAKE_TOKEN_REFRESH");
-    if (tokenRefresh == "-1") {
+    const tokenRefresh = this.env.PANCAKE_TOKEN_REFRESH;
+    if (tokenRefresh == DISABLE_FEATURE_FLAG) {
       return;
     }
     try {
