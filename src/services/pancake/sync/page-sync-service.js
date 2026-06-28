@@ -21,7 +21,7 @@ export default class PageSyncService {
 
       const pageData = await this.pancakeClient.getPages();
       if (isInvalidTokenError(pageData)) {
-        throw new Error("Pancake API Error [102]: Invalid access_token during page query");
+        throw new Error(`Pancake API Error [${pageData.error_code}]: ${pageData.message || "Invalid access_token"} during page query`);
       }
 
       const categorized = pageData?.categorized;
@@ -60,7 +60,7 @@ export default class PageSyncService {
       const userListData = await this.pancakeClient.getPageUsers(pageId);
 
       if (isInvalidTokenError(userListData)) {
-        this.captureException(new Error(`Pancake API Error [102]: Invalid access_token for users in page ${pageId}`), pageId);
+        this.captureException(new Error(`Pancake API Error [${userListData.error_code}]: ${userListData.message || "Invalid access_token"} for users in page ${pageId}`), pageId);
         return;
       }
 

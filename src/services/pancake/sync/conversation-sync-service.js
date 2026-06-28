@@ -58,7 +58,7 @@ export default class ConversationSyncService {
       const pageData = await this.pancakeClient.getPages();
       if (isInvalidTokenError(pageData)) {
         throw new Error(
-          "Pancake API Error [102]: Invalid access_token during page query"
+          `Pancake API Error [${pageData.error_code}]: ${pageData.message || "Invalid access_token"} during page query`
         );
       }
 
@@ -98,7 +98,7 @@ export default class ConversationSyncService {
         if (isInvalidTokenError(data)) {
           this.captureException(
             new Error(
-              `Pancake API Error [102]: Invalid access_token for page ${pageId}`
+              `Pancake API Error [${data.error_code}]: ${data.message || "Invalid access_token"} for page ${pageId}`
             ),
             pageId
           );

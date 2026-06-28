@@ -29,7 +29,7 @@ export default class CustomerSyncService {
 
       const pageData = await this.pancakeClient.getPages();
       if (isInvalidTokenError(pageData)) {
-        throw new Error("Pancake API Error [102]: Invalid access_token during page query");
+        throw new Error(`Pancake API Error [${pageData.error_code}]: ${pageData.message || "Invalid access_token"} during page query`);
       }
 
       const pages = pageData?.categorized?.activated || [];
@@ -59,7 +59,7 @@ export default class CustomerSyncService {
         const data = await this.pancakeClient.getPageCustomers(pageId, sinceUnix, untilUnix, pageNumber, SYNC_PAGE_SIZE);
 
         if (isInvalidTokenError(data)) {
-          this.captureException(new Error(`Pancake API Error [102]: Invalid access_token for page ${pageId}`), pageId);
+          this.captureException(new Error(`Pancake API Error [${data.error_code}]: ${data.message || "Invalid access_token"} for page ${pageId}`), pageId);
           break;
         }
 

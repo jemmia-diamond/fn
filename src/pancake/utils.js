@@ -5,6 +5,6 @@
  * @returns {boolean} True if the error is 102 Invalid access_token, false otherwise
  */
 export function isInvalidTokenError(data) {
-  return data && data.success === false && data.error_code === 102;
+  return data && data.success === false && (data.error_code === 102 || data.error_code === 103);
 }
 
