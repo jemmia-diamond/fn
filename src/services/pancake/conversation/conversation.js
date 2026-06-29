@@ -3,7 +3,7 @@ import Database from "services/database";
 import LeadService from "services/erp/crm/lead/lead";
 import AIHUBClient from "services/clients/aihub";
 import { shouldReceiveWebhook } from "controllers/webhook/pancake/erp/utils";
-import axios from "axios";
+import { createAxiosClient } from "services/utils/http-client";
 import { getSalesayaScoringWebhookUrl } from "services/salesaya/constants/constant";
 
 export default class ConversationService {
@@ -188,8 +188,7 @@ export default class ConversationService {
   }
 
   async triggerSalesayaScoringHooks(body) {
-    const url = getSalesayaScoringWebhookUrl(this.env);
-    await axios.post(url, body);
+    await createAxiosClient({}).post(getSalesayaScoringWebhookUrl(this.env), body);
   }
 
   static async dequeueMessageSummaryQueue(batch, env) {
