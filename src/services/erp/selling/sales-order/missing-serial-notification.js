@@ -1,10 +1,10 @@
-import FrappeClient from "src/frappe/frappe-client";
-import Database from "src/services/database";
-import LarksuiteService from "services/larksuite/lark";
-import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/constant";
-import { isMissingJewelrySerial, isJewelryItem, isDiamondItem } from "services/erp/selling/sales-order/utils/sales-order-notification";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
+import { isDiamondItem, isJewelryItem, isMissingJewelrySerial } from "services/erp/selling/sales-order/utils/sales-order-notification";
+import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/constant";
+import LarksuiteService from "services/larksuite/lark";
+import FrappeClient from "src/frappe/frappe-client";
+import Database from "src/services/database";
 
 dayjs.extend(utc);
 export default class MissingSerialNotificationService {
@@ -24,7 +24,8 @@ export default class MissingSerialNotificationService {
     const filters = [
       ["cancelled_status", "=", "Uncancelled"],
       ["grand_total", ">", 1000],
-      ["source_name", "!=", "web"]
+      ["source_name", "!=", "web"],
+      ["primary_sales_person", "is", "set"]
     ];
 
     if (fromDate && toDate) {
@@ -32,16 +33,36 @@ export default class MissingSerialNotificationService {
       filters.push(["creation", "<=", dayjs(toDate).utc().format("YYYY-MM-DD HH:mm:ss")]);
     }
 
-    const salesOrders = await this.frappeClient.getList("Sales Order", {
-      filters,
-      fields: ["name", "order_number", "customer_name", "primary_sales_person"],
-      limit_page_length: 200
-    });
+    let allSalesOrders = [];
+    let limitStart = 0;
+    const limitPageLength = 200;
+    let hasMore = true;
 
-    if (!salesOrders || salesOrders.length === 0) return;
+    while (hasMore) {
+      const salesOrders = await this.frappeClient.getList("Sales Order", {
+        filters,
+        fields: ["name", "order_number", "customer_name", "primary_sales_person"],
+        limit_start: limitStart,
+        limit_page_length: limitPageLength,
+        order_by: "creation desc"
+      });
+
+      if (!salesOrders || salesOrders.length === 0) {
+        break;
+      }
+
+      allSalesOrders = allSalesOrders.concat(salesOrders);
+      limitStart += limitPageLength;
+
+      if (salesOrders.length < limitPageLength) {
+        hasMore = false;
+      }
+    }
+
+    if (allSalesOrders.length === 0) return;
 
     const ordersWithIssues = [];
-    for (const order of salesOrders) {
+    for (const order of allSalesOrders) {
       const fullOrder = await this.frappeClient.getDoc("Sales Order", order.name);
       const items = fullOrder.items || [];
 
