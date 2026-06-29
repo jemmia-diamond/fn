@@ -24,7 +24,7 @@ export default class MissingSerialNotificationService {
     const filters = [
       ["cancelled_status", "=", "Uncancelled"],
       ["grand_total", ">", 1000],
-      ["source_name", "!=", "web"]
+      ["source_name", "not in", ["web", "harafunnel", "staff", "bhsc-cua-hang-hn", "bhsc-cua-hang-hcm", "sendo"]]
     ];
 
     if (fromDate && toDate) {
