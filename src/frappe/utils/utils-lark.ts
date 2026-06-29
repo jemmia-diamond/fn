@@ -13,7 +13,7 @@ dayjs.extend(utc);
 const GENDER_MAP: Record<string, string> = {
   nam: "Male",
   nữ: "Female",
-  lgbt: "Other"
+  lgbt: "LGBT"
 };
 
 export async function getAllSalesPersons(
