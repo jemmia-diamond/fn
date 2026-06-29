@@ -4,7 +4,7 @@ import LeadService from "services/erp/crm/lead/lead";
 import AIHUBClient from "services/clients/aihub";
 import { shouldReceiveWebhook } from "controllers/webhook/pancake/erp/utils";
 import axios from "axios";
-import { getSalesayaScoringWebhookUrl } from "services/salesaya/constants/salesaya-constant";
+import { getSalesayaScoringWebhookUrl } from "services/salesaya/constants/constant";
 
 export default class ConversationService {
   constructor(env) {
