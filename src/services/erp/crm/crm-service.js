@@ -5,11 +5,11 @@ export default class CRMService {
     const body = batch.messages[0].body;
     const payload = body?.data || body;
     switch (payload?.doctype) {
-      case "Appointment":
-        await ERPNextCRMAppointmentService.syncAppointment(payload, env);
-        break;
-      default:
-        break;
+    case "Appointment":
+      await ERPNextCRMAppointmentService.syncAppointment(payload, env);
+      break;
+    default:
+      break;
     }
   }
 }

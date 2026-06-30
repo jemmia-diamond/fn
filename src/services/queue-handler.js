@@ -13,88 +13,88 @@ export default {
     console.log(`[CLOUDFLARE DEQUEUING]: ${JSON.stringify(batch)}`);
 
     switch (batch.queue) {
-      case "haravan-order-notification":
-        await Ecommerce.OrderNotificationService.orderNotificationDequeue(batch, env);
-        break;
-      case "order":
-        await Haravan.OrderModule.OrderService.dequeueUpsertOrder(batch, env);
-        break;
-      case "haravan-order-stock-control":
-        await Haravan.OrderModule.OrderService.dequeueStockNotification(batch, env);
-        break;
-      case "haravan-order-transaction-sync":
-        await Haravan.OrderModule.OrderService.dequeueTransactionSync(batch, env);
-        break;
-      case "haravan-order-product-quote-sync":
-        await ProductQuote.ProductQuoteOrderService.dequeueOrderQueue(batch, env);
-        break;
-      case "erpnext-order-creation":
-        await ERP.Selling.SalesOrderService.dequeueOrderQueue(batch, env);
-        break;
-      case "pancake-pos-sync":
-        await Pancake.PancakePOSSyncService.dequeueOrderQueue(batch, env);
-        break;
-      case "message":
-        await Pancake.ConversationService.dequeueMessageSyncCustomerToLeadCRM(batch, env);
-        break;
-      case "pancake-message-webhook-dispatch":
-        await Pancake.ConversationService.dequeueExtraHooksQueue(batch, env);
-        break;
-      case "message-summary":
-        await Pancake.ConversationService.dequeueMessageSummaryQueue(batch, env);
-        break;
-      case "pancake-message-last-interaction":
-        await Pancake.ConversationService.dequeueMessageLastCustomerQueue(batch, env);
-        break;
-      case "zalo-message":
-        await Ecommerce.SendZaloMessage.dequeueSendZaloDeliveryMessageQueue(batch, env);
-        await Ecommerce.SendZaloMessage.dequeueSendZaloConfirmMessageQueue(batch, env);
-        await Ecommerce.SendZaloMessage.dequeueSendZaloRemindPayMessageQueue(batch, env);
-        break;
-      case "erpnext-contacts":
-        await ERP.Contacts.ContactService.dequeueContactQueue(batch, env);
-        break;
-      case "erpnext-sales-order":
-        await ERP.Selling.SalesOrderService.dequeueSalesOrderNotificationQueue(batch, env);
-        break;
-      case "misa":
-        await new Misa.MisaWebhookHandler(env).dequeueCallbackPayloadQueue(batch);
-        break;
-      case "erpnext-payment-entry":
-        await ERP.Accounting.PaymentEntryService.dequeuePaymentEntryQueue(batch, env);
-        break;
-      case "erpnext-crm":
-        await ERP.CRM.CRMService.dequeueCRMQueue(batch, env);
-        break;
-      case "larksuite-appointment":
-        await Larksuite.AppointmentService.dequeueAppointmentQueue(batch, env);
-        break;
-      case "sepay-transaction":
-        await ERP.Accounting.SepayTransactionService.dequeueSaveToDb(batch, env);
-        await ERP.Accounting.SepayTransactionService.dequeueSepayTransactionQueue(batch, env);
-        break;
-      case "haravan-product":
-        await Promise.allSettled([
-          await Haravan.Product.ProductVariantService.dequeueProductQueue(batch, env),
-          await Haravan.Product.AutoAddToDiscountProgramService.dequeueProductQueue(batch, env)
-        ]);
-        break;
-      case "noco-collect":
-        await Haravan.Collect.CollectService.dequeueCollectQueue(batch, env);
-        break;
-      case "erpnext-selling":
-        const sellingMsg = batch.messages[0]?.body;
-        if (sellingMsg?.doctype === "SalesOrderItem" || sellingMsg?.erpTopic === "update-sales-order-item") {
-          await new ERP.Selling.SalesOrderItemService(env).dequeueSalesOrderItemQueue(batch);
-        } else {
-          await new ERP.Selling.CustomerService(env).dequeueCustomerQueue(batch);
-        }
-        break;
-      case "promotion-diamond-collect-sync":
-        await new Ecommerce.DiamondCollectService(env).syncDiamondsToCollects();
-        break;
-      default:
-        break;
+    case "haravan-order-notification":
+      await Ecommerce.OrderNotificationService.orderNotificationDequeue(batch, env);
+      break;
+    case "order":
+      await Haravan.OrderModule.OrderService.dequeueUpsertOrder(batch, env);
+      break;
+    case "haravan-order-stock-control":
+      await Haravan.OrderModule.OrderService.dequeueStockNotification(batch, env);
+      break;
+    case "haravan-order-transaction-sync":
+      await Haravan.OrderModule.OrderService.dequeueTransactionSync(batch, env);
+      break;
+    case "haravan-order-product-quote-sync":
+      await ProductQuote.ProductQuoteOrderService.dequeueOrderQueue(batch, env);
+      break;
+    case "erpnext-order-creation":
+      await ERP.Selling.SalesOrderService.dequeueOrderQueue(batch, env);
+      break;
+    case "pancake-pos-sync":
+      await Pancake.PancakePOSSyncService.dequeueOrderQueue(batch, env);
+      break;
+    case "message":
+      await Pancake.ConversationService.dequeueMessageSyncCustomerToLeadCRM(batch, env);
+      break;
+    case "pancake-message-webhook-dispatch":
+      await Pancake.ConversationService.dequeueExtraHooksQueue(batch, env);
+      break;
+    case "message-summary":
+      await Pancake.ConversationService.dequeueMessageSummaryQueue(batch, env);
+      break;
+    case "pancake-message-last-interaction":
+      await Pancake.ConversationService.dequeueMessageLastCustomerQueue(batch, env);
+      break;
+    case "zalo-message":
+      await Ecommerce.SendZaloMessage.dequeueSendZaloDeliveryMessageQueue(batch, env);
+      await Ecommerce.SendZaloMessage.dequeueSendZaloConfirmMessageQueue(batch, env);
+      await Ecommerce.SendZaloMessage.dequeueSendZaloRemindPayMessageQueue(batch, env);
+      break;
+    case "erpnext-contacts":
+      await ERP.Contacts.ContactService.dequeueContactQueue(batch, env);
+      break;
+    case "erpnext-sales-order":
+      await ERP.Selling.SalesOrderService.dequeueSalesOrderNotificationQueue(batch, env);
+      break;
+    case "misa":
+      await new Misa.MisaWebhookHandler(env).dequeueCallbackPayloadQueue(batch);
+      break;
+    case "erpnext-payment-entry":
+      await ERP.Accounting.PaymentEntryService.dequeuePaymentEntryQueue(batch, env);
+      break;
+    case "larksuite-appointment":
+      await Larksuite.AppointmentService.dequeueAppointmentQueue(batch, env);
+      break;
+    case "sepay-transaction":
+      await ERP.Accounting.SepayTransactionService.dequeueSaveToDb(batch, env);
+      await ERP.Accounting.SepayTransactionService.dequeueSepayTransactionQueue(batch, env);
+      break;
+    case "haravan-product":
+      await Promise.allSettled([
+        await Haravan.Product.ProductVariantService.dequeueProductQueue(batch, env),
+        await Haravan.Product.AutoAddToDiscountProgramService.dequeueProductQueue(batch, env)
+      ]);
+      break;
+    case "noco-collect":
+      await Haravan.Collect.CollectService.dequeueCollectQueue(batch, env);
+      break;
+    case "erpnext-selling":
+      const sellingMsg = batch.messages[0]?.body;
+      if (sellingMsg?.doctype === "SalesOrderItem" || sellingMsg?.erpTopic === "update-sales-order-item") {
+        await new ERP.Selling.SalesOrderItemService(env).dequeueSalesOrderItemQueue(batch);
+      } else {
+        await new ERP.Selling.CustomerService(env).dequeueCustomerQueue(batch);
+      }
+      break;
+    case "promotion-diamond-collect-sync":
+      await new Ecommerce.DiamondCollectService(env).syncDiamondsToCollects();
+      break;
+    case "erpnext-crm":
+      await ERP.CRM.CRMService.dequeueCRMQueue(batch, env);
+      break;
+    default:
+      break;
     }
   }
 };
