@@ -2,64 +2,18 @@ import RecordService from "services/larksuite/docs/base/record/record";
 import { APPOINTMENTS } from "services/larksuite/appointment/constant";
 import FrappeClient from "src/frappe/frappe-client";
 
-export interface IERPNextAppointment {
-  name: string;
-  owner: string;
-  modified_by: string;
-  record_id?: string | null;
-  gender?: string | null;
-  scheduled_time?: string | null;
-  store?: string | null;
-  customer_name?: string | null;
-  customer_phone_number?: string | null;
-  notes?: string | null;
-  conversation_greeting?: string | null;
-  customer_response?: string | null;
-  status?: string | null;
-  policy?: string | null;
-}
-
-export interface Env {
-  ERPNEXT_BOT_EMAIL?: string;
-  FN_KV: any; // Cloudflare KV Namespace
-  JEMMIA_ERP_BASE_URL: string;
-  JEMMIA_ERP_API_KEY: string;
-  JEMMIA_ERP_API_SECRET: string;
-}
-
 export default class ERPNextCRMAppointmentService {
 
-  static async syncAppointment(payload: IERPNextAppointment, env: Env): Promise<void> {
+  static async syncAppointment(payload, env) {
     try {
-
       const botEmail = env.ERPNEXT_BOT_EMAIL || "tech@jemmia.vn";
 
-      // 1. Block sync if the name lock exists (prevents duplicate calls for the same appointment ID)
-      const nameLockKey = `lock:appointment-synced:${payload.name}`;
-      if (env.FN_KV) {
-        const isSynced = await env.FN_KV.get(nameLockKey);
-        if (isSynced) {
-          return;
-        }
-      }
-
-      // KV expiration TTL must be at least 60 seconds
-      const lockKey = payload.record_id ? `lock:appointment:${payload.record_id}` : null;
-      if (lockKey && env.FN_KV) {
-        const isLocked = await env.FN_KV.get(lockKey);
-        if (isLocked) {
-          return;
-        }
-        await env.FN_KV.put(lockKey, "true", { expirationTtl: 60 });
-      }
-
       if (payload.modified_by === botEmail || payload.owner === botEmail) {
-        if (env.FN_KV && lockKey) await env.FN_KV.delete(lockKey);
         return;
       }
 
       // Map gender to Lark Base
-      const genderMap: Record<string, string> = {
+      const genderMap = {
         "Male": "Nam",
         "Female": "Nữ",
         "Other": "LGBT"
@@ -71,7 +25,7 @@ export default class ERPNextCRMAppointmentService {
         : null;
 
       // Map fields for Lark Base
-      const fields: Record<string, any> = {
+      const fields = {
         "Appointment Name": payload.name, // Sync ERP name to Lark Column
         "Cửa hàng": payload.store ? [payload.store] : [],
         "Tên khách hàng/ facebook": payload.customer_name || "",
@@ -96,7 +50,6 @@ export default class ERPNextCRMAppointmentService {
 
         // Data diff check
         try {
-          // @ts-expect-error
           const currentLarkRecord = await RecordService.getLarksuiteRecord({
             env,
             appToken: APPOINTMENTS.APP_TOKEN,
@@ -124,15 +77,13 @@ export default class ERPNextCRMAppointmentService {
               (currentFields["Chính sách thu mua thu đổi"] || "") === fields["Chính sách thu mua thu đổi"];
 
             if (isSame) {
-              if (env.FN_KV && lockKey) await env.FN_KV.delete(lockKey);
               return;
             }
           }
         } catch (error) {
-          console.warn(`[ERP-SYNC] Data Diff Check failed, continuing updates fallback:`, error);
+          console.warn("[ERP-SYNC] Data Diff Check failed, continuing updates fallback:", error);
         }
 
-        // @ts-expect-error
         await RecordService.updateLarksuiteRecord({
           env,
           appToken: APPOINTMENTS.APP_TOKEN,
@@ -144,7 +95,7 @@ export default class ERPNextCRMAppointmentService {
 
       } else {
         // 1. Check whether record already exists on Lark with the corresponding Appointment Name (avoid duplicate creation when retrying)
-        let existingRecordId: string | null = null;
+        let existingRecordId = null;
         try {
           const existingRecords = await RecordService.fetchRecords(
             env,
@@ -175,7 +126,6 @@ export default class ERPNextCRMAppointmentService {
 
         if (existingRecordId) {
           // 2. If exists, sync
-          // @ts-expect-error
           await RecordService.updateLarksuiteRecord({
             env,
             appToken: APPOINTMENTS.APP_TOKEN,
@@ -185,12 +135,6 @@ export default class ERPNextCRMAppointmentService {
             userIdType: "open_id"
           });
 
-          if (env.FN_KV) {
-            await env.FN_KV.put(nameLockKey, "true", { expirationTtl: 60 });
-            await env.FN_KV.put(`lock:appointment:${existingRecordId}`, "true", { expirationTtl: 60 });
-          }
-
-          // @ts-expect-error
           const frappeClient = new FrappeClient({
             url: env.JEMMIA_ERP_BASE_URL,
             apiKey: env.JEMMIA_ERP_API_KEY,
@@ -205,7 +149,6 @@ export default class ERPNextCRMAppointmentService {
 
         } else {
           // 3. If not existing, create new record
-          // @ts-expect-error
           const newRecord = await RecordService.createLarksuiteRecord({
             env,
             appToken: APPOINTMENTS.APP_TOKEN,
@@ -217,13 +160,6 @@ export default class ERPNextCRMAppointmentService {
           if (newRecord && newRecord.record_id) {
             const newRecordId = newRecord.record_id;
 
-            // 2. Lock both name and record_id to prevent webhook feedback loop
-            if (env.FN_KV) {
-              await env.FN_KV.put(nameLockKey, "true", { expirationTtl: 60 });
-              await env.FN_KV.put(`lock:appointment:${newRecordId}`, "true", { expirationTtl: 60 });
-            }
-
-            // @ts-expect-error
             const frappeClient = new FrappeClient({
               url: env.JEMMIA_ERP_BASE_URL,
               apiKey: env.JEMMIA_ERP_API_KEY,
@@ -243,13 +179,7 @@ export default class ERPNextCRMAppointmentService {
       }
 
     } catch (error) {
-      // Release locks on error
-      if (env.FN_KV) {
-        if (payload.record_id) await env.FN_KV.delete(`lock:appointment:${payload.record_id}`);
-        await env.FN_KV.delete(`lock:appointment-synced:${payload.name}`);
-      }
       throw error;
     }
   }
 }
-
