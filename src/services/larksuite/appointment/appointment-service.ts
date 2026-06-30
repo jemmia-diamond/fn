@@ -63,7 +63,6 @@ export default class AppointmentService {
 
     const rawFields = (record.fields || {}) as LarksuiteAppointmentRawFields;
     const fields: LarksuiteAppointmentParsedFields = {
-      appointment_name: rawFields["Appointment Name"] || "",
       store: rawFields["Cửa hàng"]?.[0] || "",
       name: rawFields["Tên khách hàng/ facebook"] || "",
       phone_number: rawFields["Số điện thoại"] || "",
@@ -130,17 +129,6 @@ export default class AppointmentService {
   }
 
   async createOrUpdateAppointment(recordId: string) {
-
-    const lockKey = `lock:appointment:${recordId}`;
-    if (this.env.FN_KV) {
-      const isLocked = await this.env.FN_KV.get(lockKey);
-      if (isLocked) {
-        await this.env.FN_KV.delete(lockKey);
-        console.log(`[LARK-SYNC] Blocked loop by KV lock: ${lockKey}`);
-        return null;
-      }
-    }
-
     const record = await this.syncLarkRecord(recordId);
     const lead = await fetchLeadInfoByPhoneNumber(
       this.frappeClient,
@@ -182,16 +170,12 @@ export default class AppointmentService {
   ) {
     await saveAppointmentToPrismaDb(this.env, dataRequest);
 
-    if (dataRequest.appointment_name) {
-      // 1. Update ERP
-      const docName = dataRequest.appointment_name;
+    const existing = await this.frappeClient.getList("Appointment", {
+      filters: { record_id: dataRequest.record_id }
+    });
 
-      // Lock both record_id and ERP name before updating ERP
-      if (this.env.FN_KV) {
-        await this.env.FN_KV.put(`lock:appointment-synced:${docName}`, "true", { expirationTtl: 60 });
-        await this.env.FN_KV.put(`lock:appointment:${dataRequest.record_id}`, "true", { expirationTtl: 60 });
-      }
-
+    if (existing?.length) {
+      const docName = existing[0].name;
       const attachments = await getDocumentAttachments(
         this.frappeClient,
         "Appointment",
@@ -204,32 +188,11 @@ export default class AppointmentService {
       );
       return await this.updateERPAppointment(docName, dataRequest, lead);
     } else {
-      // 2. Create new ERP appointment
       const appointment = await this.createNewERPAppointment(dataRequest, lead);
-
-      // Lock both record_id and ERP name after receiving ERP name
-      if (this.env.FN_KV) {
-        await this.env.FN_KV.put(`lock:appointment-synced:${appointment.name}`, "true", { expirationTtl: 60 });
-        await this.env.FN_KV.put(`lock:appointment:${dataRequest.record_id}`, "true", { expirationTtl: 60 });
-      }
-
       await this.downloadFileAndUploadFrappe(
         dataRequest.product_images,
         appointment.name
       );
-
-      // @ts-expect-error
-      await RecordService.updateLarksuiteRecord({
-        env: this.env,
-        appToken: this.appToken,
-        tableId: this.tableId,
-        recordId: dataRequest.record_id,
-        fields: {
-          "Appointment Name": appointment.name
-        },
-        userIdType: "open_id"
-      });
-
       return appointment;
     }
   }
