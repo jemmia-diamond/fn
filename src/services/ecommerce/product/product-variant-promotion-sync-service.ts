@@ -311,7 +311,7 @@ export default class ProductVariantPromotionSyncService {
 
     const linksToDeleteRes = await nocodb.listRecords(NOCODB_TABLES.MARKETING.JEWELRY_HARAVAN_COLLECTIONS, {
       where: `(products_id,in,${idsArray.join(",")})`,
-      fields: "id"
+      fields: "products_id,haravan_collections_id"
     });
     const linksToDelete = linksToDeleteRes.list || [];
     if (linksToDelete.length > 0) {
