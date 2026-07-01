@@ -14,7 +14,7 @@ export function buildInventoryMetricsSql(opts = {}) {
         COALESCE(
           (
             SELECT CASE 
-              WHEN p.haravan_product_type = ANY (ARRAY['Bông Tai'::text, 'Bông Tai Nguyên Chiếc'::text])
+              WHEN p.haravan_product_type = ANY (ARRAY['Bông Tai'::text, 'Bông Tai Nguyên Chiếc'::text]) 
               THEN SUM(ln.quantity) / 2
               ELSE SUM(ln.quantity)
             END

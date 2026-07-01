@@ -1,4 +1,5 @@
 import { Prisma } from "@prisma-cli";
+import { toSqlOrder } from "services/utils/sql-helpers";
 
 export function aggregateQuery(jsonParams) {
   const filterClauses = [];
@@ -135,7 +136,7 @@ export function aggregateQuery(jsonParams) {
     `);
   }
 
-  const order = jsonParams.sort?.order === "asc" ? Prisma.raw("ASC") : Prisma.raw("DESC");
+  const order = toSqlOrder(jsonParams.sort?.order);
 
   const sortStrategies = {
     price: () => Prisma.sql`ORDER BY ${Prisma.raw(sortedColumn)} ${order}\n`,

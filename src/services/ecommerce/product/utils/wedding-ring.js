@@ -1,4 +1,5 @@
 import { Prisma } from "@prisma-cli";
+import { toSqlOrder } from "services/utils/sql-helpers";
 
 export function buildWeddingRingsQuery(jsonParams) {
   const { filterSql, sortSql, paginationSql } = aggregateQuery(jsonParams);
@@ -142,7 +143,7 @@ export function aggregateQuery(jsonParams) {
   if (jsonParams.price?.max) {
     filterSql = Prisma.sql`${filterSql} AND wr.max_price <= ${jsonParams.price.max}\n`;
   }
-  const order = jsonParams.sort?.order === "asc" ? Prisma.raw("ASC") : Prisma.raw("DESC");
+  const order = toSqlOrder(jsonParams.sort?.order);
 
   const sortStrategies = {
     price: () => Prisma.sql`ORDER BY ${jsonParams.sort?.order === "asc" ? Prisma.raw("wr.min_price") : Prisma.raw("wr.max_price")} ${order}\n`,
