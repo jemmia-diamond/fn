@@ -135,14 +135,16 @@ export function aggregateQuery(jsonParams) {
     `);
   }
 
-  const orderDir = jsonParams.sort?.order === "asc" ? Prisma.raw("ASC") : Prisma.raw("DESC");
+  const order = jsonParams.sort?.order === "asc" ? Prisma.raw("ASC") : Prisma.raw("DESC");
 
-  if (jsonParams.sort?.by === "price") {
-    sortSql = Prisma.sql`ORDER BY ${Prisma.raw(sortedColumn)} ${orderDir}\n`;
-  } else if (jsonParams.sort?.by === "sold_quantity") {
-    sortSql = Prisma.sql`ORDER BY COALESCE(p.sold_quantity, 0) ${orderDir}\n`;
-  } else if (jsonParams.sort?.by === "created_date") {
-    sortSql = Prisma.sql`ORDER BY COALESCE(d.created_date, d.database_created_at) ${orderDir}\n`;
+  const sortStrategies = {
+    price: () => Prisma.sql`ORDER BY ${Prisma.raw(sortedColumn)} ${order}\n`,
+    sold_quantity: () => Prisma.sql`ORDER BY COALESCE(p.sold_quantity, 0) ${order}\n`,
+    created_date: () => Prisma.sql`ORDER BY COALESCE(d.created_date, d.database_created_at) ${order}\n`
+  };
+
+  if (jsonParams.sort?.by && sortStrategies[jsonParams.sort.by]) {
+    sortSql = sortStrategies[jsonParams.sort.by]();
   }
 
   if (jsonParams.product_ids && jsonParams.product_ids.length > 0) {
