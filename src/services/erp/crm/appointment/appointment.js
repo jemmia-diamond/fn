@@ -7,7 +7,9 @@ export default class ERPNextCRMAppointmentService {
 
   static async syncAppointment(payload, event, env) {
     const fields = await this.mapPayloadToLarkFields(payload, env);
-    if (event === "create") return await this.createAppointment(payload, fields, env);
+    if (event === "create" || !payload.record_id) {
+      return await this.createAppointment(payload, fields, env);
+    }
 
     await this.updateAppointment(payload, fields, env);
   }
