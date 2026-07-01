@@ -88,7 +88,7 @@ export function findDataSql({ filterSql, sortSql, paginationSql }) {
         INNER JOIN ecom.materialized_wedding_rings wr ON d.wedding_ring_id = wr.id 
     WHERE 1 = 1
     ${filterSql}
-    GROUP BY wr.id, wr.title, wr.max_price, wr.min_price, wr.qty_onhand, wr.sold_quantity, d.created_date, d.database_created_at
+    GROUP BY wr.id, wr.title, wr.max_price, wr.min_price, wr.qty_onhand, wr.sold_quantity
     ${sortSql}
     ${paginationSql}
   `;
@@ -149,7 +149,7 @@ export function aggregateQuery(jsonParams) {
     price: () => Prisma.sql`ORDER BY ${jsonParams.sort?.order === "asc" ? Prisma.raw("wr.min_price") : Prisma.raw("wr.max_price")} ${order}\n`,
     stock: () => Prisma.sql`ORDER BY wr.qty_onhand ${order}\n`,
     sold_quantity: () => Prisma.sql`ORDER BY COALESCE(wr.sold_quantity, 0) ${order}\n`,
-    created_date: () => Prisma.sql`ORDER BY COALESCE(d.created_date, d.database_created_at) ${order}\n`
+    created_date: () => Prisma.sql`ORDER BY COALESCE(MAX(d.created_date), MAX(d.database_created_at)) ${order}\n`
   };
 
   if (jsonParams.sort?.by && sortStrategies[jsonParams.sort.by]) {
