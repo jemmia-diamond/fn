@@ -137,9 +137,13 @@ export function aggregateQuery(jsonParams) {
 
   if (jsonParams.sort?.by === "price") {
     sortSql = Prisma.sql`ORDER BY ${Prisma.raw(sortedColumn)} ${jsonParams.sort.order === "asc" ? Prisma.raw("ASC") : Prisma.raw("DESC")}\n`;
+  } else if (jsonParams.best_sellers) {
+    sortSql = Prisma.sql`ORDER BY COALESCE(p.sold_quantity, 0) DESC\n`;
   } else {
-    sortSql = Prisma.sql`ORDER BY p2.image_updated_at DESC\n`;
-    needsP2Join = true;
+    const isFirstPage = jsonParams.pagination.from == 1;
+    sortSql = isFirstPage
+      ? Prisma.sql`ORDER BY COALESCE(p.sold_quantity, 0) DESC\n`
+      : Prisma.sql`ORDER BY COALESCE(d.created_date, d.database_created_at) DESC\n`;
   }
 
   if (jsonParams.product_ids && jsonParams.product_ids.length > 0) {

@@ -24,9 +24,9 @@ export function buildWeddingRingByIdQuery(weddingRingId) {
   const filterSql = Prisma.sql`
     AND d.wedding_ring_id IN (
       SELECT
-        d.wedding_ring_id 
-      FROM workplace.products p 
-        INNER JOIN workplace.designs d ON p.design_id = d.id 
+        d.wedding_ring_id
+      FROM workplace.products p
+        INNER JOIN workplace.designs d ON p.design_id = d.id
       WHERE p.haravan_product_id = ${weddingRingId}
     )
   `;
@@ -40,7 +40,7 @@ export function buildWeddingRingByIdQuery(weddingRingId) {
 
 export function findDataSql({ filterSql, sortSql, paginationSql }) {
   const dataSql = Prisma.sql`
-    SELECT 
+    SELECT
         wr.id,
         wr.title,
         json_agg(
@@ -48,7 +48,7 @@ export function findDataSql({ filterSql, sortSql, paginationSql }) {
                 'id', p.haravan_product_id,
                 'product_type', p.haravan_product_type,
                 'title', p.ecom_title,
-                'ring_band_type', CASE 
+                'ring_band_type', CASE
                                         WHEN d.ring_band_type = 'None' THEN NULL
                                     ELSE d.ring_band_type
                                     END,
@@ -71,23 +71,23 @@ export function findDataSql({ filterSql, sortSql, paginationSql }) {
                         )
                     )
                     FROM workplace.variants v
-                        INNER JOIN haravan.variants vv ON v.haravan_variant_id = vv.id 
+                        INNER JOIN haravan.variants vv ON v.haravan_variant_id = vv.id
                         INNER JOIN ecom.variants vvv ON v.haravan_variant_id = vvv.haravan_variant_id
                     WHERE v.product_id = p.id
                 ),
                 'images', (
                     SELECT array_agg(i.src ORDER BY i.src)
-                    FROM haravan.images i 
+                    FROM haravan.images i
                     WHERE i.product_id = p.haravan_product_id
                 )
             )
         ) AS products
-    FROM workplace.products p 
-        INNER JOIN workplace.designs d ON p.design_id = d.id 
-        INNER JOIN ecom.materialized_wedding_rings wr ON d.wedding_ring_id = wr.id 
+    FROM workplace.products p
+        INNER JOIN workplace.designs d ON p.design_id = d.id
+        INNER JOIN ecom.materialized_wedding_rings wr ON d.wedding_ring_id = wr.id
     WHERE 1 = 1
     ${filterSql}
-    GROUP BY wr.id, wr.title, wr.max_price, wr.min_price, wr.qty_onhand
+    GROUP BY wr.id, wr.title, wr.max_price, wr.min_price, wr.qty_onhand, wr.sold_quantity, d.created_date, d.database_created_at
     ${sortSql}
     ${paginationSql}
   `;
@@ -96,13 +96,13 @@ export function findDataSql({ filterSql, sortSql, paginationSql }) {
 
 export function findCountSql({ filterSql }) {
   const countSql = Prisma.sql`
-    SELECT 
+    SELECT
       CAST(COUNT(DISTINCT wr.id) AS INT) AS total,
       (SELECT ARRAY_AGG(DISTINCT mwr.fineness) FROM ecom.materialized_wedding_rings mwr WHERE mwr.fineness NOT LIKE '%,%' ) AS fineness,
       (SELECT ARRAY_AGG(DISTINCT mwr.material_colors ) FROM ecom.materialized_wedding_rings mwr WHERE mwr.material_colors NOT LIKE '%,%' ) AS material_colors
-    FROM workplace.products p 
-      INNER JOIN workplace.designs d ON p.design_id = d.id 
-      INNER JOIN ecom.materialized_wedding_rings wr ON d.wedding_ring_id = wr.id 
+    FROM workplace.products p
+      INNER JOIN workplace.designs d ON p.design_id = d.id
+      INNER JOIN ecom.materialized_wedding_rings wr ON d.wedding_ring_id = wr.id
     WHERE 1 = 1
     ${filterSql}
   `;
@@ -142,13 +142,17 @@ export function aggregateQuery(jsonParams) {
   if (jsonParams.price?.max) {
     filterSql = Prisma.sql`${filterSql} AND wr.max_price <= ${jsonParams.price.max}\n`;
   }
-
-  if (jsonParams.sort) {
-    if (jsonParams.sort.by === "price") {
-      sortSql = Prisma.sql`ORDER BY ${jsonParams.sort.order === "asc" ? Prisma.raw("wr.min_price") : Prisma.raw("wr.max_price")} ${jsonParams.sort.order === "asc" ? Prisma.raw("ASC") : Prisma.raw("DESC")}\n`;
-    } else if (jsonParams.sort.by === "stock") {
-      sortSql = Prisma.sql`ORDER BY wr.qty_onhand ${jsonParams.sort.order === "asc" ? Prisma.raw("ASC") : Prisma.raw("DESC")}\n`;
-    }
+  if (jsonParams.sort.by === "price") {
+    sortSql = Prisma.sql`ORDER BY ${jsonParams.sort.order === "asc" ? Prisma.raw("wr.min_price") : Prisma.raw("wr.max_price")} ${jsonParams.sort.order === "asc" ? Prisma.raw("ASC") : Prisma.raw("DESC")}\n`;
+  } else if (jsonParams.sort.by === "stock") {
+    sortSql = Prisma.sql`ORDER BY wr.qty_onhand ${jsonParams.sort.order === "asc" ? Prisma.raw("ASC") : Prisma.raw("DESC")}\n`;
+  } else if (jsonParams.best_sellers) {
+    sortSql = Prisma.sql`ORDER BY COALESCE(wr.sold_quantity, 0) DESC\n`;
+  } else {
+    const isFirstPage = jsonParams.pagination.from == 1;
+    sortSql = isFirstPage
+      ? Prisma.sql`ORDER BY COALESCE(wr.sold_quantity, 0) DESC\n`
+      : Prisma.sql`ORDER BY COALESCE(d.created_date, d.database_created_at) DESC\n`;
   }
 
   if (jsonParams.product_ids && jsonParams.product_ids.length > 0) {
@@ -157,9 +161,9 @@ export function aggregateQuery(jsonParams) {
       ${filterSql}
             AND d.wedding_ring_id IN (
              SELECT
-              d.wedding_ring_id 
-              FROM workplace.products p 
-              INNER JOIN workplace.designs d ON p.design_id = d.id 
+              d.wedding_ring_id
+              FROM workplace.products p
+              INNER JOIN workplace.designs d ON p.design_id = d.id
              WHERE p.haravan_product_id = ANY(${productIds})
             )
     `;

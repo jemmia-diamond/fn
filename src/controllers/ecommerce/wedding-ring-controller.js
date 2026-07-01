@@ -25,8 +25,8 @@ export default class WeddingRingController {
       material_colors: splitParams(params.material_colors),
       is_in_stock: params.is_in_stock ? params.is_in_stock === "true" : null,
       sort: {
-        by: params.sort_by || "price",
-        order: params.sort_order || "asc"
+        by: params.sort_by,
+        order: params.sort_order
       },
       price: {
         min: params.min_price ? Number(params.min_price) : null,
@@ -36,7 +36,8 @@ export default class WeddingRingController {
         .map((v) => Number(v.trim()))
         .filter((n) => Number.isInteger(n) && n > 0),
       ring_band_styles: splitParams(params.ring_band_styles),
-      excluded_ring_band_styles: splitParams(params.excluded_ring_band_styles)
+      excluded_ring_band_styles: splitParams(params.excluded_ring_band_styles),
+      best_sellers: params.best_sellers === "true"
     };
 
     const { isValidated, message } = validateParams(jsonParams);
