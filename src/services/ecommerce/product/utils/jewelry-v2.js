@@ -13,17 +13,17 @@ export function buildInventoryMetricsSql(opts = {}) {
     , CAST(
         COALESCE(
           (
-            SELECT CASE
+            SELECT CASE 
               WHEN p.haravan_product_type = ANY (ARRAY['Bông Tai'::text, 'Bông Tai Nguyên Chiếc'::text])
               THEN SUM(ln.quantity) / 2
               ELSE SUM(ln.quantity)
             END
-            FROM haravan.line_items ln
-            INNER JOIN haravan.orders o ON ln.order_id = o.id
-            WHERE ln.product_id = p.haravan_product_id
+            FROM haravan.line_items ln 
+            INNER JOIN haravan.orders o ON ln.order_id = o.id 
+            WHERE ln.product_id = p.haravan_product_id 
               AND o.cancelled_status = 'uncancelled'
           ), 0
-        ) + COALESCE(p.sold_before_2025, 0)
+        ) + COALESCE(p.sold_before_2025, 0) 
       AS INT) AS sold_quantity, ${limitSql} AS limit_selling_quantity
   `;
 }
@@ -45,12 +45,12 @@ export function buildQueryV2(jsonParams) {
   const priceField = Prisma.sql`
     CASE
       WHEN EXISTS (
-        SELECT 1
+        SELECT 1 
         FROM workplace.products wp
         INNER JOIN workplace.products_haravan_collection phc ON phc.products_id = wp.id
         INNER JOIN workplace.haravan_collections hc ON hc.id = phc.haravan_collections_id
         WHERE wp.haravan_product_id = v.haravan_product_id
-          AND hc.start_date <= NOW()
+          AND hc.start_date <= NOW() 
           AND hc.end_date >= NOW()
       ) AND v.final_discount_price IS NOT NULL AND v.final_discount_price != 0
       THEN CAST(v.final_discount_price AS DECIMAL)
@@ -68,11 +68,11 @@ export function buildQueryV2(jsonParams) {
   // Pre-aggregate design images by material_color (performance optimization)
   const designImagesJoin = Prisma.sql`
     INNER JOIN LATERAL (
-      SELECT
+      SELECT 
         di.material_color,
         COALESCE(
           array_agg(
-            CASE
+            CASE 
               WHEN item.value->>'url' LIKE ${workplaceUrlPrefix} || '%' THEN
                 REPLACE(item.value->>'url', ${workplaceFullUrl}, ${cdnUrl})
               ELSE item.value->>'url'
@@ -82,7 +82,7 @@ export function buildQueryV2(jsonParams) {
         ) as images
       FROM workplace.design_images di
       CROSS JOIN LATERAL jsonb_array_elements(
-        CASE
+        CASE 
           WHEN di.retouch IS NOT NULL AND di.retouch != '' AND jsonb_typeof(di.retouch::jsonb) = 'array'
           THEN di.retouch::jsonb
           ELSE '[]'::jsonb
@@ -177,7 +177,7 @@ export function buildQueryV2(jsonParams) {
   }
 
   const dataSql = Prisma.sql`
-    SELECT
+    SELECT  
       CAST(p.haravan_product_id AS INT) AS id,
       p.title,
       d.design_code,
@@ -190,8 +190,8 @@ export function buildQueryV2(jsonParams) {
       JSON_AGG(
         ${variantJsonBuildObject}
       ) AS variants
-    FROM ecom.materialized_products p
-      INNER JOIN workplace.designs d ON p.design_id = d.id
+    FROM ecom.materialized_products p 
+      INNER JOIN workplace.designs d ON p.design_id = d.id 
       ${Prisma.raw(collectionJoinEcomProductsClause)}
       ${Prisma.raw(linkedCollectionJoinEcomProductsClause)}
 
@@ -199,13 +199,13 @@ export function buildQueryV2(jsonParams) {
       ${designImagesJoin}
       ${Prisma.raw(warehouseJoinClause)}
     WHERE 1 = 1
-      AND p.haravan_product_type != 'Nhẫn Cưới'
+      AND p.haravan_product_type != 'Nhẫn Cưới' 
       AND cardinality(design_imgs.images) > 0
       ${filterSql}
-    GROUP BY
+    GROUP BY 
       p.haravan_product_id, p.title, d.design_code, p.handle,
       d.diamond_holder, d.main_stone, d.ring_band_type, p.haravan_product_type,
-      p.max_price, p.min_price, p.max_price_18, p.max_price_14,
+      p.max_price, p.min_price, p.max_price_18, p.max_price_14, 
       p.has_360, p.sold_before_2025, p.sold_quantity, d.created_date, d.database_created_at ${collectionJoinEcomProductsClause ? Prisma.raw(", p2.image_updated_at") : Prisma.empty}
 
     ${havingSql}
@@ -220,7 +220,7 @@ export function buildQueryV2(jsonParams) {
      (SELECT ARRAY_AGG(DISTINCT mv.fineness ) FROM ecom.materialized_variants mv) AS fineness
     FROM (
         SELECT p.haravan_product_id
-        FROM ecom.materialized_products p
+        FROM ecom.materialized_products p 
             INNER JOIN workplace.designs d ON d.id = p.design_id
             ${Prisma.raw(collectionJoinEcomProductsClause)}
             ${Prisma.raw(linkedCollectionJoinEcomProductsClause)}
@@ -228,7 +228,7 @@ export function buildQueryV2(jsonParams) {
             ${designImagesJoin}
 
             ${Prisma.raw(warehouseJoinClause)}
-        WHERE 1 = 1
+        WHERE 1 = 1 
           AND p.haravan_product_type != 'Nhẫn Cưới'
           AND cardinality(design_imgs.images) > 0
           ${filterSql}
@@ -244,12 +244,12 @@ export function buildQuerySingleV2(params = {}) {
   const priceField = Prisma.sql`
     CASE
       WHEN EXISTS (
-        SELECT 1
+        SELECT 1 
         FROM workplace.products wp
         INNER JOIN workplace.products_haravan_collection phc ON phc.products_id = wp.id
         INNER JOIN workplace.haravan_collections hc ON hc.id = phc.haravan_collections_id
         WHERE wp.haravan_product_id = v.haravan_product_id
-          AND hc.start_date <= NOW()
+          AND hc.start_date <= NOW() 
           AND hc.end_date >= NOW()
       ) AND v.final_discount_price IS NOT NULL AND v.final_discount_price != 0
       THEN CAST(v.final_discount_price AS DECIMAL)
