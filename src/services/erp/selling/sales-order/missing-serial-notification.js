@@ -7,6 +7,10 @@ import FrappeClient from "src/frappe/frappe-client";
 import Database from "src/services/database";
 
 dayjs.extend(utc);
+
+const EXCLUDING_SOURCES = ["web", "harafunnel", "staff", "bhsc-cua-hang-hn", "bhsc-cua-hang-hcm", "sendo"];
+const EXCLUDED_ITEM_KEYWORDS = ["quà tặng", "bảo hành", "khách gửi"];
+
 export default class MissingSerialNotificationService {
   constructor(env) {
     this.env = env;
@@ -24,7 +28,7 @@ export default class MissingSerialNotificationService {
     const filters = [
       ["cancelled_status", "=", "Uncancelled"],
       ["grand_total", ">", 1000],
-      ["source_name", "!=", "web"],
+      ["source_name", "not in", EXCLUDING_SOURCES],
       ["primary_sales_person", "is", "set"]
     ];
 
@@ -64,11 +68,16 @@ export default class MissingSerialNotificationService {
     const ordersWithIssues = [];
     for (const order of allSalesOrders) {
       const fullOrder = await this.frappeClient.getDoc("Sales Order", order.name);
-      const items = fullOrder.items || [];
+      const allItems = fullOrder.items || [];
 
-      const missingSerialItems = items.filter(isMissingJewelrySerial);
+      const validItems = allItems.filter(item => {
+        const itemName = (item.item_name || "").toLowerCase();
+        return !EXCLUDED_ITEM_KEYWORDS.some(keyword => itemName.includes(keyword));
+      });
 
-      const missingPromotionItems = items.filter(item => {
+      const missingSerialItems = validItems.filter(isMissingJewelrySerial);
+
+      const missingPromotionItems = validItems.filter(item => {
         if (!isJewelryItem(item) && !isDiamondItem(item)) return false;
 
         // Check if there is a price difference (meaning it was discounted)
