@@ -69,7 +69,7 @@ export default class PancakeTokenRefresherService {
         const body = JSON.stringify({
           workspaceId: projectId,
           environment: environment,
-          secretPath: "/commons",
+          secretPath: "/commons/public",
           secretValue: secretValue
         });
 
