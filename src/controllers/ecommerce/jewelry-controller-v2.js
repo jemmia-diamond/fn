@@ -50,8 +50,7 @@ export default class JewelryControllerV2 {
       linked_collections: splitParams(params.linked_collections),
       matched_diamonds: params.matched_diamonds === "true",
       ring_sizes: splitParams(params.ring_sizes),
-      warehouse_ids: splitParams(params.warehouse_ids),
-      best_sellers: params.best_sellers === "true"
+      warehouse_ids: splitParams(params.warehouse_ids)
     };
 
     const productService = new Ecommerce.ProductService(ctx.env);

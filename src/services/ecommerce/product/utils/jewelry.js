@@ -135,15 +135,14 @@ export function aggregateQuery(jsonParams) {
     `);
   }
 
+  const orderDir = jsonParams.sort?.order === "asc" ? Prisma.raw("ASC") : Prisma.raw("DESC");
+
   if (jsonParams.sort?.by === "price") {
-    sortSql = Prisma.sql`ORDER BY ${Prisma.raw(sortedColumn)} ${jsonParams.sort.order === "asc" ? Prisma.raw("ASC") : Prisma.raw("DESC")}\n`;
-  } else if (jsonParams.best_sellers) {
-    sortSql = Prisma.sql`ORDER BY COALESCE(p.sold_quantity, 0) DESC\n`;
-  } else {
-    const isFirstPage = jsonParams.pagination.from == 1;
-    sortSql = isFirstPage
-      ? Prisma.sql`ORDER BY COALESCE(p.sold_quantity, 0) DESC\n`
-      : Prisma.sql`ORDER BY COALESCE(d.created_date, d.database_created_at) DESC\n`;
+    sortSql = Prisma.sql`ORDER BY ${Prisma.raw(sortedColumn)} ${orderDir}\n`;
+  } else if (jsonParams.sort?.by === "sold_quantity") {
+    sortSql = Prisma.sql`ORDER BY COALESCE(p.sold_quantity, 0) ${orderDir}\n`;
+  } else if (jsonParams.sort?.by === "created_date") {
+    sortSql = Prisma.sql`ORDER BY COALESCE(d.created_date, d.database_created_at) ${orderDir}\n`;
   }
 
   if (jsonParams.product_ids && jsonParams.product_ids.length > 0) {
