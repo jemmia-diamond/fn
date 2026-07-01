@@ -30,8 +30,8 @@ export default class JewelryControllerV2 {
         max: parseNumber(params.max_price, null)
       },
       sort: {
-        by: params.sort_by || "price",
-        order: params.sort_order || "asc"
+        by: params.sort_by,
+        order: params.sort_order
       },
       main_holder_size: {
         lower: parseNumber(params["main_holder_size.lower"], undefined, true),

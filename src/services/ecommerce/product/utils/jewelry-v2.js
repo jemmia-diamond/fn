@@ -206,7 +206,7 @@ export function buildQueryV2(jsonParams) {
       p.haravan_product_id, p.title, d.design_code, p.handle,
       d.diamond_holder, d.main_stone, d.ring_band_type, p.haravan_product_type,
       p.max_price, p.min_price, p.max_price_18, p.max_price_14, 
-      p.has_360, p.sold_before_2025 ${collectionJoinEcomProductsClause ? Prisma.raw(", p2.image_updated_at") : Prisma.empty}
+      p.has_360, p.sold_before_2025, p.sold_quantity, d.created_date, d.database_created_at ${collectionJoinEcomProductsClause ? Prisma.raw(", p2.image_updated_at") : Prisma.empty}
 
     ${havingSql}
     ${sortSql}
@@ -350,4 +350,3 @@ export function buildQuerySingleV2(params = {}) {
 
   return { variantJsonBuildObject, lateralJoinClause };
 }
-
