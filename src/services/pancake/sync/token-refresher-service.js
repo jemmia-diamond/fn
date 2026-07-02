@@ -78,6 +78,11 @@ export default class PancakeTokenRefresherService {
           "Authorization": `Bearer ${accessToken}`
         };
 
+        if (this.env.CF_ACCESS_CLIENT_ID && this.env.CF_ACCESS_CLIENT_SECRET) {
+          headers["CF-Access-Client-Id"] = this.env.CF_ACCESS_CLIENT_ID;
+          headers["CF-Access-Client-Secret"] = this.env.CF_ACCESS_CLIENT_SECRET;
+        }
+
         let res = await fetch(`${infisicalApiUrl}/api/v3/secrets/raw/${secretName}`, {
           method: "PATCH",
           headers,
