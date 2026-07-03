@@ -194,7 +194,7 @@ export default class ConversationService {
     const pancakeData = await this.pancakeClient.getConversationById(pageId, conversationId);
     const globalId = pancakeData?.global_id;
     if (!globalId) {
-      return
+      return;
     }
 
     const lensUrl = env.CUSTOMER_LENS_URL;
