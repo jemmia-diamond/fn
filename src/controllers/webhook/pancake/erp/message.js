@@ -22,7 +22,7 @@ export default class PancakeERPMessageController {
           env: ctx.env,
           key: `lens-conversation-${conversationId}`,
           data: data,
-          actionType: DebounceActions.SYNC_TO_CUSTOMER_LENS,
+          actionType: DebounceActions.SEND_TO_CUSTOMER_LENS,
           delay: 5000
         });
       }
