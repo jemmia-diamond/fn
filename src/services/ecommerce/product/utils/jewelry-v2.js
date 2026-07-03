@@ -1,6 +1,8 @@
 import { aggregateQuery } from "services/ecommerce/product/utils/jewelry";
-import { JEWELRY_IMAGE } from "src/controllers/ecommerce/constant";
+import { JEWELRY_IMAGE, API_CONFIG } from "src/controllers/ecommerce/constant";
 import { Prisma } from "@prisma-cli";
+
+const ROW_NUM_START_INDEX = 1;
 
 export function buildInventoryMetricsSql(opts = {}) {
   if (!opts.return_inventory_metrics) {
@@ -247,7 +249,7 @@ export function buildInterleavedQueryV2(jsonParams) {
   const productTypesCount = productTypes.length;
   const cycleSize = productTypesCount * blockSize;
 
-  const from = jsonParams.pagination?.from - 1;
+  const from = jsonParams.pagination?.from - API_CONFIG.MIN_FROM;
   const limit = jsonParams.pagination?.limit;
   const to = from + limit;
 
@@ -258,7 +260,7 @@ export function buildInterleavedQueryV2(jsonParams) {
       ...jsonParams,
       product_types: [type],
       pagination: {
-        from: 1,
+        from: API_CONFIG.MIN_FROM,
         limit: maxRowsPerType
       }
     };
@@ -280,7 +282,7 @@ export function buildInterleavedQueryV2(jsonParams) {
     SELECT * FROM (
       ${unionSql}
     ) AS ranked
-    ORDER BY (row_num - 1) / ${blockSize}::integer ASC, type_idx ASC, row_num ASC
+    ORDER BY (row_num - ${ROW_NUM_START_INDEX}) / ${blockSize}::integer ASC, type_idx ASC, row_num ASC
     LIMIT ${limit} OFFSET ${from}
   `;
 
