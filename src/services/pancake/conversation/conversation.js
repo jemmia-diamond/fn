@@ -191,31 +191,26 @@ export default class ConversationService {
     const pageId = data?.page_id;
     const conversationId = data?.data?.conversation?.id;
     if (!pageId || !conversationId) return;
-
-    try {
-      const pancakeData = await this.pancakeClient.getConversationById(pageId, conversationId);
-      const globalId = pancakeData?.global_id;
-      if (globalId) {
-        const lensUrl = env.CUSTOMER_LENS_URL;
-        const authToken = env.CUSTOMER_LENS_AUTH_TOKEN;
-        const axiosClient = createAxiosClient({
-          baseURL: lensUrl,
-          headers: {
-            "Content-Type": "application/json",
-            "auth-token": authToken
-          }
-        });
-
-        await axiosClient.post("/api/profile", {
-          "global_id": globalId,
-          "is_force": false
-        });
-      } else {
-        console.warn(`[syncToCustomerLens] No global_id found for conversation: ${conversationId}`);
-      }
-    } catch (error) {
-      console.warn("[syncToCustomerLens] Error syncing to Customer Lens:", error);
+    const pancakeData = await this.pancakeClient.getConversationById(pageId, conversationId);
+    const globalId = pancakeData?.global_id;
+    if (!globalId) {
+      throw new Error(`Global id not found for conversation ${conversationId}`);
     }
+
+    const lensUrl = env.CUSTOMER_LENS_URL;
+    const authToken = env.CUSTOMER_LENS_AUTH_TOKEN;
+    const axiosClient = createAxiosClient({
+      baseURL: lensUrl,
+      headers: {
+        "Content-Type": "application/json",
+        "auth-token": authToken
+      }
+    });
+
+    await axiosClient.post("/api/profile", {
+      "global_id": globalId,
+      "is_force": false
+    });
   }
 
   async triggerExtraHooks(body) {
