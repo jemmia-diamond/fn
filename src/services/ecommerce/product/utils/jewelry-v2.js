@@ -244,34 +244,33 @@ export function buildInterleavedQueryV2(jsonParams) {
   const productTypes = jsonParams.product_types || [];
   const blockSize = jsonParams.block_size;
 
-  const M = productTypes.length;
-  const B = blockSize;
-  const cycleSize = M * B;
+  const productTypesCount = productTypes.length;
+  const cycleSize = productTypesCount * blockSize;
 
   const from = jsonParams.pagination?.from - 1;
   const limit = jsonParams.pagination?.limit;
   const to = from + limit;
 
-  const max_rn = Math.ceil(to / cycleSize) * B;
+  const maxRowsPerType = Math.ceil(to / cycleSize) * blockSize;
 
-  const queries = productTypes.map((type, t) => {
+  const queries = productTypes.map((type, typeIdx) => {
     const singleTypeParams = {
       ...jsonParams,
       product_types: [type],
       pagination: {
         from: 1,
-        limit: max_rn
+        limit: maxRowsPerType
       }
     };
     const { dataSql: subDataSql } = buildBaseQueryV2(singleTypeParams);
-    return { subDataSql, t };
+    return { subDataSql, typeIdx };
   });
 
   const unionSql = Prisma.join(
     queries.map(q => Prisma.sql`
       SELECT *, 
-             ROW_NUMBER() OVER () as rn, 
-             ${q.t}::integer as type_idx 
+             ROW_NUMBER() OVER () as row_num, 
+             ${q.typeIdx}::integer as type_idx 
       FROM (${q.subDataSql}) AS sub_t
     `),
     " UNION ALL "
@@ -281,7 +280,7 @@ export function buildInterleavedQueryV2(jsonParams) {
     SELECT * FROM (
       ${unionSql}
     ) AS ranked
-    ORDER BY (rn - 1) / ${B}::integer ASC, type_idx ASC, rn ASC
+    ORDER BY (row_num - 1) / ${blockSize}::integer ASC, type_idx ASC, row_num ASC
     LIMIT ${limit} OFFSET ${from}
   `;
 
