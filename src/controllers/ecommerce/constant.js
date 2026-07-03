@@ -3,7 +3,8 @@ export const API_CONFIG = {
   DEFAULT_FROM: 1,
   MIN_FROM: 1,
   MAX_LIMIT: 100,
-  MAX_SEARCH_LIMIT: 30
+  MAX_SEARCH_LIMIT: 30,
+  ROW_NUM_START_INDEX: 1
 };
 
 export const JEWELRY_IMAGE = {
