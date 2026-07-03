@@ -23,7 +23,7 @@ export default class PancakeERPMessageController {
           key: `lens-conversation-${conversationId}`,
           data: data,
           actionType: DebounceActions.SYNC_TO_CUSTOMER_LENS,
-          delay: 30000
+          delay: 5000
         });
       }
 

@@ -4,6 +4,7 @@ import LeadService from "services/erp/crm/lead/lead";
 import AIHUBClient from "services/clients/aihub";
 import { shouldReceiveWebhook } from "controllers/webhook/pancake/erp/utils";
 import { EXTRA_HOOKS } from "services/pancake/constants/extra-hook.constant";
+import { createAxiosClient } from "services/utils/http-client";
 
 export default class ConversationService {
   constructor(env) {
@@ -195,26 +196,20 @@ export default class ConversationService {
       const pancakeData = await this.pancakeClient.getConversationById(pageId, conversationId);
       const globalId = pancakeData?.global_id;
       if (globalId) {
-        const lensUrl = env.CUSTOMER_LENS_URL || "https://lens.jemmia.vn";
-        const postUrl = lensUrl.endsWith("/api/profile") ? lensUrl : `${lensUrl}/api/profile`;
-        const authToken = env.CUSTOMER_LENS_AUTH_TOKEN || "access-token";
-
-        const response = await fetch(postUrl, {
-          method: "POST",
+        const lensUrl = env.CUSTOMER_LENS_URL;
+        const authToken = env.CUSTOMER_LENS_AUTH_TOKEN;
+        const axiosClient = createAxiosClient({
+          baseURL: lensUrl,
           headers: {
             "Content-Type": "application/json",
             "auth-token": authToken
-          },
-          body: JSON.stringify({
-            global_id: globalId,
-            is_force: false
-          })
+          }
         });
 
-        if (!response.ok) {
-          const text = await response.text();
-          console.warn(`[syncToCustomerLens] Customer Lens API error: ${response.status} - ${text}`);
-        }
+        await axiosClient.post("/api/profile", {
+          "global_id": globalId,
+          "is_force": false
+        });
       } else {
         console.warn(`[syncToCustomerLens] No global_id found for conversation: ${conversationId}`);
       }
