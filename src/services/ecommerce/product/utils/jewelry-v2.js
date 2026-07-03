@@ -244,14 +244,9 @@ export function buildInterleavedQueryV2(jsonParams) {
   const productTypes = jsonParams.product_types || [];
   const blockSize = jsonParams.block_size;
 
-  const productTypesCount = productTypes.length;
-  const cycleSize = productTypesCount * blockSize;
-
   const from = jsonParams.pagination?.from - API_CONFIG.MIN_FROM;
   const limit = jsonParams.pagination?.limit;
   const to = from + limit;
-
-  const maxRowsPerType = Math.ceil(to / cycleSize) * blockSize;
 
   const queries = productTypes.map((type, typeIdx) => {
     const singleTypeParams = {
@@ -259,7 +254,7 @@ export function buildInterleavedQueryV2(jsonParams) {
       product_types: [type],
       pagination: {
         from: API_CONFIG.MIN_FROM,
-        limit: maxRowsPerType
+        limit: to
       }
     };
     const { dataSql: subDataSql } = buildBaseQueryV2(singleTypeParams);
