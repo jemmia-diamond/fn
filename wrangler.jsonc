@@ -141,6 +141,10 @@
         "binding": "PANCAKE_MESSAGE_LAST_INTERACTION_QUEUE"
       },
       {
+        "queue": "pancake-message-customer-lens",
+        "binding": "PANCAKE_MESSAGE_CUSTOMER_LENS_QUEUE"
+      },
+      {
         "queue": "pancake-message-webhook-dispatch",
         "binding": "PANCAKE_MESSAGE_WEBHOOK_DISPATCH_QUEUE"
       },
@@ -242,6 +246,10 @@
       },
       {
         "queue": "pancake-message-last-interaction",
+        "max_batch_size": 1
+      },
+      {
+        "queue": "pancake-message-customer-lens",
         "max_batch_size": 1
       },
       {

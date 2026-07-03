@@ -185,6 +185,48 @@ export default class ConversationService {
       "webhookUrl": `${env.HOST}/webhook/ai-hub/erp/leads`
     });
   }
+  
+  async syncToCustomerLens(env, data) {
+    const pageId = data?.page_id;
+    const conversationId = data?.data?.conversation?.id;
+    if (!pageId || !conversationId) return;
+
+    try {
+      console.log(`[syncToCustomerLens] Fetching conversation ${conversationId} for page ${pageId}`);
+      const pancakeData = await this.pancakeClient.getConversationById(pageId, conversationId);
+      const globalId = pancakeData?.global_id;
+      if (globalId) {
+        console.log(`[syncToCustomerLens] Found global_id: ${globalId} for conversation: ${conversationId}`);
+        const lensUrl = env.CUSTOMER_LENS_URL || "https://lens.jemmia.vn";
+        const postUrl = lensUrl.endsWith("/api/profile") ? lensUrl : `${lensUrl}/api/profile`;
+        const authToken = env.CUSTOMER_LENS_AUTH_TOKEN || "access-token";
+
+        const response = await fetch(postUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "auth-token": authToken
+          },
+          body: JSON.stringify({
+            global_id: globalId,
+            is_force: false
+          })
+        });
+
+        if (!response.ok) {
+          const text = await response.text();
+          console.warn(`[syncToCustomerLens] Customer Lens API error: ${response.status} - ${text}`);
+        } else {
+          console.log(`[syncToCustomerLens] Successfully sent global_id to Customer Lens for conversation: ${conversationId}`);
+        }
+      } else {
+        console.log(`[syncToCustomerLens] No global_id found for conversation: ${conversationId}`);
+      }
+    } catch (error) {
+      console.error(`[syncToCustomerLens] Error syncing to Customer Lens:`, error);
+    }
+  }
+
 
   async triggerExtraHooks(body) {
     const promises = EXTRA_HOOKS.map(url =>
@@ -225,4 +267,12 @@ export default class ConversationService {
       await conversationService.triggerExtraHooks(message.body);
     }
   }
+
+  static async dequeueMessageCustomerLensQueue(batch, env) {
+    const conversationService = new ConversationService(env);
+    for (const message of batch.messages) {
+      await conversationService.syncToCustomerLens(env, message.body);
+    }
+  }
+
 }

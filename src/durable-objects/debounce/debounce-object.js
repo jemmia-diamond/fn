@@ -20,6 +20,9 @@ export class DebounceDurableObject extends DurableObject {
       },
       [DebounceActions.SEND_TO_ERPNEXT_SALES_ORDER_QUEUE]: async (data) => {
         await this.env["ERPNEXT_SALES_ORDER_QUEUE"].send(data);
+      },
+      [DebounceActions.SYNC_TO_CUSTOMER_LENS]: async (data) => {
+        await this.env["PANCAKE_MESSAGE_CUSTOMER_LENS_QUEUE"].send(data);
       }
     };
   }
