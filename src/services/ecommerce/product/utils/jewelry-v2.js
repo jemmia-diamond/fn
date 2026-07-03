@@ -2,8 +2,6 @@ import { aggregateQuery } from "services/ecommerce/product/utils/jewelry";
 import { JEWELRY_IMAGE, API_CONFIG } from "src/controllers/ecommerce/constant";
 import { Prisma } from "@prisma-cli";
 
-const ROW_NUM_START_INDEX = 1;
-
 export function buildInventoryMetricsSql(opts = {}) {
   if (!opts.return_inventory_metrics) {
     return Prisma.sql``;
@@ -282,7 +280,7 @@ export function buildInterleavedQueryV2(jsonParams) {
     SELECT * FROM (
       ${unionSql}
     ) AS ranked
-    ORDER BY (row_num - ${ROW_NUM_START_INDEX}) / ${blockSize}::integer ASC, type_idx ASC, row_num ASC
+    ORDER BY (row_num - ${API_CONFIG.ROW_NUM_START_INDEX}) / ${blockSize}::integer ASC, type_idx ASC, row_num ASC
     LIMIT ${limit} OFFSET ${from}
   `;
 
