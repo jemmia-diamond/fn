@@ -28,7 +28,7 @@ export function buildInventoryMetricsSql(opts = {}) {
   `;
 }
 
-export function buildQueryV2(jsonParams) {
+function buildBaseQueryV2(jsonParams) {
   const {
     filterSql,
     sortSql,
@@ -238,6 +238,67 @@ export function buildQueryV2(jsonParams) {
   `;
 
   return { dataSql, countSql };
+}
+
+export function buildInterleavedQueryV2(jsonParams) {
+  const productTypes = jsonParams.product_types || [];
+  const blockSize = jsonParams.block_size;
+
+  const M = productTypes.length;
+  const B = blockSize;
+  const cycleSize = M * B;
+
+  const from = jsonParams.pagination?.from - 1;
+  const limit = jsonParams.pagination?.limit;
+  const to = from + limit;
+
+  const max_rn = Math.ceil(to / cycleSize) * B;
+
+  const queries = productTypes.map((type, t) => {
+    const singleTypeParams = {
+      ...jsonParams,
+      product_types: [type],
+      pagination: {
+        from: 1,
+        limit: max_rn
+      }
+    };
+    const { dataSql: subDataSql } = buildBaseQueryV2(singleTypeParams);
+    return { subDataSql, t };
+  });
+
+  const unionSql = Prisma.join(
+    queries.map(q => Prisma.sql`
+      SELECT *, 
+             ROW_NUMBER() OVER () as rn, 
+             ${q.t}::integer as type_idx 
+      FROM (${q.subDataSql}) AS sub_t
+    `),
+    " UNION ALL "
+  );
+
+  const dataSql = Prisma.sql`
+    SELECT * FROM (
+      ${unionSql}
+    ) AS ranked
+    ORDER BY (rn - 1) / ${B}::integer ASC, type_idx ASC, rn ASC
+    LIMIT ${limit} OFFSET ${from}
+  `;
+
+  const { countSql } = buildBaseQueryV2(jsonParams);
+
+  return { dataSql, countSql };
+}
+
+export function buildQueryV2(jsonParams) {
+  const productTypes = jsonParams.product_types || [];
+  const blockSize = jsonParams.block_size;
+
+  if (blockSize && blockSize > 0 && productTypes.length > 1) {
+    return buildInterleavedQueryV2(jsonParams);
+  }
+
+  return buildBaseQueryV2(jsonParams);
 }
 
 export function buildQuerySingleV2(params = {}) {
