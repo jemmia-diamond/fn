@@ -1,24 +1,34 @@
 import PancakeClient from "pancake/pancake-client";
 
 class PancakeCacheImpl {
-  private memoryCache = new Map<string, { data: any; expired_at: number }>();
-
   async getConversation(
     pancakeClient: PancakeClient,
     pageId: string,
-    conversationId: string
+    conversationId: string,
+    env?: any
   ): Promise<any> {
-    const memoryKey = `${pageId}:${conversationId}`;
-    const cached = this.memoryCache.get(memoryKey);
-    if (cached && cached.expired_at > Date.now()) {
-      return cached.data;
+    const kvKey = `pancake:conversation:${pageId}:${conversationId}`;
+    let pancakeData: any = null;
+
+    if (env?.FN_KV) {
+      try {
+        pancakeData = await env.FN_KV.get(kvKey, "json");
+      } catch (e) {
+        console.warn("Failed to read from KV cache", e);
+      }
     }
-    const pancakeData = await pancakeClient.getConversationById(pageId, conversationId);
-    if (pancakeData) {
-      this.memoryCache.set(memoryKey, {
-        data: pancakeData,
-        expired_at: Date.now() + 86400 * 1000 // Cache for 24 hours
-      });
+
+    if (!pancakeData) {
+      pancakeData = await pancakeClient.getConversationById(pageId, conversationId);
+      if (pancakeData && env?.FN_KV) {
+        try {
+          await env.FN_KV.put(kvKey, JSON.stringify(pancakeData), {
+            expirationTtl: 86400 // Cache for 24 hours
+          });
+        } catch (e) {
+          console.warn("Failed to write to KV cache", e);
+        }
+      }
     }
 
     return pancakeData;
