@@ -5,6 +5,7 @@ import AIHUBClient from "services/clients/aihub";
 import { shouldReceiveWebhook } from "controllers/webhook/pancake/erp/utils";
 import { EXTRA_HOOKS } from "services/pancake/constants/extra-hook.constant";
 import CustomerLensClient from "services/customer-lens-client";
+import { PancakeCache } from "services/pancake/conversation/pancakeCache";
 
 export default class ConversationService {
   constructor(env) {
@@ -192,7 +193,7 @@ export default class ConversationService {
     const pageId = data?.page_id;
     const conversationId = data?.data?.conversation?.id;
     if (!pageId || !conversationId) return;
-    const pancakeData = await this.pancakeClient.getConversationById(pageId, conversationId);
+    const pancakeData = await PancakeCache.getConversation(this.pancakeClient, pageId, conversationId);
     const globalId = pancakeData?.global_id;
     if (!globalId) {
       return;
