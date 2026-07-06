@@ -46,7 +46,7 @@ export default {
     case "pancake-message-last-interaction":
       await Pancake.ConversationService.dequeueMessageLastCustomerQueue(batch, env);
       break;
-    case "pancake-message-customer-lens":
+    case "customer-lens":
       await Pancake.ConversationService.dequeueMessageCustomerLensQueue(batch, env);
       break;
     case "zalo-message":
