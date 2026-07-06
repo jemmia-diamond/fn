@@ -1,4 +1,4 @@
-import { DebounceActions, DebounceService } from "src/durable-objects";
+import { DebounceActions, DebounceService, DebounceKeys } from "src/durable-objects";
 
 export default class HaravanNocoProductController {
   static async create(ctx) {
@@ -19,7 +19,7 @@ export default class HaravanNocoProductController {
 
     await DebounceService.debounce({
       env: ctx.env,
-      key: `product-${slimData.id}`,
+      key: DebounceKeys[DebounceActions.SEND_TO_HARAVAN_PRODUCT_QUEUE](slimData.id),
       data: slimData,
       actionType: DebounceActions.SEND_TO_HARAVAN_PRODUCT_QUEUE,
       delay: 3000

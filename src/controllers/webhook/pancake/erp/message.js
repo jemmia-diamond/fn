@@ -1,4 +1,4 @@
-import { DebounceActions, DebounceService } from "src/durable-objects";
+import { DebounceActions, DebounceService, DebounceKeys } from "src/durable-objects";
 import { shouldReceiveWebhook } from "controllers/webhook/pancake/erp/utils";
 
 export default class PancakeERPMessageController {
@@ -20,7 +20,7 @@ export default class PancakeERPMessageController {
       if (pageId && conversationId && !pageId.startsWith("pzl")) {
         await DebounceService.debounce({
           env: ctx.env,
-          key: `lens-conversation-${conversationId}`,
+          key: DebounceKeys[DebounceActions.SEND_TO_CUSTOMER_LENS_QUEUE](conversationId),
           data: data,
           actionType: DebounceActions.SEND_TO_CUSTOMER_LENS_QUEUE,
           delay: 5000
@@ -29,7 +29,7 @@ export default class PancakeERPMessageController {
 
       await DebounceService.debounce({
         env: ctx.env,
-        key: `summary-conversation-${conversationId}`,
+        key: DebounceKeys[DebounceActions.SEND_TO_MESSAGE_SUMMARY_QUEUE](conversationId),
         data: data,
         actionType: DebounceActions.SEND_TO_MESSAGE_SUMMARY_QUEUE,
         delay: 30000
@@ -37,7 +37,7 @@ export default class PancakeERPMessageController {
 
       await DebounceService.debounce({
         env: ctx.env,
-        key: `interaction-conversation-${conversationId}`,
+        key: DebounceKeys[DebounceActions.SEND_TO_PANCAKE_MESSAGE_LAST_INTERACTION_QUEUE](conversationId),
         data: data,
         actionType: DebounceActions.SEND_TO_PANCAKE_MESSAGE_LAST_INTERACTION_QUEUE,
         delay: 30000

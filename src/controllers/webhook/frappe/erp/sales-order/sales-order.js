@@ -1,5 +1,5 @@
 import { DebounceService } from "src/durable-objects/debounce/debounce-service";
-import { DebounceActions } from "src/durable-objects/debounce/debounce-action";
+import { DebounceActions, DebounceKeys } from "src/durable-objects/debounce/debounce-action";
 
 export default class FrappeERPSalesOrderController {
   static async create(ctx) {
@@ -9,7 +9,7 @@ export default class FrappeERPSalesOrderController {
     for (const order of salesOrders) {
       await DebounceService.debounce({
         env: ctx.env,
-        key: `erp-sales-order-${order.name}`,
+        key: DebounceKeys[DebounceActions.SEND_TO_ERPNEXT_SALES_ORDER_QUEUE](order.name),
         data: order,
         actionType: DebounceActions.SEND_TO_ERPNEXT_SALES_ORDER_QUEUE
       });
