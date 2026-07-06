@@ -4,7 +4,7 @@ import LeadService from "services/erp/crm/lead/lead";
 import AIHUBClient from "services/clients/aihub";
 import { shouldReceiveWebhook } from "controllers/webhook/pancake/erp/utils";
 import { EXTRA_HOOKS } from "services/pancake/constants/extra-hook.constant";
-import { createAxiosClient, DEFAULT_RETRY_CONFIG } from "services/utils/http-client";
+import CustomerLensClient from "services/customer-lens-client";
 
 export default class ConversationService {
   constructor(env) {
@@ -12,13 +12,7 @@ export default class ConversationService {
     this.pancakeClient = new PancakeClient(env);
     this.leadService = new LeadService(env);
     this.db = Database.instance(env);
-    this.customerLensClient = createAxiosClient({
-      baseURL: env.CUSTOMER_LENS_URL,
-      headers: {
-        "Content-Type": "application/json",
-        "auth-token": env.CUSTOMER_LENS_AUTH_TOKEN
-      }
-    }, { ...DEFAULT_RETRY_CONFIG });
+    this.customerLensClient = CustomerLensClient.instance(env);
   }
 
   async updateConversation(conversationId, pageId, insertedAt) {
@@ -194,7 +188,7 @@ export default class ConversationService {
     });
   }
 
-  async syncToCustomerLens(data) {
+  async sendToCustomerLens(data) {
     const pageId = data?.page_id;
     const conversationId = data?.data?.conversation?.id;
     if (!pageId || !conversationId) return;
@@ -253,7 +247,7 @@ export default class ConversationService {
   static async dequeueMessageCustomerLensQueue(batch, env) {
     const conversationService = new ConversationService(env);
     for (const message of batch.messages) {
-      await conversationService.syncToCustomerLens(message.body);
+      await conversationService.sendToCustomerLens(message.body);
     }
   }
 }
