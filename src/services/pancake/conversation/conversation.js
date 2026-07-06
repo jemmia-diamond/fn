@@ -4,7 +4,7 @@ import LeadService from "services/erp/crm/lead/lead";
 import AIHUBClient from "services/clients/aihub";
 import { shouldReceiveWebhook } from "controllers/webhook/pancake/erp/utils";
 import { EXTRA_HOOKS } from "services/pancake/constants/extra-hook.constant";
-import { createAxiosClient } from "services/utils/http-client";
+import { createAxiosClient, DEFAULT_RETRY_CONFIG } from "services/utils/http-client";
 
 export default class ConversationService {
   constructor(env) {
@@ -12,6 +12,13 @@ export default class ConversationService {
     this.pancakeClient = new PancakeClient(env);
     this.leadService = new LeadService(env);
     this.db = Database.instance(env);
+    this.customerLensClient = createAxiosClient({
+      baseURL: env.CUSTOMER_LENS_URL,
+      headers: {
+        "Content-Type": "application/json",
+        "auth-token": env.CUSTOMER_LENS_AUTH_TOKEN
+      }
+    }, { ...DEFAULT_RETRY_CONFIG });
   }
 
   async updateConversation(conversationId, pageId, insertedAt) {
@@ -187,7 +194,7 @@ export default class ConversationService {
     });
   }
 
-  async syncToCustomerLens(env, data) {
+  async syncToCustomerLens(data) {
     const pageId = data?.page_id;
     const conversationId = data?.data?.conversation?.id;
     if (!pageId || !conversationId) return;
@@ -197,17 +204,7 @@ export default class ConversationService {
       return;
     }
 
-    const lensUrl = env.CUSTOMER_LENS_URL;
-    const authToken = env.CUSTOMER_LENS_AUTH_TOKEN;
-    const axiosClient = createAxiosClient({
-      baseURL: lensUrl,
-      headers: {
-        "Content-Type": "application/json",
-        "auth-token": authToken
-      }
-    });
-
-    await axiosClient.post("/api/profile", {
+    await this.customerLensClient.post("/api/profile", {
       "global_id": globalId,
       "is_force": false
     });
@@ -256,8 +253,7 @@ export default class ConversationService {
   static async dequeueMessageCustomerLensQueue(batch, env) {
     const conversationService = new ConversationService(env);
     for (const message of batch.messages) {
-      await conversationService.syncToCustomerLens(env, message.body);
+      await conversationService.syncToCustomerLens(message.body);
     }
   }
-
 }

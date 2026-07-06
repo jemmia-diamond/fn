@@ -18,13 +18,7 @@ export default class PancakeERPMessageController {
       const pageId = data?.page_id;
 
       if (pageId && conversationId && !pageId.startsWith("pzl")) {
-        await DebounceService.debounce({
-          env: ctx.env,
-          key: DebounceKeys[DebounceActions.SEND_TO_CUSTOMER_LENS_QUEUE](conversationId),
-          data: data,
-          actionType: DebounceActions.SEND_TO_CUSTOMER_LENS_QUEUE,
-          delay: 5000
-        });
+        await ctx.env["CUSTOMER_LENS_QUEUE"].send(data);
       }
 
       await DebounceService.debounce({
