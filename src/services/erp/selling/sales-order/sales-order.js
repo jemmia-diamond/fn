@@ -627,19 +627,28 @@ export default class SalesOrderService {
   async composeUpdateOrderContent(oldSalesOrderData, salesOrderData, promotionData) {
     const { content, diffAttachments } = composeOrderUpdateMessage(oldSalesOrderData, salesOrderData, promotionData);
     if (content) {
-      const kv = this.env.FN_KV;
-      const lastSentKey = `${SalesOrderService.KV_KEY_LARK_LAST_SENT_PREFIX}${salesOrderData.name}`;
-
-      const currentHash = crypto.createHash("sha256").update(content).digest("hex");
-      const lastSentHash = await kv.get(lastSentKey);
-      if (lastSentHash === currentHash) {
-        // If text content is same with last sent message
+      const isUnchanged = await this.isContentUnchanged(salesOrderData.name, content);
+      if (isUnchanged) {
         return { content: "", diffAttachments };
       }
-      // Save latest hash to KV, expire after 5 minutes
-      await kv.put(lastSentKey, currentHash, { expirationTtl: 300 });
     }
     return { content, diffAttachments };
+  }
+
+  async isContentUnchanged(orderName, content) {
+    if (!content) return true;
+    const kv = this.env.FN_KV;
+    const lastSentKey = `${SalesOrderService.KV_KEY_LARK_LAST_SENT_PREFIX}${orderName}`;
+    const currentHash = crypto.createHash("sha256").update(content).digest("hex");
+    const lastSentHash = await kv.get(lastSentKey);
+
+    if (lastSentHash === currentHash) {
+      return true;
+    }
+
+    // Save latest hash to KV, expire after 5 minutes
+    await kv.put(lastSentKey, currentHash, { expirationTtl: 300 });
+    return false;
   }
 
   async _getLarkUserIdByEmail(email) {
