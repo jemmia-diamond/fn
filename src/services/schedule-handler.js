@@ -139,6 +139,7 @@ export default {
         fromDate: dayjs.tz(MISSING_SERIAL_START_DATE, TIMEZONE_VIETNAM).toISOString(),
         toDate: dayjs().toISOString()
       });
+      await DatabaseOperations.MaterializedViewService.refreshMorningViews(env);
       break;
     case "0 14 * * *": // 21:00
       await ERP.Automation.AssignmentRuleService.enableAssignmentRuleOffHour(env);
