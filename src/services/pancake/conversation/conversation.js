@@ -193,8 +193,7 @@ export default class ConversationService {
     const pageId = data?.page_id;
     const conversationId = data?.data?.conversation?.id;
     if (!pageId || !conversationId) return;
-    const pancakeData = await PancakeCache.getConversation(this.pancakeClient, pageId, conversationId, this.env);
-    const globalId = pancakeData?.global_id;
+    const globalId = await PancakeCache.getMessageGlobalId(this.pancakeClient, pageId, conversationId, this.env);
     if (!globalId) {
       return;
     }
