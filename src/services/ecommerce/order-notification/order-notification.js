@@ -70,7 +70,7 @@ export default class OrderNotificationService {
     for (const message of batch.messages) {
       const orderData = message.body;
       if (await orderNotificationService.shouldSkipMessage(orderData)) continue;
-      await this.sendOrderNotification(orderData);
+      await orderNotificationService.sendOrderNotification(orderData);
       await orderNotificationService.markOrderNotified(orderData);
     }
   }
