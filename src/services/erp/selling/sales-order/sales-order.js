@@ -1,4 +1,5 @@
 import * as Sentry from "@sentry/cloudflare";
+import crypto from "crypto";
 import FrappeClient from "src/frappe/frappe-client";
 import { convertIsoToDatetime } from "src/frappe/utils/datetime";
 import LarksuiteService from "services/larksuite/lark";
@@ -27,6 +28,7 @@ export default class SalesOrderService {
   static SYNC_TYPE_AUTO = 1; // auto sync when deploy app
   static SYNC_TYPE_MANUAL = 0; // manual sync when call function
   static PAYMENT_GATEWAY_ERP = "Thanh toán qua ERP";
+  static KV_KEY_LARK_LAST_SENT_PREFIX = "lark_last_sent_hash:";
 
   constructor(env) {
     this.env = env;
@@ -623,7 +625,30 @@ export default class SalesOrderService {
   }
 
   async composeUpdateOrderContent(oldSalesOrderData, salesOrderData, promotionData) {
-    return composeOrderUpdateMessage(oldSalesOrderData, salesOrderData, promotionData);
+    const { content, diffAttachments } = composeOrderUpdateMessage(oldSalesOrderData, salesOrderData, promotionData);
+    if (content) {
+      const isUnchanged = await this.isContentUnchanged(salesOrderData.name, content);
+      if (isUnchanged) {
+        return { content: "", diffAttachments };
+      }
+    }
+    return { content, diffAttachments };
+  }
+
+  async isContentUnchanged(orderName, content) {
+    if (!content) return true;
+    const kv = this.env.FN_KV;
+    const lastSentKey = `${SalesOrderService.KV_KEY_LARK_LAST_SENT_PREFIX}${orderName}`;
+    const currentHash = crypto.createHash("sha256").update(content).digest("hex");
+    const lastSentHash = await kv.get(lastSentKey);
+
+    if (lastSentHash === currentHash) {
+      return true;
+    }
+
+    // Save latest hash to KV, expire after 5 minutes
+    await kv.put(lastSentKey, currentHash, { expirationTtl: 300 });
+    return false;
   }
 
   async _getLarkUserIdByEmail(email) {

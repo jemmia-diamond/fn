@@ -1,4 +1,5 @@
 import { Prisma } from "@prisma-cli";
+import { toSqlOrder } from "services/utils/sql-helpers";
 
 export function aggregateQuery(jsonParams) {
   const filterClauses = [];
@@ -135,11 +136,16 @@ export function aggregateQuery(jsonParams) {
     `);
   }
 
-  if (jsonParams.sort?.by === "price") {
-    sortSql = Prisma.sql`ORDER BY ${Prisma.raw(sortedColumn)} ${jsonParams.sort.order === "asc" ? Prisma.raw("ASC") : Prisma.raw("DESC")}\n`;
-  } else {
-    sortSql = Prisma.sql`ORDER BY p2.image_updated_at DESC\n`;
-    needsP2Join = true;
+  const order = toSqlOrder(jsonParams.sort?.order);
+
+  const sortStrategies = {
+    price: () => Prisma.sql`ORDER BY ${Prisma.raw(sortedColumn)} ${order}\n`,
+    sold_quantity: () => Prisma.sql`ORDER BY COALESCE(p.sold_quantity, 0) ${order}\n`,
+    created_date: () => Prisma.sql`ORDER BY COALESCE(d.created_date, d.database_created_at) ${order}\n`
+  };
+
+  if (jsonParams.sort?.by && sortStrategies[jsonParams.sort.by]) {
+    sortSql = sortStrategies[jsonParams.sort.by]();
   }
 
   if (jsonParams.product_ids && jsonParams.product_ids.length > 0) {

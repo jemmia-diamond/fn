@@ -1,5 +1,5 @@
 import { aggregateQuery } from "services/ecommerce/product/utils/jewelry";
-import { JEWELRY_IMAGE } from "src/controllers/ecommerce/constant";
+import { JEWELRY_IMAGE, API_CONFIG } from "src/controllers/ecommerce/constant";
 import { Prisma } from "@prisma-cli";
 
 export function buildInventoryMetricsSql(opts = {}) {
@@ -28,7 +28,7 @@ export function buildInventoryMetricsSql(opts = {}) {
   `;
 }
 
-export function buildQueryV2(jsonParams) {
+function buildBaseQueryV2(jsonParams) {
   const {
     filterSql,
     sortSql,
@@ -206,7 +206,7 @@ export function buildQueryV2(jsonParams) {
       p.haravan_product_id, p.title, d.design_code, p.handle,
       d.diamond_holder, d.main_stone, d.ring_band_type, p.haravan_product_type,
       p.max_price, p.min_price, p.max_price_18, p.max_price_14, 
-      p.has_360, p.sold_before_2025 ${collectionJoinEcomProductsClause ? Prisma.raw(", p2.image_updated_at") : Prisma.empty}
+      p.has_360, p.sold_before_2025, p.sold_quantity, d.created_date, d.database_created_at ${collectionJoinEcomProductsClause ? Prisma.raw(", p2.image_updated_at") : Prisma.empty}
 
     ${havingSql}
     ${sortSql}
@@ -238,6 +238,61 @@ export function buildQueryV2(jsonParams) {
   `;
 
   return { dataSql, countSql };
+}
+
+export function buildInterleavedQueryV2(jsonParams) {
+  const productTypes = jsonParams.product_types || [];
+  const blockSize = jsonParams.block_size;
+
+  const from = jsonParams.pagination?.from - API_CONFIG.MIN_FROM;
+  const limit = jsonParams.pagination?.limit;
+  const to = from + limit;
+
+  const queries = productTypes.map((type, typeIdx) => {
+    const singleTypeParams = {
+      ...jsonParams,
+      product_types: [type],
+      pagination: {
+        from: API_CONFIG.MIN_FROM,
+        limit: to
+      }
+    };
+    const { dataSql: subDataSql } = buildBaseQueryV2(singleTypeParams);
+    return { subDataSql, typeIdx };
+  });
+
+  const unionSql = Prisma.join(
+    queries.map(q => Prisma.sql`
+      SELECT *, 
+             ROW_NUMBER() OVER () as row_num, 
+             ${q.typeIdx}::integer as type_idx 
+      FROM (${q.subDataSql}) AS sub_t
+    `),
+    " UNION ALL "
+  );
+
+  const dataSql = Prisma.sql`
+    SELECT * FROM (
+      ${unionSql}
+    ) AS ranked
+    ORDER BY (row_num - ${API_CONFIG.ROW_NUM_START_INDEX}) / ${blockSize}::integer ASC, type_idx ASC, row_num ASC
+    LIMIT ${limit} OFFSET ${from}
+  `;
+
+  const { countSql } = buildBaseQueryV2(jsonParams);
+
+  return { dataSql, countSql };
+}
+
+export function buildQueryV2(jsonParams) {
+  const productTypes = jsonParams.product_types || [];
+  const blockSize = jsonParams.block_size;
+
+  if (blockSize && blockSize > 0 && productTypes.length > 1) {
+    return buildInterleavedQueryV2(jsonParams);
+  }
+
+  return buildBaseQueryV2(jsonParams);
 }
 
 export function buildQuerySingleV2(params = {}) {
@@ -350,4 +405,3 @@ export function buildQuerySingleV2(params = {}) {
 
   return { variantJsonBuildObject, lateralJoinClause };
 }
-

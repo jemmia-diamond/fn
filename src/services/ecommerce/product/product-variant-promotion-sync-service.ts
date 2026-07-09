@@ -20,15 +20,18 @@ export default class ProductVariantPromotionSyncService {
     API_REQUEST_DELAY: 200,
     JEWELRY_PROMOTION_COLLECTION_ID: "1004602299",
     PROMOTION_NAME_PREFIX: "CTKM Biến Thể",
-    DEFAULT_TARGET_COMBO_DISCOUNT: 12
+    DEFAULT_TARGET_COMBO_DISCOUNT: 12,
+    DEFAULT_JEWELRY_DISCOUNT: 16
   };
 
   private env: any;
   private targetDiscount: number;
+  private jewelryDiscount: number;
 
   constructor(env: any) {
     this.env = env;
     this.targetDiscount = Number(this.env.TARGET_COMBO_DISCOUNT || ProductVariantPromotionSyncService.CONFIG.DEFAULT_TARGET_COMBO_DISCOUNT);
+    this.jewelryDiscount = Number(this.env.DEFAULT_JEWELRY_DISCOUNT || ProductVariantPromotionSyncService.CONFIG.DEFAULT_JEWELRY_DISCOUNT);
   }
 
   /**
@@ -166,13 +169,13 @@ export default class ProductVariantPromotionSyncService {
     const originalDiscounts = new Map<number, number>();
     const jewelryProductPromoCollectionHaravanIds = new Map<number, Set<string>>();
 
-    const collectionLinksRes = await nocodb.listRecords(NOCODB_TABLES.MARKETING.JEWELRY_HARAVAN_COLLECTIONS, {
+    const collectionLinks = await this.fetchAllRecords(nocodb, NOCODB_TABLES.MARKETING.JEWELRY_HARAVAN_COLLECTIONS, {
       where: `(products_id,in,${affectedProductIdsArray.join(",")})`,
       fields: "products_id,haravan_collections_id",
       sort: "products_id"
     });
 
-    for (const link of collectionLinksRes.list || []) {
+    for (const link of collectionLinks) {
       const hcRes = await nocodb.listRecords(NOCODB_TABLES.MARKETING.HARAVAN_COLLECTIONS, {
         where: `(id,eq,${link.haravan_collections_id})`,
         limit: 1,
@@ -208,12 +211,12 @@ export default class ProductVariantPromotionSyncService {
     targetVariantIds: Set<number>,
     originalDiscounts: Map<number, number>
   ): Promise<Record<number, { product_id: number; variant_id: number }[]>> {
-    const allJewelryVariantsRes = await nocodb.listRecords(NOCODB_TABLES.SUPPLY.VARIANTS, {
+    const allJewelryVariantsList = await this.fetchAllRecords(nocodb, NOCODB_TABLES.SUPPLY.VARIANTS, {
       where: `(product_id,in,${affectedProductIdsArray.join(",")})`,
       fields: "haravan_product_id,haravan_variant_id,product_id"
     });
 
-    const allJewelryVariants = (allJewelryVariantsRes.list || [])
+    const allJewelryVariants = allJewelryVariantsList
       .filter((v: any) => v.haravan_variant_id && v.haravan_variant_id > 0)
       .map((v: any) => ({
         haravan_product_id: v.haravan_product_id,
@@ -230,7 +233,7 @@ export default class ProductVariantPromotionSyncService {
       if (targetVariantIds.has(vId)) continue;
 
       const pWorkplaceId = Number(variant.product_workplace_id);
-      const originalDiscount = originalDiscounts.get(pWorkplaceId) || 0;
+      const originalDiscount = originalDiscounts.get(pWorkplaceId) || this.jewelryDiscount;
 
       if (originalDiscount > 0) {
         if (!discountGroups[originalDiscount]) discountGroups[originalDiscount] = [];
@@ -309,11 +312,10 @@ export default class ProductVariantPromotionSyncService {
 
     const idsArray = Array.from(affectedJewelryProductWorkplaceIds);
 
-    const linksToDeleteRes = await nocodb.listRecords(NOCODB_TABLES.MARKETING.JEWELRY_HARAVAN_COLLECTIONS, {
+    const linksToDelete = await this.fetchAllRecords(nocodb, NOCODB_TABLES.MARKETING.JEWELRY_HARAVAN_COLLECTIONS, {
       where: `(products_id,in,${idsArray.join(",")})`,
-      fields: "id"
+      fields: "products_id,haravan_collections_id"
     });
-    const linksToDelete = linksToDeleteRes.list || [];
     if (linksToDelete.length > 0) {
       const deletePayload = linksToDelete.map((link: any) => ({
         products_id: link.products_id,

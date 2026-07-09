@@ -30,8 +30,8 @@ export default class JewelryControllerV2 {
         max: parseNumber(params.max_price, null)
       },
       sort: {
-        by: params.sort_by || "price",
-        order: params.sort_order || "asc"
+        by: params.sort_by,
+        order: params.sort_order
       },
       main_holder_size: {
         lower: parseNumber(params["main_holder_size.lower"], undefined, true),
@@ -50,7 +50,8 @@ export default class JewelryControllerV2 {
       linked_collections: splitParams(params.linked_collections),
       matched_diamonds: params.matched_diamonds === "true",
       ring_sizes: splitParams(params.ring_sizes),
-      warehouse_ids: splitParams(params.warehouse_ids)
+      warehouse_ids: splitParams(params.warehouse_ids),
+      block_size: parseNumber(params.block_size, null)
     };
 
     const productService = new Ecommerce.ProductService(ctx.env);
