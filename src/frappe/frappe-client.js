@@ -6,20 +6,23 @@ import { createAxiosClient } from "services/utils/http-client";
 const DEFAULT_HEADERS = { Accept: "application/json" };
 
 export default class FrappeClient {
-  constructor({ url, username, password, apiKey, apiSecret, verify = true }) {
-    this.url = url;
+  constructor({ env, url, username, password, apiKey, apiSecret, verify = true } = {}) {
+    this.url = url || env?.JEMMIA_ERP_BASE_URL;
     this.verify = verify;
     this.headers = { ...DEFAULT_HEADERS };
     this.canDownload = [];
     this.timeout = 60000;
 
-    if (apiKey && apiSecret) {
-      const token = btoa(`${apiKey}:${apiSecret}`);
+    const activeApiKey = apiKey || env?.JEMMIA_ERP_API_KEY;
+    const activeApiSecret = apiSecret || env?.JEMMIA_ERP_API_SECRET;
+
+    if (activeApiKey && activeApiSecret) {
+      const token = btoa(`${activeApiKey}:${activeApiSecret}`);
       this.headers["Authorization"] = `Basic ${token}`;
     }
 
     this.axiosClient = createAxiosClient({
-      baseURL: url,
+      baseURL: this.url,
       headers: this.headers,
       timeout: this.timeout
     });
