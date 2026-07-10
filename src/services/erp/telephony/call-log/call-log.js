@@ -1,70 +1,59 @@
 import FrappeClient from "src/frappe/frappe-client";
-import StringeeClient from "src/stringee/stringee-client";
-import { timestampToDatetime } from "src/stringee/utils/datetime";
+import VbotClient from "src/telephony/vbot/vbot-client";
 import { normalizeToStandardFormat } from "services/utils/phone-utils";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 
 dayjs.extend(utc);
 
+const FIRST_PAGE = 1;
+
 export default class CallLogService {
-  constructor(
-    {
-      jemmiaErpBaseUrl,
-      jemmiaErpApiKey,
-      jemmiaErpApiSecret,
-      stringeeApiKeySid,
-      stringeeApiKeySecret
-    }
-  ) {
+  constructor(env) {
     this.doctype = "Call Log";
-    this.frappeClient = new FrappeClient({ url: jemmiaErpBaseUrl, apiKey: jemmiaErpApiKey, apiSecret: jemmiaErpApiSecret });
-    this.stringeeClient = new StringeeClient(stringeeApiKeySid, stringeeApiKeySecret);
-    this.stringeeRecordingPrefix = `${this.stringeeClient.baseUrl}/call/recording`;
+    this.frappeClient = new FrappeClient({ env });
+    this.vbotClient = new VbotClient(env);
   }
 
-  static async syncStringeeCallLogs(env) {
-    const jemmia_erp_base_url = env.JEMMIA_ERP_BASE_URL;
-    const jemmia_erp_api_key = env.JEMMIA_ERP_API_KEY;
-    const jemmia_erp_api_secret = env.JEMMIA_ERP_API_SECRET;
-    const stringee_api_key_sid = env.STRINGEE_SID;
-    const stringee_api_key_secret = env.STRINGEE_KEY;
-
+  async syncVbotCallLogs() {
     const currentTimestamp = dayjs.utc().subtract(1, "hour").subtract(5, "minutes").unix();
-    const callLogService = new CallLogService(
-      {
-        jemmiaErpBaseUrl: jemmia_erp_base_url,
-        jemmiaErpApiKey: jemmia_erp_api_key,
-        jemmiaErpApiSecret: jemmia_erp_api_secret,
-        stringeeApiKeySid: stringee_api_key_sid,
-        stringeeApiKeySecret: stringee_api_key_secret
+    let page = FIRST_PAGE;
+
+    while (true) {
+      const callLogs = await this.vbotClient.getCallLogs({ page });
+      if (!callLogs?.length) return;
+
+      for (const callLog of callLogs) {
+        const callLogUtc = dayjs(callLog.date_create).subtract(7, "hours").unix();
+        if (callLogUtc < currentTimestamp) return;
+
+        const mappedCallLog = this.mapVbotCallLogFields(callLog);
+        await this.frappeClient.upsert(mappedCallLog, "id");
       }
-    );
-    const callLogs = await callLogService.stringeeClient.getCallLogs({
-      page: 1,
-      limit: 100,
-      from_created_time: currentTimestamp
-    });
-    for (const callLog of callLogs) {
-      const mappedCallLog = callLogService.mapStringeeCallLogFields(callLog);
-      await callLogService.frappeClient.upsert(mappedCallLog, "id");
+      page++;
     }
   }
 
-  mapStringeeCallLogFields = (callLog) => {
-    const type = callLog.from_internal === 1 ? "Outgoing" : "Incoming";
-    const recording_url = callLog.recorded === 1 ? `${this.stringeeRecordingPrefix}/${callLog.id}` : null;
+  mapVbotCallLogFields = (callLog) => {
+    const id = callLog.group_id || callLog.external_call_id;
+    const isIncoming = callLog.type_call === "INCALL";
+    const type = isIncoming ? "Incoming" : "Outgoing";
+
+    const from = isIncoming ? callLog.caller?.[0]?.phone : callLog.hotline_number;
+    const to = isIncoming ? callLog.hotline_number : callLog.callee?.[0]?.phone;
+
+    const start_time = dayjs(callLog.date_create).subtract(7, "hours").format("YYYY-MM-DD HH:mm:ss");
+    const [hrs = 0, mins = 0, secs = 0] = (callLog.duration_call || "0:0:0").split(":").map(Number);
+    const duration = hrs * 3600 + mins * 60 + secs;
+    const end_time = dayjs(start_time).add(duration, "second").format("YYYY-MM-DD HH:mm:ss");
+
+    const recording_url = callLog.record_file?.[0];
 
     return {
       doctype: this.doctype,
-      id: callLog.id,
-      from: normalizeToStandardFormat(callLog.from_number),
-      to: normalizeToStandardFormat(callLog.to_number) || callLog.to_number,
-      start_time: timestampToDatetime(callLog.start_time),
-      end_time: timestampToDatetime(callLog.stop_time),
-      duration: callLog.answer_duration,
-      type: type,
-      recording_url: recording_url
+      id, provider: "vbot",
+      from: normalizeToStandardFormat(from), to: normalizeToStandardFormat(to),
+      start_time, end_time, duration, type, recording_url
     };
   };
 }
