@@ -8,6 +8,18 @@ dayjs.extend(utc);
 
 const FIRST_PAGE = 1;
 
+const normalizeRecordingUrl = (url) => {
+  if (!url) return null;
+  try {
+    const u = new URL(url);
+    u.protocol = "https:";
+    u.port = "";
+    return u.toString();
+  } catch {
+    return url;
+  }
+};
+
 export default class CallLogService {
   constructor(env) {
     this.doctype = "Call Log";
@@ -16,7 +28,7 @@ export default class CallLogService {
   }
 
   async syncVbotCallLogs() {
-    const currentTimestamp = dayjs.utc().subtract(1, "hour").subtract(5, "minutes").unix();
+    const currentTimestamp = dayjs.utc().subtract(30, "hour").subtract(5, "minutes").unix();
     let page = FIRST_PAGE;
 
     while (true) {
@@ -47,7 +59,7 @@ export default class CallLogService {
     const duration = hrs * 3600 + mins * 60 + secs;
     const end_time = dayjs(start_time).add(duration, "second").format("YYYY-MM-DD HH:mm:ss");
 
-    const recording_url = callLog.record_file?.[0];
+    const recording_url = normalizeRecordingUrl(callLog.record_file?.[0]);
 
     return {
       doctype: this.doctype,
