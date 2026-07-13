@@ -6,13 +6,14 @@ import utc from "dayjs/plugin/utc.js";
 
 dayjs.extend(utc);
 
-const ZERO = 0;
-const FIRST = 0;
-const ONE = 1;
-const FIVE = 5;
-const ONE_HOUR = 3600;
-const ONE_MINUTE = 60;
+const FIRST_ITEM = 0;
 const FIRST_PAGE = 1;
+const UTC_OFFSET_HOURS = 7;
+const SECONDS_PER_HOUR = 3600;
+const SECONDS_PER_MINUTE = 60;
+const DEFAULT_TIME_VALUE = 0;
+const SYNC_LOOKBACK_HOURS = 1;
+const SYNC_LOOKBACK_MINUTES = 5;
 
 const normalizeRecordingUrl = (url) => {
   if (!url) return null;
@@ -34,7 +35,11 @@ export default class CallLogService {
   }
 
   async syncVbotCallLogs() {
-    const currentTimestamp = dayjs.utc().subtract(ONE, "hour").subtract(FIVE, "minutes").unix();
+    const currentTimestamp = dayjs
+      .utc()
+      .subtract(SYNC_LOOKBACK_HOURS, "hour")
+      .subtract(SYNC_LOOKBACK_MINUTES, "minutes")
+      .unix();
     let page = FIRST_PAGE;
 
     while (true) {
@@ -42,7 +47,7 @@ export default class CallLogService {
       if (!callLogs?.length) return;
 
       for (const callLog of callLogs) {
-        const callLogUtc = dayjs(callLog.date_create).subtract(7, "hours").unix();
+        const callLogUtc = dayjs(callLog.date_create).subtract(UTC_OFFSET_HOURS, "hours").unix();
         if (callLogUtc < currentTimestamp) return;
 
         const mappedCallLog = this.mapVbotCallLogFields(callLog);
@@ -57,15 +62,20 @@ export default class CallLogService {
     const isIncoming = callLog.type_call === "INCALL";
     const type = isIncoming ? "Incoming" : "Outgoing";
 
-    const from = isIncoming ? callLog.caller?.[FIRST]?.phone : callLog.hotline_number;
-    const to = isIncoming ? callLog.hotline_number : callLog.callee?.[FIRST]?.phone;
+    const from = isIncoming ? callLog.caller?.[FIRST_ITEM]?.phone : callLog.hotline_number;
+    const to = isIncoming ? callLog.hotline_number : callLog.callee?.[FIRST_ITEM]?.phone;
 
-    const start_time = dayjs(callLog.date_create).subtract(7, "hours").format("YYYY-MM-DD HH:mm:ss");
-    const [hrs = ZERO, mins = ZERO, secs = ZERO] = (callLog.duration_call || "0:0:0").split(":").map(Number);
-    const duration = hrs * ONE_HOUR + mins * ONE_MINUTE + secs;
+    const start_time = dayjs(callLog.date_create)
+      .subtract(UTC_OFFSET_HOURS, "hours")
+      .format("YYYY-MM-DD HH:mm:ss");
+    const durationStr = callLog.duration_call || "0:0:0";
+    const [hrs = DEFAULT_TIME_VALUE, mins = DEFAULT_TIME_VALUE, secs = DEFAULT_TIME_VALUE] = durationStr
+      .split(":").map(Number);
+
+    const duration = hrs * SECONDS_PER_HOUR + mins * SECONDS_PER_MINUTE + secs;
     const end_time = dayjs(start_time).add(duration, "second").format("YYYY-MM-DD HH:mm:ss");
 
-    const recording_url = normalizeRecordingUrl(callLog.record_file?.[FIRST]);
+    const recording_url = normalizeRecordingUrl(callLog.record_file?.[FIRST_ITEM]);
 
     return {
       doctype: this.doctype,
