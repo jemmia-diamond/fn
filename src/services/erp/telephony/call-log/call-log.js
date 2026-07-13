@@ -6,6 +6,12 @@ import utc from "dayjs/plugin/utc.js";
 
 dayjs.extend(utc);
 
+const ZERO = 0;
+const FIRST = 0;
+const ONE = 1;
+const FIVE = 5;
+const ONE_HOUR = 3600;
+const ONE_MINUTE = 60;
 const FIRST_PAGE = 1;
 
 const normalizeRecordingUrl = (url) => {
@@ -28,7 +34,7 @@ export default class CallLogService {
   }
 
   async syncVbotCallLogs() {
-    const currentTimestamp = dayjs.utc().subtract(30, "hour").subtract(5, "minutes").unix();
+    const currentTimestamp = dayjs.utc().subtract(ONE, "hour").subtract(FIVE, "minutes").unix();
     let page = FIRST_PAGE;
 
     while (true) {
@@ -51,15 +57,15 @@ export default class CallLogService {
     const isIncoming = callLog.type_call === "INCALL";
     const type = isIncoming ? "Incoming" : "Outgoing";
 
-    const from = isIncoming ? callLog.caller?.[0]?.phone : callLog.hotline_number;
-    const to = isIncoming ? callLog.hotline_number : callLog.callee?.[0]?.phone;
+    const from = isIncoming ? callLog.caller?.[FIRST]?.phone : callLog.hotline_number;
+    const to = isIncoming ? callLog.hotline_number : callLog.callee?.[FIRST]?.phone;
 
     const start_time = dayjs(callLog.date_create).subtract(7, "hours").format("YYYY-MM-DD HH:mm:ss");
-    const [hrs = 0, mins = 0, secs = 0] = (callLog.duration_call || "0:0:0").split(":").map(Number);
-    const duration = hrs * 3600 + mins * 60 + secs;
+    const [hrs = ZERO, mins = ZERO, secs = ZERO] = (callLog.duration_call || "0:0:0").split(":").map(Number);
+    const duration = hrs * ONE_HOUR + mins * ONE_MINUTE + secs;
     const end_time = dayjs(start_time).add(duration, "second").format("YYYY-MM-DD HH:mm:ss");
 
-    const recording_url = normalizeRecordingUrl(callLog.record_file?.[0]);
+    const recording_url = normalizeRecordingUrl(callLog.record_file?.[FIRST]);
 
     return {
       doctype: this.doctype,
