@@ -87,26 +87,44 @@ export async function mapLarkToFrappe(
     }
     return null;
   };
+  const mapPreferredProducts = (items: any[]) => {
+    if (!items?.length) return [];
+    return items.map((item) => ({ product_type: item.product_type }));
+  };
 
   const main_sales = (dataRequest.main_sales || []).map(mapSalesPerson);
   const offline_sales = (dataRequest.offline_sales || []).map(mapSalesPerson);
-
-  return {
+  const fields: Record<string, any> = {
     customer_name: dataRequest.name || "Khách hàng",
     customer_phone_number: lead?.phone || dataRequest.phone_number,
     scheduled_time: scheduledTime,
-    status: dataRequest.status || "Khách hẹn đến cửa hàng",
+    order_status: dataRequest.order_status || "Khách hẹn đến cửa hàng",
+    status: dataRequest.status,
     store: dataRequest.store,
-    gender: gender,
+    gender,
     conversation_greeting: dataRequest.conversation_greeting,
+    notes: [
+      dataRequest.note ? `Lưu ý đặc biệt \n ${dataRequest.note}` : "",
+      dataRequest.conversation_greeting ? `Nội dung đón tiếp tại cửa hàng \n ${dataRequest.conversation_greeting}` : ""
+    ].filter(Boolean).join("\n\n"),
     customer_response: dataRequest.customer_response,
-    notes: dataRequest.note,
     record_id: dataRequest.record_id,
     policy: dataRequest.policy,
-    lead: lead ? lead.name : undefined,
-    estimated_budget: lead ? lead.budget_lead : undefined,
-    range_estimated_budget: lead ? lead.proposed_budget : undefined,
+    primary_sales: main_sales.filter(Boolean)?.[0]?.sales_person,
     main_sales: main_sales.filter(Boolean),
-    offline_sales: offline_sales.filter(Boolean)
+    offline_sales: offline_sales.filter(Boolean),
+    budget: dataRequest.budget,
+    offline_response: dataRequest.offline_response
   };
+
+  if (lead) {
+    fields.estimated_budget = lead.budget_lead;
+    fields.range_estimated_budget = lead.budget_lead;
+    fields.appointment_with = lead.doctype;
+    fields.party = lead.name;
+    fields.purchased_purpose = lead.purpose_lead;
+    fields.preferred_products = mapPreferredProducts(lead.preferred_product_type);
+  }
+
+  return fields;
 }
