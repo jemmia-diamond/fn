@@ -3,7 +3,7 @@ import utc from "dayjs/plugin/utc.js";
 import HaravanAPI from "services/clients/haravan-client";
 import { sleep } from "services/utils/sleep";
 import { isTestOrder } from "services/utils/order-intercepter";
-import { processHaravanOrder } from "services/haravan/orders/order-service";
+import SalesOrderService from "services/erp/selling/sales-order/sales-order";
 
 dayjs.extend(utc);
 
@@ -43,7 +43,7 @@ export default class ERPNextOrderCreationSyncService {
         });
         const orders = response?.orders || [];
 
-        if (orders.length > 0) {
+        if (orders?.length) {
           await this._processOrderBatch(orders, fromDate, toDate);
           page++;
         } else {
@@ -76,11 +76,11 @@ export default class ERPNextOrderCreationSyncService {
       if (orderUpdatedAt.isBefore(fromDate) || orderUpdatedAt.isAfter(toDate)) return false;
       return true;
     });
+    if (!validOrders?.length) return;
 
-    if (validOrders.length === 0) return;
-
+    const salesOrderService = new SalesOrderService(this.env);
     for (const order of validOrders) {
-      await processHaravanOrder(order, this.env);
+      await salesOrderService.processHaravanOrder(order);
       await sleep(ERPNextOrderCreationSyncService.RATE_LIMIT_DELAY_MS);
     }
   }
