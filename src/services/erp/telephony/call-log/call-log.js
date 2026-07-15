@@ -76,14 +76,14 @@ export default class CallLogService {
 
     const duration = hrs * SECONDS_PER_HOUR + mins * SECONDS_PER_MINUTE + secs;
     const end_time = dayjs(start_time).add(duration, "second").format("YYYY-MM-DD HH:mm:ss");
-
     const recording_url = normalizeRecordingUrl(callLog.record_file?.[FIRST_ITEM]);
+    const disposition = String(callLog?.disposition).toLowerCase();
 
     return {
       doctype: this.doctype,
       id, provider: "vbot",
       from: normalizeToStandardFormat(from), to: normalizeToStandardFormat(to),
-      start_time, end_time, duration, type, recording_url, agent_id
+      start_time, end_time, duration, type, recording_url, agent_id, disposition
     };
   };
 }
