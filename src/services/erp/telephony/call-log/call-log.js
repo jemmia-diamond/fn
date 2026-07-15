@@ -1,70 +1,87 @@
 import FrappeClient from "src/frappe/frappe-client";
-import StringeeClient from "src/stringee/stringee-client";
-import { timestampToDatetime } from "src/stringee/utils/datetime";
+import VbotClient from "src/telephony/vbot/vbot-client";
 import { normalizeToStandardFormat } from "services/utils/phone-utils";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 
 dayjs.extend(utc);
 
+const FIRST_ITEM = 0;
+const FIRST_PAGE = 1;
+const UTC_OFFSET_HOURS = 7;
+const SECONDS_PER_HOUR = 3600;
+const SECONDS_PER_MINUTE = 60;
+const DEFAULT_TIME_VALUE = 0;
+const SYNC_LOOKBACK_HOURS = 1;
+const SYNC_LOOKBACK_MINUTES = 5;
+
+const normalizeRecordingUrl = (url) => {
+  if (!url) return null;
+  try {
+    const u = new URL(url);
+    u.protocol = "https:";
+    u.port = "";
+    return u.toString();
+  } catch {
+    return url;
+  }
+};
+
 export default class CallLogService {
-  constructor(
-    {
-      jemmiaErpBaseUrl,
-      jemmiaErpApiKey,
-      jemmiaErpApiSecret,
-      stringeeApiKeySid,
-      stringeeApiKeySecret
-    }
-  ) {
+  constructor(env) {
     this.doctype = "Call Log";
-    this.frappeClient = new FrappeClient({ url: jemmiaErpBaseUrl, apiKey: jemmiaErpApiKey, apiSecret: jemmiaErpApiSecret });
-    this.stringeeClient = new StringeeClient(stringeeApiKeySid, stringeeApiKeySecret);
-    this.stringeeRecordingPrefix = `${this.stringeeClient.baseUrl}/call/recording`;
+    this.frappeClient = new FrappeClient({ env });
+    this.vbotClient = new VbotClient(env);
   }
 
-  static async syncStringeeCallLogs(env) {
-    const jemmia_erp_base_url = env.JEMMIA_ERP_BASE_URL;
-    const jemmia_erp_api_key = env.JEMMIA_ERP_API_KEY;
-    const jemmia_erp_api_secret = env.JEMMIA_ERP_API_SECRET;
-    const stringee_api_key_sid = env.STRINGEE_SID;
-    const stringee_api_key_secret = env.STRINGEE_KEY;
+  async syncVbotCallLogs() {
+    const currentTimestamp = dayjs
+      .utc()
+      .subtract(SYNC_LOOKBACK_HOURS, "hour")
+      .subtract(SYNC_LOOKBACK_MINUTES, "minutes")
+      .unix();
+    let page = FIRST_PAGE;
 
-    const currentTimestamp = dayjs.utc().subtract(1, "hour").subtract(5, "minutes").unix();
-    const callLogService = new CallLogService(
-      {
-        jemmiaErpBaseUrl: jemmia_erp_base_url,
-        jemmiaErpApiKey: jemmia_erp_api_key,
-        jemmiaErpApiSecret: jemmia_erp_api_secret,
-        stringeeApiKeySid: stringee_api_key_sid,
-        stringeeApiKeySecret: stringee_api_key_secret
+    while (true) {
+      const callLogs = await this.vbotClient.getCallLogs({ page });
+      if (!callLogs?.length) return;
+
+      for (const callLog of callLogs) {
+        const callLogUtc = dayjs(callLog.date_create).subtract(UTC_OFFSET_HOURS, "hours").unix();
+        if (callLogUtc < currentTimestamp) return;
+
+        const mappedCallLog = this.mapVbotCallLogFields(callLog);
+        await this.frappeClient.upsert(mappedCallLog, "id");
       }
-    );
-    const callLogs = await callLogService.stringeeClient.getCallLogs({
-      page: 1,
-      limit: 100,
-      from_created_time: currentTimestamp
-    });
-    for (const callLog of callLogs) {
-      const mappedCallLog = callLogService.mapStringeeCallLogFields(callLog);
-      await callLogService.frappeClient.upsert(mappedCallLog, "id");
+      page++;
     }
   }
 
-  mapStringeeCallLogFields = (callLog) => {
-    const type = callLog.from_internal === 1 ? "Outgoing" : "Incoming";
-    const recording_url = callLog.recorded === 1 ? `${this.stringeeRecordingPrefix}/${callLog.id}` : null;
+  mapVbotCallLogFields = (callLog) => {
+    const id = callLog.group_id || callLog.external_call_id;
+    const isIncoming = callLog.type_call === "INCALL";
+    const type = isIncoming ? "Incoming" : "Outgoing";
+
+    const from = isIncoming ? callLog.caller?.[FIRST_ITEM]?.phone : callLog.hotline_number;
+    const to = isIncoming ? callLog.hotline_number : callLog.callee?.[FIRST_ITEM]?.phone;
+
+    const start_time = dayjs(callLog.date_create)
+      .subtract(UTC_OFFSET_HOURS, "hours")
+      .format("YYYY-MM-DD HH:mm:ss");
+    const durationStr = callLog.duration_call || "0:0:0";
+    const [hrs = DEFAULT_TIME_VALUE, mins = DEFAULT_TIME_VALUE, secs = DEFAULT_TIME_VALUE] = durationStr
+      .split(":").map(Number);
+
+    const duration = hrs * SECONDS_PER_HOUR + mins * SECONDS_PER_MINUTE + secs;
+    const end_time = dayjs(start_time).add(duration, "second").format("YYYY-MM-DD HH:mm:ss");
+
+    const recording_url = normalizeRecordingUrl(callLog.record_file?.[FIRST_ITEM]);
 
     return {
       doctype: this.doctype,
-      id: callLog.id,
-      from: normalizeToStandardFormat(callLog.from_number),
-      to: normalizeToStandardFormat(callLog.to_number) || callLog.to_number,
-      start_time: timestampToDatetime(callLog.start_time),
-      end_time: timestampToDatetime(callLog.stop_time),
-      duration: callLog.answer_duration,
-      type: type,
-      recording_url: recording_url
+      id, provider: "vbot",
+      from: normalizeToStandardFormat(from), to: normalizeToStandardFormat(to),
+      start_time, end_time, duration, type, recording_url
     };
   };
 }

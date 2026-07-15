@@ -24,7 +24,7 @@ export default {
   scheduled: async (controller, env, _ctx) => {
     switch (controller.cron) {
     case "0 * * * *": // At minute 0 every hour
-      await ERP.Telephony.CallLogService.syncStringeeCallLogs(env);
+      await new ERP.Telephony.CallLogService(env).syncVbotCallLogs();
       await ERP.CRM.LeadService.syncCallLogLead(env);
       await ERP.Selling.SalesOrderService.fillSerialNumbersToTemporaryOrderItems(env);
       await new Pancake.TagSyncService(env).syncTags();
