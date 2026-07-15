@@ -8,10 +8,7 @@ dayjs.extend(utc);
 
 const FIRST_ITEM = 0;
 const FIRST_PAGE = 1;
-const UTC_OFFSET_HOURS = 7;
-const SECONDS_PER_HOUR = 3600;
-const SECONDS_PER_MINUTE = 60;
-const DEFAULT_TIME_VALUE = 0;
+const DATETIME_FORMAT = "YYYY-MM-DD HH:mm:ss";
 const SYNC_LOOKBACK_HOURS = 1;
 const SYNC_LOOKBACK_MINUTES = 5;
 
@@ -47,7 +44,7 @@ export default class CallLogService {
       if (!callLogs?.length) return;
 
       for (const callLog of callLogs) {
-        const callLogUtc = dayjs(callLog.date_create).subtract(UTC_OFFSET_HOURS, "hours").unix();
+        const callLogUtc = dayjs(callLog.date_create).utc().unix();
         if (callLogUtc < currentTimestamp) return;
 
         const mappedCallLog = this.mapVbotCallLogFields(callLog);
@@ -67,15 +64,9 @@ export default class CallLogService {
     const from = isIncoming ? callLog.caller?.[FIRST_ITEM]?.phone : callLog.hotline_number;
     const to = isIncoming ? callLog.hotline_number : callLog.callee?.[FIRST_ITEM]?.phone;
 
-    const start_time = dayjs(callLog.date_create)
-      .subtract(UTC_OFFSET_HOURS, "hours")
-      .format("YYYY-MM-DD HH:mm:ss");
-    const durationStr = callLog.duration_call || "0:0:0";
-    const [hrs = DEFAULT_TIME_VALUE, mins = DEFAULT_TIME_VALUE, secs = DEFAULT_TIME_VALUE] = durationStr
-      .split(":").map(Number);
-
-    const duration = hrs * SECONDS_PER_HOUR + mins * SECONDS_PER_MINUTE + secs;
-    const end_time = dayjs(start_time).add(duration, "second").format("YYYY-MM-DD HH:mm:ss");
+    const start_time = dayjs(callLog.date_create).utc().format(DATETIME_FORMAT);
+    const duration = dayjs(`1970-01-01T${callLog.duration_call || "00:00:00"}Z`).unix();
+    const end_time = dayjs(start_time).add(duration, "second").format(DATETIME_FORMAT);
     const recording_url = normalizeRecordingUrl(callLog.record_file?.[FIRST_ITEM]);
     const disposition = String(callLog?.disposition).toLowerCase();
 
