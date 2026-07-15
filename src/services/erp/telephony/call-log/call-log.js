@@ -61,6 +61,8 @@ export default class CallLogService {
     const id = callLog.group_id || callLog.external_call_id;
     const isIncoming = callLog.type_call === "INCALL";
     const type = isIncoming ? "Incoming" : "Outgoing";
+    const agent_id = isIncoming ? callLog.callee?.[FIRST_ITEM]?.member_no
+      : callLog.caller?.[FIRST_ITEM]?.member_no;
 
     const from = isIncoming ? callLog.caller?.[FIRST_ITEM]?.phone : callLog.hotline_number;
     const to = isIncoming ? callLog.hotline_number : callLog.callee?.[FIRST_ITEM]?.phone;
@@ -81,7 +83,7 @@ export default class CallLogService {
       doctype: this.doctype,
       id, provider: "vbot",
       from: normalizeToStandardFormat(from), to: normalizeToStandardFormat(to),
-      start_time, end_time, duration, type, recording_url
+      start_time, end_time, duration, type, recording_url, agent_id
     };
   };
 }
