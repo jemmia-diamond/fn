@@ -1,5 +1,5 @@
 import { aggregateQuery } from "services/ecommerce/product/utils/jewelry";
-import { JEWELRY_IMAGE, API_CONFIG, PROMOTION_CONFIG } from "src/controllers/ecommerce/constant";
+import { JEWELRY_IMAGE, API_CONFIG } from "src/controllers/ecommerce/constant";
 import { Prisma } from "@prisma-cli";
 
 const excludeSerialsDiamondsSql = Prisma.sql`
@@ -12,8 +12,11 @@ const excludeSerialsDiamondsSql = Prisma.sql`
   )
 `;
 
-const targetComboMultiplier = (100 - PROMOTION_CONFIG.TARGET_COMBO_DISCOUNT_PERCENT) / 100;
-const defaultJewelryMultiplier = (100 - PROMOTION_CONFIG.DEFAULT_JEWELRY_DISCOUNT_PERCENT) / 100;
+function getDiscountMultiplier(customDiscount, fallbackPercent = 0) {
+  const percent = Number(customDiscount ?? fallbackPercent);
+  const safePercent = Number.isFinite(percent) && percent >= 0 && percent <= 100 ? percent : 0;
+  return (100 - safePercent) / 100;
+}
 
 export function buildInventoryMetricsSql(opts = {}) {
   if (!opts.return_inventory_metrics) {
@@ -55,6 +58,8 @@ function buildBaseQueryV2(jsonParams) {
 
   const finenessOrder = handleFinenessPriority === "14K" ? "ASC" : "DESC";
 
+  const defaultJewelryMultiplier = getDiscountMultiplier(jsonParams.default_jewelry_discount);
+
   const priceField = Prisma.sql`
     CASE
       WHEN EXISTS (
@@ -65,12 +70,7 @@ function buildBaseQueryV2(jsonParams) {
         WHERE wp.haravan_product_id = v.haravan_product_id
           AND hc.start_date <= NOW() 
           AND hc.end_date >= NOW()
-      ) THEN
-        CASE
-          WHEN v.final_discount_price IS NOT NULL AND v.final_discount_price != 0
-          THEN CAST(v.final_discount_price AS DECIMAL)
-          ELSE CAST(v.price AS DECIMAL)
-        END
+      ) THEN CAST(COALESCE(NULLIF(v.final_discount_price, 0), v.price) AS DECIMAL)
       ELSE CAST(v.price * ${defaultJewelryMultiplier} AS DECIMAL)
     END
   `;
@@ -316,6 +316,8 @@ export function buildQueryV2(jsonParams) {
 }
 
 export function buildQuerySingleV2(params = {}) {
+  const defaultJewelryMultiplier = getDiscountMultiplier(params.default_jewelry_discount);
+
   const priceField = Prisma.sql`
     CASE
       WHEN EXISTS (
@@ -326,19 +328,7 @@ export function buildQuerySingleV2(params = {}) {
         WHERE wp.haravan_product_id = v.haravan_product_id
           AND hc.start_date <= NOW() 
           AND hc.end_date >= NOW()
-      ) THEN
-        CASE
-          WHEN v.final_discount_price IS NOT NULL AND v.final_discount_price != 0
-          THEN CAST(v.final_discount_price AS DECIMAL)
-          ELSE CAST(v.price AS DECIMAL)
-        END
-      WHEN EXISTS (
-        SELECT 1
-        FROM workplace.variants wv
-        INNER JOIN workplace.variant_serials vs ON vs.variant_id = wv.id
-        INNER JOIN workplace.variant_serials_diamonds vsd ON vsd.variant_serials_id = vs.id
-        WHERE wv.haravan_variant_id = v.haravan_variant_id
-      ) THEN CAST(v.price * ${targetComboMultiplier} AS DECIMAL)
+      ) THEN CAST(COALESCE(NULLIF(v.final_discount_price, 0), v.price) AS DECIMAL)
       ELSE CAST(v.price * ${defaultJewelryMultiplier} AS DECIMAL)
     END
   `;

@@ -70,7 +70,8 @@
     "HARAVAN_APP_URL": "https://jemmiavn.myharavan.com",
     "AI_PROXY_URL": "https://aiproxy.jemmia.vn",
     "GOOGLE_GENERATIVE_AI_URL": "https://generativelanguage.googleapis.com/v1beta",
-    "VBOT_BASE_URL": "https://open-api-h01.vbot.vn/v3.0"
+    "VBOT_BASE_URL": "https://open-api-h01.vbot.vn/v3.0",
+    "DEFAULT_JEWELRY_DISCOUNT": 16
   },
   "secrets_store_secrets": [
     {

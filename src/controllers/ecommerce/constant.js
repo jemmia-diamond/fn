@@ -13,8 +13,3 @@ export const JEWELRY_IMAGE = {
   CDN_URL: "https://cdn.jemmia.vn"
 };
 
-export const PROMOTION_CONFIG = {
-  TARGET_COMBO_DISCOUNT_PERCENT: 12,
-  DEFAULT_JEWELRY_DISCOUNT_PERCENT: 16
-};
-
