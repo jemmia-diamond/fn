@@ -12,3 +12,5 @@ export const JEWELRY_IMAGE = {
   WORKPLACE_FULL_URL: "https://jemmia-workplace.90814f99c119cd5dc08362580f81a76f.r2.cloudflarestorage.com",
   CDN_URL: "https://cdn.jemmia.vn"
 };
+
+export const DEFAULT_JEWELRY_DISCOUNT = 16;
