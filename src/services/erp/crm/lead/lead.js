@@ -370,17 +370,18 @@ export default class LeadService {
     }
 
     const dataBuilder = async () => {
-      const leadData = {
+      return {
         doctype: this.doctype,
         status: "Lead",
         naming_series: "CRM-LEAD-.YYYY.-",
-        source: source,
+        source,
+        phone,
         first_name: phone,
-        phone: phone,
-        lead_owner: this.defaultLeadOwner,
-        first_reach_at: dayjs(data.creation).utc().format("YYYY-MM-DD HH:mm:ss")
+        lead_owner: data.agent || this.defaultLeadOwner,
+        first_reach_at: dayjs(data.start_time)
+          .utc()
+          .format("YYYY-MM-DD HH:mm:ss")
       };
-      return leadData;
     };
 
     const lead = await this.getOrCreateLead(phone, dataBuilder);
@@ -397,7 +398,7 @@ export default class LeadService {
         ["creation", ">=", timeThreshold],
         ["type", "=", "Incoming"]]
     });
-    for (const callLog of callLogs.slice(0,1)) {
+    for (const callLog of callLogs) {
       await leadService.processCallLogLead(callLog);
     }
   }
