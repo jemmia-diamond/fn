@@ -71,7 +71,8 @@ function buildBaseQueryV2(jsonParams) {
           AND hc.start_date <= NOW() 
           AND hc.end_date >= NOW()
       ) THEN CAST(COALESCE(NULLIF(v.final_discount_price, 0), v.price) AS DECIMAL)
-      ELSE CAST(v.price * ${defaultJewelryMultiplier} AS DECIMAL)
+      WHEN v.price < v.price_compare_at THEN CAST(COALESCE(NULLIF(v.final_discount_price, 0), v.price) AS DECIMAL)
+      ELSE CAST(v.price_compare_at * ${defaultJewelryMultiplier} AS DECIMAL)
     END
   `;
 
@@ -329,7 +330,8 @@ export function buildQuerySingleV2(params = {}) {
           AND hc.start_date <= NOW() 
           AND hc.end_date >= NOW()
       ) THEN CAST(COALESCE(NULLIF(v.final_discount_price, 0), v.price) AS DECIMAL)
-      ELSE CAST(v.price * ${defaultJewelryMultiplier} AS DECIMAL)
+      WHEN v.price < v.price_compare_at THEN CAST(COALESCE(NULLIF(v.final_discount_price, 0), v.price) AS DECIMAL)
+      ELSE CAST(v.price_compare_at * ${defaultJewelryMultiplier} AS DECIMAL)
     END
   `;
 
