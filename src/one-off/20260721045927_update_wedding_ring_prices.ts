@@ -5,19 +5,20 @@ import { SheetConnector } from "services/clients/lark-client";
 import { sleep } from "services/utils/sleep";
 import * as Sentry from "@sentry/cloudflare";
 
-const WIKI_NODE_TOKEN = "Gi6hwTTcGiUEshkbkgrlOJ1Pgph";
+const WIKI_NODE_TOKEN = "TVNSwzVH5iAbWXkSrvVl6OEfgee";
 const SHEET_ID = "GuneIA";
 const REQUIRED_FIELDS = ["product_id", "variant_id", "Giá mới cần đổi"];
 const CONCURRENCY = 5;
 const REQUEST_DELAY_MS = 200;
 
 export default async function updateWeddingRingPrices(env: any): Promise<void> {
+  console.warn("UPDATE PRICES");
   const sheet = new SheetConnector(env);
   const haravan = new HaravanAPI(env.HARAVAN_TOKEN);
   const limit = pLimit(CONCURRENCY);
 
   const spreadsheetToken = await sheet.resolveSpreadsheetToken(WIKI_NODE_TOKEN);
-  const rows = await sheet.readRange(spreadsheetToken, SHEET_ID, "A:ZZ");
+  const rows = await sheet.readRange(spreadsheetToken, SHEET_ID, "A1:C276");
   if (!rows.length) return;
 
   const header = rows[0].map((h: any) => String(h ?? "").trim());
