@@ -11,6 +11,8 @@ const FIRST_PAGE = 1;
 const DATETIME_FORMAT = "YYYY-MM-DD HH:mm:ss";
 const SYNC_LOOKBACK_HOURS = 1;
 const SYNC_LOOKBACK_MINUTES = 5;
+const SECONDS_IN_HOUR = 3600;
+const SECONDS_IN_MINUTE = 60;
 
 const normalizeRecordingUrl = (url) => {
   if (!url) return null;
@@ -65,7 +67,8 @@ export default class CallLogService {
     const to = isIncoming ? callLog.hotline_number : callLog.callee?.[FIRST_ITEM]?.phone;
 
     const start_time = dayjs(callLog.date_create).utc().format(DATETIME_FORMAT);
-    const duration = dayjs(`1970-01-01T${callLog.duration_call || "00:00:00"}Z`).unix();
+    const [hours, minutes, seconds] = (callLog.duration_call || "00:00:00").split(":").map(Number);
+    const duration = hours * SECONDS_IN_HOUR + minutes * SECONDS_IN_MINUTE + seconds;
     const end_time = dayjs(start_time).add(duration, "second").format(DATETIME_FORMAT);
     const recording_url = normalizeRecordingUrl(callLog.record_file?.[FIRST_ITEM]);
     const disposition = String(callLog?.disposition).toLowerCase();
