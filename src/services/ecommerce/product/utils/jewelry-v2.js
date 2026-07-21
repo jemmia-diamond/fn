@@ -2,7 +2,7 @@ import { aggregateQuery } from "services/ecommerce/product/utils/jewelry";
 import { JEWELRY_IMAGE, API_CONFIG } from "src/controllers/ecommerce/constant";
 import { Prisma } from "@prisma-cli";
 
-const excludeSerialsDiamondsSql = Prisma.sql`
+export const excludeSerialsDiamondsSql = Prisma.sql`
   AND NOT EXISTS (
     SELECT 1
     FROM workplace.variants wv
@@ -12,7 +12,7 @@ const excludeSerialsDiamondsSql = Prisma.sql`
   )
 `;
 
-function getDiscountMultiplier(customDiscount, fallbackPercent = 0) {
+export function getDiscountMultiplier(customDiscount, fallbackPercent = 0) {
   const percent = Number(customDiscount ?? fallbackPercent);
   const safePercent = Number.isFinite(percent) && percent >= 0 && percent <= 100 ? percent : 0;
   return (100 - safePercent) / 100;
