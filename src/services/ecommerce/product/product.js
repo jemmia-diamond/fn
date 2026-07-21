@@ -6,9 +6,8 @@ import {
   buildQuerySingleV2,
   buildInventoryMetricsSql,
   excludeSerialsDiamondsSql,
-  getDiscountMultiplier
+  buildJewelryPriceSql
 } from "services/ecommerce/product/utils/jewelry-v2";
-import { Prisma } from "@prisma-cli";
 import { buildWeddingRingByIdQuery, buildWeddingRingsQuery } from "services/ecommerce/product/utils/wedding-ring";
 import { JEWELRY_IMAGE, API_CONFIG } from "src/controllers/ecommerce/constant";
 
@@ -29,23 +28,7 @@ export default class ProductService {
     const workplaceFullUrl = JEWELRY_IMAGE.WORKPLACE_FULL_URL;
     const cdnUrl = JEWELRY_IMAGE.CDN_URL;
 
-    const defaultJewelryMultiplier = getDiscountMultiplier(options.default_jewelry_discount);
-
-    const priceField = Prisma.sql`
-      CASE
-        WHEN EXISTS (
-          SELECT 1 
-          FROM workplace.products wp
-          INNER JOIN workplace.products_haravan_collection phc ON phc.products_id = wp.id
-          INNER JOIN workplace.haravan_collections hc ON hc.id = phc.haravan_collections_id
-          WHERE wp.haravan_product_id = v.haravan_product_id
-            AND hc.start_date <= NOW() 
-            AND hc.end_date >= NOW()
-        ) THEN CAST(COALESCE(NULLIF(v.final_discount_price, 0), v.price) AS DECIMAL)
-        WHEN v.price < v.price_compare_at THEN CAST(COALESCE(NULLIF(v.final_discount_price, 0), v.price) AS DECIMAL)
-        ELSE CAST(v.price_compare_at * ${defaultJewelryMultiplier} AS DECIMAL)
-      END
-    `;
+    const priceField = buildJewelryPriceSql(options.default_jewelry_discount);
 
     const result = await this.db.$queryRaw`
       SELECT

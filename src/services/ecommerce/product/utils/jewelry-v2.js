@@ -18,6 +18,25 @@ export function getDiscountMultiplier(customDiscount, fallbackPercent = 0) {
   return (100 - safePercent) / 100;
 }
 
+export function buildJewelryPriceSql(discountParam) {
+  const defaultJewelryMultiplier = getDiscountMultiplier(discountParam);
+  return Prisma.sql`
+    CASE
+      WHEN EXISTS (
+        SELECT 1 
+        FROM workplace.products wp
+        INNER JOIN workplace.products_haravan_collection phc ON phc.products_id = wp.id
+        INNER JOIN workplace.haravan_collections hc ON hc.id = phc.haravan_collections_id
+        WHERE wp.haravan_product_id = v.haravan_product_id
+          AND hc.start_date <= NOW() 
+          AND hc.end_date >= NOW()
+      ) THEN CAST(COALESCE(NULLIF(v.final_discount_price, 0), v.price) AS DECIMAL)
+      WHEN v.price < v.price_compare_at THEN CAST(COALESCE(NULLIF(v.final_discount_price, 0), v.price) AS DECIMAL)
+      ELSE CAST(v.price_compare_at * ${defaultJewelryMultiplier} AS DECIMAL)
+    END
+  `;
+}
+
 export function buildInventoryMetricsSql(opts = {}) {
   if (!opts.return_inventory_metrics) {
     return Prisma.sql``;
@@ -58,23 +77,7 @@ function buildBaseQueryV2(jsonParams) {
 
   const finenessOrder = handleFinenessPriority === "14K" ? "ASC" : "DESC";
 
-  const defaultJewelryMultiplier = getDiscountMultiplier(jsonParams.default_jewelry_discount);
-
-  const priceField = Prisma.sql`
-    CASE
-      WHEN EXISTS (
-        SELECT 1 
-        FROM workplace.products wp
-        INNER JOIN workplace.products_haravan_collection phc ON phc.products_id = wp.id
-        INNER JOIN workplace.haravan_collections hc ON hc.id = phc.haravan_collections_id
-        WHERE wp.haravan_product_id = v.haravan_product_id
-          AND hc.start_date <= NOW() 
-          AND hc.end_date >= NOW()
-      ) THEN CAST(COALESCE(NULLIF(v.final_discount_price, 0), v.price) AS DECIMAL)
-      WHEN v.price < v.price_compare_at THEN CAST(COALESCE(NULLIF(v.final_discount_price, 0), v.price) AS DECIMAL)
-      ELSE CAST(v.price_compare_at * ${defaultJewelryMultiplier} AS DECIMAL)
-    END
-  `;
+  const priceField = buildJewelryPriceSql(jsonParams.default_jewelry_discount);
 
   let lateralJoinClause;
   let variantJsonBuildObject;
@@ -317,23 +320,7 @@ export function buildQueryV2(jsonParams) {
 }
 
 export function buildQuerySingleV2(params = {}) {
-  const defaultJewelryMultiplier = getDiscountMultiplier(params.default_jewelry_discount);
-
-  const priceField = Prisma.sql`
-    CASE
-      WHEN EXISTS (
-        SELECT 1 
-        FROM workplace.products wp
-        INNER JOIN workplace.products_haravan_collection phc ON phc.products_id = wp.id
-        INNER JOIN workplace.haravan_collections hc ON hc.id = phc.haravan_collections_id
-        WHERE wp.haravan_product_id = v.haravan_product_id
-          AND hc.start_date <= NOW() 
-          AND hc.end_date >= NOW()
-      ) THEN CAST(COALESCE(NULLIF(v.final_discount_price, 0), v.price) AS DECIMAL)
-      WHEN v.price < v.price_compare_at THEN CAST(COALESCE(NULLIF(v.final_discount_price, 0), v.price) AS DECIMAL)
-      ELSE CAST(v.price_compare_at * ${defaultJewelryMultiplier} AS DECIMAL)
-    END
-  `;
+  const priceField = buildJewelryPriceSql(params.default_jewelry_discount);
 
   let lateralJoinClause;
   let variantJsonBuildObject;
