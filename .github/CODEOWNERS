@@ -1,14 +1,14 @@
 # Global codeowners
-package.json @fongfan999
-wrangler.jsonc @fongfan999
-src/index.js @fongfan999
-src/routes @fongfan999
-src/middlewares @fongfan999
+package.json @fongfan999 @nhatnice
+wrangler.jsonc @fongfan999 @nhatnice
+src/index.js @fongfan999 @nhatnice
+src/routes @fongfan999 @nhatnice
+src/middlewares @fongfan999 @nhatnice
 
 # ESLint configuration files
-eslint.config.mjs @fongfan999
-eslint/ @fongfan999
+eslint.config.mjs @fongfan999 @nhatnice
+eslint/ @fongfan999 @nhatnice
 
 # Database
-prisma/ @fongfan999
-src/services/database.js @fongfan999
+prisma/ @fongfan999 @nhatnice
+src/services/database.js @fongfan999 @nhatnice
