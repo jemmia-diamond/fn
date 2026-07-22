@@ -234,7 +234,7 @@ export default class LeadService {
     if (!sourceCode) return null;
     const existing = await this.frappeClient.getList("Lead Source", {
       filters: [["code", "=", sourceCode]],
-      fields: ["name"]
+      fields: ["name", "code", "platform"]
     });
 
     if (existing && existing.length > 0) {
@@ -250,6 +250,7 @@ export default class LeadService {
       const contactService = new ContactService(this.env);
       const phone = normalizeToStandardFormat(data.raw_data.phone);
       const source = await this.getLeadSource(data.source);
+      const lead_owner = this.defaultLeadOwner;
       if (!source) return;
 
       const dataBuilder = async () => {
@@ -268,12 +269,18 @@ export default class LeadService {
           naming_series: "CRM-LEAD-.YYYY.-",
           source,
           phone,
+          lead_owner,
           first_name: fullName,
           email_id: data.raw_data.email?.trim() || null,
-          lead_owner: this.defaultLeadOwner,
           province: provinces.length ? provinces[0].name : null,
           first_reach_at: dayjs(data.database_created_at).utc().format("YYYY-MM-DD HH:mm:ss")
         };
+
+        if (String(provinces[0]?.code).toLowerCase().includes("website")) {
+          leadData.qualification_status = "Qualified";
+          leadData.qualified_on = first_reach_at;
+          leadData.qualified_by = lead_owner;
+        }
 
         const notes = [];
         if (data.raw_data.join_date) {
