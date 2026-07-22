@@ -234,7 +234,7 @@ export default class LeadService {
     if (!sourceCode) return null;
     const existing = await this.frappeClient.getList("Lead Source", {
       filters: [["code", "=", sourceCode]],
-      fields: ["name", "code", "platform"]
+      fields: ["name", "code", "pancake_platform"]
     });
 
     if (existing && existing.length > 0) {
