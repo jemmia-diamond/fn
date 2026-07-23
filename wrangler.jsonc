@@ -70,6 +70,7 @@
     "HARAVAN_APP_URL": "https://jemmiavn.myharavan.com",
     "AI_PROXY_URL": "https://aiproxy.jemmia.vn",
     "GOOGLE_GENERATIVE_AI_URL": "https://generativelanguage.googleapis.com/v1beta",
+    "CUSTOMER_LENS_URL": "https://lens.jemmia.vn",
     "VBOT_BASE_URL": "https://open-api-h01.vbot.vn/v3.0"
   },
   "secrets_store_secrets": [
@@ -140,6 +141,10 @@
       {
         "queue": "pancake-message-last-interaction",
         "binding": "PANCAKE_MESSAGE_LAST_INTERACTION_QUEUE"
+      },
+      {
+        "queue": "customer-lens",
+        "binding": "CUSTOMER_LENS_QUEUE"
       },
       {
         "queue": "pancake-message-webhook-dispatch",
@@ -243,6 +248,10 @@
       },
       {
         "queue": "pancake-message-last-interaction",
+        "max_batch_size": 1
+      },
+      {
+        "queue": "customer-lens",
         "max_batch_size": 1
       },
       {
