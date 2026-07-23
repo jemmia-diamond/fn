@@ -174,8 +174,16 @@
         "binding": "SEPAY_TRANSACTION_QUEUE"
       },
       {
-        "queue": "haravan-product",
-        "binding": "HARAVAN_PRODUCT_QUEUE"
+        "queue": "haravan-product-clear-incoming-stock",
+        "binding": "HARAVAN_PRODUCT_CLEAR_INCOMING_STOCK_QUEUE"
+      },
+      {
+        "queue": "haravan-product-clear-discount-out-of-stock",
+        "binding": "HARAVAN_PRODUCT_CLEAR_DISCOUNT_OUT_OF_STOCK_QUEUE"
+      },
+      {
+        "queue": "haravan-product-auto-add-to-discount-program",
+        "binding": "HARAVAN_PRODUCT_AUTO_ADD_TO_DISCOUNT_PROGRAM_QUEUE"
       },
       {
         "queue": "noco-collect",
@@ -278,7 +286,13 @@
         "queue": "sepay-transaction"
       },
       {
-        "queue": "haravan-product"
+        "queue": "haravan-product-clear-incoming-stock"
+      },
+      {
+        "queue": "haravan-product-clear-discount-out-of-stock"
+      },
+      {
+        "queue": "haravan-product-auto-add-to-discount-program"
       },
       {
         "queue": "noco-collect"

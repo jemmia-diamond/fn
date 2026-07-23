@@ -70,9 +70,14 @@ export default {
       await ERP.Accounting.SepayTransactionService.dequeueSaveToDb(batch, env);
       await ERP.Accounting.SepayTransactionService.dequeueSepayTransactionQueue(batch, env);
       break;
-    case "haravan-product":
-      await Haravan.Product.ProductVariantService.dequeueProductQueue(batch, env);
-      await Haravan.Product.AutoAddToDiscountProgramService.dequeueProductQueue(batch, env);
+    case "haravan-product-clear-incoming-stock":
+      await Haravan.Product.ClearIncomingStockTagService.dequeue(batch, env);
+      break;
+    case "haravan-product-clear-discount-out-of-stock":
+      await Haravan.Product.ClearDiscountIfOutOfStockService.dequeue(batch, env);
+      break;
+    case "haravan-product-auto-add-to-discount-program":
+      await Haravan.Product.AutoAddToDiscountProgramService.dequeue(batch, env);
       break;
     case "noco-collect":
       await Haravan.Collect.CollectService.dequeueCollectQueue(batch, env);
