@@ -234,7 +234,7 @@ export default class LeadService {
     if (!sourceCode) return null;
     const existing = await this.frappeClient.getList("Lead Source", {
       filters: [["code", "=", sourceCode]],
-      fields: ["name"]
+      fields: ["name", "code", "pancake_platform"]
     });
 
     if (existing && existing.length > 0) {
@@ -244,19 +244,14 @@ export default class LeadService {
   }
 
   async processWebsiteLead(data) {
-    if (!data.raw_data) return;
-
-    if (!data?.raw_data?.phone) {
-      return;
-    }
+    if (!data?.raw_data?.phone) return;
 
     try {
       const contactService = new ContactService(this.env);
       const phone = normalizeToStandardFormat(data.raw_data.phone);
       const source = await this.getLeadSource(data.source);
-      if (!source) {
-        return;
-      }
+      const lead_owner = this.defaultLeadOwner;
+      if (!source) return;
 
       const dataBuilder = async () => {
         const location = data.raw_data.location;
@@ -264,26 +259,28 @@ export default class LeadService {
           filters: [["province_name", "LIKE", `%${location}%`]]
         });
 
-        let fullName = data.raw_data.name?.trim();
-        if (!fullName && (data.raw_data.lastname || data.raw_data.firstname)) {
-          fullName = [data.raw_data.lastname?.trim(), data.raw_data.firstname?.trim()].filter(Boolean).join(" ");
-        }
-        if (!fullName) {
-          fullName = "Chưa rõ";
-        }
+        const fullName = data.raw_data.name?.trim()
+          || [data.raw_data.lastname?.trim(), data.raw_data.firstname?.trim()].filter(Boolean).join(" ")
+          || "Chưa rõ";
 
         const leadData = {
           doctype: this.doctype,
           status: "Lead",
           naming_series: "CRM-LEAD-.YYYY.-",
-          source: source,
+          source,
+          phone,
+          lead_owner,
           first_name: fullName,
-          phone: phone,
           email_id: data.raw_data.email?.trim() || null,
-          lead_owner: this.defaultLeadOwner,
           province: provinces.length ? provinces[0].name : null,
           first_reach_at: dayjs(data.database_created_at).utc().format("YYYY-MM-DD HH:mm:ss")
         };
+
+        if (String(provinces[0]?.code).toLowerCase().includes("website")) {
+          leadData.qualification_status = "Qualified";
+          leadData.qualified_on = first_reach_at;
+          leadData.qualified_by = lead_owner;
+        }
 
         const notes = [];
         if (data.raw_data.join_date) {
