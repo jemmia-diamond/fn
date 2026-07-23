@@ -176,6 +176,19 @@ export default class ImageTranslationService {
   }
 
   /**
+   * Build the expected EN filename from VI filename without hash.
+   * VI: {filename}.png → EN: en_{filename}.png
+   *
+   * @param {string} viFilename
+   * @returns {string}
+   */
+  getTranslatedFilenameWithoutHash(viFilename) {
+    const nameWithoutExt = viFilename.substring(0, viFilename.lastIndexOf("."));
+    const extension = viFilename.split(".").pop();
+    return `en_${nameWithoutExt}.${extension}`;
+  }
+
+  /**
    * Compute SHA-256 hash of image buffer.
    *
    * @param {Uint8Array} buffer
@@ -236,5 +249,24 @@ export default class ImageTranslationService {
     const publicUrl = await storage.upload(enFilename, translatedImageBuffer);
 
     return publicUrl;
+  }
+
+  async translateImageWithoutAI(image, env) {
+    let imageName;
+
+    if (typeof image === "string") {
+      const urlParts = image.split("/");
+      imageName = urlParts[urlParts.length - 1].split("?")[0] || "image.jpg";
+    } else {
+      imageName = image.name || "image.jpg";
+    }
+
+    const enFilename = this.getTranslatedFilenameWithoutHash(imageName);
+
+    if (await this.isTranslatedImageExists(enFilename, env)) {
+      return this.getTranslatedImageUrl(enFilename, env);
+    }
+
+    return typeof image === "string" ? image : null;
   }
 }
