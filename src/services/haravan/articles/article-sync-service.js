@@ -12,8 +12,8 @@ export default class ArticleSyncService {
   static CONFIG = {
     FETCH_LIMIT: 50,
     SYNC_THRESHOLD_MS: 600000,
-    IMAGE_BATCH_SIZE: 5,
-    ARTICLE_BATCH_SIZE: 5,
+    IMAGE_TRANSLATE_BATCH_SIZE: 5,
+    ARTICLE_TRANSLATE_BATCH_SIZE: 5,
     API_REQUEST_DELAY: 200
   };
 
@@ -107,7 +107,7 @@ export default class ArticleSyncService {
     return all;
   }
 
-  async checkBlogPair(haravanClient, viBlogId, enBlogId, viDateRange = null, enDateRange = null) {
+  async compareBlogArticles(haravanClient, viBlogId, enBlogId, viDateRange = null, enDateRange = null) {
     let viArticles = await this.fetchAllArticles(
       haravanClient,
       viBlogId,
@@ -173,8 +173,8 @@ export default class ArticleSyncService {
     let fullSrc = src.startsWith("//") ? "https:" + src : src;
 
     return retryQuery(async () => {
-      const newUrl = await imageService.translateImageWithoutAI(fullSrc, this.env);
-      return { src, newUrl: typeof newUrl === "string" ? newUrl : fullSrc, success: true };
+      const imageUrl = await imageService.translateImage(fullSrc, this.env, false);
+      return { src, newUrl: typeof imageUrl === "string" ? imageUrl : fullSrc, success: true };
     }).catch(error => {
       Sentry.captureException(error, {
         extra: { src, action: "translateImageWithRetry" }
@@ -231,7 +231,7 @@ export default class ArticleSyncService {
 
         try {
           const { matchedPairs, missingArticles, orphanEnArticles } =
-            await this.checkBlogPair(haravanClient, viId, enId);
+            await this.compareBlogArticles(haravanClient, viId, enId);
 
           const articleBatchSize = ArticleSyncService.CONFIG.ARTICLE_BATCH_SIZE;
 
