@@ -141,4 +141,27 @@ export default class NocoDBClient {
       headers
     });
   }
+
+  async uploadByUrlV1(params, urlObjects) {
+    const query = new URLSearchParams(params).toString();
+    return this.#request("POST", `/api/v1/db/storage/upload-by-url?${query}`, {
+      data: urlObjects
+    });
+  }
+
+  async uploadStorageV1(params, formData) {
+    const query = new URLSearchParams(params).toString();
+    const headers = formData.getHeaders ? formData.getHeaders() : {};
+    return this.#request("POST", `/api/v1/db/storage/upload?${query}`, {
+      data: formData,
+      headers
+    });
+  }
+
+  async updateRecordV1(params, data) {
+    const { baseId, tableId, viewId, recordId } = params;
+    return this.#request("PATCH", `/api/v1/db/data/noco/${baseId}/${tableId}/views/${viewId}/${recordId}`, {
+      data
+    });
+  }
 }

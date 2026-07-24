@@ -28,10 +28,10 @@ function objectToBase64Url(obj) {
 }
 
 export default class GoogleAuth {
-  constructor(credentials) {
+  constructor(credentials, scopes = ["https://www.googleapis.com/auth/content"]) {
     this.credentials = credentials;
     this.tokenUrl = "https://oauth2.googleapis.com/token";
-    this.scopes = ["https://www.googleapis.com/auth/content"];
+    this.scopes = scopes;
   }
 
   async getAccessToken() {

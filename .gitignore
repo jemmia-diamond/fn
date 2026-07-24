@@ -38,3 +38,5 @@ lerna-debug.log*
 
 # Sentry Config File
 .sentryclirc
+
+functions_misc/

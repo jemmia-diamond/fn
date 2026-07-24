@@ -81,4 +81,13 @@ export class R2StorageService {
       return null;
     }
   }
+
+  /**
+   * Delete an object from R2.
+   * @param {string} key - The object key.
+   */
+  async deleteObject(key) {
+    if (!key) return;
+    await this.bucket.delete(key);
+  }
 }
