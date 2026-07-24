@@ -1,13 +1,19 @@
 import GoogleAuth from "services/google/auth.js";
 import * as Sentry from "@sentry/cloudflare";
+import { createAxiosClient } from "services/utils/http-client";
 
 export default class GoogleDriveClient {
   private env: any;
   private auth: GoogleAuth | null = null;
   private driveBaseUrl = "https://www.googleapis.com/drive/v3";
+  private client: ReturnType<typeof createAxiosClient>;
 
   constructor(env: any) {
     this.env = env;
+    this.client = createAxiosClient(
+      { baseURL: this.driveBaseUrl, timeout: 30000, headers: {} },
+      { retries: 3, retryDelay: (n: number) => Math.pow(2, n) * 1000, retryCondition: (e: any) => !e.response || e.response.status >= 500 }
+    );
   }
 
   private async ensureAuth() {
@@ -33,20 +39,8 @@ export default class GoogleDriveClient {
 
   private async request(method: string, path: string, params: Record<string, any> | null = null) {
     const headers = await this.getHeaders();
-    const url = new URL(`${this.driveBaseUrl}${path}`);
-
-    if (params) {
-      Object.entries(params).forEach(([k, v]) => url.searchParams.append(k, String(v)));
-    }
-
-    const response = await fetch(url.toString(), { method, headers });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Google Drive API error: ${response.status} ${errorText}`);
-    }
-
-    return response.json();
+    const response = await this.client.request({ method, url: path, params, headers });
+    return response.data;
   }
 
   async listFiles(folderId: string) {
@@ -62,19 +56,21 @@ export default class GoogleDriveClient {
   }
 
   async downloadFile(fileId: string) {
-    await this.ensureAuth();
-    const token = await this.auth!.getAccessToken();
+    try {
+      await this.ensureAuth();
+      const token = await this.auth!.getAccessToken();
 
-    const response = await fetch(`${this.driveBaseUrl}/files/${fileId}?alt=media`, {
-      headers: { "Authorization": `Bearer ${token}` }
-    });
+      const response = await this.client.request({
+        method: "GET",
+        url: `/files/${fileId}?alt=media`,
+        responseType: "arraybuffer",
+        headers: { "Authorization": `Bearer ${token}` }
+      });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      Sentry.captureMessage(`Google Drive download error: ${response.status} ${errorText}`);
+      return { ok: true, body: response.data as ArrayBuffer };
+    } catch (err) {
+      Sentry.captureException(err);
       return null;
     }
-
-    return response;
   }
 }
