@@ -88,6 +88,8 @@ export default {
     case "promotion-diamond-collect-sync":
       await new Ecommerce.DiamondCollectService(env).syncDiamondsToCollects(true);
       break;
+    case "erpnext-crm":
+      break;
     default:
       break;
     }

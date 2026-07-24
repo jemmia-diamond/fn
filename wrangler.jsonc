@@ -249,7 +249,10 @@
         "queue": "erpnext-contacts"
       },
       {
-        "queue": "erpnext-crm"
+        "queue": "erpnext-crm",
+        "retry_delay": 600,
+        "max_retries": 6,
+        "max_batch_size": 1
       },
       {
         "queue": "erpnext-sales-order",
