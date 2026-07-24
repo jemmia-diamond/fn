@@ -42,7 +42,7 @@ export default class ArticleSyncService {
     const time = HaravanSyncHelper.normalizeDate(article.published_at) || "no-time";
     const imgPart = article.image
       ? (article.image.src.match(/([a-f0-9]{32})/i)?.[1] ||
-          article.image.src.split("/").pop().split("?")[0]).replace(/^en_/, "")
+        article.image.src.split("/").pop().split("?")[0]).replace(/^en_/, "")
       : "no-img";
     return `${time}|${imgPart}`;
   }
@@ -230,8 +230,7 @@ export default class ArticleSyncService {
         const enId = ArticleSyncService.BLOG_ID_MAP[viId];
 
         try {
-          const { matchedPairs, missingArticles, orphanEnArticles } =
-            await this.compareBlogArticles(haravanClient, viId, enId);
+          const { matchedPairs, missingArticles, orphanEnArticles } = await this.compareBlogArticles(haravanClient, viId, enId);
 
           const articleBatchSize = ArticleSyncService.CONFIG.ARTICLE_TRANSLATE_BATCH_SIZE;
 
