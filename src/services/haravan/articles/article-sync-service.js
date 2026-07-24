@@ -72,17 +72,13 @@ export default class ArticleSyncService {
     });
   }
 
-  async fetchAllArticles(haravanClient, blogId, dateRange = null) {
+  async fetchAllArticles(haravanClient, blogId) {
     let all = [];
     let page = 1;
     let hasMore = true;
     const limit = ArticleSyncService.CONFIG.FETCH_LIMIT;
 
     let params = { limit, page };
-    if (dateRange) {
-      if (dateRange.min) params.updated_at_min = dateRange.min;
-      if (dateRange.max) params.updated_at_max = dateRange.max;
-    }
 
     while (hasMore) {
       try {
@@ -107,16 +103,14 @@ export default class ArticleSyncService {
     return all;
   }
 
-  async compareBlogArticles(haravanClient, viBlogId, enBlogId, viDateRange = null, enDateRange = null) {
+  async compareBlogArticles(haravanClient, viBlogId, enBlogId) {
     let viArticles = await this.fetchAllArticles(
       haravanClient,
-      viBlogId,
-      viDateRange
+      viBlogId
     );
     let enArticles = await this.fetchAllArticles(
       haravanClient,
-      enBlogId,
-      enDateRange
+      enBlogId
     );
 
     viArticles = viArticles.filter(
@@ -126,24 +120,58 @@ export default class ArticleSyncService {
       (a) => !a.title.toLowerCase().includes("ladipage")
     );
 
+    const matchedPairs = [];
+    const missingArticles = [];
+    const orphanEnArticles = [];
+
+    // 1. Build map of VI articles by ID
+    const viById = {};
+    viArticles.forEach(a => {
+      viById[a.id] = a;
+    });
+
+    const unmatchedViIds = new Set(viArticles.map(a => a.id));
+    const unmatchedEn = [];
+
+    // Helper to extract vi_id from tags
+    const getViIdFromTags = (tagsStr) => {
+      if (!tagsStr) return null;
+      const tags = tagsStr.split(",").map(t => t.trim());
+
+      // Find the first tag that contains only digits
+      const idTag = tags.find(t => /^\d+$/.test(t));
+      return idTag ? parseInt(idTag, 10) : null;
+    };
+
+    // 2. First pass: Match by tag
+    enArticles.forEach(enArticle => {
+      const viId = getViIdFromTags(enArticle.tags);
+      if (viId && viById[viId]) {
+        matchedPairs.push({ vi: viById[viId], en: enArticle });
+        unmatchedViIds.delete(viId);
+      } else {
+        unmatchedEn.push(enArticle);
+      }
+    });
+
+    // 3. Group remaining unmatched VI articles by signature
     const viGroups = {};
-    viArticles.forEach((v) => {
+    unmatchedViIds.forEach(viId => {
+      const v = viById[viId];
       const s = this.getSignature(v);
       if (!viGroups[s]) viGroups[s] = [];
       viGroups[s].push(v);
     });
 
+    // 4. Group remaining unmatched EN articles by signature
     const enGroups = {};
-    enArticles.forEach((e) => {
+    unmatchedEn.forEach((e) => {
       const s = this.getSignature(e);
       if (!enGroups[s]) enGroups[s] = [];
       enGroups[s].push(e);
     });
 
-    const matchedPairs = [];
-    const missingArticles = [];
-    const orphanEnArticles = [];
-
+    // 5. Match remaining by signature
     const allSigs = new Set([
       ...Object.keys(viGroups),
       ...Object.keys(enGroups)
@@ -220,6 +248,17 @@ export default class ArticleSyncService {
     return result.success ? result.newUrl : fullSrc;
   }
 
+  buildEnTags(viTags, viId) {
+    const viIdTag = `${viId}`;
+    if (!viTags) return viIdTag;
+
+    const tagsArray = viTags.split(",").map(t => t.trim()).filter(Boolean);
+    if (!tagsArray.includes(viIdTag)) {
+      tagsArray.push(viIdTag);
+    }
+    return tagsArray.join(", ");
+  }
+
   async sync() {
     try {
       const HRV_API_KEY = this.env.HARAVAN_TOKEN;
@@ -248,6 +287,8 @@ export default class ArticleSyncService {
                   const sourceUpdated =
                     viUpdated - enUpdated > ArticleSyncService.CONFIG.SYNC_THRESHOLD_MS;
 
+                  const hasViIdTag = pair.en.tags && pair.en.tags.split(",").map(t => t.trim()).includes(`${pair.vi.id}`);
+
                   if (!structureSync || sourceUpdated) {
                     const enTitle = await this.translateText(pair.vi.title, false);
                     let enBody = await this.translateText(pair.vi.body_html, true);
@@ -260,7 +301,12 @@ export default class ArticleSyncService {
                       title: enTitle,
                       body_html: enBody,
                       author: pair.vi.author,
-                      image: featuredImage ? { src: featuredImage } : null
+                      image: featuredImage ? { src: featuredImage } : null,
+                      tags: this.buildEnTags(pair.en.tags, pair.vi.id)
+                    });
+                  } else if (!hasViIdTag) {
+                    await haravanClient.article.updateArticle(enId, pair.en.id, {
+                      tags: this.buildEnTags(pair.en.tags, pair.vi.id)
                     });
                   }
                 } catch (error) {
@@ -318,7 +364,8 @@ export default class ArticleSyncService {
                     body_html: enBody,
                     author: vi.author,
                     published_at: vi.published_at,
-                    image: featuredImage ? { src: featuredImage } : null
+                    image: featuredImage ? { src: featuredImage } : null,
+                    tags: this.buildEnTags(vi.tags, vi.id)
                   });
                 } catch (error) {
                   Sentry.captureException(error, {
