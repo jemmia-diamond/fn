@@ -174,7 +174,7 @@ export default class ArticleSyncService {
 
     return retryQuery(async () => {
       const imageUrl = await imageService.translateImage(fullSrc, this.env, false);
-      return { src, newUrl: typeof imageUrl === "string" ? imageUrl : fullSrc, success: true };
+      return { src, newUrl: imageUrl || fullSrc, success: true };
     }).catch(error => {
       Sentry.captureException(error, {
         extra: { src, action: "translateImageWithRetry" }
@@ -188,7 +188,7 @@ export default class ArticleSyncService {
     const images = this.getImages(html);
     if (images.length === 0) return html;
 
-    const batchSize = ArticleSyncService.CONFIG.IMAGE_BATCH_SIZE;
+    const batchSize = ArticleSyncService.CONFIG.IMAGE_TRANSLATE_BATCH_SIZE;
     const results = [];
 
     for (let i = 0; i < images.length; i += batchSize) {
@@ -233,7 +233,7 @@ export default class ArticleSyncService {
           const { matchedPairs, missingArticles, orphanEnArticles } =
             await this.compareBlogArticles(haravanClient, viId, enId);
 
-          const articleBatchSize = ArticleSyncService.CONFIG.ARTICLE_BATCH_SIZE;
+          const articleBatchSize = ArticleSyncService.CONFIG.ARTICLE_TRANSLATE_BATCH_SIZE;
 
           for (let i = 0; i < matchedPairs.length; i += articleBatchSize) {
             const batch = matchedPairs.slice(i, i + articleBatchSize);
