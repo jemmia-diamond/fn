@@ -1,4 +1,5 @@
 import ERPNextCRMAppointmentService from "services/erp/crm/appointment/appointment";
+
 export default class CRMService {
   static async dequeueCRMQueue(batch, env) {
     const body = batch.messages[0].body;

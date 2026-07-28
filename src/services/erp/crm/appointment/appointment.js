@@ -14,31 +14,20 @@ export default class ERPNextCRMAppointmentService {
   }
 
   static async createAppointment(payload, fields, env) {
-    const existingRecordId = await this.getExistingLarkRecordId(payload, env);
     const frappeClient = this.getFrappeClient(env);
-    if (existingRecordId) {
-      payload.record_id = existingRecordId;
-      await this.updateAppointment(payload, fields, env);
-      await frappeClient.update({
-        doctype: "Appointment",
-        name: payload.name,
-        record_id: existingRecordId
-      });
-    } else {
-      const newRecord = await RecordService.createLarksuiteRecord({
-        env,
-        appToken: APPOINTMENTS.APP_TOKEN,
-        tableId: APPOINTMENTS.TABLE_ID,
-        fields,
-        userIdType: "open_id"
-      });
+    const newRecord = await RecordService.createLarksuiteRecord({
+      env,
+      appToken: APPOINTMENTS.APP_TOKEN,
+      tableId: APPOINTMENTS.TABLE_ID,
+      fields,
+      userIdType: "open_id"
+    });
 
-      await frappeClient.update({
-        doctype: "Appointment",
-        name: payload.name,
-        record_id: newRecord.record_id
-      });
-    }
+    await frappeClient.update({
+      doctype: "Appointment",
+      name: payload.name,
+      record_id: newRecord.record_id
+    });
   }
 
   static async updateAppointment(payload, fields, env) {
@@ -50,33 +39,6 @@ export default class ERPNextCRMAppointmentService {
       fields,
       userIdType: "open_id"
     });
-  }
-
-  static async getExistingLarkRecordId(payload, env) {
-    const existingRecords = await RecordService.fetchRecords(
-      env,
-      { app_token: APPOINTMENTS.APP_TOKEN, table_id: APPOINTMENTS.TABLE_ID },
-      {
-        filter: {
-          conjunction: "and",
-          conditions: [
-            {
-              field_name: "appointment_name",
-              operator: "is",
-              value: [payload.name]
-            }
-          ]
-        },
-        userIdType: "open_id",
-        pageSize: 1,
-        sort: null
-      }
-    );
-
-    if (existingRecords && existingRecords.length > 0) {
-      return existingRecords[0].record_id;
-    }
-    return null;
   }
 
   static getFrappeClient(env) {
