@@ -153,7 +153,7 @@ export default class PancakeLeadSyncService {
     const query = Prisma.sql`
       WITH base_conversations AS (
         SELECT c.id, c.page_id, c.customer_id, c.type, c.inserted_at, c.updated_at,
-          c.has_phone, c.last_sent_at, 
+          c.has_phone, c.last_sent_at, c.last_sales_message_at, c.last_customer_message_at,
           pc.name as customer_name, 
           pc.phone as customer_phone, 
           pc.gender as customer_gender, 
@@ -208,6 +208,8 @@ export default class PancakeLeadSyncService {
         flc.frappe_name_id as frappe_name_id, 
         array_remove(array_agg(vt.tag_label), NULL) as tags,
         c.last_sent_at as latest_message_at, 
+        c.last_sales_message_at,
+        c.last_customer_message_at,
         c.added_user_id as pancake_user_id,
         c.avatar_url as pancake_avatar_url,
         c.ad_ids
@@ -225,7 +227,7 @@ export default class PancakeLeadSyncService {
         customer_phone_numbers, 
         customer_lives_in, 
         can_inbox,
-        flc.frappe_name_id, p.platform, c.last_sent_at, p.name, c.added_user_id, c.avatar_url, c.ad_ids 
+        flc.frappe_name_id, p.platform, c.last_sent_at, c.last_sales_message_at, c.last_customer_message_at, p.name, c.added_user_id, c.avatar_url, c.ad_ids 
       ORDER BY c.updated_at DESC
     `;
 
