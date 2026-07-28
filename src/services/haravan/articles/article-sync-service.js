@@ -13,7 +13,7 @@ export default class ArticleSyncService {
     FETCH_LIMIT: 50,
     SYNC_THRESHOLD_MS: 600000,
     IMAGE_TRANSLATE_BATCH_SIZE: 5,
-    ARTICLE_TRANSLATE_BATCH_SIZE: 5,
+    ARTICLE_TRANSLATE_BATCH_SIZE: 20,
     API_REQUEST_DELAY: 200
   };
 
@@ -144,11 +144,13 @@ export default class ArticleSyncService {
     };
 
     // 2. First pass: Match by tag
+    const matchedViIds = new Set();
     enArticles.forEach(enArticle => {
       const viId = getViIdFromTags(enArticle.tags);
-      if (viId && viById[viId]) {
+      if (viId && viById[viId] && !matchedViIds.has(viId)) {
         matchedPairs.push({ vi: viById[viId], en: enArticle });
         unmatchedViIds.delete(viId);
+        matchedViIds.add(viId);
       } else {
         unmatchedEn.push(enArticle);
       }
@@ -278,10 +280,6 @@ export default class ArticleSyncService {
             await Promise.allSettled(
               batch.map(async (pair) => {
                 try {
-                  const structureSync = HaravanSyncHelper.isHtmlStructureSync(
-                    pair.vi.body_html,
-                    pair.en.body_html
-                  );
                   const viUpdated = new Date(pair.vi.updated_at).getTime();
                   const enUpdated = new Date(pair.en.updated_at).getTime();
                   const sourceUpdated =
@@ -289,7 +287,7 @@ export default class ArticleSyncService {
 
                   const hasViIdTag = pair.en.tags && pair.en.tags.split(",").map(t => t.trim()).includes(`${pair.vi.id}`);
 
-                  if (!structureSync || sourceUpdated) {
+                  if (sourceUpdated) {
                     const enTitle = await this.translateText(pair.vi.title, false);
                     let enBody = await this.translateText(pair.vi.body_html, true);
                     enBody = await this.translateImagesInHtml(enBody, imageService);
