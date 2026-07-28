@@ -27,6 +27,7 @@ export interface CreateOrderPayload {
   ad_id?: string;
   page_id?: string;
   items?: OrderItem[];
+  inserted_at?: string;
 }
 
 export interface PancakePosOrder {
@@ -66,6 +67,11 @@ export default class PancakePosClient {
   async updateOrderStatus(shopId: number, orderId: number, status: number): Promise<void> {
     const client = await this.getClient();
     await client.put(`/shops/${shopId}/orders/${orderId}`, { status });
+  }
+
+  async updateOrderInsertedAt(shopId: number, orderId: number, insertedAt: string): Promise<void> {
+    const client = await this.getClient();
+    await client.put(`/shops/${shopId}/orders/${orderId}`, { inserted_at: insertedAt });
   }
 
   async getShops(): Promise<PancakePosShop[]> {

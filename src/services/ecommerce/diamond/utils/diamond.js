@@ -143,7 +143,7 @@ export function buildGetDiamondsQuery(jsonParams) {
   const paginationString = buildPaginationString(jsonParams);
 
   const availabilityJoin = Prisma.sql`
-    JOIN haravan.variants hv ON hv.id = d.variant_id AND hv.qty_available > 0 AND hv.title LIKE 'GIA%' AND hv.published_scope IN ('web', 'global')
+    JOIN haravan.variants hv ON hv.id = d.variant_id AND hv.qty_available > 0 AND hv.title LIKE 'GIA%'
     JOIN (
       SELECT hwi.variant_id
       FROM haravan.warehouse_inventories hwi
@@ -151,7 +151,9 @@ export function buildGetDiamondsQuery(jsonParams) {
       WHERE hw.name IN (
         '[HCM] Cửa Hàng HCM',
         '[HN] Cửa Hàng HN',
-        '[CT] Cửa Hàng Cần Thơ'
+        '[CT] Cửa Hàng Cần Thơ',
+        '[HCM] Kế Toán',
+        '[HCM] Admin'
       )
       GROUP BY hwi.variant_id
       HAVING SUM(hwi.qty_available) > 0

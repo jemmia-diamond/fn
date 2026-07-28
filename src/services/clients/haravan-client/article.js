@@ -1,6 +1,11 @@
 import BaseConnector from "services/clients/haravan-client/base-connector";
 
 class ArticleConnector extends BaseConnector {
+  constructor(accessToken) {
+    super(accessToken);
+    this.baseUrl = "https://apis.haravan.com/web";
+  }
+
   async getArticles(blogId, options = {}) {
     return this.get(`/blogs/${blogId}/articles.json`, options);
   }

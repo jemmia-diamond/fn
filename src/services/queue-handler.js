@@ -71,10 +71,8 @@ export default {
       await ERP.Accounting.SepayTransactionService.dequeueSepayTransactionQueue(batch, env);
       break;
     case "haravan-product":
-      await Promise.allSettled([
-        await Haravan.Product.ProductVariantService.dequeueProductQueue(batch, env),
-        await Haravan.Product.AutoAddToDiscountProgramService.dequeueProductQueue(batch, env)
-      ]);
+      await Haravan.Product.ProductVariantService.dequeueProductQueue(batch, env);
+      await Haravan.Product.AutoAddToDiscountProgramService.dequeueProductQueue(batch, env);
       break;
     case "noco-collect":
       await Haravan.Collect.CollectService.dequeueCollectQueue(batch, env);
@@ -88,7 +86,9 @@ export default {
       }
       break;
     case "promotion-diamond-collect-sync":
-      await new Ecommerce.DiamondCollectService(env).syncDiamondsToCollects();
+      await new Ecommerce.DiamondCollectService(env).syncDiamondsToCollects(true);
+      break;
+    case "erpnext-crm":
       break;
     case "erpnext-crm":
       await ERP.CRM.CRMService.dequeueCRMQueue(batch, env);

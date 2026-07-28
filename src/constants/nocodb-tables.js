@@ -18,6 +18,7 @@ export const NOCODB_TABLES = {
     JEWELRY_HARAVAN_COLLECTIONS: "mvhqmb8qzxl8y7z",
     DIAMONDS: "m4qggn3vyz5qyqi",
     VARIANTS: "mkab64qnm6ab9r5",
-    JEWELRIES: "mhx7y71vqz64ydn"
+    JEWELRIES: "mhx7y71vqz64ydn",
+    VARIANT_SERIALS_DIAMONDS: "mw50xuq1hl3fvls"
   }
 };

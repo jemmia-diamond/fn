@@ -1,9 +1,10 @@
+import * as Sentry from "@sentry/cloudflare";
 import dayjs from "dayjs";
 import isBetween from "dayjs/plugin/isBetween.js";
-import utc from "dayjs/plugin/utc.js";
 import timezone from "dayjs/plugin/timezone.js";
+import utc from "dayjs/plugin/utc.js";
+import { NOCODB_TABLES } from "src/constants/nocodb-tables";
 import FrappeClient from "src/frappe/frappe-client";
-import * as Sentry from "@sentry/cloudflare";
 
 dayjs.extend(isBetween);
 dayjs.extend(utc);
@@ -91,5 +92,96 @@ export default class DiamondDiscountService {
     }
 
     return 0;
+  }
+
+  static async syncNocoDBDiscountCollections({
+    diamond,
+    targetCollectionId,
+    allPercentCollectionIds,
+    defaultCollectionId,
+    nocodb,
+    existingEntries = null
+  }) {
+    const tableId = NOCODB_TABLES.MARKETING.DIAMOND_HARAVAN_COLLECTIONS;
+
+    let currentLinks = existingEntries;
+    if (!currentLinks) {
+      const currentLinksRes = await nocodb.listRecords(tableId, {
+        where: `(diamond_id,eq,${diamond.id})`,
+        limit: 100,
+        fields: "diamond_id,haravan_collection_id"
+      });
+      currentLinks = currentLinksRes.list || [];
+    }
+
+    const linksToDelete = [];
+    let hasTarget = false;
+    let hasDefault = false;
+
+    for (const link of currentLinks) {
+      const linkedColId = link.haravan_collection_id?.toString();
+      if (!linkedColId) continue;
+
+      const isPercentCollection = allPercentCollectionIds.has(Number(linkedColId)) || allPercentCollectionIds.has(linkedColId);
+      if (!isPercentCollection) {
+        continue;
+      }
+
+      const isTarget = linkedColId === targetCollectionId?.toString();
+      const isDefault = linkedColId === defaultCollectionId?.toString();
+
+      if (isTarget) {
+        hasTarget = true;
+      }
+
+      if (isDefault) {
+        hasDefault = true;
+      }
+
+      if (!isTarget && !isDefault) {
+        linksToDelete.push({ diamond_id: diamond.id, haravan_collection_id: link.haravan_collection_id });
+      }
+    }
+
+    if (linksToDelete.length > 0) {
+      try {
+        await nocodb.deleteRecords(tableId, linksToDelete);
+      } catch (e) {
+        const cause = e.cause || e.response?.data;
+        if (cause?.error !== "ERR_RECORD_NOT_FOUND" && e.response?.status !== 404) {
+          console.warn("Failed to cleanup old diamond discount collections:", e);
+        }
+      }
+    }
+
+    if (!hasTarget && targetCollectionId) {
+      try {
+        await nocodb.createRecords(tableId, {
+          diamonds: { id: diamond.id },
+          haravan_collections: { id: targetCollectionId }
+        });
+      } catch (error) {
+        const errorData = error.response?.data;
+        if (errorData?.code === "23505" || errorData?.message === "This record already exists.") {
+        } else {
+          throw error;
+        }
+      }
+    }
+
+    if (!hasDefault && defaultCollectionId && defaultCollectionId !== targetCollectionId) {
+      try {
+        await nocodb.createRecords(tableId, {
+          diamonds: { id: diamond.id },
+          haravan_collections: { id: defaultCollectionId }
+        });
+      } catch (error) {
+        const errorData = error.response?.data;
+        if (errorData?.code === "23505" || errorData?.message === "This record already exists.") {
+        } else {
+          throw error;
+        }
+      }
+    }
   }
 }

@@ -1,10 +1,10 @@
-import NocoDBClient from "services/clients/nocodb-client";
-import DiamondDiscountService from "services/ecommerce/diamond/diamond-discount-service";
-import Database from "src/services/database";
 import * as Sentry from "@sentry/cloudflare";
 import HaravanAPI from "services/clients/haravan-client";
-import { NOCODB_TABLES } from "src/constants/nocodb-tables";
+import NocoDBClient from "services/clients/nocodb-client";
+import DiamondDiscountService from "services/ecommerce/diamond/diamond-discount-service";
 import { sendPromotionSyncNotification } from "services/ecommerce/diamond/utils/notification";
+import { NOCODB_TABLES } from "src/constants/nocodb-tables";
+import Database from "src/services/database";
 
 export default class DiamondCollectService {
   constructor(env) {
@@ -13,12 +13,14 @@ export default class DiamondCollectService {
 
   static DEFAULT_DISCOUNT_PERCENT = 8;
 
-  async syncDiamondsToCollects() {
+  async syncDiamondsToCollects(notify) {
     try {
-      await sendPromotionSyncNotification(
-        this.env,
-        "🚀 [CTKM nền] Bắt đầu đồng bộ CTKM nền Kim Cương sang Haravan & Nocodb..."
-      );
+      if (notify) {
+        await sendPromotionSyncNotification(
+          this.env,
+          "🚀 [CTKM nền] Bắt đầu đồng bộ CTKM nền Kim Cương sang Haravan & Nocodb..."
+        );
+      }
 
       const { haravanApi, db, nocoClient } = await this._initializeClients();
       const activeRules = await DiamondDiscountService.getActiveRules(this.env);
@@ -35,17 +37,21 @@ export default class DiamondCollectService {
         allPercentCollectionIds
       });
 
-      await sendPromotionSyncNotification(
-        this.env,
-        "✅ [CTKM nền] Hoàn tất đồng bộ CTKM nền Kim Cương. Dữ liệu đã được cập nhật trên Haravan và Nocodb."
-      );
+      if (notify) {
+        await sendPromotionSyncNotification(
+          this.env,
+          "✅ [CTKM nền] Hoàn tất đồng bộ CTKM nền Kim Cương. Dữ liệu đã được cập nhật trên Haravan và Nocodb."
+        );
+      }
 
     } catch (error) {
       Sentry.captureException(error);
-      await sendPromotionSyncNotification(
-        this.env,
-        `❌ [CTKM nền] Lỗi đồng bộ: ${error.message || "Unknown error"}`
-      );
+      if (notify) {
+        await sendPromotionSyncNotification(
+          this.env,
+          `❌ [CTKM nền] Lỗi đồng bộ: ${error.message || "Unknown error"}`
+        );
+      }
     }
   }
 
@@ -280,25 +286,16 @@ export default class DiamondCollectService {
 
   async _syncNocoDBCollections(diamond, targetCollectionId, context, existingEntries) {
     const { ruleCollections, nocoClient, allPercentCollectionIds } = context;
-    const existingList = existingEntries || [];
-    const defaultDiscountCollectionId = ruleCollections[DiamondCollectService.DEFAULT_DISCOUNT_PERCENT]?.nocodbId;
+    const defaultCollectionId = ruleCollections[DiamondCollectService.DEFAULT_DISCOUNT_PERCENT]?.nocodbId;
 
-    for (const entry of existingList) {
-      if (!allPercentCollectionIds.has(entry.haravan_collection_id)) {
-        continue;
-      }
-      const isTargetCollection = entry.haravan_collection_id === targetCollectionId;
-      const isDefaultCollection = entry.haravan_collection_id === defaultDiscountCollectionId;
-
-      if (!isTargetCollection && !isDefaultCollection) {
-        console.warn("Removing discount collection for diamond:", diamond.id, entry.haravan_collection_id);
-        await nocoClient.deleteRecords(NOCODB_TABLES.MARKETING.DIAMOND_HARAVAN_COLLECTIONS, [{
-          diamond_id: diamond.id,
-          haravan_collection_id: entry.haravan_collection_id
-        }]);
-        await new Promise(resolve => setTimeout(resolve, 1500));
-      }
-    }
+    await DiamondDiscountService.syncNocoDBDiscountCollections({
+      diamond,
+      targetCollectionId,
+      allPercentCollectionIds,
+      defaultCollectionId,
+      nocodb: nocoClient,
+      existingEntries
+    });
   }
 
   async _syncHaravanCollections(diamond, targetNocodbCollectionId, targetHaravanCollectionId, nocoClient, haravanApi, existingEntries) {

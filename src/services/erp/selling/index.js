@@ -8,6 +8,7 @@ import PromotionService from "services/erp/selling/promotion/promotion";
 import SalesOrderItemService from "services/erp/selling/sales-order-item/sales-order-item";
 import BuybackExchangeSyncService from "services/erp/selling/buyback-exchange/buyback-exchange-sync-service";
 import MissingSerialNotificationService from "services/erp/selling/sales-order/missing-serial-notification";
+import DebtTrackingNotificationService from "src/services/erp/selling/order-and-debt-tracking/debt-tracking-notification-service";
 
 export default {
   SalesOrderService: SalesOrderService,
@@ -19,5 +20,6 @@ export default {
   PromotionService: PromotionService,
   SalesOrderItemService: SalesOrderItemService,
   BuybackExchangeSyncService: BuybackExchangeSyncService,
-  MissingSerialNotificationService: MissingSerialNotificationService
+  MissingSerialNotificationService: MissingSerialNotificationService,
+  DebtTrackingNotificationService: DebtTrackingNotificationService
 };

@@ -1,7 +1,8 @@
-import * as Sentry from "@sentry/cloudflare";
 import NocoDBClient from "services/clients/nocodb-client";
+import DiamondCollectService from "services/ecommerce/diamond/diamond-collect-service";
+import DiamondDiscountService from "services/ecommerce/diamond/diamond-discount-service";
 import { HARAVAN_TOPIC } from "services/ecommerce/enum";
-import { SKU_LENGTH, HRV_PRODUCT_TYPE } from "services/haravan/products/product-variant/constant";
+import { HRV_PRODUCT_TYPE, SKU_LENGTH } from "services/haravan/products/product-variant/constant";
 import { NOCODB_TABLES } from "src/constants/nocodb-tables";
 
 const EXCLUDED_COLLECTION_TITLES = [
@@ -25,17 +26,11 @@ export default class AutoAddToDiscountProgramService {
   static async dequeueProductQueue(batch, env) {
     const service = new AutoAddToDiscountProgramService(env);
     for (const message of batch.messages) {
-      try {
-        const body = message.body;
-        const haravanTopic = body.haravan_topic;
+      const body = message.body;
+      const haravanTopic = body.haravan_topic;
 
-        if (haravanTopic === HARAVAN_TOPIC.PRODUCT_UPDATE || haravanTopic === HARAVAN_TOPIC.PRODUCT_CREATED) {
-          await service.processProduct(body);
-        }
-      }
-      catch (error) {
-        Sentry.captureException(error);
-        message.retry();
+      if (haravanTopic === HARAVAN_TOPIC.PRODUCT_UPDATE || haravanTopic === HARAVAN_TOPIC.PRODUCT_CREATED) {
+        await service.processProduct(body);
       }
     }
   }
@@ -71,7 +66,8 @@ export default class AutoAddToDiscountProgramService {
     const nocodb = new NocoDBClient(this.env);
 
     const diamondsQuery = await nocodb.listRecords(NOCODB_TABLES.MARKETING.DIAMONDS, {
-      where: `(product_id,eq,${haravanProductId})`
+      where: `(product_id,eq,${haravanProductId})`,
+      fields: "id,edge_size_2"
     });
     const diamonds = diamondsQuery.list || [];
 
@@ -79,37 +75,43 @@ export default class AutoAddToDiscountProgramService {
       return;
     }
 
-    const DIAMOND_COLLECTION_ID = this.env.DEFAULT_HARAVAN_DIAMOND_DISCOUNT_COLLECTION_ID;
-    const diamondHaravanCollectionsTableId = NOCODB_TABLES.MARKETING.DIAMOND_HARAVAN_COLLECTIONS;
+    const activeRules = await DiamondDiscountService.getActiveRules(this.env);
+
+    const dcs = new DiamondCollectService(this.env);
+    const collections = await dcs._fetchCollections(nocodb, activeRules);
+    const dcsContext = dcs._buildRuleCollectionsMap(collections);
+    const { ruleCollections } = dcsContext;
 
     for (const diamond of diamonds) {
-      try {
-        const existing = await nocodb.listRecords(diamondHaravanCollectionsTableId, {
-          where: `(diamond_id,eq,${diamond.id})~and(haravan_collection_id,eq,${DIAMOND_COLLECTION_ID})`
-        });
+      const discountPercent = DiamondDiscountService.calculateDiscountPercent({
+        diamondSize: parseFloat(diamond.edge_size_2 || 0),
+        rules: activeRules
+      });
 
-        if (existing.list?.length === 0) {
-          await nocodb.createRecords(diamondHaravanCollectionsTableId, {
-            diamonds: { id: diamond.id },
-            haravan_collections: { id: DIAMOND_COLLECTION_ID }
-          });
-        }
-      } catch (error) {
-        const errorData = error.response?.data;
-        if (errorData?.code === "23505" || errorData?.message === "This record already exists.") {
-          continue;
-        }
-        throw error;
-      }
+      const DIAMOND_COLLECTION_ID = ruleCollections[discountPercent]?.nocodbId;
+      const defaultCollectionId = this.env.DEFAULT_HARAVAN_DIAMOND_DISCOUNT_COLLECTION_ID;
+
+      await DiamondDiscountService.syncNocoDBDiscountCollections({
+        diamond,
+        targetCollectionId: DIAMOND_COLLECTION_ID || defaultCollectionId,
+        allPercentCollectionIds: dcsContext.allPercentCollectionIds,
+        defaultCollectionId: defaultCollectionId,
+        nocodb
+      });
     }
   }
 
   async addToJewelryCollection(haravanProductId) {
     const nocodb = new NocoDBClient(this.env);
 
+    if (await this._isComboJewelryProduct(nocodb, haravanProductId)) {
+      return;
+    }
+
     const productsQuery = await nocodb.listRecords(NOCODB_TABLES.MARKETING.JEWELRIES, {
       where: `(haravan_product_id,eq,${haravanProductId})`,
-      limit: 1
+      limit: 1,
+      fields: "id,design_id"
     });
 
     const product = productsQuery.list?.[0];
@@ -121,14 +123,16 @@ export default class AutoAddToDiscountProgramService {
     if (product.design_id) {
       const designRes = await nocodb.listRecords(NOCODB_TABLES.MARKETING.DESIGNS, {
         where: `(id,eq,${product.design_id})`,
-        limit: 1
+        limit: 1,
+        fields: "id,collections_id"
       });
       const design = designRes.list?.[0] ?? null;
 
       if (design && design.collections_id) {
         const collectionRes = await nocodb.listRecords(NOCODB_TABLES.MARKETING.COLLECTIONS, {
           where: `(id,eq,${design.collections_id})`,
-          limit: 1
+          limit: 1,
+          fields: "id,collection_name"
         });
         const collection = collectionRes.list?.[0] ?? null;
 
@@ -143,7 +147,9 @@ export default class AutoAddToDiscountProgramService {
 
     try {
       const existing = await nocodb.listRecords(jewelryHaravanCollectionsTableId, {
-        where: `(products_id,eq,${product.id})~and(haravan_collections_id,eq,${JEWELRY_COLLECTION_ID})`
+        where: `(products_id,eq,${product.id})~and(haravan_collections_id,eq,${JEWELRY_COLLECTION_ID})`,
+        limit: 1,
+        fields: "products_id"
       });
 
       if (existing.list?.length === 0) {
@@ -159,5 +165,35 @@ export default class AutoAddToDiscountProgramService {
       }
       throw error;
     }
+  }
+
+  async _isComboJewelryProduct(nocodb, haravanProductId) {
+    const variantsRes = await nocodb.listRecords(NOCODB_TABLES.SUPPLY.VARIANTS, {
+      where: `(haravan_product_id,eq,${haravanProductId})`,
+      fields: "id"
+    });
+    const variantIds = variantsRes.list?.map(v => v.id) || [];
+
+    if (variantIds.length === 0) {
+      return false;
+    }
+
+    const serialsRes = await nocodb.listRecords(NOCODB_TABLES.SUPPLY.SERIALS, {
+      where: `(variant_id,in,${variantIds.join(",")})`,
+      fields: "id"
+    });
+    const serialIds = serialsRes.list?.map(s => s.id) || [];
+
+    if (serialIds.length === 0) {
+      return false;
+    }
+
+    const comboRes = await nocodb.listRecords(NOCODB_TABLES.SUPPLY.VARIANT_SERIALS_DIAMONDS, {
+      where: `(variant_serials_id,in,${serialIds.join(",")})`,
+      limit: 1,
+      fields: "variant_serials_id"
+    });
+
+    return !!(comboRes.list && comboRes.list.length > 0);
   }
 }

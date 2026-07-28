@@ -3,7 +3,8 @@ export const API_CONFIG = {
   DEFAULT_FROM: 1,
   MIN_FROM: 1,
   MAX_LIMIT: 100,
-  MAX_SEARCH_LIMIT: 30
+  MAX_SEARCH_LIMIT: 30,
+  ROW_NUM_START_INDEX: 1
 };
 
 export const JEWELRY_IMAGE = {
@@ -11,3 +12,5 @@ export const JEWELRY_IMAGE = {
   WORKPLACE_FULL_URL: "https://jemmia-workplace.90814f99c119cd5dc08362580f81a76f.r2.cloudflarestorage.com",
   CDN_URL: "https://cdn.jemmia.vn"
 };
+
+export const DEFAULT_JEWELRY_DISCOUNT = 16;

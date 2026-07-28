@@ -1,6 +1,41 @@
 import { aggregateQuery } from "services/ecommerce/product/utils/jewelry";
-import { JEWELRY_IMAGE } from "src/controllers/ecommerce/constant";
+import { JEWELRY_IMAGE, API_CONFIG } from "src/controllers/ecommerce/constant";
 import { Prisma } from "@prisma-cli";
+
+export const excludeSerialsDiamondsSql = Prisma.sql`
+  AND NOT EXISTS (
+    SELECT 1
+    FROM workplace.variants wv
+    INNER JOIN workplace.variant_serials vs ON vs.variant_id = wv.id
+    INNER JOIN workplace.variant_serials_diamonds vsd ON vsd.variant_serials_id = vs.id
+    WHERE wv.haravan_variant_id = v.haravan_variant_id
+  )
+`;
+
+export function getDiscountMultiplier(customDiscount, fallbackPercent = 0) {
+  const percent = Number(customDiscount ?? fallbackPercent);
+  const safePercent = Number.isFinite(percent) && percent >= 0 && percent <= 100 ? percent : 0;
+  return (100 - safePercent) / 100;
+}
+
+export function buildJewelryPriceSql(discountParam) {
+  const defaultJewelryMultiplier = getDiscountMultiplier(discountParam);
+  return Prisma.sql`
+    CASE
+      WHEN EXISTS (
+        SELECT 1 
+        FROM workplace.products wp
+        INNER JOIN workplace.products_haravan_collection phc ON phc.products_id = wp.id
+        INNER JOIN workplace.haravan_collections hc ON hc.id = phc.haravan_collections_id
+        WHERE wp.haravan_product_id = v.haravan_product_id
+          AND hc.start_date <= NOW() 
+          AND hc.end_date >= NOW()
+      ) THEN CAST(COALESCE(NULLIF(v.final_discount_price, 0), v.price) AS DECIMAL)
+      WHEN v.price < v.price_compare_at THEN CAST(COALESCE(NULLIF(v.final_discount_price, 0), v.price) AS DECIMAL)
+      ELSE CAST(v.price_compare_at * ${defaultJewelryMultiplier} AS DECIMAL)
+    END
+  `;
+}
 
 export function buildInventoryMetricsSql(opts = {}) {
   if (!opts.return_inventory_metrics) {
@@ -28,7 +63,7 @@ export function buildInventoryMetricsSql(opts = {}) {
   `;
 }
 
-export function buildQueryV2(jsonParams) {
+function buildBaseQueryV2(jsonParams) {
   const {
     filterSql,
     sortSql,
@@ -42,21 +77,7 @@ export function buildQueryV2(jsonParams) {
 
   const finenessOrder = handleFinenessPriority === "14K" ? "ASC" : "DESC";
 
-  const priceField = Prisma.sql`
-    CASE
-      WHEN EXISTS (
-        SELECT 1 
-        FROM workplace.products wp
-        INNER JOIN workplace.products_haravan_collection phc ON phc.products_id = wp.id
-        INNER JOIN workplace.haravan_collections hc ON hc.id = phc.haravan_collections_id
-        WHERE wp.haravan_product_id = v.haravan_product_id
-          AND hc.start_date <= NOW() 
-          AND hc.end_date >= NOW()
-      ) AND v.final_discount_price IS NOT NULL AND v.final_discount_price != 0
-      THEN CAST(v.final_discount_price AS DECIMAL)
-      ELSE CAST(v.price AS DECIMAL)
-    END
-  `;
+  const priceField = buildJewelryPriceSql(jsonParams.default_jewelry_discount);
 
   let lateralJoinClause;
   let variantJsonBuildObject;
@@ -142,6 +163,7 @@ export function buildQueryV2(jsonParams) {
           ON dia.product_id = CAST(jdp.haravan_diamond_product_id AS BIGINT)
          AND dia.variant_id = CAST(jdp.haravan_diamond_variant_id AS BIGINT)
         WHERE v.haravan_product_id = p.haravan_product_id
+          ${excludeSerialsDiamondsSql}
         GROUP BY v.haravan_product_id, v.haravan_variant_id, v.sku, v.price,
                  v.price_compare_at, v.material_color, v.fineness, v.ring_size,
                  v.qty_available, v.qty_onhand, v.applique_material,
@@ -171,6 +193,7 @@ export function buildQueryV2(jsonParams) {
         SELECT *
         FROM ecom.materialized_variants v
         WHERE v.haravan_product_id = p.haravan_product_id
+          ${excludeSerialsDiamondsSql}
         ORDER BY v.fineness ${Prisma.raw(finenessOrder)}, v.price DESC
       ) v ON TRUE
     `;
@@ -206,7 +229,7 @@ export function buildQueryV2(jsonParams) {
       p.haravan_product_id, p.title, d.design_code, p.handle,
       d.diamond_holder, d.main_stone, d.ring_band_type, p.haravan_product_type,
       p.max_price, p.min_price, p.max_price_18, p.max_price_14, 
-      p.has_360, p.sold_before_2025 ${collectionJoinEcomProductsClause ? Prisma.raw(", p2.image_updated_at") : Prisma.empty}
+      p.has_360, p.sold_before_2025, p.sold_quantity, d.created_date, d.database_created_at ${collectionJoinEcomProductsClause ? Prisma.raw(", p2.image_updated_at") : Prisma.empty}
 
     ${havingSql}
     ${sortSql}
@@ -225,6 +248,7 @@ export function buildQueryV2(jsonParams) {
             ${Prisma.raw(collectionJoinEcomProductsClause)}
             ${Prisma.raw(linkedCollectionJoinEcomProductsClause)}
             INNER JOIN ecom.materialized_variants v ON v.haravan_product_id = p.haravan_product_id
+              ${excludeSerialsDiamondsSql}
             ${designImagesJoin}
 
             ${Prisma.raw(warehouseJoinClause)}
@@ -240,22 +264,63 @@ export function buildQueryV2(jsonParams) {
   return { dataSql, countSql };
 }
 
-export function buildQuerySingleV2(params = {}) {
-  const priceField = Prisma.sql`
-    CASE
-      WHEN EXISTS (
-        SELECT 1 
-        FROM workplace.products wp
-        INNER JOIN workplace.products_haravan_collection phc ON phc.products_id = wp.id
-        INNER JOIN workplace.haravan_collections hc ON hc.id = phc.haravan_collections_id
-        WHERE wp.haravan_product_id = v.haravan_product_id
-          AND hc.start_date <= NOW() 
-          AND hc.end_date >= NOW()
-      ) AND v.final_discount_price IS NOT NULL AND v.final_discount_price != 0
-      THEN CAST(v.final_discount_price AS DECIMAL)
-      ELSE CAST(v.price AS DECIMAL)
-    END
+export function buildInterleavedQueryV2(jsonParams) {
+  const productTypes = jsonParams.product_types || [];
+  const blockSize = jsonParams.block_size;
+
+  const from = jsonParams.pagination?.from - API_CONFIG.MIN_FROM;
+  const limit = jsonParams.pagination?.limit;
+  const to = from + limit;
+
+  const queries = productTypes.map((type, typeIdx) => {
+    const singleTypeParams = {
+      ...jsonParams,
+      product_types: [type],
+      pagination: {
+        from: API_CONFIG.MIN_FROM,
+        limit: to
+      }
+    };
+    const { dataSql: subDataSql } = buildBaseQueryV2(singleTypeParams);
+    return { subDataSql, typeIdx };
+  });
+
+  const unionSql = Prisma.join(
+    queries.map(q => Prisma.sql`
+      SELECT *, 
+             ROW_NUMBER() OVER () as row_num, 
+             ${q.typeIdx}::integer as type_idx 
+      FROM (${q.subDataSql}) AS sub_t
+    `),
+    " UNION ALL "
+  );
+
+  const dataSql = Prisma.sql`
+    SELECT * FROM (
+      ${unionSql}
+    ) AS ranked
+    ORDER BY (row_num - ${API_CONFIG.ROW_NUM_START_INDEX}) / ${blockSize}::integer ASC, type_idx ASC, row_num ASC
+    LIMIT ${limit} OFFSET ${from}
   `;
+
+  const { countSql } = buildBaseQueryV2(jsonParams);
+
+  return { dataSql, countSql };
+}
+
+export function buildQueryV2(jsonParams) {
+  const productTypes = jsonParams.product_types || [];
+  const blockSize = jsonParams.block_size;
+
+  if (blockSize && blockSize > 0 && productTypes.length > 1) {
+    return buildInterleavedQueryV2(jsonParams);
+  }
+
+  return buildBaseQueryV2(jsonParams);
+}
+
+export function buildQuerySingleV2(params = {}) {
+  const priceField = buildJewelryPriceSql(params.default_jewelry_discount);
 
   let lateralJoinClause;
   let variantJsonBuildObject;
@@ -311,6 +376,7 @@ export function buildQuerySingleV2(params = {}) {
           ON dia.product_id = CAST(jdp.haravan_diamond_product_id AS BIGINT)
          AND dia.variant_id = CAST(jdp.haravan_diamond_variant_id AS BIGINT)
         WHERE v.haravan_product_id = p.haravan_product_id
+          ${excludeSerialsDiamondsSql}
         GROUP BY
           v.haravan_product_id, v.haravan_variant_id, v.sku,
           v.price, v.price_compare_at, v.material_color, v.fineness,
@@ -343,6 +409,7 @@ export function buildQuerySingleV2(params = {}) {
         SELECT *
         FROM ecom.materialized_variants v
         WHERE v.haravan_product_id = p.haravan_product_id
+          ${excludeSerialsDiamondsSql}
         ORDER BY v.fineness, v.price DESC
       ) v ON TRUE
     `;
@@ -350,4 +417,3 @@ export function buildQuerySingleV2(params = {}) {
 
   return { variantJsonBuildObject, lateralJoinClause };
 }
-

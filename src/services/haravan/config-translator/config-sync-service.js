@@ -13,7 +13,6 @@ import { TRANSLATION_PROMPTS, AI_MODELS } from "src/constants/ai-proxy";
 
 export default class ConfigTranslatorService {
   static CONFIG = {
-    THEME_ID: "1001480728", // id in theme "Translate Config Settings ( Fast )"
     KV_KEY: "haravan_config_snapshot",
     API_REQUEST_DELAY: 500,
     TRANSLATION_CONCURRENCY: 3
@@ -27,7 +26,7 @@ export default class ConfigTranslatorService {
 
   async fetchHaravanConfig(haravanClient) {
     return retryQuery(async () => {
-      const response = await haravanClient.theme.getAssets(ConfigTranslatorService.CONFIG.THEME_ID, { "asset[key]": "config/settings_data.json" });
+      const response = await haravanClient.theme.getAssets(this.env.HARAVAN_THEME_ID, { "asset[key]": "config/settings_data.json" });
       return response;
     });
   }
@@ -39,7 +38,7 @@ export default class ConfigTranslatorService {
     };
 
     return retryQuery(async () => {
-      const response = await haravanClient.theme.updateAsset(ConfigTranslatorService.CONFIG.THEME_ID, payload);
+      const response = await haravanClient.theme.updateAsset(this.env.HARAVAN_THEME_ID, payload);
       return response;
     });
   }

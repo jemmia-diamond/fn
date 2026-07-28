@@ -76,7 +76,7 @@ export default class DiamondService {
           FROM workplace.diamonds AS d
           JOIN haravan.products AS p ON p.id = d.product_id AND p.published_scope IN ('web', 'global')
           LEFT JOIN gia.report_no_data AS g ON g.report_no::BIGINT = d.report_no::BIGINT
-          JOIN haravan.variants hv ON hv.id = d.variant_id AND hv.qty_available > 0 AND hv.title LIKE 'GIA%' AND hv.published_scope IN ('web', 'global')
+          JOIN haravan.variants hv ON hv.id = d.variant_id AND hv.qty_available > 0 AND hv.title LIKE 'GIA%'
           JOIN (
             SELECT hwi.variant_id
             FROM haravan.warehouse_inventories hwi
@@ -84,7 +84,9 @@ export default class DiamondService {
             WHERE hw.name IN (
               '[HCM] Cửa Hàng HCM',
               '[HN] Cửa Hàng HN',
-              '[CT] Cửa Hàng Cần Thơ'
+              '[CT] Cửa Hàng Cần Thơ',
+              '[HCM] Kế Toán',
+              '[HCM] Admin'
             )
             GROUP BY hwi.variant_id
             HAVING SUM(hwi.qty_available) > 0

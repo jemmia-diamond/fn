@@ -4,7 +4,9 @@ import { retryQuery } from "services/utils/retry-utils";
 import {
   buildQueryV2,
   buildQuerySingleV2,
-  buildInventoryMetricsSql
+  buildInventoryMetricsSql,
+  excludeSerialsDiamondsSql,
+  buildJewelryPriceSql
 } from "services/ecommerce/product/utils/jewelry-v2";
 import { buildWeddingRingByIdQuery, buildWeddingRingsQuery } from "services/ecommerce/product/utils/wedding-ring";
 import { JEWELRY_IMAGE, API_CONFIG } from "src/controllers/ecommerce/constant";
@@ -25,6 +27,8 @@ export default class ProductService {
     const workplaceUrlPrefix = JEWELRY_IMAGE.WORKPLACE_URL_PREFIX;
     const workplaceFullUrl = JEWELRY_IMAGE.WORKPLACE_FULL_URL;
     const cdnUrl = JEWELRY_IMAGE.CDN_URL;
+
+    const priceField = buildJewelryPriceSql(options.default_jewelry_discount);
 
     const result = await this.db.$queryRaw`
       SELECT
@@ -53,7 +57,7 @@ export default class ProductService {
                 'fineness', v.fineness,
                 'material_color', v.material_color,
                 'ring_size', v.ring_size,
-                'price', CAST(v.price AS DOUBLE PRECISION),
+                'price', CAST(${priceField} AS DOUBLE PRECISION),
                 'price_compare_at', CAST(v.price_compare_at AS DOUBLE PRECISION),
                 'images', design_imgs.images
               )
@@ -86,6 +90,7 @@ export default class ProductService {
           ) design_imgs ON design_imgs.material_color = v.material_color AND cardinality(design_imgs.images) > 0
 
           WHERE v.haravan_product_id = p.haravan_product_id
+            ${excludeSerialsDiamondsSql}
           GROUP BY v.haravan_product_id
           HAVING COUNT(*) > 0
         ) var ON TRUE
