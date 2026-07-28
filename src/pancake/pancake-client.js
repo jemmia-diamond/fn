@@ -165,4 +165,9 @@ export default class PancakeClient {
   async getPageTags(pageId) {
     return await this.getRequest(pageId, `/public_api/v1/pages/${pageId}/tags`);
   }
+
+  async getConversationById(pageId, conId) {
+    const path = `/public_api/v1/pages/${pageId}/conversations/${conId}/messages`;
+    return await this.getRequest(pageId, path);
+  }
 }

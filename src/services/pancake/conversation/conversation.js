@@ -4,6 +4,8 @@ import LeadService from "services/erp/crm/lead/lead";
 import AIHUBClient from "services/clients/aihub";
 import { shouldReceiveWebhook } from "controllers/webhook/pancake/erp/utils";
 import { EXTRA_HOOKS } from "services/pancake/constants/extra-hook.constant";
+import CustomerLensClient from "services/customer-lens-client";
+import { PancakeCache } from "services/pancake/conversation/pancakeCache";
 
 export default class ConversationService {
   constructor(env) {
@@ -11,6 +13,7 @@ export default class ConversationService {
     this.pancakeClient = new PancakeClient(env);
     this.leadService = new LeadService(env);
     this.db = Database.instance(env);
+    this.customerLensClient = CustomerLensClient.instance(env);
   }
 
   async updateConversation(conversationId, pageId, insertedAt) {
@@ -186,6 +189,21 @@ export default class ConversationService {
     });
   }
 
+  async sendToCustomerLens(data) {
+    const pageId = data?.page_id;
+    const conversationId = data?.data?.conversation?.id;
+    if (!pageId || !conversationId) return;
+    const globalId = await PancakeCache.getMessageGlobalId(this.pancakeClient, pageId, conversationId, this.env);
+    if (!globalId) {
+      return;
+    }
+
+    await this.customerLensClient.post("/api/profile", {
+      "global_id": globalId,
+      "is_force": false
+    });
+  }
+
   async triggerExtraHooks(body) {
     const promises = EXTRA_HOOKS.map(url =>
       fetch(url, {
@@ -223,6 +241,13 @@ export default class ConversationService {
     const conversationService = new ConversationService(env);
     for (const message of batch.messages) {
       await conversationService.triggerExtraHooks(message.body);
+    }
+  }
+
+  static async dequeueMessageCustomerLensQueue(batch, env) {
+    const conversationService = new ConversationService(env);
+    for (const message of batch.messages) {
+      await conversationService.sendToCustomerLens(message.body);
     }
   }
 }
