@@ -4,6 +4,17 @@ import FrappeClient from "src/frappe/frappe-client";
 import Database from "services/database";
 
 export default class ERPNextCRMAppointmentService {
+
+  constructor(env) {
+    this.frappeClient = new FrappeClient(
+      {
+        url: env.JEMMIA_ERP_BASE_URL,
+        apiKey: env.JEMMIA_ERP_API_KEY,
+        apiSecret: env.JEMMIA_ERP_API_SECRET
+      }
+    );
+  }
+
   static async syncAppointment(payload, event, env) {
     const fields = await this.mapPayloadToLarkFields(payload, env);
     if (event === "create" || !payload.record_id) {
@@ -14,7 +25,6 @@ export default class ERPNextCRMAppointmentService {
   }
 
   static async createAppointment(payload, fields, env) {
-    const frappeClient = this.getFrappeClient(env);
     const newRecord = await RecordService.createLarksuiteRecord({
       env,
       appToken: APPOINTMENTS.APP_TOKEN,
@@ -23,7 +33,7 @@ export default class ERPNextCRMAppointmentService {
       userIdType: "open_id"
     });
 
-    await frappeClient.update({
+    await this.frappeClient.update({
       doctype: "Appointment",
       name: payload.name,
       record_id: newRecord.record_id
@@ -38,14 +48,6 @@ export default class ERPNextCRMAppointmentService {
       recordId: payload.record_id,
       fields,
       userIdType: "open_id"
-    });
-  }
-
-  static getFrappeClient(env) {
-    return new FrappeClient({
-      url: env.JEMMIA_ERP_BASE_URL,
-      apiKey: env.JEMMIA_ERP_API_KEY,
-      apiSecret: env.JEMMIA_ERP_API_SECRET
     });
   }
 
