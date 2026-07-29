@@ -101,7 +101,7 @@ export default class ERPNextCRMAppointmentService {
       "at_store": payload.at_store,
       "policies": policies,
       "Mục đích cuộc hẹn": payload.appointment_reason,
-      "Nguồn": payload.source,
+      "source": payload.source,
       "appointment_name": payload.name
     };
 
