@@ -93,7 +93,6 @@ export default class ERPNextCRMAppointmentService {
       "Số điện thoại": payload.customer_phone_number,
       "Chính sách thu mua thu đổi": policies,
       "Notes": notesText,
-
       "Khoảng ngân sách": payload.range_estimated_budget,
       "Ngân Sách Uớc Tính": payload.budget,
       "at_store": payload.at_store,
