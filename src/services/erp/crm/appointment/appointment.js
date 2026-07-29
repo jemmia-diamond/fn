@@ -3,6 +3,8 @@ import { APPOINTMENTS } from "services/larksuite/appointment/constant";
 import FrappeClient from "src/frappe/frappe-client";
 import Database from "services/database";
 
+const DEFAULT_USER = "tech@jemmia.vn";
+
 export default class ERPNextCRMAppointmentService {
 
   static async syncAppointment(payload, event, env) {
@@ -23,7 +25,8 @@ export default class ERPNextCRMAppointmentService {
       await frappeClient.update({
         doctype: "Appointment",
         name: payload.name,
-        record_id: existingRecordId
+        record_id: existingRecordId,
+        performed_by: DEFAULT_USER
       });
     } else {
       const newRecord = await RecordService.createLarksuiteRecord({
@@ -37,7 +40,8 @@ export default class ERPNextCRMAppointmentService {
       await frappeClient.update({
         doctype: "Appointment",
         name: payload.name,
-        record_id: newRecord.record_id
+        record_id: newRecord.record_id,
+        performed_by: DEFAULT_USER
       });
     }
   }
