@@ -5,10 +5,6 @@ import Database from "services/database";
 
 export default class ERPNextCRMAppointmentService {
 
-  constructor(env) {
-    this.frappeClient = new FrappeClient({ env });
-  }
-
   static async syncAppointment(payload, event, env) {
     const fields = await this.mapPayloadToLarkFields(payload, env);
     if (event === "create" || !payload.record_id) {
@@ -19,6 +15,7 @@ export default class ERPNextCRMAppointmentService {
   }
 
   static async createAppointment(payload, fields, env) {
+    const frappeClient = new FrappeClient({ env });
     const newRecord = await RecordService.createLarksuiteRecord({
       env,
       appToken: APPOINTMENTS.APP_TOKEN,
@@ -27,7 +24,7 @@ export default class ERPNextCRMAppointmentService {
       userIdType: "open_id"
     });
 
-    await this.frappeClient.update({
+    await frappeClient.update({
       doctype: "Appointment",
       name: payload.name,
       record_id: newRecord.record_id
