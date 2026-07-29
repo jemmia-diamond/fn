@@ -16,7 +16,9 @@ model conversation {
   added_user_email    String?   @db.VarChar
   added_user_fb_id    String?   @db.VarChar
   updated_at          DateTime? @db.Timestamp(6)
-  last_sent_at        DateTime? @db.Timestamp(6)
+  last_sent_at              DateTime? @db.Timestamp(6)
+  last_sales_message_at     DateTime? @db.Timestamp(6)
+  last_customer_message_at  DateTime? @db.Timestamp(6)
   avatar_url          String?   @db.VarChar
   ad_ids              Json?
 

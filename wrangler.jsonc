@@ -146,6 +146,10 @@
         "binding": "PANCAKE_MESSAGE_WEBHOOK_DISPATCH_QUEUE"
       },
       {
+        "queue": "pancake-sales-message",
+        "binding": "PANCAKE_SALES_MESSAGE_QUEUE"
+      },
+      {
         "queue": "erpnext-contacts",
         "binding": "ERPNEXT_CONTACTS_QUEUE"
       },
@@ -243,6 +247,10 @@
       },
       {
         "queue": "pancake-message-last-interaction",
+        "max_batch_size": 1
+      },
+      {
+        "queue": "pancake-sales-message",
         "max_batch_size": 1
       },
       {

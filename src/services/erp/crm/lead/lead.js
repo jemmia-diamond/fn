@@ -192,6 +192,19 @@ export default class LeadService {
     return response?.results || [];
   }
 
+  async updateLeadLastMessage({ frappeNameId, lastSalesMessageAt, lastCustomerMessageAt }) {
+    if (!frappeNameId) return null;
+    const values = { doctype: this.doctype, name: frappeNameId };
+    if (lastSalesMessageAt) {
+      values.last_sales_message_at = dayjs(lastSalesMessageAt).utc().format("YYYY-MM-DD HH:mm:ss");
+    }
+    if (lastCustomerMessageAt) {
+      values.last_customer_message_at = dayjs(lastCustomerMessageAt).utc().format("YYYY-MM-DD HH:mm:ss");
+    }
+    if (Object.keys(values).length <= 2) return null;
+    return await this.frappeClient.update(values);
+  }
+
   async syncLeadByBatchInsertion(docs) {
     return await this.frappeClient.postRequest("", {
       cmd: "erpnext.crm.doctype.lead.lead_methods.insert_lead_by_batch",
