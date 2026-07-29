@@ -74,7 +74,7 @@ export default class ERPNextCRMAppointmentService {
       .map(p => p.title).filter(Boolean).join("\n");
     const notesText = this.stripHtml(payload?.notes);
     const offlineText = this.stripHtml(payload?.offline_response);
-    const db = env ? Database.instance(env) : null;
+    const db = Database.instance(env);
 
     const mainSalesEmails = (payload?.main_sales || []).map(s => s.employee_email).filter(Boolean);
     const mainSalesIds = await this.getLarkUserIdsByEmails(db, mainSalesEmails);
