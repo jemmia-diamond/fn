@@ -35,10 +35,12 @@ export interface LarksuiteAppointmentRawFields {
   "Tên khách hàng/ facebook"?: string;
   created_at?: number;
   updated_at?: number;
+  "Appointment Name"?: string;
   "Ngân Sách Uớc Tính"?: string | number;
 }
 
 export interface LarksuiteAppointmentParsedFields {
+  appointment_name: string | null;
   store: string;
   name: string;
   phone_number: string;
