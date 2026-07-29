@@ -6,7 +6,7 @@ import FrappeERPSalesOrderController from "controllers/webhook/frappe/erp/sales-
 import FrappeERPPaymentEntryController from "controllers/webhook/frappe/erp/payment-entry/payment-entry";
 import FrappeERPCustomerController from "controllers/webhook/frappe/erp/customer/customer";
 import FrappeERPSalesOrderItemController from "controllers/webhook/frappe/erp/sales-order-item/sales-order-item";
-import FrappeERPAppointmentsController from "controllers/webhook/frappe/erp/appointments/appointments_controller";
+import FrappeERPAppointmentsController from "controllers/webhook/frappe/erp/appointments/appointments";
 
 export default class FrappeWebhook {
   static register(webhook) {

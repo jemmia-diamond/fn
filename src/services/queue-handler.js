@@ -92,6 +92,7 @@ export default {
       await new Ecommerce.DiamondCollectService(env).syncDiamondsToCollects(true);
       break;
     case "erpnext-crm":
+      await ERP.CRM.CRMService.dequeueCRMQueue(batch, env);
       break;
     default:
       break;
