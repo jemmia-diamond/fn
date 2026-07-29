@@ -26,7 +26,7 @@ export default class ERPNextCRMAppointmentService {
         doctype: "Appointment",
         name: payload.name,
         record_id: existingRecordId,
-        performedBy: DEFAULT_USER
+        performed_by: DEFAULT_USER
       });
     } else {
       const newRecord = await RecordService.createLarksuiteRecord({
@@ -41,7 +41,7 @@ export default class ERPNextCRMAppointmentService {
         doctype: "Appointment",
         name: payload.name,
         record_id: newRecord.record_id,
-        performedBy: DEFAULT_USER
+        performed_by: DEFAULT_USER
       });
     }
   }
