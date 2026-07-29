@@ -6,13 +6,7 @@ import Database from "services/database";
 export default class ERPNextCRMAppointmentService {
 
   constructor(env) {
-    this.frappeClient = new FrappeClient(
-      {
-        url: env.JEMMIA_ERP_BASE_URL,
-        apiKey: env.JEMMIA_ERP_API_KEY,
-        apiSecret: env.JEMMIA_ERP_API_SECRET
-      }
-    );
+    this.frappeClient = new FrappeClient({ env });
   }
 
   static async syncAppointment(payload, event, env) {
