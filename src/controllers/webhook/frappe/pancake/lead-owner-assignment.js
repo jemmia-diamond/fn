@@ -1,10 +1,8 @@
-import Pancake from "services/pancake";
-
 export default class FrappePancakeLeadOwnerAssignmentController {
   static async create(ctx) {
     const data = await ctx.req.json();
-    const conversationAssignmentService = new Pancake.ConversationAssignmentService(ctx.env);
-    const result = await conversationAssignmentService.syncConversationAssigneesWithLeadOwner(data);
-    return ctx.json({ success: !!result, data: result });
+    const event = ctx.req.header("Frappe-Webhook-Event");
+    await ctx.env["ERPNEXT_CRM_QUEUE"].send({ data, event });
+    return ctx.json({ message: "Lead owner assignment webhook received", status: 200 });
   }
 }
