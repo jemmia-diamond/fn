@@ -382,6 +382,11 @@ model erpnextLead {
   user_tags              Json?
   preferred_product_type Json?
   proposed_budget        String?   @db.VarChar(255)
+  store                  String?   @db.VarChar(255)
+  store_name             String?   @db.VarChar(255)
+  last_customer_message_at DateTime? @db.Timestamp(6)
+  last_sales_message_at    DateTime? @db.Timestamp(6)
+  first_visited_at         DateTime? @db.Timestamp(6)
   database_created_at    DateTime? @default(now()) @db.Timestamp(6)
   database_updated_at    DateTime? @db.Timestamp(6)
 
