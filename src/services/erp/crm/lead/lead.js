@@ -278,8 +278,6 @@ export default class LeadService {
 
         const leadData = {
           doctype: this.doctype,
-          status: "Lead",
-          naming_series: "CRM-LEAD-.YYYY.-",
           source,
           phone,
           lead_owner,
@@ -382,8 +380,6 @@ export default class LeadService {
     const dataBuilder = async () => {
       return {
         doctype: this.doctype,
-        status: "Lead",
-        naming_series: "CRM-LEAD-.YYYY.-",
         source,
         phone,
         first_name: phone,
