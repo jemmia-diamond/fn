@@ -302,39 +302,46 @@ export default class LeadService {
 
         if (data.raw_data.demand) {
           notes.push({
-            note: "Demand: " + data.raw_data.demand
+            note: "Demand: " + data.raw_data.demand,
+            type: "Products of Interest"
           });
         }
 
         if (data.raw_data.diamond_note) {
           notes.push({
-            note: "Diamond: " + data.raw_data.diamond_note
+            note: "Diamond: " + data.raw_data.diamond_note,
+            type: "Products of Interest"
           });
         }
 
         if (data.raw_data.company) {
           notes.push({
-            note: "Company: " + data.raw_data.company
+            note: "Company: " + data.raw_data.company,
+            type: "Customer Persona"
           });
         }
         if (data.raw_data.title) {
           notes.push({
-            note: "Job Title: " + data.raw_data.title
+            note: "Job Title: " + data.raw_data.title,
+            type: "Customer Persona"
           });
         }
         if (data.raw_data.role) {
           notes.push({
-            note: "Role: " + data.raw_data.role
+            note: "Role: " + data.raw_data.role,
+            type: "Customer Persona"
           });
         }
         if (data.raw_data.guests) {
           notes.push({
-            note: "Guests: " + data.raw_data.guests
+            note: "Guests: " + data.raw_data.guests,
+            type: "Store Visit"
           });
         }
         if (data.raw_data.note) {
           notes.push({
-            note: "Additional Notes: " + data.raw_data.note
+            note: "Additional Notes: " + data.raw_data.note,
+            type: "Other"
           });
         }
 
