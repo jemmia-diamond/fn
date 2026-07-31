@@ -1,4 +1,5 @@
 import ERPNextCRMAppointmentService from "services/erp/crm/appointment/appointment";
+import Pancake from "services/pancake";
 
 export default class CRMService {
   static async dequeueCRMQueue(batch, env) {
@@ -9,6 +10,9 @@ export default class CRMService {
     switch (payload.doctype) {
     case "Appointment":
       await ERPNextCRMAppointmentService.syncAppointment(payload, event, env);
+      break;
+    case "Lead":
+      await new Pancake.ConversationAssignmentService(env).syncConversationAssigneesWithLeadOwner(payload);
       break;
     default:
       break;
