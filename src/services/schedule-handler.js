@@ -31,6 +31,7 @@ export default {
       await new Ecommerce.ProductG1PromotionSyncService(env).syncPromotions();
       await new Haravan.Collect.CollectionProductSyncService(env).syncCollectionProducts();
       await new Ecommerce.ProductVariantPromotionSyncService(env).syncVariantPromotions();
+      await new Larksuite.VariantSyncService(env).sync();
       break;
     case "*/5 * * * *": // At every 5th minute
       await new OneOffHandler(env).run();
@@ -75,6 +76,9 @@ export default {
       break;
     case "0 */6 * * *": // At every 6th hour
       await DatabaseOperations.MaterializedViewService.refresh6Hours(env);
+      break;
+    case "0 */10 * * *": // At every 10th hour (600 minutes)
+      await new Larksuite.SerialSyncService(env).sync();
       break;
     case "0 17 * * *": // 00:00
       await new Reporting.UptimeReportSyncService(env).dailySync();
