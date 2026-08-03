@@ -44,8 +44,6 @@ export function createInsertLeadPayload(conversation) {
   const birthDate = getBirthDate(conversation.customer_birthday);
   const payload = {
     "doctype": "Lead",
-    "naming_series": "CRM-LEAD-.YYYY.-",
-    "status": "Lead",
     "gender": getGender(conversation.customer_gender),
     "first_name": conversation.customer_name?.trim() || "Chưa rõ",
     "phone": conversation.customer_phone,
