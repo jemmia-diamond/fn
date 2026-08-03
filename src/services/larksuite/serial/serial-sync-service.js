@@ -24,21 +24,15 @@ export default class SerialSyncService {
     const nowUtc = dayjs().utc();
     const defaultUpdatedAtMin = nowUtc.subtract(TIME_INTERVAL_MINUTES, "minutes").toDate();
     const finalUpdatedAtMin = updatedAtMin || defaultUpdatedAtMin;
-
     const serials = await this._fetchUpdatedSerials(finalUpdatedAtMin, limit, offset);
-
-    if (!serials || serials.length === 0) return;
+    if (!serials?.length) return;
 
     const larkSerials = await this._fetchLarkSerials(serials);
     const larkSerialMap = this._buildLarkSerialMap(larkSerials);
     const { newSerials, oldSerials } = this._categorizeSerials(serials, larkSerialMap);
 
-    if (newSerials.length > 0) {
-      await this._createLarkRecords(newSerials);
-    }
-    if (oldSerials.length > 0) {
-      await this._updateLarkRecords(oldSerials);
-    }
+    if (newSerials.length) await this._createLarkRecords(newSerials);
+    if (oldSerials.length) await this._updateLarkRecords(oldSerials);
   }
 
   async _fetchUpdatedSerials(updatedAtMin, limit = null, offset = null) {
@@ -73,9 +67,7 @@ export default class SerialSyncService {
         filter,
         pageSize: BATCH_SIZE
       });
-      if (records && records.length > 0) {
-        allLarkSerials.push(...records);
-      }
+      if (records?.length) allLarkSerials.push(...records);
     }
 
     return allLarkSerials;

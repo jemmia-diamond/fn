@@ -24,21 +24,15 @@ export default class VariantSyncService {
     const nowUtc = dayjs().utc();
     const defaultUpdatedAtMin = nowUtc.subtract(TIME_INTERVAL_MINUTES, "minutes").toDate();
     const finalUpdatedAtMin = updatedAtMin || defaultUpdatedAtMin;
-
     const variants = await this._fetchUpdatedVariants(finalUpdatedAtMin, limit, offset);
-
-    if (!variants || variants.length === 0) return;
+    if (!variants?.length) return;
 
     const larkVariants = await this._fetchLarkVariants(variants);
     const larkVariantMap = this._buildLarkVariantMap(larkVariants);
     const { newVariants, oldVariants } = this._categorizeVariants(variants, larkVariantMap);
 
-    if (newVariants.length > 0) {
-      await this._createLarkRecords(newVariants);
-    }
-    if (oldVariants.length > 0) {
-      await this._updateLarkRecords(oldVariants);
-    }
+    if (newVariants.length) await this._createLarkRecords(newVariants);
+    if (oldVariants.length) await this._updateLarkRecords(oldVariants);
   }
 
   async _fetchUpdatedVariants(updatedAtMin, limit = null, offset = null) {
@@ -74,9 +68,7 @@ export default class VariantSyncService {
         filter,
         pageSize: BATCH_SIZE
       });
-      if (records && records.length > 0) {
-        allLarkVariants.push(...records);
-      }
+      if (records?.length) allLarkVariants.push(...records);
     }
 
     return allLarkVariants;
