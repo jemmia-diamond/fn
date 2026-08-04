@@ -21,7 +21,8 @@ const REFERENCE_SCHEMA = {
   balance: (ref) => ref.balance,
   allocated_amount: (ref) => ref.allocated_amount,
   outstanding_amount: (ref) => ref.outstanding_amount,
-  unallocated_amount: (ref) => ref.unallocated_amount
+  unallocated_amount: (ref) => ref.unallocated_amount,
+  payment_date: (ref) => ref?.payment_date ? dayjs.utc(ref?.payment_date).toISOString() : null
 };
 
 export default class PaymentEntryService {
