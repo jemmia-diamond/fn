@@ -4,11 +4,13 @@ import { Prisma } from "@prisma-cli";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import { SHIFTS, ASSIGNMENT_RULES } from "services/erp/automation/assigment-rule/enum";
+import { sleep } from "services/utils/sleep.js";
 
 dayjs.extend(utc);
 
 export default class AssignmentRuleService {
   static ERPNEXT_PAGE_SIZE = 100;
+  static ONE_SECOND = 1000;
   constructor(env) {
     this.env = env;
     this.doctype = "Assignment Rule";
@@ -150,6 +152,12 @@ export default class AssignmentRuleService {
       "doctype": assignmentRuleService.doctype,
       "name": assignmentRuleName,
       "disabled": 0
+    });
+    await sleep(AssignmentRuleService.ONE_SECOND);
+    await assignmentRuleService.frappeClient.update({
+      "doctype": assignmentRuleService.doctype,
+      "name": ASSIGNMENT_RULES.Lead_Facebook_Tiktok_ZaloKOC_Website_ZaloOA_HCM.name,
+      "users": [{ user: assignmentRuleService.defaultUser }]
     });
   }
 
