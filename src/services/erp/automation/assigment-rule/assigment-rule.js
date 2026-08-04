@@ -9,7 +9,6 @@ dayjs.extend(utc);
 
 export default class AssignmentRuleService {
   static ERPNEXT_PAGE_SIZE = 100;
-  static ONE_SECOND = 1000;
   constructor(env) {
     this.env = env;
     this.doctype = "Assignment Rule";
