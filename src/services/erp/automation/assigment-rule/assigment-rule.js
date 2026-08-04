@@ -4,7 +4,6 @@ import { Prisma } from "@prisma-cli";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import { SHIFTS, ASSIGNMENT_RULES } from "services/erp/automation/assigment-rule/enum";
-import { sleep } from "services/utils/sleep.js";
 
 dayjs.extend(utc);
 
@@ -153,7 +152,6 @@ export default class AssignmentRuleService {
       "name": assignmentRuleName,
       "disabled": 0
     });
-    await sleep(AssignmentRuleService.ONE_SECOND);
     await assignmentRuleService.frappeClient.update({
       "doctype": assignmentRuleService.doctype,
       "name": ASSIGNMENT_RULES.Lead_Facebook_Tiktok_ZaloKOC_Website_ZaloOA_HCM.name,
