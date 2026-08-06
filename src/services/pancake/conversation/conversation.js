@@ -3,7 +3,8 @@ import Database from "services/database";
 import LeadService from "services/erp/crm/lead/lead";
 import AIHUBClient from "services/clients/aihub";
 import { shouldReceiveWebhook } from "controllers/webhook/pancake/erp/utils";
-import { EXTRA_HOOKS } from "services/pancake/constants/extra-hook.constant";
+import { createAxiosClient } from "services/utils/http-client";
+import { getSalesayaScoringWebhookUrl } from "services/salesaya/constants/constant";
 
 export default class ConversationService {
   constructor(env) {
@@ -224,16 +225,8 @@ export default class ConversationService {
     });
   }
 
-  async triggerExtraHooks(body) {
-    const promises = EXTRA_HOOKS.map(url =>
-      fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body)
-      })
-    );
-
-    await Promise.all(promises);
+  async triggerSalesayaScoringHooks(body) {
+    await createAxiosClient({}).post(getSalesayaScoringWebhookUrl(this.env), body);
   }
 
   static async dequeueMessageSummaryQueue(batch, env) {
@@ -267,7 +260,7 @@ export default class ConversationService {
   static async dequeueExtraHooksQueue(batch, env) {
     const conversationService = new ConversationService(env);
     for (const message of batch.messages) {
-      await conversationService.triggerExtraHooks(message.body);
+      await conversationService.triggerSalesayaScoringHooks(message.body);
     }
   }
 }

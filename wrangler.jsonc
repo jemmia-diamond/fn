@@ -58,7 +58,7 @@
     "NOCODB_SUPPLY_BASE_ID": "pl4e7zwnui0k8y1",
     "NOCODB_MARKETING_BASE_ID": "pbzopuiobhc8xf1",
     "NOCODB_WORKSPACE_BASE_URL": "https://workspace.jemmia.vn/",
-    "SALESAYA_API_BASE_URL": "https://api.salesaya.com",
+    "SALESAYA_API_BASE_URL": "https://salesaya-api.jemmia.vn",
     "DEFAULT_HARAVAN_DIAMOND_DISCOUNT_COLLECTION_ID": 32,
     "DEFAULT_HARAVAN_JEWELRY_DISCOUNT_COLLECTION_ID": 31,
     "UPTIMEROBOT_API_KEY": "ur3236830-be8be169403c7dd3a91daeca",
