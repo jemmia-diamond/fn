@@ -291,3 +291,87 @@ model larksuiteAppointment {
   @@map("appointments")
   @@schema("larksuite")
 }
+
+//  Materialized View below
+
+view larksuiteSerialNumbersView {
+  id                       BigInt    @unique
+  serial_number            String?   @db.VarChar
+  gold_weight              Decimal?  @db.Decimal
+  diamond_weight           Decimal?  @db.Decimal
+  size_type                String?   @db.VarChar
+  ring_size                String?   @db.VarChar
+  supplier                 String?   @db.VarChar
+  old_barcode              String?   @db.VarChar
+  storage_size_type        String?   @db.VarChar
+  storage_size_1           String?   @db.VarChar
+  storage_size_2           String?   @db.VarChar
+  stock_at                 DateTime? @db.Timestamp(6)
+  order_reference          String?   @db.VarChar
+  last_rfid_scan_time      DateTime? @db.Timestamp(6)
+  category                 String?   @db.VarChar
+  applique_material        String?   @db.VarChar
+  fineness                 String?   @db.VarChar
+  material_color           String?   @db.VarChar
+  price                    Decimal?  @db.Decimal
+  sku                      String?   @db.VarChar
+  haravan_variant_id       BigInt?
+  haravan_product_id       BigInt?
+  haravan_product_type     String?   @db.VarChar
+  design_code              String?   @db.VarChar
+  erp_code                 String?   @db.VarChar
+  code                     String?   @db.VarChar
+  customer_name            String?   @db.VarChar
+  customer_phone           String?   @db.VarChar
+  temporary_code           String?   @db.VarChar
+  temporary_price          Decimal?  @db.Decimal
+  fulfillment_status_value String?   @db.VarChar
+  wvs_database_updated_at  DateTime? @db.Timestamp(6)
+
+  @@map("serial_numbers_view")
+  @@schema("larksuite")
+}
+
+view larksuiteLarkVariantsView {
+  variant_id                 BigInt    @unique
+  product_id                 BigInt?
+  published_scope            String?   @db.VarChar
+  haravan_product_type       String?   @db.VarChar
+  product_title              String?   @db.VarChar
+  barcode                    String?   @db.VarChar
+  sku                        String?   @db.VarChar
+  price                      Decimal?  @db.Decimal
+  variant_title              String?   @db.VarChar
+  qty_onhand                 BigInt?
+  qty_commited               BigInt?
+  qty_available              BigInt?
+  qty_incoming               BigInt?
+  report_lab                 String?   @db.VarChar
+  report_no                  String?   @db.VarChar
+  diamond_shape              String?   @db.VarChar
+  diamond_cut                String?   @db.VarChar
+  diamond_color              String?   @db.VarChar
+  diamond_clarity            String?   @db.VarChar
+  diamond_fluorescence       String?   @db.VarChar
+  diamond_edge_size_1        Decimal?  @db.Decimal
+  diamond_edge_size_2        Decimal?  @db.Decimal
+  diamond_carat              Decimal?  @db.Decimal
+  jewelrie_category          String?   @db.VarChar
+  jewelrie_applique_material String?   @db.VarChar
+  jewelrie_fineness          String?   @db.VarChar
+  jewelrie_material_color    String?   @db.VarChar
+  jewelrie_size_type         String?   @db.VarChar
+  jewelrie_ring_size         String?   @db.VarChar
+  design_code                String?   @db.VarChar
+  code                       String?   @db.VarChar
+  erp_code                   String?   @db.VarChar
+  updated_at                 DateTime? @db.Timestamp(6)
+  hv_database_updated_at     DateTime? @db.Timestamp(6)
+  wv_database_updated_at     DateTime? @db.Timestamp(6)
+  wdi_database_updated_at    DateTime? @db.Timestamp(6)
+  wp_database_updated_at     DateTime? @db.Timestamp(6)
+  wd_database_updated_at     DateTime? @db.Timestamp(6)
+
+  @@map("lark_variants_view")
+  @@schema("larksuite")
+}
