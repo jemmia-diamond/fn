@@ -71,6 +71,7 @@ function buildBaseQueryV2(jsonParams) {
         SELECT *
         FROM marts_ecom.fct_ecom_jewelry_variants v
         WHERE v.haravan_product_id = p.haravan_product_id
+          AND v.images IS NOT NULL AND cardinality(v.images) > 0
         ORDER BY v.fineness ${Prisma.raw(finenessOrder)}, v.price DESC
       ) v ON TRUE
     `;
@@ -95,6 +96,7 @@ function buildBaseQueryV2(jsonParams) {
         SELECT *
         FROM marts_ecom.fct_ecom_jewelry_variants v
         WHERE v.haravan_product_id = p.haravan_product_id
+          AND v.images IS NOT NULL AND cardinality(v.images) > 0
         ORDER BY v.fineness ${Prisma.raw(finenessOrder)}, v.price DESC
       ) v ON TRUE
     `;
@@ -290,6 +292,7 @@ export function buildQuerySingleV2(params = {}) {
         SELECT *
         FROM marts_ecom.fct_ecom_jewelry_variants v
         WHERE v.haravan_product_id = p.haravan_product_id
+          AND v.images IS NOT NULL AND cardinality(v.images) > 0
         ORDER BY v.fineness, v.price DESC
       ) v ON TRUE
     `;
@@ -316,6 +319,7 @@ export function buildQuerySingleV2(params = {}) {
         SELECT *
         FROM marts_ecom.fct_ecom_jewelry_variants v
         WHERE v.haravan_product_id = p.haravan_product_id
+          AND v.images IS NOT NULL AND cardinality(v.images) > 0
         ORDER BY v.fineness, v.price DESC
       ) v ON TRUE
     `;
