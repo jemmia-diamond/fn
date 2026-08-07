@@ -26,21 +26,7 @@ export function buildInventoryMetricsSql(opts = {}) {
     ? Prisma.sql`CAST(${opts.limit_selling_quantity} AS INT)`
     : Prisma.sql`NULL`;
   return Prisma.sql`
-    , CAST(
-        COALESCE(
-          (
-            SELECT CASE
-              WHEN p.haravan_product_type = ANY (ARRAY['Bông Tai'::text, 'Bông Tai Nguyên Chiếc'::text])
-              THEN SUM(ln.quantity) / 2
-              ELSE SUM(ln.quantity)
-            END
-            FROM haravan.line_items ln
-            INNER JOIN haravan.orders o ON ln.order_id = o.id
-            WHERE ln.product_id = p.haravan_product_id
-              AND o.cancelled_status = 'uncancelled'
-          ), 0
-        ) + COALESCE(p.sold_quantity, 0)
-      AS INT) AS sold_quantity, ${limitSql} AS limit_selling_quantity
+    , CAST(COALESCE(p.sold_quantity, 0) AS INT) AS sold_quantity, ${limitSql} AS limit_selling_quantity
   `;
 }
 
@@ -75,48 +61,16 @@ function buildBaseQueryV2(jsonParams) {
         'price_compare_at', CAST(v.price_compare_at AS DECIMAL),
         'qty_available', v.qty_available,
         'qty_onhand', v.qty_onhand,
-        'diamonds', COALESCE(v.diamonds, '[]'::json),
+        'diamonds', COALESCE(v.diamonds::jsonb, '[]'::jsonb),
         'images', COALESCE(v.images, ARRAY[]::text[])
       )
     `;
 
     lateralJoinClause = Prisma.sql`
       INNER JOIN LATERAL (
-        SELECT
-          v.*,
-          JSON_AGG(
-            JSON_BUILD_OBJECT(
-              'product_id', dia.product_id,
-              'variant_id', dia.variant_id,
-              'report_no', dia.report_no,
-              'shape', dia.shape,
-              'carat', dia.carat,
-              'color', dia.color,
-              'clarity', dia.clarity,
-              'cut', dia.cut,
-              'edge_size_1', dia.edge_size_1,
-              'edge_size_2', dia.edge_size_2,
-              'compare_at_price', CAST(dia.price AS DECIMAL),
-              'price', CASE
-                WHEN dia.promotions ILIKE '%8%%' THEN ROUND(dia.price * 0.92, 2)
-                ELSE dia.price
-              END
-            )
-          ) FILTER (WHERE dia.product_id IS NOT NULL) AS diamonds
+        SELECT *
         FROM marts_ecom.fct_ecom_jewelry_variants v
-        LEFT JOIN ecom.jewelry_diamond_pairs jdp
-          ON CAST(jdp.haravan_product_id AS BIGINT) = v.haravan_product_id
-         AND CAST(jdp.haravan_variant_id AS BIGINT) = v.haravan_variant_id
-         AND jdp.is_active = TRUE
-        LEFT JOIN workplace.diamonds dia
-          ON dia.product_id = CAST(jdp.haravan_diamond_product_id AS BIGINT)
-         AND dia.variant_id = CAST(jdp.haravan_diamond_variant_id AS BIGINT)
         WHERE v.haravan_product_id = p.haravan_product_id
-        GROUP BY v.haravan_product_id, v.haravan_variant_id, v.sku, v.price,
-                 v.price_compare_at, v.material_color, v.fineness, v.ring_size,
-                 v.qty_available, v.qty_onhand, v.applique_material,
-                 v.estimated_gold_weight, v.ring_band_style, v.ring_head_style,
-                 v.images
         ORDER BY v.fineness ${Prisma.raw(finenessOrder)}, v.price DESC
       ) v ON TRUE
     `;
@@ -175,7 +129,7 @@ function buildBaseQueryV2(jsonParams) {
       p.haravan_product_id, p.title, p.design_code, p.handle,
       p.diamond_holder, p.main_stone, p.ring_band_type, p.haravan_product_type,
       p.max_price, p.min_price, p.max_price_18, p.max_price_14,
-      p.has_360, p.sold_quantity, p.created_date ${collectionJoinEcomProductsClause ? Prisma.raw(", p2.image_updated_at") : Prisma.empty}
+      p.has_360, p.sold_before_2025, p.sold_quantity, p.created_date ${collectionJoinEcomProductsClause ? Prisma.raw(", p2.image_updated_at") : Prisma.empty}
 
     ${havingSql}
     ${sortSql}
@@ -326,49 +280,16 @@ export function buildQuerySingleV2(params = {}) {
         'estimated_gold_weight', v.estimated_gold_weight,
         'qty_available', v.qty_available,
         'qty_onhand', v.qty_onhand,
-        'diamonds', COALESCE(v.diamonds, '[]'::json),
+        'diamonds', COALESCE(v.diamonds::jsonb, '[]'::jsonb),
         'images', COALESCE(v.images, ARRAY[]::text[])
       )
     `;
 
     lateralJoinClause = Prisma.sql`
       LEFT JOIN LATERAL (
-        SELECT
-          v.*,
-          JSON_AGG(
-            JSON_BUILD_OBJECT(
-              'product_id', dia.product_id,
-              'variant_id', dia.variant_id,
-              'report_no', dia.report_no,
-              'shape', dia.shape,
-              'carat', dia.carat,
-              'color', dia.color,
-              'clarity', dia.clarity,
-              'cut', dia.cut,
-              'edge_size_1', dia.edge_size_1,
-              'edge_size_2', dia.edge_size_2,
-              'compare_at_price', CAST(dia.price AS DECIMAL),
-              'price', CASE
-                WHEN dia.promotions ILIKE '%8%%' THEN ROUND(dia.price * 0.92, 2)
-                ELSE dia.price
-              END
-            )
-          ) FILTER (WHERE dia.product_id IS NOT NULL) AS diamonds
+        SELECT *
         FROM marts_ecom.fct_ecom_jewelry_variants v
-        LEFT JOIN ecom.jewelry_diamond_pairs jdp
-          ON CAST(jdp.haravan_product_id AS BIGINT) = v.haravan_product_id
-         AND CAST(jdp.haravan_variant_id AS BIGINT) = v.haravan_variant_id
-         AND jdp.is_active = TRUE
-        LEFT JOIN workplace.diamonds dia
-          ON dia.product_id = CAST(jdp.haravan_diamond_product_id AS BIGINT)
-         AND dia.variant_id = CAST(jdp.haravan_diamond_variant_id AS BIGINT)
         WHERE v.haravan_product_id = p.haravan_product_id
-        GROUP BY
-          v.haravan_product_id, v.haravan_variant_id, v.sku,
-          v.price, v.price_compare_at, v.material_color, v.fineness,
-          v.ring_size, v.qty_available, v.qty_onhand,
-          v.applique_material, v.estimated_gold_weight,
-          v.ring_band_style, v.ring_head_style, v.images
         ORDER BY v.fineness, v.price DESC
       ) v ON TRUE
     `;
