@@ -61,7 +61,6 @@ export default {
       break;
     case "*/30 * * * *": // At every 30th minute
       await ERP.Contacts.AddressService.cronSyncAddressesToDatabase(env);
-      await Ecommerce.ProductService.refreshMaterializedViews(env);
       await DatabaseOperations.MaterializedViewService.refresh30Minutes(env);
       await new Haravan.AccountingSalesOrders.LarkSyncService(env).sync();
       break;
