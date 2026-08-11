@@ -20,15 +20,31 @@ export default class BaseClient {
     return await this.postProcess(response);
   }
 
+  async makePostRequest(path, data) {
+    const url = `${this.baseUrl}${path}`;
+    const headers = await this.composeHeaders();
+    const response = await fetch(url, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(data)
+    });
+    return await this.postProcess(response);
+  }
+
   async postProcess(response) {
     if (!response.ok) {
+      let error = null;
+      try { error = await response.json(); } catch { /* non-JSON body */ }
       return {
         success: false,
-        message: `Haravan API error: ${response.status} ${response.statusText}`
+        status: response.status,
+        message: `Haravan API error: ${response.status} ${response.statusText}`,
+        error
       };
     }
     return {
       success: true,
+      status: response.status,
       message: "Success",
       data: await response.json()
     };
