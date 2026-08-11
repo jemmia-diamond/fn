@@ -223,7 +223,7 @@ export default class SalesOrderService {
 
   mapLineItemsFields = (lineItemData) => {
     const sku = lineItemData.sku || "";
-    let type = lineItemData.option2 || lineItemData.type;
+    let type = lineItemData.type;
 
     if (sku.startsWith("GIA")) {
       type = "Kim Cương Viên";
