@@ -1,4 +1,4 @@
 export const APPOINTMENTS = {
-  TABLE_ID: "tblVY4RI4D5A5h4t",
+  TABLE_ID: "tblnOLdZSli6F3qP",
   APP_TOKEN: "NetnwI4qLitDJRkXVidlaAWmgDo"
 };
