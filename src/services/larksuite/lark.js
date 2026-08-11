@@ -3,6 +3,7 @@ import { createFetchAdapter } from "@haverstack/axios-fetch-adapter";
 import { createAxiosClient, DEFAULT_RETRY_CONFIG } from "services/utils/http-client";
 const fetchAdapter = createFetchAdapter();
 let clientV2Instance = null;
+export const LARK_BASE_URL = "https://jemmiadiamond.sg.larksuite.com/base";
 
 export default class LarksuiteService {
 
