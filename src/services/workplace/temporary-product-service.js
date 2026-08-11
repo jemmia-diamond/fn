@@ -176,14 +176,8 @@ export default class TemporaryProductService {
       }
       giaReportNo = giaReportNo.trim();
 
-      const option1Parts = [
-        giaReportNo,
-        tempProductData.customer_name,
-        tempProductData.customer_phone
-      ].filter(Boolean);
-
       const variantData = {
-        option1: option1Parts.join(" - "),
+        option1: [giaReportNo, tempProductData.customer_name, tempProductData.customer_phone].join(" - "),
         sku: giaReportNo,
         price: tempProductData.price,
         inventory_management: "haravan",
