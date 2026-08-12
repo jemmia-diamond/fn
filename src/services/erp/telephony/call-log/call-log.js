@@ -58,13 +58,20 @@ export default class CallLogService {
 
   mapVbotCallLogFields = (callLog) => {
     const id = callLog.group_id || callLog.external_call_id;
-    const isIncoming = callLog.type_call === "INCALL";
-    const type = isIncoming ? "Incoming" : "Outgoing";
-    const agent_id = isIncoming ? callLog.callee?.[FIRST_ITEM]?.member_no
-      : callLog.caller?.[FIRST_ITEM]?.member_no;
+    const allParticipants = [...(callLog.caller || []), ...(callLog.callee || [])];
+    const agents = allParticipants.filter((p) => p.member_no);
+    const agent = agents.find((p) => p.disposition === "ANSWER") || agents[FIRST_ITEM];
+    const agent_id = agent?.member_no;
 
-    const from = isIncoming ? callLog.caller?.[FIRST_ITEM]?.phone : callLog.hotline_number;
-    const to = isIncoming ? callLog.hotline_number : callLog.callee?.[FIRST_ITEM]?.phone;
+    const isIncoming = callLog.type_call === "INCALL" || callLog.type_call === "MISSCALL";
+    const type = isIncoming ? "Incoming" : "Outgoing";
+
+    const customerPhone = isIncoming
+      ? callLog.caller?.[FIRST_ITEM]?.phone
+      : callLog.callee?.[FIRST_ITEM]?.phone;
+
+    const from = isIncoming ? customerPhone : callLog.hotline_number;
+    const to = isIncoming ? callLog.hotline_number : customerPhone;
 
     const start_time = dayjs(callLog.date_create).utc().format(DATETIME_FORMAT);
     const [hours, minutes, seconds] = (callLog.duration_call || "00:00:00").split(":").map(Number);
