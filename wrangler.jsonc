@@ -258,8 +258,8 @@
       },
       {
         "queue": "erpnext-crm",
-        "retry_delay": 600,
-        "max_retries": 6,
+        "retry_delay": 60,
+        "max_retries": 2,
         "max_batch_size": 1
       },
       {
