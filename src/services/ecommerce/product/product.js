@@ -4,10 +4,11 @@ import { retryQuery } from "services/utils/retry-utils";
 import {
   buildQueryV2,
   buildQuerySingleV2,
-  buildInventoryMetricsSql
+  buildInventoryMetricsSql,
+  buildJewelryPriceSql
 } from "services/ecommerce/product/utils/jewelry-v2";
 import { buildWeddingRingByIdQuery, buildWeddingRingsQuery } from "services/ecommerce/product/utils/wedding-ring";
-import { JEWELRY_IMAGE, API_CONFIG } from "src/controllers/ecommerce/constant";
+import { API_CONFIG } from "src/controllers/ecommerce/constant";
 
 export default class ProductService {
   constructor(env) {
@@ -22,27 +23,20 @@ export default class ProductService {
     const likePattern = `%${lowerSearchKey}%`;
     const offset = (page - 1) * limit;
 
-    const workplaceUrlPrefix = JEWELRY_IMAGE.WORKPLACE_URL_PREFIX;
-    const workplaceFullUrl = JEWELRY_IMAGE.WORKPLACE_FULL_URL;
-    const cdnUrl = JEWELRY_IMAGE.CDN_URL;
+    const priceField = buildJewelryPriceSql(options.default_jewelry_discount);
 
     const result = await this.db.$queryRaw`
       SELECT
         CAST(p.haravan_product_id AS DOUBLE PRECISION) AS id,
         p.title,
-        d.design_code,
+        p.design_code,
         p.handle,
-        d.diamond_holder,
-        d.ring_band_type,
+        p.diamond_holder,
+        p.ring_band_type,
         p.haravan_product_type AS product_type,
-        CASE
-          WHEN e.product_id IS NULL THEN FALSE
-          ELSE TRUE
-        END AS has_360${buildInventoryMetricsSql(options)},
+        p.has_360${buildInventoryMetricsSql(options)},
         var.variants
-      FROM ecom.materialized_products p
-        INNER JOIN workplace.designs d ON d.id = p.design_id
-        LEFT JOIN workplace.ecom_360 e ON p.workplace_id = e.product_id
+      FROM marts_ecom.fct_ecom_jewelry_products p
 
         INNER JOIN LATERAL (
           SELECT
@@ -53,44 +47,18 @@ export default class ProductService {
                 'fineness', v.fineness,
                 'material_color', v.material_color,
                 'ring_size', v.ring_size,
-                'price', CAST(v.price AS DOUBLE PRECISION),
+                'price', CAST(${priceField} AS DOUBLE PRECISION),
                 'price_compare_at', CAST(v.price_compare_at AS DOUBLE PRECISION),
-                'images', design_imgs.images
+                'images', COALESCE(v.images, ARRAY[]::text[])
               )
             ) AS variants
-          FROM ecom.materialized_variants v
-
-          INNER JOIN LATERAL (
-            SELECT 
-              di.material_color,
-              COALESCE(
-                array_agg(
-                  CASE 
-                    WHEN item.value->>'url' LIKE ${workplaceUrlPrefix} || '%' THEN
-                      REPLACE(item.value->>'url', ${workplaceFullUrl}, ${cdnUrl})
-                    ELSE item.value->>'url'
-                  END
-                ) FILTER (WHERE jsonb_typeof(item.value) = 'object' AND item.value->>'url' IS NOT NULL AND item.value->>'url' != ''),
-                ARRAY[]::text[]
-              ) as images
-            FROM workplace.design_images di
-            CROSS JOIN LATERAL jsonb_array_elements(
-              CASE 
-                WHEN di.retouch IS NOT NULL AND di.retouch != '' AND jsonb_typeof(di.retouch::jsonb) = 'array'
-                THEN di.retouch::jsonb
-                ELSE '[]'::jsonb
-              END
-            ) AS item
-            WHERE di.design_id = d.id
-            GROUP BY di.material_color
-          ) design_imgs ON design_imgs.material_color = v.material_color AND cardinality(design_imgs.images) > 0
-
+          FROM marts_ecom.fct_ecom_jewelry_variants v
           WHERE v.haravan_product_id = p.haravan_product_id
           GROUP BY v.haravan_product_id
           HAVING COUNT(*) > 0
         ) var ON TRUE
 
-      WHERE lower(concat(p.title, d.design_code, p.haravan_product_type)) LIKE ${likePattern}
+      WHERE lower(concat(p.title, p.design_code, p.haravan_product_type)) LIKE ${likePattern}
       LIMIT ${limit}
       OFFSET ${offset};
     `;
@@ -161,13 +129,6 @@ export default class ProductService {
       product_id: Number(item.product_id),
       path_to_3dm: item.path_to_3dm
     };
-  }
-
-  static async refreshMaterializedViews(env) {
-    const db = Database.instance(env);
-    await db.$queryRaw`REFRESH MATERIALIZED VIEW ecom.materialized_products;`;
-    await db.$queryRaw`REFRESH MATERIALIZED VIEW ecom.materialized_variants;`;
-    await db.$queryRaw`REFRESH MATERIALIZED VIEW ecom.materialized_wedding_rings;`;
   }
 
   async getJewelryDataV2(jsonParams) {
@@ -241,23 +202,20 @@ export default class ProductService {
     if (isNaN(productId)) return null;
     const { variantJsonBuildObject, lateralJoinClause } =
       buildQuerySingleV2(options);
-    const workplaceUrlPrefix = JEWELRY_IMAGE.WORKPLACE_URL_PREFIX;
-    const workplaceFullUrl = JEWELRY_IMAGE.WORKPLACE_FULL_URL;
-    const cdnUrl = JEWELRY_IMAGE.CDN_URL;
 
     const result = await retryQuery(() => this.db.$queryRaw`
       SELECT
         CAST(p.haravan_product_id AS INT) AS id,
         p.title,
-        d.design_code,
+        p.design_code,
         p.handle,
-        d.diamond_holder,
+        p.diamond_holder,
         CASE
-          WHEN d.ring_band_type = 'None' THEN NULL
-          ELSE d.ring_band_type
+          WHEN p.ring_band_type = 'None' THEN NULL
+          ELSE p.ring_band_type
         END AS ring_band_type,
-        d.main_stone,
-        d.stone_quantity,
+        p.main_stone,
+        p.stone_quantity,
         p.haravan_product_type AS product_type,
         'Round' AS shape_of_main_stone,
         p.has_360,
@@ -269,45 +227,18 @@ export default class ProductService {
           'name', p.primary_collection,
           'handle', p.primary_collection_handle
         ) AS primary_collection
-      FROM ecom.materialized_products p
-        INNER JOIN workplace.designs d ON d.id = p.design_id
+      FROM marts_ecom.fct_ecom_jewelry_products p
 
         ${lateralJoinClause}
 
-        INNER JOIN LATERAL (
-          SELECT 
-            di.material_color,
-            COALESCE(
-              array_agg(
-                CASE 
-                  WHEN item.value->>'url' LIKE ${workplaceUrlPrefix} || '%' THEN
-                    REPLACE(item.value->>'url', ${workplaceFullUrl}, ${cdnUrl})
-                  ELSE item.value->>'url'
-                END
-              ) FILTER (WHERE jsonb_typeof(item.value) = 'object' AND item.value->>'url' IS NOT NULL AND item.value->>'url' != ''),
-              ARRAY[]::text[]
-            ) as images
-          FROM workplace.design_images di
-          CROSS JOIN LATERAL jsonb_array_elements(
-            CASE 
-              WHEN di.retouch IS NOT NULL AND di.retouch != '' AND jsonb_typeof(di.retouch::jsonb) = 'array'
-              THEN di.retouch::jsonb
-              ELSE '[]'::jsonb
-            END
-          ) AS item
-          WHERE di.design_id = d.id
-          GROUP BY di.material_color
-        ) design_imgs ON design_imgs.material_color = v.material_color
-
         WHERE 1 = 1
           AND p.haravan_product_id = ${productId}
-          AND cardinality(design_imgs.images) > 0
         GROUP BY
-          p.haravan_product_id, p.title, d.design_code, p.handle,
-          d.diamond_holder, d.ring_band_type, d.main_stone, d.stone_quantity, p.haravan_product_type,
+          p.haravan_product_id, p.title, p.design_code, p.handle,
+          p.diamond_holder, p.ring_band_type, p.main_stone, p.stone_quantity, p.haravan_product_type,
           p.max_price, p.min_price, p.max_price_18, p.max_price_14,
           p.qty_onhand, p.has_360, p.estimated_gold_weight,
-          p.primary_collection, p.primary_collection_handle, p.sold_before_2025
+          p.primary_collection, p.primary_collection_handle, p.sold_quantity
     `);
     return result?.[0] || null;
   }

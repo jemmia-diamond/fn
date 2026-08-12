@@ -17,7 +17,18 @@ export default class ConversationService {
     if (!conversationId || !pageId || !insertedAt) return null;
     const result = await this.db.$queryRaw`
       UPDATE pancake.conversation c
-      SET last_sent_at = ${insertedAt}
+      SET last_sent_at = ${insertedAt},
+          last_customer_message_at = ${insertedAt}
+      WHERE c.id = ${conversationId} AND c.page_id = ${pageId};
+    `;
+    return result;
+  }
+
+  async updateLastSalesMessageAt(conversationId, pageId, insertedAt) {
+    if (!conversationId || !pageId || !insertedAt) return null;
+    const result = await this.db.$queryRaw`
+      UPDATE pancake.conversation c
+      SET last_sales_message_at = ${insertedAt}
       WHERE c.id = ${conversationId} AND c.page_id = ${pageId};
     `;
     return result;
@@ -89,9 +100,36 @@ export default class ConversationService {
       console.warn("Missing required fields for processLastCustomerMessage. Page ID: " + pageId + ", Conversation ID: " + conversationId + ", Inserted At: " + insertedAt);
       return;
     }
-    // Store the time of the last customer message
-    const result = await this.updateConversation(conversationId, pageId, insertedAt);
-    return result;
+    await this.updateConversation(conversationId, pageId, insertedAt);
+
+    const existing = await this.findExistingLead({ conversationId });
+    if (existing?.frappe_name_id) {
+      await this.leadService.updateLeadLastMessage({
+        frappeNameId: existing.frappe_name_id,
+        lastCustomerMessageAt: insertedAt
+      });
+    }
+  }
+
+  async processSalesMessage(body) {
+    const message = body?.data?.message;
+    const conversationId = body?.data?.conversation?.id;
+    const pageId = message?.page_id || body?.page_id;
+    const insertedAt = message?.inserted_at;
+
+    if (!insertedAt || !conversationId || !pageId) {
+      return;
+    }
+
+    await this.updateLastSalesMessageAt(conversationId, pageId, insertedAt);
+
+    const existing = await this.findExistingLead({ conversationId });
+    if (existing?.frappe_name_id) {
+      await this.leadService.updateLeadLastMessage({
+        frappeNameId: existing.frappe_name_id,
+        lastSalesMessageAt: insertedAt
+      });
+    }
   }
 
   async syncCustomerToLeadCrm(body) {
@@ -209,6 +247,13 @@ export default class ConversationService {
     const conversationService = new ConversationService(env);
     for (const message of batch.messages) {
       await conversationService.processLastCustomerMessage(message.body);
+    }
+  }
+
+  static async dequeueSalesMessageQueue(batch, env) {
+    const conversationService = new ConversationService(env);
+    for (const message of batch.messages) {
+      await conversationService.processSalesMessage(message.body);
     }
   }
 

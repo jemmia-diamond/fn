@@ -69,7 +69,8 @@
     "OAUTH_REDIRECT_ENDPOINT": "https://fn.jemmia.vn",
     "HARAVAN_APP_URL": "https://jemmiavn.myharavan.com",
     "AI_PROXY_URL": "https://aiproxy.jemmia.vn",
-    "GOOGLE_GENERATIVE_AI_URL": "https://generativelanguage.googleapis.com/v1beta"
+    "GOOGLE_GENERATIVE_AI_URL": "https://generativelanguage.googleapis.com/v1beta",
+    "VBOT_BASE_URL": "https://open-api-h01.vbot.vn/v3.0"
   },
   "secrets_store_secrets": [
     {
@@ -143,6 +144,10 @@
       {
         "queue": "pancake-message-webhook-dispatch",
         "binding": "PANCAKE_MESSAGE_WEBHOOK_DISPATCH_QUEUE"
+      },
+      {
+        "queue": "pancake-sales-message",
+        "binding": "PANCAKE_SALES_MESSAGE_QUEUE"
       },
       {
         "queue": "erpnext-contacts",
@@ -245,10 +250,17 @@
         "max_batch_size": 1
       },
       {
+        "queue": "pancake-sales-message",
+        "max_batch_size": 1
+      },
+      {
         "queue": "erpnext-contacts"
       },
       {
-        "queue": "erpnext-crm"
+        "queue": "erpnext-crm",
+        "retry_delay": 60,
+        "max_retries": 2,
+        "max_batch_size": 1
       },
       {
         "queue": "erpnext-sales-order",
@@ -257,6 +269,12 @@
       },
       {
         "queue": "erpnext-payment-entry",
+        "retry_delay": 600,
+        "max_retries": 6,
+        "max_batch_size": 1
+      },
+      {
+        "queue": "erpnext-crm",
         "retry_delay": 600,
         "max_retries": 6,
         "max_batch_size": 1

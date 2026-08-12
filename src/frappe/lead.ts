@@ -1,32 +1,20 @@
 import FrappeClient from "src/frappe/frappe-client";
 import { IFrappeLead } from "src/services/larksuite/appointment/types";
+import { normalizeToStandardFormat } from "src/services/utils/phone-utils";
 
 export async function fetchLeadInfoByPhoneNumber(
   frappeClient: FrappeClient,
   phoneNumber: string
 ) {
-  try {
-    if (!phoneNumber) return null;
-    const lead: IFrappeLead[] = await frappeClient.getList("Lead", {
-      fields: [
-        "name",
-        "first_name",
-        "budget_lead",
-        "proposed_budget",
-        "phone",
-        "email_id"
-      ],
-      or_filters: [
-        ["mobile_no", "like", `%${phoneNumber.replace(/^0/, "")}%`],
-        ["phone", "like", `%${phoneNumber.replace(/^0/, "")}%`]
-      ]
-    });
-    if (lead?.length) {
-      return lead[0];
-    }
-    return null;
-  } catch (error) {
-    console.warn("Error fetching lead info:", error);
-    return null;
+  if (!phoneNumber) return null;
+
+  const normalizedPhone = normalizeToStandardFormat(phoneNumber);
+  const trimmedPhone = phoneNumber.trim();
+  const or_filters: any[] = [["phone", "=", trimmedPhone], ["phone", "=", normalizedPhone]];
+  if (trimmedPhone.startsWith("84")) {
+    or_filters.push(["phone", "=", `0${trimmedPhone.slice(2)}`]);
   }
+
+  const lead: IFrappeLead[] = await frappeClient.getList("Lead", { fields: ["name"], or_filters });
+  return lead?.length ? await frappeClient.getDoc("Lead", lead[0].name) : null;
 }

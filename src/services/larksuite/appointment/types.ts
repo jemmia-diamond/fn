@@ -35,9 +35,12 @@ export interface LarksuiteAppointmentRawFields {
   "Tên khách hàng/ facebook"?: string;
   created_at?: number;
   updated_at?: number;
+  "Appointment Name"?: string;
+  "Ngân Sách Uớc Tính"?: string | number;
 }
 
 export interface LarksuiteAppointmentParsedFields {
+  appointment_name: string | null;
   store: string;
   name: string;
   phone_number: string;
@@ -49,8 +52,11 @@ export interface LarksuiteAppointmentParsedFields {
   customer_response: string | null;
   main_sales: LarksuiteSalePerson[] | null;
   offline_sales: LarksuiteSalePerson[] | null;
-  status: string | null;
+  status: string | "Open";
+  order_status: string | null;
   policy: string | null;
+  budget: number | null;
+  offline_response: string | null;
 }
 
 export interface ILarksuiteAppointment extends LarksuiteAppointmentParsedFields {
@@ -64,6 +70,9 @@ export interface IFrappeLead {
   proposed_budget: string;
   phone: string;
   email_id: string | null;
+  preferred_product_type: string[] | null;
+  purpose_lead: string;
+  doctype: string;
 }
 
 export interface IFrappeSalesPerson {

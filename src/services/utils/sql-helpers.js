@@ -1,3 +1,5 @@
+import { Prisma } from "@prisma-cli";
+
 export const escapeSqlValue = (value) => {
   if (value === null || value === undefined) {
     return "NULL";
@@ -31,3 +33,4 @@ export async function fetchChildRecordsFromERP(frappeClient, parentNames, tableN
   return childRecords || [];
 }
 
+export const toSqlOrder = (order) => order === "asc" ? Prisma.raw("ASC") : Prisma.raw("DESC");
