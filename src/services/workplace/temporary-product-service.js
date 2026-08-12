@@ -83,18 +83,8 @@ export default class TemporaryProductService {
 
   async upsertTemporaryProduct(data) {
     let existing;
-    if (data.sku) {
-      const res = await this.nocodb.listRecords(NOCODB_TABLES.SUPPLY.TEMPORARY_PRODUCTS, {
-        where: `(sku,eq,${data.sku})`,
-        limit: 1
-      });
-      existing = res?.list?.[0];
-    } else if (data.lark_base_record_id) {
-      const res = await this.nocodb.listRecords(NOCODB_TABLES.SUPPLY.TEMPORARY_PRODUCTS, {
-        where: `(lark_base_record_id,eq,${data.lark_base_record_id})`,
-        limit: 1
-      });
-      existing = res?.list?.[0];
+    if (data.lark_base_record_id) {
+      existing = await this.getTemporaryProductByLarkRecordId(data.lark_base_record_id);
     }
 
     if (existing) {
