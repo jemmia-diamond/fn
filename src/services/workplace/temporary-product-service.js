@@ -1,5 +1,7 @@
 import Database from "services/database";
 import HaravanAPIClient from "services/haravan/api-client/api-client";
+import NocoDBClient from "services/clients/nocodb-client";
+import { NOCODB_TABLES } from "constants/nocodb-tables";
 
 function tempProductMapper(data) {
   return {
@@ -28,6 +30,7 @@ export default class TemporaryProductService {
   constructor(env) {
     this.env = env;
     this.db = Database.instance(env);
+    this.nocodb = new NocoDBClient(env);
   }
 
   async getHaravanTempProduct() {
@@ -46,65 +49,49 @@ export default class TemporaryProductService {
   }
 
   async insertVariantSerial() {
-    const result = await this.db.$queryRaw`
-      INSERT INTO workplace.variant_serials (order_on)
-      VALUES (NULL)
-      RETURNING *;
-    `;
-    return result[0];
+    const result = await this.nocodb.createRecords(NOCODB_TABLES.SUPPLY.SERIALS, { order_on: null });
+    return result;
   }
 
   async addTemporaryProduct(data) {
-    const keys = Object.keys(data).filter(k => data[k] !== undefined && data[k] !== null);
-    const values = keys.map(k => data[k]);
-    const columns = keys.map(k => `"${k}"`).join(", ");
-    const bindParams = values.map((_, i) => `$${i + 1}`).join(", ");
-
-    // eslint-disable-next-line
-    const result = await this.db.$queryRawUnsafe(`
-      INSERT INTO workplace.temporary_products (${columns})
-      VALUES (${bindParams})
-      RETURNING *;
-    `, ...values);
-    return result[0];
+    const cleanData = Object.fromEntries(
+      Object.entries(data).filter(([, v]) => v !== undefined && v !== null)
+    );
+    const result = await this.nocodb.createRecords(NOCODB_TABLES.SUPPLY.TEMPORARY_PRODUCTS, cleanData);
+    return result;
   }
 
   async getTemporaryProductByLarkRecordId(recordId) {
-    const result = await this.db.$queryRaw`
-      SELECT * FROM workplace.temporary_products
-      WHERE lark_base_record_id = ${recordId}
-      LIMIT 1
-    `;
-    return result[0];
+    const result = await this.nocodb.listRecords(NOCODB_TABLES.SUPPLY.TEMPORARY_PRODUCTS, {
+      where: `(lark_base_record_id,eq,${recordId})`,
+      limit: 1
+    });
+    return result?.list?.[0] || null;
   }
 
   async updateTemporaryProductById(id, data) {
-    const keys = Object.keys(data).filter(k => data[k] !== undefined && data[k] !== null);
-
-    if (keys.length === 0) return null;
-
-    const setClause = keys.map((k, i) => `"${k}" = $${i + 2}`).join(", ");
-    const values = keys.map(k => data[k]);
-
-    // eslint-disable-next-line
-    const result = await this.db.$queryRawUnsafe(`
-      UPDATE workplace.temporary_products
-      SET ${setClause}
-      WHERE id = $1
-      RETURNING *;
-    `, id, ...values);
-
-    return result[0];
+    const cleanData = Object.fromEntries(
+      Object.entries(data).filter(([, v]) => v !== undefined && v !== null)
+    );
+    if (Object.keys(cleanData).length === 0) return null;
+    const result = await this.nocodb.updateRecords(NOCODB_TABLES.SUPPLY.TEMPORARY_PRODUCTS, { id, ...cleanData });
+    return result;
   }
 
   async upsertTemporaryProduct(data) {
     let existing;
     if (data.sku) {
-      const res = await this.db.$queryRaw`SELECT id FROM workplace.temporary_products WHERE sku = ${data.sku} LIMIT 1`;
-      existing = res[0];
+      const res = await this.nocodb.listRecords(NOCODB_TABLES.SUPPLY.TEMPORARY_PRODUCTS, {
+        where: `(sku,eq,${data.sku})`,
+        limit: 1
+      });
+      existing = res?.list?.[0];
     } else if (data.lark_base_record_id) {
-      const res = await this.db.$queryRaw`SELECT id FROM workplace.temporary_products WHERE lark_base_record_id = ${data.lark_base_record_id} LIMIT 1`;
-      existing = res[0];
+      const res = await this.nocodb.listRecords(NOCODB_TABLES.SUPPLY.TEMPORARY_PRODUCTS, {
+        where: `(lark_base_record_id,eq,${data.lark_base_record_id})`,
+        limit: 1
+      });
+      existing = res?.list?.[0];
     }
 
     if (existing) {
