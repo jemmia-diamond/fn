@@ -4,6 +4,7 @@ import LarksuiteService from "services/larksuite/lark";
 import LarkHelper from "services/larksuite/helper";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
+import * as Sentry from "@sentry/cloudflare";
 
 dayjs.extend(utc);
 
