@@ -1,4 +1,4 @@
-import LarksuiteService, { LARK_BASE_URL } from "services/larksuite/lark";
+import LarksuiteService, { LARK_WIKI_URL } from "services/larksuite/lark";
 import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/constant";
 import { APPOINTMENTS } from "services/larksuite/appointment/constant";
 import dayjs from "dayjs";
@@ -82,7 +82,7 @@ export default class AppointmentNotificationService {
                 tag: "plain_text"
               },
               type: "default",
-              url: `${LARK_BASE_URL}/${APPOINTMENTS.APP_TOKEN}?table=${APPOINTMENTS.TABLE_ID}&record=${payload.record_id}&ccm_open_type=im_card_automation_button`
+              url: `${LARK_WIKI_URL}/${APPOINTMENTS.APP_TOKEN}?table=${APPOINTMENTS.TABLE_ID}&record=${payload.record_id}&ccm_open_type=im_card_automation_button`
             }
           ]
         }
