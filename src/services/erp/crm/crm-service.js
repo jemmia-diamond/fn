@@ -9,7 +9,7 @@ export default class CRMService {
 
     switch (payload.doctype) {
     case "Appointment":
-      await ERPNextCRMAppointmentService.syncAppointment(payload, event, env);
+      await new ERPNextCRMAppointmentService(env).syncAppointment(payload, event);
       break;
     case "Lead":
       await new Pancake.ConversationAssignmentService(env).syncConversationAssigneesWithLeadOwner(payload);
