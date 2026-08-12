@@ -49,16 +49,19 @@ export default class TemporaryProductService {
   }
 
   async insertVariantSerial() {
-    const result = await this.nocodb.createRecords(NOCODB_TABLES.SUPPLY.SERIALS, { order_on: null });
-    return result;
+    // NocoDB create returns only the primary key — re-read to get the auto-generated serial_number
+    const created = await this.nocodb.createRecords(NOCODB_TABLES.SUPPLY.SERIALS, { order_on: null });
+    const id = Array.isArray(created) ? created[0]?.id : created?.id;
+    return await this.nocodb.readRecord(NOCODB_TABLES.SUPPLY.SERIALS, id);
   }
 
   async addTemporaryProduct(data) {
     const cleanData = Object.fromEntries(
       Object.entries(data).filter(([, v]) => v !== undefined && v !== null)
     );
-    const result = await this.nocodb.createRecords(NOCODB_TABLES.SUPPLY.TEMPORARY_PRODUCTS, cleanData);
-    return result;
+    const created = await this.nocodb.createRecords(NOCODB_TABLES.SUPPLY.TEMPORARY_PRODUCTS, cleanData);
+    const id = Array.isArray(created) ? created[0]?.id : created?.id;
+    return { id };
   }
 
   async getTemporaryProductByLarkRecordId(recordId) {
