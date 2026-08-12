@@ -1,7 +1,7 @@
 import Database from "services/database";
 import HaravanAPIClient from "services/haravan/api-client/api-client";
 import NocoDBClient from "services/clients/nocodb-client";
-import { NOCODB_TABLES } from "constants/nocodb-tables";
+import { NOCODB_TABLES } from "src/constants/nocodb-tables";
 
 function tempProductMapper(data) {
   return {
