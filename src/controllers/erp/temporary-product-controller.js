@@ -5,6 +5,7 @@ export default class TemporaryProductController {
     const event = await ctx.req.json();
     const tempProductService = new TemporaryProductService(ctx.env);
     const result = await tempProductService.processTemporaryProduct(event);
-    return ctx.json(result, 200);
+    // Match legacy Lambda response envelope — Lark automation reads body.data.sku / body.data.serial_number
+    return ctx.json({ data: result }, 200);
   }
 }
