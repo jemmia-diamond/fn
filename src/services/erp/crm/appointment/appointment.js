@@ -4,6 +4,7 @@ import FrappeClient from "src/frappe/frappe-client";
 import AppointmentNotificationService from "services/erp/crm/appointment/appointment-notification";
 
 const DEFAULT_USER = "tech@jemmia.vn";
+const IGNORED_SALES = ["SALES-PERSON-15761", "SALES-PERSON-15562"];
 const FIRST_ITEM = 0;
 export default class ERPNextCRMAppointmentService {
   constructor(env) {
@@ -13,6 +14,7 @@ export default class ERPNextCRMAppointmentService {
   }
 
   async syncAppointment(payload, event) {
+    if (IGNORED_SALES.includes(payload?.primary_sales)) return;
     const fields = await this.mapPayloadToLarkFields(payload);
     if (event === "create" || !payload.record_id) {
       return await this.createAppointment(payload, fields);
