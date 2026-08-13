@@ -37,12 +37,11 @@ export default class TemporaryProductService {
     const result = await this.db.$queryRaw`
       SELECT
         p.id AS product_id,
-        count(v.id) AS sum
-      FROM haravan.products p
-        INNER JOIN haravan.variants v ON p.id = v.product_id
+        jsonb_array_length(p.variants) AS sum
+      FROM raw_haravan.products p
       WHERE p.title = 'Sản Phẩm Tạm'
-      GROUP BY 1
-      HAVING count(v.id) < 470
+        AND jsonb_typeof(p.variants) = 'array'
+        AND jsonb_array_length(p.variants) < 470
       LIMIT 1
     `;
     return result;
