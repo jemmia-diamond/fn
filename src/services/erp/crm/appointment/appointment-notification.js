@@ -101,16 +101,16 @@ export default class AppointmentNotificationService {
   }
 
   async sendThreadReply(message_id, payload, existingFields) {
-    if (["tech@jemmia.vn", "Administrator"].includes(payload.modified_by)) return;
+    if (["tech@jemmia.vn", "Administrator"].includes(payload.performed_by)) return;
 
     const larkClient = await this.larkClientPromise;
     let modifiedByText = "ai đó";
-    if (payload.modified_by) {
-      const userIds = await this.getLarkUserIdsByEmails([payload.modified_by]);
+    if (payload.performed_by) {
+      const userIds = await this.getLarkUserIdsByEmails([payload.performed_by]);
       if (userIds && userIds.length > 0) {
         modifiedByText = `<at user_id="${userIds[0].id}"></at>`;
       } else {
-        modifiedByText = payload.modified_by;
+        modifiedByText = payload.performed_by;
       }
     }
 

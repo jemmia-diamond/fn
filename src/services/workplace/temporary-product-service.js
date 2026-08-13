@@ -37,19 +37,17 @@ export default class TemporaryProductService {
     const result = await this.db.$queryRaw`
       SELECT
         p.id AS product_id,
-        count(v.id) AS sum
-      FROM haravan.products p
-        INNER JOIN haravan.variants v ON p.id = v.product_id
+        jsonb_array_length(p.variants) AS sum
+      FROM raw_haravan.products p
       WHERE p.title = 'Sản Phẩm Tạm'
-      GROUP BY 1
-      HAVING count(v.id) < 470
+        AND jsonb_typeof(p.variants) = 'array'
+        AND jsonb_array_length(p.variants) < 470
       LIMIT 1
     `;
     return result;
   }
 
   async insertVariantSerial() {
-    // NocoDB create returns only the primary key — re-read to get the auto-generated serial_number
     const created = await this.nocodb.createRecords(NOCODB_TABLES.SUPPLY.SERIALS, { order_on: null });
     const id = Array.isArray(created) ? created[0]?.id : created?.id;
     return await this.nocodb.readRecord(NOCODB_TABLES.SUPPLY.SERIALS, id);
@@ -123,7 +121,6 @@ export default class TemporaryProductService {
       if (!this._isVariantLimitError(result)) {
         throw new Error(`Could not create Haravan variant: ${result.message}`);
       }
-      // 422 with variant error — product capacity reached, create new product and retry
       productId = await this._createHaravanProduct(haravanClient);
       result = await haravanClient.productVariants.createVariant(productId, variantData);
       if (!result.success) {
