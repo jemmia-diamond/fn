@@ -31,6 +31,7 @@ export default class LeadService {
     if (!data) return;
 
     const allowedFields = [
+      "budget_name",
       "budget_from",
       "budget_to",
       "interested_products",
