@@ -13,7 +13,7 @@ function tempProductMapper(data) {
     fineness: data.material || null,
     material_color: data.material_color || null,
     size_type: data.size_type || null,
-    ring_size: data.size ? parseInt(data.size.replace(/\./g, ""), 10) : null,
+    ring_size: data.size ? parseFloat(data.size) : null,
     use_case: data.use_case || null,
     lark_base_record_id: data.record_id || null,
     ticket_type: data.ticket_type || null,
