@@ -7,7 +7,11 @@ import {
   buildInventoryMetricsSql,
   buildJewelryPriceSql
 } from "services/ecommerce/product/utils/jewelry-v2";
-import { buildWeddingRingByIdQuery, buildWeddingRingsQuery } from "services/ecommerce/product/utils/wedding-ring";
+import {
+  buildWeddingRingByIdQuery,
+  buildWeddingRingsQuery,
+  filterWeddingRingVariants
+} from "services/ecommerce/product/utils/wedding-ring";
 import { API_CONFIG } from "src/controllers/ecommerce/constant";
 
 export default class ProductService {
@@ -81,8 +85,10 @@ export default class ProductService {
     const data = await retryQuery(() => this.db.$queryRaw(dataSql));
     const count = await retryQuery(() => this.db.$queryRaw(countSql));
 
+    const filteredData = (data || []).map(filterWeddingRingVariants);
+
     return {
-      data,
+      data: filteredData,
       count: count.length ? Number(count[0].total) : 0,
       material_colors: count.length ? count[0].material_colors : [],
       fineness: count.length ? count[0].fineness : []
@@ -106,7 +112,7 @@ export default class ProductService {
   async getWeddingRingById(id) {
     const dataSql = buildWeddingRingByIdQuery(id);
     const data = await this.db.$queryRaw(dataSql);
-    return data?.[0] || null;
+    return data?.[0] ? filterWeddingRingVariants(data[0]) : null;
   }
 
   async get3dMetadataByJewelryId(productId) {
