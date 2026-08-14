@@ -27,9 +27,6 @@ export function buildWeddingRingByIdQuery(weddingRingId) {
       SELECT 1
       FROM jsonb_array_elements(wr.products::jsonb) p
       WHERE (p->>'id')::bigint = ${weddingRingId}
-        AND p->'images' IS NOT NULL
-        AND jsonb_typeof(p->'images') = 'array'
-        AND jsonb_array_length(p->'images') > 0
     )
   `;
   const dataSql = findDataSql({
@@ -45,57 +42,9 @@ export function findDataSql({ filterSql, sortSql, paginationSql }) {
     SELECT 
         wr.id,
         wr.title,
-        COALESCE(
-          (
-            SELECT JSON_AGG(
-              JSON_BUILD_OBJECT(
-                'id', (p->>'id')::bigint,
-                'product_type', p->>'product_type',
-                'title', p->>'title',
-                'ring_band_type', p->>'ring_band_type',
-                'design_code', p->>'design_code',
-                'diamond_holder', p->>'diamond_holder',
-                'gender', p->>'gender',
-                'handle', p->>'handle',
-                'images', p->'images',
-                'variants', COALESCE(
-                  (
-                    SELECT JSON_AGG(
-                      JSON_BUILD_OBJECT(
-                        'id', CAST(v.haravan_variant_id AS BIGINT),
-                        'fineness', v.fineness,
-                        'material_color', v.material_color,
-                        'ring_size', v.ring_size,
-                        'price', CAST(v.price AS DECIMAL),
-                        'compare_at_price', CAST(v.price_compare_at AS DECIMAL),
-                        'inventory_quantity', v.qty_available,
-                        'available', COALESCE(v.qty_available > 0, false)
-                      )
-                      ORDER BY v.fineness DESC, v.price DESC
-                    )
-                    FROM marts_ecom.fct_ecom_jewelry_variants v
-                    WHERE v.haravan_product_id = (p->>'id')::bigint
-                  ),
-                  '[]'::json
-                )
-              )
-            )
-            FROM jsonb_array_elements(wr.products::jsonb) p
-            WHERE p->'images' IS NOT NULL
-              AND jsonb_typeof(p->'images') = 'array'
-              AND jsonb_array_length(p->'images') > 0
-          ),
-          '[]'::json
-        ) AS products
+        wr.products
     FROM marts_ecom.fct_ecom_wedding_rings wr
     WHERE 1 = 1
-      AND EXISTS (
-        SELECT 1
-        FROM jsonb_array_elements(wr.products::jsonb) p
-        WHERE p->'images' IS NOT NULL
-          AND jsonb_typeof(p->'images') = 'array'
-          AND jsonb_array_length(p->'images') > 0
-      )
     ${filterSql}
     ${sortSql}
     ${paginationSql}
@@ -111,13 +60,6 @@ export function findCountSql({ filterSql }) {
       (SELECT ARRAY_AGG(DISTINCT mwr.material_colors ) FROM marts_ecom.fct_ecom_wedding_rings mwr WHERE mwr.material_colors NOT LIKE '%,%' ) AS material_colors
     FROM marts_ecom.fct_ecom_wedding_rings wr
     WHERE 1 = 1
-      AND EXISTS (
-        SELECT 1
-        FROM jsonb_array_elements(wr.products::jsonb) p
-        WHERE p->'images' IS NOT NULL
-          AND jsonb_typeof(p->'images') = 'array'
-          AND jsonb_array_length(p->'images') > 0
-      )
     ${filterSql}
   `;
   return countSql;
@@ -177,9 +119,6 @@ export function aggregateQuery(jsonParams) {
         SELECT 1
         FROM jsonb_array_elements(wr.products::jsonb) p
         WHERE (p->>'id')::bigint = ANY(${productIds})
-          AND p->'images' IS NOT NULL
-          AND jsonb_typeof(p->'images') = 'array'
-          AND jsonb_array_length(p->'images') > 0
       )
     `;
   }
@@ -188,5 +127,63 @@ export function aggregateQuery(jsonParams) {
     filterSql,
     sortSql,
     paginationSql
+  };
+}
+
+export function toSlug(str) {
+  if (!str || typeof str !== "string") return "";
+  return str
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+export function hasImageForMaterialColor(images, materialColor) {
+  if (!images || !Array.isArray(images) || images.length === 0) {
+    return false;
+  }
+  if (!materialColor) {
+    return true;
+  }
+  const slug = toSlug(materialColor);
+  if (!slug) return true;
+
+  return images.some((img) => {
+    if (typeof img !== "string") return false;
+    const normalizedImg = img.toLowerCase().replace(/_/g, "-");
+    return normalizedImg.includes(slug);
+  });
+}
+
+export function filterWeddingRingVariants(item) {
+  if (!item) return item;
+  let products = item.products;
+  if (typeof products === "string") {
+    try {
+      products = JSON.parse(products);
+    } catch {
+      products = [];
+    }
+  }
+  if (Array.isArray(products)) {
+    products = products.map((product) => {
+      if (!product) return product;
+      const images = Array.isArray(product.images) ? product.images : [];
+      const variants = Array.isArray(product.variants) ? product.variants : [];
+      const filteredVariants = variants.filter((variant) =>
+        hasImageForMaterialColor(images, variant?.material_color)
+      );
+      return {
+        ...product,
+        variants: filteredVariants
+      };
+    });
+  }
+  return {
+    ...item,
+    products
   };
 }
