@@ -93,7 +93,7 @@ export default class TemporaryProductService {
   }
 
   async _createHaravanProduct(haravanClient) {
-    const result = await haravanClient.products.createProduct({
+    const result = await haravanClient.products.product.createProduct({
       title: "Sản Phẩm Tạm",
       vendor: "Jemmia",
       product_type: "virtual",
@@ -115,14 +115,14 @@ export default class TemporaryProductService {
   }
 
   async _createVariantWithFallback(haravanClient, productId, variantData) {
-    let result = await haravanClient.productVariants.createVariant(productId, variantData);
+    let result = await haravanClient.products.productVariant.createVariant(productId, variantData);
 
     if (!result.success) {
       if (!this._isVariantLimitError(result)) {
         throw new Error(`Could not create Haravan variant: ${result.message}`);
       }
       productId = await this._createHaravanProduct(haravanClient);
-      result = await haravanClient.productVariants.createVariant(productId, variantData);
+      result = await haravanClient.products.productVariant.createVariant(productId, variantData);
       if (!result.success) {
         throw new Error(`Could not create Haravan variant: ${result.message}`);
       }
