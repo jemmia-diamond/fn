@@ -98,7 +98,58 @@ pnpm run dev --test-scheduled
 curl "http://localhost:8787/__scheduled?cron=*+*+*+*+*"
 ```
 
-## Adding New Features
+## Environment Variables & Secrets
+
+Environment variables are stored in `.dev.vars` for local development (not committed to git). Use `.dev.vars.example` as a reference for the required keys.
+
+### Syncing secrets from Infisical
+
+This project uses a **self-hosted [Infisical](https://infisical.jemmia.vn)** instance to manage secrets.
+
+Some secrets — particularly Pancake Page Access Tokens (`PANCAKE_PATS_CONFIG_*`) — rotate automatically at midnight and are stored in Infisical under `/commons/public`. After they rotate, you need to pull the latest values into your `.dev.vars`.
+
+#### Prerequisites
+
+Install the Infisical CLI. **Note:** You must install version `0.43.45` specifically to remain compatible with our self-hosted instance's API version.
+
+```bash
+brew install infisical/get-cli/infisical@0.43.45
+```
+
+#### Pull rotated PAT secrets into `.dev.vars`
+
+Run the fetch script — it does a **smart merge**: only the fetched keys are updated; everything else in `.dev.vars` is left untouched.
+
+> **Note on tooling:** The script automatically tries to use the Infisical CLI if you installed it. If not, it gracefully falls back to using `curl` and `jq`. You don't have to do anything differently!
+
+```bash
+# 1. Ask your admin for the PUBLIC_INFISICAL_TOKEN and add it to .dev.vars:
+#    PUBLIC_INFISICAL_TOKEN='st.xxxxxxxxxx...'
+# 2. Make the script executable and run it:
+chmod +x fetch_dev_key.sh
+./fetch_dev_key.sh
+```
+
+The script will print each key that was updated or added:
+```
+Updated: PANCAKE_PATS_CONFIG_1
+Updated: PANCAKE_PATS_CONFIG_2
+Updated: PANCAKE_PATS_CONFIG_3
+Done. .dev.vars updated.
+```
+
+> [!NOTE]
+> If it stops working (404 or auth error from Infisical), the token may have been revoked. Ask your admin to generate a new one from **https://infisical.jemmia.vn → Project Settings → Service Tokens** and update your `.dev.vars`.
+
+#### How Pancake PATs are generated
+
+The `Pancake.TokenRefresherService` runs daily at midnight (cron `0 17 * * *`). It:
+1. Generates fresh Page Access Tokens for all active Pancake pages
+2. Chunks them into groups of 20 and stores them as `PANCAKE_PATS_CONFIG_1`, `PANCAKE_PATS_CONFIG_2`, etc. in Infisical under `/commons/public`
+
+After this runs in production, pull the new values locally with `./fetch_dev_key.sh`.
+
+
 
 ### Project Structure
 

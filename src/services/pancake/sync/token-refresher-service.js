@@ -1,5 +1,6 @@
-import PancakeClient from "pancake/pancake-client";
 import * as Sentry from "@sentry/cloudflare";
+import PancakeClient from "pancake/pancake-client";
+import { DISABLE_FEATURE_FLAG } from "src/constants";
 
 export default class PancakeTokenRefresherService {
   constructor(env) {
@@ -8,6 +9,10 @@ export default class PancakeTokenRefresherService {
   }
 
   async run() {
+    const tokenRefresh = this.env.PANCAKE_TOKEN_REFRESH;
+    if (tokenRefresh == DISABLE_FEATURE_FLAG) {
+      return;
+    }
     try {
       console.warn("Starting Pancake Token Refresher...");
 
@@ -64,7 +69,7 @@ export default class PancakeTokenRefresherService {
         const body = JSON.stringify({
           workspaceId: projectId,
           environment: environment,
-          secretPath: "/commons",
+          secretPath: "/commons/public",
           secretValue: secretValue
         });
 
@@ -72,6 +77,11 @@ export default class PancakeTokenRefresherService {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${accessToken}`
         };
+
+        if (this.env.CF_ACCESS_CLIENT_ID && this.env.CF_ACCESS_CLIENT_SECRET) {
+          headers["CF-Access-Client-Id"] = this.env.CF_ACCESS_CLIENT_ID;
+          headers["CF-Access-Client-Secret"] = this.env.CF_ACCESS_CLIENT_SECRET;
+        }
 
         let res = await fetch(`${infisicalApiUrl}/api/v3/secrets/raw/${secretName}`, {
           method: "PATCH",

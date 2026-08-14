@@ -35,4 +35,10 @@ export default class ProductClient extends BaseClient {
     }
     return allProducts;
   }
+
+  async createProduct(data) {
+    const path = "/com/products.json";
+    return await this.makePostRequest(path, { product: data });
+  }
+
 }

@@ -1,10 +1,10 @@
-import NocoDBClient from "services/clients/nocodb-client";
-import DiamondDiscountService from "services/ecommerce/diamond/diamond-discount-service";
-import Database from "src/services/database";
 import * as Sentry from "@sentry/cloudflare";
 import HaravanAPI from "services/clients/haravan-client";
-import { NOCODB_TABLES } from "src/constants/nocodb-tables";
+import NocoDBClient from "services/clients/nocodb-client";
+import DiamondDiscountService from "services/ecommerce/diamond/diamond-discount-service";
 import { sendPromotionSyncNotification } from "services/ecommerce/diamond/utils/notification";
+import { NOCODB_TABLES } from "src/constants/nocodb-tables";
+import Database from "src/services/database";
 
 export default class DiamondCollectService {
   constructor(env) {
@@ -286,33 +286,16 @@ export default class DiamondCollectService {
 
   async _syncNocoDBCollections(diamond, targetCollectionId, context, existingEntries) {
     const { ruleCollections, nocoClient, allPercentCollectionIds } = context;
-    const existingList = existingEntries || [];
-    const defaultDiscountCollectionId = ruleCollections[DiamondCollectService.DEFAULT_DISCOUNT_PERCENT]?.nocodbId;
+    const defaultCollectionId = ruleCollections[DiamondCollectService.DEFAULT_DISCOUNT_PERCENT]?.nocodbId;
 
-    for (const entry of existingList) {
-      if (!allPercentCollectionIds.has(entry.haravan_collection_id)) {
-        continue;
-      }
-      const isTargetCollection = entry.haravan_collection_id === targetCollectionId;
-      const isDefaultCollection = entry.haravan_collection_id === defaultDiscountCollectionId;
-
-      if (!isTargetCollection && !isDefaultCollection) {
-        console.warn("Removing discount collection for diamond:", diamond.id, entry.haravan_collection_id);
-        try {
-          await nocoClient.deleteRecords(NOCODB_TABLES.MARKETING.DIAMOND_HARAVAN_COLLECTIONS, [{
-            diamond_id: diamond.id,
-            haravan_collection_id: entry.haravan_collection_id
-          }]);
-        } catch (e) {
-          const cause = e.cause || e.response?.data;
-          if (cause?.error !== "ERR_RECORD_NOT_FOUND" && e.response?.status !== 404) {
-            throw e;
-          }
-          console.warn("Record already removed or not found:", diamond.id, entry.haravan_collection_id);
-        }
-        await new Promise(resolve => setTimeout(resolve, 1500));
-      }
-    }
+    await DiamondDiscountService.syncNocoDBDiscountCollections({
+      diamond,
+      targetCollectionId,
+      allPercentCollectionIds,
+      defaultCollectionId,
+      nocodb: nocoClient,
+      existingEntries
+    });
   }
 
   async _syncHaravanCollections(diamond, targetNocodbCollectionId, targetHaravanCollectionId, nocoClient, haravanApi, existingEntries) {

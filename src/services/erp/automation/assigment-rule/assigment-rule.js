@@ -151,6 +151,11 @@ export default class AssignmentRuleService {
       "name": assignmentRuleName,
       "disabled": 0
     });
+    await assignmentRuleService.frappeClient.update({
+      "doctype": assignmentRuleService.doctype,
+      "name": ASSIGNMENT_RULES.Lead_Facebook_Tiktok_ZaloKOC_Website_ZaloOA_HCM.name,
+      "users": [{ user: assignmentRuleService.defaultUser }]
+    });
   }
 
   static async reAssignOffHourLeads(env) {

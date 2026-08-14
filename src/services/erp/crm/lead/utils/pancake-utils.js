@@ -44,8 +44,6 @@ export function createInsertLeadPayload(conversation) {
   const birthDate = getBirthDate(conversation.customer_birthday);
   const payload = {
     "doctype": "Lead",
-    "naming_series": "CRM-LEAD-.YYYY.-",
-    "status": "Lead",
     "gender": getGender(conversation.customer_gender),
     "first_name": conversation.customer_name?.trim() || "Chưa rõ",
     "phone": conversation.customer_phone,
@@ -66,7 +64,9 @@ export function createInsertLeadPayload(conversation) {
     },
     "pancake_tags": conversation.tags,
     "address": conversation.customer_lives_in,
-    "birth_date": birthDate
+    "birth_date": birthDate,
+    "last_sales_message_at": conversation.last_sales_message_at ? dayjs(conversation.last_sales_message_at).utc().format("YYYY-MM-DD HH:mm:ss") : null,
+    "last_customer_message_at": conversation.last_customer_message_at ? dayjs(conversation.last_customer_message_at).utc().format("YYYY-MM-DD HH:mm:ss") : null
   };
 
   return cleanPayload(payload);
@@ -97,6 +97,8 @@ export function createUpdateLeadPayload(conversation) {
     "pancake_tags": conversation.tags,
     "address": conversation.customer_lives_in,
     "birth_date": birthDate,
+    "last_sales_message_at": conversation.last_sales_message_at ? dayjs(conversation.last_sales_message_at).utc().format("YYYY-MM-DD HH:mm:ss") : null,
+    "last_customer_message_at": conversation.last_customer_message_at ? dayjs(conversation.last_customer_message_at).utc().format("YYYY-MM-DD HH:mm:ss") : null,
     "docname": conversation.frappe_name_id
   };
 

@@ -12,7 +12,8 @@ export default class ArticleSyncService {
   static CONFIG = {
     FETCH_LIMIT: 50,
     SYNC_THRESHOLD_MS: 600000,
-    IMAGE_BATCH_SIZE: 5,
+    IMAGE_TRANSLATE_BATCH_SIZE: 5,
+    ARTICLE_TRANSLATE_BATCH_SIZE: 20,
     API_REQUEST_DELAY: 200
   };
 
@@ -41,7 +42,7 @@ export default class ArticleSyncService {
     const time = HaravanSyncHelper.normalizeDate(article.published_at) || "no-time";
     const imgPart = article.image
       ? (article.image.src.match(/([a-f0-9]{32})/i)?.[1] ||
-          article.image.src.split("/").pop().split("?")[0]).replace(/^en_/, "")
+        article.image.src.split("/").pop().split("?")[0]).replace(/^en_/, "")
       : "no-img";
     return `${time}|${imgPart}`;
   }
@@ -71,17 +72,13 @@ export default class ArticleSyncService {
     });
   }
 
-  async fetchAllArticles(haravanClient, blogId, dateRange = null) {
+  async fetchAllArticles(haravanClient, blogId) {
     let all = [];
     let page = 1;
     let hasMore = true;
     const limit = ArticleSyncService.CONFIG.FETCH_LIMIT;
 
     let params = { limit, page };
-    if (dateRange) {
-      if (dateRange.min) params.updated_at_min = dateRange.min;
-      if (dateRange.max) params.updated_at_max = dateRange.max;
-    }
 
     while (hasMore) {
       try {
@@ -106,16 +103,14 @@ export default class ArticleSyncService {
     return all;
   }
 
-  async checkBlogPair(haravanClient, viBlogId, enBlogId, viDateRange = null, enDateRange = null) {
+  async compareBlogArticles(haravanClient, viBlogId, enBlogId) {
     let viArticles = await this.fetchAllArticles(
       haravanClient,
-      viBlogId,
-      viDateRange
+      viBlogId
     );
     let enArticles = await this.fetchAllArticles(
       haravanClient,
-      enBlogId,
-      enDateRange
+      enBlogId
     );
 
     viArticles = viArticles.filter(
@@ -125,24 +120,60 @@ export default class ArticleSyncService {
       (a) => !a.title.toLowerCase().includes("ladipage")
     );
 
+    const matchedPairs = [];
+    const missingArticles = [];
+    const orphanEnArticles = [];
+
+    // 1. Build map of VI articles by ID
+    const viById = {};
+    viArticles.forEach(a => {
+      viById[a.id] = a;
+    });
+
+    const unmatchedViIds = new Set(viArticles.map(a => a.id));
+    const unmatchedEn = [];
+
+    // Helper to extract vi_id from tags
+    const getViIdFromTags = (tagsStr) => {
+      if (!tagsStr) return null;
+      const tags = tagsStr.split(",").map(t => t.trim());
+
+      // Find the first tag that contains only digits
+      const idTag = tags.find(t => /^\d+$/.test(t));
+      return idTag ? parseInt(idTag, 10) : null;
+    };
+
+    // 2. First pass: Match by tag
+    const matchedViIds = new Set();
+    enArticles.forEach(enArticle => {
+      const viId = getViIdFromTags(enArticle.tags);
+      if (viId && viById[viId] && !matchedViIds.has(viId)) {
+        matchedPairs.push({ vi: viById[viId], en: enArticle });
+        unmatchedViIds.delete(viId);
+        matchedViIds.add(viId);
+      } else {
+        unmatchedEn.push(enArticle);
+      }
+    });
+
+    // 3. Group remaining unmatched VI articles by signature
     const viGroups = {};
-    viArticles.forEach((v) => {
+    unmatchedViIds.forEach(viId => {
+      const v = viById[viId];
       const s = this.getSignature(v);
       if (!viGroups[s]) viGroups[s] = [];
       viGroups[s].push(v);
     });
 
+    // 4. Group remaining unmatched EN articles by signature
     const enGroups = {};
-    enArticles.forEach((e) => {
+    unmatchedEn.forEach((e) => {
       const s = this.getSignature(e);
       if (!enGroups[s]) enGroups[s] = [];
       enGroups[s].push(e);
     });
 
-    const matchedPairs = [];
-    const missingArticles = [];
-    const orphanEnArticles = [];
-
+    // 5. Match remaining by signature
     const allSigs = new Set([
       ...Object.keys(viGroups),
       ...Object.keys(enGroups)
@@ -172,8 +203,8 @@ export default class ArticleSyncService {
     let fullSrc = src.startsWith("//") ? "https:" + src : src;
 
     return retryQuery(async () => {
-      const newUrl = await imageService.translateImage(fullSrc, this.env);
-      return { src, newUrl: typeof newUrl === "string" ? newUrl : fullSrc, success: true };
+      const imageUrl = await imageService.translateImage(fullSrc, this.env, false);
+      return { src, newUrl: imageUrl || fullSrc, success: true };
     }).catch(error => {
       Sentry.captureException(error, {
         extra: { src, action: "translateImageWithRetry" }
@@ -187,7 +218,7 @@ export default class ArticleSyncService {
     const images = this.getImages(html);
     if (images.length === 0) return html;
 
-    const batchSize = ArticleSyncService.CONFIG.IMAGE_BATCH_SIZE;
+    const batchSize = ArticleSyncService.CONFIG.IMAGE_TRANSLATE_BATCH_SIZE;
     const results = [];
 
     for (let i = 0; i < images.length; i += batchSize) {
@@ -219,116 +250,135 @@ export default class ArticleSyncService {
     return result.success ? result.newUrl : fullSrc;
   }
 
+  buildEnTags(viTags, viId) {
+    const viIdTag = `${viId}`;
+    if (!viTags) return viIdTag;
+
+    const tagsArray = viTags.split(",").map(t => t.trim()).filter(Boolean);
+    if (!tagsArray.includes(viIdTag)) {
+      tagsArray.push(viIdTag);
+    }
+    return tagsArray.join(", ");
+  }
+
   async sync() {
     try {
       const HRV_API_KEY = this.env.HARAVAN_TOKEN;
       const haravanClient = new HaravanAPI(HRV_API_KEY, this.env);
       const imageService = new ImageTranslationService();
 
-      const now = new Date();
-      const endTime = new Date(now);
-      endTime.setHours(21, 0, 0, 0);
-
-      const startTime = new Date(endTime);
-      startTime.setDate(startTime.getDate() - 1);
-
-      const dateRange = {
-        min: startTime.toISOString(),
-        max: endTime.toISOString()
-      };
-
       for (const viId of Object.keys(ArticleSyncService.BLOG_ID_MAP)) {
         const enId = ArticleSyncService.BLOG_ID_MAP[viId];
 
         try {
-          const { matchedPairs, missingArticles, orphanEnArticles } =
-            await this.checkBlogPair(haravanClient, viId, enId, dateRange);
+          const { matchedPairs, missingArticles, orphanEnArticles } = await this.compareBlogArticles(haravanClient, viId, enId);
 
-          for (const pair of matchedPairs) {
-            try {
-              const structureSync = HaravanSyncHelper.isHtmlStructureSync(
-                pair.vi.body_html,
-                pair.en.body_html
-              );
-              const viUpdated = new Date(pair.vi.updated_at).getTime();
-              const enUpdated = new Date(pair.en.updated_at).getTime();
-              const sourceUpdated =
-                viUpdated - enUpdated > ArticleSyncService.CONFIG.SYNC_THRESHOLD_MS;
+          const articleBatchSize = ArticleSyncService.CONFIG.ARTICLE_TRANSLATE_BATCH_SIZE;
 
-              if (!structureSync || sourceUpdated) {
-                const enTitle = await this.translateText(pair.vi.title, false);
-                let enBody = await this.translateText(pair.vi.body_html, true);
-                enBody = await this.translateImagesInHtml(enBody, imageService);
-                const featuredImage = await this.translateFeaturedImage(
-                  pair.vi.image?.src,
-                  imageService
-                );
-                await haravanClient.article.updateArticle(enId, pair.en.id, {
-                  title: enTitle,
-                  body_html: enBody,
-                  author: pair.vi.author,
-                  image: featuredImage ? { src: featuredImage } : null
-                });
-                await sleep(ArticleSyncService.CONFIG.API_REQUEST_DELAY);
-              }
-            } catch (error) {
-              Sentry.captureException(error, {
-                extra: {
-                  viBlogId: viId,
-                  enBlogId: enId,
-                  articleId: pair.en.id,
-                  articleHandle: pair.en.handle,
-                  action: "update"
+          for (let i = 0; i < matchedPairs.length; i += articleBatchSize) {
+            const batch = matchedPairs.slice(i, i + articleBatchSize);
+            await Promise.allSettled(
+              batch.map(async (pair) => {
+                try {
+                  const viUpdated = new Date(pair.vi.updated_at).getTime();
+                  const enUpdated = new Date(pair.en.updated_at).getTime();
+                  const sourceUpdated =
+                    viUpdated - enUpdated > ArticleSyncService.CONFIG.SYNC_THRESHOLD_MS;
+
+                  const hasViIdTag = pair.en.tags && pair.en.tags.split(",").map(t => t.trim()).includes(`${pair.vi.id}`);
+
+                  if (sourceUpdated) {
+                    const enTitle = await this.translateText(pair.vi.title, false);
+                    let enBody = await this.translateText(pair.vi.body_html, true);
+                    enBody = await this.translateImagesInHtml(enBody, imageService);
+                    const featuredImage = await this.translateFeaturedImage(
+                      pair.vi.image?.src,
+                      imageService
+                    );
+                    await haravanClient.article.updateArticle(enId, pair.en.id, {
+                      title: enTitle,
+                      body_html: enBody,
+                      author: pair.vi.author,
+                      image: featuredImage ? { src: featuredImage } : null,
+                      tags: this.buildEnTags(pair.en.tags, pair.vi.id)
+                    });
+                  } else if (!hasViIdTag) {
+                    await haravanClient.article.updateArticle(enId, pair.en.id, {
+                      tags: this.buildEnTags(pair.en.tags, pair.vi.id)
+                    });
+                  }
+                } catch (error) {
+                  Sentry.captureException(error, {
+                    extra: {
+                      viBlogId: viId,
+                      enBlogId: enId,
+                      articleId: pair.en.id,
+                      articleHandle: pair.en.handle,
+                      action: "update"
+                    }
+                  });
                 }
-              });
-            }
+              })
+            );
+            await sleep(ArticleSyncService.CONFIG.API_REQUEST_DELAY);
           }
 
-          for (const orphan of orphanEnArticles) {
-            try {
-              await haravanClient.article.deleteArticle(enId, orphan.id);
-              await sleep(ArticleSyncService.CONFIG.API_REQUEST_DELAY);
-            } catch (error) {
-              Sentry.captureException(error, {
-                extra: {
-                  viBlogId: viId,
-                  enBlogId: enId,
-                  articleId: orphan.id,
-                  articleHandle: orphan.handle,
-                  action: "delete"
+          for (let i = 0; i < orphanEnArticles.length; i += articleBatchSize) {
+            const batch = orphanEnArticles.slice(i, i + articleBatchSize);
+            await Promise.allSettled(
+              batch.map(async (orphan) => {
+                try {
+                  await haravanClient.article.deleteArticle(enId, orphan.id);
+                } catch (error) {
+                  Sentry.captureException(error, {
+                    extra: {
+                      viBlogId: viId,
+                      enBlogId: enId,
+                      articleId: orphan.id,
+                      articleHandle: orphan.handle,
+                      action: "delete"
+                    }
+                  });
                 }
-              });
-            }
+              })
+            );
+            await sleep(ArticleSyncService.CONFIG.API_REQUEST_DELAY);
           }
 
-          for (const vi of missingArticles) {
-            try {
-              const enTitle = await this.translateText(vi.title, false);
-              let enBody = await this.translateText(vi.body_html, true);
-              enBody = await this.translateImagesInHtml(enBody, imageService);
-              const featuredImage = await this.translateFeaturedImage(
-                vi.image?.src,
-                imageService
-              );
-              await haravanClient.article.createArticle(enId, {
-                title: enTitle,
-                body_html: enBody,
-                author: vi.author,
-                published_at: vi.published_at,
-                image: featuredImage ? { src: featuredImage } : null
-              });
-              await sleep(ArticleSyncService.CONFIG.API_REQUEST_DELAY);
-            } catch (error) {
-              Sentry.captureException(error, {
-                extra: {
-                  viBlogId: viId,
-                  enBlogId: enId,
-                  articleId: vi.id,
-                  articleHandle: vi.handle,
-                  action: "create"
+          for (let i = 0; i < missingArticles.length; i += articleBatchSize) {
+            const batch = missingArticles.slice(i, i + articleBatchSize);
+            await Promise.allSettled(
+              batch.map(async (vi) => {
+                try {
+                  const enTitle = await this.translateText(vi.title, false);
+                  let enBody = await this.translateText(vi.body_html, true);
+                  enBody = await this.translateImagesInHtml(enBody, imageService);
+                  const featuredImage = await this.translateFeaturedImage(
+                    vi.image?.src,
+                    imageService
+                  );
+                  await haravanClient.article.createArticle(enId, {
+                    title: enTitle,
+                    body_html: enBody,
+                    author: vi.author,
+                    published_at: vi.published_at,
+                    image: featuredImage ? { src: featuredImage } : null,
+                    tags: this.buildEnTags(vi.tags, vi.id)
+                  });
+                } catch (error) {
+                  Sentry.captureException(error, {
+                    extra: {
+                      viBlogId: viId,
+                      enBlogId: enId,
+                      articleId: vi.id,
+                      articleHandle: vi.handle,
+                      action: "create"
+                    }
+                  });
                 }
-              });
-            }
+              })
+            );
+            await sleep(ArticleSyncService.CONFIG.API_REQUEST_DELAY);
           }
         } catch (error) {
           Sentry.captureException(error, {
