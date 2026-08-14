@@ -186,7 +186,7 @@ export default class SendZaloMessage {
 
         // Get latest order data from Haravan API
         const haravanApiClient = new HaravanAPIClient(env);
-        const getOrderResponse = await haravanApiClient.orders.order.getOrder(latestOrderId);
+        const getOrderResponse = await haravanApiClient.orders.getOrder(latestOrderId);
         if (!getOrderResponse || !getOrderResponse.data) {
           continue;
         }
