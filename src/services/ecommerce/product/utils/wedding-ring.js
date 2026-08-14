@@ -27,6 +27,9 @@ export function buildWeddingRingByIdQuery(weddingRingId) {
       SELECT 1
       FROM jsonb_array_elements(wr.products::jsonb) p
       WHERE (p->>'id')::bigint = ${weddingRingId}
+        AND p->'images' IS NOT NULL
+        AND jsonb_typeof(p->'images') = 'array'
+        AND jsonb_array_length(p->'images') > 0
     )
   `;
   const dataSql = findDataSql({
@@ -42,9 +45,57 @@ export function findDataSql({ filterSql, sortSql, paginationSql }) {
     SELECT 
         wr.id,
         wr.title,
-        wr.products
+        COALESCE(
+          (
+            SELECT JSON_AGG(
+              JSON_BUILD_OBJECT(
+                'id', (p->>'id')::bigint,
+                'product_type', p->>'product_type',
+                'title', p->>'title',
+                'ring_band_type', p->>'ring_band_type',
+                'design_code', p->>'design_code',
+                'diamond_holder', p->>'diamond_holder',
+                'gender', p->>'gender',
+                'handle', p->>'handle',
+                'images', p->'images',
+                'variants', COALESCE(
+                  (
+                    SELECT JSON_AGG(
+                      JSON_BUILD_OBJECT(
+                        'id', CAST(v.haravan_variant_id AS BIGINT),
+                        'fineness', v.fineness,
+                        'material_color', v.material_color,
+                        'ring_size', v.ring_size,
+                        'price', CAST(v.price AS DECIMAL),
+                        'compare_at_price', CAST(v.price_compare_at AS DECIMAL),
+                        'inventory_quantity', v.qty_available,
+                        'available', COALESCE(v.qty_available > 0, false)
+                      )
+                      ORDER BY v.fineness DESC, v.price DESC
+                    )
+                    FROM marts_ecom.fct_ecom_jewelry_variants v
+                    WHERE v.haravan_product_id = (p->>'id')::bigint
+                  ),
+                  '[]'::json
+                )
+              )
+            )
+            FROM jsonb_array_elements(wr.products::jsonb) p
+            WHERE p->'images' IS NOT NULL
+              AND jsonb_typeof(p->'images') = 'array'
+              AND jsonb_array_length(p->'images') > 0
+          ),
+          '[]'::json
+        ) AS products
     FROM marts_ecom.fct_ecom_wedding_rings wr
     WHERE 1 = 1
+      AND EXISTS (
+        SELECT 1
+        FROM jsonb_array_elements(wr.products::jsonb) p
+        WHERE p->'images' IS NOT NULL
+          AND jsonb_typeof(p->'images') = 'array'
+          AND jsonb_array_length(p->'images') > 0
+      )
     ${filterSql}
     ${sortSql}
     ${paginationSql}
@@ -60,6 +111,13 @@ export function findCountSql({ filterSql }) {
       (SELECT ARRAY_AGG(DISTINCT mwr.material_colors ) FROM marts_ecom.fct_ecom_wedding_rings mwr WHERE mwr.material_colors NOT LIKE '%,%' ) AS material_colors
     FROM marts_ecom.fct_ecom_wedding_rings wr
     WHERE 1 = 1
+      AND EXISTS (
+        SELECT 1
+        FROM jsonb_array_elements(wr.products::jsonb) p
+        WHERE p->'images' IS NOT NULL
+          AND jsonb_typeof(p->'images') = 'array'
+          AND jsonb_array_length(p->'images') > 0
+      )
     ${filterSql}
   `;
   return countSql;
@@ -119,6 +177,9 @@ export function aggregateQuery(jsonParams) {
         SELECT 1
         FROM jsonb_array_elements(wr.products::jsonb) p
         WHERE (p->>'id')::bigint = ANY(${productIds})
+          AND p->'images' IS NOT NULL
+          AND jsonb_typeof(p->'images') = 'array'
+          AND jsonb_array_length(p->'images') > 0
       )
     `;
   }
