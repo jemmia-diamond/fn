@@ -24,6 +24,7 @@ export default {
   scheduled: async (controller, env, _ctx) => {
     switch (controller.cron) {
     case "0 * * * *": // At minute 0 every hour
+      await new ERP.CRM.AppointmentService(env).notifyUpcomingAppointments();
       await new ERP.Telephony.CallLogService(env).syncVbotCallLogs();
       await ERP.CRM.LeadService.syncCallLogLead(env);
       await ERP.Selling.SalesOrderService.fillSerialNumbersToTemporaryOrderItems(env);

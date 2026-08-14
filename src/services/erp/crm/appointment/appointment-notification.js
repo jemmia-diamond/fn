@@ -195,4 +195,20 @@ export default class AppointmentNotificationService {
 
     return false;
   }
+
+  async sendUpcomingReminder(payload) {
+    if (!payload?.message_id) return;
+
+    const timeStr = dayjs(payload.scheduled_time).add(7, "hours").format("HH:mm");
+    const textContent = `⚠️ Nhắc lịch: Khách hàng ${payload?.customer_name} chuẩn bị đến vào lúc ${timeStr}.`;
+
+    await this.larkClientPromise.im.message.reply({
+      path: { message_id: payload.message_id },
+      data: {
+        content: JSON.stringify({ text: textContent }),
+        msg_type: "text",
+        reply_in_thread: true
+      }
+    });
+  }
 }
