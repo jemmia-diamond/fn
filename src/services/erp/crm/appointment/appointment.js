@@ -1,7 +1,12 @@
+import * as Sentry from "@sentry/cloudflare";
 import RecordService from "services/larksuite/docs/base/record/record";
 import { APPOINTMENTS } from "services/larksuite/appointment/constant";
 import FrappeClient from "src/frappe/frappe-client";
 import AppointmentNotificationService from "services/erp/crm/appointment/appointment-notification";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc.js";
+
+dayjs.extend(utc);
 
 const DEFAULT_USER = "tech@jemmia.vn";
 const IGNORED_SALES = ["SALES-PERSON-15761", "SALES-PERSON-15562"];
@@ -171,5 +176,25 @@ export default class ERPNextCRMAppointmentService {
       }
     );
     return existingRecords?.[FIRST_ITEM]?.record_id ?? null;
+  }
+
+  async notifyUpcomingAppointments() {
+    const start = dayjs().utc().format("YYYY-MM-DD HH:mm:ss");
+    const end = dayjs().utc().add(35, "minutes").format("YYYY-MM-DD HH:mm:ss");
+    const appointments = await this.frappeClient.getList("Appointment", {
+      fields: ["name", "scheduled_time", "customer_name", "status", "message_id"],
+      filters: [
+        ["scheduled_time", ">=", start],
+        ["scheduled_time", "<", end],
+        ["status", "=", "Open"],
+        ["message_id", "is", "set"]
+      ]
+    });
+    if (!appointments) return;
+
+    for (const appmt of appointments) {
+      await this.notificationService.sendUpcomingReminder(appmt)
+        .catch(e => Sentry.captureException(e));
+    }
   }
 }
