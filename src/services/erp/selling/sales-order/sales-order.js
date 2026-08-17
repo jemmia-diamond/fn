@@ -228,7 +228,7 @@ export default class SalesOrderService {
     if (sku.startsWith("GIA")) {
       type = "Kim Cương Viên";
     } else if (sku.startsWith("SPT-")) {
-      type = (lineItemData.option1 || "").split(" - ")[1] || type;
+      type = (lineItemData.variant_title || "").split(" - ")[1] || type;
     }
 
     return {
