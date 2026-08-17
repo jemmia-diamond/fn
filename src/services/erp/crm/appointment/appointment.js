@@ -181,7 +181,6 @@ export default class ERPNextCRMAppointmentService {
   async notifyUpcomingAppointments() {
     const start = dayjs().utc().format("YYYY-MM-DD HH:mm:ss");
     const end = dayjs().utc().add(35, "minutes").format("YYYY-MM-DD HH:mm:ss");
-
     const appointments = await this.frappeClient.getList("Appointment", {
       fields: ["name", "scheduled_time", "customer_name", "status", "message_id"],
       filters: [
@@ -191,7 +190,6 @@ export default class ERPNextCRMAppointmentService {
         ["message_id", "is", "set"]
       ]
     });
-
     if (!appointments) return;
 
     for (const appmt of appointments) {
