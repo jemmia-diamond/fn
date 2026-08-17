@@ -1,8 +1,8 @@
+import { shouldReceiveWebhook } from "controllers/webhook/pancake/erp/utils";
 import PancakeClient from "pancake/pancake-client";
+import AIHUBClient from "services/clients/aihub";
 import Database from "services/database";
 import LeadService from "services/erp/crm/lead/lead";
-import AIHUBClient from "services/clients/aihub";
-import { shouldReceiveWebhook } from "controllers/webhook/pancake/erp/utils";
 import { EXTRA_HOOKS } from "services/pancake/constants/extra-hook.constant";
 
 export default class ConversationService {
@@ -178,7 +178,7 @@ export default class ConversationService {
     } else {
       const newLead = await this.leadService.insertLead({
         customerName: body?.data?.conversation?.from?.name ?? "",
-        customerPhone: body?.data?.message?.phone_info?.[0].phone_number ?? "",
+        customerPhone: body?.data?.message?.phone_info?.[0]?.phone_number ?? "",
         platform: pancakePage.platform ?? "",
         conversationId: conversationId ?? "",
         pageId: pageId,

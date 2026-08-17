@@ -40,6 +40,11 @@ export function getBirthDate(birthday) {
   return null;
 }
 
+export function isValidImageUrl(url) {
+  if (!url || typeof url !== "string") return false;
+  return /^https?:\/\/.+/.test(url.trim());
+}
+
 export function createInsertLeadPayload(conversation) {
   const birthDate = getBirthDate(conversation.customer_birthday);
   const payload = {
@@ -47,7 +52,7 @@ export function createInsertLeadPayload(conversation) {
     "gender": getGender(conversation.customer_gender),
     "first_name": conversation.customer_name?.trim() || "Chưa rõ",
     "phone": conversation.customer_phone,
-    "image": (conversation.pancake_avatar_url && conversation.pancake_avatar_url !== "https:") ? conversation.pancake_avatar_url : null,
+    "image": isValidImageUrl(conversation.pancake_avatar_url) ? conversation.pancake_avatar_url : null,
     "pancake_data": {
       "platform": getPlatform(conversation.page_id, conversation.platform),
       "conversation_id": conversation.conversation_id,
@@ -59,7 +64,7 @@ export function createInsertLeadPayload(conversation) {
       "can_inbox": conversation.can_inbox === true ? 1 : 0,
       "latest_message_at": conversation.latest_message_at ? dayjs(conversation.latest_message_at).utc().format("YYYY-MM-DD HH:mm:ss") : null,
       "pancake_user_id": conversation.pancake_user_id || null,
-      "pancake_avatar_url": (conversation.pancake_avatar_url && conversation.pancake_avatar_url !== "https:") ? conversation.pancake_avatar_url : null,
+      "pancake_avatar_url": isValidImageUrl(conversation.pancake_avatar_url) ? conversation.pancake_avatar_url : null,
       "ad_ids": conversation.ad_ids
     },
     "pancake_tags": conversation.tags,
@@ -79,7 +84,7 @@ export function createUpdateLeadPayload(conversation) {
     "gender": getGender(conversation.customer_gender),
     "first_name": conversation.customer_name?.trim() || "Chưa rõ",
     "phone": conversation.customer_phone,
-    "image": (conversation.pancake_avatar_url && conversation.pancake_avatar_url !== "https:") ? conversation.pancake_avatar_url : null,
+    "image": isValidImageUrl(conversation.pancake_avatar_url) ? conversation.pancake_avatar_url : null,
     "pancake_data": {
       "platform": getPlatform(conversation.page_id, conversation.platform),
       "conversation_id": conversation.conversation_id,
@@ -91,7 +96,7 @@ export function createUpdateLeadPayload(conversation) {
       "can_inbox": conversation.can_inbox === true ? 1 : 0,
       "latest_message_at": conversation.latest_message_at ? dayjs(conversation.latest_message_at).utc().format("YYYY-MM-DD HH:mm:ss") : null,
       "pancake_user_id": conversation.pancake_user_id || null,
-      "pancake_avatar_url": (conversation.pancake_avatar_url && conversation.pancake_avatar_url !== "https:") ? conversation.pancake_avatar_url : null,
+      "pancake_avatar_url": isValidImageUrl(conversation.pancake_avatar_url) ? conversation.pancake_avatar_url : null,
       "ad_ids": conversation.ad_ids
     },
     "pancake_tags": conversation.tags,

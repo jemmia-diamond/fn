@@ -1,8 +1,8 @@
 import * as Sentry from "@sentry/cloudflare";
-import FrappeClient from "frappe/frappe-client";
-import Database from "services/database";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
+import FrappeClient from "frappe/frappe-client";
+import Database from "services/database";
 import ContactService from "services/erp/contacts/contact/contact";
 import { areAllFieldsEmpty, fetchLeadsFromERP, saveLeadsToDatabase } from "services/erp/crm/lead/utils/lead-helppers";
 import { createInsertLeadPayload, createUpdateLeadPayload } from "services/erp/crm/lead/utils/pancake-utils";
@@ -183,7 +183,7 @@ export default class LeadService {
     if (!Array.isArray(leadsData) || leadsData.length === 0) return [];
     const docs = leadsData.map(lead => createInsertLeadPayload(lead));
     const response = await this.syncLeadByBatchInsertion(docs);
-    return response || [];
+    return Array.isArray(response) ? response : (response?.results || []);
   }
 
   async updateLeads(leadsData) {
