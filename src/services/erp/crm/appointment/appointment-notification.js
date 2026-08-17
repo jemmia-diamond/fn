@@ -37,6 +37,7 @@ export default class AppointmentNotificationService {
     }
     const markdownContent = [
       `**Khách hàng:** ${payload.customer_name}`,
+      `**Số điện thoại:** ${this.maskedPhoneNumber(payload.customer_phone_number)}`,
       `**Thời gian dự kiến:** ${dayjs(payload.scheduled_time).add(7, "hours").format("DD/MM/YYYY HH:mm:ss")}`,
       `**Cửa hàng:** ${payload.store}`,
       `**Mục đích cuộc hẹn:** ${payload.appointment_reason}`,
@@ -200,9 +201,11 @@ export default class AppointmentNotificationService {
     if (!payload?.message_id) return;
 
     const timeStr = dayjs(payload.scheduled_time).add(7, "hours").format("HH:mm");
-    const textContent = `⚠️ Nhắc lịch: Khách hàng ${payload?.customer_name} chuẩn bị đến vào lúc ${timeStr}.`;
+    const minutesLeft = dayjs.utc(payload.scheduled_time).diff(dayjs.utc(), "minute");
+    const textContent = `⚠️ Còn ${Math.max(0, minutesLeft)} phút (${timeStr}) nữa đến giờ hẹn, vui lòng chuẩn bị đón tiếp.`;
 
-    await this.larkClientPromise.im.message.reply({
+    const larkClient = await this.larkClientPromise;
+    await larkClient.im.message.reply({
       path: { message_id: payload.message_id },
       data: {
         content: JSON.stringify({ text: textContent }),
@@ -210,5 +213,12 @@ export default class AppointmentNotificationService {
         reply_in_thread: true
       }
     });
+  }
+
+  maskedPhoneNumber(phoneNumber) {
+    if (!phoneNumber) return "Chưa có SĐT";
+    const str = String(phoneNumber).trim();
+    if (str.length <= 5) return "\\*\\*\\*" + str;
+    return "\\*\\*\\*" + str.slice(-5);
   }
 }

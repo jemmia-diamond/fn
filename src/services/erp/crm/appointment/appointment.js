@@ -179,26 +179,24 @@ export default class ERPNextCRMAppointmentService {
   }
 
   async notifyUpcomingAppointments() {
-    try {
-      const start = dayjs().format("YYYY-MM-DD HH:mm:ss");
-      const end = dayjs().add(35, "minutes").format("YYYY-MM-DD HH:mm:ss");
+    const start = dayjs().utc().format("YYYY-MM-DD HH:mm:ss");
+    const end = dayjs().utc().add(35, "minutes").format("YYYY-MM-DD HH:mm:ss");
 
-      const appointments = await this.frappeClient.getList("Appointment", {
-        fields: ["name", "scheduled_time", "customer_name", "status", "message_id"],
-        filters: [
-          ["scheduled_time", ">=", start],
-          ["scheduled_time", "<", end],
-          ["status", "=", "Open"],
-          ["message_id", "is", "set"]
-        ]
-      });
-      if (!appointments) return;
+    const appointments = await this.frappeClient.getList("Appointment", {
+      fields: ["name", "scheduled_time", "customer_name", "status", "message_id"],
+      filters: [
+        ["scheduled_time", ">=", start],
+        ["scheduled_time", "<", end],
+        ["status", "=", "Open"],
+        ["message_id", "is", "set"]
+      ]
+    });
 
-      appointments.forEach(appmt => {
-        this.notificationService.sendUpcomingReminder(appmt);
-      });
-    } catch (err) {
-      Sentry.captureException(err);
+    if (!appointments) return;
+
+    for (const appmt of appointments) {
+      await this.notificationService.sendUpcomingReminder(appmt)
+        .catch(e => Sentry.captureException(e));
     }
   }
 }
