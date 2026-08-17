@@ -24,7 +24,6 @@ export default {
   scheduled: async (controller, env, _ctx) => {
     switch (controller.cron) {
     case "0 * * * *": // At minute 0 every hour
-      await new ERP.CRM.AppointmentService(env).notifyUpcomingAppointments();
       await new ERP.Telephony.CallLogService(env).syncVbotCallLogs();
       await ERP.CRM.LeadService.syncCallLogLead(env);
       await ERP.Selling.SalesOrderService.fillSerialNumbersToTemporaryOrderItems(env);
@@ -61,6 +60,7 @@ export default {
       await DatabaseOperations.MaterializedViewService.refresh20Minutes(env);
       break;
     case "*/30 * * * *": // At every 30th minute
+      await new ERP.CRM.AppointmentService(env).notifyUpcomingAppointments();
       await ERP.Contacts.AddressService.cronSyncAddressesToDatabase(env);
       await DatabaseOperations.MaterializedViewService.refresh30Minutes(env);
       await new Haravan.AccountingSalesOrders.LarkSyncService(env).sync();
