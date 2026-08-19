@@ -1,6 +1,6 @@
+import NocoDBClient from "services/clients/nocodb-client";
 import Database from "services/database";
 import HaravanAPIClient from "services/haravan/api-client/api-client";
-import NocoDBClient from "services/clients/nocodb-client";
 import { NOCODB_TABLES } from "src/constants/nocodb-tables";
 
 function tempProductMapper(data) {
@@ -119,12 +119,14 @@ export default class TemporaryProductService {
 
     if (!result.success) {
       if (!this._isVariantLimitError(result)) {
-        throw new Error(`Could not create Haravan variant: ${result.message}`);
+        const errorDetail = result.error ? JSON.stringify(result.error) : "";
+        throw new Error(`Could not create Haravan variant: ${result.message} ${errorDetail}`.trim());
       }
       productId = await this._createHaravanProduct(haravanClient);
       result = await haravanClient.products.productVariant.createVariant(productId, variantData);
       if (!result.success) {
-        throw new Error(`Could not create Haravan variant: ${result.message}`);
+        const errorDetail = result.error ? JSON.stringify(result.error) : "";
+        throw new Error(`Could not create Haravan variant: ${result.message} ${errorDetail}`.trim());
       }
     }
 
@@ -152,6 +154,17 @@ export default class TemporaryProductService {
         giaReportNo = "GIA" + giaReportNo;
       }
       giaReportNo = giaReportNo.trim();
+
+      // Idempotency check for diamonds
+      if (tempProductData.lark_base_record_id) {
+        const existing = await this.getTemporaryProductByLarkRecordId(tempProductData.lark_base_record_id);
+        if (existing && existing.haravan_variant_id) {
+          return {
+            sku: giaReportNo,
+            serial_number: ""
+          };
+        }
+      }
 
       const variantData = {
         option1: [giaReportNo, tempProductData.customer_name, tempProductData.customer_phone].join(" - "),
@@ -192,6 +205,15 @@ export default class TemporaryProductService {
 
     const tempProductId = temporaryProduct.id;
     const sku = "SPT-" + tempProductId;
+
+    // Idempotency check for standard products
+    if (temporaryProduct.haravan_variant_id && temporaryProduct.variant_serial_id) {
+      const serialRecord = await this.nocodb.readRecord(NOCODB_TABLES.SUPPLY.SERIALS, temporaryProduct.variant_serial_id);
+      return {
+        sku: sku,
+        serial_number: serialRecord?.serial_number || ""
+      };
+    }
 
     const variantData = {
       option1: [
