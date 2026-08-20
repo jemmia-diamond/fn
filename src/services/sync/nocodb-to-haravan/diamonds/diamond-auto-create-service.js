@@ -37,7 +37,7 @@ export default class DiamondAutoCreateService {
     const productId = created?.product?.id;
     const variantId = created?.product?.variants?.[0]?.id;
 
-    if (!productId) return;
+    if (!productId || !variantId) return;
 
     await haravanApi.productImage.createImage(productId, {
       src: `${SHAPE_IMAGES_BASE_URL}/${encodeURIComponent(shape)}.png`,
