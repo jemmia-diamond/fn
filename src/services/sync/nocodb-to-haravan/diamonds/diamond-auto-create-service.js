@@ -39,14 +39,10 @@ export default class DiamondAutoCreateService {
 
     if (!productId) return;
 
-    try {
-      await haravanApi.productImage.createImage(productId, {
-        src: `${SHAPE_IMAGES_BASE_URL}/${encodeURIComponent(shape)}.png`,
-        variant_ids: variantId ? [variantId] : []
-      });
-    } catch (err) {
-      console.warn("Diamond shape image upload failed:", err.message);
-    }
+    await haravanApi.productImage.createImage(productId, {
+      src: `${SHAPE_IMAGES_BASE_URL}/${encodeURIComponent(shape)}.png`,
+      variant_ids: variantId ? [variantId] : []
+    });
 
     await nocoClient.updateRecords(tableId, {
       id,
