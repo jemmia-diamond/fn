@@ -71,22 +71,11 @@ export default class LeadService {
 
   async getLeadNameByConversationId(conversationId) {
     if (!conversationId) return null;
-    const contacts = await this.frappeClient.getList("Contact", {
-      filters: [["pancake_conversation_id", "=", conversationId]],
-      fields: ["name"],
-      order_by: "modified desc"
+    const name = await this.frappeClient.postRequest("", {
+      cmd: "erpnext.crm.doctype.lead.lead_methods.get_lead_name_by_conversation",
+      conversation_id: conversationId
     });
-    if (!contacts || !contacts.length) return null;
-    const links = await this.frappeClient.getList("Dynamic Link", {
-      filters: [
-        ["parent", "in", contacts.map(c => c.name)],
-        ["parenttype", "=", "Contact"],
-        ["link_doctype", "=", this.doctype]
-      ],
-      fields: ["link_name"],
-      order_by: "modified desc"
-    });
-    return links && links.length ? links[0].link_name : null;
+    return name || null;
   }
 
   async updateLeadFromSalesaya(name, data) {
