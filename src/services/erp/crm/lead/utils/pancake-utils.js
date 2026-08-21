@@ -66,8 +66,7 @@ export function createUpdateLeadPayload(conversation) {
     "address": conversation.customer_lives_in,
     "birth_date": birthDate,
     "last_sales_message_at": conversation.last_sales_message_at ? dayjs(conversation.last_sales_message_at).utc().format("YYYY-MM-DD HH:mm:ss") : null,
-    "last_customer_message_at": conversation.last_customer_message_at ? dayjs(conversation.last_customer_message_at).utc().format("YYYY-MM-DD HH:mm:ss") : null,
-    "docname": conversation.frappe_name_id
+    "last_customer_message_at": conversation.last_customer_message_at ? dayjs(conversation.last_customer_message_at).utc().format("YYYY-MM-DD HH:mm:ss") : null
   };
 
   return cleanPayload(payload);

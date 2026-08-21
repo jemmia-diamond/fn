@@ -64,17 +64,9 @@ export default class LeadService {
   }
 
   async findLeadByConversationId(conversationId) {
-    const contacts = await this.frappeClient.getList("Contact", {
-      filters: [["pancake_conversation_id", "=", conversationId]]
-    });
-    if (contacts.length) {
-      const contact = await this.frappeClient.getDoc("Contact", contacts[0].name);
-      const linkedLeads = contact.links.filter(link => link.link_doctype === this.doctype);
-      if (linkedLeads.length) {
-        return await this.frappeClient.getDoc(this.doctype, linkedLeads[0].link_name);
-      }
-    }
-    return null;
+    const name = await this.getLeadNameByConversationId(conversationId);
+    if (!name) return null;
+    return await this.frappeClient.getDoc(this.doctype, name);
   }
 
   async getLeadNameByConversationId(conversationId) {
@@ -118,7 +110,6 @@ export default class LeadService {
   }
 
   async updateLead({
-    frappeNameId,
     customerPhone,
     customerName,
     platform,
@@ -135,7 +126,6 @@ export default class LeadService {
     adIds
   }) {
     const leads = await this.updateLeads([{
-      frappe_name_id: frappeNameId,
       customer_phone: customerPhone,
       customer_name: customerName,
       platform: platform,
@@ -162,6 +152,16 @@ export default class LeadService {
     if (!Array.isArray(leadsData) || leadsData.length === 0) return [];
     const docs = leadsData.map(lead => createUpdateLeadPayload(lead));
     const response = await this.syncLeadByBatchUpdate(docs);
+    if (response?.failed_docs?.length) {
+      for (const fd of response.failed_docs) {
+        const conversationId = fd?.doc?.pancake_data?.conversation_id;
+        console.warn("update_lead_by_batch failure:", JSON.stringify(fd.exc || fd));
+        Sentry.captureMessage(`update_lead_by_batch failed for conversation ${conversationId}`, {
+          level: "error",
+          extra: { conversationId, exc: fd.exc, doc: fd.doc }
+        });
+      }
+    }
     return response?.results || [];
   }
 
@@ -198,15 +198,6 @@ export default class LeadService {
 
     const leadData = await dataBuilder();
     return await this.frappeClient.insert(leadData);
-  }
-
-  async getWebsiteLeads(timeThreshold) {
-    const result = await this.db.$queryRaw`
-      SELECT * FROM ecom.leads l
-      WHERE l.database_created_at > ${timeThreshold}
-      ORDER BY l.database_created_at DESC;
-    `;
-    return result;
   }
 
   async getLeadSource(sourceCode) {
@@ -327,17 +318,6 @@ export default class LeadService {
     }
   }
 
-  static async syncWebsiteLeads(env) {
-    const leadService = new LeadService(env);
-    const timeThreshold = dayjs().utc().subtract(1, "hour").subtract(5, "minutes").format("YYYY-MM-DD HH:mm:ss");
-    const leads = await leadService.getWebsiteLeads(timeThreshold);
-    if (leads.length) {
-      for (const lead of leads) {
-        await leadService.processWebsiteLead(lead);
-      }
-    }
-  }
-
   async processCallLogLead(data) {
     const contactService = new ContactService(this.env);
     const initialPhone = data.type === "Incoming" ? data.from : data.to;
@@ -423,32 +403,4 @@ export default class LeadService {
     });
   }
 
-  static async backfillWebsiteLead(env) {
-    const leadService = new LeadService(env);
-    const timeThreshold = dayjs().utc().subtract(30, "days").format("YYYY-MM-DD HH:mm:ss");
-    const pageSize = 100;
-    let offset = 0;
-
-    while (true) {
-      const leads = await leadService.db.$queryRaw`
-        SELECT * FROM ecom.leads l
-        WHERE l.database_created_at > ${timeThreshold}
-        ORDER BY l.database_created_at DESC
-        LIMIT ${pageSize} OFFSET ${offset}
-      `;
-
-      if (!leads || leads.length === 0) {
-        break;
-      }
-
-      for (const lead of leads) {
-        await leadService.processWebsiteLead(lead);
-        await new Promise(resolve => setTimeout(resolve, 500));
-      }
-
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      offset += pageSize;
-    }
-  }
 }

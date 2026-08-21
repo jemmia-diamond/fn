@@ -68,9 +68,6 @@ export default class PancakeLeadSyncService {
               hasError = true;
             }
           });
-        } else if (updateResponse && updateResponse.failed_docs && updateResponse.failed_docs.length > 0) {
-          console.warn(`Lead batch sync had ${updateResponse.failed_docs.length} failures.`);
-          hasError = true;
         }
       } catch (error) {
         console.warn("Error syncing leads batch:", error);
