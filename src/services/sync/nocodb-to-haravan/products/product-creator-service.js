@@ -10,13 +10,8 @@ export default class ProductCreatorService {
   async getDesignInfo(designId) {
     if (!designId) return null;
     const nocoClient = new NocoDBClient(this.env);
-    try {
-      const design = await nocoClient.readRecord(NOCODB_TABLES.SUPPLY.DESIGNS, designId);
-      return design || null;
-    } catch (error) {
-      console.warn(`Failed to read design record ${designId}:`, error.message);
-      return null;
-    }
+    const design = await nocoClient.readRecord(NOCODB_TABLES.SUPPLY.DESIGNS, designId);
+    return design || null;
   }
 
   async handle(payload) {
@@ -46,53 +41,39 @@ export default class ProductCreatorService {
 
     const designId = data.design_id || designsField?.id || designsField || 0;
 
-    try {
-      const designInfo = await this.getDesignInfo(designId);
-      if (!designInfo) {
-        throw new Error(`Design info not found for design ID: ${designId}`);
-      }
-
-      const templateSuffix = templateSuffixMapping(haravan_product_type);
-
-      const productPayload = {
-        title: product_title,
-        vendor,
-        product_type: haravan_product_type,
-        published: false,
-        published_scope: "pos",
-        template_suffix: templateSuffix,
-        tags: promotions || undefined
-      };
-
-      const haravanApi = new HaravanAPI(this.env.HARAVAN_TOKEN);
-      const created = await haravanApi.product.createProduct(productPayload);
-      const productId = created?.product?.id;
-
-      if (!productId) {
-        throw new Error("Failed to create product on Haravan");
-      }
-
-      const nocoClient = new NocoDBClient(this.env);
-      await nocoClient.updateRecords(tableId, {
-        id,
-        haravan_product_id: String(productId),
-        note: "Đã tạo thành công trên haravan"
-      });
-
-      return { productId };
-    } catch (error) {
-      console.warn("Product creator sync error:", error);
-      try {
-        const nocoClient = new NocoDBClient(this.env);
-        await nocoClient.updateRecords(tableId, {
-          id,
-          note: `Lỗi: ${error.message}`
-        });
-      } catch (nocoErr) {
-        console.warn("Failed to update NocoDB error note:", nocoErr);
-      }
-      throw error;
+    const designInfo = await this.getDesignInfo(designId);
+    if (!designInfo) {
+      throw new Error(`Design info not found for design ID: ${designId}`);
     }
+
+    const templateSuffix = templateSuffixMapping(haravan_product_type);
+
+    const productPayload = {
+      title: product_title,
+      vendor,
+      product_type: haravan_product_type,
+      published: false,
+      published_scope: "pos",
+      template_suffix: templateSuffix,
+      tags: promotions || undefined
+    };
+
+    const haravanApi = new HaravanAPI(this.env.HARAVAN_TOKEN);
+    const created = await haravanApi.product.createProduct(productPayload);
+    const productId = created?.product?.id;
+
+    if (!productId) {
+      throw new Error("Failed to create product on Haravan");
+    }
+
+    const nocoClient = new NocoDBClient(this.env);
+    await nocoClient.updateRecords(tableId, {
+      id,
+      haravan_product_id: String(productId),
+      note: "Đã tạo thành công trên haravan"
+    });
+
+    return { productId };
   }
 }
 
