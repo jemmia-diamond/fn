@@ -1,11 +1,11 @@
 import * as Sentry from "@sentry/cloudflare";
-import FrappeClient from "frappe/frappe-client";
-import Database from "services/database";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
+import FrappeClient from "frappe/frappe-client";
+import Database from "services/database";
 import ContactService from "services/erp/contacts/contact/contact";
 import { areAllFieldsEmpty, fetchLeadsFromERP, saveLeadsToDatabase } from "services/erp/crm/lead/utils/lead-helppers";
-import { createInsertLeadPayload, createUpdateLeadPayload } from "services/erp/crm/lead/utils/pancake-utils";
+import { createUpdateLeadPayload } from "services/erp/crm/lead/utils/pancake-utils";
 import { normalizeToStandardFormat } from "services/utils/phone-utils";
 
 dayjs.extend(utc);
@@ -77,6 +77,24 @@ export default class LeadService {
     return null;
   }
 
+  async getLeadNameByConversationId(conversationId) {
+    if (!conversationId) return null;
+    const contacts = await this.frappeClient.getList("Contact", {
+      filters: [["pancake_conversation_id", "=", conversationId]],
+      fields: ["name"]
+    });
+    if (!contacts || !contacts.length) return null;
+    const links = await this.frappeClient.getList("Dynamic Link", {
+      filters: [
+        ["parent", "in", contacts.map(c => c.name)],
+        ["parenttype", "=", "Contact"],
+        ["link_doctype", "=", this.doctype]
+      ],
+      fields: ["link_name"]
+    });
+    return links && links.length ? links[0].link_name : null;
+  }
+
   async updateLeadFromSalesaya(name, data) {
     const currentLead = await this.frappeClient.getDoc(this.doctype, name);
     if (!currentLead) {
@@ -140,52 +158,6 @@ export default class LeadService {
     return null;
   }
 
-  async insertLead({
-    customerName,
-    customerPhone,
-    platform,
-    conversationId,
-    customerId,
-    pageId,
-    pageName,
-    insertedAt,
-    updatedAt,
-    type,
-    lastestMessageAt,
-    pancakeUserId,
-    pancakeAvatarUrl,
-    adIds
-  }) {
-    const leads = await this.insertLeads([{
-      customer_name: customerName,
-      customer_phone: customerPhone,
-      platform: platform,
-      conversation_id: conversationId,
-      customer_id: customerId,
-      page_id: pageId,
-      page_name: pageName,
-      inserted_at: insertedAt,
-      updated_at: updatedAt,
-      can_inbox: type === "INBOX",
-      latest_message_at: lastestMessageAt,
-      pancake_user_id: pancakeUserId,
-      pancake_avatar_url: pancakeAvatarUrl,
-      ad_ids: adIds
-    }]);
-
-    if (leads && Array.isArray(leads) && leads.length > 0) {
-      return leads[0];
-    }
-    return null;
-  }
-
-  async insertLeads(leadsData) {
-    if (!Array.isArray(leadsData) || leadsData.length === 0) return [];
-    const docs = leadsData.map(lead => createInsertLeadPayload(lead));
-    const response = await this.syncLeadByBatchInsertion(docs);
-    return response || [];
-  }
-
   async updateLeads(leadsData) {
     if (!Array.isArray(leadsData) || leadsData.length === 0) return [];
     const docs = leadsData.map(lead => createUpdateLeadPayload(lead));
@@ -204,13 +176,6 @@ export default class LeadService {
     }
     if (Object.keys(values).length <= 2) return null;
     return await this.frappeClient.update(values);
-  }
-
-  async syncLeadByBatchInsertion(docs) {
-    return await this.frappeClient.postRequest("", {
-      cmd: "erpnext.crm.doctype.lead.lead_methods.insert_lead_by_batch",
-      docs: JSON.stringify(docs)
-    });
   }
 
   async syncLeadByBatchUpdate(docs) {

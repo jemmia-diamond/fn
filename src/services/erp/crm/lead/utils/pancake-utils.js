@@ -40,38 +40,6 @@ export function getBirthDate(birthday) {
   return null;
 }
 
-export function createInsertLeadPayload(conversation) {
-  const birthDate = getBirthDate(conversation.customer_birthday);
-  const payload = {
-    "doctype": "Lead",
-    "gender": getGender(conversation.customer_gender),
-    "first_name": conversation.customer_name?.trim() || "Chưa rõ",
-    "phone": conversation.customer_phone,
-    "image": (conversation.pancake_avatar_url && conversation.pancake_avatar_url !== "https:") ? conversation.pancake_avatar_url : null,
-    "pancake_data": {
-      "platform": getPlatform(conversation.page_id, conversation.platform),
-      "conversation_id": conversation.conversation_id,
-      "customer_id": conversation.customer_id,
-      "page_id": conversation.page_id,
-      "page_name": conversation.page_name,
-      "inserted_at": conversation.inserted_at ? dayjs(conversation.inserted_at).utc().format("YYYY-MM-DD HH:mm:ss") : null,
-      "updated_at": conversation.updated_at ? dayjs(conversation.updated_at).utc().format("YYYY-MM-DD HH:mm:ss") : null,
-      "can_inbox": conversation.can_inbox === true ? 1 : 0,
-      "latest_message_at": conversation.latest_message_at ? dayjs(conversation.latest_message_at).utc().format("YYYY-MM-DD HH:mm:ss") : null,
-      "pancake_user_id": conversation.pancake_user_id || null,
-      "pancake_avatar_url": (conversation.pancake_avatar_url && conversation.pancake_avatar_url !== "https:") ? conversation.pancake_avatar_url : null,
-      "ad_ids": conversation.ad_ids
-    },
-    "pancake_tags": conversation.tags,
-    "address": conversation.customer_lives_in,
-    "birth_date": birthDate,
-    "last_sales_message_at": conversation.last_sales_message_at ? dayjs(conversation.last_sales_message_at).utc().format("YYYY-MM-DD HH:mm:ss") : null,
-    "last_customer_message_at": conversation.last_customer_message_at ? dayjs(conversation.last_customer_message_at).utc().format("YYYY-MM-DD HH:mm:ss") : null
-  };
-
-  return cleanPayload(payload);
-}
-
 export function createUpdateLeadPayload(conversation) {
   const birthDate = getBirthDate(conversation.customer_birthday);
   const payload = {
