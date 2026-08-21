@@ -73,7 +73,8 @@ export default class LeadService {
     if (!conversationId) return null;
     const contacts = await this.frappeClient.getList("Contact", {
       filters: [["pancake_conversation_id", "=", conversationId]],
-      fields: ["name"]
+      fields: ["name"],
+      order_by: "modified desc"
     });
     if (!contacts || !contacts.length) return null;
     const links = await this.frappeClient.getList("Dynamic Link", {
@@ -82,7 +83,8 @@ export default class LeadService {
         ["parenttype", "=", "Contact"],
         ["link_doctype", "=", this.doctype]
       ],
-      fields: ["link_name"]
+      fields: ["link_name"],
+      order_by: "modified desc"
     });
     return links && links.length ? links[0].link_name : null;
   }
@@ -158,7 +160,7 @@ export default class LeadService {
         console.warn("update_lead_by_batch failure:", JSON.stringify(fd.exc || fd));
         Sentry.captureMessage(`update_lead_by_batch failed for conversation ${conversationId}`, {
           level: "error",
-          extra: { conversationId, exc: fd.exc, doc: fd.doc }
+          extra: { conversationId, exc: fd.exc }
         });
       }
     }
