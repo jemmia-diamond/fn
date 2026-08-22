@@ -1,9 +1,9 @@
-import LeadService from "services/erp/crm/lead/lead";
-import Database from "services/database";
+import { Prisma } from "@prisma-cli";
+import * as Sentry from "@sentry/cloudflare";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
-import * as Sentry from "@sentry/cloudflare";
-import { Prisma } from "@prisma-cli";
+import Database from "services/database";
+import LeadService from "services/erp/crm/lead/lead";
 
 dayjs.extend(utc);
 
@@ -52,89 +52,27 @@ export default class PancakeLeadSyncService {
         break;
       }
 
-      const insertLeads = [];
-      const updateLeads = [];
-
-      for (const lead of leadsData) {
-        if (!lead.frappe_name_id) {
-          insertLeads.push(lead);
-        } else {
-          updateLeads.push(lead);
-        }
-      }
-
       const batchCount = leadsData.length;
-      console.warn(`Total: ${batchCount}, Insert leads: ${insertLeads.length}, Update leads: ${updateLeads.length}`);
+      console.warn(`Total: ${batchCount}`);
 
       offset += this.BATCH_SIZE;
       totalProcessed += batchCount;
 
-      // Process Inserts
-      if (insertLeads.length > 0) {
-        try {
-          const insertResponse = await this.leadService.insertLeads(insertLeads);
+      try {
+        const updateResponse = await this.leadService.updateLeads(leadsData);
 
-          if (insertResponse && Array.isArray(insertResponse)) {
-            const toInsertLeads = [];
-            insertResponse.forEach((result) => {
-              const conversationId = result?.conversation_id;
-              const frappeNameId = result?.name;
-
-              if (conversationId && frappeNameId) {
-                toInsertLeads.push({
-                  conversation_id: conversationId,
-                  frappe_name_id: frappeNameId
-                });
-              } else if (result && result.name === null) {
-                console.warn(`Lead insertion failed for conversation ${result.conversation_id} with error ${result.name}`);
-                hasError = true;
-              }
-            });
-            if (toInsertLeads.length > 0) {
-              await this.saveSyncedLeadsBatch(toInsertLeads);
+        if (updateResponse && Array.isArray(updateResponse)) {
+          updateResponse.forEach(result => {
+            if (result && result.name === null) {
+              console.warn(`Lead sync failed for conversation ${result.conversation_id}`);
+              hasError = true;
             }
-          } else {
-            console.warn("Invalid response from insert_many_leads", insertResponse);
-            hasError = true;
-          }
-        } catch (error) {
-          console.warn("Error inserting leads batch:", error);
-          Sentry.captureException(error);
-          hasError = true;
+          });
         }
-      }
-
-      // Process Updates
-      if (updateLeads.length > 0) {
-        try {
-          const updateResponse = await this.leadService.updateLeads(updateLeads);
-
-          if (updateResponse && Array.isArray(updateResponse)) {
-            const toUpsertLeads = [];
-            updateResponse.forEach(result => {
-              if (result.name && result.conversation_id) {
-                toUpsertLeads.push({
-                  conversation_id: result.conversation_id,
-                  frappe_name_id: result.name
-                });
-              } else if (result && result.name === null) {
-                console.warn(`Lead update failed for conversation ${result.conversation_id} with error ${result.name}`);
-                hasError = true;
-              }
-            });
-
-            if (toUpsertLeads.length > 0) {
-              await this.saveSyncedLeadsBatch(toUpsertLeads);
-            }
-          } else if (updateResponse && updateResponse.failed_docs && updateResponse.failed_docs.length > 0) {
-            console.warn(`Lead batch update had ${updateResponse.failed_docs.length} failures.`);
-            hasError = true;
-          }
-        } catch (error) {
-          console.warn("Error updating leads batch:", error);
-          Sentry.captureException(error);
-          hasError = true;
-        }
+      } catch (error) {
+        console.warn("Error syncing leads batch:", error);
+        Sentry.captureException(error);
+        hasError = true;
       }
     }
 
@@ -205,7 +143,6 @@ export default class PancakeLeadSyncService {
         customer_phone_numbers,
         customer_lives_in,
         can_inbox,
-        flc.frappe_name_id as frappe_name_id, 
         array_remove(array_agg(vt.tag_label), NULL) as tags,
         c.last_sent_at as latest_message_at, 
         c.last_sales_message_at,
@@ -215,9 +152,8 @@ export default class PancakeLeadSyncService {
         c.ad_ids
       FROM base_conversations c
       LEFT JOIN pancake.conversation_page_customer cpc ON c.id = cpc.conversation_id
-      LEFT JOIN pancake.page p ON p.id = c.page_id 
-      LEFT JOIN pancake.frappe_lead_conversation flc ON c.id = flc.conversation_id 
-      LEFT JOIN valid_tags vt ON c.id = vt.conversation_id 
+      LEFT JOIN pancake.page p ON p.id = c.page_id
+      LEFT JOIN valid_tags vt ON c.id = vt.conversation_id
       GROUP BY 
         c.id, c.page_id, c.customer_id, c.type, c.inserted_at, c.updated_at, c.has_phone, 
         customer_name, 
@@ -225,9 +161,9 @@ export default class PancakeLeadSyncService {
         customer_gender, 
         customer_birthday,  
         customer_phone_numbers, 
-        customer_lives_in, 
+        customer_lives_in,
         can_inbox,
-        flc.frappe_name_id, p.platform, c.last_sent_at, c.last_sales_message_at, c.last_customer_message_at, p.name, c.added_user_id, c.avatar_url, c.ad_ids 
+        p.platform, c.last_sent_at, c.last_sales_message_at, c.last_customer_message_at, p.name, c.added_user_id, c.avatar_url, c.ad_ids
       ORDER BY c.updated_at DESC
     `;
 
@@ -242,32 +178,6 @@ export default class PancakeLeadSyncService {
         }
       });
       return [];
-    }
-  }
-
-  async saveSyncedLeadsBatch(leads) {
-    if (!leads || leads.length === 0) return;
-    const queries = leads.map(lead => {
-      return this.db.frappe_lead_conversation.upsert({
-        where: { conversation_id: lead.conversation_id },
-        update: {
-          frappe_name_id: lead.frappe_name_id,
-          updated_at: new Date()
-        },
-        create: {
-          conversation_id: lead.conversation_id,
-          frappe_name_id: lead.frappe_name_id,
-          created_at: new Date(),
-          updated_at: new Date()
-        }
-      });
-    });
-
-    try {
-      await Promise.all(queries);
-    } catch (error) {
-      console.warn("Error saving synced leads:", error);
-      throw error;
     }
   }
 }
