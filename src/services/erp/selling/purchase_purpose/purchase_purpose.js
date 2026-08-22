@@ -1,7 +1,7 @@
-import FrappeClient from "frappe/frappe-client";
-import Database from "services/database";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
+import FrappeClient from "frappe/frappe-client";
+import Database from "services/database";
 
 dayjs.extend(utc);
 
@@ -10,13 +10,11 @@ export default class PurchasePurposeService {
   constructor(env) {
     this.env = env;
     this.doctype = "Purchase Purpose";
-    this.frappeClient = new FrappeClient(
-      {
-        url: env.JEMMIA_ERP_BASE_URL,
-        apiKey: env.JEMMIA_ERP_API_KEY,
-        apiSecret: env.JEMMIA_ERP_API_SECRET
-      }
-    );
+    this.frappeClient = new FrappeClient({
+      url: env.JEMMIA_ERP_BASE_URL,
+      apiKey: env.JEMMIA_ERP_API_KEY,
+      apiSecret: env.JEMMIA_ERP_API_SECRET
+    });
     this.db = Database.instance(env);
   }
 
@@ -28,13 +26,14 @@ export default class PurchasePurposeService {
     let page = 1;
     const pageSize = PurchasePurposeService.ERPNEXT_PAGE_SIZE;
     while (true) {
-      const result = await purchasePurposeService.frappeClient.getList(purchasePurposeService.doctype, {
-        limit_start: (page - 1) * pageSize,
-        limit_page_length: pageSize,
-        filters: [
-          ["modified", ">=", timeThreshold]
-        ]
-      });
+      const result = await purchasePurposeService.frappeClient.getList(
+        purchasePurposeService.doctype,
+        {
+          limit_start: (page - 1) * pageSize,
+          limit_page_length: pageSize,
+          filters: [["modified", ">=", timeThreshold]]
+        }
+      );
       purchasePurposes = purchasePurposes.concat(result);
       if (result.length < pageSize) break;
       page++;

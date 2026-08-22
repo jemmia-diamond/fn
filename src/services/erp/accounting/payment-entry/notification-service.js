@@ -1,12 +1,12 @@
-import FrappeClient from "src/frappe/frappe-client";
-import dayjs from "dayjs";
-import utc from "dayjs/plugin/utc.js";
-import timezone from "dayjs/plugin/timezone.js";
 import * as Sentry from "@sentry/cloudflare";
-import LarksuiteService from "services/larksuite/lark";
-import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/constant";
+import dayjs from "dayjs";
+import timezone from "dayjs/plugin/timezone.js";
+import utc from "dayjs/plugin/utc.js";
 import Database from "services/database";
+import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/constant";
+import LarksuiteService from "services/larksuite/lark";
 import { TIMEZONE_VIETNAM } from "src/constants";
+import FrappeClient from "src/frappe/frappe-client";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -60,10 +60,20 @@ export default class PaymentEntryNotificationService {
 
       const paymentEntries = await this.frappeClient.getList("Payment Entry", {
         fields: [
-          "name", "payment_date", "paid_amount", "party_name",
-          "mode_of_payment", "payment_code", "bank_account_branch",
-          "custom_transfer_status", "payment_order_status", "gateway", "created_by_display"
-        ], filters, limit_page_length: PAGE_LIMIT
+          "name",
+          "payment_date",
+          "paid_amount",
+          "party_name",
+          "mode_of_payment",
+          "payment_code",
+          "bank_account_branch",
+          "custom_transfer_status",
+          "payment_order_status",
+          "gateway",
+          "created_by_display"
+        ],
+        filters,
+        limit_page_length: PAGE_LIMIT
       });
 
       const entriesWithoutReferences = [];
@@ -78,7 +88,7 @@ export default class PaymentEntryNotificationService {
 
       if (entriesWithoutReferences.length === 0) return [];
 
-      const pendingEntries = entriesWithoutReferences.map(entry => ({
+      const pendingEntries = entriesWithoutReferences.map((entry) => ({
         name: entry.name,
         payment_date: entry.payment_date,
         amount: entry.paid_amount,
@@ -105,10 +115,7 @@ export default class PaymentEntryNotificationService {
 
     const users = await this.db.larksuite_users.findMany({
       where: {
-        OR: [
-          { email: { in: emails } },
-          { enterprise_email: { in: emails } }
-        ]
+        OR: [{ email: { in: emails } }, { enterprise_email: { in: emails } }]
       },
       select: { user_id: true, email: true, enterprise_email: true }
     });
@@ -127,7 +134,9 @@ export default class PaymentEntryNotificationService {
     let remainingEntries = [...entries];
 
     for (const rule of BRANCH_MANAGERS) {
-      const groupEntries = remainingEntries.filter(e => e.branch && e.branch.includes(rule.pattern));
+      const groupEntries = remainingEntries.filter(
+        (e) => e.branch && e.branch.includes(rule.pattern)
+      );
 
       if (groupEntries.length > ZERO) {
         groupedEntries.push({
@@ -136,7 +145,7 @@ export default class PaymentEntryNotificationService {
           userId: null
         });
 
-        remainingEntries = remainingEntries.filter(e => !groupEntries.includes(e));
+        remainingEntries = remainingEntries.filter((e) => !groupEntries.includes(e));
       }
     }
 
@@ -148,7 +157,7 @@ export default class PaymentEntryNotificationService {
       });
     }
 
-    const uniqueEmails = [...new Set(entries.map(e => e.created_by_display).filter(Boolean))];
+    const uniqueEmails = [...new Set(entries.map((e) => e.created_by_display).filter(Boolean))];
     const emailToUserIdMap = await this.getUserIdsByEmails(uniqueEmails);
 
     for (const group of groupedEntries) {
@@ -172,31 +181,35 @@ export default class PaymentEntryNotificationService {
 
   formatNotificationMessage(groupedEntries, totalCount, date) {
     const formattedHeaderDate = dayjs(date).format("DD-MM-YYYY");
-    let message = `[${formattedHeaderDate}] Có ${totalCount} phiếu thanh toán đang chờ xử lý:\n` +
+    let message =
+      `[${formattedHeaderDate}] Có ${totalCount} phiếu thanh toán đang chờ xử lý:\n` +
       "Lý do: <b>Phiếu thanh toán chưa được map đơn</b>. Vui lòng kiểm tra và xử lý\n";
     let globalIndex = ZERO;
     for (const group of groupedEntries) {
       message += "\n";
       message += `<b>KHU VỰC: ${group.label.toUpperCase()}</b>\n`;
 
-      const groupList = group.entries.map(entry => {
-        globalIndex++;
-        const link = `${this.erpPEUrl}/${entry.name}`;
-        const formattedAmount = new Intl.NumberFormat("vi-VN").format(entry.amount || ZERO);
+      const groupList = group.entries
+        .map((entry) => {
+          globalIndex++;
+          const link = `${this.erpPEUrl}/${entry.name}`;
+          const formattedAmount = new Intl.NumberFormat("vi-VN").format(entry.amount || ZERO);
 
-        let entryMessage = `\n${globalIndex}. Phiếu ${entry.name}\n` +
-               `- Số tiền: ${formattedAmount}\n` +
-               `- Loại thanh toán: ${entry.mode_of_payment}\n` +
-              (entry.payment_code !== "banking" ? `- Kênh thanh toán: ${entry.gateway}\n` : "") +
-               `- Khách hàng: ${entry?.party_name}\n` +
-               `- Link: <b>${link}</b>`;
+          let entryMessage =
+            `\n${globalIndex}. Phiếu ${entry.name}\n` +
+            `- Số tiền: ${formattedAmount}\n` +
+            `- Loại thanh toán: ${entry.mode_of_payment}\n` +
+            (entry.payment_code !== "banking" ? `- Kênh thanh toán: ${entry.gateway}\n` : "") +
+            `- Khách hàng: ${entry?.party_name}\n` +
+            `- Link: <b>${link}</b>`;
 
-        if (entry.userId) {
-          entryMessage += `\n<at user_id="${entry.userId}"></at>`;
-        }
+          if (entry.userId) {
+            entryMessage += `\n<at user_id="${entry.userId}"></at>`;
+          }
 
-        return entryMessage;
-      }).join("\n");
+          return entryMessage;
+        })
+        .join("\n");
 
       message += groupList;
       message += "\n";

@@ -5,9 +5,15 @@ export default class PublicAPIRoutes {
   static register(publicApi) {
     const ecommerceNamespaceApi = publicApi.basePath("/ecommerce");
 
-    ecommerceNamespaceApi.get("/products/jewelries/:id/3d-metadata", Ecommerce.Jewelry3DMetadataController.show);
+    ecommerceNamespaceApi.get(
+      "/products/jewelries/:id/3d-metadata",
+      Ecommerce.Jewelry3DMetadataController.show
+    );
 
-    ecommerceNamespaceApi.get("/products/:id/availability", Ecommerce.ProductAvailabilityController.index);
+    ecommerceNamespaceApi.get(
+      "/products/:id/availability",
+      Ecommerce.ProductAvailabilityController.index
+    );
     ecommerceNamespaceApi.get("/products/wedding_rings", Ecommerce.WeddingRingController.index);
     ecommerceNamespaceApi.get("/products/wedding_rings/:id", Ecommerce.WeddingRingController.show);
 
@@ -19,7 +25,10 @@ export default class PublicAPIRoutes {
 
     // Diamond
     ecommerceNamespaceApi.get("/products/diamonds", Ecommerce.DiamondController.show);
-    ecommerceNamespaceApi.get("/products/diamonds/gia-report", Ecommerce.DiamondProfileImageController.show);
+    ecommerceNamespaceApi.get(
+      "/products/diamonds/gia-report",
+      Ecommerce.DiamondProfileImageController.show
+    );
     ecommerceNamespaceApi.get("/products/diamonds/:id", Ecommerce.DiamondController.index);
 
     ecommerceNamespaceApi.get("/diamonds/prices", Ecommerce.DiamondPricesController.index);
@@ -33,5 +42,5 @@ export default class PublicAPIRoutes {
     // RSS Proxy
     const rssNamespaceApi = publicApi.basePath("/rss");
     rssNamespaceApi.get("/pinterest/:slug", RSS.PinterestController.index);
-  };
-};
+  }
+}

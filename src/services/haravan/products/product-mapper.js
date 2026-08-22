@@ -40,6 +40,6 @@ export default class ProductMapper {
   static extractImages(product) {
     if (!product.images || !Array.isArray(product.images)) return [];
 
-    return product.images.map(image => ({ ...image, product_id: product.id }));
+    return product.images.map((image) => ({ ...image, product_id: product.id }));
   }
 }

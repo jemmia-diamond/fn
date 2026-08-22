@@ -1,10 +1,11 @@
+import { Prisma } from "@prisma-cli";
 import * as Sentry from "@sentry/cloudflare";
+import { randomUUID } from "crypto";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
-import { Prisma } from "@prisma-cli";
-import { randomUUID } from "crypto";
 import { mapAddressesToDatabase } from "src/services/erp/contacts/address/utils/address-mappers";
 import { escapeSqlValue } from "src/services/utils/sql-helpers";
+
 dayjs.extend(utc);
 
 const CHUNK_SIZE = 20;
@@ -16,7 +17,7 @@ export async function fetchAddressesFromERP(frappeClient, doctype, fromDate, toD
     if (toDate) {
       filters["modified"] = ["between", [fromDate, toDate]];
     }
-    let allAddresses = [];
+    const allAddresses = [];
     let start = 0;
     let hasMoreData = true;
 
@@ -29,12 +30,16 @@ export async function fetchAddressesFromERP(frappeClient, doctype, fromDate, toD
       });
 
       if (addressesBatch?.length) {
-        const addressNames = addressesBatch.map(address => address.name);
-        const addressLinks = await fetchAddressChildRecordsFromERP(frappeClient, addressNames, "tabDynamic Link");
+        const addressNames = addressesBatch.map((address) => address.name);
+        const addressLinks = await fetchAddressChildRecordsFromERP(
+          frappeClient,
+          addressNames,
+          "tabDynamic Link"
+        );
 
         // group address links by address name
         const addressLinksMap = {};
-        addressLinks.forEach(item => {
+        addressLinks.forEach((item) => {
           if (!addressLinksMap[item.parent]) {
             addressLinksMap[item.parent] = [];
           }
@@ -42,7 +47,7 @@ export async function fetchAddressesFromERP(frappeClient, doctype, fromDate, toD
         });
 
         // add address links to each address in addressesBatch
-        addressesBatch.forEach(address => {
+        addressesBatch.forEach((address) => {
           address.links = addressLinksMap[address.name] || [];
         });
 
@@ -65,7 +70,7 @@ export async function fetchAddressChildRecordsFromERP(frappeClient, addressNames
   if (!Array.isArray(addressNames) || addressNames.length === 0) {
     return [];
   }
-  const quotedNames = addressNames.map(name => `"${name}"`).join(", ");
+  const quotedNames = addressNames.map((name) => `"${name}"`).join(", ");
   const sql = `SELECT * FROM \`${tableName}\` WHERE parent IN (${quotedNames})`;
   const addressChildRecords = await frappeClient.executeSQL(sql);
   return addressChildRecords || [];
@@ -83,28 +88,35 @@ export async function saveAddressesToDatabase(db, addresses) {
       const chunk = addressesData.slice(i, i + CHUNK_SIZE);
 
       // Get fields including both database timestamp columns for INSERT
-      const fields = ["uuid", ...Object.keys(chunk[0]).filter(field =>
-        field !== "database_created_at" && field !== "database_updated_at"
-      ), "database_created_at", "database_updated_at"];
-      const fieldsSql = fields.map(field => `"${field}"`).join(", ");
+      const fields = [
+        "uuid",
+        ...Object.keys(chunk[0]).filter(
+          (field) => field !== "database_created_at" && field !== "database_updated_at"
+        ),
+        "database_created_at",
+        "database_updated_at"
+      ];
+      const fieldsSql = fields.map((field) => `"${field}"`).join(", ");
 
       // Create VALUES clause with generated UUIDs and timestamps
       const currentTimestamp = new Date();
-      const values = chunk.map(address => {
-        const addressWithTimestamps = {
-          uuid: randomUUID(),
-          ...address,
-          database_created_at: currentTimestamp,
-          database_updated_at: currentTimestamp
-        };
-        const fieldValues = fields.map(field => escapeSqlValue(addressWithTimestamps[field]));
-        return `(${fieldValues.join(", ")})`;
-      }).join(",\n  ");
+      const values = chunk
+        .map((address) => {
+          const addressWithTimestamps = {
+            uuid: randomUUID(),
+            ...address,
+            database_created_at: currentTimestamp,
+            database_updated_at: currentTimestamp
+          };
+          const fieldValues = fields.map((field) => escapeSqlValue(addressWithTimestamps[field]));
+          return `(${fieldValues.join(", ")})`;
+        })
+        .join(",\n  ");
 
       // Create UPDATE SET clause for ON CONFLICT (exclude "name", "uuid", and "database_created_at")
       const updateSetSql = fields
-        .filter(field => field !== "name" && field !== "uuid" && field !== "database_created_at")
-        .map(field => {
+        .filter((field) => field !== "name" && field !== "uuid" && field !== "database_created_at")
+        .map((field) => {
           if (field === "database_updated_at") {
             return `"${field}" = CURRENT_TIMESTAMP`;
           }
@@ -120,7 +132,6 @@ export async function saveAddressesToDatabase(db, addresses) {
       `;
       await db.$queryRaw`${Prisma.raw(query)}`;
     }
-
   } catch (error) {
     Sentry.captureException(error);
   }

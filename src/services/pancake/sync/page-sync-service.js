@@ -1,9 +1,9 @@
-import Database from "services/database";
-import PancakeClient from "pancake/pancake-client";
+import * as Sentry from "@sentry/cloudflare";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
-import * as Sentry from "@sentry/cloudflare";
+import PancakeClient from "pancake/pancake-client";
 import { isInvalidTokenError } from "pancake/utils";
+import Database from "services/database";
 import { sleep } from "services/utils/sleep";
 
 dayjs.extend(utc);
@@ -30,10 +30,7 @@ export default class PageSyncService {
         return;
       }
 
-      const pageList = [
-        ...(categorized.activated || []),
-        ...(categorized.inactivated || [])
-      ];
+      const pageList = [...(categorized.activated || []), ...(categorized.inactivated || [])];
 
       if (pageList.length === 0) {
         console.warn("Page list is empty.");
@@ -60,7 +57,10 @@ export default class PageSyncService {
       const userListData = await this.pancakeClient.getPageUsers(pageId);
 
       if (isInvalidTokenError(userListData)) {
-        this.captureException(new Error(`Pancake API Error [102]: Invalid access_token for users in page ${pageId}`), pageId);
+        this.captureException(
+          new Error(`Pancake API Error [102]: Invalid access_token for users in page ${pageId}`),
+          pageId
+        );
         return;
       }
 
@@ -79,11 +79,13 @@ export default class PageSyncService {
       if (!item.id) continue;
       const pageData = this.mapToPageModel(item);
 
-      pageUpserts.push(this.db.page.upsert({
-        where: { id: item.id },
-        create: pageData,
-        update: { ...pageData, uuid: undefined, database_updated_at: dayjs().utc().toDate() }
-      }));
+      pageUpserts.push(
+        this.db.page.upsert({
+          where: { id: item.id },
+          create: pageData,
+          update: { ...pageData, uuid: undefined, database_updated_at: dayjs().utc().toDate() }
+        })
+      );
     }
 
     const chunkSize = 50;
@@ -102,11 +104,17 @@ export default class PageSyncService {
 
     for (const user of uniqueUsersMap.values()) {
       const userData = this.mapToUserModel(user);
-      userUpserts.push(this.db.pancake_user.upsert({
-        where: { id: user.id },
-        create: { ...userData, database_created_at: dayjs().utc().toDate(), database_updated_at: dayjs().utc().toDate() },
-        update: { ...userData, database_updated_at: dayjs().utc().toDate() }
-      }));
+      userUpserts.push(
+        this.db.pancake_user.upsert({
+          where: { id: user.id },
+          create: {
+            ...userData,
+            database_created_at: dayjs().utc().toDate(),
+            database_updated_at: dayjs().utc().toDate()
+          },
+          update: { ...userData, database_updated_at: dayjs().utc().toDate() }
+        })
+      );
     }
 
     const chunkSize = 50;

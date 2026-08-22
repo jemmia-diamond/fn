@@ -1,6 +1,10 @@
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
-import { isDiamondItem, isJewelryItem, isMissingJewelrySerial } from "services/erp/selling/sales-order/utils/sales-order-notification";
+import {
+  isDiamondItem,
+  isJewelryItem,
+  isMissingJewelrySerial
+} from "services/erp/selling/sales-order/utils/sales-order-notification";
 import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/constant";
 import LarksuiteService from "services/larksuite/lark";
 import FrappeClient from "src/frappe/frappe-client";
@@ -8,7 +12,14 @@ import Database from "src/services/database";
 
 dayjs.extend(utc);
 
-const EXCLUDING_SOURCES = ["web", "harafunnel", "staff", "bhsc-cua-hang-hn", "bhsc-cua-hang-hcm", "sendo"];
+const EXCLUDING_SOURCES = [
+  "web",
+  "harafunnel",
+  "staff",
+  "bhsc-cua-hang-hn",
+  "bhsc-cua-hang-hcm",
+  "sendo"
+];
 const EXCLUDED_ITEM_KEYWORDS = ["quà tặng", "bảo hành", "khách gửi"];
 
 export default class MissingSerialNotificationService {
@@ -70,14 +81,14 @@ export default class MissingSerialNotificationService {
       const fullOrder = await this.frappeClient.getDoc("Sales Order", order.name);
       const allItems = fullOrder.items || [];
 
-      const validItems = allItems.filter(item => {
+      const validItems = allItems.filter((item) => {
         const itemName = (item.item_name || "").toLowerCase();
-        return !EXCLUDED_ITEM_KEYWORDS.some(keyword => itemName.includes(keyword));
+        return !EXCLUDED_ITEM_KEYWORDS.some((keyword) => itemName.includes(keyword));
       });
 
       const missingSerialItems = validItems.filter(isMissingJewelrySerial);
 
-      const missingPromotionItems = validItems.filter(item => {
+      const missingPromotionItems = validItems.filter((item) => {
         if (!isJewelryItem(item) && !isDiamondItem(item)) return false;
 
         // Check if there is a price difference (meaning it was discounted)
@@ -96,9 +107,15 @@ export default class MissingSerialNotificationService {
         return false;
       });
 
-      const isOrderMissingPromotion = (fullOrder.discount_amount || 0) > 5000 && (!fullOrder.promotions || fullOrder.promotions.length === 0);
+      const isOrderMissingPromotion =
+        (fullOrder.discount_amount || 0) > 5000 &&
+        (!fullOrder.promotions || fullOrder.promotions.length === 0);
 
-      if (missingSerialItems.length > 0 || missingPromotionItems.length > 0 || isOrderMissingPromotion) {
+      if (
+        missingSerialItems.length > 0 ||
+        missingPromotionItems.length > 0 ||
+        isOrderMissingPromotion
+      ) {
         const larkUserId = await this.getLarkUserIdBySalesPerson(order.primary_sales_person);
         ordersWithIssues.push({
           name: order.name,

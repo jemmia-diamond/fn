@@ -37,7 +37,9 @@ export const mapLeadsToDatabase = (leads) => {
     qualified_by: safeValue(lead.qualified_by),
     qualified_on: lead.qualified_on ? new Date(lead.qualified_on) : null,
     purpose_lead: safeValue(lead.purpose_lead),
-    expected_delivery_date: lead.expected_delivery_date ? new Date(lead.expected_delivery_date) : null,
+    expected_delivery_date: lead.expected_delivery_date
+      ? new Date(lead.expected_delivery_date)
+      : null,
     budget_lead: safeValue(lead.budget_lead),
     province: safeValue(lead.province),
     region: safeValue(lead.region),

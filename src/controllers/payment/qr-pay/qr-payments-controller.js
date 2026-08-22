@@ -2,10 +2,10 @@ import * as Sentry from "@sentry/cloudflare";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import PaymentService from "services/payment";
+
 dayjs.extend(utc);
 
 export default class QRPaymentsController {
-
   static preProcessQRRequest(body) {
     return {
       bank_code: body.bank_code,
@@ -73,7 +73,9 @@ export default class QRPaymentsController {
     }
     // haravan_order_total_price
     if (serializableData.haravan_order_total_price != null) {
-      serializableData.haravan_order_total_price = parseFloat(serializableData.haravan_order_total_price);
+      serializableData.haravan_order_total_price = parseFloat(
+        serializableData.haravan_order_total_price
+      );
     }
     return serializableData;
   }

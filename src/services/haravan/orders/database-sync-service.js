@@ -1,11 +1,11 @@
+import * as crypto from "crypto";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
-import Database from "services/database";
 import HaravanAPI from "services/clients/haravan-client";
+import Database from "services/database";
 import OrderMapper from "services/haravan/orders/order-mapper";
-import * as crypto from "crypto";
-import { sleep } from "services/utils/sleep.js";
 import { isTestOrder } from "services/utils/order-intercepter";
+import { sleep } from "services/utils/sleep.js";
 
 dayjs.extend(utc);
 
@@ -92,7 +92,7 @@ export default class OrderDatabaseSyncService {
   async _processOrderBatch(orders) {
     if (!orders || orders.length === 0) return;
 
-    const validOrders = orders.filter(order => !isTestOrder(order));
+    const validOrders = orders.filter((order) => !isTestOrder(order));
     if (validOrders.length === 0) return;
 
     const lineItems = [];
@@ -132,7 +132,7 @@ export default class OrderDatabaseSyncService {
 
     const currentDateTime = dayjs().utc().toDate();
     await this.db.$transaction(async (tx) => {
-      const operations = orders.map(order => {
+      const operations = orders.map((order) => {
         const data = OrderMapper.mapOrder(order);
         const id = data.id;
         delete data.id;
@@ -161,7 +161,7 @@ export default class OrderDatabaseSyncService {
 
     const currentDateTime = dayjs().utc().toDate();
     await this.db.$transaction(async (tx) => {
-      const operations = lineItems.map(item => {
+      const operations = lineItems.map((item) => {
         const data = OrderMapper.mapLineItem(item);
         const id = data.id;
         delete data.id;
@@ -190,7 +190,7 @@ export default class OrderDatabaseSyncService {
 
     const currentDateTime = dayjs().utc().toDate();
     await this.db.$transaction(async (tx) => {
-      const operations = transactions.map(item => {
+      const operations = transactions.map((item) => {
         const data = OrderMapper.mapTransaction(item);
         const id = data.id;
         delete data.id;
@@ -219,7 +219,7 @@ export default class OrderDatabaseSyncService {
 
     const currentDateTime = dayjs().utc().toDate();
     await this.db.$transaction(async (tx) => {
-      const operations = fulfillments.map(item => {
+      const operations = fulfillments.map((item) => {
         const data = OrderMapper.mapFulfillment(item);
         const id = data.id;
         delete data.id;
@@ -248,7 +248,7 @@ export default class OrderDatabaseSyncService {
 
     const currentDateTime = dayjs().utc().toDate();
     await this.db.$transaction(async (tx) => {
-      const operations = refunds.map(item => {
+      const operations = refunds.map((item) => {
         const data = OrderMapper.mapRefund(item);
         const id = data.id;
         delete data.id;

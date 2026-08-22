@@ -1,8 +1,8 @@
+import * as crypto from "crypto";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
-import Database from "services/database";
 import HaravanAPI from "services/clients/haravan-client";
-import * as crypto from "crypto";
+import Database from "services/database";
 
 dayjs.extend(utc);
 
@@ -53,7 +53,10 @@ export default class CollectionProductSyncService {
           if (latestUpdatedAt) {
             for (const collect of collects) {
               const collectUpdatedAt = dayjs(collect.updated_at);
-              if (collectUpdatedAt.isAfter(latestUpdatedAt) || collectUpdatedAt.isSame(latestUpdatedAt)) {
+              if (
+                collectUpdatedAt.isAfter(latestUpdatedAt) ||
+                collectUpdatedAt.isSame(latestUpdatedAt)
+              ) {
                 buckets.push(collect);
               }
             }
@@ -86,7 +89,9 @@ export default class CollectionProductSyncService {
           const allowedRetrySeconds = CollectionProductSyncService.MAX_RETRY_AFTER_SECONDS;
 
           if (retryAfter > allowedRetrySeconds) {
-            throw new Error(`Rate limited for ${retryAfter}s (exceeds ${allowedRetrySeconds}s threshold)`);
+            throw new Error(
+              `Rate limited for ${retryAfter}s (exceeds ${allowedRetrySeconds}s threshold)`
+            );
           }
 
           await this._sleep(retryAfter * 1000);
@@ -99,7 +104,7 @@ export default class CollectionProductSyncService {
   }
 
   _sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   _mapCollectionProduct(item) {
@@ -116,13 +121,13 @@ export default class CollectionProductSyncService {
   }
 
   async _processCollectBatch(collects) {
-    const collectionProductsToUpsert = collects.map(item => this._mapCollectionProduct(item));
+    const collectionProductsToUpsert = collects.map((item) => this._mapCollectionProduct(item));
 
     if (collectionProductsToUpsert.length === 0) return;
 
     const currentDateTime = dayjs().utc().toDate();
     await this.db.$transaction(async (tx) => {
-      const operations = collectionProductsToUpsert.map(data => {
+      const operations = collectionProductsToUpsert.map((data) => {
         const id = data.id;
         delete data.id;
 

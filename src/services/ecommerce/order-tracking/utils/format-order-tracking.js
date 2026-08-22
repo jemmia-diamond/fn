@@ -8,12 +8,22 @@ export function formatOrderTrackingResult(order, nhattinTrackInfo, isAuthorizedA
     items: isAuthorizedAccess ? (order.items || []).map(normalizeDiamondItem) : [],
     tracking_logs: nhattinTrackInfo?.status || [],
     expected_receive_date: convertToUTC(nhattinTrackInfo.date_expected),
-    shipping_address_name: isAuthorizedAccess ? order.shipping_address_name : maskExceptFirstAndLast(order.shipping_address_name),
-    shipping_address_phone: isAuthorizedAccess ? order.shipping_address_phone : maskPhoneNumber(order.shipping_address_phone),
+    shipping_address_name: isAuthorizedAccess
+      ? order.shipping_address_name
+      : maskExceptFirstAndLast(order.shipping_address_name),
+    shipping_address_phone: isAuthorizedAccess
+      ? order.shipping_address_phone
+      : maskPhoneNumber(order.shipping_address_phone),
     shipping_address_city: order.shipping_address_city,
-    shipping_address_district: isAuthorizedAccess ? order.shipping_address_district : maskFull(order.shipping_address_district),
-    shipping_address_ward: isAuthorizedAccess ? order.shipping_address_ward : maskFull(order.shipping_address_ward),
-    shipping_address_address: isAuthorizedAccess ? order.shipping_address_address1 : maskFull(order.shipping_address_address1),
+    shipping_address_district: isAuthorizedAccess
+      ? order.shipping_address_district
+      : maskFull(order.shipping_address_district),
+    shipping_address_ward: isAuthorizedAccess
+      ? order.shipping_address_ward
+      : maskFull(order.shipping_address_ward),
+    shipping_address_address: isAuthorizedAccess
+      ? order.shipping_address_address1
+      : maskFull(order.shipping_address_address1),
     shipping_address_province: order.shipping_address_province,
     payment_method: order.payment_method,
     confirmed_date: order.order_date,

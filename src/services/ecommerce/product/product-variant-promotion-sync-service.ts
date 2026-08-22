@@ -1,8 +1,8 @@
+import * as Sentry from "@sentry/cloudflare";
 import HaravanAPI from "services/clients/haravan-client";
 import NocoDBClient from "services/clients/nocodb-client";
-import { NOCODB_TABLES } from "src/constants/nocodb-tables";
-import * as Sentry from "@sentry/cloudflare";
 import { sleep } from "services/utils/sleep";
+import { NOCODB_TABLES } from "src/constants/nocodb-tables";
 
 interface CustomTarget {
   diamonds_id: number;
@@ -30,14 +30,25 @@ export default class ProductVariantPromotionSyncService {
 
   constructor(env: any) {
     this.env = env;
-    this.targetDiscount = Number(this.env.TARGET_COMBO_DISCOUNT || ProductVariantPromotionSyncService.CONFIG.DEFAULT_TARGET_COMBO_DISCOUNT);
-    this.jewelryDiscount = Number(this.env.DEFAULT_JEWELRY_DISCOUNT || ProductVariantPromotionSyncService.CONFIG.DEFAULT_JEWELRY_DISCOUNT);
+    this.targetDiscount = Number(
+      this.env.TARGET_COMBO_DISCOUNT ||
+        ProductVariantPromotionSyncService.CONFIG.DEFAULT_TARGET_COMBO_DISCOUNT
+    );
+    this.jewelryDiscount = Number(
+      this.env.DEFAULT_JEWELRY_DISCOUNT ||
+        ProductVariantPromotionSyncService.CONFIG.DEFAULT_JEWELRY_DISCOUNT
+    );
   }
 
   /**
    * Paginate through all records in a NocoDB table, returning a flat array.
    */
-  private async fetchAllRecords(nocodb: NocoDBClient, table: string, params: Record<string, any> = {}, pageSize = 100): Promise<any[]> {
+  private async fetchAllRecords(
+    nocodb: NocoDBClient,
+    table: string,
+    params: Record<string, any> = {},
+    pageSize = 100
+  ): Promise<any[]> {
     const results: any[] = [];
     let offset = 0;
 
@@ -66,32 +77,56 @@ export default class ProductVariantPromotionSyncService {
 
     if (!allVsd.length) return [];
 
-    const diamondIds = [...new Set(allVsd.map(v => v.diamonds_id).filter(Boolean))];
-    const serialIds = [...new Set(allVsd.map(v => v.variant_serials_id).filter(Boolean))];
+    const diamondIds = [...new Set(allVsd.map((v) => v.diamonds_id).filter(Boolean))];
+    const serialIds = [...new Set(allVsd.map((v) => v.variant_serials_id).filter(Boolean))];
 
     // Batch fetch Diamonds and Serials
     const [diamondsRes, serialsRes] = await Promise.all([
-      this.fetchBatchRecords(nocodb, NOCODB_TABLES.SUPPLY.DIAMONDS, diamondIds, "id,variant_id,product_id"),
+      this.fetchBatchRecords(
+        nocodb,
+        NOCODB_TABLES.SUPPLY.DIAMONDS,
+        diamondIds,
+        "id,variant_id,product_id"
+      ),
       this.fetchBatchRecords(nocodb, NOCODB_TABLES.SUPPLY.SERIALS, serialIds, "id,variant_id")
     ]);
 
-    const diamondMap = new Map<number, any>(diamondsRes.map(d => [d.id, d]));
-    const serialMap = new Map<number, any>(serialsRes.map(s => [s.id, s]));
+    const diamondMap = new Map<number, any>(diamondsRes.map((d) => [d.id, d]));
+    const serialMap = new Map<number, any>(serialsRes.map((s) => [s.id, s]));
 
-    const variantIds = [...new Set(serialsRes.map(s => s.variant_id).filter(Boolean))];
-    const variantsRes = await this.fetchBatchRecords(nocodb, NOCODB_TABLES.SUPPLY.VARIANTS, variantIds, "id,haravan_variant_id,haravan_product_id,product_id");
-    const variantMap = new Map<number, any>(variantsRes.map(v => [v.id, v]));
+    const variantIds = [...new Set(serialsRes.map((s) => s.variant_id).filter(Boolean))];
+    const variantsRes = await this.fetchBatchRecords(
+      nocodb,
+      NOCODB_TABLES.SUPPLY.VARIANTS,
+      variantIds,
+      "id,haravan_variant_id,haravan_product_id,product_id"
+    );
+    const variantMap = new Map<number, any>(variantsRes.map((v) => [v.id, v]));
 
     const targets: CustomTarget[] = [];
     for (const vsd of allVsd) {
       const diamond = diamondMap.get(vsd.diamonds_id);
-      if (!diamond || !diamond.variant_id || diamond.variant_id <= 0 || !diamond.product_id || diamond.product_id <= 0) continue;
+      if (
+        !diamond ||
+        !diamond.variant_id ||
+        diamond.variant_id <= 0 ||
+        !diamond.product_id ||
+        diamond.product_id <= 0
+      )
+        continue;
 
       const serial = serialMap.get(vsd.variant_serials_id);
       if (!serial || !serial.variant_id) continue;
 
       const variant = variantMap.get(serial.variant_id);
-      if (!variant || !variant.haravan_variant_id || variant.haravan_variant_id <= 0 || !variant.haravan_product_id || variant.haravan_product_id <= 0) continue;
+      if (
+        !variant ||
+        !variant.haravan_variant_id ||
+        variant.haravan_variant_id <= 0 ||
+        !variant.haravan_product_id ||
+        variant.haravan_product_id <= 0
+      )
+        continue;
 
       targets.push({
         diamonds_id: vsd.diamonds_id,
@@ -107,7 +142,12 @@ export default class ProductVariantPromotionSyncService {
     return targets;
   }
 
-  private async fetchBatchRecords(nocodb: NocoDBClient, table: string, ids: any[], fields: string): Promise<any[]> {
+  private async fetchBatchRecords(
+    nocodb: NocoDBClient,
+    table: string,
+    ids: any[],
+    fields: string
+  ): Promise<any[]> {
     if (!ids.length) return [];
     const res = await nocodb.listRecords(table, {
       where: `(id,in,${ids.join(",")})`,
@@ -125,7 +165,11 @@ export default class ProductVariantPromotionSyncService {
     const targetVariantIds = new Set<number>();
     const affectedJewelryProductWorkplaceIds = new Set<number>();
     const affectedJewelryHaravanProductIds = new Set<number>();
-    const affectedDiamonds: { diamond_workplace_id: number; diamond_haravan_product_id: number; diamond_haravan_variant_id: number }[] = [];
+    const affectedDiamonds: {
+      diamond_workplace_id: number;
+      diamond_haravan_product_id: number;
+      diamond_haravan_variant_id: number;
+    }[] = [];
     const haravanProductToWorkplaceId = new Map<number, number>();
 
     for (const target of customTargets) {
@@ -169,11 +213,15 @@ export default class ProductVariantPromotionSyncService {
     const originalDiscounts = new Map<number, number>();
     const jewelryProductPromoCollectionHaravanIds = new Map<number, Set<string>>();
 
-    const collectionLinks = await this.fetchAllRecords(nocodb, NOCODB_TABLES.MARKETING.JEWELRY_HARAVAN_COLLECTIONS, {
-      where: `(products_id,in,${affectedProductIdsArray.join(",")})`,
-      fields: "products_id,haravan_collections_id",
-      sort: "products_id"
-    });
+    const collectionLinks = await this.fetchAllRecords(
+      nocodb,
+      NOCODB_TABLES.MARKETING.JEWELRY_HARAVAN_COLLECTIONS,
+      {
+        where: `(products_id,in,${affectedProductIdsArray.join(",")})`,
+        fields: "products_id,haravan_collections_id",
+        sort: "products_id"
+      }
+    );
 
     for (const link of collectionLinks) {
       const hcRes = await nocodb.listRecords(NOCODB_TABLES.MARKETING.HARAVAN_COLLECTIONS, {
@@ -211,10 +259,14 @@ export default class ProductVariantPromotionSyncService {
     targetVariantIds: Set<number>,
     originalDiscounts: Map<number, number>
   ): Promise<Record<number, { product_id: number; variant_id: number }[]>> {
-    const allJewelryVariantsList = await this.fetchAllRecords(nocodb, NOCODB_TABLES.SUPPLY.VARIANTS, {
-      where: `(product_id,in,${affectedProductIdsArray.join(",")})`,
-      fields: "haravan_product_id,haravan_variant_id,product_id"
-    });
+    const allJewelryVariantsList = await this.fetchAllRecords(
+      nocodb,
+      NOCODB_TABLES.SUPPLY.VARIANTS,
+      {
+        where: `(product_id,in,${affectedProductIdsArray.join(",")})`,
+        fields: "haravan_product_id,haravan_variant_id,product_id"
+      }
+    );
 
     const allJewelryVariants = allJewelryVariantsList
       .filter((v: any) => v.haravan_variant_id && v.haravan_variant_id > 0)
@@ -250,7 +302,10 @@ export default class ProductVariantPromotionSyncService {
   /**
    * For each discount percentage, create/update/delete the matching Haravan promotion.
    */
-  private async syncHaravanPromotions(haravanClient: any, discountGroups: Record<number, { product_id: number; variant_id: number }[]>) {
+  private async syncHaravanPromotions(
+    haravanClient: any,
+    discountGroups: Record<number, { product_id: number; variant_id: number }[]>
+  ) {
     const promotionsResponse = await haravanClient.promotion.getPromotions();
     const existingPromotions = promotionsResponse?.promotions || [];
 
@@ -279,7 +334,9 @@ export default class ProductVariantPromotionSyncService {
         variants: variantsList
       };
       if (existingPromoSummary) {
-        const existingVariantIds = new Set<number>((existingPromoSummary.entitled_variant_ids || []).map(Number));
+        const existingVariantIds = new Set<number>(
+          (existingPromoSummary.entitled_variant_ids || []).map(Number)
+        );
 
         if (this.variantIdSetsAreEqual(variantsList, existingVariantIds)) {
           continue;
@@ -298,30 +355,43 @@ export default class ProductVariantPromotionSyncService {
    * Compare our variantsList [{ variant_id }] against the Set of IDs
    * from Haravan's entitled_variant_ids.
    */
-  private variantIdSetsAreEqual(variantsList: { variant_id: number }[], existingVariantIdSet: Set<number>): boolean {
+  private variantIdSetsAreEqual(
+    variantsList: { variant_id: number }[],
+    existingVariantIdSet: Set<number>
+  ): boolean {
     if (variantsList.length !== existingVariantIdSet.size) return false;
-    return variantsList.every(v => existingVariantIdSet.has(Number(v.variant_id)));
+    return variantsList.every((v) => existingVariantIdSet.has(Number(v.variant_id)));
   }
 
   /**
    * Remove affected jewelry products from collection-based promotions in DB
    * and mark g1_promotion as 'None' to prevent re-sync.
    */
-  private async cleanupJewelryCollectionLinks(nocodb: NocoDBClient, affectedJewelryProductWorkplaceIds: Set<number>) {
+  private async cleanupJewelryCollectionLinks(
+    nocodb: NocoDBClient,
+    affectedJewelryProductWorkplaceIds: Set<number>
+  ) {
     if (!affectedJewelryProductWorkplaceIds.size) return;
 
     const idsArray = Array.from(affectedJewelryProductWorkplaceIds);
 
-    const linksToDelete = await this.fetchAllRecords(nocodb, NOCODB_TABLES.MARKETING.JEWELRY_HARAVAN_COLLECTIONS, {
-      where: `(products_id,in,${idsArray.join(",")})`,
-      fields: "products_id,haravan_collections_id"
-    });
+    const linksToDelete = await this.fetchAllRecords(
+      nocodb,
+      NOCODB_TABLES.MARKETING.JEWELRY_HARAVAN_COLLECTIONS,
+      {
+        where: `(products_id,in,${idsArray.join(",")})`,
+        fields: "products_id,haravan_collections_id"
+      }
+    );
     if (linksToDelete.length > 0) {
       const deletePayload = linksToDelete.map((link: any) => ({
         products_id: link.products_id,
         haravan_collections_id: link.haravan_collections_id
       }));
-      await nocodb.deleteRecords(NOCODB_TABLES.MARKETING.JEWELRY_HARAVAN_COLLECTIONS, deletePayload);
+      await nocodb.deleteRecords(
+        NOCODB_TABLES.MARKETING.JEWELRY_HARAVAN_COLLECTIONS,
+        deletePayload
+      );
     }
 
     for (const pWorkplaceId of affectedJewelryProductWorkplaceIds) {
@@ -335,14 +405,22 @@ export default class ProductVariantPromotionSyncService {
   /**
    * Remove affected jewelry products from the specific Haravan collection (ID 1004602299).
    */
-  private async cleanupJewelryHaravanCollects(haravanClient: any, affectedJewelryHaravanProductIds: Set<number>) {
+  private async cleanupJewelryHaravanCollects(
+    haravanClient: any,
+    affectedJewelryHaravanProductIds: Set<number>
+  ) {
     for (const hProductId of affectedJewelryHaravanProductIds) {
       try {
-        const collectsResponse = await haravanClient.collect.getCollects({ product_id: hProductId });
+        const collectsResponse = await haravanClient.collect.getCollects({
+          product_id: hProductId
+        });
         const collects = collectsResponse?.collects || [];
 
         for (const collect of collects) {
-          if (String(collect.collection_id) === ProductVariantPromotionSyncService.CONFIG.JEWELRY_PROMOTION_COLLECTION_ID) {
+          if (
+            String(collect.collection_id) ===
+            ProductVariantPromotionSyncService.CONFIG.JEWELRY_PROMOTION_COLLECTION_ID
+          ) {
             await haravanClient.collect.deleteCollect(collect.id);
             await sleep(ProductVariantPromotionSyncService.CONFIG.API_REQUEST_DELAY);
           }
@@ -382,7 +460,10 @@ export default class ProductVariantPromotionSyncService {
       const affectedProductIdsArray = Array.from(affectedJewelryProductWorkplaceIds);
 
       // 3. Resolve original discount percentages from collection links
-      const { originalDiscounts } = await this.fetchOriginalDiscounts(nocodb, affectedProductIdsArray);
+      const { originalDiscounts } = await this.fetchOriginalDiscounts(
+        nocodb,
+        affectedProductIdsArray
+      );
 
       // 4. Build discount groups ({ [pct]: [variants] })
       const discountGroups = await this.buildDiscountGroups(
@@ -399,7 +480,6 @@ export default class ProductVariantPromotionSyncService {
       // 6. Cleanup: remove jewelry products from collection-based promotions
       await this.cleanupJewelryCollectionLinks(nocodb, affectedJewelryProductWorkplaceIds);
       await this.cleanupJewelryHaravanCollects(haravanClient, affectedJewelryHaravanProductIds);
-
     } catch (error) {
       Sentry.captureException(error);
     }

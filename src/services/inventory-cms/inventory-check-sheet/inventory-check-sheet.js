@@ -1,11 +1,11 @@
-import * as Sentry from "@sentry/cloudflare";
-import InventoryCMSClient from "services/inventory-cms/inventory-cms-client/inventory-cms-client";
-import { COLLECTIONS } from "services/inventory-cms/collections/constant";
 import { readItems } from "@directus/sdk";
-import Database from "services/database";
-import { v4 as uuidv4 } from "uuid";
+import * as Sentry from "@sentry/cloudflare";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
+import Database from "services/database";
+import { COLLECTIONS } from "services/inventory-cms/collections/constant";
+import InventoryCMSClient from "services/inventory-cms/inventory-cms-client/inventory-cms-client";
+import { v4 as uuidv4 } from "uuid";
 
 dayjs.extend(utc);
 
@@ -42,7 +42,11 @@ export default class InventoryCheckSheetService {
     const client = await InventoryCMSClient.createClient(env);
     const db = Database.instance(env);
 
-    const timeThreshold = dayjs().utc().subtract(3, "hours").subtract(5, "minutes").format("YYYY-MM-DD HH:mm:ss");
+    const timeThreshold = dayjs()
+      .utc()
+      .subtract(3, "hours")
+      .subtract(5, "minutes")
+      .format("YYYY-MM-DD HH:mm:ss");
     const queryObject = {
       filter: {
         date_created: {
@@ -59,10 +63,12 @@ export default class InventoryCheckSheetService {
     try {
       let items;
       do {
-        items = await client.request(readItems(COLLECTIONS.INVENTORY_CHECK_SHEET, {
-          page,
-          ...queryObject
-        }));
+        items = await client.request(
+          readItems(COLLECTIONS.INVENTORY_CHECK_SHEET, {
+            page,
+            ...queryObject
+          })
+        );
         inventoryCheckSheets.push(...items);
         page++;
       } while (items && items.length > 0);

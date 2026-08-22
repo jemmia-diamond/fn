@@ -4,17 +4,14 @@ import * as Sentry from "@sentry/cloudflare";
 
 import { Hono } from "hono";
 import { bearerAuth } from "hono/bearer-auth";
-
-import Routes from "src/routes";
-import { DebounceDurableObject } from "src/durable-objects";
-
-import errorTracker from "middlewares/error-tracker";
 import errorHandler from "middlewares/error-handler";
-
+import errorTracker from "middlewares/error-tracker";
 import CorsService from "services/cors-service";
+import loggrageLogger from "services/custom-logger";
 import queueHandler from "services/queue-handler";
 import scheduleHandler from "services/schedule-handler";
-import loggrageLogger from "services/custom-logger";
+import { DebounceDurableObject } from "src/durable-objects";
+import Routes from "src/routes";
 
 const app = new Hono();
 
@@ -31,12 +28,13 @@ api.use("*", CorsService.createCorsConfig());
 publicApi.use("*", CorsService.createCorsConfig());
 
 // Authentication
-api.use("*",
+api.use(
+  "*",
   bearerAuth({
     verifyToken: async (token, c) => {
       const bearerToken = c.env.BEARER_TOKEN;
 
-      return (token === bearerToken) || (token === c.env.BEARER_TOKEN);
+      return token === bearerToken || token === c.env.BEARER_TOKEN;
     }
   })
 );

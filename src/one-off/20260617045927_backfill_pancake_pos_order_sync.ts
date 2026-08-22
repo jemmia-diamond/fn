@@ -1,7 +1,7 @@
+import * as Sentry from "@sentry/cloudflare";
 import pLimit from "p-limit";
 import Database from "services/database";
 import PancakePosClient from "services/pancake/pos/pancake-pos-client";
-import * as Sentry from "@sentry/cloudflare";
 
 const BATCH_SIZE = 300;
 const CONCURRENCY_LIMIT = 10;
@@ -52,7 +52,11 @@ export default async function backfillPancakePosInsertedAt(env: any): Promise<vo
           }
 
           try {
-            await client.updateOrderInsertedAt(sync.shop_id, sync.pancake_order_id, order.created_at.toISOString());
+            await client.updateOrderInsertedAt(
+              sync.shop_id,
+              sync.pancake_order_id,
+              order.created_at.toISOString()
+            );
           } catch (e) {
             Sentry.captureException(e, {
               tags: {

@@ -37,7 +37,8 @@ export default class BuybackExchangeService {
   }
 
   whereClauseGenerator(params) {
-    const { phone_number, instance_type, status, submitted_date_start, submitted_date_end } = params;
+    const { phone_number, instance_type, status, submitted_date_start, submitted_date_end } =
+      params;
 
     if (!phone_number) {
       return [];

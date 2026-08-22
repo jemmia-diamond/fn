@@ -35,7 +35,7 @@ export default class SyncHaravanHelper {
   }
 
   static isHtmlStructureSync(html1, html2) {
-    return this.normalizeHtml(html1) === this.normalizeHtml(html2);
+    return SyncHaravanHelper.normalizeHtml(html1) === SyncHaravanHelper.normalizeHtml(html2);
   }
 
   static normalizeDate(isoDate) {

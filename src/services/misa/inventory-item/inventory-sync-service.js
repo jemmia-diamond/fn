@@ -1,8 +1,8 @@
 import * as Sentry from "@sentry/cloudflare";
 import dayjs from "dayjs";
-import Database from "services/database";
-import MisaClient from "services/clients/misa-client";
 import HaravanAPI from "services/clients/haravan-client";
+import MisaClient from "services/clients/misa-client";
+import Database from "services/database";
 import ProductToMisaMapper from "services/haravan/dtos/product-to-misa";
 import Misa from "services/misa";
 
@@ -74,7 +74,6 @@ export default class MisaInventoryItemSyncService {
         } else {
           hasMore = false;
         }
-
       } catch (error) {
         if (error.status === 429) {
           const retryAfter = parseFloat(error.retryAfter || 2);
@@ -96,7 +95,7 @@ export default class MisaInventoryItemSyncService {
   }
 
   _sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   async _processProductBatch(products, misaClient) {
@@ -109,22 +108,22 @@ export default class MisaInventoryItemSyncService {
       return;
     }
 
-    const variantsWithSku = variants.filter(v => v.sku);
+    const variantsWithSku = variants.filter((v) => v.sku);
     if (variantsWithSku.length === 0) {
       return;
     }
 
-    const skus = variantsWithSku.map(v => v.sku);
+    const skus = variantsWithSku.map((v) => v.sku);
     const existingSKUs = await this._checkExistingSKUs(skus);
     const existingSKUSet = new Set(existingSKUs);
-    const newVariants = variantsWithSku.filter(v => !existingSKUSet.has(v.sku));
+    const newVariants = variantsWithSku.filter((v) => !existingSKUSet.has(v.sku));
 
     if (newVariants.length === 0) {
       return;
     }
 
     const currentTime = String(Date.now());
-    const inventoryItems = newVariants.map(variant =>
+    const inventoryItems = newVariants.map((variant) =>
       Misa.InventoryItemMappingService.transformHaravanItemToMisa(variant, currentTime)
     );
 
@@ -132,10 +131,9 @@ export default class MisaInventoryItemSyncService {
 
     if (misaResponse.Success === true) {
       await this._trackSyncedItems(newVariants);
-
     } else {
       const errorMsg = {
-        skus: newVariants.map(v => v.sku),
+        skus: newVariants.map((v) => v.sku),
         count: newVariants.length,
         misa_response: misaResponse?.ErrorMessage
       };
@@ -151,7 +149,7 @@ export default class MisaInventoryItemSyncService {
       where: { sku: { in: skus } },
       select: { sku: true }
     });
-    return existingItems.map(item => item.sku);
+    return existingItems.map((item) => item.sku);
   }
 
   async _saveDictionaryToMisa(misaClient, inventoryItems) {
@@ -166,7 +164,7 @@ export default class MisaInventoryItemSyncService {
 
   async _trackSyncedItems(variants) {
     await this.db.$transaction(async (tx) => {
-      const operations = variants.map(variant =>
+      const operations = variants.map((variant) =>
         tx.misaInventoryItem.upsert({
           where: { sku: variant.sku },
           create: {

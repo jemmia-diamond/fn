@@ -1,17 +1,17 @@
 import * as Sentry from "@sentry/cloudflare";
-import Ecommerce from "services/ecommerce";
 import { HTTPException } from "hono/http-exception";
+import Ecommerce from "services/ecommerce";
 import { isInteger } from "services/utils/num-helper";
 
 export default class OrderTrackingController {
   static async show(ctx) {
     const { id } = ctx.req.param();
     if (!id) {
-      return ctx.json({ message: "Invalid order ID" }, 400 );
+      return ctx.json({ message: "Invalid order ID" }, 400);
     }
 
     if (!isInteger(id)) {
-      return ctx.json({ message: "Invalid order ID" }, 422 );
+      return ctx.json({ message: "Invalid order ID" }, 422);
     }
 
     const authorization = ctx.req.header("Authorization");
@@ -29,10 +29,10 @@ export default class OrderTrackingController {
       return ctx.json(orderDetails);
     } catch (error) {
       if (error instanceof HTTPException) {
-        return ctx.json({ error_code: error.message }, error.status );
+        return ctx.json({ error_code: error.message }, error.status);
       }
       Sentry.captureException(error);
-      return ctx.json({ message: "Internal Server Error" }, 500 );
+      return ctx.json({ message: "Internal Server Error" }, 500);
     }
   }
 }

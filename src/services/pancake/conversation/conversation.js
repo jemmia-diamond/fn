@@ -34,9 +34,7 @@ export default class ConversationService {
     return result;
   }
 
-  async findPageInfo({
-    pageId
-  }) {
+  async findPageInfo({ pageId }) {
     if (!pageId) return null;
     const result = await this.db.$queryRaw`
       SELECT * FROM pancake.page AS p
@@ -67,7 +65,14 @@ export default class ConversationService {
     const insertedAt = message.inserted_at;
 
     if (!insertedAt || !conversationId || !pageId) {
-      console.warn("Missing required fields for processLastCustomerMessage. Page ID: " + pageId + ", Conversation ID: " + conversationId + ", Inserted At: " + insertedAt);
+      console.warn(
+        "Missing required fields for processLastCustomerMessage. Page ID: " +
+          pageId +
+          ", Conversation ID: " +
+          conversationId +
+          ", Inserted At: " +
+          insertedAt
+      );
       return;
     }
     await this.updateConversation(conversationId, pageId, insertedAt);
@@ -154,14 +159,14 @@ export default class ConversationService {
 
     const aihub = new AIHUBClient(env);
     return await aihub.makeRequest("/lead-info", {
-      "pageId": body.page_id,
-      "conversationId": conversationId,
-      "webhookUrl": `${env.HOST}/webhook/ai-hub/erp/leads`
+      pageId: body.page_id,
+      conversationId: conversationId,
+      webhookUrl: `${env.HOST}/webhook/ai-hub/erp/leads`
     });
   }
 
   async triggerExtraHooks(body) {
-    const promises = EXTRA_HOOKS.map(url =>
+    const promises = EXTRA_HOOKS.map((url) =>
       fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

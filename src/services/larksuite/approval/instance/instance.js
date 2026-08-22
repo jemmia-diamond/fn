@@ -1,9 +1,9 @@
-import LarksuiteService from "services/larksuite/lark";
-import Database from "services/database";
+import * as crypto from "crypto";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
+import Database from "services/database";
 import { APPROVALS } from "services/larksuite/approval/constant";
-import * as crypto from "crypto";
+import LarksuiteService from "services/larksuite/lark";
 
 dayjs.extend(utc);
 
@@ -41,7 +41,7 @@ export default class InstanceService {
         payload,
         pageSize
       );
-      const codes = responses.flatMap(res => (res?.data?.instance_code_list ?? []));
+      const codes = responses.flatMap((res) => res?.data?.instance_code_list ?? []);
 
       for (const code of codes) {
         const instanceResponse = await larkClient.approval.v4.instance.get({
@@ -66,7 +66,7 @@ export default class InstanceService {
         create: instance
       });
     }
-    const uniqueUserIds = [...new Set(transformedInstances.map(i => i.user_id).filter(Boolean))];
+    const uniqueUserIds = [...new Set(transformedInstances.map((i) => i.user_id).filter(Boolean))];
     for (const userId of uniqueUserIds) {
       await instanceService.createOrUpdateUser(userId, db, env);
     }
@@ -75,7 +75,7 @@ export default class InstanceService {
   async createOrUpdateUser(userId, db, env) {
     if (!userId) return null;
 
-    let user = await db.larksuite_users.findUnique({
+    const user = await db.larksuite_users.findUnique({
       where: { user_id: userId },
       select: { user_id: true, name: true }
     });

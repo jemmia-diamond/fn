@@ -1,5 +1,5 @@
-import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 
 /**
  * Utility to create an OpenAI-compatible model instance using AI Proxy.

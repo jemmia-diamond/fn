@@ -1,9 +1,9 @@
 import * as Sentry from "@sentry/cloudflare";
+import * as crypto from "crypto";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
-import Database from "services/database";
 import HaravanAPI from "services/clients/haravan-client";
-import * as crypto from "crypto";
+import Database from "services/database";
 
 dayjs.extend(utc);
 
@@ -72,14 +72,15 @@ export default class VariantSyncService {
         } else {
           hasMore = false;
         }
-
       } catch (error) {
         if (error.status === 429) {
           const retryAfter = parseFloat(error.retryAfter || 2);
           const allowedRetrySeconds = VariantSyncService.MAX_RETRY_AFTER_SECONDS;
 
           if (retryAfter > allowedRetrySeconds) {
-            throw new Error(`Rate limited for ${retryAfter}s (exceeds ${allowedRetrySeconds}s threshold)`);
+            throw new Error(
+              `Rate limited for ${retryAfter}s (exceeds ${allowedRetrySeconds}s threshold)`
+            );
           }
 
           await this._sleep(retryAfter * 1000);
@@ -92,7 +93,7 @@ export default class VariantSyncService {
   }
 
   _sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   _mapVariant(variant, product) {
@@ -149,7 +150,7 @@ export default class VariantSyncService {
 
     const currentDateTime = dayjs().utc().toDate();
     await this.db.$transaction(async (tx) => {
-      const operations = variantsToUpsert.map(variantData => {
+      const operations = variantsToUpsert.map((variantData) => {
         const id = variantData.id;
         delete variantData.id;
 

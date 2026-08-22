@@ -11,8 +11,16 @@ import { getRefOrderChain } from "services/ecommerce/order-tracking/queries/get-
  * @param {String} haravanOrderNumber - Haravan order name to use if payment is null
  * @returns {Promise<string>} Journal note for MISA voucher
  */
-async function getJournalNote(db, payment = null, orderChain = null, haravanOrderId = null, haravanOrderNumber = null, haravanRefOrderId = null) {
-  const defaultNote = payment?.haravan_order?.order_number || payment?.haravan_order_name || haravanOrderNumber;
+async function getJournalNote(
+  db,
+  payment = null,
+  orderChain = null,
+  haravanOrderId = null,
+  haravanOrderNumber = null,
+  haravanRefOrderId = null
+) {
+  const defaultNote =
+    payment?.haravan_order?.order_number || payment?.haravan_order_name || haravanOrderNumber;
   const orderId = payment?.haravan_order_id || haravanOrderId;
 
   if (!payment?.haravan_order?.ref_order_id || !haravanRefOrderId) {
@@ -32,9 +40,10 @@ async function getJournalNote(db, payment = null, orderChain = null, haravanOrde
   let finalNote = lastOrder.order_number;
 
   const previousOrders = chain.slice(0, -1);
-  const firstPaidCanceledOrder = previousOrders.find(order =>
-    (order.financial_status === "paid" || order.financial_status === "partially_paid") &&
-    order.order_processing_status === "cancel"
+  const firstPaidCanceledOrder = previousOrders.find(
+    (order) =>
+      (order.financial_status === "paid" || order.financial_status === "partially_paid") &&
+      order.order_processing_status === "cancel"
   );
 
   if (firstPaidCanceledOrder) {

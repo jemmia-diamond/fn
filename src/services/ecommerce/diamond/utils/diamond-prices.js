@@ -8,7 +8,7 @@ function dataAgg(rows, title) {
   const ALL_COLORS = ["D", "E", "F", "G", "H", "I"];
   const ORDERED_CLARITIES = ["IF", "VVS1", "VVS2", "VS1", "VS2"];
 
-  const filtered = rows.filter(r => r.title === title);
+  const filtered = rows.filter((r) => r.title === title);
 
   const temp = {};
 
@@ -31,7 +31,7 @@ function dataAgg(rows, title) {
   for (const clarity of ORDERED_CLARITIES) {
     if (!temp[clarity]) continue;
 
-    const colors = ALL_COLORS.filter(c => temp[clarity][c]);
+    const colors = ALL_COLORS.filter((c) => temp[clarity][c]);
 
     if (colors.length === 0) continue;
 
@@ -45,9 +45,9 @@ function dataAgg(rows, title) {
 }
 
 export function formatData(rows) {
-  const titles = [...new Set(rows.map(r => r.title))];
+  const titles = [...new Set(rows.map((r) => r.title))];
 
-  return titles.map(title => ({
+  return titles.map((title) => ({
     size: processSize(title),
     data: dataAgg(rows, title)
   }));

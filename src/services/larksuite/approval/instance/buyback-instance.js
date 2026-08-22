@@ -1,10 +1,10 @@
-import LarksuiteService from "services/larksuite/lark";
-import Database from "services/database";
+import * as Sentry from "@sentry/cloudflare";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
+import Database from "services/database";
 import { APPROVALS } from "services/larksuite/approval/constant";
+import LarksuiteService from "services/larksuite/lark";
 import FrappeClient from "src/frappe/frappe-client";
-import * as Sentry from "@sentry/cloudflare";
 
 dayjs.extend(utc);
 
@@ -25,16 +25,20 @@ export default class BuyBackInstanceService {
     const transformedInstances = [];
     const payload = {
       params: {
-        start_time, end_time, page_size,
+        start_time,
+        end_time,
+        page_size,
         approval_code: APPROVALS.BUYBACK_EXCHANGE.code
       }
     };
 
     const responses = await LarksuiteService.requestWithPagination(
-      larkClient.approval.v4.instance.list, payload, page_size
+      larkClient.approval.v4.instance.list,
+      payload,
+      page_size
     );
 
-    const codes = responses.flatMap(res => (res?.data?.instance_code_list ?? []));
+    const codes = responses.flatMap((res) => res?.data?.instance_code_list ?? []);
 
     for (const code of codes) {
       const instanceResponse = await larkClient.approval.v4.instance.get({
@@ -220,18 +224,26 @@ export default class BuyBackInstanceService {
       refund_amount: data.refund_amount,
       order_code: data.order_code,
       new_order_code: data.new_order_code,
-      submitted_date: data.submitted_date ? dayjs(data.submitted_date).format("YYYY-MM-DD HH:mm:ss") : null,
-      products_info: typeof data.products_info === "string" ? data.products_info : JSON.stringify(data.products_info || [])
+      submitted_date: data.submitted_date
+        ? dayjs(data.submitted_date).format("YYYY-MM-DD HH:mm:ss")
+        : null,
+      products_info:
+        typeof data.products_info === "string"
+          ? data.products_info
+          : JSON.stringify(data.products_info || [])
     };
-    const ignoredFields = Object.keys(erpData).filter(key => key !== "status" && key !== "doctype");
+    const ignoredFields = Object.keys(erpData).filter(
+      (key) => key !== "status" && key !== "doctype"
+    );
 
     try {
       await frappeClient.upsert(erpData, "lark_instance_id", ignoredFields);
     } catch (error) {
       const msg = error?.message || "";
-      const isDuplicate = error?.status === 417
-        || msg.includes("UniqueValidationError")
-        || msg.includes("Duplicate entry");
+      const isDuplicate =
+        error?.status === 417 ||
+        msg.includes("UniqueValidationError") ||
+        msg.includes("Duplicate entry");
 
       if (!isDuplicate) {
         throw error;

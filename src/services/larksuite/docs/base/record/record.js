@@ -1,8 +1,8 @@
-import LarksuiteService from "services/larksuite/lark";
-import Database from "services/database";
+import * as Sentry from "@sentry/cloudflare";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
-import * as Sentry from "@sentry/cloudflare";
+import Database from "services/database";
+import LarksuiteService from "services/larksuite/lark";
 
 dayjs.extend(utc);
 
@@ -30,17 +30,23 @@ export default class RecordService {
           data: {
             filter: {
               conjunction: "and",
-              conditions: [{
-                field_name: "Last Modified Date",
-                operator: "isGreater",
-                value: ["ExactDate", timeThreshold]
-              }]
+              conditions: [
+                {
+                  field_name: "Last Modified Date",
+                  operator: "isGreater",
+                  value: ["ExactDate", timeThreshold]
+                }
+              ]
             }
           }
         };
-        const responses = await LarksuiteService.requestWithPagination(larkClient.bitable.appTableRecord.search, payload, pageSize);
-        const records = responses.flatMap(res => (res?.data?.items ?? []));
-        const recordsWithTableMetaData = records.map(record => {
+        const responses = await LarksuiteService.requestWithPagination(
+          larkClient.bitable.appTableRecord.search,
+          payload,
+          pageSize
+        );
+        const records = responses.flatMap((res) => res?.data?.items ?? []);
+        const recordsWithTableMetaData = records.map((record) => {
           return {
             ...record,
             table_id: table.table_id,
@@ -83,12 +89,7 @@ export default class RecordService {
    * @returns {Promise<Array>} - Array of records
    */
   static async fetchRecords(env, tableConfig, options = {}) {
-    const {
-      filter = null,
-      pageSize = 100,
-      userIdType = "open_id",
-      sort = null
-    } = options;
+    const { filter = null, pageSize = 100, userIdType = "open_id", sort = null } = options;
 
     const larkClient = await LarksuiteService.createClientV2(env);
 
@@ -124,12 +125,12 @@ export default class RecordService {
       if (response?.code && response.code !== 0) {
         throw new Error(
           `LarkSuite API error: ${response.msg || "Unknown error"} (code: ${response.code}). ` +
-          `Details: ${JSON.stringify(response.error || {})}`
+            `Details: ${JSON.stringify(response.error || {})}`
         );
       }
     }
 
-    return responses.flatMap(res => (res?.data?.items ?? []));
+    return responses.flatMap((res) => res?.data?.items ?? []);
   }
 
   /**
@@ -142,9 +143,7 @@ export default class RecordService {
    * @param {string} userIdType - The type of user ID to use (default is "user_id").
    * @returns {Promise<object|null>} - The record object if found, otherwise null.
    */
-  static async getLarksuiteRecord({
-    env, appToken, tableId, recordId, userIdType = "open_id"
-  }) {
+  static async getLarksuiteRecord({ env, appToken, tableId, recordId, userIdType = "open_id" }) {
     const larkClient = await LarksuiteService.createClientV2(env);
 
     const response = await larkClient.bitable.appTableRecord.get({
@@ -162,18 +161,16 @@ export default class RecordService {
   }
 
   /**
- * Creates a single record in a Larksuite table.
- *
- * @param {string} env - The environment configuration.
- * @param {string} appToken - The app token of the Larksuite application.
- * @param {string} tableId - The table ID where the record will be created.
- * @param {object} fields - An object containing the fields and values for the new record.
- * @param {string} userIdType - The type of user ID to use (default is "open_id").
- * @returns {Promise<object|null>} - The created record object if successful, otherwise null.
- */
-  static async createLarksuiteRecord({
-    env, appToken, tableId, fields, userIdType = "open_id"
-  }) {
+   * Creates a single record in a Larksuite table.
+   *
+   * @param {string} env - The environment configuration.
+   * @param {string} appToken - The app token of the Larksuite application.
+   * @param {string} tableId - The table ID where the record will be created.
+   * @param {object} fields - An object containing the fields and values for the new record.
+   * @param {string} userIdType - The type of user ID to use (default is "open_id").
+   * @returns {Promise<object|null>} - The created record object if successful, otherwise null.
+   */
+  static async createLarksuiteRecord({ env, appToken, tableId, fields, userIdType = "open_id" }) {
     const larkClient = await LarksuiteService.createClientV2(env);
 
     const response = await larkClient.bitable.appTableRecord.create({
@@ -204,7 +201,12 @@ export default class RecordService {
    * @returns {Promise<object|null>} - The updated record object if successful, otherwise null.
    */
   static async updateLarksuiteRecord({
-    env, appToken, tableId, recordId, fields, userIdType = "open_id"
+    env,
+    appToken,
+    tableId,
+    recordId,
+    fields,
+    userIdType = "open_id"
   }) {
     const larkClient = await LarksuiteService.createClientV2(env);
 
@@ -225,9 +227,7 @@ export default class RecordService {
     return response.data.record;
   }
 
-  static async createLarksuiteRecords({
-    env, appToken, tableId, records, userIdType = "open_id"
-  }) {
+  static async createLarksuiteRecords({ env, appToken, tableId, records, userIdType = "open_id" }) {
     const larkClient = await LarksuiteService.createClientV2(env);
 
     const response = await larkClient.bitable.appTableRecord.batchCreate({
@@ -239,16 +239,14 @@ export default class RecordService {
         user_id_type: userIdType
       },
       data: {
-        records: records.map(e => ({ fields: e }))
+        records: records.map((e) => ({ fields: e }))
       }
     });
 
     return response;
   }
 
-  static async updateLarksuiteRecords({
-    env, appToken, tableId, records, userIdType = "open_id"
-  }) {
+  static async updateLarksuiteRecords({ env, appToken, tableId, records, userIdType = "open_id" }) {
     const larkClient = await LarksuiteService.createClientV2(env);
 
     const response = await larkClient.bitable.appTableRecord.batchUpdate({

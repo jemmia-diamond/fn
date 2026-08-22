@@ -11,16 +11,21 @@ export default class IndDayStatService {
 
   static async trackBudget(batch, env) {
     try {
-      const { line_items, haravan_topic, cancelled_status, cancelled_at, updated_at, partially_paid } = batch.messages[0].body;
+      const {
+        line_items,
+        haravan_topic,
+        cancelled_status,
+        cancelled_at,
+        updated_at,
+        partially_paid
+      } = batch.messages[0].body;
 
-      if ( partially_paid !== "partially_paid" ) return;
+      if (partially_paid !== "partially_paid") return;
 
       const indDayStatService = new IndDayStatService();
       const totalQuantity = Object.values(line_items).reduce(
         (sum, item) =>
-          indDayStatService.indDayProductIds.includes(item.product_id)
-            ? sum + item.quantity
-            : sum,
+          indDayStatService.indDayProductIds.includes(item.product_id) ? sum + item.quantity : sum,
         0
       );
 
@@ -30,7 +35,7 @@ export default class IndDayStatService {
 
       if (haravan_topic === HARAVAN_TOPIC.CREATED) {
         newQuantityCount += totalQuantity;
-      } else if (haravan_topic === HARAVAN_TOPIC.UPDATED && cancelled_status === "cancelled" ) {
+      } else if (haravan_topic === HARAVAN_TOPIC.UPDATED && cancelled_status === "cancelled") {
         const cancelledAt = new Date(cancelled_at);
         const updatedAt = new Date(updated_at);
         if (updatedAt.getTime() - cancelledAt.getTime() < 2000) {
@@ -42,7 +47,6 @@ export default class IndDayStatService {
         console.warn("Product quantity budget exceeded");
       }
       await env.FN_KV.put(indDayStatService.countProductQuantityKey, newQuantityCount);
-
     } catch (error) {
       Sentry.captureException(error);
     }
@@ -56,7 +60,8 @@ export default class IndDayStatService {
       }
 
       return {
-        count_product_quantity: Number(productQuantity) + (Number(this.env.STATS_NUMBER_BUFFER) || 0)
+        count_product_quantity:
+          Number(productQuantity) + (Number(this.env.STATS_NUMBER_BUFFER) || 0)
       };
     } catch (error) {
       Sentry.captureException(error);

@@ -1,4 +1,4 @@
-import { parsePhoneNumberFromString, getCountryCallingCode } from "libphonenumber-js";
+import { getCountryCallingCode, parsePhoneNumberFromString } from "libphonenumber-js";
 
 export function normalizeToStandardFormat(phone, defaultCountry = "VN") {
   if (!phone) return "";
@@ -8,7 +8,7 @@ export function normalizeToStandardFormat(phone, defaultCountry = "VN") {
     return phoneNumber.format("E.164").replace("+", "");
   }
 
-  let digits = phone.replace(/\D/g, "");
+  const digits = phone.replace(/\D/g, "");
   if (!digits) return "";
 
   let countryCode;

@@ -1,4 +1,3 @@
-
 function pemToArrayBuffer(pem) {
   const b64Lines = pem.replace(/-----[^-]+-----/g, "").replace(/\s+/g, "");
   const b64 = atob(b64Lines);
@@ -17,10 +16,7 @@ function arrayBufferToBase64Url(buffer) {
   for (let i = 0; i < len; i++) {
     binary += String.fromCharCode(bytes[i]);
   }
-  return btoa(binary)
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/, "");
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
 function objectToBase64Url(obj) {

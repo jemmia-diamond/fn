@@ -9,17 +9,11 @@ export default class JemmiaShieldCallbackController {
     }
 
     try {
-      const html = await ShieldOnboardingService.renderOnboardingPage(
-        c.env,
-        code
-      );
+      const html = await ShieldOnboardingService.renderOnboardingPage(c.env, code);
       return c.html(html);
     } catch (error: any) {
       console.warn("Authentication Failed:", error);
-      return c.text(
-        `Authentication Failed: ${error.message}\n\nStack: ${error.stack}`,
-        500
-      );
+      return c.text(`Authentication Failed: ${error.message}\n\nStack: ${error.stack}`, 500);
     }
   }
 }

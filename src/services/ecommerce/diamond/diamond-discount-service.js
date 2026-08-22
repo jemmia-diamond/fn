@@ -11,7 +11,6 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 
 export default class DiamondDiscountService {
-
   /**
    * Fetch active promotion rules from database
    * @param {Object} env - Environment variables
@@ -80,11 +79,9 @@ export default class DiamondDiscountService {
 
       if (hasMin && hasMax) {
         if (diamondSize < rule.min_value || diamondSize >= rule.max_value) continue;
-      }
-      else if (hasMin && !hasMax) {
+      } else if (hasMin && !hasMax) {
         if (diamondSize < rule.min_value) continue;
-      }
-      else if (!hasMin && hasMax) {
+      } else if (!hasMin && hasMax) {
         if (diamondSize >= rule.max_value) continue;
       }
 
@@ -122,7 +119,9 @@ export default class DiamondDiscountService {
       const linkedColId = link.haravan_collection_id?.toString();
       if (!linkedColId) continue;
 
-      const isPercentCollection = allPercentCollectionIds.has(Number(linkedColId)) || allPercentCollectionIds.has(linkedColId);
+      const isPercentCollection =
+        allPercentCollectionIds.has(Number(linkedColId)) ||
+        allPercentCollectionIds.has(linkedColId);
       if (!isPercentCollection) {
         continue;
       }
@@ -139,7 +138,10 @@ export default class DiamondDiscountService {
       }
 
       if (!isTarget && !isDefault) {
-        linksToDelete.push({ diamond_id: diamond.id, haravan_collection_id: link.haravan_collection_id });
+        linksToDelete.push({
+          diamond_id: diamond.id,
+          haravan_collection_id: link.haravan_collection_id
+        });
       }
     }
 

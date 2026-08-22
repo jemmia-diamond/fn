@@ -9,7 +9,8 @@ export default class CallbackResultsController {
 
     const isSaveFunction = payload.data_type === Misa.Constants.CALLBACK_TYPE.SAVE_FUNCTION;
     const isPaymentVoucher = [
-      Misa.Constants.VOUCHER_TYPES.MANUAL_PAYMENT, Misa.Constants.VOUCHER_TYPES.QR_PAYMENT
+      Misa.Constants.VOUCHER_TYPES.MANUAL_PAYMENT,
+      Misa.Constants.VOUCHER_TYPES.QR_PAYMENT
     ].includes(firstVoucher.voucher_type);
 
     if (isSaveFunction && isPaymentVoucher) {
@@ -17,5 +18,5 @@ export default class CallbackResultsController {
     }
 
     return ctx.json({ message: "Message receive", status: 200 });
-  };
-};
+  }
+}

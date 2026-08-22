@@ -1,4 +1,3 @@
-
 export const verifyPancakeWebhook = async (ctx, next) => {
   const xRealIP = ctx.req.header("x-real-ip");
   const pancakeAllowedIPs = ctx.env.PANCAKE_ALLOWED_IPS.split(",");

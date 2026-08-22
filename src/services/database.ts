@@ -1,5 +1,5 @@
-import { PrismaClient } from "@prisma-cli";
 import { PrismaPg } from "@prisma/adapter-pg";
+import { PrismaClient } from "@prisma-cli";
 
 // Example usage:
 // const db = Database.instance(c.env);

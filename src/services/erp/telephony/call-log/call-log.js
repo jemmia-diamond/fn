@@ -1,8 +1,8 @@
-import FrappeClient from "src/frappe/frappe-client";
-import VbotClient from "src/telephony/vbot/vbot-client";
-import { normalizeToStandardFormat } from "services/utils/phone-utils";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
+import { normalizeToStandardFormat } from "services/utils/phone-utils";
+import FrappeClient from "src/frappe/frappe-client";
+import VbotClient from "src/telephony/vbot/vbot-client";
 
 dayjs.extend(utc);
 
@@ -82,9 +82,17 @@ export default class CallLogService {
 
     return {
       doctype: this.doctype,
-      id, provider: "vbot",
-      from: normalizeToStandardFormat(from), to: normalizeToStandardFormat(to),
-      start_time, end_time, duration, type, recording_url, agent_id, disposition
+      id,
+      provider: "vbot",
+      from: normalizeToStandardFormat(from),
+      to: normalizeToStandardFormat(to),
+      start_time,
+      end_time,
+      duration,
+      type,
+      recording_url,
+      agent_id,
+      disposition
     };
   };
 }

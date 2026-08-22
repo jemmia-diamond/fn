@@ -1,11 +1,11 @@
+import { Prisma } from "@prisma-cli";
 import * as Sentry from "@sentry/cloudflare";
+import { randomUUID } from "crypto";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
-import { Prisma } from "@prisma-cli";
-import { randomUUID } from "crypto";
 import { mapCustomersToDatabase } from "src/services/erp/selling/customer/utils/customer-mappers";
-import { fetchChildRecordsFromERP } from "src/services/utils/sql-helpers";
-import { escapeSqlValue } from "src/services/utils/sql-helpers";
+import { escapeSqlValue, fetchChildRecordsFromERP } from "src/services/utils/sql-helpers";
+
 dayjs.extend(utc);
 
 const CHUNK_SIZE = 50;
@@ -17,7 +17,7 @@ export async function fetchCustomersFromERP(frappeClient, doctype, fromDate, toD
     if (toDate) {
       filters["modified"] = ["between", [fromDate, toDate]];
     }
-    let allCustomers = [];
+    const allCustomers = [];
     let start = 0;
     let hasMoreData = true;
 
@@ -30,12 +30,13 @@ export async function fetchCustomersFromERP(frappeClient, doctype, fromDate, toD
       });
 
       if (customersBatch?.length) {
-        const customerNames = customersBatch.map(customer => customer.name);
-        const customerCoupons = await fetchChildRecordsFromERP(frappeClient, customerNames, "tabCoupon") || [];
+        const customerNames = customersBatch.map((customer) => customer.name);
+        const customerCoupons =
+          (await fetchChildRecordsFromERP(frappeClient, customerNames, "tabCoupon")) || [];
 
         // group customer coupons by customer name
         const customerCouponsMap = {};
-        customerCoupons.forEach(item => {
+        customerCoupons.forEach((item) => {
           if (!customerCouponsMap[item.parent]) {
             customerCouponsMap[item.parent] = [];
           }
@@ -43,7 +44,7 @@ export async function fetchCustomersFromERP(frappeClient, doctype, fromDate, toD
         });
 
         // add customer coupons to each customer in customersBatch
-        customersBatch.forEach(customer => {
+        customersBatch.forEach((customer) => {
           customer.coupons = customerCouponsMap[customer.name] || [];
         });
 
@@ -73,28 +74,35 @@ export async function saveCustomersToDatabase(db, customers) {
       const chunk = customersData.slice(i, i + CHUNK_SIZE);
 
       // Get fields including both database timestamp columns for INSERT
-      const fields = ["uuid", ...Object.keys(chunk[0]).filter(field =>
-        field !== "database_created_at" && field !== "database_updated_at"
-      ), "database_created_at", "database_updated_at"];
-      const fieldsSql = fields.map(field => `"${field}"`).join(", ");
+      const fields = [
+        "uuid",
+        ...Object.keys(chunk[0]).filter(
+          (field) => field !== "database_created_at" && field !== "database_updated_at"
+        ),
+        "database_created_at",
+        "database_updated_at"
+      ];
+      const fieldsSql = fields.map((field) => `"${field}"`).join(", ");
 
       // Create VALUES clause with generated UUIDs and timestamps
       const currentTimestamp = new Date();
-      const values = chunk.map(customer => {
-        const customerWithTimestamps = {
-          uuid: randomUUID(),
-          ...customer,
-          database_created_at: currentTimestamp,
-          database_updated_at: currentTimestamp
-        };
-        const fieldValues = fields.map(field => escapeSqlValue(customerWithTimestamps[field]));
-        return `(${fieldValues.join(", ")})`;
-      }).join(",\n  ");
+      const values = chunk
+        .map((customer) => {
+          const customerWithTimestamps = {
+            uuid: randomUUID(),
+            ...customer,
+            database_created_at: currentTimestamp,
+            database_updated_at: currentTimestamp
+          };
+          const fieldValues = fields.map((field) => escapeSqlValue(customerWithTimestamps[field]));
+          return `(${fieldValues.join(", ")})`;
+        })
+        .join(",\n  ");
 
       // Create UPDATE SET clause for ON CONFLICT (exclude "name", "uuid", and "database_created_at")
       const updateSetSql = fields
-        .filter(field => field !== "name" && field !== "uuid" && field !== "database_created_at")
-        .map(field => {
+        .filter((field) => field !== "name" && field !== "uuid" && field !== "database_created_at")
+        .map((field) => {
           if (field === "database_updated_at") {
             return `"${field}" = CURRENT_TIMESTAMP`;
           }
@@ -110,7 +118,6 @@ export async function saveCustomersToDatabase(db, customers) {
       `;
       await db.$queryRaw`${Prisma.raw(query)}`;
     }
-
   } catch (error) {
     Sentry.captureException(error);
   }

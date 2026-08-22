@@ -5,8 +5,7 @@ const RETRY_CONFIG = {
   retries: 2,
   retryDelay: axiosRetry.exponentialDelay,
   retryCondition: (error) =>
-    axiosRetry.isNetworkOrIdempotentRequestError(error) ||
-    error.response?.status >= 500
+    axiosRetry.isNetworkOrIdempotentRequestError(error) || error.response?.status >= 500
 };
 
 export default class NocoDBClient {
@@ -121,15 +120,27 @@ export default class NocoDBClient {
   }
 
   async listLinkedRecords(tableId, linkFieldId, recordId, params = {}) {
-    return this.#request("GET", `/api/v2/tables/${tableId}/links/${linkFieldId}/records/${recordId}`, { params });
+    return this.#request(
+      "GET",
+      `/api/v2/tables/${tableId}/links/${linkFieldId}/records/${recordId}`,
+      { params }
+    );
   }
 
   async linkRecords(tableId, linkFieldId, recordId, data) {
-    return this.#request("POST", `/api/v2/tables/${tableId}/links/${linkFieldId}/records/${recordId}`, { data });
+    return this.#request(
+      "POST",
+      `/api/v2/tables/${tableId}/links/${linkFieldId}/records/${recordId}`,
+      { data }
+    );
   }
 
   async unlinkRecords(tableId, linkFieldId, recordId, data) {
-    return this.#request("DELETE", `/api/v2/tables/${tableId}/links/${linkFieldId}/records/${recordId}`, { data });
+    return this.#request(
+      "DELETE",
+      `/api/v2/tables/${tableId}/links/${linkFieldId}/records/${recordId}`,
+      { data }
+    );
   }
 
   async uploadAttachment(params, fileData) {

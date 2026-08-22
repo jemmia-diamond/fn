@@ -15,11 +15,16 @@ export const escapeSqlValue = (value) => {
   return value;
 };
 
-export async function fetchChildRecordsFromERP(frappeClient, parentNames, tableName, additionalConditions = {}) {
+export async function fetchChildRecordsFromERP(
+  frappeClient,
+  parentNames,
+  tableName,
+  additionalConditions = {}
+) {
   if (!Array.isArray(parentNames) || parentNames.length === 0) {
     return [];
   }
-  const quotedNames = parentNames.map(name => `"${name}"`).join(", ");
+  const quotedNames = parentNames.map((name) => `"${name}"`).join(", ");
   let sql = `SELECT * FROM \`${tableName}\` WHERE parent IN (${quotedNames})`;
 
   if (additionalConditions && Object.keys(additionalConditions).length > 0) {
@@ -33,4 +38,4 @@ export async function fetchChildRecordsFromERP(frappeClient, parentNames, tableN
   return childRecords || [];
 }
 
-export const toSqlOrder = (order) => order === "asc" ? Prisma.raw("ASC") : Prisma.raw("DESC");
+export const toSqlOrder = (order) => (order === "asc" ? Prisma.raw("ASC") : Prisma.raw("DESC"));

@@ -1,7 +1,7 @@
-import FrappeClient from "frappe/frappe-client";
-import Database from "services/database";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
+import FrappeClient from "frappe/frappe-client";
+import Database from "services/database";
 
 dayjs.extend(utc);
 
@@ -10,13 +10,11 @@ export default class LeadDemandService {
   constructor(env) {
     this.env = env;
     this.doctype = "Lead Demand";
-    this.frappeClient = new FrappeClient(
-      {
-        url: env.JEMMIA_ERP_BASE_URL,
-        apiKey: env.JEMMIA_ERP_API_KEY,
-        apiSecret: env.JEMMIA_ERP_API_SECRET
-      }
-    );
+    this.frappeClient = new FrappeClient({
+      url: env.JEMMIA_ERP_BASE_URL,
+      apiKey: env.JEMMIA_ERP_API_KEY,
+      apiSecret: env.JEMMIA_ERP_API_SECRET
+    });
     this.db = Database.instance(env);
   }
 
@@ -25,9 +23,7 @@ export default class LeadDemandService {
     const leadDemandService = new LeadDemandService(env);
     const leadDemands = await leadDemandService.frappeClient.getList("Lead Demand", {
       limit_page_length: LeadDemandService.ERPNEXT_PAGE_SIZE,
-      filters: [
-        ["modified", ">=", timeThreshold]
-      ]
+      filters: [["modified", ">=", timeThreshold]]
     });
     if (leadDemands.length > 0) {
       for (const leadDemand of leadDemands) {

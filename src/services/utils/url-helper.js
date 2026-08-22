@@ -10,11 +10,5 @@ export function parseURLParameters(url) {
 }
 
 export function getParam(raw, key, ...sources) {
-  return (
-    raw[key] ||
-    sources.reduce(
-      (acc, params) => acc || params?.get(key),
-      null
-    )
-  );
+  return raw[key] || sources.reduce((acc, params) => acc || params?.get(key), null);
 }

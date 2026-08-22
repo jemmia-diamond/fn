@@ -1,5 +1,6 @@
-import { createMiddleware } from "hono/factory";
 import CryptoJS from "crypto-js";
+import { createMiddleware } from "hono/factory";
+
 const { HmacSHA256, enc } = CryptoJS;
 const Hex = enc.Hex;
 

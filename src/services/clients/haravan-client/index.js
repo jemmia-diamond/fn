@@ -1,10 +1,7 @@
+import ArticleConnector from "services/clients/haravan-client/article";
+import CollectConnector from "services/clients/haravan-client/collect";
+import CustomCollectConnector from "services/clients/haravan-client/collect-custom";
 import CustomerConnector from "services/clients/haravan-client/customer";
-import ProductConnector from "services/clients/haravan-client/product";
-import ProductVariantConnector from "services/clients/haravan-client/product-variant";
-import ProductImageConnector from "services/clients/haravan-client/product-image";
-import OrderConnector from "services/clients/haravan-client/order";
-import RefundOrderConnector from "services/clients/haravan-client/order-refund";
-import TransactionOrderConnector from "services/clients/haravan-client/order-transaction";
 import InventoryAdjustmentConnector from "services/clients/haravan-client/inventory-adjustment";
 import InventoryLocationConnector from "services/clients/haravan-client/inventory-location";
 import InventoryPurchaseOrderConnector from "services/clients/haravan-client/inventory-purchase-order";
@@ -12,12 +9,15 @@ import InventoryPurchaseReceiveConnector from "services/clients/haravan-client/i
 import InventoryPurchaseReturnConnector from "services/clients/haravan-client/inventory-purchase-return";
 import InventoryTransferConnector from "services/clients/haravan-client/inventory-transfer";
 import LocationConnector from "services/clients/haravan-client/location";
-import CollectConnector from "services/clients/haravan-client/collect";
-import CustomCollectConnector from "services/clients/haravan-client/collect-custom";
-import UserConnector from "services/clients/haravan-client/user";
-import ArticleConnector from "services/clients/haravan-client/article";
-import ThemeConnector from "services/clients/haravan-client/theme";
+import OrderConnector from "services/clients/haravan-client/order";
+import RefundOrderConnector from "services/clients/haravan-client/order-refund";
+import TransactionOrderConnector from "services/clients/haravan-client/order-transaction";
+import ProductConnector from "services/clients/haravan-client/product";
+import ProductImageConnector from "services/clients/haravan-client/product-image";
+import ProductVariantConnector from "services/clients/haravan-client/product-variant";
 import PromotionConnector from "services/clients/haravan-client/promotion-connector";
+import ThemeConnector from "services/clients/haravan-client/theme";
+import UserConnector from "services/clients/haravan-client/user";
 
 class HaravanAPI {
   constructor(accessToken) {

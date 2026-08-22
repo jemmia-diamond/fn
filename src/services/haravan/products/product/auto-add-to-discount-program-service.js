@@ -18,7 +18,6 @@ const EXCLUDED_COLLECTION_TITLES = [
 ];
 
 export default class AutoAddToDiscountProgramService {
-
   constructor(env) {
     this.env = env;
   }
@@ -29,7 +28,10 @@ export default class AutoAddToDiscountProgramService {
       const body = message.body;
       const haravanTopic = body.haravan_topic;
 
-      if (haravanTopic === HARAVAN_TOPIC.PRODUCT_UPDATE || haravanTopic === HARAVAN_TOPIC.PRODUCT_CREATED) {
+      if (
+        haravanTopic === HARAVAN_TOPIC.PRODUCT_UPDATE ||
+        haravanTopic === HARAVAN_TOPIC.PRODUCT_CREATED
+      ) {
         await service.processProduct(body);
       }
     }
@@ -39,22 +41,26 @@ export default class AutoAddToDiscountProgramService {
     const variants = product.variants || [];
 
     // Check for Diamond
-    const isDiamond = variants.length > 0 && variants.some(variant => {
-      const sku = variant.sku || "";
-      const title = variant.title || "";
-      const skuParts = sku.split("-");
-      const isSkuValid = skuParts.length === 2 && skuParts[1].startsWith("GIA");
-      return isSkuValid || title.startsWith("GIA");
-    });
+    const isDiamond =
+      variants.length > 0 &&
+      variants.some((variant) => {
+        const sku = variant.sku || "";
+        const title = variant.title || "";
+        const skuParts = sku.split("-");
+        const isSkuValid = skuParts.length === 2 && skuParts[1].startsWith("GIA");
+        return isSkuValid || title.startsWith("GIA");
+      });
 
     if (isDiamond) {
       await this.addToDiamondCollection(product.id);
     } else {
       // Check for Jewelry
-      const isJewelry = variants.length > 0 && variants.some(variant => {
-        const sku = variant.sku || "";
-        return sku.length === SKU_LENGTH.JEWELRY;
-      });
+      const isJewelry =
+        variants.length > 0 &&
+        variants.some((variant) => {
+          const sku = variant.sku || "";
+          return sku.length === SKU_LENGTH.JEWELRY;
+        });
 
       if (isJewelry && product.product_type.trim() !== HRV_PRODUCT_TYPE.PLAIN_CHAIN) {
         await this.addToJewelryCollection(product.id);
@@ -172,7 +178,7 @@ export default class AutoAddToDiscountProgramService {
       where: `(haravan_product_id,eq,${haravanProductId})`,
       fields: "id"
     });
-    const variantIds = variantsRes.list?.map(v => v.id) || [];
+    const variantIds = variantsRes.list?.map((v) => v.id) || [];
 
     if (variantIds.length === 0) {
       return false;
@@ -182,7 +188,7 @@ export default class AutoAddToDiscountProgramService {
       where: `(variant_id,in,${variantIds.join(",")})`,
       fields: "id"
     });
-    const serialIds = serialsRes.list?.map(s => s.id) || [];
+    const serialIds = serialsRes.list?.map((s) => s.id) || [];
 
     if (serialIds.length === 0) {
       return false;

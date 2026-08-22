@@ -83,7 +83,7 @@ export default class InventoryItemMappingService {
       barcode
     } = haravanItem;
 
-    const category = this.#getCategory(sku);
+    const category = InventoryItemMappingService.#getCategory(sku);
     const syncMessage = `SP được đồng bộ vào ngày (múi giờ 0+): ${currentTime}`;
     const itemName = `${productTitle} - ${variantTitle}`;
     const description = `${productTitle}. Variant name: ${variantTitle}. ${syncMessage}`;

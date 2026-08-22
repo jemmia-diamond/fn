@@ -7,10 +7,7 @@ export default class ZNSMessageService {
   }
 
   _generateHash(data, secret) {
-    return crypto
-      .createHmac("sha256", secret)
-      .update(data)
-      .digest("hex");
+    return crypto.createHmac("sha256", secret).update(data).digest("hex");
   }
 
   _generateRequestId() {
@@ -56,7 +53,9 @@ export default class ZNSMessageService {
       const data = text ? JSON.parse(text) : null;
 
       if (!response.ok) {
-        Sentry.captureException(new Error(`Zalo API request failed: ${response.status} - ${JSON.stringify(data)}`));
+        Sentry.captureException(
+          new Error(`Zalo API request failed: ${response.status} - ${JSON.stringify(data)}`)
+        );
         throw new Error(`Zalo API error: ${text}`);
       }
 

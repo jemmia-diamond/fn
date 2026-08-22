@@ -1,7 +1,7 @@
-import FrappeClient from "frappe/frappe-client";
-import Database from "services/database";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
+import FrappeClient from "frappe/frappe-client";
+import Database from "services/database";
 
 dayjs.extend(utc);
 
@@ -10,13 +10,11 @@ export default class ProductCategoryService {
   constructor(env) {
     this.env = env;
     this.doctype = "Product Category";
-    this.frappeClient = new FrappeClient(
-      {
-        url: env.JEMMIA_ERP_BASE_URL,
-        apiKey: env.JEMMIA_ERP_API_KEY,
-        apiSecret: env.JEMMIA_ERP_API_SECRET
-      }
-    );
+    this.frappeClient = new FrappeClient({
+      url: env.JEMMIA_ERP_BASE_URL,
+      apiKey: env.JEMMIA_ERP_API_KEY,
+      apiSecret: env.JEMMIA_ERP_API_SECRET
+    });
     this.db = Database.instance(env);
   }
 
@@ -28,13 +26,14 @@ export default class ProductCategoryService {
     let page = 1;
     const pageSize = ProductCategoryService.ERPNEXT_PAGE_SIZE;
     while (true) {
-      const result = await productCategoryService.frappeClient.getList(productCategoryService.doctype, {
-        limit_start: (page - 1) * pageSize,
-        limit_page_length: pageSize,
-        filters: [
-          ["modified", ">=", timeThreshold]
-        ]
-      });
+      const result = await productCategoryService.frappeClient.getList(
+        productCategoryService.doctype,
+        {
+          limit_start: (page - 1) * pageSize,
+          limit_page_length: pageSize,
+          filters: [["modified", ">=", timeThreshold]]
+        }
+      );
       productCategories = productCategories.concat(result);
       if (result.length < pageSize) break;
       page++;

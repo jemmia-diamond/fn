@@ -1,8 +1,8 @@
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import Database from "services/database";
-import { TABLES, SERIAL_NUMBERS_FIELDS } from "services/larksuite/docs/constant";
 import RecordService from "services/larksuite/docs/base/record/record";
+import { SERIAL_NUMBERS_FIELDS, TABLES } from "services/larksuite/docs/constant";
 
 dayjs.extend(utc);
 
@@ -55,8 +55,8 @@ export default class SerialSyncService {
 
     for (let i = 0; i < serials.length; i += BATCH_SIZE) {
       const batch = serials.slice(i, i + BATCH_SIZE);
-      const serialIds = batch.map(item => String(item.id));
-      const conditions = serialIds.map(id => ({
+      const serialIds = batch.map((item) => String(item.id));
+      const conditions = serialIds.map((id) => ({
         field_name: "id",
         operator: "is",
         value: [id]
@@ -124,7 +124,7 @@ export default class SerialSyncService {
   }
 
   async _createLarkRecords(serials) {
-    const records = serials.map(serial => this._composeLarkRecord(serial));
+    const records = serials.map((serial) => this._composeLarkRecord(serial));
 
     for (let i = 0; i < records.length; i += LARK_BATCH_SIZE) {
       const chunk = records.slice(i, i + LARK_BATCH_SIZE);
@@ -138,7 +138,7 @@ export default class SerialSyncService {
   }
 
   async _updateLarkRecords(serials) {
-    const records = serials.map(serial => ({
+    const records = serials.map((serial) => ({
       record_id: serial.lark_record_id,
       ...this._composeLarkRecord(serial)
     }));

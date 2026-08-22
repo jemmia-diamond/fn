@@ -1,12 +1,12 @@
-import * as lark from "@larksuiteoapi/node-sdk";
 import { createFetchAdapter } from "@haverstack/axios-fetch-adapter";
+import * as lark from "@larksuiteoapi/node-sdk";
 import { createAxiosClient, DEFAULT_RETRY_CONFIG } from "services/utils/http-client";
+
 const fetchAdapter = createFetchAdapter();
 let clientV2Instance = null;
 export const LARK_WIKI_URL = "https://jemmiadiamond.sg.larksuite.com/wiki";
 
 export default class LarksuiteService {
-
   static async _getCredentials(env) {
     const appId = env.LARK_APP_ID;
     const appSecret = env.LARK_APP_SECRET;
@@ -19,7 +19,7 @@ export default class LarksuiteService {
       return clientV2Instance;
     }
 
-    const { appId, appSecret } = await this._getCredentials(env);
+    const { appId, appSecret } = await LarksuiteService._getCredentials(env);
     const larkApiEndpoint = env.LARK_API_ENDPOINT || "https://open.larksuite.com";
 
     clientV2Instance = new lark.Client({
@@ -32,20 +32,23 @@ export default class LarksuiteService {
   }
 
   static async createLarkAxiosClient(env, token) {
-    const client = createAxiosClient({
-      baseURL: env.LARK_API_ENDPOINT,
-      timeout: 15000,
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    }, { ...DEFAULT_RETRY_CONFIG, retries: 6 });
+    const client = createAxiosClient(
+      {
+        baseURL: env.LARK_API_ENDPOINT,
+        timeout: 15000,
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      },
+      { ...DEFAULT_RETRY_CONFIG, retries: 6 }
+    );
     client.defaults.adapter = fetchAdapter;
     return client;
   }
 
   static async getTenantAccessToken(env) {
     const larkClient = await LarksuiteService.createClientV2(env);
-    const { appId, appSecret } = await this._getCredentials(env);
+    const { appId, appSecret } = await LarksuiteService._getCredentials(env);
 
     const res = await larkClient.auth.tenantAccessToken.internal({
       data: {
@@ -77,7 +80,7 @@ export default class LarksuiteService {
   }
 
   static async getUserInfo(env, userId) {
-    const client = await this.createClientV2(env);
+    const client = await LarksuiteService.createClientV2(env);
     const res = await client.contact.user.get({
       path: {
         user_id: userId
@@ -88,4 +91,4 @@ export default class LarksuiteService {
     });
     return res.data?.user;
   }
-};
+}

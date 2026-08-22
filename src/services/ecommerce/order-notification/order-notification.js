@@ -1,9 +1,9 @@
-import LarksuiteService from "services/larksuite/lark";
-import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/constant";
 import { HARAVAN_TOPIC } from "services/ecommerce/enum";
-import { stringSquish } from "services/utils/string-helper";
+import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/constant";
+import LarksuiteService from "services/larksuite/lark";
 import { numberToCurrency } from "services/utils/number-helper";
-import { isTestOrder, isReorder } from "services/utils/order-intercepter";
+import { isReorder, isTestOrder } from "services/utils/order-intercepter";
+import { stringSquish } from "services/utils/string-helper";
 
 export default class OrderNotificationService {
   static WHITELIST_SOURCES = ["web"];
@@ -34,7 +34,7 @@ export default class OrderNotificationService {
   }
 
   buildOrderMessage(orderData) {
-    const products = orderData.line_items.map(item => item.title);
+    const products = orderData.line_items.map((item) => item.title);
 
     return stringSquish(`
       [🔥NEW ORDER FROM WEB🔥]

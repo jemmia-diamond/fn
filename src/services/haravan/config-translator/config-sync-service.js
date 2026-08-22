@@ -9,7 +9,7 @@ import { getOpenAICompatibleModel } from "services/utils/llm-helper";
 import { retryQuery } from "services/utils/retry-utils";
 import { sleep } from "services/utils/sleep";
 
-import { TRANSLATION_PROMPTS, AI_MODELS } from "src/constants/ai-proxy";
+import { AI_MODELS, TRANSLATION_PROMPTS } from "src/constants/ai-proxy";
 
 export default class ConfigTranslatorService {
   static CONFIG = {
@@ -26,7 +26,9 @@ export default class ConfigTranslatorService {
 
   async fetchHaravanConfig(haravanClient) {
     return retryQuery(async () => {
-      const response = await haravanClient.theme.getAssets(this.env.HARAVAN_THEME_ID, { "asset[key]": "config/settings_data.json" });
+      const response = await haravanClient.theme.getAssets(this.env.HARAVAN_THEME_ID, {
+        "asset[key]": "config/settings_data.json"
+      });
       return response;
     });
   }
@@ -49,10 +51,7 @@ export default class ConfigTranslatorService {
   }
 
   async saveSnapshotToKV(config) {
-    await this.env.FN_KV.put(
-      ConfigTranslatorService.CONFIG.KV_KEY,
-      JSON.stringify(config)
-    );
+    await this.env.FN_KV.put(ConfigTranslatorService.CONFIG.KV_KEY, JSON.stringify(config));
   }
 
   findChangedKeys(currentConfig, previousConfig) {
@@ -110,7 +109,8 @@ export default class ConfigTranslatorService {
 
   isVietnameseText(value) {
     if (typeof value !== "string" || value.trim().length === 0) return false;
-    const viRegex = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸĐ]/;
+    const viRegex =
+      /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸĐ]/;
     return viRegex.test(value);
   }
 
@@ -147,7 +147,7 @@ export default class ConfigTranslatorService {
     return retryQuery(async () => {
       const newUrl = await imageService.translateImage(imageUrl, this.env);
       return typeof newUrl === "string" ? newUrl : imageUrl;
-    }).catch(error => {
+    }).catch((error) => {
       Sentry.captureException(error, {
         extra: { imageUrl, action: "translateImageUrl" }
       });
@@ -172,8 +172,11 @@ export default class ConfigTranslatorService {
   isPathChanged(currentPath, changedPaths, allKeys) {
     if (allKeys) return true;
     if (changedPaths.length === 0) return false;
-    return changedPaths.some(changedPath =>
-      currentPath === changedPath || currentPath.startsWith(changedPath + ".") || changedPath.startsWith(currentPath + ".")
+    return changedPaths.some(
+      (changedPath) =>
+        currentPath === changedPath ||
+        currentPath.startsWith(changedPath + ".") ||
+        changedPath.startsWith(currentPath + ".")
     );
   }
 
@@ -204,9 +207,16 @@ export default class ConfigTranslatorService {
 
     collectTranslations(translatedConfig);
 
-    for (let i = 0; i < translationTasks.length; i += ConfigTranslatorService.CONFIG.TRANSLATION_CONCURRENCY) {
-      const batch = translationTasks.slice(i, i + ConfigTranslatorService.CONFIG.TRANSLATION_CONCURRENCY);
-      await Promise.all(batch.map(task => task()));
+    for (
+      let i = 0;
+      i < translationTasks.length;
+      i += ConfigTranslatorService.CONFIG.TRANSLATION_CONCURRENCY
+    ) {
+      const batch = translationTasks.slice(
+        i,
+        i + ConfigTranslatorService.CONFIG.TRANSLATION_CONCURRENCY
+      );
+      await Promise.all(batch.map((task) => task()));
       await sleep(ConfigTranslatorService.CONFIG.API_REQUEST_DELAY);
     }
 
@@ -246,9 +256,16 @@ export default class ConfigTranslatorService {
         return;
       }
 
-      console.warn(`Detected ${allKeys ? "all keys (first run)" : changedPaths.length + " changed keys"}, starting translation...`);
+      console.warn(
+        `Detected ${allKeys ? "all keys (first run)" : changedPaths.length + " changed keys"}, starting translation...`
+      );
 
-      const translatedConfig = await this.applyTranslations(currentConfig, changedPaths, allKeys, imageService);
+      const translatedConfig = await this.applyTranslations(
+        currentConfig,
+        changedPaths,
+        allKeys,
+        imageService
+      );
 
       const translatedValue = JSON.stringify(translatedConfig, null, 2);
 

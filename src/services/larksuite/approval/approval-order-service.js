@@ -34,7 +34,7 @@ export default class ApprovalOrderService {
   }
 
   mapOrdersToOptions(orders) {
-    const options = orders.map(order => {
+    const options = orders.map((order) => {
       const id = order.order_number;
       const value = order.order_number;
       return {
@@ -45,10 +45,10 @@ export default class ApprovalOrderService {
     });
 
     const texts = {};
-    orders.forEach(order => {
+    orders.forEach((order) => {
       const key = order.order_number;
 
-      let label = order.order_number;
+      const label = order.order_number;
 
       texts[key] = label;
     });

@@ -1,10 +1,11 @@
-import { DebounceService } from "src/durable-objects/debounce/debounce-service";
 import { DebounceActions } from "src/durable-objects/debounce/debounce-action";
+import { DebounceService } from "src/durable-objects/debounce/debounce-service";
 
 export default class FrappeERPSalesOrderController {
   static async create(ctx) {
     const data = await ctx.req.json();
-    const salesOrders = data.sales_orders && Array.isArray(data.sales_orders) ? data.sales_orders : [data];
+    const salesOrders =
+      data.sales_orders && Array.isArray(data.sales_orders) ? data.sales_orders : [data];
 
     for (const order of salesOrders) {
       await DebounceService.debounce({

@@ -218,8 +218,6 @@ export default class MessageManagementConnector extends LarkBaseClient {
    * @returns {object} Cleaned parameters
    */
   _cleanParams(params) {
-    return Object.fromEntries(
-      Object.entries(params).filter(([_, value]) => value != null)
-    );
+    return Object.fromEntries(Object.entries(params).filter(([_, value]) => value != null));
   }
 }

@@ -1,6 +1,6 @@
+import * as Sentry from "@sentry/cloudflare";
 import Database from "services/database";
 import { BadRequestException } from "src/exception/exceptions";
-import * as Sentry from "@sentry/cloudflare";
 
 export default class JewelryDiamondPairService {
   constructor(env) {
@@ -182,7 +182,10 @@ export default class JewelryDiamondPairService {
       haravan_diamond_variant_id
     } = body;
 
-    const isOutOfStock = await this.isDiamondOutOfStock(haravan_diamond_product_id, haravan_diamond_variant_id);
+    const isOutOfStock = await this.isDiamondOutOfStock(
+      haravan_diamond_product_id,
+      haravan_diamond_variant_id
+    );
     if (!isOutOfStock) {
       throw new BadRequestException("Diamond is not out of stock. No action taken.");
     }

@@ -1,8 +1,8 @@
-import Database from "services/database";
-import FrappeClient from "frappe/frappe-client";
+import * as Sentry from "@sentry/cloudflare";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
-import * as Sentry from "@sentry/cloudflare";
+import FrappeClient from "frappe/frappe-client";
+import Database from "services/database";
 
 dayjs.extend(utc);
 
@@ -11,13 +11,11 @@ export default class EmployeeService {
   constructor(env) {
     this.env = env;
     this.doctype = "Employee";
-    this.frappeClient = new FrappeClient(
-      {
-        url: env.JEMMIA_ERP_BASE_URL,
-        apiKey: env.JEMMIA_ERP_API_KEY,
-        apiSecret: env.JEMMIA_ERP_API_SECRET
-      }
-    );
+    this.frappeClient = new FrappeClient({
+      url: env.JEMMIA_ERP_BASE_URL,
+      apiKey: env.JEMMIA_ERP_API_KEY,
+      apiSecret: env.JEMMIA_ERP_API_SECRET
+    });
     this.db = Database.instance(env);
   }
 
@@ -33,9 +31,7 @@ export default class EmployeeService {
         const result = await employeeService.frappeClient.getList(employeeService.doctype, {
           limit_start: (page - 1) * pageSize,
           limit_page_length: pageSize,
-          filters: [
-            ["modified", ">=", timeThreshold]
-          ]
+          filters: [["modified", ">=", timeThreshold]]
         });
         employees = employees.concat(result);
         if (result.length < pageSize) break;

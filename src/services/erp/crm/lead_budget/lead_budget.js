@@ -1,7 +1,7 @@
-import FrappeClient from "frappe/frappe-client";
-import Database from "services/database";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
+import FrappeClient from "frappe/frappe-client";
+import Database from "services/database";
 
 dayjs.extend(utc);
 
@@ -10,13 +10,11 @@ export default class LeadBudgetService {
   constructor(env) {
     this.env = env;
     this.doctype = "Lead Budget";
-    this.frappeClient = new FrappeClient(
-      {
-        url: env.JEMMIA_ERP_BASE_URL,
-        apiKey: env.JEMMIA_ERP_API_KEY,
-        apiSecret: env.JEMMIA_ERP_API_SECRET
-      }
-    );
+    this.frappeClient = new FrappeClient({
+      url: env.JEMMIA_ERP_BASE_URL,
+      apiKey: env.JEMMIA_ERP_API_KEY,
+      apiSecret: env.JEMMIA_ERP_API_SECRET
+    });
     this.db = Database.instance(env);
   }
 
@@ -25,9 +23,7 @@ export default class LeadBudgetService {
     const leadBudgetService = new LeadBudgetService(env);
     const leadBudgets = await leadBudgetService.frappeClient.getList("Lead Budget", {
       limit_page_length: LeadBudgetService.ERPNEXT_PAGE_SIZE,
-      filters: [
-        ["modified", ">=", timeThreshold]
-      ]
+      filters: [["modified", ">=", timeThreshold]]
     });
     if (leadBudgets.length > 0) {
       for (const leadBudget of leadBudgets) {

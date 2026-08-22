@@ -8,10 +8,7 @@ export default class ShieldEventService {
     let eventBody = body;
 
     if (body.encrypt) {
-      const decryptedData = await JemmiaShieldLarkService.decryptEvent(
-        env,
-        body.encrypt
-      );
+      const decryptedData = await JemmiaShieldLarkService.decryptEvent(env, body.encrypt);
       eventBody = JSON.parse(decryptedData);
     }
 
@@ -21,15 +18,15 @@ export default class ShieldEventService {
 
     if (eventBody.header?.event_type === "im.message.receive_v1") {
       const eventId = eventBody.header.event_id;
-      if (eventId && this.processedEvents.has(eventId)) {
+      if (eventId && ShieldEventService.processedEvents.has(eventId)) {
         return { type: "text", content: "OK", status: 200 };
       }
 
       if (eventId) {
-        this.processedEvents.add(eventId);
+        ShieldEventService.processedEvents.add(eventId);
         setTimeout(
           () => {
-            this.processedEvents.delete(eventId);
+            ShieldEventService.processedEvents.delete(eventId);
           },
           5 * 60 * 1000
         );
@@ -37,10 +34,7 @@ export default class ShieldEventService {
 
       executionCtx.waitUntil(
         (async () => {
-          await ShieldMessageService.detectSensitiveInfoAndMask(
-            env,
-            eventBody.event
-          );
+          await ShieldMessageService.detectSensitiveInfoAndMask(env, eventBody.event);
         })()
       );
     }

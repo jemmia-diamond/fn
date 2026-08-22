@@ -1,8 +1,8 @@
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import Database from "services/database";
-import { TABLES, VARIANTS_V2_FIELDS } from "services/larksuite/docs/constant";
 import RecordService from "services/larksuite/docs/base/record/record";
+import { TABLES, VARIANTS_V2_FIELDS } from "services/larksuite/docs/constant";
 
 dayjs.extend(utc);
 
@@ -56,8 +56,8 @@ export default class VariantSyncService {
 
     for (let i = 0; i < variants.length; i += BATCH_SIZE) {
       const batch = variants.slice(i, i + BATCH_SIZE);
-      const variantIds = batch.map(item => String(item.variant_id));
-      const conditions = variantIds.map(vid => ({
+      const variantIds = batch.map((item) => String(item.variant_id));
+      const conditions = variantIds.map((vid) => ({
         field_name: "variant_id",
         operator: "is",
         value: [vid]
@@ -125,7 +125,7 @@ export default class VariantSyncService {
   }
 
   async _createLarkRecords(variants) {
-    const records = variants.map(variant => this._composeLarkRecord(variant));
+    const records = variants.map((variant) => this._composeLarkRecord(variant));
 
     for (let i = 0; i < records.length; i += LARK_BATCH_SIZE) {
       const chunk = records.slice(i, i + LARK_BATCH_SIZE);
@@ -139,7 +139,7 @@ export default class VariantSyncService {
   }
 
   async _updateLarkRecords(variants) {
-    const records = variants.map(variant => ({
+    const records = variants.map((variant) => ({
       record_id: variant.lark_record_id,
       ...this._composeLarkRecord(variant)
     }));

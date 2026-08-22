@@ -1,16 +1,16 @@
 // TODO: Make this import dynamic, so that we can add new controllers without repeating ourselves.
 import AIHubWebhook from "controllers/webhook/ai-hub";
-import HaravanWebhook from "controllers/webhook/haravan";
 import FrappeWebhook from "controllers/webhook/frappe";
-import PancakeWebhook from "controllers/webhook/pancake";
-import InventoryCmsWebhook from "controllers/webhook/inventory-cms";
-import ZaloMessageWebhook from "controllers/webhook/zalo-message";
-import MisaWebhook from "controllers/webhook/misa";
-import SepayWebhook from "controllers/webhook/sepay";
-import NocoWebhook from "controllers/webhook/nocodb";
-import ZalopayTransactionWebhook from "controllers/webhook/zalopay-transaction";
-import LarkWebhook from "controllers/webhook/lark";
+import HaravanWebhook from "controllers/webhook/haravan";
 import InfisicalWebhook from "controllers/webhook/infisical";
+import InventoryCmsWebhook from "controllers/webhook/inventory-cms";
+import LarkWebhook from "controllers/webhook/lark";
+import MisaWebhook from "controllers/webhook/misa";
+import NocoWebhook from "controllers/webhook/nocodb";
+import PancakeWebhook from "controllers/webhook/pancake";
+import SepayWebhook from "controllers/webhook/sepay";
+import ZaloMessageWebhook from "controllers/webhook/zalo-message";
+import ZalopayTransactionWebhook from "controllers/webhook/zalopay-transaction";
 
 export default class WebhookRoutes {
   static register(webhook) {
@@ -30,5 +30,5 @@ export default class WebhookRoutes {
     ZalopayTransactionWebhook.register(webhook);
     LarkWebhook.register(webhook);
     InfisicalWebhook.register(webhook);
-  };
-};
+  }
+}

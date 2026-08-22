@@ -8,7 +8,7 @@ export default class BaseClient {
         baseURL: env.HARAVAN_API_BASE_URL,
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${env.HARAVAN_TOKEN}`
+          Authorization: `Bearer ${env.HARAVAN_TOKEN}`
         }
       },
       {

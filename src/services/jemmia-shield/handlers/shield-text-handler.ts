@@ -9,25 +9,13 @@ export default class ShieldMessageHandler {
 
     if (await ShieldPresidioService.detectSensitiveInfo(env, text)) {
       const senderId = event.sender.sender_id.open_id;
-      const maskedText = await ShieldPresidioService.maskSensitiveInfo(
-        env,
-        text
-      );
+      const maskedText = await ShieldPresidioService.maskSensitiveInfo(env, text);
 
       const mentions = event.message.mentions || [];
-      const cardMaskedText = ShieldUtils.resolveMentionsForCard(
-        maskedText,
-        mentions
-      );
+      const cardMaskedText = ShieldUtils.resolveMentionsForCard(maskedText, mentions);
 
-      const viewOriginalText = ShieldUtils.resolveMentionsAndStyleForView(
-        text,
-        mentions
-      );
-      const viewMaskedText = ShieldUtils.resolveMentionsAndStyleForView(
-        maskedText,
-        mentions
-      );
+      const viewOriginalText = ShieldUtils.resolveMentionsAndStyleForView(text, mentions);
+      const viewMaskedText = ShieldUtils.resolveMentionsAndStyleForView(maskedText, mentions);
 
       const randomId = ShieldUtils.generateRandomId();
       const formattedText = ShieldUtils.formatTextForLarkMd(cardMaskedText);
@@ -63,10 +51,7 @@ export default class ShieldMessageHandler {
         cardContent
       );
 
-      await JemmiaShieldLarkService.recallMessage(
-        env,
-        event.message.message_id
-      );
+      await JemmiaShieldLarkService.recallMessage(env, event.message.message_id);
     }
   }
 }

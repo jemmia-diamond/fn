@@ -36,8 +36,12 @@ export default class OrderMapper {
       cart_token: order.cart_token,
       checkout_token: order.checkout_token,
       client_details_accept_language: clientDetails.accept_language,
-      client_details_browser_height: clientDetails.browser_height ? BigInt(clientDetails.browser_height) : null,
-      client_details_browser_width: clientDetails.browser_width ? BigInt(clientDetails.browser_width) : null,
+      client_details_browser_height: clientDetails.browser_height
+        ? BigInt(clientDetails.browser_height)
+        : null,
+      client_details_browser_width: clientDetails.browser_width
+        ? BigInt(clientDetails.browser_width)
+        : null,
       client_details_session_hash: clientDetails.session_hash,
       client_details_user_agent: clientDetails.user_agent,
       client_details_browser_ip: clientDetails.browser_ip,
@@ -66,8 +70,12 @@ export default class OrderMapper {
       customer_group_name: customer.group_name,
       customer_birthday: customer.birthday,
       customer_gender: String(customer?.gender) || null,
-      customer_last_order_date: customer.last_order_date ? dayjs(customer.last_order_date).toDate() : null,
-      customer_default_address_id: customerDefaultAddress.id ? BigInt(customerDefaultAddress.id) : null,
+      customer_last_order_date: customer.last_order_date
+        ? dayjs(customer.last_order_date).toDate()
+        : null,
+      customer_default_address_id: customerDefaultAddress.id
+        ? BigInt(customerDefaultAddress.id)
+        : null,
       customer_default_address_address1: customerDefaultAddress.address1,
       customer_default_address_address2: customerDefaultAddress.address2,
       customer_default_address_city: customerDefaultAddress.city,
@@ -137,8 +145,12 @@ export default class OrderMapper {
       confirmed_status: order.confirmed_status,
       assigned_location_id: order.assigned_location_id ? BigInt(order.assigned_location_id) : null,
       assigned_location_name: order.assigned_location_name,
-      assigned_location_at: order.assigned_location_at ? dayjs(order.assigned_location_at).toDate() : null,
-      exported_confirm_at: order.exported_confirm_at ? dayjs(order.exported_confirm_at).toDate() : null,
+      assigned_location_at: order.assigned_location_at
+        ? dayjs(order.assigned_location_at).toDate()
+        : null,
+      exported_confirm_at: order.exported_confirm_at
+        ? dayjs(order.exported_confirm_at).toDate()
+        : null,
       user_id: order.user_id ? BigInt(order.user_id) : null,
       device_id: order.device_id ? BigInt(order.device_id) : null,
       location_id: order.location_id ? BigInt(order.location_id) : null,

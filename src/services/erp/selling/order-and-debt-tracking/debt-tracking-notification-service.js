@@ -1,12 +1,12 @@
-import FrappeClient from "src/frappe/frappe-client";
-import Database from "services/database";
-import LarksuiteService from "services/larksuite/lark";
-import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/constant";
 import dayjs from "dayjs";
-import utc from "dayjs/plugin/utc.js";
 import timezone from "dayjs/plugin/timezone.js";
-import { TIMEZONE_VIETNAM } from "src/constants";
+import utc from "dayjs/plugin/utc.js";
+import Database from "services/database";
+import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/constant";
+import LarksuiteService from "services/larksuite/lark";
 import { stringSquishLarkMessage } from "services/utils/string-helper";
+import { TIMEZONE_VIETNAM } from "src/constants";
+import FrappeClient from "src/frappe/frappe-client";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -99,7 +99,7 @@ export default class DebtTrackingNotificationService {
     let ctCount = 0;
     let otherCount = 0;
 
-    orders.forEach(order => {
+    orders.forEach((order) => {
       const address = order.billing_address || "";
       if (address.includes("72 Nguyễn Cư Trinh")) hcmCount++;
       else if (address.includes("63 Kim Mã")) hnCount++;
@@ -114,7 +114,9 @@ export default class DebtTrackingNotificationService {
     });
 
     const adminTags = {};
-    users.forEach(u => { adminTags[u.enterprise_email] = `<at id="${u.user_id}"></at>`; });
+    users.forEach((u) => {
+      adminTags[u.enterprise_email] = `<at id="${u.user_id}"></at>`;
+    });
 
     const hcmTag = adminTags["trinh.ngo@jemmia.vn"];
     const hnTag = adminTags["hue.phan@jemmia.vn"];
@@ -122,8 +124,14 @@ export default class DebtTrackingNotificationService {
     const allTags = `${hcmTag} ${hnTag} ${ctTag}`;
 
     return {
-      hcmCount, hnCount, ctCount, otherCount,
-      hcmTag, hnTag, ctTag, allTags
+      hcmCount,
+      hnCount,
+      ctCount,
+      otherCount,
+      hcmTag,
+      hnTag,
+      ctTag,
+      allTags
     };
   }
 

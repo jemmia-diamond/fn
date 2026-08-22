@@ -1,7 +1,7 @@
 import Ecommerce from "services/ecommerce";
-import { API_CONFIG } from "src/controllers/ecommerce/constant";
 import { validateParams } from "services/ecommerce/product/utils/validation";
 import { splitParams } from "services/utils/param-helper";
+import { API_CONFIG } from "src/controllers/ecommerce/constant";
 
 export default class WeddingRingController {
   static async index(ctx) {
@@ -15,10 +15,7 @@ export default class WeddingRingController {
         ),
         limit: Math.min(
           API_CONFIG.MAX_LIMIT,
-          Math.max(
-            1,
-            params.limit ? Number(params.limit) : API_CONFIG.DEFAULT_LIMIT
-          )
+          Math.max(1, params.limit ? Number(params.limit) : API_CONFIG.DEFAULT_LIMIT)
         )
       },
       fineness: splitParams(params.fineness),

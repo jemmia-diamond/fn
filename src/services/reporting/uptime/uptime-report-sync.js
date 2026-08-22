@@ -1,9 +1,9 @@
+import * as Sentry from "@sentry/cloudflare";
+import dayjs from "dayjs";
+import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
+import utc from "dayjs/plugin/utc";
 import UptimeRobotClient from "services/clients/uptimerobot-client";
 import Database from "services/database";
-import dayjs from "dayjs";
-import utc from "dayjs/plugin/utc";
-import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
-import * as Sentry from "@sentry/cloudflare";
 
 dayjs.extend(utc);
 dayjs.extend(isSameOrBefore);
@@ -33,7 +33,7 @@ export default class UptimeReportSyncService {
       throw new Error(`No monitors found at ${endDate}`);
     }
 
-    const targetMonitors = monitorIds || allMonitors.map(m => m.id);
+    const targetMonitors = monitorIds || allMonitors.map((m) => m.id);
     const dates = [];
     let iterDate = startDate;
 
@@ -72,7 +72,10 @@ export default class UptimeReportSyncService {
     const endTimestamp = dayjs(date).endOf("day").unix();
 
     const response = await this.client.getMonitors(
-      monitorIds, LOGS_LIMIT, DEFAULT_LOG_TYPE, `${startTimestamp}_${endTimestamp}`
+      monitorIds,
+      LOGS_LIMIT,
+      DEFAULT_LOG_TYPE,
+      `${startTimestamp}_${endTimestamp}`
     );
 
     const reports = [];

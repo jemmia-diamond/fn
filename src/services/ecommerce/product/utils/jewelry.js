@@ -42,7 +42,7 @@ export function aggregateQuery(jsonParams) {
   let sortedColumn = "p.max_price_18";
   let collectionJoinEcomProductsClause = "";
   let havingSql = Prisma.empty;
-  let linkedCollectionJoinEcomProductsClause = "";
+  const linkedCollectionJoinEcomProductsClause = "";
   let needsP2Join = false;
   let warehouseJoinClause = "";
   if (jsonParams.is_in_stock) {
@@ -91,7 +91,9 @@ export function aggregateQuery(jsonParams) {
   }
 
   if (jsonParams.genders && jsonParams.genders.length > 0) {
-    filterClauses.push(Prisma.sql`AND (p.gender = ANY(${jsonParams.genders}) OR p.gender IS NULL OR p.gender = '')\n`);
+    filterClauses.push(
+      Prisma.sql`AND (p.gender = ANY(${jsonParams.genders}) OR p.gender IS NULL OR p.gender = '')\n`
+    );
   }
 
   if (jsonParams.design_tags && jsonParams.design_tags.length > 0) {
@@ -99,7 +101,7 @@ export function aggregateQuery(jsonParams) {
   }
 
   if (jsonParams.design_ids && jsonParams.design_ids.length > 0) {
-    const designIds = jsonParams.design_ids.map(id => BigInt(id));
+    const designIds = jsonParams.design_ids.map((id) => BigInt(id));
     filterClauses.push(Prisma.sql`AND p.design_id = ANY(${designIds})\n`);
   }
 
@@ -122,11 +124,15 @@ export function aggregateQuery(jsonParams) {
   }
 
   if (jsonParams.excluded_ring_head_styles && jsonParams.excluded_ring_head_styles.length > 0) {
-    filterClauses.push(buildExcludedRingStyleFilter("p.ring_head_style", jsonParams.excluded_ring_head_styles));
+    filterClauses.push(
+      buildExcludedRingStyleFilter("p.ring_head_style", jsonParams.excluded_ring_head_styles)
+    );
   }
 
   if (jsonParams.excluded_ring_band_styles && jsonParams.excluded_ring_band_styles.length > 0) {
-    filterClauses.push(buildExcludedRingStyleFilter("p.ring_band_style", jsonParams.excluded_ring_band_styles));
+    filterClauses.push(
+      buildExcludedRingStyleFilter("p.ring_band_style", jsonParams.excluded_ring_band_styles)
+    );
   }
 
   const order = toSqlOrder(jsonParams.sort?.order);
@@ -134,7 +140,8 @@ export function aggregateQuery(jsonParams) {
   const sortStrategies = {
     price: () => Prisma.sql`ORDER BY ${Prisma.raw(sortedColumn)} ${order}\n`,
     sold_quantity: () => Prisma.sql`ORDER BY COALESCE(p.sold_quantity, 0) ${order}\n`,
-    created_date: () => Prisma.sql`ORDER BY COALESCE(p.created_date, p.database_created_at) ${order}\n`
+    created_date: () =>
+      Prisma.sql`ORDER BY COALESCE(p.created_date, p.database_created_at) ${order}\n`
   };
 
   if (jsonParams.sort?.by && sortStrategies[jsonParams.sort.by]) {
@@ -142,7 +149,9 @@ export function aggregateQuery(jsonParams) {
   }
 
   if (jsonParams.product_ids && jsonParams.product_ids.length > 0) {
-    const productIds = jsonParams.product_ids.map(id => typeof id === "string" ? BigInt(id) : id);
+    const productIds = jsonParams.product_ids.map((id) =>
+      typeof id === "string" ? BigInt(id) : id
+    );
     filterClauses.push(Prisma.sql`AND p.haravan_product_id = ANY(${productIds})\n`);
   }
 
@@ -151,11 +160,15 @@ export function aggregateQuery(jsonParams) {
     filterClauses.push(Prisma.sql`AND p.main_stone ~ '^[a-zA-Z]+ [0-9]+l[0-9]+$'\n`);
 
     if (jsonParams.main_holder_size?.lower) {
-      filterClauses.push(Prisma.sql`AND CAST(REPLACE(SPLIT_PART(p.main_stone, ' ', 2), 'l', '.') AS DECIMAL) >= ${jsonParams.main_holder_size.lower}\n`);
+      filterClauses.push(
+        Prisma.sql`AND CAST(REPLACE(SPLIT_PART(p.main_stone, ' ', 2), 'l', '.') AS DECIMAL) >= ${jsonParams.main_holder_size.lower}\n`
+      );
     }
 
     if (jsonParams.main_holder_size?.upper) {
-      filterClauses.push(Prisma.sql`AND CAST(REPLACE(SPLIT_PART(p.main_stone, ' ', 2), 'l', '.') AS DECIMAL) < ${jsonParams.main_holder_size.upper}\n`);
+      filterClauses.push(
+        Prisma.sql`AND CAST(REPLACE(SPLIT_PART(p.main_stone, ' ', 2), 'l', '.') AS DECIMAL) < ${jsonParams.main_holder_size.upper}\n`
+      );
     }
   }
 
@@ -181,9 +194,7 @@ export function aggregateQuery(jsonParams) {
     filterClauses.push(Prisma.sql`AND w.id = ANY(${jsonParams.warehouse_ids})\n`);
   }
 
-  const filterSql = filterClauses.length > 0
-    ? Prisma.join(filterClauses, " ")
-    : Prisma.empty;
+  const filterSql = filterClauses.length > 0 ? Prisma.join(filterClauses, " ") : Prisma.empty;
 
   return {
     filterSql,

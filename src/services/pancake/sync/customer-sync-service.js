@@ -1,14 +1,14 @@
-import Database from "services/database";
-import PancakeClient from "pancake/pancake-client";
+import * as Sentry from "@sentry/cloudflare";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
-import * as Sentry from "@sentry/cloudflare";
+import PancakeClient from "pancake/pancake-client";
 import { isInvalidTokenError } from "pancake/utils";
-import { sleep } from "services/utils/sleep";
+import Database from "services/database";
 import {
   normalizePageCustomerPhone,
   normalizePageCustomerPhoneNumbers
 } from "services/pancake/sync/page-customer-phone-normalize";
+import { sleep } from "services/utils/sleep";
 
 dayjs.extend(utc);
 
@@ -44,7 +44,9 @@ export default class CustomerSyncService {
       }
 
       await this.env.FN_KV.put(KV_KEY, now.format("YYYY-MM-DD HH:mm:ss"));
-      console.warn(`Finished syncCustomers. Saved checkpoint: ${now.format("YYYY-MM-DD HH:mm:ss")}`);
+      console.warn(
+        `Finished syncCustomers. Saved checkpoint: ${now.format("YYYY-MM-DD HH:mm:ss")}`
+      );
     } catch (error) {
       this.captureException(error);
     }
@@ -56,10 +58,19 @@ export default class CustomerSyncService {
     let pageNumber = 1;
     while (true) {
       try {
-        const data = await this.pancakeClient.getPageCustomers(pageId, sinceUnix, untilUnix, pageNumber, SYNC_PAGE_SIZE);
+        const data = await this.pancakeClient.getPageCustomers(
+          pageId,
+          sinceUnix,
+          untilUnix,
+          pageNumber,
+          SYNC_PAGE_SIZE
+        );
 
         if (isInvalidTokenError(data)) {
-          this.captureException(new Error(`Pancake API Error [102]: Invalid access_token for page ${pageId}`), pageId);
+          this.captureException(
+            new Error(`Pancake API Error [102]: Invalid access_token for page ${pageId}`),
+            pageId
+          );
           break;
         }
 
@@ -84,11 +95,13 @@ export default class CustomerSyncService {
       if (!item.id) continue;
       const customerData = this.mapToCustomerModel(item, pageId);
 
-      customerUpserts.push(this.db.page_customer.upsert({
-        where: { id: item.id },
-        create: customerData,
-        update: { ...customerData, uuid: undefined, database_updated_at: dayjs().utc().toDate() }
-      }));
+      customerUpserts.push(
+        this.db.page_customer.upsert({
+          where: { id: item.id },
+          create: customerData,
+          update: { ...customerData, uuid: undefined, database_updated_at: dayjs().utc().toDate() }
+        })
+      );
     }
 
     const chunkSize = 50;

@@ -1,4 +1,4 @@
-import { createDirectus, staticToken, rest } from "@directus/sdk";
+import { createDirectus, rest, staticToken } from "@directus/sdk";
 
 export default class DirectusClient {
   static createClient(endpoint, token) {

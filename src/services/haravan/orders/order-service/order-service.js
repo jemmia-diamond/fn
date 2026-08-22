@@ -1,19 +1,19 @@
 import * as Sentry from "@sentry/cloudflare";
-import Database from "services/database";
-import HaravanAPIClient from "services/haravan/api-client/api-client";
-import LarksuiteService from "services/larksuite/lark";
-import RecordService from "services/larksuite/docs/base/record/record";
-import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/constant";
-import { negativeStockOrderMessage } from "services/haravan/orders/order-service/helpers/messages-compose";
-import { HARAVAN_TOPIC } from "services/ecommerce/enum";
-import { toUnixTimestamp } from "services/utils/date-helper";
-import { getFinancialStatus } from "services/haravan/orders/order-service/helpers/financial-status";
-import { getOrderFinancials } from "services/haravan/orders/order-service/helpers/order-financials";
-import { TABLES } from "services/larksuite/docs/constant";
-import { BadRequestException } from "src/exception/exceptions";
 import HaravanAPI from "services/clients/haravan-client";
+import Database from "services/database";
+import { HARAVAN_TOPIC } from "services/ecommerce/enum";
+import HaravanAPIClient from "services/haravan/api-client/api-client";
+import { getFinancialStatus } from "services/haravan/orders/order-service/helpers/financial-status";
+import { negativeStockOrderMessage } from "services/haravan/orders/order-service/helpers/messages-compose";
+import { getOrderFinancials } from "services/haravan/orders/order-service/helpers/order-financials";
+import RecordService from "services/larksuite/docs/base/record/record";
+import { TABLES } from "services/larksuite/docs/constant";
+import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/constant";
+import LarksuiteService from "services/larksuite/lark";
 import Misa from "services/misa";
+import { toUnixTimestamp } from "services/utils/date-helper";
 import { isTestOrder } from "services/utils/order-intercepter";
+import { BadRequestException } from "src/exception/exceptions";
 
 export default class OrderService {
   constructor(env) {
@@ -24,12 +24,16 @@ export default class OrderService {
 
   async invalidOrderNotification(order) {
     const jewelrySKULength = 21;
-    const jewelryVariants = order.line_items.filter(item => item.sku && item.sku.toString().length === jewelrySKULength);
+    const jewelryVariants = order.line_items.filter(
+      (item) => item.sku && item.sku.toString().length === jewelrySKULength
+    );
     const negativeOrderedVariants = [];
     for (const jewelryVariant of jewelryVariants) {
-      const productData = (await this.hrvClient.products.product.getProduct(jewelryVariant.product_id)).data.product;
+      const productData = (
+        await this.hrvClient.products.product.getProduct(jewelryVariant.product_id)
+      ).data.product;
       const variants = productData.variants;
-      const targetVariant = variants.find(variant => variant.id === jewelryVariant.variant_id);
+      const targetVariant = variants.find((variant) => variant.id === jewelryVariant.variant_id);
       if (targetVariant.inventory_advance.qty_available < 0) {
         negativeOrderedVariants.push(jewelryVariant);
       }
@@ -61,7 +65,7 @@ export default class OrderService {
     const { paidAmount, remainingBalance } = getOrderFinancials(order);
 
     const recordFields = {
-      "ID": String(order.order_number),
+      ID: String(order.order_number),
       "Mã đơn hàng": order.order_number,
       "Mã đơn cũ": order.ref_order_number,
       "Trạng thái": getFinancialStatus(order.financial_status),
@@ -106,7 +110,6 @@ export default class OrderService {
         fields: recordFields
       });
     }
-
   }
 
   async syncRefTransactions(order) {
@@ -117,7 +120,9 @@ export default class OrderService {
 
     const HRV_API_KEY = this.env.HARAVAN_TOKEN;
     if (!HRV_API_KEY) {
-      throw new BadRequestException("Haravan API credentials or base URL are not configured in the environment.");
+      throw new BadRequestException(
+        "Haravan API credentials or base URL are not configured in the environment."
+      );
     }
 
     const hrvClient = new HaravanAPI(HRV_API_KEY);
@@ -140,8 +145,10 @@ export default class OrderService {
         const refTransactionKind = refTransac.kind;
         const refTransactionGateway = refTransac.gateway;
 
-        if (refTransactionAmount > 0 && ["capture", "authorization", "sale"].includes(refTransactionKind?.toLowerCase())) {
-
+        if (
+          refTransactionAmount > 0 &&
+          ["capture", "authorization", "sale"].includes(refTransactionKind?.toLowerCase())
+        ) {
           const syncAmount = Math.min(refTransactionAmount, remainingBalance);
 
           const transactionData = {

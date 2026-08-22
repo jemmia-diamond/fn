@@ -1,5 +1,5 @@
-import { createAxiosClient } from "services/utils/http-client";
 import { Jimp } from "jimp";
+import { createAxiosClient } from "services/utils/http-client";
 
 const BASE_URL = "https://presidio.jemmia.vn";
 
@@ -130,9 +130,7 @@ export default class PresidioClient {
    * @param {File | Blob | Buffer} file - The image file, blob or buffer
    * @returns {Promise<{ has_sensitive_info: boolean; image: string }>} The anonymization result
    */
-  async anonymizeImage(
-    file: any
-  ): Promise<{ has_sensitive_info: boolean; image: string }> {
+  async anonymizeImage(file: any): Promise<{ has_sensitive_info: boolean; image: string }> {
     let inputBuffer: Buffer;
 
     if (
@@ -142,9 +140,7 @@ export default class PresidioClient {
       inputBuffer = file instanceof Buffer ? file : file.buffer;
     } else {
       // Fallback for non-buffer inputs (though primarily used with Buffer)
-      console.warn(
-        "PresidioClient: Input file is not a Buffer, skipping resize."
-      );
+      console.warn("PresidioClient: Input file is not a Buffer, skipping resize.");
       // If it's a blob, we can't easily resize with Jimp without conversion.
       // Pass through.
       const formData = new FormData();
@@ -193,9 +189,7 @@ export default class PresidioClient {
       inputBuffer = file instanceof Buffer ? file : file.buffer;
     } else {
       // Fallback for non-buffer inputs (though primarily used with Buffer)
-      console.warn(
-        "PresidioClient: Input file is not a Buffer, skipping resize."
-      );
+      console.warn("PresidioClient: Input file is not a Buffer, skipping resize.");
       // If it's a blob, we can't easily resize with Jimp without conversion.
       // Pass through.
       const formData = new FormData();
@@ -220,9 +214,7 @@ export default class PresidioClient {
       // Continue with original buffer
     }
 
-    console.warn(
-      `PresidioClient: Sending image of size ${inputBuffer.length} bytes`
-    );
+    console.warn(`PresidioClient: Sending image of size ${inputBuffer.length} bytes`);
 
     const formData = new FormData();
     const fileName = (file as any).name || "image.jpg";
@@ -245,10 +237,7 @@ export default class PresidioClient {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.warn(
-          `PresidioClient AnalyzeImage Failed (${response.status}):`,
-          errorText
-        );
+        console.warn(`PresidioClient AnalyzeImage Failed (${response.status}):`, errorText);
         throw new Error(
           `PresidioClient AnalyzeImage failed with status ${response.status}: ${errorText}`
         );

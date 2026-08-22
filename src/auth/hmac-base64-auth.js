@@ -1,5 +1,5 @@
-import { createMiddleware } from "hono/factory";
 import { generateHmacBase64 } from "auth/utils";
+import { createMiddleware } from "hono/factory";
 
 export const verifyHmacBase64Auth = (signatureheaderkey, secretEnvKey) =>
   createMiddleware(async (c, next) => {

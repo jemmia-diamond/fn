@@ -1,6 +1,6 @@
+import * as Sentry from "@sentry/cloudflare";
 import HaravanAPI from "services/clients/haravan-client";
 import Database from "services/database";
-import * as Sentry from "@sentry/cloudflare";
 import { sleep } from "services/utils/sleep";
 
 const COLLECTION_ID = 1004297849;

@@ -1,4 +1,4 @@
-import { Context } from "hono";
+import type { Context } from "hono";
 import JemmiaShieldMessageService from "services/jemmia-shield/shield-message-view-service";
 
 export default class ShieldMessageController {
@@ -12,13 +12,12 @@ export default class ShieldMessageController {
     }
 
     const env = c.env;
-    const contentHtml =
-      await JemmiaShieldMessageService.processAndRenderMessage(
-        env,
-        data,
-        code,
-        type
-      );
+    const contentHtml = await JemmiaShieldMessageService.processAndRenderMessage(
+      env,
+      data,
+      code,
+      type
+    );
 
     return c.html(contentHtml);
   }

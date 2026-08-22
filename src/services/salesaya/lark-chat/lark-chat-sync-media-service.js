@@ -1,24 +1,23 @@
+import * as Sentry from "@sentry/cloudflare";
+import dayjs from "dayjs";
+import timezone from "dayjs/plugin/timezone.js";
+import utc from "dayjs/plugin/utc.js";
+import NocoDBClient from "services/clients/nocodb-client";
 import RecordService from "services/larksuite/docs/base/record/record";
-import LarkChatResourceFetcher from "services/salesaya/lark-chat/lark-chat-resource-fetcher";
-import LarkChatMediaUploader from "services/salesaya/lark-chat/lark-chat-media-uploader";
-import LarkChatParser from "services/salesaya/lark-chat/lark-chat-parser";
 import { TABLES } from "services/larksuite/docs/constant";
 import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/constant";
-import { getFilename } from "services/salesaya/lark-chat/lark-chat-helper";
-import NocoDBClient from "services/clients/nocodb-client";
 import LarksuiteService from "services/larksuite/lark";
+import { getFilename } from "services/salesaya/lark-chat/lark-chat-helper";
+import LarkChatMediaUploader from "services/salesaya/lark-chat/lark-chat-media-uploader";
+import LarkChatParser from "services/salesaya/lark-chat/lark-chat-parser";
+import LarkChatResourceFetcher from "services/salesaya/lark-chat/lark-chat-resource-fetcher";
 import { TIMEZONE_VIETNAM } from "src/constants";
-import dayjs from "dayjs";
-import utc from "dayjs/plugin/utc.js";
-import timezone from "dayjs/plugin/timezone.js";
-import * as Sentry from "@sentry/cloudflare";
 import { NOCODB_TABLES } from "src/constants/nocodb-tables";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
 export default class LarkChatSyncMediaService {
-
   constructor(env, larkAxiosClient, larkSdkClient) {
     this.env = env;
     this.larkAxiosClient = larkAxiosClient;
@@ -47,7 +46,7 @@ export default class LarkChatSyncMediaService {
         }
       ]
     });
-  };
+  }
 
   async syncChat(chatId, startTime, endTime) {
     const nocodb = new NocoDBClient(this.env);
@@ -82,7 +81,7 @@ export default class LarkChatSyncMediaService {
         const parsed = await this.parser.parseThread(msg.thread_id);
 
         if (parsed.codes.length === 0) continue;
-        const uniqueCodes = [...new Set(parsed.codes.map(c => c.trim()))];
+        const uniqueCodes = [...new Set(parsed.codes.map((c) => c.trim()))];
         const buffersCache = {};
         const imageLinks = [];
         const fileLinks = [];
@@ -116,11 +115,7 @@ export default class LarkChatSyncMediaService {
             const key = `${f.message_id}_${f.key}`;
 
             if (!buffersCache[key]) {
-              buffersCache[key] = await this.fetcher.getBufferByKey(
-                f.message_id,
-                f.key,
-                "file"
-              );
+              buffersCache[key] = await this.fetcher.getBufferByKey(f.message_id, f.key, "file");
             }
 
             if (buffersCache[key]) {
@@ -157,14 +152,23 @@ export default class LarkChatSyncMediaService {
           }
 
           if (!updated) {
-            let existDesignRes = await nocodb.listRecords(designTableId, { where: `(design_code,eq,${uniqueCodes[0]})`, limit: 1 });
+            let existDesignRes = await nocodb.listRecords(designTableId, {
+              where: `(design_code,eq,${uniqueCodes[0]})`,
+              limit: 1
+            });
             let existDesign = existDesignRes.list?.[0] ?? null;
             if (!existDesign) {
-              existDesignRes = await nocodb.listRecords(designTableId, { where: `(erp_code,eq,${uniqueCodes[0]})`, limit: 1 });
+              existDesignRes = await nocodb.listRecords(designTableId, {
+                where: `(erp_code,eq,${uniqueCodes[0]})`,
+                limit: 1
+              });
               existDesign = existDesignRes.list?.[0] ?? null;
             }
             if (!existDesign) {
-              existDesignRes = await nocodb.listRecords(designTableId, { where: `(code,eq,${uniqueCodes[0]})`, limit: 1 });
+              existDesignRes = await nocodb.listRecords(designTableId, {
+                where: `(code,eq,${uniqueCodes[0]})`,
+                limit: 1
+              });
               existDesign = existDesignRes.list?.[0] ?? null;
             }
 
@@ -177,18 +181,33 @@ export default class LarkChatSyncMediaService {
               try {
                 await nocodb.createRecords(designImageTableId, data);
               } catch (error) {
-                if (error.response?.status !== 422 || error.response?.data?.error !== "INVALID_PK_VALUE") {
+                if (
+                  error.response?.status !== 422 ||
+                  error.response?.data?.error !== "INVALID_PK_VALUE"
+                ) {
                   throw error;
                 }
               }
             } else {
-              await this.writeRecord(uniqueCodes[0], links, "Thất bại", "Không thể get thông tin sản phẩm từ nocodb", msg.message_id);
+              await this.writeRecord(
+                uniqueCodes[0],
+                links,
+                "Thất bại",
+                "Không thể get thông tin sản phẩm từ nocodb",
+                msg.message_id
+              );
               continue;
             }
           }
           await this.writeRecord(uniqueCodes[0], links, "Thành công", "", msg.message_id);
         } else {
-          await this.writeRecord(uniqueCodes.join(", "), links, "Thất bại", "Tin nhắn chứa nhiều mã sản phẩm", msg.message_id);
+          await this.writeRecord(
+            uniqueCodes.join(", "),
+            links,
+            "Thất bại",
+            "Tin nhắn chứa nhiều mã sản phẩm",
+            msg.message_id
+          );
         }
       }
 
@@ -210,4 +229,3 @@ export default class LarkChatSyncMediaService {
     }
   }
 }
-

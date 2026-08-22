@@ -1,12 +1,12 @@
-import ManualPaymentService from "services/payment/manual-pay/payment";
-import QrPaymentFetchingService from "services/payment/qr_payment/fetch-service";
+import BankOptionsService from "services/payment/bank-options-service";
 import ManualPaymentFetchingService from "services/payment/manual-pay/fetch-service";
+import ManualPaymentService from "services/payment/manual-pay/payment";
 import MisaVoucherSyncService from "services/payment/misa/voucher-sync-service";
 import CreateQRService from "services/payment/qr_payment/create-qr-service";
+import QrPaymentFetchingService from "services/payment/qr_payment/fetch-service";
 import FindQRService from "services/payment/qr_payment/find-qr-service";
-import MapQRWithBankTransactionService from "services/payment/qr_payment/map-qr-with-bank-transaction-service";
 import LinkQRWithRealOrderService from "services/payment/qr_payment/link-qr-with-real-order-service";
-import BankOptionsService from "services/payment/bank-options-service";
+import MapQRWithBankTransactionService from "services/payment/qr_payment/map-qr-with-bank-transaction-service";
 
 export default {
   ManualPaymentService: ManualPaymentService,

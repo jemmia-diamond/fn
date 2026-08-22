@@ -1,16 +1,17 @@
 // TODO: Make this import dynamic, so that we can add new controllers without repeating ourselves.
-import Namespace from "controllers/namespace";
+
 import anotherNamespace from "controllers/another-namespace";
-import ERP from "controllers/erp";
-import Pancake from "controllers/pancake";
 import Dashboard from "controllers/dashboard";
-import Ecommerce from "controllers/ecommerce";
 import Delivery from "controllers/delivery";
-import Payment from "controllers/payment";
-import Salesaya from "controllers/salesaya";
+import Ecommerce from "controllers/ecommerce";
+import ERP from "controllers/erp";
+import Inventory from "controllers/inventory";
 import Larksuite from "controllers/larksuite";
 import Media from "controllers/media";
-import Inventory from "controllers/inventory";
+import Namespace from "controllers/namespace";
+import Pancake from "controllers/pancake";
+import Payment from "controllers/payment";
+import Salesaya from "controllers/salesaya";
 
 export default class APIRoutes {
   static register(api) {
@@ -32,21 +33,36 @@ export default class APIRoutes {
     jemmiaERPNamespaceApi.get("/customers/:id", ERP.CustomersController.show);
 
     jemmiaERPNamespaceApi.post("/sales_orders", ERP.SalesOrderController.create);
-    jemmiaERPNamespaceApi.post("/sales_orders/:id/notifications", ERP.SalesOrderNotificationController.create);
+    jemmiaERPNamespaceApi.post(
+      "/sales_orders/:id/notifications",
+      ERP.SalesOrderNotificationController.create
+    );
     jemmiaERPNamespaceApi.post("/temporary-products", ERP.TemporaryProductController.create);
-    jemmiaERPNamespaceApi.post("/promotions/diamond-collects", Ecommerce.DiamondCollectController.create);
+    jemmiaERPNamespaceApi.post(
+      "/promotions/diamond-collects",
+      Ecommerce.DiamondCollectController.create
+    );
 
     const pancakeNamespaceApi = api.basePath("/pancake");
-    pancakeNamespaceApi.post("/conversation_assignments", Pancake.ConversationAssignmentController.create);
+    pancakeNamespaceApi.post(
+      "/conversation_assignments",
+      Pancake.ConversationAssignmentController.create
+    );
 
     const dashboardNamespaceApi = api.basePath("/dashboard");
     dashboardNamespaceApi.get("/tv", Dashboard.TVController.show);
 
     const ecommerceNamespaceApi = api.basePath("/ecommerce");
     ecommerceNamespaceApi.delete("/ind-day-stats", Ecommerce.IndDayStatController.destroy);
-    ecommerceNamespaceApi.post("/products/jewelries/diamond-replacements", Ecommerce.JewelryDiamondPairController.create);
+    ecommerceNamespaceApi.post(
+      "/products/jewelries/diamond-replacements",
+      Ecommerce.JewelryDiamondPairController.create
+    );
 
-    ecommerceNamespaceApi.post("/diamonds/stock-tracker", Ecommerce.DiamondStockTrackerController.create);
+    ecommerceNamespaceApi.post(
+      "/diamonds/stock-tracker",
+      Ecommerce.DiamondStockTrackerController.create
+    );
 
     ecommerceNamespaceApi.get("/cards/:id", Ecommerce.CardController.show);
     ecommerceNamespaceApi.post("/cards", Ecommerce.CardController.create);
@@ -59,7 +75,10 @@ export default class APIRoutes {
     paymentApi.post("/manual-payments", Payment.ManualPaymentsController.create);
     paymentApi.patch("/manual-payments/:id", Payment.ManualPaymentsController.update);
     paymentApi.post("/qr-payments", Payment.QRPaymentsController.create);
-    paymentApi.patch("/qr-payments/:id/map-bank-transaction", Payment.QRPaymentsMapBankTransactionController.create);
+    paymentApi.patch(
+      "/qr-payments/:id/map-bank-transaction",
+      Payment.QRPaymentsMapBankTransactionController.create
+    );
     paymentApi.patch("/qr-payments/:id/link-order", Payment.QRPaymentsLinkOrderController.create);
     paymentApi.get("/qr-payments/:id", Payment.QRPaymentsController.show);
     paymentApi.get("/bank-options", Payment.BankOptionsController.index);
@@ -77,5 +96,5 @@ export default class APIRoutes {
 
     const inventoryApi = api.basePath("/inventory");
     inventoryApi.get("/availability", Inventory.AvailabilityController.index);
-  };
-};
+  }
+}

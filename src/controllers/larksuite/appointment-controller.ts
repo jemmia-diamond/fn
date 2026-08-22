@@ -5,4 +5,4 @@ export default class LarkAppointmentController {
     await ctx.env["LARKSUITE_APPOINTMENT_QUEUE"].send(body);
     return ctx.json({ message: "Lark appointment webhook received", status: 200 });
   }
-};
+}

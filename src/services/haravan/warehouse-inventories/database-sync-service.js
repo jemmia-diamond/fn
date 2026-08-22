@@ -1,8 +1,8 @@
+import * as crypto from "crypto";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
-import Database from "services/database";
 import HaravanAPI from "services/clients/haravan-client";
-import * as crypto from "crypto";
+import Database from "services/database";
 import { sleep } from "services/utils/sleep.js";
 
 dayjs.extend(utc);
@@ -95,7 +95,7 @@ export default class DatabaseSyncService {
   async _fetchLocationIds(haravanClient) {
     const response = await haravanClient.location.getLocations();
     const locations = response?.locations || [];
-    return locations.map(l => l.id);
+    return locations.map((l) => l.id);
   }
 
   async _processInventoryChunks(haravanClient, variantIds, locationIds) {
@@ -103,7 +103,6 @@ export default class DatabaseSyncService {
       const locationChunk = locationIds.slice(li, li + LOCATION_CHUNK_SIZE);
       const strLocationIds = locationChunk.join(",");
       for (let vi = 0; vi < variantIds.length; vi += VARIANT_CHUNK_SIZE) {
-
         const variantChunk = variantIds.slice(vi, vi + VARIANT_CHUNK_SIZE);
         const strVariantIds = variantChunk.join(",");
 
@@ -135,12 +134,12 @@ export default class DatabaseSyncService {
   }
 
   async _upsertBatch(inventoryLocations) {
-    const toUpsert = inventoryLocations.map(item => this._mapInventoryLocation(item));
+    const toUpsert = inventoryLocations.map((item) => this._mapInventoryLocation(item));
     if (toUpsert.length === 0) return;
 
     const currentDateTime = dayjs().utc().toDate();
     await this.db.$transaction(async (tx) => {
-      const operations = toUpsert.map(data => {
+      const operations = toUpsert.map((data) => {
         const id = data.id;
         delete data.id;
 

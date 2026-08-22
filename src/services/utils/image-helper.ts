@@ -1,10 +1,7 @@
 import { Jimp } from "jimp";
 
 export default class ImageHelper {
-  static async blurImage(
-    buffer: Buffer,
-    options?: { blurSize?: number }
-  ): Promise<Buffer> {
+  static async blurImage(buffer: Buffer, options?: { blurSize?: number }): Promise<Buffer> {
     const image = await Jimp.read(buffer);
 
     if (image.width > 720 || image.height > 720) {

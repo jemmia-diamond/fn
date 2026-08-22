@@ -6,8 +6,7 @@ export const DEFAULT_RETRY_CONFIG = {
   retryDelay: axiosRetry.exponentialDelay,
   shouldResetTimeout: true,
   retryCondition: (error) =>
-    axiosRetry.isNetworkOrIdempotentRequestError(error) ||
-    error.response?.status >= 500
+    axiosRetry.isNetworkOrIdempotentRequestError(error) || error.response?.status >= 500
 };
 
 /**

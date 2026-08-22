@@ -5,8 +5,7 @@ const RETRY_CONFIG = {
   retries: 2,
   retryDelay: axiosRetry.exponentialDelay,
   retryCondition: (error) =>
-    axiosRetry.isNetworkOrIdempotentRequestError(error) ||
-    error.response?.status >= 500
+    axiosRetry.isNetworkOrIdempotentRequestError(error) || error.response?.status >= 500
 };
 
 export default class LarkBaseClient {
@@ -36,7 +35,9 @@ export default class LarkBaseClient {
     this.#appSecret = this.#env.LARK_APP_SECRET;
 
     if (!this.#appId || !this.#appSecret) {
-      throw new Error(`LARK_APP_ID or LARK_APP_SECRET is missing. AppID: ${this.#appId}, Secret defined: ${!!this.#appSecret}`);
+      throw new Error(
+        `LARK_APP_ID or LARK_APP_SECRET is missing. AppID: ${this.#appId}, Secret defined: ${!!this.#appSecret}`
+      );
     }
 
     return { appId: this.#appId, appSecret: this.#appSecret };
@@ -64,7 +65,7 @@ export default class LarkBaseClient {
       }
 
       this.#accessToken = response.data.tenant_access_token;
-      this.#tokenExpiry = Date.now() + (response.data.expire * 1000); // Usually 2 hours
+      this.#tokenExpiry = Date.now() + response.data.expire * 1000; // Usually 2 hours
 
       return this.#accessToken;
     } catch (error) {
@@ -79,7 +80,7 @@ export default class LarkBaseClient {
       baseURL: this.#baseUrl,
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
+        Authorization: `Bearer ${token}`
       },
       timeout: 30000
     });

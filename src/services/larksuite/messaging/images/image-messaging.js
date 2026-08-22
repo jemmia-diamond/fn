@@ -1,11 +1,10 @@
-import LarksuiteService from "services/larksuite/lark";
 import * as Sentry from "@sentry/cloudflare";
+import LarksuiteService from "services/larksuite/lark";
 
 export class ImageMessagingService {
-
   /**
-     * Uploads an image file to Lark and returns the image_key.
-     */
+   * Uploads an image file to Lark and returns the image_key.
+   */
   static async uploadLarkImage({ imageBuffer, env }) {
     const tenantAccessToken = await LarksuiteService.getTenantAccessToken(env);
     if (!tenantAccessToken) {
@@ -30,7 +29,9 @@ export class ImageMessagingService {
       const data = await response.json();
 
       if (!response.ok) {
-        Sentry.captureException(new Error(`Upload request failed: ${response.status} ${response.statusText}`));
+        Sentry.captureException(
+          new Error(`Upload request failed: ${response.status} ${response.statusText}`)
+        );
         return null;
       }
 
@@ -47,12 +48,14 @@ export class ImageMessagingService {
   }
 
   /**
-     * Sends an image message to a Lark chat.
-     */
+   * Sends an image message to a Lark chat.
+   */
   static async sendLarkImageMessage({ chatId, imageKey, rootMessageId, env, isReply }) {
     const tenantAccessToken = await LarksuiteService.getTenantAccessToken(env);
     if (!tenantAccessToken) {
-      Sentry.captureException(new Error("Could not obtain tenant access token for sending message."));
+      Sentry.captureException(
+        new Error("Could not obtain tenant access token for sending message.")
+      );
       return;
     }
 
@@ -87,7 +90,10 @@ export class ImageMessagingService {
       const data = await response.json();
 
       if (!response.ok) {
-        Sentry.captureException(new Error(`Sending/replying request failed: ${response.status} ${response.statusText}`), { extra: { responseData: data } });
+        Sentry.captureException(
+          new Error(`Sending/replying request failed: ${response.status} ${response.statusText}`),
+          { extra: { responseData: data } }
+        );
         return;
       }
     } catch (err) {
@@ -96,19 +102,22 @@ export class ImageMessagingService {
   }
 
   /**
-     * Combined function to download → upload → send image to Lark chat.
-     */
+   * Combined function to download → upload → send image to Lark chat.
+   */
   static async sendLarkImageFromUrl({ imageBuffer, chatId, rootMessageId, env, isReply = true }) {
     try {
-
       const imageKey = await ImageMessagingService.uploadLarkImage({ imageBuffer, env });
       if (!imageKey) return false;
 
       await ImageMessagingService.sendLarkImageMessage({
-        chatId, imageKey, rootMessageId, env, isReply
+        chatId,
+        imageKey,
+        rootMessageId,
+        env,
+        isReply
       });
       return true;
-    }  catch (e) {
+    } catch (e) {
       Sentry.captureException(e);
       return false;
     }

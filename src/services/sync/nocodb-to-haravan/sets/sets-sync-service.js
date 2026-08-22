@@ -38,7 +38,10 @@ export default class SetsSyncService {
     if (Array.isArray(designCodes)) {
       return designCodes.join("/");
     }
-    return String(designCodes).split(",").map(s => s.trim()).join("/");
+    return String(designCodes)
+      .split(",")
+      .map((s) => s.trim())
+      .join("/");
   }
 
   async handleInsert(row, variantTitle, haravanApi, nocoClient, tableId) {

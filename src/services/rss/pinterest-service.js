@@ -1,5 +1,5 @@
-import { createAxiosClient } from "services/utils/http-client";
 import * as cheerio from "cheerio";
+import { createAxiosClient } from "services/utils/http-client";
 
 const httpClient = createAxiosClient();
 
@@ -22,7 +22,7 @@ export default class PinterestService {
 
     const feedTitle = $("feed > title").text();
     // Default to provided URL if alternate link is missing
-    const feedLink = $("feed > link[rel=\"alternate\"]").attr("href") || feedUrl;
+    const feedLink = $('feed > link[rel="alternate"]').attr("href") || feedUrl;
     const feedDescription = feedTitle;
 
     let rssItems = "";
@@ -50,7 +50,7 @@ export default class PinterestService {
     const entry = $(element);
 
     const title = entry.find("title").text();
-    const link = entry.find("link[rel=\"alternate\"]").attr("href");
+    const link = entry.find('link[rel="alternate"]').attr("href");
     const id = entry.find("id").text();
     const updated = entry.find("updated").text();
 
@@ -81,7 +81,7 @@ export default class PinterestService {
 
   // Extracts the best suitable image for the entry.
   extractImage($, entry, content) {
-    let imageLink = entry.find("link[rel=\"alternate\"][type^=\"image/\"]").attr("href");
+    let imageLink = entry.find('link[rel="alternate"][type^="image/"]').attr("href");
 
     if (!imageLink && content) {
       const content$ = cheerio.load(content, { xmlMode: false });

@@ -1,8 +1,8 @@
-import LarksuiteService from "services/larksuite/lark";
 import * as lark from "@larksuiteoapi/node-sdk";
-import Database from "services/database";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
+import Database from "services/database";
+import LarksuiteService from "services/larksuite/lark";
 
 dayjs.extend(utc);
 
@@ -19,7 +19,13 @@ export default class ScheduleService {
     const userIds = await ScheduleService.getUsersIds(db);
     const schedulesSets = [];
     for (const userId of userIds) {
-      const userSchedule = await ScheduleService.getUserSchedule(larkClient, tenantAccessToken, userId, timeThresholdStart, timeThresholdEnd);
+      const userSchedule = await ScheduleService.getUserSchedule(
+        larkClient,
+        tenantAccessToken,
+        userId,
+        timeThresholdStart,
+        timeThresholdEnd
+      );
       schedulesSets.push(userSchedule);
     }
     const schedules = schedulesSets.flat().filter(Boolean);
@@ -37,21 +43,22 @@ export default class ScheduleService {
 
   static async getUsersIds(db) {
     const users = await db.$queryRaw`SELECT user_id FROM larksuite.users`;
-    return users.map(user => user.user_id);
+    return users.map((user) => user.user_id);
   }
 
   static async getUserSchedule(larkClient, tenantAccessToken, userId, from, to) {
-    const reponse = await larkClient.attendance.userDailyShift.query({
-      params: {
-        employee_type: "employee_id"
+    const reponse = await larkClient.attendance.userDailyShift.query(
+      {
+        params: {
+          employee_type: "employee_id"
+        },
+        data: {
+          user_ids: [userId],
+          check_date_from: from,
+          check_date_to: to
+        }
       },
-      data: {
-        user_ids: [userId],
-        check_date_from: from,
-        check_date_to: to
-      }
-    },
-    lark.withTenantToken(tenantAccessToken)
+      lark.withTenantToken(tenantAccessToken)
     );
     return reponse.data.user_daily_shifts;
   }

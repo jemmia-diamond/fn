@@ -1,5 +1,5 @@
-import JemmiaShieldLarkService from "services/jemmia-shield/jemmia-shield-lark-service";
 import * as Sentry from "@sentry/cloudflare";
+import JemmiaShieldLarkService from "services/jemmia-shield/jemmia-shield-lark-service";
 import LarkCipher from "services/larksuite/lark-cipher";
 
 export class ShieldUtils {
@@ -61,7 +61,7 @@ export class ShieldUtils {
   }
 
   static formatTextForLarkMd(text: string): string {
-    text = this.escapeLarkMarkdown(text);
+    text = ShieldUtils.escapeLarkMarkdown(text);
     text = text.replace(/(https?:\/\/[^\s]+)/g, (url) => {
       const match = url.match(/^([^\s]+?)([.,;!?]+)$/);
       if (match) {
@@ -80,10 +80,7 @@ export class ShieldUtils {
     if (!mentions || mentions.length === 0) return text;
     let resolved = text;
     for (const mention of mentions) {
-      const id =
-        mention.id && typeof mention.id === "object"
-          ? mention.id.open_id
-          : mention.id;
+      const id = mention.id && typeof mention.id === "object" ? mention.id.open_id : mention.id;
       if (mention.key && id) {
         resolved = resolved.split(mention.key).join(`<at id="${id}"></at>`);
       }

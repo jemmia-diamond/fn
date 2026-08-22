@@ -1,8 +1,8 @@
 import * as Sentry from "@sentry/cloudflare";
-import FrappeClient from "src/frappe/frappe-client";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import Database from "services/database";
+import FrappeClient from "src/frappe/frappe-client";
 
 dayjs.extend(utc);
 
@@ -10,13 +10,11 @@ export default class SerialService {
   constructor(env) {
     this.env = env;
     this.doctype = "Serial";
-    this.frappeClient = new FrappeClient(
-      {
-        url: env.JEMMIA_ERP_BASE_URL,
-        apiKey: env.JEMMIA_ERP_API_KEY,
-        apiSecret: env.JEMMIA_ERP_API_SECRET
-      }
-    );
+    this.frappeClient = new FrappeClient({
+      url: env.JEMMIA_ERP_BASE_URL,
+      apiKey: env.JEMMIA_ERP_API_KEY,
+      apiSecret: env.JEMMIA_ERP_API_SECRET
+    });
     this.db = Database.instance(env);
   }
 
@@ -40,23 +38,30 @@ export default class SerialService {
   }
 
   static async syncSerialsToERP(env) {
-    const timeThreshold = dayjs().utc().subtract(10, "minutes").subtract(1, "minute").format("YYYY-MM-DD HH:mm:ss");
+    const timeThreshold = dayjs()
+      .utc()
+      .subtract(10, "minutes")
+      .subtract(1, "minute")
+      .format("YYYY-MM-DD HH:mm:ss");
     const serialService = new SerialService(env);
     const serials = await serialService.getSerialsToUpdate(timeThreshold);
 
-    const promises = serials.map(serial =>
-      serialService.frappeClient.upsert({
-        doctype: serialService.doctype,
-        serial_number: serial.serial_number,
-        sku: serial.sku,
-        design_code: serial.design_code
-      }, "serial_number").catch(e => {
-        Sentry.captureException(e);
-      })
+    const promises = serials.map((serial) =>
+      serialService.frappeClient
+        .upsert(
+          {
+            doctype: serialService.doctype,
+            serial_number: serial.serial_number,
+            sku: serial.sku,
+            design_code: serial.design_code
+          },
+          "serial_number"
+        )
+        .catch((e) => {
+          Sentry.captureException(e);
+        })
     );
 
-    await Promise.all(
-      promises
-    );
+    await Promise.all(promises);
   }
 }

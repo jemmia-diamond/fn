@@ -14,11 +14,14 @@ export default class MisaClient {
   }
 
   _initClient() {
-    this.client = createAxiosClient({
-      baseURL: this.baseUrl,
-      timeout: this.timeout,
-      headers: this._getAuthHeaders()
-    }, { ...DEFAULT_RETRY_CONFIG, retries: 6 });
+    this.client = createAxiosClient(
+      {
+        baseURL: this.baseUrl,
+        timeout: this.timeout,
+        headers: this._getAuthHeaders()
+      },
+      { ...DEFAULT_RETRY_CONFIG, retries: 6 }
+    );
   }
 
   /**
@@ -35,11 +38,14 @@ export default class MisaClient {
       return this.accessToken;
     }
 
-    const tokenClient = createAxiosClient({
-      baseURL: this.baseUrl,
-      timeout: this.timeout,
-      headers: { "Content-Type": "application/json" }
-    }, { ...DEFAULT_RETRY_CONFIG, retries: 6 });
+    const tokenClient = createAxiosClient(
+      {
+        baseURL: this.baseUrl,
+        timeout: this.timeout,
+        headers: { "Content-Type": "application/json" }
+      },
+      { ...DEFAULT_RETRY_CONFIG, retries: 6 }
+    );
     const payload = {
       app_id: this.env.MISA_APP_ID,
       access_code: this.env.MISA_ACCESS_CODE,
@@ -81,7 +87,10 @@ export default class MisaClient {
    * @returns
    */
   async saveDictionary(dictionaryPayload) {
-    const response = await this.client.post("/apir/sync/actopen/save_dictionary", dictionaryPayload);
+    const response = await this.client.post(
+      "/apir/sync/actopen/save_dictionary",
+      dictionaryPayload
+    );
     return response.data;
   }
 
@@ -93,7 +102,10 @@ export default class MisaClient {
    */
   async getDictionary(data_type, skip = 0, take = RETRIEVABLE_LIMIT, last_sync_time = null) {
     const payload = {
-      data_type, skip, take, last_sync_time,
+      data_type,
+      skip,
+      take,
+      last_sync_time,
       app_id: this.env.MISA_APP_ID
     };
 

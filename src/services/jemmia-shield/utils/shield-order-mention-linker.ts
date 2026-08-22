@@ -1,14 +1,14 @@
-import Database from "src/services/database";
-import FrappeClient from "src/frappe/frappe-client";
-import { getSalesOrdersByHaravanOrderId } from "src/services/erp/selling/sales-order/utils/sales-order-helpers";
+import dayjs from "dayjs";
+import type { ShieldOrderLinkInfo } from "services/jemmia-shield/interfaces/shield-interface";
 import JemmiaShieldLarkService from "services/jemmia-shield/jemmia-shield-lark-service";
 import {
-  JEMMIA_SHIELD_MESSAGE_TYPE,
   JEMMIA_SHIELD_CONTENT_TAG,
+  JEMMIA_SHIELD_MESSAGE_TYPE,
   ORDER_REGEX
 } from "src/constants/jemmia-shield-constants";
-import { ShieldOrderLinkInfo } from "services/jemmia-shield/interfaces/shield-interface";
-import dayjs from "dayjs";
+import FrappeClient from "src/frappe/frappe-client";
+import Database from "src/services/database";
+import { getSalesOrdersByHaravanOrderId } from "src/services/erp/selling/sales-order/utils/sales-order-helpers";
 import { getFinancialStatus } from "src/services/haravan/orders/order-service/helpers/financial-status";
 import { getFulfillmentStatus } from "src/services/haravan/orders/order-service/helpers/fulfillment-status";
 
@@ -17,29 +17,29 @@ export class ShieldOrderMentionLinker {
    * Detect order codes in message (TEXT or POST) and reply order info card to thread.
    */
   static async replyOrderLinksIfMentioned(env: any, event: any): Promise<void> {
-    const messageText = this.extractTextFromMessage(event);
-    const orderCodes = this.extractOrderCodes(messageText);
+    const messageText = ShieldOrderMentionLinker.extractTextFromMessage(event);
+    const orderCodes = ShieldOrderMentionLinker.extractOrderCodes(messageText);
     if (orderCodes.length === 0) return;
 
-    const frappeClient = this.createFrappeClient(env);
-    const orderLinks = await this.fetchOrderLinks(frappeClient, orderCodes);
+    const frappeClient = ShieldOrderMentionLinker.createFrappeClient(env);
+    const orderLinks = await ShieldOrderMentionLinker.fetchOrderLinks(frappeClient, orderCodes);
 
     if (orderLinks.length === 0) return;
 
-    await this.sendOrderInfoCard(env, event, orderLinks);
+    await ShieldOrderMentionLinker.sendOrderInfoCard(env, event, orderLinks);
   }
 
   static async saveOrderMappingsIfMentioned(env: any, event: any): Promise<void> {
-    const messageText = this.extractTextFromMessage(event);
-    const orderCodes = this.extractOrderCodes(messageText);
+    const messageText = ShieldOrderMentionLinker.extractTextFromMessage(event);
+    const orderCodes = ShieldOrderMentionLinker.extractOrderCodes(messageText);
     if (orderCodes.length === 0) return;
 
-    const frappeClient = this.createFrappeClient(env);
-    const orderLinks = await this.fetchOrderLinks(frappeClient, orderCodes);
+    const frappeClient = ShieldOrderMentionLinker.createFrappeClient(env);
+    const orderLinks = await ShieldOrderMentionLinker.fetchOrderLinks(frappeClient, orderCodes);
     if (orderLinks.length === 0) return;
 
     const messageId = event.message.message_id;
-    await this.saveOrderMappings(env, messageId, orderLinks);
+    await ShieldOrderMentionLinker.saveOrderMappings(env, messageId, orderLinks);
   }
 
   private static async saveOrderMappings(
@@ -71,7 +71,7 @@ export class ShieldOrderMentionLinker {
     }
 
     if (messageType === JEMMIA_SHIELD_MESSAGE_TYPE.POST) {
-      return this.extractTextFromPostContent(content);
+      return ShieldOrderMentionLinker.extractTextFromPostContent(content);
     }
 
     return "";
@@ -117,7 +117,7 @@ export class ShieldOrderMentionLinker {
     const results: ShieldOrderLinkInfo[] = [];
 
     for (const code of orderCodes) {
-      const linkInfo = await this.fetchSingleOrderLink(frappeClient, code);
+      const linkInfo = await ShieldOrderMentionLinker.fetchSingleOrderLink(frappeClient, code);
       if (linkInfo) results.push(linkInfo);
     }
 
@@ -129,21 +129,17 @@ export class ShieldOrderMentionLinker {
     orderCode: string
   ): Promise<ShieldOrderLinkInfo | null> {
     try {
-      const orders = await getSalesOrdersByHaravanOrderId(
-        frappeClient,
-        orderCode,
-        [
-          "name",
-          "haravan_order_id",
-          "split_order_group",
-          "grand_total",
-          "transaction_date",
-          "financial_status",
-          "fulfillment_status",
-          "cancelled_status",
-          "status"
-        ]
-      );
+      const orders = await getSalesOrdersByHaravanOrderId(frappeClient, orderCode, [
+        "name",
+        "haravan_order_id",
+        "split_order_group",
+        "grand_total",
+        "transaction_date",
+        "financial_status",
+        "fulfillment_status",
+        "cancelled_status",
+        "status"
+      ]);
       if (!orders || orders.length === 0) return null;
 
       const order = orders[0];
@@ -219,15 +215,12 @@ export class ShieldOrderMentionLinker {
       }
     };
 
-    const actionButtons = this.buildActionButtons(env, link);
+    const actionButtons = ShieldOrderMentionLinker.buildActionButtons(env, link);
 
     return [header, contentElement, actionButtons];
   }
 
-  private static buildActionButtons(
-    env: any,
-    linkInfo: ShieldOrderLinkInfo
-  ): any {
+  private static buildActionButtons(env: any, linkInfo: ShieldOrderLinkInfo): any {
     const erpBaseUrl = `${env.JEMMIA_ERP_BASE_URL}/app/sales-order`;
     const haravanBaseUrl = `${env.HARAVAN_APP_URL}/admin/orders`;
 
@@ -264,7 +257,7 @@ export class ShieldOrderMentionLinker {
     const threadId = event.message.root_id ?? event.message.message_id;
 
     for (const link of orderLinks) {
-      const elements = await this.buildSingleOrderCardElements(env, link);
+      const elements = await ShieldOrderMentionLinker.buildSingleOrderCardElements(env, link);
       const cardContent = JSON.stringify({ elements });
 
       await JemmiaShieldLarkService.sendMessageToThread(

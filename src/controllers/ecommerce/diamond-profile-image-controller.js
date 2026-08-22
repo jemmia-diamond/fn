@@ -1,7 +1,6 @@
 import Ecommerce from "services/ecommerce";
 
 export default class DiamondProfileImageController {
-
   static async show(ctx) {
     const params = await ctx.req.query();
     const gia_no = params?.gia_no;

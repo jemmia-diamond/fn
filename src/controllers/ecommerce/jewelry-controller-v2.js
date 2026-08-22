@@ -16,10 +16,7 @@ export default class JewelryControllerV2 {
       pages: splitParams(params.pages),
       is_in_stock: params.is_in_stock ? params.is_in_stock === "true" : null,
       pagination: {
-        from: Math.max(
-          API_CONFIG.MIN_FROM,
-          parseNumber(params.from, API_CONFIG.DEFAULT_FROM)
-        ),
+        from: Math.max(API_CONFIG.MIN_FROM, parseNumber(params.from, API_CONFIG.DEFAULT_FROM)),
         limit: Math.min(
           API_CONFIG.MAX_LIMIT,
           Math.max(API_CONFIG.MIN_FROM, parseNumber(params.limit, API_CONFIG.DEFAULT_LIMIT))

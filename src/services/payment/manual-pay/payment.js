@@ -1,12 +1,12 @@
 import * as Sentry from "@sentry/cloudflare";
-import LarksuiteService from "services/larksuite/lark";
-import Database from "services/database";
-import { TABLES } from "services/larksuite/docs/constant";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
-import { BadRequestException } from "src/exception/exceptions";
 import HaravanAPI from "services/clients/haravan-client";
+import Database from "services/database";
+import { TABLES } from "services/larksuite/docs/constant";
+import LarksuiteService from "services/larksuite/lark";
 import Misa from "services/misa";
+import { BadRequestException } from "src/exception/exceptions";
 
 dayjs.extend(utc);
 
@@ -25,17 +25,23 @@ export default class ManualPaymentService {
    */
   async syncManualPaymentsToDatabase() {
     const larkClient = await LarksuiteService.createClientV2(this.env);
-    const timeThreshold = dayjs().utc().subtract(ManualPaymentService.INTERVAL_IN_MINUTES, "minutes").subtract(5, "minutes").valueOf();
+    const timeThreshold = dayjs()
+      .utc()
+      .subtract(ManualPaymentService.INTERVAL_IN_MINUTES, "minutes")
+      .subtract(5, "minutes")
+      .valueOf();
     const manualPaymentTable = TABLES.MANUAL_PAYMENT;
 
     if (!manualPaymentTable) {
-      Sentry.captureException(new Error("MANUAL_PAYMENT table configuration not found in constants."));
+      Sentry.captureException(
+        new Error("MANUAL_PAYMENT table configuration not found in constants.")
+      );
       return;
     }
 
     try {
       let hasMore = true;
-      let pageToken = undefined;
+      let pageToken;
 
       while (hasMore) {
         const response = await larkClient.bitable.appTableRecord.search({
@@ -49,7 +55,11 @@ export default class ManualPaymentService {
             filter: {
               conjunction: "and",
               conditions: [
-                { field_name: "Ngày Cập Nhật", operator: "isGreater", value: ["ExactDate", timeThreshold] },
+                {
+                  field_name: "Ngày Cập Nhật",
+                  operator: "isGreater",
+                  value: ["ExactDate", timeThreshold]
+                },
                 { field_name: "Loại Thanh Toán", operator: "isNot", value: ["QR"] }
               ]
             }
@@ -60,7 +70,7 @@ export default class ManualPaymentService {
           const currentRecordsPage = response.data.items ?? [];
 
           if (currentRecordsPage.length > 0) {
-            const upsertPromises = currentRecordsPage.map(record => {
+            const upsertPromises = currentRecordsPage.map((record) => {
               const fields = record.fields;
 
               const getText = (field) => {
@@ -77,14 +87,36 @@ export default class ManualPaymentService {
                 payment_type: getText(fields["Loại Thanh Toán"]),
                 branch: getText(fields["Chi Nhánh"]),
                 shipping_code: fields["Mã Vận Đơn"],
-                send_date: fields["Ngày Gửi"] ? dayjs.unix(fields["Ngày Gửi"] / 1000).utc().toDate() : null,
-                receive_date: fields["Ngày Nhận Tiền"] ? dayjs.unix(fields["Ngày Nhận Tiền"] / 1000).utc().toDate() : null,
-                created_date: fields["Ngày Tạo"] ? dayjs.unix(fields["Ngày Tạo"] / 1000).utc().toDate() : null,
-                updated_date: fields["Ngày Cập Nhật"] ? dayjs.unix(fields["Ngày Cập Nhật"] / 1000).utc().toDate() : null,
+                send_date: fields["Ngày Gửi"]
+                  ? dayjs
+                      .unix(fields["Ngày Gửi"] / 1000)
+                      .utc()
+                      .toDate()
+                  : null,
+                receive_date: fields["Ngày Nhận Tiền"]
+                  ? dayjs
+                      .unix(fields["Ngày Nhận Tiền"] / 1000)
+                      .utc()
+                      .toDate()
+                  : null,
+                created_date: fields["Ngày Tạo"]
+                  ? dayjs
+                      .unix(fields["Ngày Tạo"] / 1000)
+                      .utc()
+                      .toDate()
+                  : null,
+                updated_date: fields["Ngày Cập Nhật"]
+                  ? dayjs
+                      .unix(fields["Ngày Cập Nhật"] / 1000)
+                      .utc()
+                      .toDate()
+                  : null,
                 bank_account: fields["Số Tài Khoản"]?.value?.[0]?.toString() ?? null,
                 bank_name: getText(fields["Ngân Hàng"]?.value),
                 transfer_amount: fields["Số Tiền Giao Dịch"],
-                transfer_note: Array.isArray(fields["Nội Dung CK"]) ? fields["Nội Dung CK"].map(i => i.text || "").join("") : fields["Nội Dung CK"],
+                transfer_note: Array.isArray(fields["Nội Dung CK"])
+                  ? fields["Nội Dung CK"].map((i) => i.text || "").join("")
+                  : fields["Nội Dung CK"],
                 haravan_order_id: rawOrderId != null ? parseInt(rawOrderId, 10) : null,
                 haravan_order_name: getText(fields["ORDER"]),
                 transfer_status: getText(fields["Trạng Thái Thủ Công"])
@@ -106,7 +138,11 @@ export default class ManualPaymentService {
           hasMore = response.data.has_more;
           pageToken = response.data.page_token;
         } else {
-          Sentry.captureException(new Error(`Error fetching page from Lark Bitable: ${response.msg} (code: ${response.code})`));
+          Sentry.captureException(
+            new Error(
+              `Error fetching page from Lark Bitable: ${response.msg} (code: ${response.code})`
+            )
+          );
           hasMore = false;
         }
       }
@@ -141,7 +177,12 @@ export default class ManualPaymentService {
       });
 
       // Temporary for larkbase usage, we'll remove this block once we're all move over to erp
-      if (newPayment.transfer_status === "Xác nhận" && newPayment.receive_date && newPayment.haravan_order_id && !newPayment.payment_entry_name) {
+      if (
+        newPayment.transfer_status === "Xác nhận" &&
+        newPayment.receive_date &&
+        newPayment.haravan_order_id &&
+        !newPayment.payment_entry_name
+      ) {
         await this._enqueueMisaBackgroundJob(newPayment);
       }
 
@@ -160,7 +201,6 @@ export default class ManualPaymentService {
    */
   async updateManualPayment(uuid, data) {
     try {
-
       const paymentBeforeUpdate = await this.db.manualPaymentTransaction.findUnique({
         where: { uuid }
       });
@@ -183,7 +223,12 @@ export default class ManualPaymentService {
         });
 
         // Temporary for larkbase usage, we'll remove this block once we're all move over to erp
-        if (data.receive_date && !paymentBeforeUpdate.receive_date && updatedPayment.haravan_order_id && !updatedPayment.payment_entry_name) {
+        if (
+          data.receive_date &&
+          !paymentBeforeUpdate.receive_date &&
+          updatedPayment.haravan_order_id &&
+          !updatedPayment.payment_entry_name
+        ) {
           await this._enqueueMisaBackgroundJob(updatedPayment);
         }
 
@@ -202,7 +247,9 @@ export default class ManualPaymentService {
           where: { id: dataForFirstUpdate.haravan_order_id }
         });
         if (!orderExists) {
-          throw new BadRequestException(`Haravan Order ID ${dataForFirstUpdate.haravan_order_id} does not exist.`);
+          throw new BadRequestException(
+            `Haravan Order ID ${dataForFirstUpdate.haravan_order_id} does not exist.`
+          );
         }
       }
 
@@ -217,8 +264,7 @@ export default class ManualPaymentService {
       });
 
       const shouldCreateTransaction =
-        data.transfer_status === "Xác nhận" &&
-        paymentBeforeUpdate.transfer_status !== "Xác nhận";
+        data.transfer_status === "Xác nhận" && paymentBeforeUpdate.transfer_status !== "Xác nhận";
 
       if (shouldCreateTransaction) {
         const finalUpdatedPayment = await this.db.manualPaymentTransaction.update({
@@ -229,7 +275,11 @@ export default class ManualPaymentService {
         });
 
         // Temporary for larkbase usage, we'll remove this block once we're all move over to erp
-        if (finalUpdatedPayment.receive_date && finalUpdatedPayment.haravan_order_id && !finalUpdatedPayment.payment_entry_name) {
+        if (
+          finalUpdatedPayment.receive_date &&
+          finalUpdatedPayment.haravan_order_id &&
+          !finalUpdatedPayment.payment_entry_name
+        ) {
           await this._enqueueMisaBackgroundJob(finalUpdatedPayment);
         }
 
@@ -254,12 +304,7 @@ export default class ManualPaymentService {
     await this.env["MISA_QUEUE"].send(payload, { delaySeconds: Misa.Constants.DELAYS.ONE_MINUTE });
   }
 
-  async createManualTransactionsToHaravanOrder(
-    haravanOrderId,
-    transferAmount,
-    paymentType
-  ) {
-
+  async createManualTransactionsToHaravanOrder(haravanOrderId, transferAmount, paymentType) {
     if (!haravanOrderId) {
       throw new BadRequestException("Haravan Order ID is missing.");
     }
@@ -276,7 +321,9 @@ export default class ManualPaymentService {
 
     const validPaymentMethods = ["Tiền Mặt", "Cà Thẻ Tại Cửa Hàng", "Cà Thẻ Online", "COD HTC"];
     if (!paymentType || !validPaymentMethods.includes(paymentType)) {
-      throw new BadRequestException(`Invalid payment method. Must be one of: ${validPaymentMethods.join(", ")}`);
+      throw new BadRequestException(
+        `Invalid payment method. Must be one of: ${validPaymentMethods.join(", ")}`
+      );
     }
 
     const orderResult = await this.db.$queryRaw`
@@ -289,9 +336,11 @@ export default class ManualPaymentService {
     if (!order) {
       throw new BadRequestException(`Order with ID ${haravanOrderId} not found.`);
     }
-    if (order.cancelled_status === "cancelled") throw new BadRequestException("Order is cancelled.");
+    if (order.cancelled_status === "cancelled")
+      throw new BadRequestException("Order is cancelled.");
     if (order.financial_status === "paid") throw new BadRequestException("Order is already paid.");
-    if (order.financial_status === "refunded") throw new BadRequestException("Order is already refunded.");
+    if (order.financial_status === "refunded")
+      throw new BadRequestException("Order is already refunded.");
     if (order.closed_status === "closed") throw new BadRequestException("Order is closed.");
     if (parsedTransferAmount > parseInt(order.total_price)) {
       throw new BadRequestException("Transaction amount exceeds order total price.");
@@ -300,19 +349,18 @@ export default class ManualPaymentService {
     const HRV_API_KEY = this.env.HARAVAN_TOKEN;
 
     if (!HRV_API_KEY) {
-      throw new BadRequestException("Haravan API credentials or base URL are not configured in the environment.");
+      throw new BadRequestException(
+        "Haravan API credentials or base URL are not configured in the environment."
+      );
     }
 
     const hrvClient = new HaravanAPI(HRV_API_KEY);
 
-    const responseData = await hrvClient.orderTransaction.createTransaction(
-      haravanOrderId,
-      {
-        amount: parsedTransferAmount,
-        kind: "capture",
-        gateway: paymentType
-      }
-    );
+    const responseData = await hrvClient.orderTransaction.createTransaction(haravanOrderId, {
+      amount: parsedTransferAmount,
+      kind: "capture",
+      gateway: paymentType
+    });
     return responseData.transaction;
   }
 }

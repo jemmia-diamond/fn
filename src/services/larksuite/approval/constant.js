@@ -1,9 +1,9 @@
 import {
+  transformExchangeBuybackdData,
   transformLeaveFormData,
-  transformPaymentFormData,
-  transformPurchaseFormData,
   transformOffboardData,
-  transformExchangeBuybackdData
+  transformPaymentFormData,
+  transformPurchaseFormData
 } from "services/larksuite/approval/instance/utils/formTransformation";
 
 export const APPROVALS = {

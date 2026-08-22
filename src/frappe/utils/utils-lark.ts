@@ -1,12 +1,12 @@
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
-import {
+import type FrappeClient from "frappe/frappe-client";
+import type {
   IFrappeLead,
   IFrappeSalesPerson,
   ILarksuiteAppointment,
   LarksuiteSalePerson
 } from "services/larksuite/appointment/types";
-import FrappeClient from "frappe/frappe-client";
 
 dayjs.extend(utc);
 
@@ -59,16 +59,10 @@ export async function mapLarkToFrappe(
     ? dayjs.utc(dataRequest.date_time).format("YYYY-MM-DD HH:mm:ss")
     : undefined;
 
-  const allEmails = [
-    ...(dataRequest.main_sales || []),
-    ...(dataRequest.offline_sales || [])
-  ]
+  const allEmails = [...(dataRequest.main_sales || []), ...(dataRequest.offline_sales || [])]
     .map((s) => s.email)
     .filter(Boolean);
-  const allNames = [
-    ...(dataRequest.main_sales || []),
-    ...(dataRequest.offline_sales || [])
-  ]
+  const allNames = [...(dataRequest.main_sales || []), ...(dataRequest.offline_sales || [])]
     .map((s) => s.name)
     .filter(Boolean);
   const salesPersons =
@@ -105,8 +99,12 @@ export async function mapLarkToFrappe(
     conversation_greeting: dataRequest.conversation_greeting,
     notes: [
       dataRequest.note ? `Lưu ý đặc biệt \n ${dataRequest.note}` : "",
-      dataRequest.conversation_greeting ? `Nội dung đón tiếp tại cửa hàng \n ${dataRequest.conversation_greeting}` : ""
-    ].filter(Boolean).join("\n\n"),
+      dataRequest.conversation_greeting
+        ? `Nội dung đón tiếp tại cửa hàng \n ${dataRequest.conversation_greeting}`
+        : ""
+    ]
+      .filter(Boolean)
+      .join("\n\n"),
     customer_response: dataRequest.customer_response,
     record_id: dataRequest.record_id,
     policy: dataRequest.policy,

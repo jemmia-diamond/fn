@@ -40,5 +40,4 @@ export default class ProductClient extends BaseClient {
     const path = "/com/products.json";
     return await this.makePostRequest(path, { product: data });
   }
-
 }

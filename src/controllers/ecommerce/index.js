@@ -1,18 +1,18 @@
-import JewelryControllerV2 from "controllers/ecommerce/jewelry-controller-v2";
-import SearchController from "controllers/ecommerce/search-controller";
-import DiamondController from "controllers/ecommerce/diamond-controller";
-import WeddingRingController from "controllers/ecommerce/wedding-ring-controller";
-import IndDayStatController from "controllers/ecommerce/ind-day-stat-controller";
-import OrderTrackingController from "controllers/ecommerce/order-tracking-controller";
 import CardController from "controllers/ecommerce/card-controller";
-import ProductAvailabilityController from "controllers/ecommerce/product-availability-controller";
-import JewelryDiamondPairController from "controllers/ecommerce/jewelry-diamond-pair-controller";
-import DiamondProfileImageController from "controllers/ecommerce/diamond-profile-image-controller";
-import WebsiteFormController from "controllers/ecommerce/website-form-controller";
-import DiamondPricesController from "controllers/ecommerce/diamond-prices-controller";
-import Jewelry3DMetadataController from "controllers/ecommerce/jewelry-3d-metadata-controller";
-import DiamondStockTrackerController from "controllers/ecommerce/diamond-stock-tracker-controller";
 import DiamondCollectController from "controllers/ecommerce/diamond-collect-controller";
+import DiamondController from "controllers/ecommerce/diamond-controller";
+import DiamondPricesController from "controllers/ecommerce/diamond-prices-controller";
+import DiamondProfileImageController from "controllers/ecommerce/diamond-profile-image-controller";
+import DiamondStockTrackerController from "controllers/ecommerce/diamond-stock-tracker-controller";
+import IndDayStatController from "controllers/ecommerce/ind-day-stat-controller";
+import Jewelry3DMetadataController from "controllers/ecommerce/jewelry-3d-metadata-controller";
+import JewelryControllerV2 from "controllers/ecommerce/jewelry-controller-v2";
+import JewelryDiamondPairController from "controllers/ecommerce/jewelry-diamond-pair-controller";
+import OrderTrackingController from "controllers/ecommerce/order-tracking-controller";
+import ProductAvailabilityController from "controllers/ecommerce/product-availability-controller";
+import SearchController from "controllers/ecommerce/search-controller";
+import WebsiteFormController from "controllers/ecommerce/website-form-controller";
+import WeddingRingController from "controllers/ecommerce/wedding-ring-controller";
 
 export default {
   JewelryControllerV2: JewelryControllerV2,

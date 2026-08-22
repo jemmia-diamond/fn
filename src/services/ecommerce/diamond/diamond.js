@@ -1,12 +1,9 @@
+import * as Sentry from "@sentry/cloudflare";
 import Database from "services/database";
 import { buildGetDiamondsQuery } from "services/ecommerce/diamond/utils/diamond";
-import {
-  dataSql,
-  formatData
-} from "services/ecommerce/diamond/utils/diamond-prices";
-import * as Sentry from "@sentry/cloudflare";
-import { retryQuery } from "services/utils/retry-utils";
+import { dataSql, formatData } from "services/ecommerce/diamond/utils/diamond-prices";
 import { buildStockTrackerQuery } from "services/ecommerce/diamond/utils/diamond-stock-tracker";
+import { retryQuery } from "services/utils/retry-utils";
 
 export default class DiamondService {
   constructor(env) {
@@ -65,11 +62,11 @@ export default class DiamondService {
       );
       return result?.[0]
         ? {
-          ...result[0],
-          gia_url: result[0].simple_encrypted_report_no
-            ? `${this.env.R2_JEMMIA_WEBSITE_PUBLIC_URL}/website/gia-reports/${result[0].simple_encrypted_report_no}.png`
-            : null
-        }
+            ...result[0],
+            gia_url: result[0].simple_encrypted_report_no
+              ? `${this.env.R2_JEMMIA_WEBSITE_PUBLIC_URL}/website/gia-reports/${result[0].simple_encrypted_report_no}.png`
+              : null
+          }
         : null;
     } catch (e) {
       Sentry.captureException(e);
@@ -94,9 +91,7 @@ export default class DiamondService {
     }
 
     const targetWarehouses =
-      warehouseNames &&
-      Array.isArray(warehouseNames) &&
-      warehouseNames.length > 0
+      warehouseNames && Array.isArray(warehouseNames) && warehouseNames.length > 0
         ? warehouseNames
         : [];
 
@@ -105,9 +100,7 @@ export default class DiamondService {
     const result = await retryQuery(() => this.db.$queryRaw(sql));
 
     const groupedResults = targets.map((target, idx) => {
-      const matchingDiamonds = result.filter(
-        (row) => row.target_index === idx + 1
-      );
+      const matchingDiamonds = result.filter((row) => row.target_index === idx + 1);
 
       let diamondsList;
       if (

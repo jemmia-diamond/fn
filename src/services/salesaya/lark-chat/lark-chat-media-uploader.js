@@ -1,5 +1,5 @@
-import { createAxiosClient } from "services/utils/http-client";
 import fetchAdapter from "@haverstack/axios-fetch-adapter";
+import { createAxiosClient } from "services/utils/http-client";
 
 export default class LarkChatMediaUploader {
   constructor(uploadUrl) {

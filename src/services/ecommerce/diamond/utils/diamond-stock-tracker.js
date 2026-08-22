@@ -5,8 +5,7 @@ export function buildStockTrackerQuery(targets, warehouseNames) {
   targets.forEach((t, index) => {
     const s1 = t.s1 != null ? parseFloat(t.s1) : null;
     const s2 = t.s2 != null ? parseFloat(t.s2) : null;
-    const price =
-      t.original_price != null ? parseFloat(t.original_price) : null;
+    const price = t.original_price != null ? parseFloat(t.original_price) : null;
     let c_gte = null,
       c_lte = null,
       c_gt = null,

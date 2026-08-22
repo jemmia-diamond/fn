@@ -1,9 +1,9 @@
+import { Prisma } from "@prisma-cli/client";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
-import { Prisma } from "@prisma-cli/client";
 import Database from "services/database";
-import { TABLES } from "services/larksuite/docs/constant";
 import RecordService from "services/larksuite/docs/base/record/record";
+import { TABLES } from "services/larksuite/docs/constant";
 
 dayjs.extend(utc);
 
@@ -12,7 +12,6 @@ const BATCH_SIZE = 20;
 const LARK_BATCH_SIZE = 500;
 
 export default class AccountingSalesOrderLarkSyncService {
-
   constructor(env) {
     this.env = env;
     this.db = Database.instance(env);
@@ -54,14 +53,17 @@ export default class AccountingSalesOrderLarkSyncService {
 
     for (let i = 0; i < orders.length; i += BATCH_SIZE) {
       const batch = orders.slice(i, i + BATCH_SIZE);
-      const orderIds = batch.map(order => String(order.id));
-      const conditions = orderIds.map(id => ({
-        field_name: "id", operator: "is", value: [id]
+      const orderIds = batch.map((order) => String(order.id));
+      const conditions = orderIds.map((id) => ({
+        field_name: "id",
+        operator: "is",
+        value: [id]
       }));
 
       const filter = { conjunction: "or", conditions };
       const records = await RecordService.fetchRecords(this.env, this.tableConfig, {
-        filter, pageSize: BATCH_SIZE
+        filter,
+        pageSize: BATCH_SIZE
       });
       allLarkOrders.push(...records);
     }
@@ -94,7 +96,7 @@ export default class AccountingSalesOrderLarkSyncService {
   }
 
   async _createLarkRecords(orders) {
-    const records = orders.map(order => this._mapOrderToLarkFields(order));
+    const records = orders.map((order) => this._mapOrderToLarkFields(order));
 
     for (let i = 0; i < records.length; i += LARK_BATCH_SIZE) {
       const chunk = records.slice(i, i + LARK_BATCH_SIZE);
@@ -108,7 +110,7 @@ export default class AccountingSalesOrderLarkSyncService {
   }
 
   async _updateLarkRecords(orders) {
-    const records = orders.map(order => ({
+    const records = orders.map((order) => ({
       record_id: order.lark_record_id,
       ...this._mapOrderToLarkFields(order)
     }));
@@ -143,7 +145,9 @@ export default class AccountingSalesOrderLarkSyncService {
       first_channel_label: order.first_channel_label,
       name_value: order.name_value,
       status: order.status,
-      fulfillment_created_at: order.fulfillment_created_at ? dayjs(order.fulfillment_created_at).toISOString() : null,
+      fulfillment_created_at: order.fulfillment_created_at
+        ? dayjs(order.fulfillment_created_at).toISOString()
+        : null,
       cancelled_at: order.cancelled_at ? dayjs(order.cancelled_at).toISOString() : null
     };
   }

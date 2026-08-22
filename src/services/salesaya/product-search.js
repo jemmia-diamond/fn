@@ -1,5 +1,5 @@
-import Database from "services/database";
 import { Prisma } from "@prisma-cli";
+import Database from "services/database";
 
 export default class ProductSearchService {
   constructor(env) {
@@ -31,7 +31,13 @@ export default class ProductSearchService {
     const normalizedPage = Number.isFinite(page) && page > 0 ? Math.floor(page) : 1;
 
     // Query database directly
-    const results = await this._queryDatabase(searchKey, normalizedLimit, normalizedPage, priceFrom, priceTo);
+    const results = await this._queryDatabase(
+      searchKey,
+      normalizedLimit,
+      normalizedPage,
+      priceFrom,
+      priceTo
+    );
     return results;
   }
 
@@ -39,7 +45,7 @@ export default class ProductSearchService {
     const normalizedSearchKey = searchKey.toLowerCase().trim();
     const searchTerms = normalizedSearchKey
       .split(/\s+/)
-      .map(term => term.trim())
+      .map((term) => term.trim())
       .filter(Boolean);
 
     if (!searchTerms.length) {
@@ -51,7 +57,9 @@ export default class ProductSearchService {
     const offset = (safePage - 1) * safeLimit;
 
     // Format values for SQL query
-    const likePatternsArray = searchTerms.map(term => `'%${term.replace(/'/g, "''")}%'`).join(", ");
+    const likePatternsArray = searchTerms
+      .map((term) => `'%${term.replace(/'/g, "''")}%'`)
+      .join(", ");
     const likePatternsSql = `ARRAY[${likePatternsArray}]`;
     const normalizedSearchKeyEscaped = normalizedSearchKey.replace(/'/g, "''");
     const priceFromFilter = priceFrom ? `AND hv.price >= ${Number(priceFrom)}` : "";
@@ -137,7 +145,7 @@ export default class ProductSearchService {
 
     const results = await this.db.$queryRaw`${Prisma.raw(query)}`;
 
-    return results.map(item => ({
+    return results.map((item) => ({
       name: item.name,
       sku: item.sku,
       design_code: item.design_code,
@@ -145,7 +153,10 @@ export default class ProductSearchService {
       barcode: item.barcode,
       price: item.price ? Number(item.price) : null,
       link_haravan: `${this.env.WEBSITE_BASE_URL}/admin/products/${item.product_id}/variants/${item.variant_id}`,
-      link_website: item.published_scope === "global" ? `${this.env.WEBSITE_BASE_URL}/products/${item.handle}` : null,
+      link_website:
+        item.published_scope === "global"
+          ? `${this.env.WEBSITE_BASE_URL}/products/${item.handle}`
+          : null,
       inventory: item.inventory || [],
       image_urls: item.image_urls || []
     }));

@@ -6,8 +6,7 @@ const RETRY_CONFIG = {
   retryDelay: axiosRetry.exponentialDelay,
   shouldResetTimeout: true,
   retryCondition: (error) =>
-    axiosRetry.isNetworkOrIdempotentRequestError(error) ||
-    error.response?.status >= 500
+    axiosRetry.isNetworkOrIdempotentRequestError(error) || error.response?.status >= 500
 };
 
 class BaseConnector {
@@ -20,7 +19,7 @@ class BaseConnector {
   getHeaders() {
     return {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${this.accessToken}`
+      Authorization: `Bearer ${this.accessToken}`
     };
   }
 

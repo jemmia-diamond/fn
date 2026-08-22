@@ -3,7 +3,7 @@ const verifyAIHubWebhook = async (ctx, next) => {
   if (!deliveryToken) return ctx.json({ error: "Invalid access token" }, 401);
 
   const bearerToken = ctx.env.BEARER_TOKEN;
-  if ((deliveryToken !== bearerToken) && (deliveryToken !== ctx.env.BEARER_TOKEN)) {
+  if (deliveryToken !== bearerToken && deliveryToken !== ctx.env.BEARER_TOKEN) {
     return ctx.json({ error: "Invalid access token" }, 401);
   }
 

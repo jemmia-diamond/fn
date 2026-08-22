@@ -1,7 +1,7 @@
-import ProductService from "services/ecommerce/product/product.js";
-import DiamondService from "services/ecommerce/diamond/diamond.js";
-import GoogleMerchantService from "services/google/google-merchant-service.js";
 import * as Sentry from "@sentry/cloudflare";
+import DiamondService from "services/ecommerce/diamond/diamond.js";
+import ProductService from "services/ecommerce/product/product.js";
+import GoogleMerchantService from "services/google/google-merchant-service.js";
 
 const LIMIT = 20;
 
@@ -72,7 +72,6 @@ export default class GoogleMerchantProductSyncService {
       syncedCount += diamondSyncedCount;
 
       return { success: true, syncedCount };
-
     } catch (error) {
       Sentry.captureException(error);
       return { success: false, syncedCount, errors: [error] };
@@ -81,10 +80,10 @@ export default class GoogleMerchantProductSyncService {
 
   _mapToMerchantProduct(product, variant) {
     try {
-      let imageLink = variant.images && variant.images.length > 0 ? variant.images[0] : "";
+      const imageLink = variant.images && variant.images.length > 0 ? variant.images[0] : "";
 
       let availability = "in_stock";
-      let availabilityDate = undefined;
+      let availabilityDate;
 
       if (variant.qty_available <= 0) {
         availability = "preorder";
@@ -95,7 +94,7 @@ export default class GoogleMerchantProductSyncService {
 
       let priceValue = parseInt(variant.price || 0);
 
-      if (product.product_type && (product.product_type.toLowerCase().includes("bông tai"))) {
+      if (product.product_type && product.product_type.toLowerCase().includes("bông tai")) {
         priceValue *= 2;
       }
 
@@ -125,8 +124,12 @@ export default class GoogleMerchantProductSyncService {
       const mpn = product.id ? product.id.toString() : "";
       const itemGroupId = product.code || product.handle || `${product.id}`;
 
-      const allFinenesses = [...new Set(product.variants.map(v => v.fineness).filter(Boolean))].join(", ");
-      const allMaterials = [...new Set(product.variants.map(v => v.material_color).filter(Boolean))].join(", ");
+      const allFinenesses = [
+        ...new Set(product.variants.map((v) => v.fineness).filter(Boolean))
+      ].join(", ");
+      const allMaterials = [
+        ...new Set(product.variants.map((v) => v.material_color).filter(Boolean))
+      ].join(", ");
 
       return {
         offerId: offerId.toLowerCase(),
@@ -161,15 +164,15 @@ export default class GoogleMerchantProductSyncService {
 
   _mapDiamondToMerchantProduct(diamond) {
     try {
-      let imageLink = diamond.images && diamond.images.length > 0 ? diamond.images[0] : "";
+      const imageLink = diamond.images && diamond.images.length > 0 ? diamond.images[0] : "";
 
-      let availability = "in_stock";
+      const availability = "in_stock";
 
-      let priceValue = parseInt(diamond.price || 0);
+      const priceValue = parseInt(diamond.price || 0);
 
       const title = diamond.title;
 
-      let description = diamond.title;
+      const description = diamond.title;
 
       const link = `https://jemmia.vn/products/${diamond.handle}`;
 
@@ -178,7 +181,9 @@ export default class GoogleMerchantProductSyncService {
         return null;
       }
 
-      const itemGroupId = diamond.product_id ? diamond.product_id.toString() : `${diamond.variant_id}`;
+      const itemGroupId = diamond.product_id
+        ? diamond.product_id.toString()
+        : `${diamond.variant_id}`;
 
       return {
         offerId: offerId.toLowerCase(),

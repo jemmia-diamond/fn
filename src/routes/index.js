@@ -1,7 +1,7 @@
-import AppRoutes from "routes/app";
 import APIRoutes from "routes/api";
-import WebhookRoutes from "routes/webhook";
+import AppRoutes from "routes/app";
 import PublicAPIRoutes from "routes/public-api";
+import WebhookRoutes from "routes/webhook";
 
 export default {
   AppRoutes,

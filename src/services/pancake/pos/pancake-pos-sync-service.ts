@@ -1,12 +1,12 @@
 import * as Sentry from "@sentry/cloudflare";
 import Database from "services/database";
-import PancakePosClient, { CreateOrderPayload, OrderItem } from "services/pancake/pos/pancake-pos-client";
-import { haravanMoneyToNumber, HaravanOrderPayload } from "services/haravan/webhook-order";
-import { ResolvedLead } from "services/pancake/pos/types";
-import {
-  HARAVAN_CANCELLED_STATUS,
-  HARAVAN_TOPIC
-} from "services/ecommerce/enum";
+import { HARAVAN_CANCELLED_STATUS, HARAVAN_TOPIC } from "services/ecommerce/enum";
+import { type HaravanOrderPayload, haravanMoneyToNumber } from "services/haravan/webhook-order";
+import PancakePosClient, {
+  type CreateOrderPayload,
+  type OrderItem
+} from "services/pancake/pos/pancake-pos-client";
+import type { ResolvedLead } from "services/pancake/pos/types";
 import { normalizeToStandardFormat } from "services/utils/phone-utils";
 
 const POS_STATUS = {
@@ -125,7 +125,11 @@ export default class PancakePOSSyncService {
     return page?.pos_shop_id ?? null;
   }
 
-  private async syncOrderCreate(order: HaravanOrderPayload, shopId: number, lead: ResolvedLead): Promise<void> {
+  private async syncOrderCreate(
+    order: HaravanOrderPayload,
+    shopId: number,
+    lead: ResolvedLead
+  ): Promise<void> {
     const existing = await this.db.pancakePOSOrderSync.findUnique({
       where: { haravan_order_id: BigInt(order.id) }
     });
@@ -170,7 +174,8 @@ export default class PancakePOSSyncService {
     status: number;
   }): CreateOrderPayload {
     const customer = order.customer;
-    const fullName = [customer?.first_name, customer?.last_name].filter(Boolean).join(" ") || undefined;
+    const fullName =
+      [customer?.first_name, customer?.last_name].filter(Boolean).join(" ") || undefined;
     const shippingFee = (order.shipping_lines ?? []).reduce(
       (total, line) => total + haravanMoneyToNumber(line.price),
       0
@@ -224,7 +229,8 @@ export default class PancakePOSSyncService {
   }
 
   private mapStatus(order: HaravanOrderPayload): number {
-    if (order.cancelled_status?.toLowerCase() === HARAVAN_CANCELLED_STATUS.CANCELLED) return POS_STATUS.CANCELED;
+    if (order.cancelled_status?.toLowerCase() === HARAVAN_CANCELLED_STATUS.CANCELLED)
+      return POS_STATUS.CANCELED;
     if (order.confirmed_at) return POS_STATUS.CONFIRMED;
     return POS_STATUS.NEW;
   }

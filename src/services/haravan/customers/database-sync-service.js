@@ -1,9 +1,9 @@
+import * as crypto from "crypto";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
-import Database from "services/database";
 import HaravanAPI from "services/clients/haravan-client";
+import Database from "services/database";
 import CustomerMapper from "services/haravan/customers/customer-mapper";
-import * as crypto from "crypto";
 import { sleep } from "services/utils/sleep.js";
 
 dayjs.extend(utc);
@@ -93,7 +93,7 @@ export default class CustomerDatabaseSyncService {
 
     const currentDateTime = dayjs().utc().toDate();
     await this.db.$transaction(async (tx) => {
-      const operations = customers.map(customer => {
+      const operations = customers.map((customer) => {
         const data = CustomerMapper.mapCustomer(customer);
         const id = data.id;
         delete data.id;

@@ -1,14 +1,14 @@
-import FrappeClient from "src/frappe/frappe-client";
-import Database from "src/services/database";
+import * as Sentry from "@sentry/cloudflare";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
-import * as Sentry from "@sentry/cloudflare";
-import { TABLES } from "services/larksuite/docs/constant";
-import RecordService from "services/larksuite/docs/base/record/record";
 import HaravanAPI from "services/clients/haravan-client";
+import { SEPAY_WEBHOOK_TOPICS } from "services/erp/accounting/sepay-transaction/constants";
+import RecordService from "services/larksuite/docs/base/record/record";
+import { TABLES } from "services/larksuite/docs/constant";
 import Misa from "services/misa";
 import { BadRequestException } from "src/exception/exceptions";
-import { SEPAY_WEBHOOK_TOPICS } from "services/erp/accounting/sepay-transaction/constants";
+import FrappeClient from "src/frappe/frappe-client";
+import Database from "src/services/database";
 
 dayjs.extend(utc);
 
@@ -57,7 +57,8 @@ export default class SepayTransactionService {
         fields: ["name", "sepay_account_number"]
       });
 
-      const bankTransactionName = bankTransactions && bankTransactions.length > 0 ? bankTransactions[0].name : null;
+      const bankTransactionName =
+        bankTransactions && bankTransactions.length > 0 ? bankTransactions[0].name : null;
 
       if (!bankTransactionName) {
         throw new Error("Bank Transaction not found in ERPNext");
@@ -67,30 +68,32 @@ export default class SepayTransactionService {
         throw new Error("Bank account number does not match");
       }
 
-      const linkPaymentEntryToBankTransactionResult = await this.linkPaymentEntryToBankTransaction(qr, {
-        paymentEntryName: qr.payment_entry_name,
-        bankTransactionName: bankTransactionName
-      });
+      const linkPaymentEntryToBankTransactionResult = await this.linkPaymentEntryToBankTransaction(
+        qr,
+        {
+          paymentEntryName: qr.payment_entry_name,
+          bankTransactionName: bankTransactionName
+        }
+      );
 
       return linkPaymentEntryToBankTransactionResult;
     }
 
     const HRV_API_KEY = this.env.HARAVAN_TOKEN;
     if (!HRV_API_KEY) {
-      throw new BadRequestException("Haravan API credentials or base URL are not configured in the environment.");
+      throw new BadRequestException(
+        "Haravan API credentials or base URL are not configured in the environment."
+      );
     }
 
     if (!isOrderLater) {
       const hrvClient = new HaravanAPI(HRV_API_KEY);
 
-      const created = await hrvClient.orderTransaction.createTransaction(
-        qr.haravan_order_id,
-        {
-          amount: transferAmount,
-          kind: "capture",
-          gateway: "Chuyển khoản ngân hàng (tự động xác nhận giao dịch)"
-        }
-      );
+      const created = await hrvClient.orderTransaction.createTransaction(qr.haravan_order_id, {
+        amount: transferAmount,
+        kind: "capture",
+        gateway: "Chuyển khoản ngân hàng (tự động xác nhận giao dịch)"
+      });
 
       if (!created) {
         throw new Error("Failed to create Haravan transaction");
@@ -117,18 +120,23 @@ export default class SepayTransactionService {
     }
 
     // Temporary for larkbase usage, we'll remove this block once we're all move over to erp
-    if (qr.transfer_status === "success" && !isOrderLater && qr.haravan_order_id && !qr.payment_entry_name) {
+    if (
+      qr.transfer_status === "success" &&
+      !isOrderLater &&
+      qr.haravan_order_id &&
+      !qr.payment_entry_name
+    ) {
       await this.enqueueMisaBackgroundJob(qr);
     }
     return true;
   }
 
-  async linkPaymentEntryToBankTransaction(qrRecord, {
-    paymentEntryName,
-    bankTransactionName
-  }) {
+  async linkPaymentEntryToBankTransaction(qrRecord, { paymentEntryName, bankTransactionName }) {
     try {
-      const bankTransaction = await this.frappeClient.getDoc("Bank Transaction", bankTransactionName);
+      const bankTransaction = await this.frappeClient.getDoc(
+        "Bank Transaction",
+        bankTransactionName
+      );
 
       if (!bankTransaction) {
         throw new Error(`Bank Transaction ${bankTransactionName} not found`);
@@ -140,7 +148,6 @@ export default class SepayTransactionService {
       );
 
       if (!isAlreadyLinked) {
-
         await this.db.qrPaymentTransaction.update({
           where: { id: qrRecord.id },
           data: { transfer_status: "success" }
@@ -148,7 +155,10 @@ export default class SepayTransactionService {
         const paymentEntry = await this.frappeClient.getDoc("Payment Entry", paymentEntryName);
 
         // Assume we allocate the full unallocated amount or deposit if unallocated is not set/zero but it should be valid
-        const amountToAllocate = bankTransaction.unallocated_amount > 0 ? bankTransaction.unallocated_amount : bankTransaction.deposit;
+        const amountToAllocate =
+          bankTransaction.unallocated_amount > 0
+            ? bankTransaction.unallocated_amount
+            : bankTransaction.deposit;
 
         paymentEntries.push({
           payment_document: "Payment Entry",
@@ -190,7 +200,9 @@ export default class SepayTransactionService {
   }
 
   mapRawSepayTransactionToPrisma(rawSepayTransaction) {
-    const transaction_date = dayjs(rawSepayTransaction.transactionDate, "YYYY-MM-DD HH:mm:ss").subtract(7, "hour").format("YYYY-MM-DD HH:mm:ss");
+    const transaction_date = dayjs(rawSepayTransaction.transactionDate, "YYYY-MM-DD HH:mm:ss")
+      .subtract(7, "hour")
+      .format("YYYY-MM-DD HH:mm:ss");
     return {
       id: String(rawSepayTransaction.id),
       bank_brand_name: rawSepayTransaction.gateway,
@@ -214,22 +226,27 @@ export default class SepayTransactionService {
 
       if (parseFloat(sepayTransaction.amount_in) < 0) return;
 
-      const { orderNumber, orderDesc } = this.standardizeOrderNumber(sepayTransaction.transaction_content, sepayTransaction.description);
+      const { orderNumber, orderDesc } = this.standardizeOrderNumber(
+        sepayTransaction.transaction_content,
+        sepayTransaction.description
+      );
 
       if (existingTransaction) {
-        const bank = sepayTransaction.bank_brand_name && await this.frappeClient.getList(
-          "Bank",
-          { filters: [["bank_name", "=", sepayTransaction.bank_brand_name]] }
-        );
-        const bankAccountList = bank && bank[0] && sepayTransaction.account_number && await this.frappeClient.getList(
-          "Bank Account",
-          {
+        const bank =
+          sepayTransaction.bank_brand_name &&
+          (await this.frappeClient.getList("Bank", {
+            filters: [["bank_name", "=", sepayTransaction.bank_brand_name]]
+          }));
+        const bankAccountList =
+          bank &&
+          bank[0] &&
+          sepayTransaction.account_number &&
+          (await this.frappeClient.getList("Bank Account", {
             filters: [
               ["bank", "=", bank[0].name],
               ["bank_account_no", "=", sepayTransaction.account_number]
             ]
-          }
-        );
+          }));
         const bankAccountName = bankAccountList?.length === 1 ? bankAccountList[0].name : null;
 
         const upsertedBankTransaction = await this.frappeClient.upsert(
@@ -253,7 +270,9 @@ export default class SepayTransactionService {
             sepay_bank_account_id: sepayTransaction.bank_account_id,
             deposit: sepayTransaction.amount_in,
             reference_number: sepayTransaction.reference_number,
-            date: dayjs(rawSepayTransaction.transactionDate, "YYYY-MM-DD HH:mm:ss").format("YYYY-MM-DD"),
+            date: dayjs(rawSepayTransaction.transactionDate, "YYYY-MM-DD HH:mm:ss").format(
+              "YYYY-MM-DD"
+            ),
             bank_account: bankAccountName
           },
           "name"
@@ -349,18 +368,28 @@ export default class SepayTransactionService {
       const safeJsonParse = (value) => {
         if (!value) return null;
         if (typeof value === "object") return value;
-        try { return JSON.parse(value); } catch { return value; }
+        try {
+          return JSON.parse(value);
+        } catch {
+          return value;
+        }
       };
 
       const safeBigInt = (value) => {
         if (value == null) return null;
-        try { return BigInt(value); } catch { return null; }
+        try {
+          return BigInt(value);
+        } catch {
+          return null;
+        }
       };
 
       const createDto = {
         id: parsedData.app_trans_id,
         amount_in: String(parsedData.amount || 0),
-        transaction_date: parsedData.server_time ? dayjs(parsedData.server_time).format("YYYY-MM-DD HH:mm:ss") : null,
+        transaction_date: parsedData.server_time
+          ? dayjs(parsedData.server_time).format("YYYY-MM-DD HH:mm:ss")
+          : null,
 
         app_id: parsedData.app_id,
         app_time: safeBigInt(parsedData.app_time),
@@ -385,7 +414,9 @@ export default class SepayTransactionService {
         }
       });
 
-      console.warn(`[ZaloPay] Transaction saved: ${parsedData.app_trans_id}, zp_trans_id: ${parsedData.zp_trans_id}`);
+      console.warn(
+        `[ZaloPay] Transaction saved: ${parsedData.app_trans_id}, zp_trans_id: ${parsedData.zp_trans_id}`
+      );
       return result;
     } catch (e) {
       console.warn("[ZaloPay] Failed to create transaction:", e.message);

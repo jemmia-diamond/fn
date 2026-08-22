@@ -19,8 +19,8 @@ export class DebounceService {
       await durableObject.debounce({ key, data, delay, actionType });
     } catch (error) {
       if (retries > 0) {
-        await new Promise(resolve => setTimeout(resolve, (4 - retries) * 1000));
-        return this.debounce({ env, key, data, actionType, delay }, retries - 1);
+        await new Promise((resolve) => setTimeout(resolve, (4 - retries) * 1000));
+        return DebounceService.debounce({ env, key, data, actionType, delay }, retries - 1);
       } else {
         Sentry.captureException(error);
         throw error;

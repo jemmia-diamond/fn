@@ -1,5 +1,5 @@
-import { IFrapperAttachment } from "services/larksuite/appointment/types";
-import FrappeClient from "frappe/frappe-client";
+import type FrappeClient from "frappe/frappe-client";
+import type { IFrapperAttachment } from "services/larksuite/appointment/types";
 
 export async function removeFileAttachment(
   frappeClient: FrappeClient,
@@ -35,10 +35,7 @@ export async function getDocumentAttachments(
     });
     return attachments || [];
   } catch (error) {
-    console.warn(
-      `Error fetching attachments for ${doctype} ${docname}:`,
-      error
-    );
+    console.warn(`Error fetching attachments for ${doctype} ${docname}:`, error);
     return [];
   }
 }

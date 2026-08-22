@@ -1,13 +1,13 @@
 import * as Sentry from "@sentry/cloudflare";
-import ZNSMessageService from "services/zalo-message/zalo-message";
-import { GetTemplateZalo } from "services/ecommerce/zalo-message/utils/format-template-zalo";
-import { ZALO_TEMPLATE } from "services/ecommerce/zalo-message/enums/zalo-template.enum";
-import HaravanAPIClient from "services/haravan/api-client/api-client";
-import { getLatestOrderId } from "services/ecommerce/order-tracking/queries/get-latest-orderid";
-import Database from "services/database";
 import crypto from "crypto";
-import { getInitialOrder } from "services/ecommerce/order-tracking/queries/get-initial-order";
+import Database from "services/database";
 import { HARAVAN_DISPATCH_TYPE_ZALO_MSG } from "services/ecommerce/enum";
+import { getInitialOrder } from "services/ecommerce/order-tracking/queries/get-initial-order";
+import { getLatestOrderId } from "services/ecommerce/order-tracking/queries/get-latest-orderid";
+import { ZALO_TEMPLATE } from "services/ecommerce/zalo-message/enums/zalo-template.enum";
+import { GetTemplateZalo } from "services/ecommerce/zalo-message/utils/format-template-zalo";
+import HaravanAPIClient from "services/haravan/api-client/api-client";
+import ZNSMessageService from "services/zalo-message/zalo-message";
 
 export default class SendZaloMessage {
   constructor(env) {
@@ -26,8 +26,7 @@ export default class SendZaloMessage {
   }
 
   static eligibleForSendingZaloMessage(message) {
-    if (this.whitelistSource.includes(message?.source)
-        && message.ref_order_id === 0) {
+    if (SendZaloMessage.whitelistSource.includes(message?.source) && message.ref_order_id === 0) {
       return true;
     }
 
@@ -37,9 +36,8 @@ export default class SendZaloMessage {
   static async dequeueSendZaloConfirmMessageQueue(batch, env) {
     const messages = batch.messages;
     for (const message of messages) {
-
       const order = message.body;
-      if (!this.eligibleForSendingZaloMessage(order)) {
+      if (!SendZaloMessage.eligibleForSendingZaloMessage(order)) {
         continue;
       }
 
@@ -54,7 +52,7 @@ export default class SendZaloMessage {
       const templateId = ZALO_TEMPLATE.orderConfirmed;
       const result = GetTemplateZalo.getTemplateZalo(templateId, order);
       if (result) {
-        await this.sendZaloMessage(result.phone, templateId, result.templateData, env);
+        await SendZaloMessage.sendZaloMessage(result.phone, templateId, result.templateData, env);
       }
     }
   }
@@ -68,18 +66,20 @@ export default class SendZaloMessage {
     const messages = batch.messages;
     for (const message of messages) {
       try {
-
         const order = message.body;
 
-        if (!this.eligibleForSendingZaloMessage(order)) {
+        if (!SendZaloMessage.eligibleForSendingZaloMessage(order)) {
           continue;
         }
 
-        if (order.dispatchType === HARAVAN_DISPATCH_TYPE_ZALO_MSG.REMIND_PAY || order.dispatchType === HARAVAN_DISPATCH_TYPE_ZALO_MSG.PAID) {
+        if (
+          order.dispatchType === HARAVAN_DISPATCH_TYPE_ZALO_MSG.REMIND_PAY ||
+          order.dispatchType === HARAVAN_DISPATCH_TYPE_ZALO_MSG.PAID
+        ) {
           continue;
         }
 
-        const haravanFulfillment = this.getLatestFulfillment(order);
+        const haravanFulfillment = SendZaloMessage.getLatestFulfillment(order);
 
         if (!haravanFulfillment || !haravanFulfillment.delivering_date) {
           console.warn("No delivering date found for order:", order.id);
@@ -101,7 +101,10 @@ export default class SendZaloMessage {
           }
         }
 
-        const isOrderInDelivery = await this.checkOrderInDelivery(String(firstOrder.id), db);
+        const isOrderInDelivery = await SendZaloMessage.checkOrderInDelivery(
+          String(firstOrder.id),
+          db
+        );
         if (isOrderInDelivery) {
           console.warn("Order is already in delivery:", firstOrder.id);
           continue;
@@ -110,10 +113,14 @@ export default class SendZaloMessage {
         const templateId = ZALO_TEMPLATE.delivering;
 
         const bearerToken = env.BEARER_TOKEN;
-        const accessToken = await this.createTokenForOrderTracking({
-          order_id: firstOrder.id,
-          order_number: firstOrder.order_number
-        }, bearerToken, env);
+        const accessToken = await SendZaloMessage.createTokenForOrderTracking(
+          {
+            order_id: firstOrder.id,
+            order_number: firstOrder.order_number
+          },
+          bearerToken,
+          env
+        );
         const extraParams = {
           trackingRedirectPath: `order-tracking?order_id=${firstOrder.id}&token=${accessToken}`
         };
@@ -122,8 +129,8 @@ export default class SendZaloMessage {
         console.warn("Zalo Delivery Template", result);
 
         if (result) {
-          await this.sendZaloMessage(result.phone, templateId, result.templateData, env);
-          await this.makeOrderInDelivery(String(firstOrder.id), db);
+          await SendZaloMessage.sendZaloMessage(result.phone, templateId, result.templateData, env);
+          await SendZaloMessage.makeOrderInDelivery(String(firstOrder.id), db);
         }
       } catch (error) {
         Sentry.captureException(error);
@@ -171,7 +178,6 @@ export default class SendZaloMessage {
   static async dequeueSendZaloRemindPayMessageQueue(batch, env) {
     const messages = batch.messages;
     for (const message of messages) {
-
       try {
         const orderData = message.body;
         const dispatchType = orderData.dispatchType;
@@ -197,7 +203,7 @@ export default class SendZaloMessage {
           continue;
         }
 
-        if (!this.eligibleForSendingZaloMessage(order)) {
+        if (!SendZaloMessage.eligibleForSendingZaloMessage(order)) {
           continue;
         }
 
@@ -219,7 +225,7 @@ export default class SendZaloMessage {
         const templateId = ZALO_TEMPLATE.remindPay;
         const result = GetTemplateZalo.getTemplateZalo(templateId, order);
         if (result) {
-          await this.sendZaloMessage(result.phone, templateId, result.templateData, env);
+          await SendZaloMessage.sendZaloMessage(result.phone, templateId, result.templateData, env);
         }
       } catch (error) {
         Sentry.captureException(error);
@@ -230,7 +236,7 @@ export default class SendZaloMessage {
   static async createTokenForOrderTracking(payloadObject, secret, env) {
     const payloadString = `${payloadObject.order_id}|${payloadObject.order_number}|${JSON.stringify(payloadObject)}`;
     const base64Payload = Buffer.from(payloadString).toString("base64url");
-    const hashedToken = this.createHashForOrderTracking(payloadString, secret);
+    const hashedToken = SendZaloMessage.createHashForOrderTracking(payloadString, secret);
 
     const uuid = crypto.randomUUID();
     const accessToken = `${base64Payload}.${hashedToken}`;
@@ -240,14 +246,11 @@ export default class SendZaloMessage {
   }
 
   static createHashForOrderTracking(payloadString, secret) {
-    const hashedToken =  this.generateHash(payloadString, secret);
+    const hashedToken = SendZaloMessage.generateHash(payloadString, secret);
     return hashedToken;
   }
 
   static generateHash(data, secret) {
-    return crypto
-      .createHmac("sha256", secret)
-      .update(data)
-      .digest("hex");
+    return crypto.createHmac("sha256", secret).update(data).digest("hex");
   }
 }

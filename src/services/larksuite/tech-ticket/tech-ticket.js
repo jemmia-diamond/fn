@@ -1,15 +1,14 @@
-import Database from "services/database";
-import { TABLES } from "services/larksuite/docs/constant";
-import LarksuiteService from "services/larksuite/lark";
-import LarkHelper from "services/larksuite/helper";
+import * as Sentry from "@sentry/cloudflare";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
-import * as Sentry from "@sentry/cloudflare";
+import Database from "services/database";
+import { TABLES } from "services/larksuite/docs/constant";
+import LarkHelper from "services/larksuite/helper";
+import LarksuiteService from "services/larksuite/lark";
 
 dayjs.extend(utc);
 
 export default class TechTicketService {
-
   /**
    * Helper function to map LarkSuite fields to tech ticket database fields
    * @param {Object} fields - LarkSuite fields object
@@ -25,8 +24,12 @@ export default class TechTicketService {
     return {
       ticket_id: LarkHelper.extractText(fields["Ticket ID"]),
       ticket_name: LarkHelper.extractText(fields["Tên Vấn Đề"]),
-      ticket_type: LarkHelper.extractText(fields["Nhóm Vấn Đề"]) || LarkHelper.extractText(fields["Loại Yêu Cầu"]),
-      ticket_priority: LarkHelper.extractText(fields["Mức Độ Khẩn Cấp Ưu Tiên"]) || LarkHelper.extractText(fields["Mức Độ Khẩn Cấp"]),
+      ticket_type:
+        LarkHelper.extractText(fields["Nhóm Vấn Đề"]) ||
+        LarkHelper.extractText(fields["Loại Yêu Cầu"]),
+      ticket_priority:
+        LarkHelper.extractText(fields["Mức Độ Khẩn Cấp Ưu Tiên"]) ||
+        LarkHelper.extractText(fields["Mức Độ Khẩn Cấp"]),
       ticket_status: LarkHelper.extractText(fields["Tình Trạng Xử Lý"]),
       description: LarkHelper.extractText(fields["Mô Tả Vấn Đề"]),
       solution_update: LarkHelper.extractText(fields["Kết Quả/Cập Nhật Xử Lý"]),
@@ -81,7 +84,7 @@ export default class TechTicketService {
     if (response?.code && response.code !== 0) {
       throw new Error(
         `LarkSuite API error: ${response.msg || "Unknown error"} (code: ${response.code}). ` +
-        `Details: ${JSON.stringify(response.error || {})}`
+          `Details: ${JSON.stringify(response.error || {})}`
       );
     }
 
@@ -102,7 +105,7 @@ export default class TechTicketService {
     const db = Database.instance(env);
 
     let created = 0;
-    let updated = 0;
+    const updated = 0;
     let failed = 0;
 
     // Process in chunks to avoid overwhelming the database but effectively use concurrency
@@ -111,33 +114,35 @@ export default class TechTicketService {
     for (let i = 0; i < records.length; i += CHUNK_SIZE) {
       const chunk = records.slice(i, i + CHUNK_SIZE);
 
-      const results = await Promise.all(chunk.map(async (record) => {
-        try {
-          const fields = record.fields || {};
-          const mappedFields = this.mapFieldsToTicket(fields);
+      const results = await Promise.all(
+        chunk.map(async (record) => {
+          try {
+            const fields = record.fields || {};
+            const mappedFields = TechTicketService.mapFieldsToTicket(fields);
 
-          const result = await db.larksuiteTechTicket.upsert({
-            where: {
-              record_id: record.record_id
-            },
-            update: {
-              ...mappedFields,
-              synced_at: new Date()
-            },
-            create: {
-              record_id: record.record_id,
-              ...mappedFields
-            }
-          });
+            const result = await db.larksuiteTechTicket.upsert({
+              where: {
+                record_id: record.record_id
+              },
+              update: {
+                ...mappedFields,
+                synced_at: new Date()
+              },
+              create: {
+                record_id: record.record_id,
+                ...mappedFields
+              }
+            });
 
-          return result ? "created" : "failed";
-        } catch {
-          return "failed";
-        }
-      }));
+            return result ? "created" : "failed";
+          } catch {
+            return "failed";
+          }
+        })
+      );
 
       // Count results
-      results.forEach(res => {
+      results.forEach((res) => {
         if (res === "created") created++;
         else failed++;
       });
@@ -204,19 +209,18 @@ export default class TechTicketService {
       // Fetch and save in batches
       do {
         // Fetch one page
-        const { items, hasMore, pageToken: nextPageToken } = await this.fetchTechTicketsPage(
-          env,
-          filter,
-          pageToken,
-          pageSize
-        );
+        const {
+          items,
+          hasMore,
+          pageToken: nextPageToken
+        } = await TechTicketService.fetchTechTicketsPage(env, filter, pageToken, pageSize);
 
         if (items.length === 0) break;
 
         totalFetched += items.length;
 
         // Save this batch immediately
-        const stats = await this.saveTechTicketsToDatabase(env, items);
+        const stats = await TechTicketService.saveTechTicketsToDatabase(env, items);
         totalCreated += stats.created;
         totalUpdated += stats.updated;
         totalFailed += stats.failed;

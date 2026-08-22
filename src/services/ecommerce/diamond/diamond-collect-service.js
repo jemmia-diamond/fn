@@ -26,7 +26,8 @@ export default class DiamondCollectService {
       const activeRules = await DiamondDiscountService.getActiveRules(this.env);
       const allCollections = await this._fetchCollections(nocoClient, activeRules);
 
-      const { ruleCollections, allPercentCollectionIds } = this._buildRuleCollectionsMap(allCollections);
+      const { ruleCollections, allPercentCollectionIds } =
+        this._buildRuleCollectionsMap(allCollections);
 
       await this._processDiamondBatches({
         db,
@@ -43,7 +44,6 @@ export default class DiamondCollectService {
           "✅ [CTKM nền] Hoàn tất đồng bộ CTKM nền Kim Cương. Dữ liệu đã được cập nhật trên Haravan và Nocodb."
         );
       }
-
     } catch (error) {
       Sentry.captureException(error);
       if (notify) {
@@ -66,7 +66,7 @@ export default class DiamondCollectService {
   }
 
   async _fetchCollections(nocoClient, activeRules) {
-    const uniquePercents = [...new Set(activeRules.map(r => r.discount_percent))];
+    const uniquePercents = [...new Set(activeRules.map((r) => r.discount_percent))];
 
     if (uniquePercents.length === 0) {
       return { list: [] };
@@ -78,8 +78,8 @@ export default class DiamondCollectService {
       limit: 1000
     });
 
-    const existingPercents = new Set((collections.list || []).map(c => Number(c.discount_value)));
-    const missingPercents = uniquePercents.filter(p => !existingPercents.has(Number(p)));
+    const existingPercents = new Set((collections.list || []).map((c) => Number(c.discount_value)));
+    const missingPercents = uniquePercents.filter((p) => !existingPercents.has(Number(p)));
 
     if (missingPercents.length > 0) {
       await this._ensureMissingCollectionsExist(nocoClient, missingPercents);
@@ -94,7 +94,7 @@ export default class DiamondCollectService {
   }
 
   async _ensureMissingCollectionsExist(nocoClient, missingPercents) {
-    const newRecords = missingPercents.map(percent => ({
+    const newRecords = missingPercents.map((percent) => ({
       discount_type: "percent",
       discount_value: percent,
       title: `Chương trình nền KCV ${percent}%`,
@@ -102,12 +102,18 @@ export default class DiamondCollectService {
     }));
 
     try {
-      const createdCollections = await nocoClient.createRecords(NOCODB_TABLES.MARKETING.HARAVAN_COLLECTIONS, newRecords);
-      const createdCollectionIds = (createdCollections || []).map(record => record.id);
+      const createdCollections = await nocoClient.createRecords(
+        NOCODB_TABLES.MARKETING.HARAVAN_COLLECTIONS,
+        newRecords
+      );
+      const createdCollectionIds = (createdCollections || []).map((record) => record.id);
 
-      const createdCollectionsList = await nocoClient.listRecords(NOCODB_TABLES.MARKETING.HARAVAN_COLLECTIONS, {
-        where: `(id,in,${createdCollectionIds.join(",")})`
-      });
+      const createdCollectionsList = await nocoClient.listRecords(
+        NOCODB_TABLES.MARKETING.HARAVAN_COLLECTIONS,
+        {
+          where: `(id,in,${createdCollectionIds.join(",")})`
+        }
+      );
 
       if (createdCollectionsList.list.length > 0) {
         for (const col of createdCollectionsList.list) {
@@ -126,24 +132,21 @@ export default class DiamondCollectService {
 
   async _triggerCollectionWebhook(col) {
     try {
-      await fetch(
-        "https://fagwjdzlfqwwyul2ij6ehvug3e0vhowc.lambda-url.ap-southeast-1.on.aws/",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            "type": "records.after.update",
-            "version": "v3",
-            "data": {
-              "table_id": NOCODB_TABLES.MARKETING.HARAVAN_COLLECTIONS,
-              "table_name": "haravan_collections",
-              "rows": [col]
-            }
-          })
-        }
-      );
+      await fetch("https://fagwjdzlfqwwyul2ij6ehvug3e0vhowc.lambda-url.ap-southeast-1.on.aws/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          type: "records.after.update",
+          version: "v3",
+          data: {
+            table_id: NOCODB_TABLES.MARKETING.HARAVAN_COLLECTIONS,
+            table_name: "haravan_collections",
+            rows: [col]
+          }
+        })
+      });
     } catch (error) {
       Sentry.captureException(error, {
         tags: {
@@ -158,7 +161,7 @@ export default class DiamondCollectService {
     const ruleCollections = {};
     const allPercentCollectionIds = new Set();
 
-    for (const col of (allCollections.list || [])) {
+    for (const col of allCollections.list || []) {
       if (col.discount_value) {
         const discountVal = col.discount_value;
 
@@ -192,7 +195,7 @@ export default class DiamondCollectService {
         break;
       }
 
-      const diamondIds = diamonds.map(d => d.id);
+      const diamondIds = diamonds.map((d) => d.id);
       const diamondCollectionsMap = {};
 
       if (diamondIds.length > 0) {
@@ -201,11 +204,14 @@ export default class DiamondCollectService {
         const entriesLimit = 1000;
 
         while (true) {
-          const relatedCollections = await nocoClient.listRecords(NOCODB_TABLES.MARKETING.DIAMOND_HARAVAN_COLLECTIONS, {
-            where,
-            limit: entriesLimit,
-            offset: entriesOffset
-          });
+          const relatedCollections = await nocoClient.listRecords(
+            NOCODB_TABLES.MARKETING.DIAMOND_HARAVAN_COLLECTIONS,
+            {
+              where,
+              limit: entriesLimit,
+              offset: entriesOffset
+            }
+          );
 
           const list = relatedCollections.list || [];
 
@@ -272,9 +278,20 @@ export default class DiamondCollectService {
       const rules = ruleCollections[discountPercent] || {};
       const targetNocodbCollectionId = rules.nocodbId || null;
 
-      await this._syncNocoDBCollections(diamond, targetNocodbCollectionId, context, existingEntries);
-      await this._syncHaravanCollections(diamond, targetNocodbCollectionId, rules.haravanId, nocoClient, haravanApi, existingEntries);
-
+      await this._syncNocoDBCollections(
+        diamond,
+        targetNocodbCollectionId,
+        context,
+        existingEntries
+      );
+      await this._syncHaravanCollections(
+        diamond,
+        targetNocodbCollectionId,
+        rules.haravanId,
+        nocoClient,
+        haravanApi,
+        existingEntries
+      );
     } catch (error) {
       if (this._isIgnorableError(error)) {
         return;
@@ -286,7 +303,8 @@ export default class DiamondCollectService {
 
   async _syncNocoDBCollections(diamond, targetCollectionId, context, existingEntries) {
     const { ruleCollections, nocoClient, allPercentCollectionIds } = context;
-    const defaultCollectionId = ruleCollections[DiamondCollectService.DEFAULT_DISCOUNT_PERCENT]?.nocodbId;
+    const defaultCollectionId =
+      ruleCollections[DiamondCollectService.DEFAULT_DISCOUNT_PERCENT]?.nocodbId;
 
     await DiamondDiscountService.syncNocoDBDiscountCollections({
       diamond,
@@ -298,20 +316,33 @@ export default class DiamondCollectService {
     });
   }
 
-  async _syncHaravanCollections(diamond, targetNocodbCollectionId, targetHaravanCollectionId, nocoClient, haravanApi, existingEntries) {
+  async _syncHaravanCollections(
+    diamond,
+    targetNocodbCollectionId,
+    targetHaravanCollectionId,
+    nocoClient,
+    haravanApi,
+    existingEntries
+  ) {
     if (!targetNocodbCollectionId) return;
 
-    let exists = (existingEntries || []).some(entry => entry.haravan_collection_id === targetNocodbCollectionId);
+    let exists = (existingEntries || []).some(
+      (entry) => entry.haravan_collection_id === targetNocodbCollectionId
+    );
 
     if (!exists) {
       try {
-        console.warn("Adding discount collection for diamond:", diamond.id, targetNocodbCollectionId);
+        console.warn(
+          "Adding discount collection for diamond:",
+          diamond.id,
+          targetNocodbCollectionId
+        );
         await nocoClient.createRecords(NOCODB_TABLES.MARKETING.DIAMOND_HARAVAN_COLLECTIONS, {
           diamonds: { id: diamond.id },
           haravan_collections: { id: targetNocodbCollectionId }
         });
         // Delay for NocoDB creation
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise((resolve) => setTimeout(resolve, 1000));
         exists = true;
       } catch (error) {
         if (this._isIgnorableError(error)) {
@@ -330,8 +361,8 @@ export default class DiamondCollectService {
   async _createHaravanCollect(diamond, haravanCollectionId, haravanApi) {
     try {
       await haravanApi.collect.createCollect({
-        "product_id": parseInt(diamond.product_id),
-        "collection_id": parseInt(haravanCollectionId)
+        product_id: parseInt(diamond.product_id),
+        collection_id: parseInt(haravanCollectionId)
       });
     } catch (hrvError) {
       if (hrvError.response?.status === 422) {
@@ -341,7 +372,7 @@ export default class DiamondCollectService {
       }
     }
     // Delay for Haravan rate limit
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
   }
 
   _isIgnorableError(error) {

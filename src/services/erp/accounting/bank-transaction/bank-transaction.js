@@ -1,12 +1,12 @@
-import FrappeClient from "src/frappe/frappe-client";
-import dayjs from "dayjs";
-import utc from "dayjs/plugin/utc.js";
-import timezone from "dayjs/plugin/timezone.js";
 import * as Sentry from "@sentry/cloudflare";
-import LarksuiteService from "services/larksuite/lark";
-import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/constant";
+import dayjs from "dayjs";
+import timezone from "dayjs/plugin/timezone.js";
+import utc from "dayjs/plugin/utc.js";
 import Database from "services/database";
+import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/constant";
+import LarksuiteService from "services/larksuite/lark";
 import { TIMEZONE_VIETNAM } from "src/constants";
+import FrappeClient from "src/frappe/frappe-client";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -73,12 +73,19 @@ export default class BankTransactionService {
         ["transaction_type", "=", "SePay"]
       ];
 
-      EXCLUDED_TRANSACTION_PATTERNS.forEach(pattern => {
+      EXCLUDED_TRANSACTION_PATTERNS.forEach((pattern) => {
         filters.push(["sepay_transaction_content", "not like", `%${pattern}%`]);
       });
 
       const bankTransactions = await this.frappeClient.getList("Bank Transaction", {
-        fields: ["name", "date", "deposit", "sepay_transaction_content", "bank_account", "sepay_transaction_date"],
+        fields: [
+          "name",
+          "date",
+          "deposit",
+          "sepay_transaction_content",
+          "bank_account",
+          "sepay_transaction_date"
+        ],
         filters,
         limit_page_length: 100
       });
@@ -90,10 +97,14 @@ export default class BankTransactionService {
       const unlinkedTransactions = [];
       for (const transaction of bankTransactions) {
         try {
-          const fullTransaction = await this.frappeClient.getDoc("Bank Transaction", transaction.name);
-          const hasPaymentEntry = fullTransaction.payment_entries &&
-                                   Array.isArray(fullTransaction.payment_entries) &&
-                                   fullTransaction.payment_entries.length > 0;
+          const fullTransaction = await this.frappeClient.getDoc(
+            "Bank Transaction",
+            transaction.name
+          );
+          const hasPaymentEntry =
+            fullTransaction.payment_entries &&
+            Array.isArray(fullTransaction.payment_entries) &&
+            fullTransaction.payment_entries.length > 0;
 
           if (!hasPaymentEntry) {
             unlinkedTransactions.push({
@@ -111,7 +122,10 @@ export default class BankTransactionService {
       }
 
       if (unlinkedTransactions.length > 0) {
-        await this.sendNotification(unlinkedTransactions, dayjs(toDateUTC).tz(TIMEZONE_VIETNAM).format("YYYY-MM-DD"));
+        await this.sendNotification(
+          unlinkedTransactions,
+          dayjs(toDateUTC).tz(TIMEZONE_VIETNAM).format("YYYY-MM-DD")
+        );
       }
 
       return unlinkedTransactions;
@@ -125,10 +139,7 @@ export default class BankTransactionService {
     try {
       const user = await this.db.larksuite_users.findFirst({
         where: {
-          OR: [
-            { email: email },
-            { enterprise_email: email }
-          ]
+          OR: [{ email: email }, { enterprise_email: email }]
         },
         select: {
           user_id: true
@@ -148,7 +159,9 @@ export default class BankTransactionService {
     let remainingTransactions = [...transactions];
 
     for (const rule of LOCATION_CC_RULES) {
-      const groupTransactions = remainingTransactions.filter(t => t.bank_account && t.bank_account.includes(rule.pattern));
+      const groupTransactions = remainingTransactions.filter(
+        (t) => t.bank_account && t.bank_account.includes(rule.pattern)
+      );
 
       if (groupTransactions.length > 0) {
         const userId = await this.getUserIdByEmail(rule.email);
@@ -159,7 +172,7 @@ export default class BankTransactionService {
         });
 
         // Remove matches from remaining
-        remainingTransactions = remainingTransactions.filter(t => !groupTransactions.includes(t));
+        remainingTransactions = remainingTransactions.filter((t) => !groupTransactions.includes(t));
       }
     }
 
@@ -191,7 +204,8 @@ export default class BankTransactionService {
 
   formatNotificationMessage(groupedTransactions, totalCount, date) {
     const formattedHeaderDate = dayjs(date).format("DD-MM-YYYY");
-    let message = `⚠️ [${formattedHeaderDate}] Có ${totalCount} giao dịch chưa được liên kết với phiếu thu ⚠️:\n` +
+    let message =
+      `⚠️ [${formattedHeaderDate}] Có ${totalCount} giao dịch chưa được liên kết với phiếu thu ⚠️:\n` +
       "Lý do: Không thể tự động tìm thấy phiếu thu để gắn giao dịch. Vui lòng tìm và tự gắn lại\n";
 
     let globalIndex = 0;
@@ -200,21 +214,25 @@ export default class BankTransactionService {
       message += "\n";
       message += `📍 <b>KHU VỰC: ${group.label.toUpperCase()}</b>\n`;
 
-      const groupList = group.transactions.map(transaction => {
-        globalIndex++;
-        const link = `https://erp.jemmia.vn/app/bank-transaction/${transaction.name}`;
-        const amount = new Intl.NumberFormat("vi-VN").format(transaction.amount_in || 0);
-        const formattedDate = transaction.sepay_transaction_date
-          ? dayjs(transaction.sepay_transaction_date).format("DD-MM-YYYY HH:mm:ss")
-          : dayjs(transaction.date).format("DD-MM-YYYY");
+      const groupList = group.transactions
+        .map((transaction) => {
+          globalIndex++;
+          const link = `https://erp.jemmia.vn/app/bank-transaction/${transaction.name}`;
+          const amount = new Intl.NumberFormat("vi-VN").format(transaction.amount_in || 0);
+          const formattedDate = transaction.sepay_transaction_date
+            ? dayjs(transaction.sepay_transaction_date).format("DD-MM-YYYY HH:mm:ss")
+            : dayjs(transaction.date).format("DD-MM-YYYY");
 
-        return `\n${globalIndex}. Giao dịch ${transaction.name}\n` +
-               `- Tiền vào: +${amount} ₫\n` +
-               `- Tài khoản: ${transaction.bank_account || "N/A"}\n` +
-               `- Lúc: ${formattedDate}\n` +
-               `- Nội dung CK: ${transaction.sepay_transaction_content || "N/A"}\n` +
-               `- Link: ${link}`;
-      }).join("\n");
+          return (
+            `\n${globalIndex}. Giao dịch ${transaction.name}\n` +
+            `- Tiền vào: +${amount} ₫\n` +
+            `- Tài khoản: ${transaction.bank_account || "N/A"}\n` +
+            `- Lúc: ${formattedDate}\n` +
+            `- Nội dung CK: ${transaction.sepay_transaction_content || "N/A"}\n` +
+            `- Link: ${link}`
+          );
+        })
+        .join("\n");
 
       message += groupList;
 

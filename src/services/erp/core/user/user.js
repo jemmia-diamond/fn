@@ -1,8 +1,8 @@
-import FrappeClient from "frappe/frappe-client";
-import Database from "services/database";
+import * as Sentry from "@sentry/cloudflare";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
-import * as Sentry from "@sentry/cloudflare";
+import FrappeClient from "frappe/frappe-client";
+import Database from "services/database";
 
 dayjs.extend(utc);
 
@@ -28,14 +28,14 @@ export default class UserService {
     try {
       const userService = new UserService(env);
       const users = await userService.frappeClient.getList(userService.doctype, {
-        filters: [
-          ["pancake_id", "=", null]
-        ]
+        filters: [["pancake_id", "=", null]]
       });
 
       const pancakeUsers = await userService.getPancakeUsers();
       for (const user of users) {
-        const pancakeUser = pancakeUsers.find(pancakeUser => pancakeUser.enterprise_email === user.email);
+        const pancakeUser = pancakeUsers.find(
+          (pancakeUser) => pancakeUser.enterprise_email === user.email
+        );
         if (pancakeUser) {
           await userService.frappeClient.update({
             doctype: userService.doctype,
@@ -61,9 +61,7 @@ export default class UserService {
         const result = await userService.frappeClient.getList(userService.doctype, {
           limit_start: (page - 1) * pageSize,
           limit_page_length: pageSize,
-          filters: [
-            ["modified", ">=", timeThreshold]
-          ]
+          filters: [["modified", ">=", timeThreshold]]
         });
         users = users.concat(result);
         if (result.length < pageSize) break;
@@ -101,4 +99,3 @@ export default class UserService {
     }
   }
 }
-

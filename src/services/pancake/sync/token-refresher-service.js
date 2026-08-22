@@ -18,10 +18,7 @@ export default class PancakeTokenRefresherService {
 
       const pagesResponse = await this.pancakeClient.getPages();
       const categorized = pagesResponse?.categorized;
-      const pages = [
-        ...(categorized?.activated || []),
-        ...(categorized?.inactivated || [])
-      ];
+      const pages = [...(categorized?.activated || []), ...(categorized?.inactivated || [])];
 
       if (!pages.length) {
         console.warn("No Pancake pages found to refresh tokens for.");
@@ -52,7 +49,9 @@ export default class PancakeTokenRefresherService {
       const environment = this.env.INFISICAL_ENVIRONMENT || "prod";
 
       if (!accessToken || !projectId) {
-        throw new Error("Missing required Infisical environment variables (INFISICAL_TOKEN, INFISICAL_PROJECT_ID).");
+        throw new Error(
+          "Missing required Infisical environment variables (INFISICAL_TOKEN, INFISICAL_PROJECT_ID)."
+        );
       }
 
       const entries = Object.entries(patsConfig);
@@ -75,7 +74,7 @@ export default class PancakeTokenRefresherService {
 
         const headers = {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${accessToken}`
+          Authorization: `Bearer ${accessToken}`
         };
 
         if (this.env.CF_ACCESS_CLIENT_ID && this.env.CF_ACCESS_CLIENT_SECRET) {
@@ -99,7 +98,9 @@ export default class PancakeTokenRefresherService {
 
         if (!res.ok) {
           const errorText = await res.text();
-          throw new Error(`Failed to upsert secret ${secretName} in Infisical: ${res.status} - ${errorText}`);
+          throw new Error(
+            `Failed to upsert secret ${secretName} in Infisical: ${res.status} - ${errorText}`
+          );
         }
 
         console.warn(`Successfully updated ${secretName} in Infisical.`);

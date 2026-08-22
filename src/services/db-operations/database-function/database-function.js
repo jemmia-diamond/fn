@@ -1,6 +1,6 @@
+import { Prisma } from "@prisma-cli";
 import * as Sentry from "@sentry/cloudflare";
 import Database from "services/database";
-import { Prisma } from "@prisma-cli";
 
 export default class DatabaseFunctionService {
   constructor(env) {

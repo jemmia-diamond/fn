@@ -1,9 +1,9 @@
+import * as crypto from "crypto";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
-import Database from "services/database";
 import HaravanAPI from "services/clients/haravan-client";
+import Database from "services/database";
 import ProductMapper from "services/haravan/products/product-mapper";
-import * as crypto from "crypto";
 import { sleep } from "services/utils/sleep.js";
 
 dayjs.extend(utc);
@@ -104,7 +104,7 @@ export default class ProductDatabaseSyncService {
 
     const currentDateTime = dayjs().utc().toDate();
     await this.db.$transaction(async (tx) => {
-      const operations = products.map(product => {
+      const operations = products.map((product) => {
         const data = ProductMapper.mapProduct(product);
         const id = data.id;
         delete data.id;
@@ -133,7 +133,7 @@ export default class ProductDatabaseSyncService {
 
     const currentDateTime = dayjs().utc().toDate();
     await this.db.$transaction(async (tx) => {
-      const operations = images.map(image => {
+      const operations = images.map((image) => {
         const data = ProductMapper.mapImage(image);
         const id = data.id;
         delete data.id;

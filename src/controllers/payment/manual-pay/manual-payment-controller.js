@@ -1,8 +1,8 @@
 import * as Sentry from "@sentry/cloudflare";
-import { BadRequestException } from "src/exception/exceptions";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import ManualPaymentService from "services/payment/manual-pay/payment";
+import { BadRequestException } from "src/exception/exceptions";
 
 dayjs.extend(utc);
 
@@ -23,12 +23,15 @@ export default class ManualPaymentsController {
       delete paymentData.transfer_amount;
     }
 
-    ["send_date", "receive_date", "created_date", "updated_date"].forEach(field => {
-      let rawValue = body[field];
+    ["send_date", "receive_date", "created_date", "updated_date"].forEach((field) => {
+      const rawValue = body[field];
       if (rawValue != null && rawValue !== "") {
         const timestamp = Number(rawValue);
         if (Number.isFinite(timestamp)) {
-          const date = dayjs.unix(timestamp / 1000).utc().toDate();
+          const date = dayjs
+            .unix(timestamp / 1000)
+            .utc()
+            .toDate();
           if (!isNaN(date.getTime())) {
             paymentData[field] = date;
             return;
@@ -51,9 +54,13 @@ export default class ManualPaymentsController {
       delete paymentData.haravan_order_id;
     }
 
-    Object.keys(paymentData).forEach(key => {
+    Object.keys(paymentData).forEach((key) => {
       const value = paymentData[key];
-      if (value === undefined || (value instanceof Date && isNaN(value.getTime())) || (typeof value === "number" && isNaN(value))) {
+      if (
+        value === undefined ||
+        (value instanceof Date && isNaN(value.getTime())) ||
+        (typeof value === "number" && isNaN(value))
+      ) {
         delete paymentData[key];
       }
     });
@@ -94,10 +101,7 @@ export default class ManualPaymentsController {
 
       const manualPaymentService = new ManualPaymentService(c.env);
 
-      const updatedPayment = await manualPaymentService.updateManualPayment(
-        id,
-        paymentData
-      );
+      const updatedPayment = await manualPaymentService.updateManualPayment(id, paymentData);
 
       if (updatedPayment) {
         return c.json(ManualPaymentsController._serializePayment(updatedPayment), 200);

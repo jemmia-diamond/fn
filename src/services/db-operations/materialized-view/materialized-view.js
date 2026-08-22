@@ -1,6 +1,6 @@
-import Database from "services/database";
 import { Prisma } from "@prisma-cli";
 import * as Sentry from "@sentry/cloudflare";
+import Database from "services/database";
 
 export default class MaterializedViewService {
   constructor(env) {
@@ -9,10 +9,7 @@ export default class MaterializedViewService {
 
   static async refresh10Minutes(env) {
     const db = Database.instance(env);
-    const views = [
-      "larksuite.lark_variants_view",
-      "larksuite.serial_numbers_view"
-    ];
+    const views = ["larksuite.lark_variants_view", "larksuite.serial_numbers_view"];
     for (const view of views) {
       try {
         await db.$queryRaw`${Prisma.raw(`REFRESH MATERIALIZED VIEW ${view};`)}`;
@@ -67,9 +64,7 @@ export default class MaterializedViewService {
   // Refresh each 3 hours
   static async refresh3Hours(env) {
     const db = Database.instance(env);
-    const views = [
-      "marketing.lead_contact_conversion_customer_order_view"
-    ];
+    const views = ["marketing.lead_contact_conversion_customer_order_view"];
     for (const view of views) {
       try {
         await db.$queryRaw`${Prisma.raw(`REFRESH MATERIALIZED VIEW ${view};`)}`;

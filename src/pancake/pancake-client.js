@@ -9,7 +9,7 @@ export default class PancakeClient {
     } else {
       this.accessToken = env.PANCAKE_ACCESS_TOKEN;
 
-      let combinedPats = {};
+      const combinedPats = {};
       for (let i = 1; i <= 20; i++) {
         const chunk = env[`PANCAKE_PATS_CONFIG_${i}`];
         if (chunk) {
@@ -26,24 +26,27 @@ export default class PancakeClient {
       this.pancakePatsConfig = combinedPats;
     }
 
-    this.client = createAxiosClient({
-      baseURL: this.baseUrl,
-      headers: { "Content-Type": "application/json" },
-      timeout: 60000
-    }, {
-      retries: 3,
-      retryDelay: (retryCount) => retryCount * 1000,
-      shouldResetTimeout: true,
-      retryCondition: (error) => {
-        return (
-          error.response?.status === 429 ||
-          error.response?.status >= 500 ||
-          error.code === "ECONNABORTED" ||
-          error.code === "ETIMEDOUT" ||
-          error.message?.includes("timeout")
-        );
+    this.client = createAxiosClient(
+      {
+        baseURL: this.baseUrl,
+        headers: { "Content-Type": "application/json" },
+        timeout: 60000
+      },
+      {
+        retries: 3,
+        retryDelay: (retryCount) => retryCount * 1000,
+        shouldResetTimeout: true,
+        retryCondition: (error) => {
+          return (
+            error.response?.status === 429 ||
+            error.response?.status >= 500 ||
+            error.code === "ECONNABORTED" ||
+            error.code === "ETIMEDOUT" ||
+            error.message?.includes("timeout")
+          );
+        }
       }
-    });
+    );
 
     this.client.interceptors.response.use(
       (response) => {
@@ -56,7 +59,9 @@ export default class PancakeClient {
       (error) => {
         if (error.response && error.response.data) {
           const data = error.response.data;
-          throw new Error(`Pancake API Error ${error.response.status}: ${typeof data === "object" ? JSON.stringify(data) : data}`);
+          throw new Error(
+            `Pancake API Error ${error.response.status}: ${typeof data === "object" ? JSON.stringify(data) : data}`
+          );
         }
         throw error;
       }
@@ -70,7 +75,9 @@ export default class PancakeClient {
       return pageAccessToken;
     }
 
-    console.warn(`Page Access Token for page ${pageId} not found in PANCAKE_PATS_CONFIG. Skipping.`);
+    console.warn(
+      `Page Access Token for page ${pageId} not found in PANCAKE_PATS_CONFIG. Skipping.`
+    );
     return null;
   }
 

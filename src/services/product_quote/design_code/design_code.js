@@ -1,10 +1,10 @@
-import Database from "services/database";
-import { TABLES } from "services/larksuite/docs/constant";
 import { Prisma } from "@prisma-cli/client";
-import utc from "dayjs/plugin/utc.js";
-import dayjs from "dayjs";
-import RecordService from "services/larksuite/docs/base/record/record";
 import * as Sentry from "@sentry/cloudflare";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc.js";
+import Database from "services/database";
+import RecordService from "services/larksuite/docs/base/record/record";
+import { TABLES } from "services/larksuite/docs/constant";
 
 dayjs.extend(utc);
 
@@ -16,15 +16,15 @@ export default class DesignCodeService {
 
   mapToLarkFields(design) {
     return {
-      "id": design.id,
+      id: design.id,
       "Mã thiết kế": design.design_code || "",
       "Loại thiết kế": design.design_type || "",
       "Giới tính": design.gender || "",
-      "Cover": design.cover || "",
+      Cover: design.cover || "",
       "Link render": design.link_render
         ? { text: design.link_render, link: design.link_render }
         : null,
-      "Code": design.code || "",
+      Code: design.code || "",
       "Erp Code": design.erp_code || "",
       "Backup Code": design.backup_code || "",
       "Tìm kiếm MTK": this.concatenateCodes(
@@ -96,7 +96,9 @@ export default class DesignCodeService {
       return `'${String(value).replace(/'/g, "''")}'`;
     };
 
-    const valuesList = records.map((record) => `
+    const valuesList = records
+      .map(
+        (record) => `
       (
             ${record.id},
             ${escape(record.design_code)},
@@ -109,7 +111,9 @@ export default class DesignCodeService {
             ${escape(record.backup_code)},
             ${escape(record.lark_record_id)}
           )
-    `).join(", ");
+    `
+      )
+      .join(", ");
 
     const sql = `
       INSERT INTO workplace.designs_temporary_products (
@@ -141,7 +145,8 @@ export default class DesignCodeService {
     const lastDate = await kv.get(KV_KEY);
 
     const minutesBack = 10;
-    const fromDate = lastDate || dayjs().utc().subtract(minutesBack, "minutes").format("YYYY-MM-DD HH:mm:ss");
+    const fromDate =
+      lastDate || dayjs().utc().subtract(minutesBack, "minutes").format("YYYY-MM-DD HH:mm:ss");
     const toDate = dayjs().utc().format("YYYY-MM-DD HH:mm:ss");
 
     try {
@@ -152,7 +157,7 @@ export default class DesignCodeService {
       });
 
       if (newDesigns && newDesigns.length > 0) {
-        const recordItems = newDesigns.map(d => this.mapToLarkFields(d));
+        const recordItems = newDesigns.map((d) => this.mapToLarkFields(d));
 
         const response = await RecordService.createLarksuiteRecords({
           env: this.env,
@@ -162,7 +167,11 @@ export default class DesignCodeService {
           userIdType: "open_id"
         });
 
-        if (response && response.code === 0 && response.data?.records?.length === newDesigns.length) {
+        if (
+          response &&
+          response.code === 0 &&
+          response.data?.records?.length === newDesigns.length
+        ) {
           const createdRecords = response.data.records;
           const updatedNewDesigns = newDesigns.map((design, idx) => ({
             ...design,
@@ -180,7 +189,7 @@ export default class DesignCodeService {
       });
 
       if (existingDesigns && existingDesigns.length > 0) {
-        const updateRecordItems = existingDesigns.map(design => ({
+        const updateRecordItems = existingDesigns.map((design) => ({
           record_id: design.lark_record_id,
           ...this.mapToLarkFields(design)
         }));

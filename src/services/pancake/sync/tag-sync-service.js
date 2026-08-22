@@ -1,9 +1,9 @@
-import Database from "services/database";
-import PancakeClient from "pancake/pancake-client";
+import * as Sentry from "@sentry/cloudflare";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
-import * as Sentry from "@sentry/cloudflare";
+import PancakeClient from "pancake/pancake-client";
 import { isInvalidTokenError } from "pancake/utils";
+import Database from "services/database";
 import { sleep } from "services/utils/sleep";
 
 dayjs.extend(utc);
@@ -48,7 +48,10 @@ export default class TagSyncService {
       const data = await this.pancakeClient.getPageTags(pageId);
 
       if (isInvalidTokenError(data)) {
-        this.captureException(new Error(`Pancake API Error [102]: Invalid access_token for tags in page ${pageId}`), pageId);
+        this.captureException(
+          new Error(`Pancake API Error [102]: Invalid access_token for tags in page ${pageId}`),
+          pageId
+        );
         return;
       }
 
@@ -72,11 +75,13 @@ export default class TagSyncService {
 
       const tagData = this.mapToTagModel(item, pageId, tagId);
 
-      tagUpserts.push(this.db.tag_page.upsert({
-        where: { page_id_id: { page_id: String(pageId), id: tagId } },
-        create: { ...tagData, database_created_at: dayjs().utc().toDate() },
-        update: { ...tagData, database_updated_at: dayjs().utc().toDate() }
-      }));
+      tagUpserts.push(
+        this.db.tag_page.upsert({
+          where: { page_id_id: { page_id: String(pageId), id: tagId } },
+          create: { ...tagData, database_created_at: dayjs().utc().toDate() },
+          update: { ...tagData, database_updated_at: dayjs().utc().toDate() }
+        })
+      );
 
       if (tagUpserts.length >= 50) {
         await Promise.all(tagUpserts);

@@ -1,5 +1,5 @@
-import ProductModule from "services/haravan/api-client/modules/products";
 import OrderModule from "services/haravan/api-client/modules/orders";
+import ProductModule from "services/haravan/api-client/modules/products";
 
 export default class HaravanAPIClient {
   constructor(env) {

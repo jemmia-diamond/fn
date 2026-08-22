@@ -147,7 +147,7 @@ export default class RecordConnector extends LarkBaseClient {
     const endpoint = `/bitable/v1/apps/${appToken}/tables/${tableId}/records/batch_create`;
 
     const data = this._cleanParams({
-      records: records.map(fields => ({ fields })),
+      records: records.map((fields) => ({ fields })),
       user_id_type: options.userIdType || "open_id",
       client_token: options.clientToken
     });
@@ -220,7 +220,7 @@ export default class RecordConnector extends LarkBaseClient {
     }
 
     // Delete in batches
-    const recordIds = records.map(row => row.record_id);
+    const recordIds = records.map((row) => row.record_id);
     const batchSize = 500;
 
     for (let i = 0; i < recordIds.length; i += batchSize) {
@@ -236,8 +236,6 @@ export default class RecordConnector extends LarkBaseClient {
    * @returns {object} Cleaned parameters
    */
   _cleanParams(params) {
-    return Object.fromEntries(
-      Object.entries(params).filter(([_, value]) => value != null)
-    );
+    return Object.fromEntries(Object.entries(params).filter(([_, value]) => value != null));
   }
 }

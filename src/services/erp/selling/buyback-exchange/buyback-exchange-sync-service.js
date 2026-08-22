@@ -1,7 +1,7 @@
-import FrappeClient from "frappe/frappe-client";
-import Database from "services/database";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
+import FrappeClient from "frappe/frappe-client";
+import Database from "services/database";
 import { fetchChildRecordsFromERP } from "src/services/utils/sql-helpers";
 
 dayjs.extend(utc);
@@ -44,7 +44,11 @@ export default class BuybackExchangeSyncService {
 
   async fetchBuybackExchangeItems(parentNames) {
     if (!parentNames.length) return [];
-    return await fetchChildRecordsFromERP(this.frappeClient, parentNames, "tabBuyback Exchange Item");
+    return await fetchChildRecordsFromERP(
+      this.frappeClient,
+      parentNames,
+      "tabBuyback Exchange Item"
+    );
   }
 
   async upsertBuybackExchange(record) {
@@ -113,7 +117,8 @@ export default class BuybackExchangeSyncService {
   async sync() {
     const toDate = dayjs().utc().format(DEFAULT_DATE_FORMAT);
     const lastDate = await this.kv.get(KV_KEY);
-    const fromDate = lastDate || dayjs().utc().subtract(MINUTES_BACK, "minute").format(DEFAULT_DATE_FORMAT);
+    const fromDate =
+      lastDate || dayjs().utc().subtract(MINUTES_BACK, "minute").format(DEFAULT_DATE_FORMAT);
 
     try {
       const records = await this.fetchBuybackExchanges(fromDate, toDate);

@@ -1,12 +1,12 @@
+import * as Sentry from "@sentry/cloudflare";
 import { generateText } from "ai";
 import HaravanAPI from "services/clients/haravan-client/index.js";
 import HaravanSyncHelper from "services/haravan/utils/sync-haravan-helper";
-import { getOpenAICompatibleModel } from "services/utils/llm-helper.js";
 import ImageTranslationService from "services/media/image-translation-service.js";
+import { getOpenAICompatibleModel } from "services/utils/llm-helper.js";
 import { retryQuery } from "services/utils/retry-utils";
 import { sleep } from "services/utils/sleep.js";
-import * as Sentry from "@sentry/cloudflare";
-import { TRANSLATION_PROMPTS, AI_MODELS } from "src/constants/ai-proxy";
+import { AI_MODELS, TRANSLATION_PROMPTS } from "src/constants/ai-proxy";
 
 export default class ArticleSyncService {
   static CONFIG = {
@@ -41,8 +41,10 @@ export default class ArticleSyncService {
   getSignature(article) {
     const time = HaravanSyncHelper.normalizeDate(article.published_at) || "no-time";
     const imgPart = article.image
-      ? (article.image.src.match(/([a-f0-9]{32})/i)?.[1] ||
-        article.image.src.split("/").pop().split("?")[0]).replace(/^en_/, "")
+      ? (
+          article.image.src.match(/([a-f0-9]{32})/i)?.[1] ||
+          article.image.src.split("/").pop().split("?")[0]
+        ).replace(/^en_/, "")
       : "no-img";
     return `${time}|${imgPart}`;
   }
@@ -60,9 +62,7 @@ export default class ArticleSyncService {
 
   async translateText(text, isHtml = true) {
     if (!text) return text;
-    const prompt = isHtml
-      ? TRANSLATION_PROMPTS.HTML + text
-      : TRANSLATION_PROMPTS.TEXT + text;
+    const prompt = isHtml ? TRANSLATION_PROMPTS.HTML + text : TRANSLATION_PROMPTS.TEXT + text;
     const provider = await getOpenAICompatibleModel(this.env);
     const model = provider(AI_MODELS.GEMINI_2_5_FLASH_LITE);
 
@@ -78,7 +78,7 @@ export default class ArticleSyncService {
     let hasMore = true;
     const limit = ArticleSyncService.CONFIG.FETCH_LIMIT;
 
-    let params = { limit, page };
+    const params = { limit, page };
 
     while (hasMore) {
       try {
@@ -104,21 +104,11 @@ export default class ArticleSyncService {
   }
 
   async compareBlogArticles(haravanClient, viBlogId, enBlogId) {
-    let viArticles = await this.fetchAllArticles(
-      haravanClient,
-      viBlogId
-    );
-    let enArticles = await this.fetchAllArticles(
-      haravanClient,
-      enBlogId
-    );
+    let viArticles = await this.fetchAllArticles(haravanClient, viBlogId);
+    let enArticles = await this.fetchAllArticles(haravanClient, enBlogId);
 
-    viArticles = viArticles.filter(
-      (a) => !a.title.toLowerCase().includes("ladipage")
-    );
-    enArticles = enArticles.filter(
-      (a) => !a.title.toLowerCase().includes("ladipage")
-    );
+    viArticles = viArticles.filter((a) => !a.title.toLowerCase().includes("ladipage"));
+    enArticles = enArticles.filter((a) => !a.title.toLowerCase().includes("ladipage"));
 
     const matchedPairs = [];
     const missingArticles = [];
@@ -126,26 +116,26 @@ export default class ArticleSyncService {
 
     // 1. Build map of VI articles by ID
     const viById = {};
-    viArticles.forEach(a => {
+    viArticles.forEach((a) => {
       viById[a.id] = a;
     });
 
-    const unmatchedViIds = new Set(viArticles.map(a => a.id));
+    const unmatchedViIds = new Set(viArticles.map((a) => a.id));
     const unmatchedEn = [];
 
     // Helper to extract vi_id from tags
     const getViIdFromTags = (tagsStr) => {
       if (!tagsStr) return null;
-      const tags = tagsStr.split(",").map(t => t.trim());
+      const tags = tagsStr.split(",").map((t) => t.trim());
 
       // Find the first tag that contains only digits
-      const idTag = tags.find(t => /^\d+$/.test(t));
+      const idTag = tags.find((t) => /^\d+$/.test(t));
       return idTag ? parseInt(idTag, 10) : null;
     };
 
     // 2. First pass: Match by tag
     const matchedViIds = new Set();
-    enArticles.forEach(enArticle => {
+    enArticles.forEach((enArticle) => {
       const viId = getViIdFromTags(enArticle.tags);
       if (viId && viById[viId] && !matchedViIds.has(viId)) {
         matchedPairs.push({ vi: viById[viId], en: enArticle });
@@ -158,7 +148,7 @@ export default class ArticleSyncService {
 
     // 3. Group remaining unmatched VI articles by signature
     const viGroups = {};
-    unmatchedViIds.forEach(viId => {
+    unmatchedViIds.forEach((viId) => {
       const v = viById[viId];
       const s = this.getSignature(v);
       if (!viGroups[s]) viGroups[s] = [];
@@ -174,10 +164,7 @@ export default class ArticleSyncService {
     });
 
     // 5. Match remaining by signature
-    const allSigs = new Set([
-      ...Object.keys(viGroups),
-      ...Object.keys(enGroups)
-    ]);
+    const allSigs = new Set([...Object.keys(viGroups), ...Object.keys(enGroups)]);
     for (const sig of allSigs) {
       const viList = viGroups[sig] || [];
       const enList = enGroups[sig] || [];
@@ -190,8 +177,7 @@ export default class ArticleSyncService {
       });
 
       const min = Math.min(viList.length, enList.length);
-      for (let i = 0; i < min; i++)
-        matchedPairs.push({ vi: viList[i], en: enList[i] });
+      for (let i = 0; i < min; i++) matchedPairs.push({ vi: viList[i], en: enList[i] });
       if (viList.length > min) missingArticles.push(...viList.slice(min));
       if (enList.length > min) orphanEnArticles.push(...enList.slice(min));
     }
@@ -200,12 +186,12 @@ export default class ArticleSyncService {
   }
 
   async translateImageWithRetry(src, imageService) {
-    let fullSrc = src.startsWith("//") ? "https:" + src : src;
+    const fullSrc = src.startsWith("//") ? "https:" + src : src;
 
     return retryQuery(async () => {
       const imageUrl = await imageService.translateImage(fullSrc, this.env, false);
       return { src, newUrl: imageUrl || fullSrc, success: true };
-    }).catch(error => {
+    }).catch((error) => {
       Sentry.captureException(error, {
         extra: { src, action: "translateImageWithRetry" }
       });
@@ -224,9 +210,9 @@ export default class ArticleSyncService {
     for (let i = 0; i < images.length; i += batchSize) {
       const batch = images.slice(i, i + batchSize);
       const batchResults = await Promise.allSettled(
-        batch.map(src => this.translateImageWithRetry(src, imageService))
+        batch.map((src) => this.translateImageWithRetry(src, imageService))
       );
-      results.push(...batchResults.map(r => r.status === "fulfilled" ? r.value : null));
+      results.push(...batchResults.map((r) => (r.status === "fulfilled" ? r.value : null)));
     }
 
     let updatedHtml = html;
@@ -254,7 +240,10 @@ export default class ArticleSyncService {
     const viIdTag = `${viId}`;
     if (!viTags) return viIdTag;
 
-    const tagsArray = viTags.split(",").map(t => t.trim()).filter(Boolean);
+    const tagsArray = viTags
+      .split(",")
+      .map((t) => t.trim())
+      .filter(Boolean);
     if (!tagsArray.includes(viIdTag)) {
       tagsArray.push(viIdTag);
     }
@@ -271,7 +260,8 @@ export default class ArticleSyncService {
         const enId = ArticleSyncService.BLOG_ID_MAP[viId];
 
         try {
-          const { matchedPairs, missingArticles, orphanEnArticles } = await this.compareBlogArticles(haravanClient, viId, enId);
+          const { matchedPairs, missingArticles, orphanEnArticles } =
+            await this.compareBlogArticles(haravanClient, viId, enId);
 
           const articleBatchSize = ArticleSyncService.CONFIG.ARTICLE_TRANSLATE_BATCH_SIZE;
 
@@ -285,7 +275,12 @@ export default class ArticleSyncService {
                   const sourceUpdated =
                     viUpdated - enUpdated > ArticleSyncService.CONFIG.SYNC_THRESHOLD_MS;
 
-                  const hasViIdTag = pair.en.tags && pair.en.tags.split(",").map(t => t.trim()).includes(`${pair.vi.id}`);
+                  const hasViIdTag =
+                    pair.en.tags &&
+                    pair.en.tags
+                      .split(",")
+                      .map((t) => t.trim())
+                      .includes(`${pair.vi.id}`);
 
                   if (sourceUpdated) {
                     const enTitle = await this.translateText(pair.vi.title, false);

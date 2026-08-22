@@ -90,4 +90,3 @@ function templateSuffixMapping(productType) {
   }
   return "product";
 }
-

@@ -1,8 +1,8 @@
-import Database from "services/database";
-import HaravanAPI from "services/clients/haravan-client";
 import * as crypto from "crypto";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
+import HaravanAPI from "services/clients/haravan-client";
+import Database from "services/database";
 
 dayjs.extend(utc);
 const UPSERT_BATCH_SIZE = 20;
@@ -55,7 +55,7 @@ export default class UserSyncService {
       const batch = users.slice(i, i + UPSERT_BATCH_SIZE);
 
       await this.db.$transaction(async (tx) => {
-        const operations = batch.map(user => {
+        const operations = batch.map((user) => {
           const data = this._mapUser(user);
           const id = data.id;
           delete data.id;

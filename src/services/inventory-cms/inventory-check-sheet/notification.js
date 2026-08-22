@@ -1,13 +1,12 @@
-
-import dayjs from "dayjs";
-import utc from "dayjs/plugin/utc";
-import timezone from "dayjs/plugin/timezone";
-import InventoryCMSClient from "services/inventory-cms/inventory-cms-client/inventory-cms-client";
 import { readItems } from "@directus/sdk";
-import LarksuiteService from "services/larksuite/lark";
 import * as Sentry from "@sentry/cloudflare";
-import { TIMEZONE_VIETNAM } from "src/constants";
+import dayjs from "dayjs";
+import timezone from "dayjs/plugin/timezone";
+import utc from "dayjs/plugin/utc";
+import InventoryCMSClient from "services/inventory-cms/inventory-cms-client/inventory-cms-client";
+import LarksuiteService from "services/larksuite/lark";
 import { retryRequest } from "services/utils/retry-utils";
+import { TIMEZONE_VIETNAM } from "src/constants";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -24,13 +23,20 @@ const CHAT_IDS = {
 export default class CheckSheetNotificationService {
   static async processInventoryCheck(payload, env) {
     const { warehouse, staff: staffId, lines = [] } = payload;
-    const targetChatId = this.getTargetChatId(warehouse);
-    const alertedLines = lines.filter(l => l.count_in_book > l.count_for_real || l.count_extra_for_real);
-    if (targetChatId == CHAT_IDS["[ALL]"]) return { success: true, alertedLines: alertedLines.length };
+    const targetChatId = CheckSheetNotificationService.getTargetChatId(warehouse);
+    const alertedLines = lines.filter(
+      (l) => l.count_in_book > l.count_for_real || l.count_extra_for_real
+    );
+    if (targetChatId == CHAT_IDS["[ALL]"])
+      return { success: true, alertedLines: alertedLines.length };
 
-    const staffName = await this.getStaffName(staffId, env);
-    const messageText = this.composeMessage(payload, alertedLines, staffName);
-    await this.sendNotification(env, targetChatId, messageText);
+    const staffName = await CheckSheetNotificationService.getStaffName(staffId, env);
+    const messageText = CheckSheetNotificationService.composeMessage(
+      payload,
+      alertedLines,
+      staffName
+    );
+    await CheckSheetNotificationService.sendNotification(env, targetChatId, messageText);
 
     return { success: true, alertedLines: alertedLines.length };
   }
@@ -39,7 +45,7 @@ export default class CheckSheetNotificationService {
     const client = await InventoryCMSClient.createClient(env);
     const staffs = await client.request(readItems("staffs", { limit: -1 }));
 
-    const staff = staffs?.find(s => s.id === staffId);
+    const staff = staffs?.find((s) => s.id === staffId);
     if (staff) {
       return `${staff.last_name || ""} ${staff.first_name || ""}`.trim();
     } else {
@@ -61,7 +67,7 @@ export default class CheckSheetNotificationService {
     const dateStr = dayjs(timeToFormat).tz(TIMEZONE_VIETNAM).format("DD/MM/YYYY HH:mm:ss");
 
     const gap = countForReal - countInBook;
-    const gapText = gap > 0 ? `Dư ${gap}` : (gap < 0 ? `Thiếu ${-gap}` : "đủ hàng");
+    const gapText = gap > 0 ? `Dư ${gap}` : gap < 0 ? `Thiếu ${-gap}` : "đủ hàng";
 
     const headInfo = {
       [`[${dateStr}]`]: `<b>${warehouse}</b> | <b>${code}</b>`,
@@ -69,15 +75,17 @@ export default class CheckSheetNotificationService {
       "- Tem RFID quét dư": payload.extra || 0
     };
 
-    const messageHead = this.textJoin(headInfo, "\n");
+    const messageHead = CheckSheetNotificationService.textJoin(headInfo, "\n");
     const messageLines = alertedLines
-      .map(l => this.textJoin(this.lineMapping(l), "\n"))
+      .map((l) =>
+        CheckSheetNotificationService.textJoin(CheckSheetNotificationService.lineMapping(l), "\n")
+      )
       .join("\n\n");
 
     const staffInfo = `- Nhận sự phụ trách chính: ${staffName}`;
 
     return [messageHead, messageLines, staffInfo]
-      .filter(p => p && p.trim() !== "")
+      .filter((p) => p && p.trim() !== "")
       .join("\n\n")
       .trim();
   }
@@ -86,8 +94,8 @@ export default class CheckSheetNotificationService {
     const lGap = line.count_for_real - line.count_in_book;
     return {
       "Sản phẩm": line.product_name || line.name || "N/A",
-      "Barcode": line.barcode || "N/A",
-      "SKU": line.sku || "N/A",
+      Barcode: line.barcode || "N/A",
+      SKU: line.sku || "N/A",
       "Tồn kho lấy từ Haravan": line.count_in_book,
       "Tồn kho thực tế": `${line.count_for_real} (${lGap})`,
       "Tem RFID quét dư": line.count_extra_for_real,
@@ -105,20 +113,22 @@ export default class CheckSheetNotificationService {
     if (!warehouse) return CHAT_IDS["[TEST]"];
 
     const match = Object.keys(CHAT_IDS)
-      .filter(k => !["[TEST]", "[ALL]"].includes(k))
-      .find(k => warehouse.includes(k));
+      .filter((k) => !["[TEST]", "[ALL]"].includes(k))
+      .find((k) => warehouse.includes(k));
     return CHAT_IDS[match] || CHAT_IDS["[ALL]"];
   }
 
   static async sendNotification(env, chatId, messageText) {
     const larkClient = await LarksuiteService.createClientV2(env);
-    await retryRequest(() => larkClient.im.message.create({
-      params: { receive_id_type: "chat_id" },
-      data: {
-        receive_id: chatId,
-        msg_type: "text",
-        content: JSON.stringify({ text: messageText })
-      }
-    }));
+    await retryRequest(() =>
+      larkClient.im.message.create({
+        params: { receive_id_type: "chat_id" },
+        data: {
+          receive_id: chatId,
+          msg_type: "text",
+          content: JSON.stringify({ text: messageText })
+        }
+      })
+    );
   }
 }

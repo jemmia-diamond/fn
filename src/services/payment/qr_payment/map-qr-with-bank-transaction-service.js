@@ -1,11 +1,10 @@
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
-import Database from "services/database";
-
 import HaravanAPI from "services/clients/haravan-client";
-import { BadRequestException } from "src/exception/exceptions";
+import Database from "services/database";
 import RecordService from "services/larksuite/docs/base/record/record";
 import { TABLES } from "services/larksuite/docs/constant";
+import { BadRequestException } from "src/exception/exceptions";
 
 dayjs.extend(utc);
 
@@ -27,24 +26,30 @@ export default class MapQRWithBankTransactionService {
     });
 
     if (!qrPayment) {
-      throw new Error(JSON.stringify({
-        error_msg: `QR Payment with ID ${qrPaymentId} not found`,
-        error_code: MapQRWithBankTransactionService.NOT_FOUND
-      }));
+      throw new Error(
+        JSON.stringify({
+          error_msg: `QR Payment with ID ${qrPaymentId} not found`,
+          error_code: MapQRWithBankTransactionService.NOT_FOUND
+        })
+      );
     }
 
     if (qrPayment.transfer_status !== "pending") {
-      throw new Error(JSON.stringify({
-        error_msg: `QR Payment with ID ${qrPaymentId} is not in a pending state`,
-        error_code: MapQRWithBankTransactionService.INVALID_STATE
-      }));
+      throw new Error(
+        JSON.stringify({
+          error_msg: `QR Payment with ID ${qrPaymentId} is not in a pending state`,
+          error_code: MapQRWithBankTransactionService.INVALID_STATE
+        })
+      );
     }
 
     if (!qrPayment.haravan_order_number) {
-      throw new Error(JSON.stringify({
-        error_msg: `QR Payment with ID ${qrPaymentId} does not have an associated Haravan order number`,
-        error_code: MapQRWithBankTransactionService.MISSING_FIELD
-      }));
+      throw new Error(
+        JSON.stringify({
+          error_msg: `QR Payment with ID ${qrPaymentId} does not have an associated Haravan order number`,
+          error_code: MapQRWithBankTransactionService.MISSING_FIELD
+        })
+      );
     }
 
     const sepayTransaction = await this.db.sepay_transaction.findUnique({
@@ -52,18 +57,22 @@ export default class MapQRWithBankTransactionService {
     });
 
     if (!sepayTransaction) {
-      throw new Error(JSON.stringify({
-        error_msg: `Sepay Transaction with ID ${sepayTransactionId} not found`,
-        error_code: MapQRWithBankTransactionService.NOT_FOUND
-      }));
+      throw new Error(
+        JSON.stringify({
+          error_msg: `Sepay Transaction with ID ${sepayTransactionId} not found`,
+          error_code: MapQRWithBankTransactionService.NOT_FOUND
+        })
+      );
     }
 
     const sepayTransactionAmount = parseFloat(sepayTransaction.amount_in);
     if (Math.abs(sepayTransactionAmount - parseFloat(qrPayment.transfer_amount)) > 1000) {
-      throw new Error(JSON.stringify({
-        error_msg: `Sepay transaction with id ${sepayTransactionId} amount is not equal to QR's amount`,
-        error_code: MapQRWithBankTransactionService.AMOUNT_MISMATCH
-      }));
+      throw new Error(
+        JSON.stringify({
+          error_msg: `Sepay transaction with id ${sepayTransactionId} amount is not equal to QR's amount`,
+          error_code: MapQRWithBankTransactionService.AMOUNT_MISMATCH
+        })
+      );
     }
 
     /**
@@ -74,10 +83,12 @@ export default class MapQRWithBankTransactionService {
       const updatedQrPayment = await this.updateQRToSuccess(qrPaymentId);
 
       if (!updatedQrPayment) {
-        throw new Error(JSON.stringify({
-          error_msg: `Failed to update order later with id ${qrPaymentId}`,
-          error_code: MapQRWithBankTransactionService.INTERNAL_ERROR
-        }));
+        throw new Error(
+          JSON.stringify({
+            error_msg: `Failed to update order later with id ${qrPaymentId}`,
+            error_code: MapQRWithBankTransactionService.INTERNAL_ERROR
+          })
+        );
       }
 
       await this.updateLarksuiteRecordToSuccess(qrPayment.lark_record_id);
@@ -94,7 +105,9 @@ export default class MapQRWithBankTransactionService {
     const HRV_API_KEY = this.env.HARAVAN_TOKEN;
 
     if (!HRV_API_KEY) {
-      throw new BadRequestException("Haravan API credentials or base URL are not configured in the environment.");
+      throw new BadRequestException(
+        "Haravan API credentials or base URL are not configured in the environment."
+      );
     }
 
     const haravanService = new HaravanAPI(HRV_API_KEY);
@@ -112,10 +125,12 @@ export default class MapQRWithBankTransactionService {
       const updatedQrPayment = await this.updateQRToSuccess(qrPaymentId);
 
       if (!updatedQrPayment) {
-        throw new Error(JSON.stringify({
-          error_msg: `Failed to update QR payment with id ${qrPaymentId}`,
-          error_code: MapQRWithBankTransactionService.INTERNAL_ERROR
-        }));
+        throw new Error(
+          JSON.stringify({
+            error_msg: `Failed to update QR payment with id ${qrPaymentId}`,
+            error_code: MapQRWithBankTransactionService.INTERNAL_ERROR
+          })
+        );
       }
 
       await this.updateLarksuiteRecordToSuccess(qrPayment.lark_record_id);

@@ -1,10 +1,10 @@
 import * as Sentry from "@sentry/cloudflare";
-import RecordService from "services/larksuite/docs/base/record/record";
-import { APPOINTMENTS } from "services/larksuite/appointment/constant";
-import FrappeClient from "src/frappe/frappe-client";
-import AppointmentNotificationService from "services/erp/crm/appointment/appointment-notification";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
+import AppointmentNotificationService from "services/erp/crm/appointment/appointment-notification";
+import { APPOINTMENTS } from "services/larksuite/appointment/constant";
+import RecordService from "services/larksuite/docs/base/record/record";
+import FrappeClient from "src/frappe/frappe-client";
 
 dayjs.extend(utc);
 
@@ -46,7 +46,8 @@ export default class ERPNextCRMAppointmentService {
       env: this.env,
       appToken: APPOINTMENTS.APP_TOKEN,
       tableId: APPOINTMENTS.TABLE_ID,
-      fields, userIdType: "open_id"
+      fields,
+      userIdType: "open_id"
     });
     if (!newRecord) return;
 
@@ -93,7 +94,8 @@ export default class ERPNextCRMAppointmentService {
       });
     } else {
       const shouldReply = this.notificationService.shouldSendThreadReply(existingFields, fields);
-      if (shouldReply) await this.notificationService.sendThreadReply(message_id, payload, existingFields);
+      if (shouldReply)
+        await this.notificationService.sendThreadReply(message_id, payload, existingFields);
     }
 
     if (message_id) fields["message_id"] = message_id;
@@ -102,7 +104,8 @@ export default class ERPNextCRMAppointmentService {
       appToken: APPOINTMENTS.APP_TOKEN,
       tableId: APPOINTMENTS.TABLE_ID,
       recordId: payload.record_id,
-      fields, userIdType: "open_id"
+      fields,
+      userIdType: "open_id"
     });
   }
 
@@ -111,31 +114,44 @@ export default class ERPNextCRMAppointmentService {
       env: this.env,
       appToken: APPOINTMENTS.APP_TOKEN,
       tableId: APPOINTMENTS.TABLE_ID,
-      recordId, userIdType: "open_id"
+      recordId,
+      userIdType: "open_id"
     });
     return record?.fields || null;
   }
 
   stripHtml(html) {
     if (!html) return "";
-    return String(html).replace(/<\/p>|<br\s*\/?>/gi, "\n").replace(/<[^>]*>?/gm, "").trim();
+    return String(html)
+      .replace(/<\/p>|<br\s*\/?>/gi, "\n")
+      .replace(/<[^>]*>?/gm, "")
+      .trim();
   }
 
   async mapPayloadToLarkFields(payload) {
     const policies = (payload?.policies || [])
-      .map(p => p.title).filter(Boolean).join("\n");
+      .map((p) => p.title)
+      .filter(Boolean)
+      .join("\n");
     const notesText = this.stripHtml(payload?.notes);
     const offlineText = this.stripHtml(payload?.offline_response);
 
-    const mainSalesEmails = (payload?.main_sales || []).map(s => s.employee_email).filter(Boolean);
+    const mainSalesEmails = (payload?.main_sales || [])
+      .map((s) => s.employee_email)
+      .filter(Boolean);
     const mainSalesIds = await this.notificationService.getLarkUserIdsByEmails(mainSalesEmails);
-    const offlineSalesEmails = (payload?.offline_sales || []).map(s => s.employee_email).filter(Boolean);
-    const offlineSalesIds = await this.notificationService.getLarkUserIdsByEmails(offlineSalesEmails);
+    const offlineSalesEmails = (payload?.offline_sales || [])
+      .map((s) => s.employee_email)
+      .filter(Boolean);
+    const offlineSalesIds =
+      await this.notificationService.getLarkUserIdsByEmails(offlineSalesEmails);
 
     const fields = {
       "Người tạo": mainSalesIds?.length ? mainSalesIds : null,
       "Sales hỗ trợ": offlineSalesIds?.length ? offlineSalesIds : null,
-      "Ngày đến dự kiến": payload.scheduled_time ? new Date(payload.scheduled_time).getTime() : null,
+      "Ngày đến dự kiến": payload.scheduled_time
+        ? new Date(payload.scheduled_time).getTime()
+        : null,
       "Cửa hàng": payload?.store,
       "Khách hàng": payload.customer_name,
       "Giới tính": payload.gender,
@@ -148,8 +164,8 @@ export default class ERPNextCRMAppointmentService {
       "Khoảng ngân sách": payload.range_estimated_budget,
       "Ngân sách ước tính": payload.budget,
       "Mục đích cuộc hẹn": payload.appointment_reason,
-      "Nguồn": payload.source,
-      "appointment_name": payload.name
+      Nguồn: payload.source,
+      appointment_name: payload.name
     };
 
     return fields;
@@ -193,8 +209,9 @@ export default class ERPNextCRMAppointmentService {
     if (!appointments) return;
 
     for (const appmt of appointments) {
-      await this.notificationService.sendUpcomingReminder(appmt)
-        .catch(e => Sentry.captureException(e));
+      await this.notificationService
+        .sendUpcomingReminder(appmt)
+        .catch((e) => Sentry.captureException(e));
     }
   }
 }

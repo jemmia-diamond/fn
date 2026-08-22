@@ -45,8 +45,6 @@ export async function getLatestOrderId(db, orderId) {
     WHERE o.id = ${orderId};
   `;
 
-  const latestOrderId = latestOrderRows.length
-    ? latestOrderRows[0].latest_order_id
-    : orderId;
+  const latestOrderId = latestOrderRows.length ? latestOrderRows[0].latest_order_id : orderId;
   return latestOrderId;
 }

@@ -38,7 +38,7 @@ class CustomLogger {
       }
     } catch (e) {
       console.log("Error parsing request body:", e);
-    };
+    }
 
     return "";
   }

@@ -1,7 +1,7 @@
+import * as Sentry from "@sentry/cloudflare";
 import JemmiaShieldLarkService from "services/jemmia-shield/jemmia-shield-lark-service";
 import ShieldNotificationService from "services/jemmia-shield/shield-notification-service";
 import { ShieldUtils } from "services/jemmia-shield/utils/shield-utils";
-import * as Sentry from "@sentry/cloudflare";
 
 export default class ShieldMessageViewService {
   static async processAndRenderMessage(
@@ -11,7 +11,7 @@ export default class ShieldMessageViewService {
     type: string
   ): Promise<string> {
     if (!code) {
-      return this.renderLoadingPage(env.LARK_APP_SHIELD_ID);
+      return ShieldMessageViewService.renderLoadingPage(env.LARK_APP_SHIELD_ID);
     }
 
     // Decryption might throw, caller should handle 400 error
@@ -19,28 +19,23 @@ export default class ShieldMessageViewService {
 
     let contentHtml = "";
     try {
-      await ShieldNotificationService.sendSensitiveViewNotification(
-        env,
-        code,
-        payload,
-        type
-      );
+      await ShieldNotificationService.sendSensitiveViewNotification(env, code, payload, type);
 
-      const renderContent = this.prepareRenderContent(payload);
+      const renderContent = ShieldMessageViewService.prepareRenderContent(payload);
 
       if (type === "image") {
-        contentHtml = await this.renderImage(env, renderContent);
+        contentHtml = await ShieldMessageViewService.renderImage(env, renderContent);
       } else if (type === "post") {
-        contentHtml = await this.renderPost(env, renderContent);
+        contentHtml = await ShieldMessageViewService.renderPost(env, renderContent);
       } else {
-        contentHtml = this.renderText(renderContent);
+        contentHtml = ShieldMessageViewService.renderText(renderContent);
       }
     } catch (error: any) {
       Sentry.captureException(error);
       contentHtml = `<div style="color: red; padding: 10px; background: #ffe6e6; border: 1px solid red; margin-bottom: 10px;">Debug Error: ${error.message}</div>`;
     }
 
-    return this.renderContentPage(contentHtml);
+    return ShieldMessageViewService.renderContentPage(contentHtml);
   }
 
   private static prepareRenderContent(payload: any): any {
@@ -146,38 +141,32 @@ export default class ShieldMessageViewService {
   static async renderImage(env: any, renderContent: any): Promise<string> {
     try {
       const imageKey =
-        renderContent.image_key ||
-        (typeof renderContent === "string" ? renderContent : null);
+        renderContent.image_key || (typeof renderContent === "string" ? renderContent : null);
       if (imageKey) {
-        const imageBuffer = await JemmiaShieldLarkService.downloadImage(
-          env,
-          imageKey
-        );
+        const imageBuffer = await JemmiaShieldLarkService.downloadImage(env, imageKey);
         const base64 = imageBuffer.toString("base64");
         return `<div style="padding: 20px; text-align: center;"><img src="data:image/png;base64,${base64}" style="max-width: 100%; height: auto; border-radius: 4px;" /></div>`;
       } else {
-        return "<div style=\"padding: 20px; text-align: center;\">[Image key missing]</div>";
+        return '<div style="padding: 20px; text-align: center;">[Image key missing]</div>';
       }
     } catch (error) {
       Sentry.captureException(error);
-      return "<div style=\"padding: 20px; text-align: center;\">[Image failed to load]</div>";
+      return '<div style="padding: 20px; text-align: center;">[Image failed to load]</div>';
     }
   }
 
   static renderText(renderContent: any): string {
     const textContent =
       renderContent.text ||
-      (typeof renderContent === "string"
-        ? renderContent
-        : JSON.stringify(renderContent, null, 2));
-    return `<div style="white-space: pre-wrap; word-break: break-word; font-family: sans-serif; padding: 20px;">${this.formatText(
-      this.escapeHtml(textContent)
+      (typeof renderContent === "string" ? renderContent : JSON.stringify(renderContent, null, 2));
+    return `<div style="white-space: pre-wrap; word-break: break-word; font-family: sans-serif; padding: 20px;">${ShieldMessageViewService.formatText(
+      ShieldMessageViewService.escapeHtml(textContent)
     )}</div>`;
   }
 
   static async renderPost(env: any, payload: any): Promise<string> {
     const content = payload;
-    let html = "<div style=\"font-family: sans-serif; padding: 20px;\">";
+    let html = '<div style="font-family: sans-serif; padding: 20px;">';
 
     if (content.title) {
       html += `<h2 style="margin-top: 0;">${content.title}</h2>`;
@@ -185,53 +174,50 @@ export default class ShieldMessageViewService {
 
     if (content.content) {
       for (const line of content.content) {
-        html += "<p style=\"margin: 0.5em 0;\">";
+        html += '<p style="margin: 0.5em 0;">';
         for (const item of line) {
           switch (item.tag) {
-          case "text": {
-            let text = this.escapeHtml(item.text);
-            if (item.style) {
-              if (item.style.includes("bold"))
-                text = `<strong>${text}</strong>`;
-              if (item.style.includes("italic")) text = `<em>${text}</em>`;
-              if (item.style.includes("strikethrough"))
-                text = `<del>${text}</del>`;
-              if (item.style.includes("underline")) text = `<u>${text}</u>`;
-            }
-            text = this.formatText(text);
-            html += text;
-            break;
-          }
-          case "a":
-            html += `<a href="${item.href}" target="_blank">${this.escapeHtml(
-              item.text
-            )}</a>`;
-            break;
-          case "at": {
-            const displayText = item.text || item.user_id || "Unknown";
-            html += `<span style="color: #3370ff;">@${this.escapeHtml(
-              displayText
-            )}</span>`;
-            break;
-          }
-          case "img":
-            if (item.image_key) {
-              try {
-                const imageBuffer =
-                    await JemmiaShieldLarkService.downloadImage(
-                      env,
-                      item.image_key
-                    );
-                const base64 = imageBuffer.toString("base64");
-                html += `<img src="data:image/png;base64,${base64}" style="max-width: 100%; height: auto; border-radius: 4px; margin: 5px 0;" />`;
-              } catch (error) {
-                Sentry.captureException(error);
-                html += "[Image failed to load]";
+            case "text": {
+              let text = ShieldMessageViewService.escapeHtml(item.text);
+              if (item.style) {
+                if (item.style.includes("bold")) text = `<strong>${text}</strong>`;
+                if (item.style.includes("italic")) text = `<em>${text}</em>`;
+                if (item.style.includes("strikethrough")) text = `<del>${text}</del>`;
+                if (item.style.includes("underline")) text = `<u>${text}</u>`;
               }
-            } else {
-              html += `[Image: ${item.image_key}]`;
+              text = ShieldMessageViewService.formatText(text);
+              html += text;
+              break;
             }
-            break;
+            case "a":
+              html += `<a href="${item.href}" target="_blank">${ShieldMessageViewService.escapeHtml(
+                item.text
+              )}</a>`;
+              break;
+            case "at": {
+              const displayText = item.text || item.user_id || "Unknown";
+              html += `<span style="color: #3370ff;">@${ShieldMessageViewService.escapeHtml(
+                displayText
+              )}</span>`;
+              break;
+            }
+            case "img":
+              if (item.image_key) {
+                try {
+                  const imageBuffer = await JemmiaShieldLarkService.downloadImage(
+                    env,
+                    item.image_key
+                  );
+                  const base64 = imageBuffer.toString("base64");
+                  html += `<img src="data:image/png;base64,${base64}" style="max-width: 100%; height: auto; border-radius: 4px; margin: 5px 0;" />`;
+                } catch (error) {
+                  Sentry.captureException(error);
+                  html += "[Image failed to load]";
+                }
+              } else {
+                html += `[Image: ${item.image_key}]`;
+              }
+              break;
           }
         }
         html += "</p>";

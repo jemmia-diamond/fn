@@ -7,12 +7,14 @@ export function rawToPaymentEntry(body) {
     bank_account: body.bank_account,
     bank_account_branch: body.bank_account_branch,
     bank_account_no: body.bank_account_no,
-    bank_details: body.bank_details ? {
-      bank_bin: body.bank_details.bank_bin,
-      bank_code: body.bank_details.bank_code,
-      bank_name: body.bank_details.bank_name,
-      swift_number: body.bank_details.swift_number
-    } : null,
+    bank_details: body.bank_details
+      ? {
+          bank_bin: body.bank_details.bank_bin,
+          bank_code: body.bank_details.bank_code,
+          bank_name: body.bank_details.bank_name,
+          swift_number: body.bank_details.swift_number
+        }
+      : null,
     bank_transactions: body.bank_transactions,
     base_in_words: body.base_in_words,
     base_paid_amount: body.base_paid_amount,
@@ -21,7 +23,8 @@ export function rawToPaymentEntry(body) {
     base_received_amount_after_tax: body.base_received_amount_after_tax,
     base_total_allocated_amount: body.base_total_allocated_amount,
     base_total_taxes_and_charges: body.base_total_taxes_and_charges,
-    book_advance_payments_in_separate_party_account: body.book_advance_payments_in_separate_party_account,
+    book_advance_payments_in_separate_party_account:
+      body.book_advance_payments_in_separate_party_account,
     clearance_date: body.clearance_date,
     company: body.company,
     contact_email: body.contact_email,
@@ -35,10 +38,10 @@ export function rawToPaymentEntry(body) {
     custom_transfer_status: body.custom_transfer_status,
     customer_details: body.customer_details
       ? {
-        mobile_no: body.customer_details.mobile_no,
-        name: body.customer_details.name,
-        phone: body.customer_details.phone
-      }
+          mobile_no: body.customer_details.mobile_no,
+          name: body.customer_details.name,
+          phone: body.customer_details.phone
+        }
       : null,
     deductions: body.deductions,
     difference_amount: body.difference_amount,
@@ -146,11 +149,11 @@ export function rawToReference(ref) {
     unallocated_amount: ref.unallocated_amount,
     sales_order_details: ref.sales_order_details
       ? {
-        haravan_cancelled_status: ref.sales_order_details.haravan_cancelled_status,
-        haravan_financial_status: ref.sales_order_details.haravan_financial_status,
-        haravan_order_id: ref.sales_order_details.haravan_order_id,
-        haravan_order_number: ref.sales_order_details.haravan_order_number
-      }
+          haravan_cancelled_status: ref.sales_order_details.haravan_cancelled_status,
+          haravan_financial_status: ref.sales_order_details.haravan_financial_status,
+          haravan_order_id: ref.sales_order_details.haravan_order_id,
+          haravan_order_number: ref.sales_order_details.haravan_order_number
+        }
       : null
   };
 }

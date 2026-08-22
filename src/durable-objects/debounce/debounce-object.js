@@ -1,5 +1,5 @@
-import * as Sentry from "@sentry/cloudflare";
 import { DurableObject } from "cloudflare:workers";
+import * as Sentry from "@sentry/cloudflare";
 import { DebounceActions } from "src/durable-objects/debounce/debounce-action";
 
 export class DebounceDurableObject extends DurableObject {
@@ -65,7 +65,6 @@ export class DebounceDurableObject extends DurableObject {
       if (storedTasks.size === 50) {
         await this.state.storage.setAlarm(Date.now() + 100);
       }
-
     } catch (error) {
       Sentry.captureException(error);
     }

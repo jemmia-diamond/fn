@@ -14,7 +14,7 @@ export function normalizePageCustomerPhoneNumbers(phoneNumbersJson) {
   }
 
   const out = phoneNumbersJson
-    .map(item => typeof item === "string" ? normalizeToStandardFormat(item) : null)
+    .map((item) => (typeof item === "string" ? normalizeToStandardFormat(item) : null))
     .filter(Boolean);
 
   return out.length ? out : null;
