@@ -50,6 +50,7 @@ export default {
       await new Ecommerce.VariantSyncService(env).syncVariants();
       await ERP.Selling.BuybackExchangeSyncService.cronSync(env);
       await new Haravan.Customer.DatabaseSyncService(env).sync();
+      await DatabaseOperations.MaterializedViewService.refresh10Minutes(env);
       break;
     case "*/15 * * * *": // At every 15th minute
       await ERP.Contacts.ContactService.cronSyncContactsToDatabase(env);
