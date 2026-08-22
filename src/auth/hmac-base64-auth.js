@@ -1,5 +1,5 @@
+import { generateHmacBase64, timingSafeEqual } from "auth/utils";
 import { createMiddleware } from "hono/factory";
-import { generateHmacBase64 } from "auth/utils";
 
 export const verifyHmacBase64Auth = (signatureheaderkey, secretEnvKey) =>
   createMiddleware(async (c, next) => {
@@ -9,7 +9,7 @@ export const verifyHmacBase64Auth = (signatureheaderkey, secretEnvKey) =>
 
     const body = await c.req.text();
     const computedHmac = generateHmacBase64(body, secret);
-    if (signature !== computedHmac) return c.json({ error: "Unauthorized" }, 401);
+    if (!timingSafeEqual(signature, computedHmac)) return c.json({ error: "Unauthorized" }, 401);
 
     await next();
   });
