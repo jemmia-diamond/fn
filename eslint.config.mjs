@@ -1,6 +1,6 @@
-import { defineConfig } from "eslint/config";
-import { includeIgnoreFile } from "@eslint/compat";
 import { fileURLToPath } from "node:url";
+import { includeIgnoreFile } from "@eslint/compat";
+import { defineConfig } from "eslint/config";
 import tseslint from "typescript-eslint";
 
 import getBaseConfig from "./eslint/configs/base.js";
