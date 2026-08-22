@@ -10,6 +10,7 @@ import Payment from "controllers/payment";
 import Salesaya from "controllers/salesaya";
 import Larksuite from "controllers/larksuite";
 import Media from "controllers/media";
+import Inventory from "controllers/inventory";
 
 export default class APIRoutes {
   static register(api) {
@@ -73,5 +74,8 @@ export default class APIRoutes {
 
     const mediaApi = api.basePath("/media");
     mediaApi.post("/image-translation", Media.ImageTranslationController.create);
+
+    const inventoryApi = api.basePath("/inventory");
+    inventoryApi.get("/availability", Inventory.AvailabilityController.index);
   };
 };
