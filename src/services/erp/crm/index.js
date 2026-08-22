@@ -6,6 +6,7 @@ import LeadProductService from "services/erp/crm/lead_product/lead_product";
 import RegionService from "services/erp/crm/region/region";
 import ProvinceService from "services/erp/crm/province/province";
 import CRMService from "services/erp/crm/crm-service";
+import AppointmentService from "services/erp/crm/appointment/appointment";
 
 export default {
   LeadService: LeadService,
@@ -15,5 +16,6 @@ export default {
   LeadProductService: LeadProductService,
   RegionService: RegionService,
   ProvinceService: ProvinceService,
-  CRMService: CRMService
+  CRMService: CRMService,
+  AppointmentService
 };

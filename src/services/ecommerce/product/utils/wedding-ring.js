@@ -129,3 +129,61 @@ export function aggregateQuery(jsonParams) {
     paginationSql
   };
 }
+
+export function toSlug(str) {
+  if (!str || typeof str !== "string") return "";
+  return str
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+export function hasImageForMaterialColor(images, materialColor) {
+  if (!images || !Array.isArray(images) || images.length === 0) {
+    return false;
+  }
+  if (!materialColor) {
+    return true;
+  }
+  const slug = toSlug(materialColor);
+  if (!slug) return true;
+
+  return images.some((img) => {
+    if (typeof img !== "string") return false;
+    const normalizedImg = img.toLowerCase().replace(/_/g, "-");
+    return normalizedImg.includes(slug);
+  });
+}
+
+export function filterWeddingRingVariants(item) {
+  if (!item) return item;
+  let products = item.products;
+  if (typeof products === "string") {
+    try {
+      products = JSON.parse(products);
+    } catch {
+      products = [];
+    }
+  }
+  if (Array.isArray(products)) {
+    products = products.map((product) => {
+      if (!product) return product;
+      const images = Array.isArray(product.images) ? product.images : [];
+      const variants = Array.isArray(product.variants) ? product.variants : [];
+      const filteredVariants = variants.filter((variant) =>
+        hasImageForMaterialColor(images, variant?.material_color)
+      );
+      return {
+        ...product,
+        variants: filteredVariants
+      };
+    });
+  }
+  return {
+    ...item,
+    products
+  };
+}

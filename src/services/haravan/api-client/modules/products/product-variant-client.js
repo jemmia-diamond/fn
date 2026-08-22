@@ -9,4 +9,9 @@ export default class ProductVariantClient extends BaseClient {
     const path = `/com/products/${productId}/variants.json`;
     return await this.makeGetRequest(path);
   }
+
+  async createVariant(productId, data) {
+    const path = `/com/products/${productId}/variants.json`;
+    return await this.makePostRequest(path, { variant: data });
+  }
 }

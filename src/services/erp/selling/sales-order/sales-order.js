@@ -222,6 +222,15 @@ export default class SalesOrderService {
   };
 
   mapLineItemsFields = (lineItemData) => {
+    const sku = lineItemData.sku || "";
+    let type = lineItemData.type;
+
+    if (sku.startsWith("GIA")) {
+      type = "Kim Cương Viên";
+    } else if (sku.startsWith("SPT-")) {
+      type = (lineItemData.variant_title || "").split(" - ")[1] || type;
+    }
+
     return {
       doctype: this.linkedTableDoctype.lineItems,
       haravan_variant_id: lineItemData.variant_id,
@@ -233,7 +242,7 @@ export default class SalesOrderService {
       price_list_rate: parseInt(lineItemData.price_original),
       discount_amount: parseInt(lineItemData.price_original - lineItemData.price),
       rate: parseInt(lineItemData.price),
-      type: lineItemData.type
+      type
     };
   };
 
