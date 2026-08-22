@@ -4,7 +4,7 @@ export const verifyNocoWebhook = async (ctx, next) => {
     return ctx.json({ error: "NocoDB Webhook Secret is not configured" }, 500);
   }
 
-  const clientSecret = ctx.req.header("X-NocoDB-Webhook-Secret");
+  const clientSecret = ctx.req.header("X-Nocodb-Webhook-Signature");
   if (!clientSecret || clientSecret !== secret) {
     return ctx.json({ error: "Unauthorized" }, 401);
   }
