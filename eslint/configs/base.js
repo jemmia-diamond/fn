@@ -48,6 +48,7 @@ export default function getBaseConfig() {
       "eol-last": ["error", "always"],
       "no-console": ["error", { allow: ["warn"] }],
       indent: ["error", 2],
+      "no-dupe-class-members": "error",
       "@typescript-eslint/no-explicit-any": "off",
       "@stylistic/array-bracket-spacing": ["error", "never"],
       "@stylistic/object-curly-spacing": ["error", "always"],
