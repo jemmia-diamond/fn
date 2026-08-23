@@ -8,23 +8,26 @@ export default class GoogleMerchantService {
     this.env = env;
     this.merchantId = env.GOOGLE_MERCHANT_ID;
     this.auth = null;
-    this.client = createAxiosClient({
-      baseURL: "https://merchantapi.googleapis.com",
-      timeout: 30000
-    }, {
-      retries: 5,
-      shouldResetTimeout: true,
-      retryDelay: (retryCount) => {
-        return Math.pow(2, retryCount) * 1000;
+    this.client = createAxiosClient(
+      {
+        baseURL: "https://merchantapi.googleapis.com",
+        timeout: 30000
       },
-      retryCondition: (error) => {
-        return (
-          !error.response ||
-          (error.response.status >= 500 && error.response.status <= 599) ||
-          error.response.status === 429
-        );
+      {
+        retries: 5,
+        shouldResetTimeout: true,
+        retryDelay: (retryCount) => {
+          return Math.pow(2, retryCount) * 1000;
+        },
+        retryCondition: (error) => {
+          return (
+            !error.response ||
+            (error.response.status >= 500 && error.response.status <= 599) ||
+            error.response.status === 429
+          );
+        }
       }
-    });
+    );
   }
 
   async _ensureAuth() {
@@ -50,7 +53,9 @@ export default class GoogleMerchantService {
       const url = `/datasources/v1/accounts/${this.merchantId}/dataSources`;
       const response = await this.client.get(url, { headers });
 
-      const contentApiSource = response.data.dataSources?.find(ds => ds.displayName === "Content API");
+      const contentApiSource = response.data.dataSources?.find(
+        (ds) => ds.displayName === "Content API"
+      );
 
       if (contentApiSource) {
         this.dataSourceId = contentApiSource.dataSourceId;
@@ -84,7 +89,7 @@ export default class GoogleMerchantService {
     }
     const token = await this.auth.getAccessToken();
     return {
-      "Authorization": `Bearer ${token}`,
+      Authorization: `Bearer ${token}`,
       "Content-Type": "application/json"
     };
   }
@@ -128,5 +133,4 @@ export default class GoogleMerchantService {
       Sentry.captureException(error);
     }
   }
-
 }

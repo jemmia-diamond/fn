@@ -5,8 +5,16 @@ export default class SetsController {
     const payload = await ctx.req.json();
     const env = ctx.env;
 
-    if (!payload || !payload.type || !payload.data || payload.data.table_name !== "sets") {
-      return ctx.json({ message: "Invalid or ignored payload" }, { status: 200 });
+    if (
+      !payload ||
+      !payload.type ||
+      !payload.data ||
+      payload.data.table_name !== "sets"
+    ) {
+      return ctx.json(
+        { message: "Invalid or ignored payload" },
+        { status: 200 }
+      );
     }
 
     const setsSyncService = new SetsSyncService(env);

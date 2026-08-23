@@ -7,10 +7,19 @@ export default class HaravanWebhook {
     /*
     /webhook/namespace/resources
     */
-    const  haravanWebhookNamespace = webhook.basePath("/haravan");
+    const haravanWebhookNamespace = webhook.basePath("/haravan");
 
-    haravanWebhookNamespace.use("*", verifyHmacBase64Auth("X-Haravan-Hmacsha256", "HARAVAN_WEBHOOK_SECRET"));
-    haravanWebhookNamespace.post("erp/orders", HaravanERPOrderController.create);
-    haravanWebhookNamespace.post("noco/products",  HaravanNocoProductController.create);
-  };
-};
+    haravanWebhookNamespace.use(
+      "*",
+      verifyHmacBase64Auth("X-Haravan-Hmacsha256", "HARAVAN_WEBHOOK_SECRET")
+    );
+    haravanWebhookNamespace.post(
+      "erp/orders",
+      HaravanERPOrderController.create
+    );
+    haravanWebhookNamespace.post(
+      "noco/products",
+      HaravanNocoProductController.create
+    );
+  }
+}

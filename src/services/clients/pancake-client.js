@@ -32,7 +32,10 @@ export default class PancakeClient {
       this.pageAccessTokens[pageId] = token;
       return token;
     } catch (error) {
-      throw new Error(`Failed to generate page access token for page ${pageId}.`, error.response?.data || error.message);
+      throw new Error(
+        `Failed to generate page access token for page ${pageId}.`,
+        error.response?.data || error.message
+      );
     }
   }
 
@@ -48,7 +51,10 @@ export default class PancakeClient {
       });
       return response.data.data || response.data;
     } catch (error) {
-      throw new Error("Failed to retrieve pages list.", error.response?.data || error.message);
+      throw new Error(
+        "Failed to retrieve pages list.",
+        error.response?.data || error.message
+      );
     }
   }
 
@@ -79,7 +85,10 @@ export default class PancakeClient {
       });
       return response.data.conversations || [];
     } catch (error) {
-      throw new Error(`Failed to get conversations for page ${pageId}.`, error.response?.data || error.message);
+      throw new Error(
+        `Failed to get conversations for page ${pageId}.`,
+        error.response?.data || error.message
+      );
     }
   }
 
@@ -97,11 +106,18 @@ export default class PancakeClient {
     const payload = { action, tag_id: tagId };
     try {
       const response = await axios.post(url, payload, {
-        params: { page_id: pageId, page_access_token: pageAccessToken, conversation_id: conversationId }
+        params: {
+          page_id: pageId,
+          page_access_token: pageAccessToken,
+          conversation_id: conversationId
+        }
       });
       return response.data;
     } catch (error) {
-      throw new Error(`Failed to tag conversation ${conversationId}.`, error.response?.data || error.message);
+      throw new Error(
+        `Failed to tag conversation ${conversationId}.`,
+        error.response?.data || error.message
+      );
     }
   }
 
@@ -118,11 +134,18 @@ export default class PancakeClient {
     const payload = { assignee_ids: assigneeIds };
     try {
       const response = await axios.post(url, payload, {
-        params: { page_id: pageId, page_access_token: pageAccessToken, conversation_id: conversationId }
+        params: {
+          page_id: pageId,
+          page_access_token: pageAccessToken,
+          conversation_id: conversationId
+        }
       });
       return response.data;
     } catch (error) {
-      throw new Error(`Failed to assign conversation ${conversationId}.`, error.response?.data || error.message);
+      throw new Error(
+        `Failed to assign conversation ${conversationId}.`,
+        error.response?.data || error.message
+      );
     }
   }
 
@@ -137,11 +160,18 @@ export default class PancakeClient {
     const url = `${this.baseUrl}/api/public_api/v1/pages/${pageId}/conversations/${conversationId}/read`;
     try {
       const response = await axios.post(url, null, {
-        params: { page_id: pageId, conversation_id: conversationId, page_access_token: pageAccessToken }
+        params: {
+          page_id: pageId,
+          conversation_id: conversationId,
+          page_access_token: pageAccessToken
+        }
       });
       return response.data;
     } catch (error) {
-      throw new Error(`Failed to mark conversation ${conversationId} as read.`, error.response?.data || error.message);
+      throw new Error(
+        `Failed to mark conversation ${conversationId} as read.`,
+        error.response?.data || error.message
+      );
     }
   }
 
@@ -156,11 +186,18 @@ export default class PancakeClient {
     const url = `${this.baseUrl}/api/public_api/v1/pages/${pageId}/conversations/${conversationId}/unread`;
     try {
       const response = await axios.post(url, null, {
-        params: { page_id: pageId, conversation_id: conversationId, page_access_token: pageAccessToken }
+        params: {
+          page_id: pageId,
+          conversation_id: conversationId,
+          page_access_token: pageAccessToken
+        }
       });
       return response.data;
     } catch (error) {
-      throw new Error(`Failed to mark conversation ${conversationId} as unread.`, error.response?.data || error.message);
+      throw new Error(
+        `Failed to mark conversation ${conversationId} as unread.`,
+        error.response?.data || error.message
+      );
     }
   }
 
@@ -185,7 +222,10 @@ export default class PancakeClient {
       });
       return response.data.messages || [];
     } catch (error) {
-      throw new Error(`Failed to get messages for conversation ${conversationId}.`, error.response?.data || error.message);
+      throw new Error(
+        `Failed to get messages for conversation ${conversationId}.`,
+        error.response?.data || error.message
+      );
     }
   }
 
@@ -201,11 +241,19 @@ export default class PancakeClient {
     const url = `${this.baseUrl}/api/public_api/v1/pages/${pageId}/statistics/pages_campaigns`;
     try {
       const response = await axios.get(url, {
-        params: { page_id: pageId, page_access_token: pageAccessToken, since, until }
+        params: {
+          page_id: pageId,
+          page_access_token: pageAccessToken,
+          since,
+          until
+        }
       });
       return response.data.data || [];
     } catch (error) {
-      throw new Error(`Failed to get campaign statistics for page ${pageId}.`, error.response?.data || error.message);
+      throw new Error(
+        `Failed to get campaign statistics for page ${pageId}.`,
+        error.response?.data || error.message
+      );
     }
   }
 
@@ -222,11 +270,20 @@ export default class PancakeClient {
     const url = `${this.baseUrl}/api/public_api/v1/pages/${pageId}/statistics/ads`;
     try {
       const response = await axios.get(url, {
-        params: { page_id: pageId, page_access_token: pageAccessToken, since, until, type }
+        params: {
+          page_id: pageId,
+          page_access_token: pageAccessToken,
+          since,
+          until,
+          type
+        }
       });
       return response.data.data || [];
     } catch (error) {
-      throw new Error(`Failed to get ads statistics for page ${pageId}.`, error.response?.data || error.message);
+      throw new Error(
+        `Failed to get ads statistics for page ${pageId}.`,
+        error.response?.data || error.message
+      );
     }
   }
 
@@ -249,7 +306,10 @@ export default class PancakeClient {
       const response = await axios.get(url, { params });
       return response.data;
     } catch (error) {
-      throw new Error(`Failed to get engagement statistics for page ${pageId}.`, error.response?.data || error.message);
+      throw new Error(
+        `Failed to get engagement statistics for page ${pageId}.`,
+        error.response?.data || error.message
+      );
     }
   }
 
@@ -265,11 +325,19 @@ export default class PancakeClient {
     const url = `${this.baseUrl}/api/public_api/v1/pages/${pageId}/statistics/pages`;
     try {
       const response = await axios.get(url, {
-        params: { page_id: pageId, page_access_token: pageAccessToken, since, until }
+        params: {
+          page_id: pageId,
+          page_access_token: pageAccessToken,
+          since,
+          until
+        }
       });
       return response.data.data || [];
     } catch (error) {
-      throw new Error(`Failed to get statistics for page ${pageId}.`, error.response?.data || error.message);
+      throw new Error(
+        `Failed to get statistics for page ${pageId}.`,
+        error.response?.data || error.message
+      );
     }
   }
 
@@ -291,7 +359,10 @@ export default class PancakeClient {
       const response = await axios.get(url, { params });
       return response.data.data || [];
     } catch (error) {
-      throw new Error(`Failed to get user statistics for page ${pageId}.`, error.response?.data || error.message);
+      throw new Error(
+        `Failed to get user statistics for page ${pageId}.`,
+        error.response?.data || error.message
+      );
     }
   }
 
@@ -315,7 +386,10 @@ export default class PancakeClient {
       const response = await axios.get(url, { params });
       return response.data.data || [];
     } catch (error) {
-      throw new Error("Failed to get multi-page user statistics.", error.response?.data || error.message);
+      throw new Error(
+        "Failed to get multi-page user statistics.",
+        error.response?.data || error.message
+      );
     }
   }
 
@@ -332,11 +406,19 @@ export default class PancakeClient {
     const url = `${this.baseUrl}/api/public_api/v1/pages/${pageId}/statistics/tags`;
     try {
       const response = await axios.get(url, {
-        params: { page_id: pageId, page_access_token: pageAccessToken, since, until }
+        params: {
+          page_id: pageId,
+          page_access_token: pageAccessToken,
+          since,
+          until
+        }
       });
       return response.data.data || [];
     } catch (error) {
-      throw new Error(`Failed to get tag statistics for page ${pageId}.`, error.response?.data || error.message);
+      throw new Error(
+        `Failed to get tag statistics for page ${pageId}.`,
+        error.response?.data || error.message
+      );
     }
   }
 
@@ -358,7 +440,10 @@ export default class PancakeClient {
       const response = await axios.get(url, { params });
       return response.data.data || [];
     } catch (error) {
-      throw new Error(`Failed to get user statistics for page ${pageId}.`, error.response?.data || error.message);
+      throw new Error(
+        `Failed to get user statistics for page ${pageId}.`,
+        error.response?.data || error.message
+      );
     }
   }
 
@@ -383,7 +468,10 @@ export default class PancakeClient {
       const response = await axios.get(url, { params });
       return response.data.data || response.data;
     } catch (error) {
-      throw new Error(`Failed to get new customer statistics for page ${pageId}.`, error.response?.data || error.message);
+      throw new Error(
+        `Failed to get new customer statistics for page ${pageId}.`,
+        error.response?.data || error.message
+      );
     }
   }
 
@@ -412,7 +500,10 @@ export default class PancakeClient {
       const response = await axios.get(url, { params });
       return response.data.data || [];
     } catch (error) {
-      throw new Error(`Failed to get conversations from ads for page ${pageId}.`, error.response?.data || error.message);
+      throw new Error(
+        `Failed to get conversations from ads for page ${pageId}.`,
+        error.response?.data || error.message
+      );
     }
   }
 
@@ -427,7 +518,14 @@ export default class PancakeClient {
    * @returns {Promise<Object>} Customers data response with paging.
    * API: GET /public_api/v1/pages/:page_id/page_customers
    */
-  async getPageCustomers(pageId, since, until, pageNumber, pageSize = 100, orderBy = "inserted_at") {
+  async getPageCustomers(
+    pageId,
+    since,
+    until,
+    pageNumber,
+    pageSize = 100,
+    orderBy = "inserted_at"
+  ) {
     const pageAccessToken = await this.getPageAccessToken(pageId);
     const url = `${this.baseUrl}/api/public_api/v1/pages/${pageId}/page_customers`;
     try {
@@ -443,7 +541,10 @@ export default class PancakeClient {
       const response = await axios.get(url, { params });
       return response.data;
     } catch (error) {
-      throw new Error(`Failed to get customers info for page ${pageId}.`, error.response?.data || error.message);
+      throw new Error(
+        `Failed to get customers info for page ${pageId}.`,
+        error.response?.data || error.message
+      );
     }
   }
 
@@ -469,7 +570,10 @@ export default class PancakeClient {
       const response = await axios.put(url, data, { params });
       return response.data;
     } catch (error) {
-      throw new Error(`Failed to update customer info for customer ${pageCustomerId} on page ${pageId}.`, error.response?.data || error.message);
+      throw new Error(
+        `Failed to update customer info for customer ${pageCustomerId} on page ${pageId}.`,
+        error.response?.data || error.message
+      );
     }
   }
 
@@ -500,7 +604,10 @@ export default class PancakeClient {
       const response = await axios.get(url, { params });
       return response.data;
     } catch (error) {
-      throw new Error(`Failed to get call logs for page ${pageId} (SIP ID: ${id}).`, error.response?.data || error.message);
+      throw new Error(
+        `Failed to get call logs for page ${pageId} (SIP ID: ${id}).`,
+        error.response?.data || error.message
+      );
     }
   }
 
@@ -519,7 +626,10 @@ export default class PancakeClient {
       });
       return response.data.tags || [];
     } catch (error) {
-      throw new Error(`Failed to list tags for page ${pageId}.`, error.response?.data || error.message);
+      throw new Error(
+        `Failed to list tags for page ${pageId}.`,
+        error.response?.data || error.message
+      );
     }
   }
 
@@ -539,7 +649,10 @@ export default class PancakeClient {
       });
       return response.data;
     } catch (error) {
-      throw new Error(`Failed to list users for page ${pageId}.`, error.response?.data || error.message);
+      throw new Error(
+        `Failed to list users for page ${pageId}.`,
+        error.response?.data || error.message
+      );
     }
   }
 
@@ -570,7 +683,10 @@ export default class PancakeClient {
       const response = await axios.get(url, { params });
       return response.data;
     } catch (error) {
-      throw new Error(`Failed to get posts for page ${pageId}.`, error.response?.data || error.message);
+      throw new Error(
+        `Failed to get posts for page ${pageId}.`,
+        error.response?.data || error.message
+      );
     }
   }
 
@@ -594,7 +710,10 @@ export default class PancakeClient {
       const response = await axios.post(url, data, { params });
       return response.data;
     } catch (error) {
-      throw new Error(`Failed to update round robin users for page ${pageId}.`, error.response?.data || error.message);
+      throw new Error(
+        `Failed to update round robin users for page ${pageId}.`,
+        error.response?.data || error.message
+      );
     }
   }
 
@@ -612,7 +731,12 @@ export default class PancakeClient {
   async sendPrivateReply(pageId, conversationId, postId, messageId, message) {
     const pageAccessToken = await this.getPageAccessToken(pageId);
     const url = `${this.baseUrl}/api/public_api/v1/pages/${pageId}/conversations/${conversationId}/messages`;
-    const payload = { action: "private_replies", post_id: postId, message_id: messageId, message };
+    const payload = {
+      action: "private_replies",
+      post_id: postId,
+      message_id: messageId,
+      message
+    };
     try {
       const response = await axios.post(url, payload, {
         params: { page_access_token: pageAccessToken },
@@ -621,7 +745,8 @@ export default class PancakeClient {
       return response.data;
     } catch (error) {
       throw new Error(
-        `Failed to send private reply to comment ${messageId}.`, error.response?.data || error.message
+        `Failed to send private reply to comment ${messageId}.`,
+        error.response?.data || error.message
       );
     }
   }

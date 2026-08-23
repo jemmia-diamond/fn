@@ -31,7 +31,10 @@ export default class DebtTrackingNotificationService {
   async notifyWeeklyAnnouncement() {
     if (dayjs().tz(TIMEZONE_VIETNAM).day() !== VIETNAM_THURSDAY) return;
 
-    const nextWednesday = dayjs().tz(TIMEZONE_VIETNAM).add(6, "day").format("YYYY-MM-DD");
+    const nextWednesday = dayjs()
+      .tz(TIMEZONE_VIETNAM)
+      .add(6, "day")
+      .format("YYYY-MM-DD");
     const orders = await this._fetchDebtList(nextWednesday, false);
     if (!orders?.length) return;
 
@@ -99,7 +102,7 @@ export default class DebtTrackingNotificationService {
     let ctCount = 0;
     let otherCount = 0;
 
-    orders.forEach(order => {
+    orders.forEach((order) => {
       const address = order.billing_address || "";
       if (address.includes("72 Nguyễn Cư Trinh")) hcmCount++;
       else if (address.includes("63 Kim Mã")) hnCount++;
@@ -107,14 +110,20 @@ export default class DebtTrackingNotificationService {
       else otherCount++;
     });
 
-    const adminEmails = ["trinh.ngo@jemmia.vn", "hue.phan@jemmia.vn", "tien.chau@jemmia.vn"];
+    const adminEmails = [
+      "trinh.ngo@jemmia.vn",
+      "hue.phan@jemmia.vn",
+      "tien.chau@jemmia.vn"
+    ];
     const users = await this.db.larksuite_users.findMany({
       where: { enterprise_email: { in: adminEmails } },
       select: { enterprise_email: true, user_id: true }
     });
 
     const adminTags = {};
-    users.forEach(u => { adminTags[u.enterprise_email] = `<at id="${u.user_id}"></at>`; });
+    users.forEach((u) => {
+      adminTags[u.enterprise_email] = `<at id="${u.user_id}"></at>`;
+    });
 
     const hcmTag = adminTags["trinh.ngo@jemmia.vn"];
     const hnTag = adminTags["hue.phan@jemmia.vn"];
@@ -122,8 +131,14 @@ export default class DebtTrackingNotificationService {
     const allTags = `${hcmTag} ${hnTag} ${ctTag}`;
 
     return {
-      hcmCount, hnCount, ctCount, otherCount,
-      hcmTag, hnTag, ctTag, allTags
+      hcmCount,
+      hnCount,
+      ctCount,
+      otherCount,
+      hcmTag,
+      hnTag,
+      ctTag,
+      allTags
     };
   }
 

@@ -35,7 +35,8 @@ export default class PancakeERPMessageController {
         env: ctx.env,
         key: `interaction-conversation-${conversationId}`,
         data: data,
-        actionType: DebounceActions.SEND_TO_PANCAKE_MESSAGE_LAST_INTERACTION_QUEUE,
+        actionType:
+          DebounceActions.SEND_TO_PANCAKE_MESSAGE_LAST_INTERACTION_QUEUE,
         delay: 30000
       });
     }

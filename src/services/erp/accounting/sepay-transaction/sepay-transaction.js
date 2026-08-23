@@ -38,7 +38,10 @@ export default class SepayTransactionService {
    */
   async processTransaction(sepayTransaction) {
     const { content, description, transferAmount } = sepayTransaction;
-    const { orderNumber, orderDesc } = this.standardizeOrderNumber(content, description);
+    const { orderNumber, orderDesc } = this.standardizeOrderNumber(
+      content,
+      description
+    );
 
     if (!orderNumber && !orderDesc) {
       // TODO: send notification to larksuite
@@ -52,32 +55,44 @@ export default class SepayTransactionService {
     if (!qr) throw new Error("QR code not found");
 
     if (qr.payment_entry_name) {
-      const bankTransactions = await this.frappeClient.getList("Bank Transaction", {
-        filters: [["sepay_id", "=", sepayTransaction.id]],
-        fields: ["name", "sepay_account_number"]
-      });
+      const bankTransactions = await this.frappeClient.getList(
+        "Bank Transaction",
+        {
+          filters: [["sepay_id", "=", sepayTransaction.id]],
+          fields: ["name", "sepay_account_number"]
+        }
+      );
 
-      const bankTransactionName = bankTransactions && bankTransactions.length > 0 ? bankTransactions[0].name : null;
+      const bankTransactionName =
+        bankTransactions && bankTransactions.length > 0
+          ? bankTransactions[0].name
+          : null;
 
       if (!bankTransactionName) {
         throw new Error("Bank Transaction not found in ERPNext");
       }
 
-      if (String(qr.bank_account_number) !== String(bankTransactions[0].sepay_account_number)) {
+      if (
+        String(qr.bank_account_number) !==
+        String(bankTransactions[0].sepay_account_number)
+      ) {
         throw new Error("Bank account number does not match");
       }
 
-      const linkPaymentEntryToBankTransactionResult = await this.linkPaymentEntryToBankTransaction(qr, {
-        paymentEntryName: qr.payment_entry_name,
-        bankTransactionName: bankTransactionName
-      });
+      const linkPaymentEntryToBankTransactionResult =
+        await this.linkPaymentEntryToBankTransaction(qr, {
+          paymentEntryName: qr.payment_entry_name,
+          bankTransactionName: bankTransactionName
+        });
 
       return linkPaymentEntryToBankTransactionResult;
     }
 
     const HRV_API_KEY = this.env.HARAVAN_TOKEN;
     if (!HRV_API_KEY) {
-      throw new BadRequestException("Haravan API credentials or base URL are not configured in the environment.");
+      throw new BadRequestException(
+        "Haravan API credentials or base URL are not configured in the environment."
+      );
     }
 
     if (!isOrderLater) {
@@ -117,18 +132,26 @@ export default class SepayTransactionService {
     }
 
     // Temporary for larkbase usage, we'll remove this block once we're all move over to erp
-    if (qr.transfer_status === "success" && !isOrderLater && qr.haravan_order_id && !qr.payment_entry_name) {
+    if (
+      qr.transfer_status === "success" &&
+      !isOrderLater &&
+      qr.haravan_order_id &&
+      !qr.payment_entry_name
+    ) {
       await this.enqueueMisaBackgroundJob(qr);
     }
     return true;
   }
 
-  async linkPaymentEntryToBankTransaction(qrRecord, {
-    paymentEntryName,
-    bankTransactionName
-  }) {
+  async linkPaymentEntryToBankTransaction(
+    qrRecord,
+    { paymentEntryName, bankTransactionName }
+  ) {
     try {
-      const bankTransaction = await this.frappeClient.getDoc("Bank Transaction", bankTransactionName);
+      const bankTransaction = await this.frappeClient.getDoc(
+        "Bank Transaction",
+        bankTransactionName
+      );
 
       if (!bankTransaction) {
         throw new Error(`Bank Transaction ${bankTransactionName} not found`);
@@ -140,15 +163,20 @@ export default class SepayTransactionService {
       );
 
       if (!isAlreadyLinked) {
-
         await this.db.qrPaymentTransaction.update({
           where: { id: qrRecord.id },
           data: { transfer_status: "success" }
         });
-        const paymentEntry = await this.frappeClient.getDoc("Payment Entry", paymentEntryName);
+        const paymentEntry = await this.frappeClient.getDoc(
+          "Payment Entry",
+          paymentEntryName
+        );
 
         // Assume we allocate the full unallocated amount or deposit if unallocated is not set/zero but it should be valid
-        const amountToAllocate = bankTransaction.unallocated_amount > 0 ? bankTransaction.unallocated_amount : bankTransaction.deposit;
+        const amountToAllocate =
+          bankTransaction.unallocated_amount > 0
+            ? bankTransaction.unallocated_amount
+            : bankTransaction.deposit;
 
         paymentEntries.push({
           payment_document: "Payment Entry",
@@ -190,7 +218,12 @@ export default class SepayTransactionService {
   }
 
   mapRawSepayTransactionToPrisma(rawSepayTransaction) {
-    const transaction_date = dayjs(rawSepayTransaction.transactionDate, "YYYY-MM-DD HH:mm:ss").subtract(7, "hour").format("YYYY-MM-DD HH:mm:ss");
+    const transaction_date = dayjs(
+      rawSepayTransaction.transactionDate,
+      "YYYY-MM-DD HH:mm:ss"
+    )
+      .subtract(7, "hour")
+      .format("YYYY-MM-DD HH:mm:ss");
     return {
       id: String(rawSepayTransaction.id),
       bank_brand_name: rawSepayTransaction.gateway,
@@ -210,27 +243,34 @@ export default class SepayTransactionService {
 
   async sendToERP(rawSepayTransaction, existingTransaction) {
     try {
-      const sepayTransaction = this.mapRawSepayTransactionToPrisma(rawSepayTransaction);
+      const sepayTransaction =
+        this.mapRawSepayTransactionToPrisma(rawSepayTransaction);
 
       if (parseFloat(sepayTransaction.amount_in) < 0) return;
 
-      const { orderNumber, orderDesc } = this.standardizeOrderNumber(sepayTransaction.transaction_content, sepayTransaction.description);
+      const { orderNumber, orderDesc } = this.standardizeOrderNumber(
+        sepayTransaction.transaction_content,
+        sepayTransaction.description
+      );
 
       if (existingTransaction) {
-        const bank = sepayTransaction.bank_brand_name && await this.frappeClient.getList(
-          "Bank",
-          { filters: [["bank_name", "=", sepayTransaction.bank_brand_name]] }
-        );
-        const bankAccountList = bank && bank[0] && sepayTransaction.account_number && await this.frappeClient.getList(
-          "Bank Account",
-          {
+        const bank =
+          sepayTransaction.bank_brand_name &&
+          (await this.frappeClient.getList("Bank", {
+            filters: [["bank_name", "=", sepayTransaction.bank_brand_name]]
+          }));
+        const bankAccountList =
+          bank &&
+          bank[0] &&
+          sepayTransaction.account_number &&
+          (await this.frappeClient.getList("Bank Account", {
             filters: [
               ["bank", "=", bank[0].name],
               ["bank_account_no", "=", sepayTransaction.account_number]
             ]
-          }
-        );
-        const bankAccountName = bankAccountList?.length === 1 ? bankAccountList[0].name : null;
+          }));
+        const bankAccountName =
+          bankAccountList?.length === 1 ? bankAccountList[0].name : null;
 
         const upsertedBankTransaction = await this.frappeClient.upsert(
           {
@@ -253,7 +293,10 @@ export default class SepayTransactionService {
             sepay_bank_account_id: sepayTransaction.bank_account_id,
             deposit: sepayTransaction.amount_in,
             reference_number: sepayTransaction.reference_number,
-            date: dayjs(rawSepayTransaction.transactionDate, "YYYY-MM-DD HH:mm:ss").format("YYYY-MM-DD"),
+            date: dayjs(
+              rawSepayTransaction.transactionDate,
+              "YYYY-MM-DD HH:mm:ss"
+            ).format("YYYY-MM-DD"),
             bank_account: bankAccountName
           },
           "name"
@@ -272,7 +315,8 @@ export default class SepayTransactionService {
   }
 
   async saveToDb(rawSepayTransaction) {
-    const sepayTransaction = this.mapRawSepayTransactionToPrisma(rawSepayTransaction);
+    const sepayTransaction =
+      this.mapRawSepayTransactionToPrisma(rawSepayTransaction);
 
     if (parseFloat(sepayTransaction.amount_in) < 0) return;
     const {
@@ -339,28 +383,41 @@ export default class SepayTransactionService {
         return null;
       }
 
-      const parsedData = typeof dataStr === "string" ? JSON.parse(dataStr) : dataStr;
+      const parsedData =
+        typeof dataStr === "string" ? JSON.parse(dataStr) : dataStr;
 
       if (!parsedData.app_trans_id) {
-        console.warn("[ZaloPay] Missing app_trans_id in callback data, skipping");
+        console.warn(
+          "[ZaloPay] Missing app_trans_id in callback data, skipping"
+        );
         return null;
       }
 
       const safeJsonParse = (value) => {
         if (!value) return null;
         if (typeof value === "object") return value;
-        try { return JSON.parse(value); } catch { return value; }
+        try {
+          return JSON.parse(value);
+        } catch {
+          return value;
+        }
       };
 
       const safeBigInt = (value) => {
         if (value == null) return null;
-        try { return BigInt(value); } catch { return null; }
+        try {
+          return BigInt(value);
+        } catch {
+          return null;
+        }
       };
 
       const createDto = {
         id: parsedData.app_trans_id,
         amount_in: String(parsedData.amount || 0),
-        transaction_date: parsedData.server_time ? dayjs(parsedData.server_time).format("YYYY-MM-DD HH:mm:ss") : null,
+        transaction_date: parsedData.server_time
+          ? dayjs(parsedData.server_time).format("YYYY-MM-DD HH:mm:ss")
+          : null,
 
         app_id: parsedData.app_id,
         app_time: safeBigInt(parsedData.app_time),
@@ -385,7 +442,9 @@ export default class SepayTransactionService {
         }
       });
 
-      console.warn(`[ZaloPay] Transaction saved: ${parsedData.app_trans_id}, zp_trans_id: ${parsedData.zp_trans_id}`);
+      console.warn(
+        `[ZaloPay] Transaction saved: ${parsedData.app_trans_id}, zp_trans_id: ${parsedData.zp_trans_id}`
+      );
       return result;
     } catch (e) {
       console.warn("[ZaloPay] Failed to create transaction:", e.message);
@@ -402,7 +461,9 @@ export default class SepayTransactionService {
       }
     };
 
-    await this.env["MISA_QUEUE"].send(payload, { delaySeconds: Misa.Constants.DELAYS.ONE_MINUTE });
+    await this.env["MISA_QUEUE"].send(payload, {
+      delaySeconds: Misa.Constants.DELAYS.ONE_MINUTE
+    });
   }
 
   static async dequeueSepayTransactionQueue(batch, env) {
@@ -420,7 +481,9 @@ export default class SepayTransactionService {
         Sentry.captureException(error);
         const status = error?.status || error?.response?.status;
         if (status === 502 || status === 503 || status === 504) {
-          await env["SEPAY_TRANSACTION_QUEUE"].send(message.body, { delaySeconds: TEN_MINUTES });
+          await env["SEPAY_TRANSACTION_QUEUE"].send(message.body, {
+            delaySeconds: TEN_MINUTES
+          });
         }
       }
     }
@@ -436,16 +499,23 @@ export default class SepayTransactionService {
         if (topic === SEPAY_WEBHOOK_TOPICS.SEPAY) {
           createdSepayTransaction = await service.saveToDb(message.body);
         } else {
-          createdSepayTransaction = await service.createZalopayTransaction(message.body);
+          createdSepayTransaction = await service.createZalopayTransaction(
+            message.body
+          );
         }
         if (createdSepayTransaction && topic === SEPAY_WEBHOOK_TOPICS.SEPAY) {
           await service.sendToERP(message.body, createdSepayTransaction);
-        } else if (createdSepayTransaction && topic === SEPAY_WEBHOOK_TOPICS.ZALOPAY) {
+        } else if (
+          createdSepayTransaction &&
+          topic === SEPAY_WEBHOOK_TOPICS.ZALOPAY
+        ) {
           await service.sendZalopayToERP(message.body, createdSepayTransaction);
         }
       } catch (error) {
         Sentry.captureException(error);
-        await env["SEPAY_TRANSACTION_QUEUE"].send(message.body, { delaySeconds: TEN_MINUTES });
+        await env["SEPAY_TRANSACTION_QUEUE"].send(message.body, {
+          delaySeconds: TEN_MINUTES
+        });
       }
     }
   }

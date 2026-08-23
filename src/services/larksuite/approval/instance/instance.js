@@ -13,7 +13,8 @@ export default class InstanceService {
     const db = Database.instance(env);
     const larkClient = await LarksuiteService.createClientV2(env);
     const timeThreshold = dayjs().utc();
-    const startTime = timeThreshold.subtract(1, "day").subtract(1, "hour").unix() * 1000;
+    const startTime =
+      timeThreshold.subtract(1, "day").subtract(1, "hour").unix() * 1000;
     const endTime = timeThreshold.add(12, "hour").unix() * 1000;
     const pageSize = 100;
 
@@ -41,7 +42,9 @@ export default class InstanceService {
         payload,
         pageSize
       );
-      const codes = responses.flatMap(res => (res?.data?.instance_code_list ?? []));
+      const codes = responses.flatMap(
+        (res) => res?.data?.instance_code_list ?? []
+      );
 
       for (const code of codes) {
         const instanceResponse = await larkClient.approval.v4.instance.get({
@@ -66,7 +69,9 @@ export default class InstanceService {
         create: instance
       });
     }
-    const uniqueUserIds = [...new Set(transformedInstances.map(i => i.user_id).filter(Boolean))];
+    const uniqueUserIds = [
+      ...new Set(transformedInstances.map((i) => i.user_id).filter(Boolean))
+    ];
     for (const userId of uniqueUserIds) {
       await instanceService.createOrUpdateUser(userId, db, env);
     }

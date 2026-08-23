@@ -118,4 +118,3 @@ export const VARIANTS_V2_FIELDS = [
   "wp_database_updated_at",
   "wd_database_updated_at"
 ];
-

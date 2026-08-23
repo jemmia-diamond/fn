@@ -1,4 +1,7 @@
-import { parsePhoneNumberFromString, getCountryCallingCode } from "libphonenumber-js";
+import {
+  parsePhoneNumberFromString,
+  getCountryCallingCode
+} from "libphonenumber-js";
 
 export function normalizeToStandardFormat(phone, defaultCountry = "VN") {
   if (!phone) return "";
@@ -22,7 +25,10 @@ export function normalizeToStandardFormat(phone, defaultCountry = "VN") {
     return countryCode + digits.slice(1);
   }
 
-  if (digits.startsWith(countryCode + "0") && digits.length >= countryCode.length + 9) {
+  if (
+    digits.startsWith(countryCode + "0") &&
+    digits.length >= countryCode.length + 9
+  ) {
     return countryCode + digits.slice(countryCode.length + 1);
   }
 

@@ -105,8 +105,12 @@ export async function mapLarkToFrappe(
     conversation_greeting: dataRequest.conversation_greeting,
     notes: [
       dataRequest.note ? `Lưu ý đặc biệt \n ${dataRequest.note}` : "",
-      dataRequest.conversation_greeting ? `Nội dung đón tiếp tại cửa hàng \n ${dataRequest.conversation_greeting}` : ""
-    ].filter(Boolean).join("\n\n"),
+      dataRequest.conversation_greeting
+        ? `Nội dung đón tiếp tại cửa hàng \n ${dataRequest.conversation_greeting}`
+        : ""
+    ]
+      .filter(Boolean)
+      .join("\n\n"),
     customer_response: dataRequest.customer_response,
     record_id: dataRequest.record_id,
     policy: dataRequest.policy,
@@ -123,7 +127,9 @@ export async function mapLarkToFrappe(
     fields.appointment_with = lead.doctype;
     fields.party = lead.name;
     fields.purchased_purpose = lead.purpose_lead;
-    fields.preferred_products = mapPreferredProducts(lead.preferred_product_type);
+    fields.preferred_products = mapPreferredProducts(
+      lead.preferred_product_type
+    );
   }
 
   return fields;

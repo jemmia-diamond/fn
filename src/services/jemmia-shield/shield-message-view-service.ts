@@ -156,11 +156,11 @@ export default class ShieldMessageViewService {
         const base64 = imageBuffer.toString("base64");
         return `<div style="padding: 20px; text-align: center;"><img src="data:image/png;base64,${base64}" style="max-width: 100%; height: auto; border-radius: 4px;" /></div>`;
       } else {
-        return "<div style=\"padding: 20px; text-align: center;\">[Image key missing]</div>";
+        return '<div style="padding: 20px; text-align: center;">[Image key missing]</div>';
       }
     } catch (error) {
       Sentry.captureException(error);
-      return "<div style=\"padding: 20px; text-align: center;\">[Image failed to load]</div>";
+      return '<div style="padding: 20px; text-align: center;">[Image failed to load]</div>';
     }
   }
 
@@ -177,7 +177,7 @@ export default class ShieldMessageViewService {
 
   static async renderPost(env: any, payload: any): Promise<string> {
     const content = payload;
-    let html = "<div style=\"font-family: sans-serif; padding: 20px;\">";
+    let html = '<div style="font-family: sans-serif; padding: 20px;">';
 
     if (content.title) {
       html += `<h2 style="margin-top: 0;">${content.title}</h2>`;
@@ -185,53 +185,53 @@ export default class ShieldMessageViewService {
 
     if (content.content) {
       for (const line of content.content) {
-        html += "<p style=\"margin: 0.5em 0;\">";
+        html += '<p style="margin: 0.5em 0;">';
         for (const item of line) {
           switch (item.tag) {
-          case "text": {
-            let text = this.escapeHtml(item.text);
-            if (item.style) {
-              if (item.style.includes("bold"))
-                text = `<strong>${text}</strong>`;
-              if (item.style.includes("italic")) text = `<em>${text}</em>`;
-              if (item.style.includes("strikethrough"))
-                text = `<del>${text}</del>`;
-              if (item.style.includes("underline")) text = `<u>${text}</u>`;
+            case "text": {
+              let text = this.escapeHtml(item.text);
+              if (item.style) {
+                if (item.style.includes("bold"))
+                  text = `<strong>${text}</strong>`;
+                if (item.style.includes("italic")) text = `<em>${text}</em>`;
+                if (item.style.includes("strikethrough"))
+                  text = `<del>${text}</del>`;
+                if (item.style.includes("underline")) text = `<u>${text}</u>`;
+              }
+              text = this.formatText(text);
+              html += text;
+              break;
             }
-            text = this.formatText(text);
-            html += text;
-            break;
-          }
-          case "a":
-            html += `<a href="${item.href}" target="_blank">${this.escapeHtml(
-              item.text
-            )}</a>`;
-            break;
-          case "at": {
-            const displayText = item.text || item.user_id || "Unknown";
-            html += `<span style="color: #3370ff;">@${this.escapeHtml(
-              displayText
-            )}</span>`;
-            break;
-          }
-          case "img":
-            if (item.image_key) {
-              try {
-                const imageBuffer =
+            case "a":
+              html += `<a href="${item.href}" target="_blank">${this.escapeHtml(
+                item.text
+              )}</a>`;
+              break;
+            case "at": {
+              const displayText = item.text || item.user_id || "Unknown";
+              html += `<span style="color: #3370ff;">@${this.escapeHtml(
+                displayText
+              )}</span>`;
+              break;
+            }
+            case "img":
+              if (item.image_key) {
+                try {
+                  const imageBuffer =
                     await JemmiaShieldLarkService.downloadImage(
                       env,
                       item.image_key
                     );
-                const base64 = imageBuffer.toString("base64");
-                html += `<img src="data:image/png;base64,${base64}" style="max-width: 100%; height: auto; border-radius: 4px; margin: 5px 0;" />`;
-              } catch (error) {
-                Sentry.captureException(error);
-                html += "[Image failed to load]";
+                  const base64 = imageBuffer.toString("base64");
+                  html += `<img src="data:image/png;base64,${base64}" style="max-width: 100%; height: auto; border-radius: 4px; margin: 5px 0;" />`;
+                } catch (error) {
+                  Sentry.captureException(error);
+                  html += "[Image failed to load]";
+                }
+              } else {
+                html += `[Image: ${item.image_key}]`;
               }
-            } else {
-              html += `[Image: ${item.image_key}]`;
-            }
-            break;
+              break;
           }
         }
         html += "</p>";

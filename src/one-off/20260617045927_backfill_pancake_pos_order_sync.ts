@@ -9,7 +9,9 @@ const REQUEST_DELAY_MS = 200;
 const SINCE_DATE = new Date("2026-01-01T00:00:00Z");
 const UNTIL_DATE = new Date("2026-06-17T23:59:59Z");
 
-export default async function backfillPancakePosInsertedAt(env: any): Promise<void> {
+export default async function backfillPancakePosInsertedAt(
+  env: any
+): Promise<void> {
   const db = Database.instance(env);
   const client = new PancakePosClient(env.PANCAKE_POS_API_KEY);
   const limit = pLimit(CONCURRENCY_LIMIT);
@@ -52,7 +54,11 @@ export default async function backfillPancakePosInsertedAt(env: any): Promise<vo
           }
 
           try {
-            await client.updateOrderInsertedAt(sync.shop_id, sync.pancake_order_id, order.created_at.toISOString());
+            await client.updateOrderInsertedAt(
+              sync.shop_id,
+              sync.pancake_order_id,
+              order.created_at.toISOString()
+            );
           } catch (e) {
             Sentry.captureException(e, {
               tags: {
@@ -61,7 +67,9 @@ export default async function backfillPancakePosInsertedAt(env: any): Promise<vo
               }
             });
           } finally {
-            await new Promise((resolve) => setTimeout(resolve, REQUEST_DELAY_MS));
+            await new Promise((resolve) =>
+              setTimeout(resolve, REQUEST_DELAY_MS)
+            );
           }
         })
       )

@@ -10,7 +10,9 @@ class InventoryPurchaseReceiveConnector extends BaseConnector {
   }
 
   async createPurchaseReceive(receiveData) {
-    return this.post("/purchase_receives.json", { purchase_receive: receiveData });
+    return this.post("/purchase_receives.json", {
+      purchase_receive: receiveData
+    });
   }
 }
 

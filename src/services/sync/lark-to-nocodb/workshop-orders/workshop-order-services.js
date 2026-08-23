@@ -1,7 +1,13 @@
 import * as Sentry from "@sentry/cloudflare";
 import { RecordConnector } from "services/clients/lark-client/docs";
 import NocoDBClient from "services/clients/nocodb-client";
-import { LARK_APP_TOKEN, LARK_TABLE_ID, POLICY_FIELDS, SERIAL_NUMBER, LAST_UPDATED_AT } from "services/sync/lark-to-nocodb/workshop-orders/constants";
+import {
+  LARK_APP_TOKEN,
+  LARK_TABLE_ID,
+  POLICY_FIELDS,
+  SERIAL_NUMBER,
+  LAST_UPDATED_AT
+} from "services/sync/lark-to-nocodb/workshop-orders/constants";
 import { NOCODB_TABLES } from "src/constants/nocodb-tables";
 
 const KV_KEY = "workshop_order_sync:last_date";
@@ -28,15 +34,20 @@ export default class WorkshopOrderServices {
   }
 
   async syncLarkToNocoDB(options = {}) {
-    const { isSyncType = WorkshopOrderServices.SYNC_TYPE_MANUAL, hoursBack = 3 } = options;
+    const {
+      isSyncType = WorkshopOrderServices.SYNC_TYPE_MANUAL,
+      hoursBack = 3
+    } = options;
     const currentRunTime = Date.now();
     let timestamp;
 
     if (isSyncType === WorkshopOrderServices.SYNC_TYPE_AUTO) {
       const lastDate = await this.kv.get(KV_KEY);
-      timestamp = lastDate ? parseInt(lastDate) : (currentRunTime - (hoursBack * 60 * 60 * 1000));
+      timestamp = lastDate
+        ? parseInt(lastDate)
+        : currentRunTime - hoursBack * 60 * 60 * 1000;
     } else {
-      timestamp = currentRunTime - (hoursBack * 60 * 60 * 1000);
+      timestamp = currentRunTime - hoursBack * 60 * 60 * 1000;
     }
 
     try {
@@ -46,13 +57,15 @@ export default class WorkshopOrderServices {
         await this.kv.put(KV_KEY, currentRunTime.toString());
       }
       return { msg: "Success" };
-
     } catch (error) {
       Sentry.captureException(error);
       // Self-Healing: If stuck for > 6 hour, force update checkpoint to skip problematic range
       if (isSyncType === WorkshopOrderServices.SYNC_TYPE_AUTO) {
         const lastDate = await this.kv.get(KV_KEY);
-        if (lastDate && (currentRunTime - parseInt(lastDate) > 6 * 60 * 60 * 1000)) {
+        if (
+          lastDate &&
+          currentRunTime - parseInt(lastDate) > 6 * 60 * 60 * 1000
+        ) {
           await this.kv.put(KV_KEY, currentRunTime.toString());
         }
       }
@@ -61,23 +74,32 @@ export default class WorkshopOrderServices {
   }
 
   async _fetchAndProcess(timestamp) {
-    let hasMore = true, pageToken = null;
+    let hasMore = true,
+      pageToken = null;
 
     while (hasMore) {
       // Fetch records from LarkBase
-      const res = await this.larkClient.searchRecords(LARK_APP_TOKEN, LARK_TABLE_ID, {
-        automatic_fields: true,
-        fieldNames: FIELDS,
-        pageSize: WorkshopOrderServices.PAGE_SIZE,
-        pageToken,
-        filter: {
-          conjunction: "and",
-          conditions: [
-            { field_name: SERIAL_NUMBER, operator: "isNotEmpty", value: [] },
-            { field_name: LAST_UPDATED_AT, operator: "isGreater", value: ["ExactDate", timestamp] }
-          ]
+      const res = await this.larkClient.searchRecords(
+        LARK_APP_TOKEN,
+        LARK_TABLE_ID,
+        {
+          automatic_fields: true,
+          fieldNames: FIELDS,
+          pageSize: WorkshopOrderServices.PAGE_SIZE,
+          pageToken,
+          filter: {
+            conjunction: "and",
+            conditions: [
+              { field_name: SERIAL_NUMBER, operator: "isNotEmpty", value: [] },
+              {
+                field_name: LAST_UPDATED_AT,
+                operator: "isGreater",
+                value: ["ExactDate", timestamp]
+              }
+            ]
+          }
         }
-      });
+      );
 
       if (res.code !== 0) throw new Error(`Lark API Error: ${res.msg}`);
 
@@ -95,12 +117,12 @@ export default class WorkshopOrderServices {
 
           if (item.fields[SERIAL_NUMBER] && item.fields[SERIAL_NUMBER].value) {
             const fullSerialString = item.fields[SERIAL_NUMBER].value
-              .map(segment => segment.text)
+              .map((segment) => segment.text)
               .join("");
 
             const serialList = fullSerialString.split(",");
             // Select serial number and policy
-            serialList.forEach(serial => {
+            serialList.forEach((serial) => {
               const cleanSerial = serial.trim();
               if (cleanSerial) {
                 recordsToSync.push({
@@ -125,19 +147,24 @@ export default class WorkshopOrderServices {
     if (recordsToSync.length === 0) return;
 
     // Get all IDs for these serials
-    const serials = recordsToSync.map(r => r.serialNumber).join(",");
+    const serials = recordsToSync.map((r) => r.serialNumber).join(",");
 
     try {
-      const searchData = await this.nocoClient.listRecords(NOCODB_TABLES.SUPPLY.SERIALS, {
-        where: `(serial_number,in,${serials})`,
-        limit: recordsToSync.length,
-        fields: ["id", "serial_number"]
-      });
+      const searchData = await this.nocoClient.listRecords(
+        NOCODB_TABLES.SUPPLY.SERIALS,
+        {
+          where: `(serial_number,in,${serials})`,
+          limit: recordsToSync.length,
+          fields: ["id", "serial_number"]
+        }
+      );
 
       // Create Lookup Map: Serial -> Record
       const existingMap = new Map();
       if (searchData.list) {
-        searchData.list.forEach(rec => existingMap.set(rec.serial_number, rec));
+        searchData.list.forEach((rec) =>
+          existingMap.set(rec.serial_number, rec)
+        );
       }
 
       // Process Updates

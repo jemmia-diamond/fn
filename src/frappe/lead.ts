@@ -10,11 +10,17 @@ export async function fetchLeadInfoByPhoneNumber(
 
   const normalizedPhone = normalizeToStandardFormat(phoneNumber);
   const trimmedPhone = phoneNumber.trim();
-  const or_filters: any[] = [["phone", "=", trimmedPhone], ["phone", "=", normalizedPhone]];
+  const or_filters: any[] = [
+    ["phone", "=", trimmedPhone],
+    ["phone", "=", normalizedPhone]
+  ];
   if (trimmedPhone.startsWith("84")) {
     or_filters.push(["phone", "=", `0${trimmedPhone.slice(2)}`]);
   }
 
-  const lead: IFrappeLead[] = await frappeClient.getList("Lead", { fields: ["name"], or_filters });
+  const lead: IFrappeLead[] = await frappeClient.getList("Lead", {
+    fields: ["name"],
+    or_filters
+  });
   return lead?.length ? await frappeClient.getDoc("Lead", lead[0].name) : null;
 }

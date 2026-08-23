@@ -12,8 +12,8 @@ export default function getBaseConfig() {
     plugins: {
       "unused-imports": unusedImports,
       "@stylistic": stylistic,
-      "unicorn": unicorn,
-      "custom": {
+      unicorn: unicorn,
+      custom: {
         rules: {
           "no-relative-imports": noRelativeImports,
           "no-vietnamese-text": noVietnameseText
@@ -28,9 +28,9 @@ export default function getBaseConfig() {
       "@typescript-eslint/no-unused-vars": [
         "error",
         {
-          "argsIgnorePattern": "^_",
-          "varsIgnorePattern": "^_",
-          "caughtErrorsIgnorePattern": "^_"
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_"
         }
       ],
       "unused-imports/no-unused-imports": "error",
@@ -46,15 +46,18 @@ export default function getBaseConfig() {
       "no-debugger": "error",
       "no-multiple-empty-lines": ["error", { max: 1 }],
       "eol-last": ["error", "always"],
-      "no-console": ["error", { "allow": ["warn"] }],
-      "indent": ["error", 2],
+      "no-console": ["error", { allow: ["warn"] }],
+      indent: ["error", 2],
       "@typescript-eslint/no-explicit-any": "off",
       "@stylistic/array-bracket-spacing": ["error", "never"],
       "@stylistic/object-curly-spacing": ["error", "always"],
-      "unicorn/template-indent": ["error", {
-        "selectors": ["TemplateLiteral"],
-        "indent": 2
-      }],
+      "unicorn/template-indent": [
+        "error",
+        {
+          selectors: ["TemplateLiteral"],
+          indent: 2
+        }
+      ],
       "no-trailing-spaces": "error",
       "key-spacing": "error",
       "custom/no-relative-imports": "error",
@@ -62,12 +65,14 @@ export default function getBaseConfig() {
       "no-restricted-syntax": [
         "error",
         {
-          "selector": "MemberExpression[property.name='$queryRawUnsafe']",
-          "message": "Use of $queryRawUnsafe is not allowed. Use $queryRaw with proper parameterization instead."
+          selector: "MemberExpression[property.name='$queryRawUnsafe']",
+          message:
+            "Use of $queryRawUnsafe is not allowed. Use $queryRaw with proper parameterization instead."
         },
         {
-          "selector": "MemberExpression[property.name='$executeRawUnsafe']",
-          "message": "Use of $executeRawUnsafe is not allowed. Use $executeRaw with proper parameterization instead."
+          selector: "MemberExpression[property.name='$executeRawUnsafe']",
+          message:
+            "Use of $executeRawUnsafe is not allowed. Use $executeRaw with proper parameterization instead."
         }
       ]
     }

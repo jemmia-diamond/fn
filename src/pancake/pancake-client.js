@@ -26,24 +26,27 @@ export default class PancakeClient {
       this.pancakePatsConfig = combinedPats;
     }
 
-    this.client = createAxiosClient({
-      baseURL: this.baseUrl,
-      headers: { "Content-Type": "application/json" },
-      timeout: 60000
-    }, {
-      retries: 3,
-      retryDelay: (retryCount) => retryCount * 1000,
-      shouldResetTimeout: true,
-      retryCondition: (error) => {
-        return (
-          error.response?.status === 429 ||
-          error.response?.status >= 500 ||
-          error.code === "ECONNABORTED" ||
-          error.code === "ETIMEDOUT" ||
-          error.message?.includes("timeout")
-        );
+    this.client = createAxiosClient(
+      {
+        baseURL: this.baseUrl,
+        headers: { "Content-Type": "application/json" },
+        timeout: 60000
+      },
+      {
+        retries: 3,
+        retryDelay: (retryCount) => retryCount * 1000,
+        shouldResetTimeout: true,
+        retryCondition: (error) => {
+          return (
+            error.response?.status === 429 ||
+            error.response?.status >= 500 ||
+            error.code === "ECONNABORTED" ||
+            error.code === "ETIMEDOUT" ||
+            error.message?.includes("timeout")
+          );
+        }
       }
-    });
+    );
 
     this.client.interceptors.response.use(
       (response) => {
@@ -56,7 +59,9 @@ export default class PancakeClient {
       (error) => {
         if (error.response && error.response.data) {
           const data = error.response.data;
-          throw new Error(`Pancake API Error ${error.response.status}: ${typeof data === "object" ? JSON.stringify(data) : data}`);
+          throw new Error(
+            `Pancake API Error ${error.response.status}: ${typeof data === "object" ? JSON.stringify(data) : data}`
+          );
         }
         throw error;
       }
@@ -70,7 +75,9 @@ export default class PancakeClient {
       return pageAccessToken;
     }
 
-    console.warn(`Page Access Token for page ${pageId} not found in PANCAKE_PATS_CONFIG. Skipping.`);
+    console.warn(
+      `Page Access Token for page ${pageId} not found in PANCAKE_PATS_CONFIG. Skipping.`
+    );
     return null;
   }
 
@@ -144,7 +151,11 @@ export default class PancakeClient {
       page_number: pageNumber,
       order_by: "updated_at"
     };
-    return await this.getRequest(pageId, `/public_api/v1/pages/${pageId}/conversations`, params);
+    return await this.getRequest(
+      pageId,
+      `/public_api/v1/pages/${pageId}/conversations`,
+      params
+    );
   }
 
   async getPageCustomers(pageId, sinceUnix, untilUnix, pageNumber, pageSize) {
@@ -155,11 +166,18 @@ export default class PancakeClient {
       page_size: pageSize,
       order_by: "updated_at"
     };
-    return await this.getRequest(pageId, `/public_api/v1/pages/${pageId}/page_customers`, params);
+    return await this.getRequest(
+      pageId,
+      `/public_api/v1/pages/${pageId}/page_customers`,
+      params
+    );
   }
 
   async getPageUsers(pageId) {
-    return await this.getRequest(pageId, `/public_api/v1/pages/${pageId}/users`);
+    return await this.getRequest(
+      pageId,
+      `/public_api/v1/pages/${pageId}/users`
+    );
   }
 
   async getPageTags(pageId) {

@@ -4,13 +4,18 @@ import { BadRequestException } from "src/exception/exceptions";
 import { NOCODB_TABLES } from "src/constants/nocodb-tables";
 
 export default class CollectService {
-
   constructor(env) {
     this.env = env;
   }
 
   async createCollect(body) {
-    let { haravan_collection_id, diamond_id, product_id, products_id, haravan_collections_id } = body.data.rows[0];
+    let {
+      haravan_collection_id,
+      diamond_id,
+      product_id,
+      products_id,
+      haravan_collections_id
+    } = body.data.rows[0];
 
     if (!haravan_collection_id && haravan_collections_id) {
       haravan_collection_id = haravan_collections_id;
@@ -27,7 +32,14 @@ export default class CollectService {
     const nocodb = new NocoDBClient(this.env);
 
     // Get Haravan Collection ID from ID
-    const collectionRes = await nocodb.listRecords(NOCODB_TABLES.MARKETING.HARAVAN_COLLECTIONS, { where: `(id,eq,${haravan_collection_id})`, limit: 1, fields: "id,haravan_id" });
+    const collectionRes = await nocodb.listRecords(
+      NOCODB_TABLES.MARKETING.HARAVAN_COLLECTIONS,
+      {
+        where: `(id,eq,${haravan_collection_id})`,
+        limit: 1,
+        fields: "id,haravan_id"
+      }
+    );
     const collection = collectionRes.list?.[0] ?? null;
 
     if (!collection) {
@@ -38,13 +50,23 @@ export default class CollectService {
     // Get Haravan Product ID from ID
     let realProductId;
     if (diamond_id) {
-      const diamondRes = await nocodb.listRecords(NOCODB_TABLES.MARKETING.DIAMONDS, { where: `(id,eq,${diamond_id})`, limit: 1, fields: "id,product_id" });
+      const diamondRes = await nocodb.listRecords(
+        NOCODB_TABLES.MARKETING.DIAMONDS,
+        { where: `(id,eq,${diamond_id})`, limit: 1, fields: "id,product_id" }
+      );
       const diamond = diamondRes.list?.[0] ?? null;
       if (diamond) {
         realProductId = diamond.product_id;
       }
     } else if (product_id) {
-      const jewelryRes = await nocodb.listRecords(NOCODB_TABLES.MARKETING.JEWELRIES, { where: `(id,eq,${product_id})`, limit: 1, fields: "id,haravan_product_id" });
+      const jewelryRes = await nocodb.listRecords(
+        NOCODB_TABLES.MARKETING.JEWELRIES,
+        {
+          where: `(id,eq,${product_id})`,
+          limit: 1,
+          fields: "id,haravan_product_id"
+        }
+      );
       const jewelry = jewelryRes.list?.[0] ?? null;
       if (jewelry) {
         realProductId = jewelry.haravan_product_id;
@@ -58,21 +80,29 @@ export default class CollectService {
     const HRV_API_KEY = this.env.HARAVAN_TOKEN;
 
     if (!HRV_API_KEY) {
-      throw new BadRequestException("Haravan API credentials or base URL are not configured in the environment.");
+      throw new BadRequestException(
+        "Haravan API credentials or base URL are not configured in the environment."
+      );
     }
 
     const hrvClient = new HaravanAPI(HRV_API_KEY);
 
     const newCollect = await hrvClient.collect.createCollect({
-      "product_id": realProductId,
-      "collection_id": realCollectionId
+      product_id: realProductId,
+      collection_id: realCollectionId
     });
 
     return newCollect;
   }
 
   async removeCollect(body) {
-    let { haravan_collection_id, diamond_id, product_id, products_id, haravan_collections_id } = body.data.rows[0];
+    let {
+      haravan_collection_id,
+      diamond_id,
+      product_id,
+      products_id,
+      haravan_collections_id
+    } = body.data.rows[0];
 
     if (!haravan_collection_id && haravan_collections_id) {
       haravan_collection_id = haravan_collections_id;
@@ -89,7 +119,14 @@ export default class CollectService {
     const nocodb = new NocoDBClient(this.env);
 
     // Get Haravan Collection ID
-    const collectionRes2 = await nocodb.listRecords(NOCODB_TABLES.MARKETING.HARAVAN_COLLECTIONS, { where: `(id,eq,${haravan_collection_id})`, limit: 1, fields: "id,haravan_id" });
+    const collectionRes2 = await nocodb.listRecords(
+      NOCODB_TABLES.MARKETING.HARAVAN_COLLECTIONS,
+      {
+        where: `(id,eq,${haravan_collection_id})`,
+        limit: 1,
+        fields: "id,haravan_id"
+      }
+    );
     const collection = collectionRes2.list?.[0] ?? null;
 
     if (!collection) {
@@ -100,13 +137,23 @@ export default class CollectService {
     // Get Haravan Product ID
     let realProductId;
     if (diamond_id) {
-      const diamondRes2 = await nocodb.listRecords(NOCODB_TABLES.MARKETING.DIAMONDS, { where: `(id,eq,${diamond_id})`, limit: 1, fields: "id,product_id" });
+      const diamondRes2 = await nocodb.listRecords(
+        NOCODB_TABLES.MARKETING.DIAMONDS,
+        { where: `(id,eq,${diamond_id})`, limit: 1, fields: "id,product_id" }
+      );
       const diamond = diamondRes2.list?.[0] ?? null;
       if (diamond) {
         realProductId = diamond.product_id;
       }
     } else if (product_id) {
-      const jewelryRes2 = await nocodb.listRecords(NOCODB_TABLES.MARKETING.JEWELRIES, { where: `(id,eq,${product_id})`, limit: 1, fields: "id,haravan_product_id" });
+      const jewelryRes2 = await nocodb.listRecords(
+        NOCODB_TABLES.MARKETING.JEWELRIES,
+        {
+          where: `(id,eq,${product_id})`,
+          limit: 1,
+          fields: "id,haravan_product_id"
+        }
+      );
       const jewelry = jewelryRes2.list?.[0] ?? null;
       if (jewelry) {
         realProductId = jewelry.haravan_product_id;
@@ -120,15 +167,21 @@ export default class CollectService {
     const HRV_API_KEY = this.env.HARAVAN_TOKEN;
 
     if (!HRV_API_KEY) {
-      throw new BadRequestException("Haravan API credentials or base URL are not configured in the environment.");
+      throw new BadRequestException(
+        "Haravan API credentials or base URL are not configured in the environment."
+      );
     }
     const hrvClient = new HaravanAPI(HRV_API_KEY);
     const collectsData = await hrvClient.collect.getCollects({
-      "collection_id": realCollectionId,
-      "product_id": realProductId
+      collection_id: realCollectionId,
+      product_id: realProductId
     });
 
-    if (collectsData && collectsData.collects && collectsData.collects.length > 0) {
+    if (
+      collectsData &&
+      collectsData.collects &&
+      collectsData.collects.length > 0
+    ) {
       const collectId = collectsData.collects[0].id;
       const deletedCollect = await hrvClient.collect.deleteCollect(collectId);
       return deletedCollect;

@@ -1,7 +1,13 @@
 import { Prisma } from "@prisma-cli";
 import { toSqlOrder } from "services/utils/sql-helpers";
 
-const ALLOWED_SORT_COLUMNS = new Set(["price", "color", "clarity", "shape", "fluorescence"]);
+const ALLOWED_SORT_COLUMNS = new Set([
+  "price",
+  "color",
+  "clarity",
+  "shape",
+  "fluorescence"
+]);
 
 export function buildFilterString(jsonParams) {
   const filterClauses = [];

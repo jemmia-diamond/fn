@@ -1,5 +1,7 @@
 export function getFinancialStatus(status) {
-  const key = String(status ?? "").trim().toLowerCase();
+  const key = String(status ?? "")
+    .trim()
+    .toLowerCase();
 
   const map = {
     pending: "Chờ xác nhận",

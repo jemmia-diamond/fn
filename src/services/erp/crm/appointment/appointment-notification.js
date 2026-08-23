@@ -22,7 +22,10 @@ export default class AppointmentNotificationService {
     let templateColor = "blue";
     let titleContent = "Có lịch hẹn mới";
     if (payload.scheduled_time) {
-      const scheduledDate = dayjs.utc(payload.scheduled_time).tz(TIMEZONE_VIETNAM).startOf("day");
+      const scheduledDate = dayjs
+        .utc(payload.scheduled_time)
+        .tz(TIMEZONE_VIETNAM)
+        .startOf("day");
       const today = dayjs().tz(TIMEZONE_VIETNAM).startOf("day");
       if (scheduledDate.isBefore(today)) {
         templateColor = "red";
@@ -102,7 +105,8 @@ export default class AppointmentNotificationService {
   }
 
   async sendThreadReply(message_id, payload, existingFields) {
-    if (["tech@jemmia.vn", "Administrator"].includes(payload.performed_by)) return;
+    if (["tech@jemmia.vn", "Administrator"].includes(payload.performed_by))
+      return;
 
     const larkClient = await this.larkClientPromise;
     let modifiedByText = "ai đó";
@@ -118,26 +122,44 @@ export default class AppointmentNotificationService {
     let textContent = `Trạng thái: <b>${payload.status}</b>\n`;
     if (existingFields) {
       const oldTimeMs = existingFields["Ngày đến dự kiến"];
-      const newTimeMs = payload.scheduled_time ? new Date(payload.scheduled_time).getTime() : null;
+      const newTimeMs = payload.scheduled_time
+        ? new Date(payload.scheduled_time).getTime()
+        : null;
       if (oldTimeMs != newTimeMs) {
-        const oldTimeStr = oldTimeMs ? dayjs(parseInt(oldTimeMs)).add(7, "hours").format("DD-MM-YYYY HH:mm") : "N/A";
-        const newTimeStr = newTimeMs ? dayjs(newTimeMs).add(7, "hours").format("DD-MM-YYYY HH:mm") : "N/A";
+        const oldTimeStr = oldTimeMs
+          ? dayjs(parseInt(oldTimeMs))
+              .add(7, "hours")
+              .format("DD-MM-YYYY HH:mm")
+          : "N/A";
+        const newTimeStr = newTimeMs
+          ? dayjs(newTimeMs).add(7, "hours").format("DD-MM-YYYY HH:mm")
+          : "N/A";
         textContent += `Thời gian dự kiến: ${oldTimeStr}  ➡️  ${newTimeStr}\n`;
       }
     }
 
-    const offlineSalesEmails = (payload?.offline_sales || []).map(s => s.employee_email).filter(Boolean);
+    const offlineSalesEmails = (payload?.offline_sales || [])
+      .map((s) => s.employee_email)
+      .filter(Boolean);
     let salesChanged = false;
     let offlineSalesTagsStr = "";
 
     if (offlineSalesEmails.length > 0) {
       const offlineIds = await this.getLarkUserIdsByEmails(offlineSalesEmails);
       if (offlineIds.length > 0) {
-        offlineSalesTagsStr = offlineIds.map(u => `<at user_id="${u.id}"></at>`).join(", ");
+        offlineSalesTagsStr = offlineIds
+          .map((u) => `<at user_id="${u.id}"></at>`)
+          .join(", ");
 
         if (existingFields) {
-          const existingSales = (existingFields["Sales hỗ trợ"] || []).map(u => u.id).sort().join(",");
-          const newSales = offlineIds.map(u => u.id).sort().join(",");
+          const existingSales = (existingFields["Sales hỗ trợ"] || [])
+            .map((u) => u.id)
+            .sort()
+            .join(",");
+          const newSales = offlineIds
+            .map((u) => u.id)
+            .sort()
+            .join(",");
           if (existingSales !== newSales) salesChanged = true;
         } else {
           salesChanged = true;
@@ -176,7 +198,7 @@ export default class AppointmentNotificationService {
       where: { enterprise_email: { in: emails } },
       select: { open_id: true }
     });
-    return users.filter(u => u.open_id).map(u => ({ id: u.open_id }));
+    return users.filter((u) => u.open_id).map((u) => ({ id: u.open_id }));
   }
 
   shouldSendThreadReply(existingFields, fields) {
@@ -190,8 +212,14 @@ export default class AppointmentNotificationService {
     const newStatus = fields["Trạng thái"];
     if (existingStatus != newStatus) return true;
 
-    const existingSales = (existingFields["Sales hỗ trợ"] || []).map(u => u.id).sort().join(",");
-    const newSales = (fields["Sales hỗ trợ"] || []).map(u => u.id).sort().join(",");
+    const existingSales = (existingFields["Sales hỗ trợ"] || [])
+      .map((u) => u.id)
+      .sort()
+      .join(",");
+    const newSales = (fields["Sales hỗ trợ"] || [])
+      .map((u) => u.id)
+      .sort()
+      .join(",");
     if (existingSales !== newSales) return true;
 
     return false;
@@ -200,8 +228,12 @@ export default class AppointmentNotificationService {
   async sendUpcomingReminder(payload) {
     if (!payload?.message_id) return;
 
-    const timeStr = dayjs(payload.scheduled_time).add(7, "hours").format("HH:mm");
-    const minutesLeft = dayjs.utc(payload.scheduled_time).diff(dayjs.utc(), "minute");
+    const timeStr = dayjs(payload.scheduled_time)
+      .add(7, "hours")
+      .format("HH:mm");
+    const minutesLeft = dayjs
+      .utc(payload.scheduled_time)
+      .diff(dayjs.utc(), "minute");
     const textContent = `⚠️ Còn ${Math.max(0, minutesLeft)} phút (${timeStr}) nữa đến giờ hẹn, vui lòng chuẩn bị đón tiếp.`;
 
     const larkClient = await this.larkClientPromise;

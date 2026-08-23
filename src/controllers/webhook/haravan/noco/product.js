@@ -9,7 +9,7 @@ export default class HaravanNocoProductController {
       id: data.id,
       haravan_topic: haravanTopic,
       product_type: data.product_type || "",
-      variants: (data.variants || []).map(v => ({
+      variants: (data.variants || []).map((v) => ({
         id: v.id,
         sku: v.sku,
         title: v.title,
@@ -26,5 +26,5 @@ export default class HaravanNocoProductController {
     });
 
     return ctx.json({ message: "Message sent to queue", status: 200 });
-  };
-};
+  }
+}

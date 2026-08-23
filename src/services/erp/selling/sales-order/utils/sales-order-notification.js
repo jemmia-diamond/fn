@@ -1,23 +1,47 @@
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
-import { SKU_LENGTH, SKU_PREFIX } from "services/haravan/products/product-variant/constant";
+import {
+  SKU_LENGTH,
+  SKU_PREFIX
+} from "services/haravan/products/product-variant/constant";
 import { numberToCurrency } from "services/utils/number-helper";
 import { stringSquishLarkMessage } from "services/utils/string-helper";
-import { getItemPromotions, normalizeUrlForAttachments } from "services/erp/selling/sales-order/utils/sales-order-helpers";
+import {
+  getItemPromotions,
+  normalizeUrlForAttachments
+} from "services/erp/selling/sales-order/utils/sales-order-helpers";
 
 dayjs.extend(utc);
 
-export const composeSalesOrderNotification = (salesOrder, promotionData, leadSource, policyData, productCategoryData, purposeData, customer, primarySalesPerson, secondarySalesPeople) => {
+export const composeSalesOrderNotification = (
+  salesOrder,
+  promotionData,
+  leadSource,
+  policyData,
+  productCategoryData,
+  purposeData,
+  customer,
+  primarySalesPerson,
+  secondarySalesPeople
+) => {
   const orderNumber = salesOrder.order_number;
 
-  const orderPromotionNames = salesOrder.promotions.map((promotion) => promotion.promotion);
-  const orderPromotions = promotionData.filter((promotion) => orderPromotionNames.includes(promotion.name));
+  const orderPromotionNames = salesOrder.promotions.map(
+    (promotion) => promotion.promotion
+  );
+  const orderPromotions = promotionData.filter((promotion) =>
+    orderPromotionNames.includes(promotion.name)
+  );
 
-  const expectedPaymentDate = dayjs(salesOrder.expected_payment_date).format("DD-MM-YYYY");
+  const expectedPaymentDate = dayjs(salesOrder.expected_payment_date).format(
+    "DD-MM-YYYY"
+  );
 
   const realOrderDate = dayjs(salesOrder.real_order_date).format("DD-MM-YYYY");
 
-  const secondarySalesPeopleNameList = secondarySalesPeople.map((salesPerson) => salesPerson.sales_person_name);
+  const secondarySalesPeopleNameList = secondarySalesPeople.map(
+    (salesPerson) => salesPerson.sales_person_name
+  );
 
   let content = "";
   content += `
@@ -29,7 +53,13 @@ export const composeSalesOrderNotification = (salesOrder, promotionData, leadSou
   `;
 
   salesOrder.items.map((item, idx) => {
-    content += composeItemContent(item, idx + 1, promotionData.filter((promotion) => getItemPromotions(item).includes(promotion.name)));
+    content += composeItemContent(
+      item,
+      idx + 1,
+      promotionData.filter((promotion) =>
+        getItemPromotions(item).includes(promotion.name)
+      )
+    );
   });
 
   content += `
@@ -42,7 +72,7 @@ export const composeSalesOrderNotification = (salesOrder, promotionData, leadSou
     - Ngày thanh toán dự kiến: ${expectedPaymentDate}
     - Kênh tiếp cận đầu tiên: ${leadSource.source_name}
     - Hành trình khách hàng: ${customer.customer_journey}
-    - Mục đích đơn hàng: ${purposeData && purposeData.length > 0 ? purposeData.map(p => p.title).join(", ") : "Không"}
+    - Mục đích đơn hàng: ${purposeData && purposeData.length > 0 ? purposeData.map((p) => p.title).join(", ") : "Không"}
   `;
 
   content += `
@@ -53,15 +83,19 @@ export const composeSalesOrderNotification = (salesOrder, promotionData, leadSou
     * <b>Chính sách bảo hành</b>:\n${composeChildrenContent(policyData, "title")}
   `;
 
-  const ordPromotion = orderPromotions && Array.isArray(orderPromotions) && orderPromotions.length > 0 ?
-    composeChildrenContent(orderPromotions, "title")
-    : " - Không";
+  const ordPromotion =
+    orderPromotions &&
+    Array.isArray(orderPromotions) &&
+    orderPromotions.length > 0
+      ? composeChildrenContent(orderPromotions, "title")
+      : " - Không";
   content += `
     * <b>Chương trình khuyến mãi toàn đơn</b>:\n${ordPromotion}
   `;
 
-  const secondSales = secondarySalesPeopleNameList.length ?
-    `\n - Phụ: ${secondarySalesPeopleNameList.join(", ")}` : "";
+  const secondSales = secondarySalesPeopleNameList.length
+    ? `\n - Phụ: ${secondarySalesPeopleNameList.join(", ")}`
+    : "";
   content += `
     * Nhân viên phụ trách:\n- Chính: ${primarySalesPerson.sales_person_name}${secondSales}
   `;
@@ -83,7 +117,9 @@ const composeItemContent = (item, idx, promotionData) => {
     `;
   }
 
-  const serialNumbers = item.serial_numbers ? item.serial_numbers.split("\n").join(", ") : "";
+  const serialNumbers = item.serial_numbers
+    ? item.serial_numbers.split("\n").join(", ")
+    : "";
   const content = `
     ${parentOrderInfo}
     ${idx}. ${item.item_name}
@@ -103,7 +139,7 @@ export const extractPromotions = (salesOrder) => {
   const promotionNames = [];
   const items = salesOrder.items;
   for (const item of items) {
-    getItemPromotions(item).forEach(p => promotionNames.push(p));
+    getItemPromotions(item).forEach((p) => promotionNames.push(p));
   }
 
   const promotions = salesOrder.promotions;
@@ -114,9 +150,7 @@ export const extractPromotions = (salesOrder) => {
 };
 
 function composeChildrenContent(children, key) {
-  return children
-    .map((child) => " - " + child[key])
-    .join("\n");
+  return children.map((child) => " - " + child[key]).join("\n");
 }
 
 function extractVariantNameForGIA(text) {
@@ -133,9 +167,20 @@ function extractVariantNameForJewelry(text) {
   return match ? match[1] : "";
 }
 
-export const composeOrderUpdateMessage = (prevOrder, salesOrder, promotionData) => {
-  const diffAttachments = diffInAttachments(prevOrder.attachments || [], salesOrder.attachments || []);
-  const lineItemMessage = composeLineItemsChangeMessage(prevOrder.items || [], salesOrder.items || [], promotionData);
+export const composeOrderUpdateMessage = (
+  prevOrder,
+  salesOrder,
+  promotionData
+) => {
+  const diffAttachments = diffInAttachments(
+    prevOrder.attachments || [],
+    salesOrder.attachments || []
+  );
+  const lineItemMessage = composeLineItemsChangeMessage(
+    prevOrder.items || [],
+    salesOrder.items || [],
+    promotionData
+  );
 
   let content = "";
   if (lineItemMessage) {
@@ -154,17 +199,27 @@ export const composeOrderUpdateMessage = (prevOrder, salesOrder, promotionData) 
 };
 
 export const diffInAttachments = (prevAttachments, attachments) => {
-  const validPrev = (prevAttachments || []).filter(a => a && a.file_url);
-  const validNew = (attachments || []).filter(a => a && a.file_url);
+  const validPrev = (prevAttachments || []).filter((a) => a && a.file_url);
+  const validNew = (attachments || []).filter((a) => a && a.file_url);
 
-  const prevAttachmentUrls = validPrev.map((attachment) => normalizeUrlForAttachments(attachment.file_url));
-  const newAttachmentUrls = validNew.map((attachment) => normalizeUrlForAttachments(attachment.file_url));
+  const prevAttachmentUrls = validPrev.map((attachment) =>
+    normalizeUrlForAttachments(attachment.file_url)
+  );
+  const newAttachmentUrls = validNew.map((attachment) =>
+    normalizeUrlForAttachments(attachment.file_url)
+  );
 
   const addedAttachments = validNew.filter(
-    (attachment) => !prevAttachmentUrls.includes(normalizeUrlForAttachments(attachment.file_url))
+    (attachment) =>
+      !prevAttachmentUrls.includes(
+        normalizeUrlForAttachments(attachment.file_url)
+      )
   );
   const removedAttachments = validPrev.filter(
-    (attachment) => !newAttachmentUrls.includes(normalizeUrlForAttachments(attachment.file_url))
+    (attachment) =>
+      !newAttachmentUrls.includes(
+        normalizeUrlForAttachments(attachment.file_url)
+      )
   );
   const modifiedAttachments = {};
 
@@ -181,13 +236,19 @@ export const diffInAttachments = (prevAttachments, attachments) => {
 
 const composeLineItemsChangeMessage = (oldItems, newItems, promotionData) => {
   let message = "";
-  const addedItems = newItems.filter(newItem => !oldItems.find(oldItem => oldItem.name === newItem.name));
-  const removedItems = oldItems.filter(oldItem => !newItems.find(newItem => newItem.name === oldItem.name));
-  const updatedItems = newItems.filter(newItem => oldItems.find(oldItem => oldItem.name === newItem.name));
+  const addedItems = newItems.filter(
+    (newItem) => !oldItems.find((oldItem) => oldItem.name === newItem.name)
+  );
+  const removedItems = oldItems.filter(
+    (oldItem) => !newItems.find((newItem) => newItem.name === oldItem.name)
+  );
+  const updatedItems = newItems.filter((newItem) =>
+    oldItems.find((oldItem) => oldItem.name === newItem.name)
+  );
 
   if (addedItems.length > 0) {
     message += "* <b>Sản phẩm được thêm mới: </b>\n";
-    addedItems.forEach(item => {
+    addedItems.forEach((item) => {
       message += `#${item.parent_order_number || "N/A"} <i>(tổng đơn: ${numberToCurrency(item.parent_grand_total || 0)})</i>\n`;
       message += `<i>${item.item_name}</i>\n`;
       message += `Mã gốc: ${extractVariantTitle(item)}\n`;
@@ -197,7 +258,9 @@ const composeLineItemsChangeMessage = (oldItems, newItems, promotionData) => {
       message += `Giá: ${numberToCurrency(item.price_list_rate)}\n`;
       message += `Giá khuyến mãi: ${numberToCurrency(item.rate)}\n`;
 
-      const itemPromotions = promotionData.filter((promotion) => getItemPromotions(item).includes(promotion.name));
+      const itemPromotions = promotionData.filter((promotion) =>
+        getItemPromotions(item).includes(promotion.name)
+      );
       if (itemPromotions && itemPromotions.length > 0) {
         message += "CTKM: \n";
         message += `${composeChildrenContent(itemPromotions, "title")}`;
@@ -209,7 +272,7 @@ const composeLineItemsChangeMessage = (oldItems, newItems, promotionData) => {
 
   if (removedItems.length > 0) {
     message += "* <b>Sản phẩm bị loại bỏ: </b>\n";
-    removedItems.forEach(item => {
+    removedItems.forEach((item) => {
       message += `#${item.parent_order_number || "N/A"} <i>(tổng đơn: ${numberToCurrency(item.parent_grand_total || 0)})</i>\n`;
       message += `- ${item.item_name} (SKU: ${item.sku})\n`;
     });
@@ -218,13 +281,15 @@ const composeLineItemsChangeMessage = (oldItems, newItems, promotionData) => {
 
   if (updatedItems.length > 0) {
     let itemMessages = "";
-    updatedItems.forEach(newItem => {
-      const oldItem = oldItems.find(oldItem => oldItem.name === newItem.name);
+    updatedItems.forEach((newItem) => {
+      const oldItem = oldItems.find((oldItem) => oldItem.name === newItem.name);
       if (oldItem) {
         const changes = [];
 
         if (newItem.variant_title !== oldItem.variant_title) {
-          changes.push(`Mã gốc: ${extractVariantTitle(oldItem)} → ${extractVariantTitle(newItem)}`);
+          changes.push(
+            `Mã gốc: ${extractVariantTitle(oldItem)} → ${extractVariantTitle(newItem)}`
+          );
         }
         if (newItem.sku !== oldItem.sku) {
           changes.push(`SKU: ${oldItem.sku} → ${newItem.sku}`);
@@ -233,36 +298,53 @@ const composeLineItemsChangeMessage = (oldItems, newItems, promotionData) => {
           changes.push(`Số lượng: ${oldItem.qty} → ${newItem.qty}`);
         }
         if ((newItem.serial_numbers || "") !== (oldItem.serial_numbers || "")) {
-          changes.push(`Số serial: ${oldItem.serial_numbers || "N/A"} → ${newItem.serial_numbers || "N/A"}`);
+          changes.push(
+            `Số serial: ${oldItem.serial_numbers || "N/A"} → ${newItem.serial_numbers || "N/A"}`
+          );
         }
         if (newItem.price_list_rate !== oldItem.price_list_rate) {
-          changes.push(`Giá: ${numberToCurrency(oldItem.price_list_rate)} → ${numberToCurrency(newItem.price_list_rate)}`);
+          changes.push(
+            `Giá: ${numberToCurrency(oldItem.price_list_rate)} → ${numberToCurrency(newItem.price_list_rate)}`
+          );
         }
         if (newItem.rate !== oldItem.rate) {
-          changes.push(`Giá khuyến mãi: ${numberToCurrency(oldItem.rate)} → ${numberToCurrency(newItem.rate)}`);
+          changes.push(
+            `Giá khuyến mãi: ${numberToCurrency(oldItem.rate)} → ${numberToCurrency(newItem.rate)}`
+          );
         }
 
         // Promotions
         const oldPromotions = getItemPromotions(oldItem);
         const newPromotions = getItemPromotions(newItem);
 
-        const addedPromotions = newPromotions.filter(promo => !oldPromotions.includes(promo));
-        const removedPromotions = oldPromotions.filter(promo => !newPromotions.includes(promo));
+        const addedPromotions = newPromotions.filter(
+          (promo) => !oldPromotions.includes(promo)
+        );
+        const removedPromotions = oldPromotions.filter(
+          (promo) => !newPromotions.includes(promo)
+        );
 
         if (addedPromotions.length > 0 || removedPromotions.length > 0) {
           let promotionChanges = "";
           if (newPromotions.length > 0) {
             promotionChanges += "CTKM: \n";
-            promotionChanges += `${composeChildrenContent(promotionData.filter((promotion) => newPromotions.includes(promotion.name)), "title")}\n`;
+            promotionChanges += `${composeChildrenContent(
+              promotionData.filter((promotion) =>
+                newPromotions.includes(promotion.name)
+              ),
+              "title"
+            )}\n`;
           }
           changes.push(promotionChanges.trim());
         }
 
         if (changes.length > 0) {
           const parentOrderInfo = `#${newItem.parent_order_number || "N/A"} <i>(tổng đơn: ${numberToCurrency(newItem.parent_grand_total || 0)})</i>`;
-          changes.unshift(`<i>${newItem.item_name} - ${newItem.variant_title}</i>`);
+          changes.unshift(
+            `<i>${newItem.item_name} - ${newItem.variant_title}</i>`
+          );
           changes.unshift(parentOrderInfo);
-          changes.forEach(change => {
+          changes.forEach((change) => {
             itemMessages += `${change}\n`;
           });
           itemMessages += "\n";
@@ -278,14 +360,15 @@ const composeLineItemsChangeMessage = (oldItems, newItems, promotionData) => {
   }
 
   return message;
-
 };
 
 const extractVariantTitle = (item) => {
   const title = item?.variant_title || "";
-  const extracted = item.sku?.startsWith(SKU_PREFIX.DIAMOND) || item.sku?.startsWith(SKU_PREFIX.DIAMOND_TEMPORARY)
-    ? extractVariantNameForGIA(title)
-    : extractVariantNameForJewelry(title);
+  const extracted =
+    item.sku?.startsWith(SKU_PREFIX.DIAMOND) ||
+    item.sku?.startsWith(SKU_PREFIX.DIAMOND_TEMPORARY)
+      ? extractVariantNameForGIA(title)
+      : extractVariantNameForJewelry(title);
 
   return extracted || title || "N/A";
 };
@@ -296,14 +379,19 @@ const extractVariantTitle = (item) => {
  * @returns {{mainOrder: *, subOrders: *[]}}
  */
 export const findMainOrder = (orders) => {
-  const uncancelledOrders = orders.filter(o => o.cancelled_status === "Uncancelled");
-  const ordersToProcess = uncancelledOrders.length > 0 ? uncancelledOrders : orders;
+  const uncancelledOrders = orders.filter(
+    (o) => o.cancelled_status === "Uncancelled"
+  );
+  const ordersToProcess =
+    uncancelledOrders.length > 0 ? uncancelledOrders : orders;
 
-  let mainOrder = ordersToProcess.find(order => isPrimaryOrder(order));
+  let mainOrder = ordersToProcess.find((order) => isPrimaryOrder(order));
   if (!mainOrder) {
     mainOrder = ordersToProcess[0];
   }
-  const subOrders = ordersToProcess.filter(order => order.name !== mainOrder.name);
+  const subOrders = ordersToProcess.filter(
+    (order) => order.name !== mainOrder.name
+  );
   return {
     mainOrder,
     subOrders
@@ -318,9 +406,7 @@ export const findMainOrder = (orders) => {
 const isPrimaryOrder = (salesOrder) => {
   const items = salesOrder.items || [];
   if (items.length === 0) return false;
-  return items.every(
-    (item) => isGiftItem(item) || isJewelryItem(item)
-  );
+  return items.every((item) => isGiftItem(item) || isJewelryItem(item));
 };
 
 export const isGiftItem = (item) => {
@@ -328,13 +414,22 @@ export const isGiftItem = (item) => {
 };
 
 export const isJewelryItem = (item) => {
-  return item.sku?.startsWith(SKU_PREFIX.TEMPORARY_JEWELRY) || item.sku?.length === SKU_LENGTH.JEWELRY;
+  return (
+    item.sku?.startsWith(SKU_PREFIX.TEMPORARY_JEWELRY) ||
+    item.sku?.length === SKU_LENGTH.JEWELRY
+  );
 };
 
 export const isDiamondItem = (item) => {
-  return item.sku?.startsWith(SKU_PREFIX.DIAMOND) || item.sku?.startsWith(SKU_PREFIX.DIAMOND_TEMPORARY);
+  return (
+    item.sku?.startsWith(SKU_PREFIX.DIAMOND) ||
+    item.sku?.startsWith(SKU_PREFIX.DIAMOND_TEMPORARY)
+  );
 };
 
 export const isMissingJewelrySerial = (item) => {
-  return isJewelryItem(item) && (!item.serial_numbers || item.serial_numbers.trim() === "");
+  return (
+    isJewelryItem(item) &&
+    (!item.serial_numbers || item.serial_numbers.trim() === "")
+  );
 };

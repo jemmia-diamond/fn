@@ -18,23 +18,30 @@ export default class BuyBackInstanceService {
     const db = Database.instance(env);
     const larkClient = await LarksuiteService.createClientV2(env);
     const timeThreshold = dayjs().utc();
-    const start_time = timeThreshold.subtract(1, "day").subtract(1, "hour").unix() * 1000;
+    const start_time =
+      timeThreshold.subtract(1, "day").subtract(1, "hour").unix() * 1000;
     const end_time = timeThreshold.add(12, "hour").unix() * 1000;
     const page_size = 100;
 
     const transformedInstances = [];
     const payload = {
       params: {
-        start_time, end_time, page_size,
+        start_time,
+        end_time,
+        page_size,
         approval_code: APPROVALS.BUYBACK_EXCHANGE.code
       }
     };
 
     const responses = await LarksuiteService.requestWithPagination(
-      larkClient.approval.v4.instance.list, payload, page_size
+      larkClient.approval.v4.instance.list,
+      payload,
+      page_size
     );
 
-    const codes = responses.flatMap(res => (res?.data?.instance_code_list ?? []));
+    const codes = responses.flatMap(
+      (res) => res?.data?.instance_code_list ?? []
+    );
 
     for (const code of codes) {
       const instanceResponse = await larkClient.approval.v4.instance.get({
@@ -43,8 +50,11 @@ export default class BuyBackInstanceService {
         }
       });
       const instance = instanceResponse.data;
-      const transformedInstance = instanceService.transformBuybackInstance(instance);
-      const formData = APPROVALS.BUYBACK_EXCHANGE.formTransformFunction(instance.form);
+      const transformedInstance =
+        instanceService.transformBuybackInstance(instance);
+      const formData = APPROVALS.BUYBACK_EXCHANGE.formTransformFunction(
+        instance.form
+      );
       const finalInstance = { ...transformedInstance, ...formData };
       transformedInstances.push(finalInstance);
     }
@@ -65,7 +75,9 @@ export default class BuyBackInstanceService {
           national_id: instance.national_id,
           products_info: instance.products_info,
           reason: instance.reason,
-          refund_amount: instance.refund_amount ? parseFloat(instance.refund_amount) : null,
+          refund_amount: instance.refund_amount
+            ? parseFloat(instance.refund_amount)
+            : null,
           is_synced_to_crm: false,
           updated_at: new Date(),
           submitted_date: instance.submitted_date,
@@ -86,7 +98,9 @@ export default class BuyBackInstanceService {
           national_id: instance.national_id,
           products_info: instance.products_info,
           reason: instance.reason,
-          refund_amount: instance.refund_amount ? parseFloat(instance.refund_amount) : null,
+          refund_amount: instance.refund_amount
+            ? parseFloat(instance.refund_amount)
+            : null,
           is_synced_to_crm: false,
           created_at: new Date(),
           updated_at: new Date(),
@@ -105,7 +119,9 @@ export default class BuyBackInstanceService {
       instance_code: instance.instance_code,
       serial_number: instance.serial_number,
       status: instance.status,
-      submitted_date: instance.start_time ? new Date(Number(instance.start_time)) : null,
+      submitted_date: instance.start_time
+        ? new Date(Number(instance.start_time))
+        : null,
       new_order_code: instance.new_order_code,
       user_id: instance.user_id
     };
@@ -132,14 +148,19 @@ export default class BuyBackInstanceService {
     }
 
     if (!instanceResponse || !instanceResponse.data) {
-      console.warn("No instance data returned from Lark", { instance_code: event.instance_code });
+      console.warn("No instance data returned from Lark", {
+        instance_code: event.instance_code
+      });
       return;
     }
 
     const instance = instanceResponse.data;
 
-    const transformedInstance = instanceService.transformBuybackInstance(instance);
-    const formData = APPROVALS.BUYBACK_EXCHANGE.formTransformFunction(instance.form || []);
+    const transformedInstance =
+      instanceService.transformBuybackInstance(instance);
+    const formData = APPROVALS.BUYBACK_EXCHANGE.formTransformFunction(
+      instance.form || []
+    );
     const finalInstance = { ...transformedInstance, ...formData };
     const prepareDbData = (instance) => ({
       instance_code: instance.instance_code,
@@ -153,7 +174,9 @@ export default class BuyBackInstanceService {
       national_id: instance.national_id,
       products_info: instance.products_info,
       reason: instance.reason,
-      refund_amount: instance.refund_amount ? parseFloat(instance.refund_amount) : null,
+      refund_amount: instance.refund_amount
+        ? parseFloat(instance.refund_amount)
+        : null,
       submitted_date: instance.submitted_date,
       updated_at: new Date(),
       department_id: instance.department_id,
@@ -220,18 +243,26 @@ export default class BuyBackInstanceService {
       refund_amount: data.refund_amount,
       order_code: data.order_code,
       new_order_code: data.new_order_code,
-      submitted_date: data.submitted_date ? dayjs(data.submitted_date).format("YYYY-MM-DD HH:mm:ss") : null,
-      products_info: typeof data.products_info === "string" ? data.products_info : JSON.stringify(data.products_info || [])
+      submitted_date: data.submitted_date
+        ? dayjs(data.submitted_date).format("YYYY-MM-DD HH:mm:ss")
+        : null,
+      products_info:
+        typeof data.products_info === "string"
+          ? data.products_info
+          : JSON.stringify(data.products_info || [])
     };
-    const ignoredFields = Object.keys(erpData).filter(key => key !== "status" && key !== "doctype");
+    const ignoredFields = Object.keys(erpData).filter(
+      (key) => key !== "status" && key !== "doctype"
+    );
 
     try {
       await frappeClient.upsert(erpData, "lark_instance_id", ignoredFields);
     } catch (error) {
       const msg = error?.message || "";
-      const isDuplicate = error?.status === 417
-        || msg.includes("UniqueValidationError")
-        || msg.includes("Duplicate entry");
+      const isDuplicate =
+        error?.status === 417 ||
+        msg.includes("UniqueValidationError") ||
+        msg.includes("Duplicate entry");
 
       if (!isDuplicate) {
         throw error;

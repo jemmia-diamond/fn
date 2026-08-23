@@ -1,4 +1,3 @@
-
 import CollectController from "controllers/webhook/nocodb/collect";
 import DiamondsController from "controllers/webhook/nocodb/diamonds";
 import ProductsController from "controllers/webhook/nocodb/products";
