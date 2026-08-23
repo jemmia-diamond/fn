@@ -37,8 +37,13 @@ export default class BuybackExchangeService {
   }
 
   whereClauseGenerator(params) {
-    const { phone_number, instance_type, status, submitted_date_start, submitted_date_end } =
-      params;
+    const {
+      phone_number,
+      instance_type,
+      status,
+      submitted_date_start,
+      submitted_date_end
+    } = params;
 
     if (!phone_number) {
       return [];
@@ -53,17 +58,25 @@ export default class BuybackExchangeService {
     );
 
     if (instance_type != "none") {
-      whereClauses.push(Prisma.sql`instance_type = ${instance_type || EXCHANGE_TYPE.BUYBACK}`);
+      whereClauses.push(
+        Prisma.sql`instance_type = ${instance_type || EXCHANGE_TYPE.BUYBACK}`
+      );
     }
 
     if (status != "none") {
-      whereClauses.push(Prisma.sql`status = ${status?.toUpperCase() || EXCHANGE_STATUS.APPROVED}`);
+      whereClauses.push(
+        Prisma.sql`status = ${status?.toUpperCase() || EXCHANGE_STATUS.APPROVED}`
+      );
     }
     if (submitted_date_start) {
-      whereClauses.push(Prisma.sql`submitted_date >= ${new Date(submitted_date_start)}`);
+      whereClauses.push(
+        Prisma.sql`submitted_date >= ${new Date(submitted_date_start)}`
+      );
     }
     if (submitted_date_end) {
-      whereClauses.push(Prisma.sql`submitted_date <= ${new Date(submitted_date_end)}`);
+      whereClauses.push(
+        Prisma.sql`submitted_date <= ${new Date(submitted_date_end)}`
+      );
     }
 
     return whereClauses;

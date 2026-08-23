@@ -26,7 +26,9 @@ export default class MisaInventoryItemSyncService {
     const lastSyncDate = await kv.get(KV_KEY);
 
     const fromDate = lastSyncDate
-      ? dayjs(lastSyncDate).subtract(5, "minutes").format("YYYY-MM-DDTHH:mm:ss[Z]")
+      ? dayjs(lastSyncDate)
+          .subtract(5, "minutes")
+          .format("YYYY-MM-DDTHH:mm:ss[Z]")
       : dayjs().utc().subtract(1, "hour").format("YYYY-MM-DDTHH:mm:ss[Z]");
 
     const updatedAtMin = fromDate;
@@ -37,10 +39,17 @@ export default class MisaInventoryItemSyncService {
       const HRV_API_KEY = this.env.HARAVAN_TOKEN;
       const haravanClient = new HaravanAPI(HRV_API_KEY);
 
-      await this._fetchAndProcessProducts(haravanClient, misaClient, updatedAtMin);
+      await this._fetchAndProcessProducts(
+        haravanClient,
+        misaClient,
+        updatedAtMin
+      );
       await kv.put(KV_KEY, toDate);
     } catch (error) {
-      if (lastSyncDate && dayjs(toDate).diff(dayjs(lastSyncDate), "hour") >= 1) {
+      if (
+        lastSyncDate &&
+        dayjs(toDate).diff(dayjs(lastSyncDate), "hour") >= 1
+      ) {
         await kv.put(KV_KEY, toDate);
       }
 
@@ -77,7 +86,8 @@ export default class MisaInventoryItemSyncService {
       } catch (error) {
         if (error.status === 429) {
           const retryAfter = parseFloat(error.retryAfter || 2);
-          const allowedRetrySeconds = MisaInventoryItemSyncService.MAX_RETRY_AFTER_SECONDS;
+          const allowedRetrySeconds =
+            MisaInventoryItemSyncService.MAX_RETRY_AFTER_SECONDS;
 
           if (retryAfter > allowedRetrySeconds) {
             throw new Error(
@@ -116,7 +126,9 @@ export default class MisaInventoryItemSyncService {
     const skus = variantsWithSku.map((v) => v.sku);
     const existingSKUs = await this._checkExistingSKUs(skus);
     const existingSKUSet = new Set(existingSKUs);
-    const newVariants = variantsWithSku.filter((v) => !existingSKUSet.has(v.sku));
+    const newVariants = variantsWithSku.filter(
+      (v) => !existingSKUSet.has(v.sku)
+    );
 
     if (newVariants.length === 0) {
       return;
@@ -124,10 +136,16 @@ export default class MisaInventoryItemSyncService {
 
     const currentTime = String(Date.now());
     const inventoryItems = newVariants.map((variant) =>
-      Misa.InventoryItemMappingService.transformHaravanItemToMisa(variant, currentTime)
+      Misa.InventoryItemMappingService.transformHaravanItemToMisa(
+        variant,
+        currentTime
+      )
     );
 
-    const misaResponse = await this._saveDictionaryToMisa(misaClient, inventoryItems);
+    const misaResponse = await this._saveDictionaryToMisa(
+      misaClient,
+      inventoryItems
+    );
 
     if (misaResponse.Success === true) {
       await this._trackSyncedItems(newVariants);
@@ -137,10 +155,13 @@ export default class MisaInventoryItemSyncService {
         count: newVariants.length,
         misa_response: misaResponse?.ErrorMessage
       };
-      Sentry.captureMessage(`MISA Inventory Item Sync failed at ${currentTime}`, {
-        level: "error",
-        extra: errorMsg
-      });
+      Sentry.captureMessage(
+        `MISA Inventory Item Sync failed at ${currentTime}`,
+        {
+          level: "error",
+          extra: errorMsg
+        }
+      );
     }
   }
 

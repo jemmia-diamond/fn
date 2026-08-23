@@ -31,8 +31,14 @@ export default class ShieldNotificationService {
     payload: any,
     type: string
   ): Promise<void> {
-    const userToken = await JemmiaShieldLarkService.getUserAccessToken(env, code);
-    const userInfo = await JemmiaShieldLarkService.getUserInfo(env, userToken.access_token);
+    const userToken = await JemmiaShieldLarkService.getUserAccessToken(
+      env,
+      code
+    );
+    const userInfo = await JemmiaShieldLarkService.getUserInfo(
+      env,
+      userToken.access_token
+    );
 
     const openId = userToken.open_id || userInfo.open_id;
 

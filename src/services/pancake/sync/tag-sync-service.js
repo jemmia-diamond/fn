@@ -21,7 +21,9 @@ export default class TagSyncService {
 
       const pageData = await this.pancakeClient.getPages();
       if (isInvalidTokenError(pageData)) {
-        throw new Error("Pancake API Error [102]: Invalid access_token during page query");
+        throw new Error(
+          "Pancake API Error [102]: Invalid access_token during page query"
+        );
       }
 
       const pages = pageData?.categorized?.activated || [];
@@ -49,7 +51,9 @@ export default class TagSyncService {
 
       if (isInvalidTokenError(data)) {
         this.captureException(
-          new Error(`Pancake API Error [102]: Invalid access_token for tags in page ${pageId}`),
+          new Error(
+            `Pancake API Error [102]: Invalid access_token for tags in page ${pageId}`
+          ),
           pageId
         );
         return;

@@ -10,7 +10,10 @@ export default class LarkWebhook {
     namespace.use("/appointment", verifyLarkWebhook);
     namespace.post("/recall/event", ShieldEventController.create);
     namespace.post("/event/redirect", EventRedirectController.create);
-    namespace.post("/approval/orders-options", LarkApprovalOrdersController.create);
+    namespace.post(
+      "/approval/orders-options",
+      LarkApprovalOrdersController.create
+    );
     namespace.post("/appointment", LarkAppointmentController.create);
   }
 }

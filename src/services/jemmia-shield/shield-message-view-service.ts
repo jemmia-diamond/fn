@@ -19,14 +19,26 @@ export default class ShieldMessageViewService {
 
     let contentHtml = "";
     try {
-      await ShieldNotificationService.sendSensitiveViewNotification(env, code, payload, type);
+      await ShieldNotificationService.sendSensitiveViewNotification(
+        env,
+        code,
+        payload,
+        type
+      );
 
-      const renderContent = ShieldMessageViewService.prepareRenderContent(payload);
+      const renderContent =
+        ShieldMessageViewService.prepareRenderContent(payload);
 
       if (type === "image") {
-        contentHtml = await ShieldMessageViewService.renderImage(env, renderContent);
+        contentHtml = await ShieldMessageViewService.renderImage(
+          env,
+          renderContent
+        );
       } else if (type === "post") {
-        contentHtml = await ShieldMessageViewService.renderPost(env, renderContent);
+        contentHtml = await ShieldMessageViewService.renderPost(
+          env,
+          renderContent
+        );
       } else {
         contentHtml = ShieldMessageViewService.renderText(renderContent);
       }
@@ -141,9 +153,13 @@ export default class ShieldMessageViewService {
   static async renderImage(env: any, renderContent: any): Promise<string> {
     try {
       const imageKey =
-        renderContent.image_key || (typeof renderContent === "string" ? renderContent : null);
+        renderContent.image_key ||
+        (typeof renderContent === "string" ? renderContent : null);
       if (imageKey) {
-        const imageBuffer = await JemmiaShieldLarkService.downloadImage(env, imageKey);
+        const imageBuffer = await JemmiaShieldLarkService.downloadImage(
+          env,
+          imageKey
+        );
         const base64 = imageBuffer.toString("base64");
         return `<div style="padding: 20px; text-align: center;"><img src="data:image/png;base64,${base64}" style="max-width: 100%; height: auto; border-radius: 4px;" /></div>`;
       } else {
@@ -158,7 +174,9 @@ export default class ShieldMessageViewService {
   static renderText(renderContent: any): string {
     const textContent =
       renderContent.text ||
-      (typeof renderContent === "string" ? renderContent : JSON.stringify(renderContent, null, 2));
+      (typeof renderContent === "string"
+        ? renderContent
+        : JSON.stringify(renderContent, null, 2));
     return `<div style="white-space: pre-wrap; word-break: break-word; font-family: sans-serif; padding: 20px;">${ShieldMessageViewService.formatText(
       ShieldMessageViewService.escapeHtml(textContent)
     )}</div>`;
@@ -180,9 +198,11 @@ export default class ShieldMessageViewService {
             case "text": {
               let text = ShieldMessageViewService.escapeHtml(item.text);
               if (item.style) {
-                if (item.style.includes("bold")) text = `<strong>${text}</strong>`;
+                if (item.style.includes("bold"))
+                  text = `<strong>${text}</strong>`;
                 if (item.style.includes("italic")) text = `<em>${text}</em>`;
-                if (item.style.includes("strikethrough")) text = `<del>${text}</del>`;
+                if (item.style.includes("strikethrough"))
+                  text = `<del>${text}</del>`;
                 if (item.style.includes("underline")) text = `<u>${text}</u>`;
               }
               text = ShieldMessageViewService.formatText(text);
@@ -204,10 +224,11 @@ export default class ShieldMessageViewService {
             case "img":
               if (item.image_key) {
                 try {
-                  const imageBuffer = await JemmiaShieldLarkService.downloadImage(
-                    env,
-                    item.image_key
-                  );
+                  const imageBuffer =
+                    await JemmiaShieldLarkService.downloadImage(
+                      env,
+                      item.image_key
+                    );
                   const base64 = imageBuffer.toString("base64");
                   html += `<img src="data:image/png;base64,${base64}" style="max-width: 100%; height: auto; border-radius: 4px; margin: 5px 0;" />`;
                 } catch (error) {

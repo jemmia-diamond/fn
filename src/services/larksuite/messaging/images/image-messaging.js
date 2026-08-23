@@ -8,7 +8,9 @@ export class ImageMessagingService {
   static async uploadLarkImage({ imageBuffer, env }) {
     const tenantAccessToken = await LarksuiteService.getTenantAccessToken(env);
     if (!tenantAccessToken) {
-      Sentry.captureException(new Error("Could not obtain tenant access token for upload."));
+      Sentry.captureException(
+        new Error("Could not obtain tenant access token for upload.")
+      );
       return null;
     }
 
@@ -18,19 +20,24 @@ export class ImageMessagingService {
     form.append("image", imageBlob, "image.jpg");
 
     try {
-      const response = await fetch(`${env.LARK_API_ENDPOINT}/open-apis/image/v4/put/`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${tenantAccessToken}`
-        },
-        body: form
-      });
+      const response = await fetch(
+        `${env.LARK_API_ENDPOINT}/open-apis/image/v4/put/`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${tenantAccessToken}`
+          },
+          body: form
+        }
+      );
 
       const data = await response.json();
 
       if (!response.ok) {
         Sentry.captureException(
-          new Error(`Upload request failed: ${response.status} ${response.statusText}`)
+          new Error(
+            `Upload request failed: ${response.status} ${response.statusText}`
+          )
         );
         return null;
       }
@@ -50,7 +57,13 @@ export class ImageMessagingService {
   /**
    * Sends an image message to a Lark chat.
    */
-  static async sendLarkImageMessage({ chatId, imageKey, rootMessageId, env, isReply }) {
+  static async sendLarkImageMessage({
+    chatId,
+    imageKey,
+    rootMessageId,
+    env,
+    isReply
+  }) {
     const tenantAccessToken = await LarksuiteService.getTenantAccessToken(env);
     if (!tenantAccessToken) {
       Sentry.captureException(
@@ -91,7 +104,9 @@ export class ImageMessagingService {
 
       if (!response.ok) {
         Sentry.captureException(
-          new Error(`Sending/replying request failed: ${response.status} ${response.statusText}`),
+          new Error(
+            `Sending/replying request failed: ${response.status} ${response.statusText}`
+          ),
           { extra: { responseData: data } }
         );
         return;
@@ -104,9 +119,18 @@ export class ImageMessagingService {
   /**
    * Combined function to download → upload → send image to Lark chat.
    */
-  static async sendLarkImageFromUrl({ imageBuffer, chatId, rootMessageId, env, isReply = true }) {
+  static async sendLarkImageFromUrl({
+    imageBuffer,
+    chatId,
+    rootMessageId,
+    env,
+    isReply = true
+  }) {
     try {
-      const imageKey = await ImageMessagingService.uploadLarkImage({ imageBuffer, env });
+      const imageKey = await ImageMessagingService.uploadLarkImage({
+        imageBuffer,
+        env
+      });
       if (!imageKey) return false;
 
       await ImageMessagingService.sendLarkImageMessage({

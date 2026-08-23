@@ -32,7 +32,9 @@ export default class OrderMapper {
       browser_ip: order.browser_ip,
       buyer_accepts_marketing: order.buyer_accepts_marketing,
       cancel_reason: order.cancel_reason,
-      cancelled_at: order.cancelled_at ? dayjs(order.cancelled_at).toDate() : null,
+      cancelled_at: order.cancelled_at
+        ? dayjs(order.cancelled_at).toDate()
+        : null,
       cart_token: order.cart_token,
       checkout_token: order.checkout_token,
       client_details_accept_language: clientDetails.accept_language,
@@ -54,14 +56,18 @@ export default class OrderMapper {
       customer_first_name: customer.first_name,
       customer_last_name: customer.last_name,
       customer_multipass_identifier: customer.multipass_identifier,
-      customer_last_order_id: customer.last_order_id ? BigInt(customer.last_order_id) : null,
+      customer_last_order_id: customer.last_order_id
+        ? BigInt(customer.last_order_id)
+        : null,
       customer_last_order_name: order.customer_last_order_name,
       customer_note: order.customer_note,
       customer_order_count: customer.order_count,
       customer_state: customer.state,
       customer_tags: customer.tags,
       customer_total_spent: customer.total_spent,
-      customer_updated_at: customer.updated_at ? dayjs(customer.updated_at).toDate() : null,
+      customer_updated_at: customer.updated_at
+        ? dayjs(customer.updated_at).toDate()
+        : null,
       customer_verified_email: customer.verified_email,
       customer_send_email_invite: customer.send_email_invite,
       customer_send_email_welcome: customer.send_email_welcome,
@@ -85,11 +91,14 @@ export default class OrderMapper {
       customer_default_address_first_name: customerDefaultAddress.first_name,
       customer_default_address_last_name: customerDefaultAddress.last_name,
       customer_default_address_phone: customerDefaultAddress.phone,
-      customer_default_address_province_code: customerDefaultAddress.province_code,
-      customer_default_address_country_code: customerDefaultAddress.country_code,
+      customer_default_address_province_code:
+        customerDefaultAddress.province_code,
+      customer_default_address_country_code:
+        customerDefaultAddress.country_code,
       customer_default_address_default: customerDefaultAddress.default,
       customer_default_address_district: customerDefaultAddress.district,
-      customer_default_address_district_code: customerDefaultAddress.district_code,
+      customer_default_address_district_code:
+        customerDefaultAddress.district_code,
       customer_default_address_ward: customerDefaultAddress.ward,
       customer_default_address_ward_code: customerDefaultAddress.ward_code,
       discount_codes: order.discount_codes,
@@ -139,11 +148,15 @@ export default class OrderMapper {
       total_weight: order.total_weight,
       updated_at: order.updated_at ? dayjs(order.updated_at).toDate() : null,
       note_attributes: order.note_attributes,
-      confirmed_at: order.confirmed_at ? dayjs(order.confirmed_at).toDate() : null,
+      confirmed_at: order.confirmed_at
+        ? dayjs(order.confirmed_at).toDate()
+        : null,
       closed_status: order.closed_status,
       cancelled_status: order.cancelled_status,
       confirmed_status: order.confirmed_status,
-      assigned_location_id: order.assigned_location_id ? BigInt(order.assigned_location_id) : null,
+      assigned_location_id: order.assigned_location_id
+        ? BigInt(order.assigned_location_id)
+        : null,
       assigned_location_name: order.assigned_location_name,
       assigned_location_at: order.assigned_location_at
         ? dayjs(order.assigned_location_at).toDate()
@@ -156,7 +169,9 @@ export default class OrderMapper {
       location_id: order.location_id ? BigInt(order.location_id) : null,
       location_name: order.location_name,
       ref_order_id: order.ref_order_id ? BigInt(order.ref_order_id) : null,
-      ref_order_date: order.ref_order_date ? dayjs(order.ref_order_date).toDate() : null,
+      ref_order_date: order.ref_order_date
+        ? dayjs(order.ref_order_date).toDate()
+        : null,
       ref_order_number: order.ref_order_number,
       utm_source: order.utm_source,
       utm_medium: order.utm_medium,
@@ -168,7 +183,9 @@ export default class OrderMapper {
       order_processing_status: order.order_processing_status,
       prev_order_id: order.prev_order_id ? BigInt(order.prev_order_id) : null,
       prev_order_number: order.prev_order_number,
-      prev_order_date: order.prev_order_date ? dayjs(order.prev_order_date).toDate() : null,
+      prev_order_date: order.prev_order_date
+        ? dayjs(order.prev_order_date).toDate()
+        : null,
       redeem_model: order.redeem_model,
       confirm_user: order.confirm_user ? BigInt(order.confirm_user) : null,
       risk_level: order.risk_level,

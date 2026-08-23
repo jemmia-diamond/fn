@@ -30,7 +30,9 @@ export default class AddressService {
     if (customer) {
       addressName = customer.customer_name;
     } else {
-      const nameParts = [addressData.last_name, addressData.first_name].filter(Boolean);
+      const nameParts = [addressData.last_name, addressData.first_name].filter(
+        Boolean
+      );
       addressName = nameParts.join(" ") || addressData.address1 || "No Entry";
     }
     const mappedAddressData = {
@@ -44,14 +46,20 @@ export default class AddressService {
       address_line2: addressData.address2
     };
     if (customer) {
-      mappedAddressData.links = [{ link_doctype: customer.doctype, link_name: customer.name }];
+      mappedAddressData.links = [
+        { link_doctype: customer.doctype, link_name: customer.name }
+      ];
     }
-    const address = await this.frappeClient.upsert(mappedAddressData, "haravan_id");
+    const address = await this.frappeClient.upsert(
+      mappedAddressData,
+      "haravan_id"
+    );
     return address;
   }
 
   async syncAddressesToDatabase(options = {}) {
-    const { isSyncType = AddressService.SYNC_TYPE_AUTO, minutesBack = 10 } = options;
+    const { isSyncType = AddressService.SYNC_TYPE_AUTO, minutesBack = 10 } =
+      options;
     const kv = this.env.FN_KV;
     const KV_KEY = "address_sync:last_date";
     const toDate = dayjs().utc().format("YYYY-MM-DD HH:mm:ss");
@@ -60,9 +68,16 @@ export default class AddressService {
     if (isSyncType === AddressService.SYNC_TYPE_AUTO) {
       const lastDate = await kv.get(KV_KEY);
       fromDate =
-        lastDate || dayjs().utc().subtract(minutesBack, "minutes").format("YYYY-MM-DD HH:mm:ss");
+        lastDate ||
+        dayjs()
+          .utc()
+          .subtract(minutesBack, "minutes")
+          .format("YYYY-MM-DD HH:mm:ss");
     } else {
-      fromDate = dayjs().utc().subtract(minutesBack, "minutes").format("YYYY-MM-DD HH:mm:ss");
+      fromDate = dayjs()
+        .utc()
+        .subtract(minutesBack, "minutes")
+        .format("YYYY-MM-DD HH:mm:ss");
     }
 
     try {

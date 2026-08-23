@@ -35,8 +35,17 @@ export default class ContactService {
     const contacts = await this.frappeClient.getList(this.doctype, {
       filters: [
         ["Contact Phone", "phone", "=", newCustomerInfo?.phone || phone],
-        ["Contact Phone", "is_primary_phone", "=", newCustomerInfo?.is_new ? false : true],
-        ["haravan_customer_id", "is", newCustomerInfo?.is_new ? "not set" : "set"]
+        [
+          "Contact Phone",
+          "is_primary_phone",
+          "=",
+          newCustomerInfo?.is_new ? false : true
+        ],
+        [
+          "haravan_customer_id",
+          "is",
+          newCustomerInfo?.is_new ? "not set" : "set"
+        ]
       ]
     });
     if (contacts.length) {
@@ -55,7 +64,11 @@ export default class ContactService {
     return contact;
   };
 
-  async processHaravanContact(customerData, customer = null, newCustomerInfo = {}) {
+  async processHaravanContact(
+    customerData,
+    customer = null,
+    newCustomerInfo = {}
+  ) {
     const nameParts = customerData["phone"]
       ? [customerData.last_name, customerData.first_name].filter(Boolean)
       : [this.defaultContactName];
@@ -79,7 +92,8 @@ export default class ContactService {
       );
       if (existingContact && newCustomerInfo?.is_new) {
         mappedContactData.name = existingContact.name;
-        const newCustomerContact = await this.frappeClient.update(mappedContactData);
+        const newCustomerContact =
+          await this.frappeClient.update(mappedContactData);
         return newCustomerContact;
       }
       if (existingContact) {
@@ -95,17 +109,29 @@ export default class ContactService {
       }
     }
 
-    const contact = await this.frappeClient.upsert(mappedContactData, "haravan_customer_id");
+    const contact = await this.frappeClient.upsert(
+      mappedContactData,
+      "haravan_customer_id"
+    );
     if (customer) {
-      return await this.frappeClient.reference(contact, "Contact", customer, "Customer");
+      return await this.frappeClient.reference(
+        contact,
+        "Contact",
+        customer,
+        "Customer"
+      );
     }
     return contact;
   }
 
   async processWebsiteContact(data, lead, source = null) {
     const referrerParams = parseURLParameters(data.raw_data.referrer);
-    const conversionUrlParams = parseURLParameters(data.raw_data.conversion_url);
-    const originalUrlPageParams = parseURLParameters(data.raw_data.origin_url_page);
+    const conversionUrlParams = parseURLParameters(
+      data.raw_data.conversion_url
+    );
+    const originalUrlPageParams = parseURLParameters(
+      data.raw_data.origin_url_page
+    );
 
     const normalizedPhone = normalizeToStandardFormat(data.raw_data.phone);
 
@@ -113,7 +139,9 @@ export default class ContactService {
       doctype: this.doctype,
       custom_uuid: data.custom_uuid,
       first_name: data.raw_data.name,
-      inserted_at: dayjs(data.database_created_at).utc().format("YYYY-MM-DD HH:mm:ss"),
+      inserted_at: dayjs(data.database_created_at)
+        .utc()
+        .format("YYYY-MM-DD HH:mm:ss"),
       phone_nos: [
         {
           phone: normalizedPhone,
@@ -158,7 +186,9 @@ export default class ContactService {
       variant_url: data.raw_data.variant_url,
       ladi_form_id: data.raw_data.ladi_form_id,
       message_time: data.raw_data.message_time
-        ? dayjs(Number(data.raw_data.message_time)).utc().format("YYYY-MM-DD HH:mm:ss")
+        ? dayjs(Number(data.raw_data.message_time))
+            .utc()
+            .format("YYYY-MM-DD HH:mm:ss")
         : null,
       utm_campaign: getParam(
         data.raw_data,
@@ -196,7 +226,9 @@ export default class ContactService {
         conversionUrlParams,
         originalUrlPageParams
       ),
-      user_agent: data.raw_data.user_agent ? data.raw_data.user_agent.substring(0, 140) : null,
+      user_agent: data.raw_data.user_agent
+        ? data.raw_data.user_agent.substring(0, 140)
+        : null,
       gad_source: getParam(
         data.raw_data,
         "gad_source",
@@ -265,9 +297,15 @@ export default class ContactService {
         });
       }
     } else {
-      const contact = await this.frappeClient.upsert(contactData, "custom_uuid");
+      const contact = await this.frappeClient.upsert(
+        contactData,
+        "custom_uuid"
+      );
       // reference contact with lead
-      const contactWithLinks = await this.frappeClient.getDoc(this.doctype, contact.name);
+      const contactWithLinks = await this.frappeClient.getDoc(
+        this.doctype,
+        contact.name
+      );
       await this.frappeClient.update(this.reference(contactWithLinks, lead));
     }
   }
@@ -295,7 +333,8 @@ export default class ContactService {
   }
 
   async syncContactsToDatabase(options = {}) {
-    const { isSyncType = ContactService.SYNC_TYPE_AUTO, minutesBack = 10 } = options;
+    const { isSyncType = ContactService.SYNC_TYPE_AUTO, minutesBack = 10 } =
+      options;
     const kv = this.env.FN_KV;
     const KV_KEY = "contact_sync:last_date";
     const toDate = dayjs().utc().format("YYYY-MM-DD HH:mm:ss");
@@ -304,9 +343,16 @@ export default class ContactService {
     if (isSyncType === ContactService.SYNC_TYPE_AUTO) {
       const lastDate = await kv.get(KV_KEY);
       fromDate =
-        lastDate || dayjs().utc().subtract(minutesBack, "minutes").format("YYYY-MM-DD HH:mm:ss");
+        lastDate ||
+        dayjs()
+          .utc()
+          .subtract(minutesBack, "minutes")
+          .format("YYYY-MM-DD HH:mm:ss");
     } else {
-      fromDate = dayjs().utc().subtract(minutesBack, "minutes").format("YYYY-MM-DD HH:mm:ss");
+      fromDate = dayjs()
+        .utc()
+        .subtract(minutesBack, "minutes")
+        .format("YYYY-MM-DD HH:mm:ss");
     }
 
     try {

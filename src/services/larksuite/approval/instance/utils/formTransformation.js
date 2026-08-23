@@ -17,10 +17,22 @@ export const transformOffboardData = (form) => {
   const widgetFieldMapper = APPROVALS.OFFBOARD_APPROVAL.widgetFieldMapper;
 
   return {
-    offboard_reason: accessNestedKey(widgetsObj, widgetFieldMapper.offboardReason),
-    offboard_date: accessNestedKey(widgetsObj, widgetFieldMapper.offboardDesireDate),
-    handover_start_date: accessNestedKey(widgetsObj, widgetFieldMapper.handoverStartDate),
-    handover_receiver: accessNestedKey(widgetsObj, widgetFieldMapper.handoverReceiver)
+    offboard_reason: accessNestedKey(
+      widgetsObj,
+      widgetFieldMapper.offboardReason
+    ),
+    offboard_date: accessNestedKey(
+      widgetsObj,
+      widgetFieldMapper.offboardDesireDate
+    ),
+    handover_start_date: accessNestedKey(
+      widgetsObj,
+      widgetFieldMapper.handoverStartDate
+    ),
+    handover_receiver: accessNestedKey(
+      widgetsObj,
+      widgetFieldMapper.handoverReceiver
+    )
   };
 };
 
@@ -42,13 +54,22 @@ export const transformPaymentFormData = (form) => {
   const widgetFieldMapper = APPROVALS.PAYMENT_APPROVAL.widgetFieldMapper;
   return {
     type: accessNestedKey(widgetsObj, widgetFieldMapper.type),
-    purchase_occurrence: accessNestedKey(widgetsObj, widgetFieldMapper.purchase_occurrence),
+    purchase_occurrence: accessNestedKey(
+      widgetsObj,
+      widgetFieldMapper.purchase_occurrence
+    ),
     reason: accessNestedKey(widgetsObj, widgetFieldMapper.reason),
     description: accessNestedKey(widgetsObj, widgetFieldMapper.description),
-    qualified_document: accessNestedKey(widgetsObj, widgetFieldMapper.qualified_document),
+    qualified_document: accessNestedKey(
+      widgetsObj,
+      widgetFieldMapper.qualified_document
+    ),
     total_amount: accessNestedKey(widgetsObj, widgetFieldMapper.total_amount),
     payment_info: accessNestedKey(widgetsObj, widgetFieldMapper.payment_info),
-    expected_payment_date: accessNestedKey(widgetsObj, widgetFieldMapper.expected_payment_date)
+    expected_payment_date: accessNestedKey(
+      widgetsObj,
+      widgetFieldMapper.expected_payment_date
+    )
   };
 };
 
@@ -58,8 +79,14 @@ export const transformPurchaseFormData = (form) => {
   return {
     reason: accessNestedKey(widgetsObj, widgetFieldMapper.reason),
     description: accessNestedKey(widgetsObj, widgetFieldMapper.description),
-    estimated_amount: accessNestedKey(widgetsObj, widgetFieldMapper.estimated_amount),
-    expected_receive_date: accessNestedKey(widgetsObj, widgetFieldMapper.expected_receive_date)
+    estimated_amount: accessNestedKey(
+      widgetsObj,
+      widgetFieldMapper.estimated_amount
+    ),
+    expected_receive_date: accessNestedKey(
+      widgetsObj,
+      widgetFieldMapper.expected_receive_date
+    )
   };
 };
 
@@ -70,7 +97,10 @@ export const transformExchangeBuybackdData = (form) => {
   const phoneData = accessNestedKey(widgetsObj, widgetFieldMapper.phone_number);
   const phoneNumber = phoneData ? JSON.stringify(phoneData) : null;
 
-  const productsInfoRaw = accessNestedKey(widgetsObj, widgetFieldMapper.products_info);
+  const productsInfoRaw = accessNestedKey(
+    widgetsObj,
+    widgetFieldMapper.products_info
+  );
   let productsInfo = null;
   let orderCodeFromProducts = null;
 
@@ -111,18 +141,28 @@ export const transformExchangeBuybackdData = (form) => {
     productsInfo = products;
   }
 
-  const mainOrderCode = accessNestedKey(widgetsObj, widgetFieldMapper.order_code);
+  const mainOrderCode = accessNestedKey(
+    widgetsObj,
+    widgetFieldMapper.order_code
+  );
   const orderCode = mainOrderCode || orderCodeFromProducts;
   const department = accessNestedKey(widgetsObj, widgetFieldMapper.department);
 
   return {
     instance_type: accessNestedKey(widgetsObj, widgetFieldMapper.instance_type),
     order_code: orderCode ? orderCode.toString().trim() : null,
-    new_order_code: accessNestedKey(widgetsObj, widgetFieldMapper.new_order_code)
-      ? accessNestedKey(widgetsObj, widgetFieldMapper.new_order_code).toString().trim()
+    new_order_code: accessNestedKey(
+      widgetsObj,
+      widgetFieldMapper.new_order_code
+    )
+      ? accessNestedKey(widgetsObj, widgetFieldMapper.new_order_code)
+          .toString()
+          .trim()
       : null,
     customer_name: accessNestedKey(widgetsObj, widgetFieldMapper.customer_name)
-      ? accessNestedKey(widgetsObj, widgetFieldMapper.customer_name).toString().trim()
+      ? accessNestedKey(widgetsObj, widgetFieldMapper.customer_name)
+          .toString()
+          .trim()
       : null,
     phone_number: phoneNumber,
     national_id: accessNestedKey(widgetsObj, widgetFieldMapper.national_id),

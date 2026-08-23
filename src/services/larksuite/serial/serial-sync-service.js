@@ -2,7 +2,10 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import Database from "services/database";
 import RecordService from "services/larksuite/docs/base/record/record";
-import { SERIAL_NUMBERS_FIELDS, TABLES } from "services/larksuite/docs/constant";
+import {
+  SERIAL_NUMBERS_FIELDS,
+  TABLES
+} from "services/larksuite/docs/constant";
 
 dayjs.extend(utc);
 
@@ -22,14 +25,23 @@ export default class SerialSyncService {
 
   async sync({ limit = null, offset = null, updatedAtMin = null } = {}) {
     const nowUtc = dayjs().utc();
-    const defaultUpdatedAtMin = nowUtc.subtract(TIME_INTERVAL_MINUTES, "minutes").toDate();
+    const defaultUpdatedAtMin = nowUtc
+      .subtract(TIME_INTERVAL_MINUTES, "minutes")
+      .toDate();
     const finalUpdatedAtMin = updatedAtMin || defaultUpdatedAtMin;
-    const serials = await this._fetchUpdatedSerials(finalUpdatedAtMin, limit, offset);
+    const serials = await this._fetchUpdatedSerials(
+      finalUpdatedAtMin,
+      limit,
+      offset
+    );
     if (!serials?.length) return;
 
     const larkSerials = await this._fetchLarkSerials(serials);
     const larkSerialMap = this._buildLarkSerialMap(larkSerials);
-    const { newSerials, oldSerials } = this._categorizeSerials(serials, larkSerialMap);
+    const { newSerials, oldSerials } = this._categorizeSerials(
+      serials,
+      larkSerialMap
+    );
 
     if (newSerials.length) await this._createLarkRecords(newSerials);
     if (oldSerials.length) await this._updateLarkRecords(oldSerials);
@@ -63,10 +75,14 @@ export default class SerialSyncService {
       }));
 
       const filter = { conjunction: "or", conditions };
-      const records = await RecordService.fetchRecords(this.env, this.tableConfig, {
-        filter,
-        pageSize: BATCH_SIZE
-      });
+      const records = await RecordService.fetchRecords(
+        this.env,
+        this.tableConfig,
+        {
+          filter,
+          pageSize: BATCH_SIZE
+        }
+      );
       if (records?.length) allLarkSerials.push(...records);
     }
 

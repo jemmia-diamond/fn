@@ -3,7 +3,8 @@ class NoVietnameseTextValidator {
     return {
       type: "problem",
       docs: {
-        description: "Disallow Vietnamese text in comments, only English is allowed"
+        description:
+          "Disallow Vietnamese text in comments, only English is allowed"
       },
       fixable: null,
       schema: []

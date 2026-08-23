@@ -95,7 +95,8 @@ export default class ProductService {
   }
 
   async getWeddingRings(jsonParams) {
-    const { data, count, material_colors, fineness } = await this.getWeddingRingsData(jsonParams);
+    const { data, count, material_colors, fineness } =
+      await this.getWeddingRingsData(jsonParams);
     return {
       data,
       metadata: {
@@ -150,7 +151,8 @@ export default class ProductService {
   }
 
   async getJewelryV2(jsonParams) {
-    const { data, count, material_colors, fineness } = await this.getJewelryDataV2(jsonParams);
+    const { data, count, material_colors, fineness } =
+      await this.getJewelryDataV2(jsonParams);
     return {
       data,
       metadata: {
@@ -179,7 +181,9 @@ export default class ProductService {
     }
 
     const setProduct = setProducts[0];
-    const designIds = (setProduct.design_ids || []).filter((dId) => dId != null);
+    const designIds = (setProduct.design_ids || []).filter(
+      (dId) => dId != null
+    );
 
     let linkedProductsData = [];
     if (designIds.length > 0) {
@@ -203,7 +207,8 @@ export default class ProductService {
   async getJewelryByIdV2(id, options = {}) {
     const productId = parseInt(id, 10);
     if (isNaN(productId)) return null;
-    const { variantJsonBuildObject, lateralJoinClause } = buildQuerySingleV2(options);
+    const { variantJsonBuildObject, lateralJoinClause } =
+      buildQuerySingleV2(options);
 
     const result = await retryQuery(
       () => this.db.$queryRaw`

@@ -20,18 +20,28 @@ export default class AccountingSalesOrderLarkSyncService {
 
   async sync({ limit = null, offset = null, updatedAtMin = null } = {}) {
     const now = dayjs().utc();
-    const defaultUpdatedAtMin = now.subtract(TIME_INTERVAL_MINUTES, "minutes").toDate();
+    const defaultUpdatedAtMin = now
+      .subtract(TIME_INTERVAL_MINUTES, "minutes")
+      .toDate();
     const finalUpdatedAtMin = updatedAtMin || defaultUpdatedAtMin;
-    const orders = await this._fetchUpdatedOrders(finalUpdatedAtMin, limit, offset);
+    const orders = await this._fetchUpdatedOrders(
+      finalUpdatedAtMin,
+      limit,
+      offset
+    );
 
     if (!orders || orders.length === 0) return;
 
     const larkOrders = await this._fetchLarkOrders(orders);
     const larkOrderMap = this._buildLarkOrderMap(larkOrders);
-    const { newOrders, existingOrders } = this._categorizeOrders(orders, larkOrderMap);
+    const { newOrders, existingOrders } = this._categorizeOrders(
+      orders,
+      larkOrderMap
+    );
 
     if (newOrders.length > 0) await this._createLarkRecords(newOrders);
-    if (existingOrders.length > 0) await this._updateLarkRecords(existingOrders);
+    if (existingOrders.length > 0)
+      await this._updateLarkRecords(existingOrders);
   }
 
   async _fetchUpdatedOrders(updatedAtMin, limit = null, offset = null) {
@@ -61,10 +71,14 @@ export default class AccountingSalesOrderLarkSyncService {
       }));
 
       const filter = { conjunction: "or", conditions };
-      const records = await RecordService.fetchRecords(this.env, this.tableConfig, {
-        filter,
-        pageSize: BATCH_SIZE
-      });
+      const records = await RecordService.fetchRecords(
+        this.env,
+        this.tableConfig,
+        {
+          filter,
+          pageSize: BATCH_SIZE
+        }
+      );
       allLarkOrders.push(...records);
     }
     return allLarkOrders;
@@ -129,10 +143,16 @@ export default class AccountingSalesOrderLarkSyncService {
   _mapOrderToLarkFields(order) {
     return {
       id: order.id ? Number(order.id) : null,
-      created_at: order.created_at ? dayjs(order.created_at).toISOString() : null,
-      updated_at: order.updated_at ? dayjs(order.updated_at).toISOString() : null,
+      created_at: order.created_at
+        ? dayjs(order.created_at).toISOString()
+        : null,
+      updated_at: order.updated_at
+        ? dayjs(order.updated_at).toISOString()
+        : null,
       name: order.name,
-      real_created_at: order.real_created_at ? dayjs(order.real_created_at).toISOString() : null,
+      real_created_at: order.real_created_at
+        ? dayjs(order.real_created_at).toISOString()
+        : null,
       customer_type: order.customer_type,
       fulfillment_status: order.fulfillment_status,
       cancelled_status: order.cancelled_status,
@@ -148,7 +168,9 @@ export default class AccountingSalesOrderLarkSyncService {
       fulfillment_created_at: order.fulfillment_created_at
         ? dayjs(order.fulfillment_created_at).toISOString()
         : null,
-      cancelled_at: order.cancelled_at ? dayjs(order.cancelled_at).toISOString() : null
+      cancelled_at: order.cancelled_at
+        ? dayjs(order.cancelled_at).toISOString()
+        : null
     };
   }
 }

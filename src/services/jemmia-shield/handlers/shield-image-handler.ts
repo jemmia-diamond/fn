@@ -17,11 +17,16 @@ export default class ShieldImageHandler {
       imageKey
     );
 
-    const analyzeResult = await ShieldPresidioService.analyzeImage(env, imageBuffer);
+    const analyzeResult = await ShieldPresidioService.analyzeImage(
+      env,
+      imageBuffer
+    );
 
     const isSensitive =
       analyzeResult.ner_results.length > 0 &&
-      analyzeResult.ner_results.some((result) => result.score >= JEMMIA_SHIELD_NER_SCORE_THRESHOLD);
+      analyzeResult.ner_results.some(
+        (result) => result.score >= JEMMIA_SHIELD_NER_SCORE_THRESHOLD
+      );
 
     if (!isSensitive) {
       return;
@@ -41,7 +46,10 @@ export default class ShieldImageHandler {
       blurSize: 24
     });
 
-    const newImageKey = await JemmiaShieldLarkService.uploadImage(env, bufferToUpload);
+    const newImageKey = await JemmiaShieldLarkService.uploadImage(
+      env,
+      bufferToUpload
+    );
 
     const randomId = ShieldUtils.generateRandomId();
     const elements = [

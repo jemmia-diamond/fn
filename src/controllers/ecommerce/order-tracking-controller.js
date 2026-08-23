@@ -22,7 +22,10 @@ export default class OrderTrackingController {
 
     const orderTrackingService = new Ecommerce.OrderTrackingService(ctx.env);
     try {
-      const orderDetails = await orderTrackingService.trackOrder(id, reqBearerToken);
+      const orderDetails = await orderTrackingService.trackOrder(
+        id,
+        reqBearerToken
+      );
       if (!orderDetails) {
         return ctx.json({ error_code: "order_not_found" }, 404);
       }

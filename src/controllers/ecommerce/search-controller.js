@@ -1,6 +1,9 @@
 import Ecommerce from "services/ecommerce";
 import { parseNumber } from "services/utils/num-helper";
-import { API_CONFIG, DEFAULT_JEWELRY_DISCOUNT } from "src/controllers/ecommerce/constant";
+import {
+  API_CONFIG,
+  DEFAULT_JEWELRY_DISCOUNT
+} from "src/controllers/ecommerce/constant";
 
 export default class SearchController {
   static async index(ctx) {
@@ -11,7 +14,10 @@ export default class SearchController {
       !Number.isFinite(parsedLimit) || parsedLimit <= 0
         ? API_CONFIG.MAX_SEARCH_LIMIT
         : Math.min(parsedLimit, API_CONFIG.MAX_SEARCH_LIMIT);
-    const page = Math.max(API_CONFIG.MIN_FROM, Number(params.page) || API_CONFIG.MIN_FROM);
+    const page = Math.max(
+      API_CONFIG.MIN_FROM,
+      Number(params.page) || API_CONFIG.MIN_FROM
+    );
     const productService = new Ecommerce.ProductService(ctx.env);
     const result = await productService.searchJewelry(searchKey, limit, page, {
       return_inventory_metrics: params.return_inventory_metrics === "true",

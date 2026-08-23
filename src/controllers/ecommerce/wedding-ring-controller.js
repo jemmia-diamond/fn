@@ -15,7 +15,10 @@ export default class WeddingRingController {
         ),
         limit: Math.min(
           API_CONFIG.MAX_LIMIT,
-          Math.max(1, params.limit ? Number(params.limit) : API_CONFIG.DEFAULT_LIMIT)
+          Math.max(
+            1,
+            params.limit ? Number(params.limit) : API_CONFIG.DEFAULT_LIMIT
+          )
         )
       },
       fineness: splitParams(params.fineness),

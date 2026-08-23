@@ -1,5 +1,8 @@
 import * as Sentry from "@sentry/cloudflare";
-import { HARAVAN_DISPATCH_TYPE_ZALO_MSG, HARAVAN_TOPIC } from "services/ecommerce/enum";
+import {
+  HARAVAN_DISPATCH_TYPE_ZALO_MSG,
+  HARAVAN_TOPIC
+} from "services/ecommerce/enum";
 
 export default class HaravanERPOrderController {
   static async create(ctx) {
@@ -42,10 +45,16 @@ export default class HaravanERPOrderController {
     }
   }
 
-  static async sendToZaloMessageQueue(ctx, data, dispatchType = null, delayInSeconds = 0) {
+  static async sendToZaloMessageQueue(
+    ctx,
+    data,
+    dispatchType = null,
+    delayInSeconds = 0
+  ) {
     data.dispatchType = dispatchType;
 
-    const scheduleOptions = HaravanERPOrderController.getZaloMessageSchedule(delayInSeconds);
+    const scheduleOptions =
+      HaravanERPOrderController.getZaloMessageSchedule(delayInSeconds);
 
     await ctx.env["ZALO_MESSAGE_QUEUE"].send(data, scheduleOptions);
   }
@@ -68,7 +77,9 @@ export default class HaravanERPOrderController {
       `${get("year")}-${get("month")}-${get("day")}T${get("hour")}:${get("minute")}:${get("second")}+07:00`
     );
 
-    const scheduledTime = new Date(localNow.getTime() + initialDelayInSeconds * 1000);
+    const scheduledTime = new Date(
+      localNow.getTime() + initialDelayInSeconds * 1000
+    );
     const scheduledHour = scheduledTime.getHours();
     const scheduledMinute = scheduledTime.getMinutes();
 

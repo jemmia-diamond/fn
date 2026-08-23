@@ -59,10 +59,16 @@ export async function mapLarkToFrappe(
     ? dayjs.utc(dataRequest.date_time).format("YYYY-MM-DD HH:mm:ss")
     : undefined;
 
-  const allEmails = [...(dataRequest.main_sales || []), ...(dataRequest.offline_sales || [])]
+  const allEmails = [
+    ...(dataRequest.main_sales || []),
+    ...(dataRequest.offline_sales || [])
+  ]
     .map((s) => s.email)
     .filter(Boolean);
-  const allNames = [...(dataRequest.main_sales || []), ...(dataRequest.offline_sales || [])]
+  const allNames = [
+    ...(dataRequest.main_sales || []),
+    ...(dataRequest.offline_sales || [])
+  ]
     .map((s) => s.name)
     .filter(Boolean);
   const salesPersons =
@@ -121,7 +127,9 @@ export async function mapLarkToFrappe(
     fields.appointment_with = lead.doctype;
     fields.party = lead.name;
     fields.purchased_purpose = lead.purpose_lead;
-    fields.preferred_products = mapPreferredProducts(lead.preferred_product_type);
+    fields.preferred_products = mapPreferredProducts(
+      lead.preferred_product_type
+    );
   }
 
   return fields;

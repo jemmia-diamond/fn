@@ -81,7 +81,9 @@ export default class PinterestService {
 
   // Extracts the best suitable image for the entry.
   extractImage($, entry, content) {
-    let imageLink = entry.find('link[rel="alternate"][type^="image/"]').attr("href");
+    let imageLink = entry
+      .find('link[rel="alternate"][type^="image/"]')
+      .attr("href");
 
     if (!imageLink && content) {
       const content$ = cheerio.load(content, { xmlMode: false });

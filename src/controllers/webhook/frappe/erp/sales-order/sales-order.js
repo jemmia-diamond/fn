@@ -5,7 +5,9 @@ export default class FrappeERPSalesOrderController {
   static async create(ctx) {
     const data = await ctx.req.json();
     const salesOrders =
-      data.sales_orders && Array.isArray(data.sales_orders) ? data.sales_orders : [data];
+      data.sales_orders && Array.isArray(data.sales_orders)
+        ? data.sales_orders
+        : [data];
 
     for (const order of salesOrders) {
       await DebounceService.debounce({

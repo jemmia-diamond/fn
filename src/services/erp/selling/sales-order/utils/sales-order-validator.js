@@ -1,4 +1,7 @@
-import { SKU_LENGTH, SKU_PREFIX } from "services/haravan/products/product-variant/constant";
+import {
+  SKU_LENGTH,
+  SKU_PREFIX
+} from "services/haravan/products/product-variant/constant";
 
 /**
  * Validates the completeness of the sales order data.
@@ -66,7 +69,8 @@ const validateOrderCompleteness = (salesOrderData, customer) => {
 
   const jewelryItems = lineItems.filter(
     (item) =>
-      item.sku?.length === SKU_LENGTH.JEWELRY || item.sku?.startsWith(SKU_PREFIX.TEMPORARY_JEWELRY)
+      item.sku?.length === SKU_LENGTH.JEWELRY ||
+      item.sku?.startsWith(SKU_PREFIX.TEMPORARY_JEWELRY)
   );
   for (const jewelryItem of jewelryItems) {
     if (!jewelryItem.serial_numbers) {
@@ -79,7 +83,10 @@ const validateOrderCompleteness = (salesOrderData, customer) => {
 };
 
 export const validateSalesOrder = (salesOrderData, customer) => {
-  const completenessValidation = validateOrderCompleteness(salesOrderData, customer);
+  const completenessValidation = validateOrderCompleteness(
+    salesOrderData,
+    customer
+  );
   if (!completenessValidation.isValid) {
     return completenessValidation;
   }

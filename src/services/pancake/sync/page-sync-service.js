@@ -21,7 +21,9 @@ export default class PageSyncService {
 
       const pageData = await this.pancakeClient.getPages();
       if (isInvalidTokenError(pageData)) {
-        throw new Error("Pancake API Error [102]: Invalid access_token during page query");
+        throw new Error(
+          "Pancake API Error [102]: Invalid access_token during page query"
+        );
       }
 
       const categorized = pageData?.categorized;
@@ -30,7 +32,10 @@ export default class PageSyncService {
         return;
       }
 
-      const pageList = [...(categorized.activated || []), ...(categorized.inactivated || [])];
+      const pageList = [
+        ...(categorized.activated || []),
+        ...(categorized.inactivated || [])
+      ];
 
       if (pageList.length === 0) {
         console.warn("Page list is empty.");
@@ -58,7 +63,9 @@ export default class PageSyncService {
 
       if (isInvalidTokenError(userListData)) {
         this.captureException(
-          new Error(`Pancake API Error [102]: Invalid access_token for users in page ${pageId}`),
+          new Error(
+            `Pancake API Error [102]: Invalid access_token for users in page ${pageId}`
+          ),
           pageId
         );
         return;
@@ -83,7 +90,11 @@ export default class PageSyncService {
         this.db.page.upsert({
           where: { id: item.id },
           create: pageData,
-          update: { ...pageData, uuid: undefined, database_updated_at: dayjs().utc().toDate() }
+          update: {
+            ...pageData,
+            uuid: undefined,
+            database_updated_at: dayjs().utc().toDate()
+          }
         })
       );
     }
@@ -127,7 +138,9 @@ export default class PageSyncService {
     return {
       uuid: crypto.randomUUID(),
       id: item.id,
-      inserted_at: item.inserted_at ? dayjs.utc(item.inserted_at).toDate() : null,
+      inserted_at: item.inserted_at
+        ? dayjs.utc(item.inserted_at).toDate()
+        : null,
       connected: item.connected ?? null,
       is_activated: item.is_activated ?? null,
       name: item.name || null,

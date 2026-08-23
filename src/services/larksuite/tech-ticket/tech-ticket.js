@@ -38,15 +38,21 @@ export default class TechTicketService {
       manual_updated_time: toDate(fields["Ngày Cập Nhật (Manual)"]),
       completed_time: toDate(fields["Ngày Hoàn Thành"]),
       expected_completion_time: toDate(fields["Ngày Hoàn Thành Mong Đợi"]),
-      new_deadline: toDate(LarkHelper.extractInt(fields["Hạn chót - Deadline"])),
+      new_deadline: toDate(
+        LarkHelper.extractInt(fields["Hạn chót - Deadline"])
+      ),
       sla_50_percent: toDate(LarkHelper.extractInt(fields["Mốc 50% SLA"])),
       reminder_time: toDate(LarkHelper.extractInt(fields["Giờ nhắc nhở"])),
       manager: LarkHelper.extractText(fields["Quản lý"], "name"),
       ticket_no_in_month: LarkHelper.extractText(fields["Ticket No. In Month"]),
-      current_number_in_month: LarkHelper.extractInt(fields["Current Number In Month"]),
+      current_number_in_month: LarkHelper.extractInt(
+        fields["Current Number In Month"]
+      ),
       responded_at: toDate(LarkHelper.extractInt(fields["Thời gian phản hồi"])),
       processed_at: toDate(LarkHelper.extractInt(fields["Thời gian xử lý"])),
-      completed_at: toDate(LarkHelper.extractInt(fields["Thời gian hoàn thành"]))
+      completed_at: toDate(
+        LarkHelper.extractInt(fields["Thời gian hoàn thành"])
+      )
     };
   }
 
@@ -58,7 +64,12 @@ export default class TechTicketService {
    * @param {number} pageSize - Number of records per page (default: 200)
    * @returns {Promise<Object>} - Object with { items: [], hasMore: boolean, pageToken: string }
    */
-  static async fetchTechTicketsPage(env, filter, pageToken = null, pageSize = 100) {
+  static async fetchTechTicketsPage(
+    env,
+    filter,
+    pageToken = null,
+    pageSize = 100
+  ) {
     const larkClient = await LarksuiteService.createClientV2(env);
 
     const payload = {
@@ -213,14 +224,22 @@ export default class TechTicketService {
           items,
           hasMore,
           pageToken: nextPageToken
-        } = await TechTicketService.fetchTechTicketsPage(env, filter, pageToken, pageSize);
+        } = await TechTicketService.fetchTechTicketsPage(
+          env,
+          filter,
+          pageToken,
+          pageSize
+        );
 
         if (items.length === 0) break;
 
         totalFetched += items.length;
 
         // Save this batch immediately
-        const stats = await TechTicketService.saveTechTicketsToDatabase(env, items);
+        const stats = await TechTicketService.saveTechTicketsToDatabase(
+          env,
+          items
+        );
         totalCreated += stats.created;
         totalUpdated += stats.updated;
         totalFailed += stats.failed;

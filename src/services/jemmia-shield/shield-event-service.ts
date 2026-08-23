@@ -8,7 +8,10 @@ export default class ShieldEventService {
     let eventBody = body;
 
     if (body.encrypt) {
-      const decryptedData = await JemmiaShieldLarkService.decryptEvent(env, body.encrypt);
+      const decryptedData = await JemmiaShieldLarkService.decryptEvent(
+        env,
+        body.encrypt
+      );
       eventBody = JSON.parse(decryptedData);
     }
 
@@ -34,7 +37,10 @@ export default class ShieldEventService {
 
       executionCtx.waitUntil(
         (async () => {
-          await ShieldMessageService.detectSensitiveInfoAndMask(env, eventBody.event);
+          await ShieldMessageService.detectSensitiveInfoAndMask(
+            env,
+            eventBody.event
+          );
         })()
       );
     }

@@ -146,7 +146,11 @@ export default class DesignCodeService {
 
     const minutesBack = 10;
     const fromDate =
-      lastDate || dayjs().utc().subtract(minutesBack, "minutes").format("YYYY-MM-DD HH:mm:ss");
+      lastDate ||
+      dayjs()
+        .utc()
+        .subtract(minutesBack, "minutes")
+        .format("YYYY-MM-DD HH:mm:ss");
     const toDate = dayjs().utc().format("YYYY-MM-DD HH:mm:ss");
 
     try {

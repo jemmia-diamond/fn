@@ -45,7 +45,10 @@ export default class ManualPaymentService {
 
       while (hasMore) {
         const response = await larkClient.bitable.appTableRecord.search({
-          path: { app_token: manualPaymentTable.app_token, table_id: manualPaymentTable.table_id },
+          path: {
+            app_token: manualPaymentTable.app_token,
+            table_id: manualPaymentTable.table_id
+          },
           params: {
             user_id_type: "user_id",
             page_token: pageToken,
@@ -60,7 +63,11 @@ export default class ManualPaymentService {
                   operator: "isGreater",
                   value: ["ExactDate", timeThreshold]
                 },
-                { field_name: "Loại Thanh Toán", operator: "isNot", value: ["QR"] }
+                {
+                  field_name: "Loại Thanh Toán",
+                  operator: "isNot",
+                  value: ["QR"]
+                }
               ]
             }
           }
@@ -75,7 +82,11 @@ export default class ManualPaymentService {
 
               const getText = (field) => {
                 if (typeof field === "string") return field;
-                if (Array.isArray(field) && field.length > 0 && typeof field[0].text === "string") {
+                if (
+                  Array.isArray(field) &&
+                  field.length > 0 &&
+                  typeof field[0].text === "string"
+                ) {
                   return field[0].text;
                 }
                 return null;
@@ -111,20 +122,26 @@ export default class ManualPaymentService {
                       .utc()
                       .toDate()
                   : null,
-                bank_account: fields["Số Tài Khoản"]?.value?.[0]?.toString() ?? null,
+                bank_account:
+                  fields["Số Tài Khoản"]?.value?.[0]?.toString() ?? null,
                 bank_name: getText(fields["Ngân Hàng"]?.value),
                 transfer_amount: fields["Số Tiền Giao Dịch"],
                 transfer_note: Array.isArray(fields["Nội Dung CK"])
                   ? fields["Nội Dung CK"].map((i) => i.text || "").join("")
                   : fields["Nội Dung CK"],
-                haravan_order_id: rawOrderId != null ? parseInt(rawOrderId, 10) : null,
+                haravan_order_id:
+                  rawOrderId != null ? parseInt(rawOrderId, 10) : null,
                 haravan_order_name: getText(fields["ORDER"]),
                 transfer_status: getText(fields["Trạng Thái Thủ Công"])
               };
 
               return this.db.manualPaymentTransaction.upsert({
                 where: { lark_record_id: record.record_id },
-                create: { ...data, lark_record_id: record.record_id, misa_synced: false },
+                create: {
+                  ...data,
+                  lark_record_id: record.record_id,
+                  misa_synced: false
+                },
                 update: data
               });
             });
@@ -201,15 +218,19 @@ export default class ManualPaymentService {
    */
   async updateManualPayment(uuid, data) {
     try {
-      const paymentBeforeUpdate = await this.db.manualPaymentTransaction.findUnique({
-        where: { uuid }
-      });
+      const paymentBeforeUpdate =
+        await this.db.manualPaymentTransaction.findUnique({
+          where: { uuid }
+        });
 
       if (!paymentBeforeUpdate) {
         return null;
       }
 
-      if (paymentBeforeUpdate.transfer_status === "Xác nhận" && !data.payment_entry_name) {
+      if (
+        paymentBeforeUpdate.transfer_status === "Xác nhận" &&
+        !data.payment_entry_name
+      ) {
         const updateData = { ...data };
 
         delete updateData.transfer_status;
@@ -241,7 +262,8 @@ export default class ManualPaymentService {
 
       delete dataForFirstUpdate.transfer_status;
 
-      const isOrderLater = dataForFirstUpdate.haravan_order_name === "Đơn hàng cọc";
+      const isOrderLater =
+        dataForFirstUpdate.haravan_order_name === "Đơn hàng cọc";
       if (!isOrderLater && !data.payment_entry_name) {
         const orderExists = await this.db.order.findUnique({
           where: { id: dataForFirstUpdate.haravan_order_id }
@@ -264,15 +286,17 @@ export default class ManualPaymentService {
       });
 
       const shouldCreateTransaction =
-        data.transfer_status === "Xác nhận" && paymentBeforeUpdate.transfer_status !== "Xác nhận";
+        data.transfer_status === "Xác nhận" &&
+        paymentBeforeUpdate.transfer_status !== "Xác nhận";
 
       if (shouldCreateTransaction) {
-        const finalUpdatedPayment = await this.db.manualPaymentTransaction.update({
-          where: { uuid: uuid },
-          data: {
-            transfer_status: data.transfer_status
-          }
-        });
+        const finalUpdatedPayment =
+          await this.db.manualPaymentTransaction.update({
+            where: { uuid: uuid },
+            data: {
+              transfer_status: data.transfer_status
+            }
+          });
 
         // Temporary for larkbase usage, we'll remove this block once we're all move over to erp
         if (
@@ -301,10 +325,16 @@ export default class ManualPaymentService {
       }
     };
 
-    await this.env["MISA_QUEUE"].send(payload, { delaySeconds: Misa.Constants.DELAYS.ONE_MINUTE });
+    await this.env["MISA_QUEUE"].send(payload, {
+      delaySeconds: Misa.Constants.DELAYS.ONE_MINUTE
+    });
   }
 
-  async createManualTransactionsToHaravanOrder(haravanOrderId, transferAmount, paymentType) {
+  async createManualTransactionsToHaravanOrder(
+    haravanOrderId,
+    transferAmount,
+    paymentType
+  ) {
     if (!haravanOrderId) {
       throw new BadRequestException("Haravan Order ID is missing.");
     }
@@ -316,10 +346,17 @@ export default class ManualPaymentService {
     const parsedTransferAmount = parseInt(transferAmount);
 
     if (parsedTransferAmount <= 0) {
-      throw new BadRequestException("Transaction amount must be a positive number.");
+      throw new BadRequestException(
+        "Transaction amount must be a positive number."
+      );
     }
 
-    const validPaymentMethods = ["Tiền Mặt", "Cà Thẻ Tại Cửa Hàng", "Cà Thẻ Online", "COD HTC"];
+    const validPaymentMethods = [
+      "Tiền Mặt",
+      "Cà Thẻ Tại Cửa Hàng",
+      "Cà Thẻ Online",
+      "COD HTC"
+    ];
     if (!paymentType || !validPaymentMethods.includes(paymentType)) {
       throw new BadRequestException(
         `Invalid payment method. Must be one of: ${validPaymentMethods.join(", ")}`
@@ -334,16 +371,22 @@ export default class ManualPaymentService {
     const order = orderResult[0];
 
     if (!order) {
-      throw new BadRequestException(`Order with ID ${haravanOrderId} not found.`);
+      throw new BadRequestException(
+        `Order with ID ${haravanOrderId} not found.`
+      );
     }
     if (order.cancelled_status === "cancelled")
       throw new BadRequestException("Order is cancelled.");
-    if (order.financial_status === "paid") throw new BadRequestException("Order is already paid.");
+    if (order.financial_status === "paid")
+      throw new BadRequestException("Order is already paid.");
     if (order.financial_status === "refunded")
       throw new BadRequestException("Order is already refunded.");
-    if (order.closed_status === "closed") throw new BadRequestException("Order is closed.");
+    if (order.closed_status === "closed")
+      throw new BadRequestException("Order is closed.");
     if (parsedTransferAmount > parseInt(order.total_price)) {
-      throw new BadRequestException("Transaction amount exceeds order total price.");
+      throw new BadRequestException(
+        "Transaction amount exceeds order total price."
+      );
     }
 
     const HRV_API_KEY = this.env.HARAVAN_TOKEN;
@@ -356,11 +399,14 @@ export default class ManualPaymentService {
 
     const hrvClient = new HaravanAPI(HRV_API_KEY);
 
-    const responseData = await hrvClient.orderTransaction.createTransaction(haravanOrderId, {
-      amount: parsedTransferAmount,
-      kind: "capture",
-      gateway: paymentType
-    });
+    const responseData = await hrvClient.orderTransaction.createTransaction(
+      haravanOrderId,
+      {
+        amount: parsedTransferAmount,
+        kind: "capture",
+        gateway: paymentType
+      }
+    );
     return responseData.transaction;
   }
 }

@@ -3,7 +3,8 @@ export const safeValue = (value, type = "string") => {
   switch (type) {
     case "number":
       if (typeof value === "number") return value;
-      if (typeof value === "string" && !isNaN(Number(value))) return Number(value);
+      if (typeof value === "string" && !isNaN(Number(value)))
+        return Number(value);
       return null;
     case "date":
       return new Date(value);

@@ -65,7 +65,8 @@ export default class UserService {
         const updateData = { ...userData };
         if (
           !user.department_ids ||
-          (Array.isArray(user.department_ids) && user.department_ids.length === 0)
+          (Array.isArray(user.department_ids) &&
+            user.department_ids.length === 0)
         ) {
           delete updateData.department_ids;
         }
@@ -83,7 +84,8 @@ export default class UserService {
 
   static async getDepartmentIds(env) {
     const db = Database.instance(env);
-    const departements = await db.$queryRaw`SELECT department_id FROM larksuite.departments`;
+    const departements =
+      await db.$queryRaw`SELECT department_id FROM larksuite.departments`;
     return departements.map((departement) => departement.department_id);
   }
 }

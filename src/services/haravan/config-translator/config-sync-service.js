@@ -18,7 +18,8 @@ export default class ConfigTranslatorService {
     TRANSLATION_CONCURRENCY: 3
   };
 
-  static IMAGE_URL_REGEX = /https?:\/\/[^\s"']+\.(?:png|jpe?g|gif|svg|webp)(?:\?[^\s"']*)?/gi;
+  static IMAGE_URL_REGEX =
+    /https?:\/\/[^\s"']+\.(?:png|jpe?g|gif|svg|webp)(?:\?[^\s"']*)?/gi;
 
   constructor(env) {
     this.env = env;
@@ -26,9 +27,12 @@ export default class ConfigTranslatorService {
 
   async fetchHaravanConfig(haravanClient) {
     return retryQuery(async () => {
-      const response = await haravanClient.theme.getAssets(this.env.HARAVAN_THEME_ID, {
-        "asset[key]": "config/settings_data.json"
-      });
+      const response = await haravanClient.theme.getAssets(
+        this.env.HARAVAN_THEME_ID,
+        {
+          "asset[key]": "config/settings_data.json"
+        }
+      );
       return response;
     });
   }
@@ -40,18 +44,27 @@ export default class ConfigTranslatorService {
     };
 
     return retryQuery(async () => {
-      const response = await haravanClient.theme.updateAsset(this.env.HARAVAN_THEME_ID, payload);
+      const response = await haravanClient.theme.updateAsset(
+        this.env.HARAVAN_THEME_ID,
+        payload
+      );
       return response;
     });
   }
 
   async getSnapshotFromKV() {
-    const snapshot = await this.env.FN_KV.get(ConfigTranslatorService.CONFIG.KV_KEY, "json");
+    const snapshot = await this.env.FN_KV.get(
+      ConfigTranslatorService.CONFIG.KV_KEY,
+      "json"
+    );
     return snapshot;
   }
 
   async saveSnapshotToKV(config) {
-    await this.env.FN_KV.put(ConfigTranslatorService.CONFIG.KV_KEY, JSON.stringify(config));
+    await this.env.FN_KV.put(
+      ConfigTranslatorService.CONFIG.KV_KEY,
+      JSON.stringify(config)
+    );
   }
 
   findChangedKeys(currentConfig, previousConfig) {
@@ -74,7 +87,10 @@ export default class ConfigTranslatorService {
         return;
       }
 
-      const allKeys = new Set([...Object.keys(current), ...Object.keys(previous)]);
+      const allKeys = new Set([
+        ...Object.keys(current),
+        ...Object.keys(previous)
+      ]);
 
       for (const key of allKeys) {
         const currentPath = path ? `${path}.${key}` : key;
@@ -192,7 +208,11 @@ export default class ConfigTranslatorService {
         const value = obj[key];
 
         if (typeof value === "string") {
-          const shouldTranslate = this.isPathChanged(currentPath, changedPaths, allKeys);
+          const shouldTranslate = this.isPathChanged(
+            currentPath,
+            changedPaths,
+            allKeys
+          );
 
           if (shouldTranslate && this.isVietnameseText(value)) {
             translationTasks.push(async () => {
@@ -249,7 +269,10 @@ export default class ConfigTranslatorService {
 
       const previousConfig = await this.getSnapshotFromKV();
 
-      const { allKeys, changedPaths } = this.findChangedKeys(currentConfig, previousConfig);
+      const { allKeys, changedPaths } = this.findChangedKeys(
+        currentConfig,
+        previousConfig
+      );
 
       if (!allKeys && changedPaths.length === 0) {
         console.warn("No changes detected in config, skipping translation");

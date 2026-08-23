@@ -1,7 +1,10 @@
 import * as Sentry from "@sentry/cloudflare";
 import Database from "services/database";
 import { buildGetDiamondsQuery } from "services/ecommerce/diamond/utils/diamond";
-import { dataSql, formatData } from "services/ecommerce/diamond/utils/diamond-prices";
+import {
+  dataSql,
+  formatData
+} from "services/ecommerce/diamond/utils/diamond-prices";
 import { buildStockTrackerQuery } from "services/ecommerce/diamond/utils/diamond-stock-tracker";
 import { retryQuery } from "services/utils/retry-utils";
 
@@ -91,7 +94,9 @@ export default class DiamondService {
     }
 
     const targetWarehouses =
-      warehouseNames && Array.isArray(warehouseNames) && warehouseNames.length > 0
+      warehouseNames &&
+      Array.isArray(warehouseNames) &&
+      warehouseNames.length > 0
         ? warehouseNames
         : [];
 
@@ -100,7 +105,9 @@ export default class DiamondService {
     const result = await retryQuery(() => this.db.$queryRaw(sql));
 
     const groupedResults = targets.map((target, idx) => {
-      const matchingDiamonds = result.filter((row) => row.target_index === idx + 1);
+      const matchingDiamonds = result.filter(
+        (row) => row.target_index === idx + 1
+      );
 
       let diamondsList;
       if (

@@ -4,7 +4,11 @@ import dayjs from "dayjs";
 import MisaClient from "services/clients/misa-client";
 import Database from "services/database";
 import Misa from "services/misa";
-import { buildOrgUnitMap, VOUCHER_REF_TYPES, VOUCHER_TYPES } from "services/misa/constant";
+import {
+  buildOrgUnitMap,
+  VOUCHER_REF_TYPES,
+  VOUCHER_TYPES
+} from "services/misa/constant";
 import CashVoucherMappingService from "services/misa/mapping/cash-voucher-mapping-service";
 import Payment from "services/payment";
 
@@ -15,12 +19,18 @@ export default class ManualTransactionService {
   }
 
   async processTransaction(manualPayment, is_retry = false) {
-    if (manualPayment.misa_sync_guid && manualPayment.misa_synced_at && !is_retry) {
+    if (
+      manualPayment.misa_sync_guid &&
+      manualPayment.misa_synced_at &&
+      !is_retry
+    ) {
       return true;
     }
 
     const currentTime = dayjs().utc().toDate();
-    const generatedGuid = is_retry ? manualPayment.misa_sync_guid : crypto.randomUUID();
+    const generatedGuid = is_retry
+      ? manualPayment.misa_sync_guid
+      : crypto.randomUUID();
 
     if (!is_retry) {
       const claimed = await this.db.manualPaymentTransaction.updateMany({
@@ -76,17 +86,18 @@ export default class ManualTransactionService {
         ? VOUCHER_REF_TYPES.MANUAL_PAYMENT
         : VOUCHER_REF_TYPES.OTHER_MANUAL_PAYMENT;
 
-      const { misaVoucher, originalId } = await CashVoucherMappingService.transforManualToVoucher(
-        manualPayment,
-        bankMap,
-        orgUnitMap,
-        voucherType,
-        refType,
-        journalNote,
-        this.env,
-        generatedGuid,
-        this.db
-      );
+      const { misaVoucher, originalId } =
+        await CashVoucherMappingService.transforManualToVoucher(
+          manualPayment,
+          bankMap,
+          orgUnitMap,
+          voucherType,
+          refType,
+          journalNote,
+          this.env,
+          generatedGuid,
+          this.db
+        );
 
       const payload = {
         app_id: this.env.MISA_APP_ID,

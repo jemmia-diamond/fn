@@ -16,7 +16,10 @@ function arrayBufferToBase64Url(buffer) {
   for (let i = 0; i < len; i++) {
     binary += String.fromCharCode(bytes[i]);
   }
-  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  return btoa(binary)
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
 }
 
 function objectToBase64Url(obj) {
@@ -88,7 +91,9 @@ export default class GoogleAuth {
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`Failed to fetch access token: ${response.status} ${errorText}`);
+      throw new Error(
+        `Failed to fetch access token: ${response.status} ${errorText}`
+      );
     }
 
     const data = await response.json();

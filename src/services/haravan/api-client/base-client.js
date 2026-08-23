@@ -1,4 +1,7 @@
-import { createAxiosClient, DEFAULT_RETRY_CONFIG } from "services/utils/http-client";
+import {
+  createAxiosClient,
+  DEFAULT_RETRY_CONFIG
+} from "services/utils/http-client";
 
 export default class BaseClient {
   constructor(env) {
@@ -21,7 +24,12 @@ export default class BaseClient {
   async makeGetRequest(path, params = {}) {
     try {
       const response = await this.client.get(path, { params });
-      return { success: true, status: response.status, message: "Success", data: response.data };
+      return {
+        success: true,
+        status: response.status,
+        message: "Success",
+        data: response.data
+      };
     } catch (error) {
       return {
         success: false,
@@ -35,7 +43,12 @@ export default class BaseClient {
   async makePostRequest(path, data) {
     try {
       const response = await this.client.post(path, data);
-      return { success: true, status: response.status, message: "Success", data: response.data };
+      return {
+        success: true,
+        status: response.status,
+        message: "Success",
+        data: response.data
+      };
     } catch (error) {
       return {
         success: false,

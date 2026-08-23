@@ -27,7 +27,10 @@ export default class PancakeLeadSyncService {
     if (lastSyncTimeStr) {
       updatedTime = lastSyncTimeStr;
     } else {
-      updatedTime = now.subtract(5, "minutes").subtract(1, "minute").format("YYYY-MM-DD HH:mm:ss");
+      updatedTime = now
+        .subtract(5, "minutes")
+        .subtract(1, "minute")
+        .format("YYYY-MM-DD HH:mm:ss");
     }
 
     return { now, updatedTime, KV_KEY };
@@ -69,7 +72,9 @@ export default class PancakeLeadSyncService {
         if (updateResponse && Array.isArray(updateResponse)) {
           updateResponse.forEach((result) => {
             if (result && result.name === null) {
-              console.warn(`Lead sync failed for conversation ${result.conversation_id}`);
+              console.warn(
+                `Lead sync failed for conversation ${result.conversation_id}`
+              );
               hasError = true;
             }
           });

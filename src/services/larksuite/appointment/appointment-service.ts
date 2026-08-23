@@ -1,5 +1,8 @@
 import type { PrismaClient } from "@prisma-cli";
-import { getDocumentAttachments, removeFileAttachment } from "frappe/attachment";
+import {
+  getDocumentAttachments,
+  removeFileAttachment
+} from "frappe/attachment";
 import { fetchLeadInfoByPhoneNumber } from "frappe/lead";
 import { mapLarkToFrappe } from "frappe/utils/utils-lark";
 import Database from "services/database";
@@ -46,7 +49,9 @@ export default class AppointmentService {
     this.tableId = APPOINTMENTS.TABLE_ID;
   }
 
-  private async syncLarkRecord(recordId: string): Promise<ILarksuiteAppointment> {
+  private async syncLarkRecord(
+    recordId: string
+  ): Promise<ILarksuiteAppointment> {
     // @ts-expect-error This RecordService was written in javascript so we can not define the type for it
     const record = await RecordService.getLarksuiteRecord({
       env: this.env,
@@ -89,7 +94,10 @@ export default class AppointmentService {
     return data;
   }
 
-  private async downloadFileAndUploadFrappe(attachments: LarksuiteAttachment[], docname: string) {
+  private async downloadFileAndUploadFrappe(
+    attachments: LarksuiteAttachment[],
+    docname: string
+  ) {
     try {
       if (!attachments?.length) return;
       const accessToken = await LarksuiteService.getTenantAccessToken(this.env);
@@ -125,12 +133,18 @@ export default class AppointmentService {
 
   async createOrUpdateAppointment(recordId: string) {
     const record = await this.syncLarkRecord(recordId);
-    const lead = await fetchLeadInfoByPhoneNumber(this.frappeClient, record.phone_number);
+    const lead = await fetchLeadInfoByPhoneNumber(
+      this.frappeClient,
+      record.phone_number
+    );
     const erpAppointment = await this.upsertERPAppointment(record, lead);
     return erpAppointment;
   }
 
-  async createNewERPAppointment(dataRequest: ILarksuiteAppointment, lead?: IFrappeLead) {
+  async createNewERPAppointment(
+    dataRequest: ILarksuiteAppointment,
+    lead?: IFrappeLead
+  ) {
     const payload = await mapLarkToFrappe(this.frappeClient, dataRequest, lead);
     const data = await this.frappeClient.insert({
       doctype: "Appointment",
@@ -153,7 +167,10 @@ export default class AppointmentService {
     return data;
   }
 
-  async upsertERPAppointment(dataRequest: ILarksuiteAppointment, lead?: IFrappeLead) {
+  async upsertERPAppointment(
+    dataRequest: ILarksuiteAppointment,
+    lead?: IFrappeLead
+  ) {
     await saveAppointmentToPrismaDb(this.env, dataRequest);
 
     const existing = await this.frappeClient.getList("Appointment", {
@@ -162,13 +179,23 @@ export default class AppointmentService {
 
     if (existing?.length) {
       const docName = existing[0].name;
-      const attachments = await getDocumentAttachments(this.frappeClient, "Appointment", docName);
+      const attachments = await getDocumentAttachments(
+        this.frappeClient,
+        "Appointment",
+        docName
+      );
       await removeFileAttachment(this.frappeClient, attachments);
-      await this.downloadFileAndUploadFrappe(dataRequest.product_images, docName);
+      await this.downloadFileAndUploadFrappe(
+        dataRequest.product_images,
+        docName
+      );
       return await this.updateERPAppointment(docName, dataRequest, lead);
     } else {
       const appointment = await this.createNewERPAppointment(dataRequest, lead);
-      await this.downloadFileAndUploadFrappe(dataRequest.product_images, appointment.name);
+      await this.downloadFileAndUploadFrappe(
+        dataRequest.product_images,
+        appointment.name
+      );
       return appointment;
     }
   }

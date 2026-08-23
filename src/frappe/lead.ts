@@ -2,7 +2,10 @@ import type FrappeClient from "src/frappe/frappe-client";
 import type { IFrappeLead } from "src/services/larksuite/appointment/types";
 import { normalizeToStandardFormat } from "src/services/utils/phone-utils";
 
-export async function fetchLeadInfoByPhoneNumber(frappeClient: FrappeClient, phoneNumber: string) {
+export async function fetchLeadInfoByPhoneNumber(
+  frappeClient: FrappeClient,
+  phoneNumber: string
+) {
   if (!phoneNumber) return null;
 
   const normalizedPhone = normalizeToStandardFormat(phoneNumber);
@@ -15,6 +18,9 @@ export async function fetchLeadInfoByPhoneNumber(frappeClient: FrappeClient, pho
     or_filters.push(["phone", "=", `0${trimmedPhone.slice(2)}`]);
   }
 
-  const lead: IFrappeLead[] = await frappeClient.getList("Lead", { fields: ["name"], or_filters });
+  const lead: IFrappeLead[] = await frappeClient.getList("Lead", {
+    fields: ["name"],
+    or_filters
+  });
   return lead?.length ? await frappeClient.getDoc("Lead", lead[0].name) : null;
 }

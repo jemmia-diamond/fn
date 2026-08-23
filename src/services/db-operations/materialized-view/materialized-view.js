@@ -9,7 +9,10 @@ export default class MaterializedViewService {
 
   static async refresh10Minutes(env) {
     const db = Database.instance(env);
-    const views = ["larksuite.lark_variants_view", "larksuite.serial_numbers_view"];
+    const views = [
+      "larksuite.lark_variants_view",
+      "larksuite.serial_numbers_view"
+    ];
     for (const view of views) {
       try {
         await db.$queryRaw`${Prisma.raw(`REFRESH MATERIALIZED VIEW ${view};`)}`;

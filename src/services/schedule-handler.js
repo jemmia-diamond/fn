@@ -26,21 +26,33 @@ export default {
       case "0 * * * *": // At minute 0 every hour
         await new ERP.Telephony.CallLogService(env).syncVbotCallLogs();
         await ERP.CRM.LeadService.syncCallLogLead(env);
-        await ERP.Selling.SalesOrderService.fillSerialNumbersToTemporaryOrderItems(env);
+        await ERP.Selling.SalesOrderService.fillSerialNumbersToTemporaryOrderItems(
+          env
+        );
         await new Pancake.TagSyncService(env).syncTags();
         await new Ecommerce.ProductG1PromotionSyncService(env).syncPromotions();
-        await new Haravan.Collect.CollectionProductSyncService(env).syncCollectionProducts();
-        await new Ecommerce.ProductVariantPromotionSyncService(env).syncVariantPromotions();
+        await new Haravan.Collect.CollectionProductSyncService(
+          env
+        ).syncCollectionProducts();
+        await new Ecommerce.ProductVariantPromotionSyncService(
+          env
+        ).syncVariantPromotions();
         await new Larksuite.VariantSyncService(env).sync();
         break;
       case "*/5 * * * *": {
         // At every 5th minute
         await new OneOffHandler(env).run();
         const batchTime = dayjs().utc();
-        await new Pancake.ConversationSyncService(env, _ctx).syncConversations({ batchTime });
+        await new Pancake.ConversationSyncService(env, _ctx).syncConversations({
+          batchTime
+        });
         await new Pancake.CustomerSyncService(env).syncCustomers({ batchTime });
-        await new ERP.CRM.PancakeLeadSyncService(env).syncPancakeLeads({ batchTime });
-        await new Ecommerce.JewelryDiamondPairService(env).processOutOfStockDiamonds();
+        await new ERP.CRM.PancakeLeadSyncService(env).syncPancakeLeads({
+          batchTime
+        });
+        await new Ecommerce.JewelryDiamondPairService(
+          env
+        ).processOutOfStockDiamonds();
         await new Misa.InventoryItemSyncService(env).syncInventoryItems();
         await new Haravan.OrderModule.DatabaseSyncService(env).sync();
         await new Haravan.Product.DatabaseSyncService(env).sync();
@@ -70,10 +82,18 @@ export default {
         await new Haravan.AccountingSalesOrders.LarkSyncService(env).sync();
         break;
       case "0 */3 * * *": // At every 3rd hour
-        await InventoryCMS.InventoryCheckSheetService.syncInventoryCheckSheetToDatabase(env);
-        await InventoryCMS.InventoryCheckLineService.syncInventoryCheckLineToDatabase(env);
-        await DatabaseOperations.DatabaseFunctionService.runWorkplaceUpdateLastRfidScanTime(env);
-        await WorkshopOrderServices.WorkshopOrderServices.cronJobSyncLarkToNocoDB(env);
+        await InventoryCMS.InventoryCheckSheetService.syncInventoryCheckSheetToDatabase(
+          env
+        );
+        await InventoryCMS.InventoryCheckLineService.syncInventoryCheckLineToDatabase(
+          env
+        );
+        await DatabaseOperations.DatabaseFunctionService.runWorkplaceUpdateLastRfidScanTime(
+          env
+        );
+        await WorkshopOrderServices.WorkshopOrderServices.cronJobSyncLarkToNocoDB(
+          env
+        );
         await DatabaseOperations.MaterializedViewService.refresh3Hours(env);
         await DatabaseOperations.DatabaseFunctionService.runUpdateOrderReferencesInVariantSerials(
           env
@@ -96,7 +116,9 @@ export default {
         await new Pancake.PageSyncService(env).syncPages();
         await new Haravan.Users.UserSyncService(env).sync().catch(() => {});
         await new Pancake.TokenRefresherService(env).run();
-        await new Ecommerce.DiamondCollectService(env).syncDiamondsToCollects(false);
+        await new Ecommerce.DiamondCollectService(env).syncDiamondsToCollects(
+          false
+        );
         break;
       case "30 0 * * *": // 07:30
         await ERP.CRM.LeadDemandService.syncLeadDemandToDatabase(env);
@@ -104,8 +126,12 @@ export default {
         await ERP.CRM.LeadProductService.syncLeadProductToDatabase(env);
         await ERP.CRM.RegionService.syncRegionsToDatabase(env);
         await ERP.CRM.ProvinceService.syncProvincesToDatabase(env);
-        await ERP.Selling.PurchasePurposeService.syncPurchasePurposeToDatabase(env);
-        await ERP.Selling.ProductCategoryService.syncProductCategoryToDatabase(env);
+        await ERP.Selling.PurchasePurposeService.syncPurchasePurposeToDatabase(
+          env
+        );
+        await ERP.Selling.ProductCategoryService.syncProductCategoryToDatabase(
+          env
+        );
         await ERP.Selling.PromotionService.syncPromotionToDatabase(env);
         break;
       case "0 1 * * *": // 08:00
@@ -113,50 +139,91 @@ export default {
         await Larksuite.Approval.InstanceService.syncInstancesToDatabase(env);
         break;
       case "30 1 * * *": // 08:30
-        await ERP.Automation.AssignmentRuleService.disableAssignmentRuleOffHour(env);
-        await ERP.Automation.AssignmentRuleService.updateAssignmentRulesStartDay(env);
+        await ERP.Automation.AssignmentRuleService.disableAssignmentRuleOffHour(
+          env
+        );
+        await ERP.Automation.AssignmentRuleService.updateAssignmentRulesStartDay(
+          env
+        );
         await ERP.Automation.AssignmentRuleService.reAssignOffHourLeads(env);
         break;
       case "30 5 * * *": // 12:30
-        await ERP.Automation.AssignmentRuleService.updateAssignmentRulesMidDay(env);
+        await ERP.Automation.AssignmentRuleService.updateAssignmentRulesMidDay(
+          env
+        );
         break;
       case "30 6 * * *": // 13:30
         break;
       case "0 10 * * *": // 17:00
-        await ERP.Automation.AssignmentRuleService.updateAssignmentRulesEndDay(env);
-        await ERP.Accounting.BankTransactionService.notifyUnlinkedBankTransactions(env, {
-          fromDate: dayjs().tz(TIMEZONE_VIETNAM).hour(9).minute(0).second(0).toISOString(),
-          toDate: dayjs().tz(TIMEZONE_VIETNAM).hour(17).minute(0).second(0).toISOString()
-        });
-        await new ERP.Accounting.PaymentEntryNotificationService(env).runAfternoonBatch();
+        await ERP.Automation.AssignmentRuleService.updateAssignmentRulesEndDay(
+          env
+        );
+        await ERP.Accounting.BankTransactionService.notifyUnlinkedBankTransactions(
+          env,
+          {
+            fromDate: dayjs()
+              .tz(TIMEZONE_VIETNAM)
+              .hour(9)
+              .minute(0)
+              .second(0)
+              .toISOString(),
+            toDate: dayjs()
+              .tz(TIMEZONE_VIETNAM)
+              .hour(17)
+              .minute(0)
+              .second(0)
+              .toISOString()
+          }
+        );
+        await new ERP.Accounting.PaymentEntryNotificationService(
+          env
+        ).runAfternoonBatch();
         await new ERP.Selling.MissingSerialNotificationService(env).notify({
-          fromDate: dayjs.tz(MISSING_SERIAL_START_DATE, TIMEZONE_VIETNAM).toISOString(),
+          fromDate: dayjs
+            .tz(MISSING_SERIAL_START_DATE, TIMEZONE_VIETNAM)
+            .toISOString(),
           toDate: dayjs().toISOString()
         });
         break;
       case "0 11 * * *": // 18:00
         break;
       case "0 2 * * *": // 09:00
-        await ERP.Accounting.BankTransactionService.notifyUnlinkedBankTransactions(env, {
-          fromDate: dayjs()
-            .tz(TIMEZONE_VIETNAM)
-            .subtract(1, "day")
-            .hour(17)
-            .minute(0)
-            .second(0)
-            .toISOString(),
-          toDate: dayjs().tz(TIMEZONE_VIETNAM).hour(9).minute(0).second(0).toISOString()
+        await ERP.Accounting.BankTransactionService.notifyUnlinkedBankTransactions(
+          env,
+          {
+            fromDate: dayjs()
+              .tz(TIMEZONE_VIETNAM)
+              .subtract(1, "day")
+              .hour(17)
+              .minute(0)
+              .second(0)
+              .toISOString(),
+            toDate: dayjs()
+              .tz(TIMEZONE_VIETNAM)
+              .hour(9)
+              .minute(0)
+              .second(0)
+              .toISOString()
+          }
+        );
+        await Larksuite.Ticket.TechTicketService.syncTechTickets(env, {
+          mode: "daily"
         });
-        await Larksuite.Ticket.TechTicketService.syncTechTickets(env, { mode: "daily" });
         await new Google.GoogleMerchantProductSyncService(env).sync();
-        await new ERP.Accounting.PaymentEntryNotificationService(env).runMorningBatch();
+        await new ERP.Accounting.PaymentEntryNotificationService(
+          env
+        ).runMorningBatch();
         await new ERP.Selling.MissingSerialNotificationService(env).notify({
-          fromDate: dayjs.tz(MISSING_SERIAL_START_DATE, TIMEZONE_VIETNAM).toISOString(),
+          fromDate: dayjs
+            .tz(MISSING_SERIAL_START_DATE, TIMEZONE_VIETNAM)
+            .toISOString(),
           toDate: dayjs().toISOString()
         });
         break;
       case "0 14 * * *": // 21:00
-        await ERP.Automation.AssignmentRuleService.enableAssignmentRuleOffHour(env);
+        await ERP.Automation.AssignmentRuleService.enableAssignmentRuleOffHour(
+          env
+        );
         await new Haravan.Articles.ArticleSyncService(env).sync();
         await new Haravan.ConfigTranslator.ConfigTranslatorService(env).sync();
         break;

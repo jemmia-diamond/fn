@@ -19,7 +19,10 @@ export default class ProductCategoryService {
   }
 
   static async syncProductCategoryToDatabase(env) {
-    const timeThreshold = dayjs().subtract(1, "day").utc().format("YYYY-MM-DD HH:mm:ss");
+    const timeThreshold = dayjs()
+      .subtract(1, "day")
+      .utc()
+      .format("YYYY-MM-DD HH:mm:ss");
     const productCategoryService = new ProductCategoryService(env);
 
     let productCategories = [];
@@ -43,8 +46,12 @@ export default class ProductCategoryService {
       const productCategoryData = {
         name: productCategory.name,
         owner: productCategory.owner,
-        creation: productCategory.creation ? new Date(productCategory.creation) : null,
-        modified: productCategory.modified ? new Date(productCategory.modified) : null,
+        creation: productCategory.creation
+          ? new Date(productCategory.creation)
+          : null,
+        modified: productCategory.modified
+          ? new Date(productCategory.modified)
+          : null,
         modified_by: productCategory.modified_by,
         docstatus: productCategory.docstatus,
         idx: productCategory.idx,

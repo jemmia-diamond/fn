@@ -30,10 +30,14 @@ export default class OrderService {
     const negativeOrderedVariants = [];
     for (const jewelryVariant of jewelryVariants) {
       const productData = (
-        await this.hrvClient.products.product.getProduct(jewelryVariant.product_id)
+        await this.hrvClient.products.product.getProduct(
+          jewelryVariant.product_id
+        )
       ).data.product;
       const variants = productData.variants;
-      const targetVariant = variants.find((variant) => variant.id === jewelryVariant.variant_id);
+      const targetVariant = variants.find(
+        (variant) => variant.id === jewelryVariant.variant_id
+      );
       if (targetVariant.inventory_advance.qty_available < 0) {
         negativeOrderedVariants.push(jewelryVariant);
       }
@@ -75,8 +79,10 @@ export default class OrderService {
       "SĐT thanh toán": order.billing_address.phone,
       "SĐT giao hàng": order.shipping_address.phone,
       "Số điện thoại": order.customer.phone,
-      "Trạng thái hủy": order.cancelled_status === "cancelled" ? "Đã hủy" : "Chưa hủy",
-      "Trạng thái đóng": order.closed_status === "closed" ? "Đã đóng" : "Chưa đóng",
+      "Trạng thái hủy":
+        order.cancelled_status === "cancelled" ? "Đã hủy" : "Chưa hủy",
+      "Trạng thái đóng":
+        order.closed_status === "closed" ? "Đã đóng" : "Chưa đóng",
       "Thời gian tạo": toUnixTimestamp(order.created_at),
       "Đã thanh toán": parseInt(paidAmount),
       "Cần thanh toán": parseInt(remainingBalance),
@@ -128,7 +134,8 @@ export default class OrderService {
     const hrvClient = new HaravanAPI(HRV_API_KEY);
 
     try {
-      const refTransactionsResponse = await hrvClient.orderTransaction.getTransactions(refOrderId);
+      const refTransactionsResponse =
+        await hrvClient.orderTransaction.getTransactions(refOrderId);
 
       const refTransactions = refTransactionsResponse.transactions;
 
@@ -147,7 +154,9 @@ export default class OrderService {
 
         if (
           refTransactionAmount > 0 &&
-          ["capture", "authorization", "sale"].includes(refTransactionKind?.toLowerCase())
+          ["capture", "authorization", "sale"].includes(
+            refTransactionKind?.toLowerCase()
+          )
         ) {
           const syncAmount = Math.min(refTransactionAmount, remainingBalance);
 
@@ -157,7 +166,10 @@ export default class OrderService {
             gateway: refTransactionGateway
           };
 
-          await hrvClient.orderTransaction.createTransaction(order.id, transactionData);
+          await hrvClient.orderTransaction.createTransaction(
+            order.id,
+            transactionData
+          );
           remainingBalance -= syncAmount;
         }
       }
@@ -192,11 +204,15 @@ export default class OrderService {
         customer_id: order?.customer?.id,
         customer_first_name: order?.customer?.first_name,
         customer_last_name: order?.customer?.last_name,
-        customer_default_address_address1: order?.customer?.default_address.address1,
-        customer_default_address_address2: order?.customer?.default_address.address2,
+        customer_default_address_address1:
+          order?.customer?.default_address.address1,
+        customer_default_address_address2:
+          order?.customer?.default_address.address2,
         customer_default_address_ward: order?.customer?.default_address.ward,
-        customer_default_address_district: order?.customer?.default_address.district,
-        customer_default_address_province: order?.customer?.default_address.province,
+        customer_default_address_district:
+          order?.customer?.default_address.district,
+        customer_default_address_province:
+          order?.customer?.default_address.province,
         user_id: order?.user_id,
         source: order?.source
       }

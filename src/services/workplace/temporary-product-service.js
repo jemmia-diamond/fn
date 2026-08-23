@@ -48,9 +48,12 @@ export default class TemporaryProductService {
   }
 
   async insertVariantSerial() {
-    const created = await this.nocodb.createRecords(NOCODB_TABLES.SUPPLY.SERIALS, {
-      order_on: null
-    });
+    const created = await this.nocodb.createRecords(
+      NOCODB_TABLES.SUPPLY.SERIALS,
+      {
+        order_on: null
+      }
+    );
     const id = Array.isArray(created) ? created[0]?.id : created?.id;
     return await this.nocodb.readRecord(NOCODB_TABLES.SUPPLY.SERIALS, id);
   }
@@ -68,10 +71,13 @@ export default class TemporaryProductService {
   }
 
   async getTemporaryProductByLarkRecordId(recordId) {
-    const result = await this.nocodb.listRecords(NOCODB_TABLES.SUPPLY.TEMPORARY_PRODUCTS, {
-      where: `(lark_base_record_id,eq,${recordId})`,
-      limit: 1
-    });
+    const result = await this.nocodb.listRecords(
+      NOCODB_TABLES.SUPPLY.TEMPORARY_PRODUCTS,
+      {
+        where: `(lark_base_record_id,eq,${recordId})`,
+        limit: 1
+      }
+    );
     return result?.list?.[0] || null;
   }
 
@@ -80,17 +86,22 @@ export default class TemporaryProductService {
       Object.entries(data).filter(([, v]) => v !== undefined && v !== null)
     );
     if (Object.keys(cleanData).length === 0) return null;
-    const result = await this.nocodb.updateRecords(NOCODB_TABLES.SUPPLY.TEMPORARY_PRODUCTS, {
-      id,
-      ...cleanData
-    });
+    const result = await this.nocodb.updateRecords(
+      NOCODB_TABLES.SUPPLY.TEMPORARY_PRODUCTS,
+      {
+        id,
+        ...cleanData
+      }
+    );
     return result;
   }
 
   async upsertTemporaryProduct(data) {
     let existing;
     if (data.lark_base_record_id) {
-      existing = await this.getTemporaryProductByLarkRecordId(data.lark_base_record_id);
+      existing = await this.getTemporaryProductByLarkRecordId(
+        data.lark_base_record_id
+      );
     }
 
     if (existing) {
@@ -121,14 +132,20 @@ export default class TemporaryProductService {
   }
 
   async _createVariantWithFallback(haravanClient, productId, variantData) {
-    let result = await haravanClient.products.productVariant.createVariant(productId, variantData);
+    let result = await haravanClient.products.productVariant.createVariant(
+      productId,
+      variantData
+    );
 
     if (!result.success) {
       if (!this._isVariantLimitError(result)) {
         throw new Error(`Could not create Haravan variant: ${result.message}`);
       }
       productId = await this._createHaravanProduct(haravanClient);
-      result = await haravanClient.products.productVariant.createVariant(productId, variantData);
+      result = await haravanClient.products.productVariant.createVariant(
+        productId,
+        variantData
+      );
       if (!result.success) {
         throw new Error(`Could not create Haravan variant: ${result.message}`);
       }
@@ -160,9 +177,11 @@ export default class TemporaryProductService {
       giaReportNo = giaReportNo.trim();
 
       const variantData = {
-        option1: [giaReportNo, tempProductData.customer_name, tempProductData.customer_phone].join(
-          " - "
-        ),
+        option1: [
+          giaReportNo,
+          tempProductData.customer_name,
+          tempProductData.customer_phone
+        ].join(" - "),
         sku: giaReportNo,
         price: tempProductData.price,
         inventory_management: "haravan",

@@ -52,10 +52,11 @@ export default class ProductQuoteOrderService {
       const variantId = lineItem.variant_id;
       if (!variantId) continue;
 
-      const dbTempVariant = await ProductQuoteOrderService._findTemporaryProductByVariantId(
-        db,
-        variantId
-      );
+      const dbTempVariant =
+        await ProductQuoteOrderService._findTemporaryProductByVariantId(
+          db,
+          variantId
+        );
 
       if (dbTempVariant?.lark_base_record_id) {
         const recordId = dbTempVariant.lark_base_record_id;

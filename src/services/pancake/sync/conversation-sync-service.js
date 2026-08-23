@@ -52,11 +52,14 @@ export default class ConversationSyncService {
   async syncConversations({ batchTime } = {}) {
     try {
       console.warn("Starting syncConversations...");
-      const { sinceUnix, untilUnix, now, KV_KEY } = await this.getSyncTimeframe(batchTime);
+      const { sinceUnix, untilUnix, now, KV_KEY } =
+        await this.getSyncTimeframe(batchTime);
 
       const pageData = await this.pancakeClient.getPages();
       if (isInvalidTokenError(pageData)) {
-        throw new Error("Pancake API Error [102]: Invalid access_token during page query");
+        throw new Error(
+          "Pancake API Error [102]: Invalid access_token during page query"
+        );
       }
 
       const pages = pageData?.categorized?.activated || [];
@@ -94,7 +97,9 @@ export default class ConversationSyncService {
 
         if (isInvalidTokenError(data)) {
           this.captureException(
-            new Error(`Pancake API Error [102]: Invalid access_token for page ${pageId}`),
+            new Error(
+              `Pancake API Error [102]: Invalid access_token for page ${pageId}`
+            ),
             pageId
           );
           break;
@@ -144,10 +149,18 @@ export default class ConversationSyncService {
       }
 
       this.mapAndPrepareCustomerUpserts(item, pageCustomerUpserts);
-      this.mapAndPrepareTagUpserts(item, conversationTagUpserts, duplicatesTagKey);
+      this.mapAndPrepareTagUpserts(
+        item,
+        conversationTagUpserts,
+        duplicatesTagKey
+      );
     }
 
-    await Promise.all([...conversationUpserts, ...pageCustomerUpserts, ...conversationTagUpserts]);
+    await Promise.all([
+      ...conversationUpserts,
+      ...pageCustomerUpserts,
+      ...conversationTagUpserts
+    ]);
 
     let isSalesayaEnabled = await this.env.FN_KV.get("ENABLE_SALESAYA_WEBHOOK");
     if (isSalesayaEnabled === null) {
@@ -170,7 +183,8 @@ export default class ConversationSyncService {
     let addedUsers = null;
     const assigneeHistories = item.assignee_histories || [];
     if (assigneeHistories.length > 0) {
-      const payload = assigneeHistories[assigneeHistories.length - 1].payload || {};
+      const payload =
+        assigneeHistories[assigneeHistories.length - 1].payload || {};
       const payloadAddedUsers = payload.added_users || [];
       if (payloadAddedUsers.length > 0) {
         addedUsers = payloadAddedUsers[0];
@@ -178,7 +192,10 @@ export default class ConversationSyncService {
     }
 
     let lastSentAt = null;
-    if (item.page_id && !PAGES_EXCLUDED_FROM_LAST_SENT_AT_UPDATE.includes(item.page_id)) {
+    if (
+      item.page_id &&
+      !PAGES_EXCLUDED_FROM_LAST_SENT_AT_UPDATE.includes(item.page_id)
+    ) {
       lastSentAt = item.updated_at ? dayjs.utc(item.updated_at).toDate() : null;
     }
 
@@ -190,7 +207,9 @@ export default class ConversationSyncService {
       id: item.id || null,
       customer_id: item.customer_id || null,
       type: item.type || null,
-      inserted_at: item.inserted_at ? dayjs.utc(item.inserted_at).toDate() : null,
+      inserted_at: item.inserted_at
+        ? dayjs.utc(item.inserted_at).toDate()
+        : null,
       page_id: item.page_id || null,
       has_phone: item.has_phone ?? null,
       post_id: item.post_id || null,
@@ -340,7 +359,8 @@ export default class ConversationSyncService {
 
       const assigneeHistories = item.assignee_histories || [];
       if (assigneeHistories.length > 0) {
-        const historyPayload = assigneeHistories[assigneeHistories.length - 1].payload || {};
+        const historyPayload =
+          assigneeHistories[assigneeHistories.length - 1].payload || {};
         const payloadAddedUsers = historyPayload.added_users || [];
         if (payloadAddedUsers.length > 0 && payloadAddedUsers[0].id) {
           payload.assigneeIds = [payloadAddedUsers[0].id];

@@ -63,7 +63,9 @@ export default class BuybackExchangeSyncService {
       lark_instance_id: record.lark_instance_id || null,
       instance_type: record.instance_type || null,
       status: record.status || null,
-      submitted_date: record.submitted_date ? new Date(record.submitted_date) : null,
+      submitted_date: record.submitted_date
+        ? new Date(record.submitted_date)
+        : null,
       customer_name: record.customer_name || null,
       phone_number: record.phone_number || null,
       national_id: record.national_id || null,
@@ -118,7 +120,11 @@ export default class BuybackExchangeSyncService {
     const toDate = dayjs().utc().format(DEFAULT_DATE_FORMAT);
     const lastDate = await this.kv.get(KV_KEY);
     const fromDate =
-      lastDate || dayjs().utc().subtract(MINUTES_BACK, "minute").format(DEFAULT_DATE_FORMAT);
+      lastDate ||
+      dayjs()
+        .utc()
+        .subtract(MINUTES_BACK, "minute")
+        .format(DEFAULT_DATE_FORMAT);
 
     try {
       const records = await this.fetchBuybackExchanges(fromDate, toDate);

@@ -84,7 +84,8 @@ export function rawToPaymentEntry(body) {
     posting_date: body.posting_date,
     print_heading: body.print_heading,
     project: body.project,
-    purchase_taxes_and_charges_template: body.purchase_taxes_and_charges_template,
+    purchase_taxes_and_charges_template:
+      body.purchase_taxes_and_charges_template,
     qr_url: body.qr_url,
     received_amount: body.received_amount,
     received_amount_after_tax: body.received_amount_after_tax,
@@ -149,8 +150,10 @@ export function rawToReference(ref) {
     unallocated_amount: ref.unallocated_amount,
     sales_order_details: ref.sales_order_details
       ? {
-          haravan_cancelled_status: ref.sales_order_details.haravan_cancelled_status,
-          haravan_financial_status: ref.sales_order_details.haravan_financial_status,
+          haravan_cancelled_status:
+            ref.sales_order_details.haravan_cancelled_status,
+          haravan_financial_status:
+            ref.sales_order_details.haravan_financial_status,
           haravan_order_id: ref.sales_order_details.haravan_order_id,
           haravan_order_number: ref.sales_order_details.haravan_order_number
         }

@@ -19,7 +19,10 @@ export default class PurchasePurposeService {
   }
 
   static async syncPurchasePurposeToDatabase(env) {
-    const timeThreshold = dayjs().subtract(1, "day").utc().format("YYYY-MM-DD HH:mm:ss");
+    const timeThreshold = dayjs()
+      .subtract(1, "day")
+      .utc()
+      .format("YYYY-MM-DD HH:mm:ss");
     const purchasePurposeService = new PurchasePurposeService(env);
 
     let purchasePurposes = [];
@@ -43,8 +46,12 @@ export default class PurchasePurposeService {
       const purchasePurposeData = {
         name: purchasePurpose.name,
         owner: purchasePurpose.owner,
-        creation: purchasePurpose.creation ? new Date(purchasePurpose.creation) : null,
-        modified: purchasePurpose.modified ? new Date(purchasePurpose.modified) : null,
+        creation: purchasePurpose.creation
+          ? new Date(purchasePurpose.creation)
+          : null,
+        modified: purchasePurpose.modified
+          ? new Date(purchasePurpose.modified)
+          : null,
         modified_by: purchasePurpose.modified_by,
         docstatus: purchasePurpose.docstatus,
         idx: purchasePurpose.idx,

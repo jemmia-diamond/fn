@@ -52,7 +52,10 @@ export default class ERPNextCRMAppointmentService {
     if (!newRecord) return;
 
     payload.record_id = newRecord.record_id;
-    const message_id = await this.notificationService.sendNewAppointmentMessage(payload, fields);
+    const message_id = await this.notificationService.sendNewAppointmentMessage(
+      payload,
+      fields
+    );
     if (message_id) {
       await RecordService.updateLarksuiteRecord({
         env: this.env,
@@ -78,14 +81,19 @@ export default class ERPNextCRMAppointmentService {
     let existingFields = null;
 
     if (payload.record_id) {
-      existingFields = await this.getExistingBaseRecordFields(payload.record_id);
+      existingFields = await this.getExistingBaseRecordFields(
+        payload.record_id
+      );
       if (!message_id && existingFields) {
         message_id = existingFields.message_id;
       }
     }
 
     if (!message_id) {
-      message_id = await this.notificationService.sendNewAppointmentMessage(payload, fields);
+      message_id = await this.notificationService.sendNewAppointmentMessage(
+        payload,
+        fields
+      );
       await this.frappeClient.update({
         doctype: "Appointment",
         name: payload.name,
@@ -93,9 +101,16 @@ export default class ERPNextCRMAppointmentService {
         message_id
       });
     } else {
-      const shouldReply = this.notificationService.shouldSendThreadReply(existingFields, fields);
+      const shouldReply = this.notificationService.shouldSendThreadReply(
+        existingFields,
+        fields
+      );
       if (shouldReply)
-        await this.notificationService.sendThreadReply(message_id, payload, existingFields);
+        await this.notificationService.sendThreadReply(
+          message_id,
+          payload,
+          existingFields
+        );
     }
 
     if (message_id) fields["message_id"] = message_id;
@@ -139,7 +154,8 @@ export default class ERPNextCRMAppointmentService {
     const mainSalesEmails = (payload?.main_sales || [])
       .map((s) => s.employee_email)
       .filter(Boolean);
-    const mainSalesIds = await this.notificationService.getLarkUserIdsByEmails(mainSalesEmails);
+    const mainSalesIds =
+      await this.notificationService.getLarkUserIdsByEmails(mainSalesEmails);
     const offlineSalesEmails = (payload?.offline_sales || [])
       .map((s) => s.employee_email)
       .filter(Boolean);
@@ -198,7 +214,13 @@ export default class ERPNextCRMAppointmentService {
     const start = dayjs().utc().format("YYYY-MM-DD HH:mm:ss");
     const end = dayjs().utc().add(35, "minutes").format("YYYY-MM-DD HH:mm:ss");
     const appointments = await this.frappeClient.getList("Appointment", {
-      fields: ["name", "scheduled_time", "customer_name", "status", "message_id"],
+      fields: [
+        "name",
+        "scheduled_time",
+        "customer_name",
+        "status",
+        "message_id"
+      ],
       filters: [
         ["scheduled_time", ">=", start],
         ["scheduled_time", "<", end],

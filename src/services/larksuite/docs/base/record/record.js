@@ -11,7 +11,11 @@ export default class RecordService {
     try {
       const db = Database.instance(env);
       const larkClient = await LarksuiteService.createClientV2(env);
-      const timeThreshold = dayjs().utc().subtract(1, "day").subtract(5, "minutes").valueOf();
+      const timeThreshold = dayjs()
+        .utc()
+        .subtract(1, "day")
+        .subtract(5, "minutes")
+        .valueOf();
       const pageSize = 100;
 
       const tables = [];
@@ -89,7 +93,12 @@ export default class RecordService {
    * @returns {Promise<Array>} - Array of records
    */
   static async fetchRecords(env, tableConfig, options = {}) {
-    const { filter = null, pageSize = 100, userIdType = "open_id", sort = null } = options;
+    const {
+      filter = null,
+      pageSize = 100,
+      userIdType = "open_id",
+      sort = null
+    } = options;
 
     const larkClient = await LarksuiteService.createClientV2(env);
 
@@ -143,7 +152,13 @@ export default class RecordService {
    * @param {string} userIdType - The type of user ID to use (default is "user_id").
    * @returns {Promise<object|null>} - The record object if found, otherwise null.
    */
-  static async getLarksuiteRecord({ env, appToken, tableId, recordId, userIdType = "open_id" }) {
+  static async getLarksuiteRecord({
+    env,
+    appToken,
+    tableId,
+    recordId,
+    userIdType = "open_id"
+  }) {
     const larkClient = await LarksuiteService.createClientV2(env);
 
     const response = await larkClient.bitable.appTableRecord.get({
@@ -170,7 +185,13 @@ export default class RecordService {
    * @param {string} userIdType - The type of user ID to use (default is "open_id").
    * @returns {Promise<object|null>} - The created record object if successful, otherwise null.
    */
-  static async createLarksuiteRecord({ env, appToken, tableId, fields, userIdType = "open_id" }) {
+  static async createLarksuiteRecord({
+    env,
+    appToken,
+    tableId,
+    fields,
+    userIdType = "open_id"
+  }) {
     const larkClient = await LarksuiteService.createClientV2(env);
 
     const response = await larkClient.bitable.appTableRecord.create({
@@ -227,7 +248,13 @@ export default class RecordService {
     return response.data.record;
   }
 
-  static async createLarksuiteRecords({ env, appToken, tableId, records, userIdType = "open_id" }) {
+  static async createLarksuiteRecords({
+    env,
+    appToken,
+    tableId,
+    records,
+    userIdType = "open_id"
+  }) {
     const larkClient = await LarksuiteService.createClientV2(env);
 
     const response = await larkClient.bitable.appTableRecord.batchCreate({
@@ -246,7 +273,13 @@ export default class RecordService {
     return response;
   }
 
-  static async updateLarksuiteRecords({ env, appToken, tableId, records, userIdType = "open_id" }) {
+  static async updateLarksuiteRecords({
+    env,
+    appToken,
+    tableId,
+    records,
+    userIdType = "open_id"
+  }) {
     const larkClient = await LarksuiteService.createClientV2(env);
 
     const response = await larkClient.bitable.appTableRecord.batchUpdate({

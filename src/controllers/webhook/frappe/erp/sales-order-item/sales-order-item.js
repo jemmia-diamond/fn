@@ -7,6 +7,9 @@ export default class FrappeERPSalesOrderItemController {
       erpTopic,
       doctype: "SalesOrderItem"
     });
-    return ctx.json({ message: "Sales Order Item webhook received", status: 200 });
+    return ctx.json({
+      message: "Sales Order Item webhook received",
+      status: 200
+    });
   }
 }

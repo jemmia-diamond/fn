@@ -10,7 +10,13 @@ dayjs.extend(utc);
 
 const CHUNK_SIZE = 20;
 
-export async function fetchAddressesFromERP(frappeClient, doctype, fromDate, toDate, pageSize) {
+export async function fetchAddressesFromERP(
+  frappeClient,
+  doctype,
+  fromDate,
+  toDate,
+  pageSize
+) {
   try {
     const filters = {};
     filters["modified"] = [">=", fromDate];
@@ -66,7 +72,11 @@ export async function fetchAddressesFromERP(frappeClient, doctype, fromDate, toD
 }
 
 // Function to fetch child records from ERPNext
-export async function fetchAddressChildRecordsFromERP(frappeClient, addressNames, tableName) {
+export async function fetchAddressChildRecordsFromERP(
+  frappeClient,
+  addressNames,
+  tableName
+) {
   if (!Array.isArray(addressNames) || addressNames.length === 0) {
     return [];
   }
@@ -91,7 +101,8 @@ export async function saveAddressesToDatabase(db, addresses) {
       const fields = [
         "uuid",
         ...Object.keys(chunk[0]).filter(
-          (field) => field !== "database_created_at" && field !== "database_updated_at"
+          (field) =>
+            field !== "database_created_at" && field !== "database_updated_at"
         ),
         "database_created_at",
         "database_updated_at"
@@ -108,14 +119,21 @@ export async function saveAddressesToDatabase(db, addresses) {
             database_created_at: currentTimestamp,
             database_updated_at: currentTimestamp
           };
-          const fieldValues = fields.map((field) => escapeSqlValue(addressWithTimestamps[field]));
+          const fieldValues = fields.map((field) =>
+            escapeSqlValue(addressWithTimestamps[field])
+          );
           return `(${fieldValues.join(", ")})`;
         })
         .join(",\n  ");
 
       // Create UPDATE SET clause for ON CONFLICT (exclude "name", "uuid", and "database_created_at")
       const updateSetSql = fields
-        .filter((field) => field !== "name" && field !== "uuid" && field !== "database_created_at")
+        .filter(
+          (field) =>
+            field !== "name" &&
+            field !== "uuid" &&
+            field !== "database_created_at"
+        )
         .map((field) => {
           if (field === "database_updated_at") {
             return `"${field}" = CURRENT_TIMESTAMP`;

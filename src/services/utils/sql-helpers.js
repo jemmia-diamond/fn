@@ -38,4 +38,5 @@ export async function fetchChildRecordsFromERP(
   return childRecords || [];
 }
 
-export const toSqlOrder = (order) => (order === "asc" ? Prisma.raw("ASC") : Prisma.raw("DESC"));
+export const toSqlOrder = (order) =>
+  order === "asc" ? Prisma.raw("ASC") : Prisma.raw("DESC");

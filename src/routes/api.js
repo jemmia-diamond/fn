@@ -32,12 +32,18 @@ export default class APIRoutes {
     jemmiaERPNamespaceApi.patch("/leads/:id", ERP.LeadController.update);
     jemmiaERPNamespaceApi.get("/customers/:id", ERP.CustomersController.show);
 
-    jemmiaERPNamespaceApi.post("/sales_orders", ERP.SalesOrderController.create);
+    jemmiaERPNamespaceApi.post(
+      "/sales_orders",
+      ERP.SalesOrderController.create
+    );
     jemmiaERPNamespaceApi.post(
       "/sales_orders/:id/notifications",
       ERP.SalesOrderNotificationController.create
     );
-    jemmiaERPNamespaceApi.post("/temporary-products", ERP.TemporaryProductController.create);
+    jemmiaERPNamespaceApi.post(
+      "/temporary-products",
+      ERP.TemporaryProductController.create
+    );
     jemmiaERPNamespaceApi.post(
       "/promotions/diamond-collects",
       Ecommerce.DiamondCollectController.create
@@ -53,7 +59,10 @@ export default class APIRoutes {
     dashboardNamespaceApi.get("/tv", Dashboard.TVController.show);
 
     const ecommerceNamespaceApi = api.basePath("/ecommerce");
-    ecommerceNamespaceApi.delete("/ind-day-stats", Ecommerce.IndDayStatController.destroy);
+    ecommerceNamespaceApi.delete(
+      "/ind-day-stats",
+      Ecommerce.IndDayStatController.destroy
+    );
     ecommerceNamespaceApi.post(
       "/products/jewelries/diamond-replacements",
       Ecommerce.JewelryDiamondPairController.create
@@ -69,30 +78,54 @@ export default class APIRoutes {
     ecommerceNamespaceApi.patch("/cards/:id", Ecommerce.CardController.update);
 
     const nhattinNamespaceApi = api.basePath("/delivery");
-    nhattinNamespaceApi.get("/nhattin", Delivery.DeliveryTrackingController.show);
+    nhattinNamespaceApi.get(
+      "/nhattin",
+      Delivery.DeliveryTrackingController.show
+    );
 
     const paymentApi = api.basePath("/payments");
-    paymentApi.post("/manual-payments", Payment.ManualPaymentsController.create);
-    paymentApi.patch("/manual-payments/:id", Payment.ManualPaymentsController.update);
+    paymentApi.post(
+      "/manual-payments",
+      Payment.ManualPaymentsController.create
+    );
+    paymentApi.patch(
+      "/manual-payments/:id",
+      Payment.ManualPaymentsController.update
+    );
     paymentApi.post("/qr-payments", Payment.QRPaymentsController.create);
     paymentApi.patch(
       "/qr-payments/:id/map-bank-transaction",
       Payment.QRPaymentsMapBankTransactionController.create
     );
-    paymentApi.patch("/qr-payments/:id/link-order", Payment.QRPaymentsLinkOrderController.create);
+    paymentApi.patch(
+      "/qr-payments/:id/link-order",
+      Payment.QRPaymentsLinkOrderController.create
+    );
     paymentApi.get("/qr-payments/:id", Payment.QRPaymentsController.show);
     paymentApi.get("/bank-options", Payment.BankOptionsController.index);
 
     const salesayaNamespaceApi = api.basePath("/salesaya");
-    salesayaNamespaceApi.get("/product-searches", Salesaya.ProductSearchController.index);
+    salesayaNamespaceApi.get(
+      "/product-searches",
+      Salesaya.ProductSearchController.index
+    );
     salesayaNamespaceApi.get("/warehouses", Salesaya.WarehouseController.index);
 
     const larksuiteApi = api.basePath("/larksuites");
-    larksuiteApi.get("/buyback-exchanges", Larksuite.BuybackExchangeController.index);
-    larksuiteApi.get("/subscriptions", Larksuite.ApprovalSubscriptionController.index);
+    larksuiteApi.get(
+      "/buyback-exchanges",
+      Larksuite.BuybackExchangeController.index
+    );
+    larksuiteApi.get(
+      "/subscriptions",
+      Larksuite.ApprovalSubscriptionController.index
+    );
 
     const mediaApi = api.basePath("/media");
-    mediaApi.post("/image-translation", Media.ImageTranslationController.create);
+    mediaApi.post(
+      "/image-translation",
+      Media.ImageTranslationController.create
+    );
 
     const inventoryApi = api.basePath("/inventory");
     inventoryApi.get("/availability", Inventory.AvailabilityController.index);

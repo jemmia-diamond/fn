@@ -1,11 +1,17 @@
-export function formatOrderTrackingResult(order, nhattinTrackInfo, isAuthorizedAccess = false) {
+export function formatOrderTrackingResult(
+  order,
+  nhattinTrackInfo,
+  isAuthorizedAccess = false
+) {
   return {
     order_id: order.order_id.toString(),
     order_number: order.order_number,
     total_price: Number(order.total_price || 0),
     original_total_price: Number(order.original_total_price || 0),
     shipping_fee: Number(order.shipping_fee || 0),
-    items: isAuthorizedAccess ? (order.items || []).map(normalizeDiamondItem) : [],
+    items: isAuthorizedAccess
+      ? (order.items || []).map(normalizeDiamondItem)
+      : [],
     tracking_logs: nhattinTrackInfo?.status || [],
     expected_receive_date: convertToUTC(nhattinTrackInfo.date_expected),
     shipping_address_name: isAuthorizedAccess
@@ -33,7 +39,9 @@ export function formatOrderTrackingResult(order, nhattinTrackInfo, isAuthorizedA
     cancel_reason: order.cancel_reason,
     overall_status: nhattinTrackInfo.overall_status,
     p_link_image: isAuthorizedAccess ? nhattinTrackInfo.p_link_image : null,
-    bill_image_link: isAuthorizedAccess ? nhattinTrackInfo.bill_image_link : null,
+    bill_image_link: isAuthorizedAccess
+      ? nhattinTrackInfo.bill_image_link
+      : null,
     document_image_link: nhattinTrackInfo.document_image_link,
     delivery_date: convertToUTC(nhattinTrackInfo.date_delivery),
     pickup_date: convertToUTC(nhattinTrackInfo.date_pickup),
@@ -109,6 +117,9 @@ function normalizeDiamondItem(item) {
   return {
     ...item,
     title: NATURAL_DIAMOND_TITLE,
-    variant_title: item.name.replace(new RegExp(`^${NATURAL_DIAMOND_TITLE}\\s*`), "")
+    variant_title: item.name.replace(
+      new RegExp(`^${NATURAL_DIAMOND_TITLE}\\s*`),
+      ""
+    )
   };
 }

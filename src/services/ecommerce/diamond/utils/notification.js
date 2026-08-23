@@ -2,7 +2,9 @@ import * as Sentry from "@sentry/cloudflare";
 import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/constant";
 import LarksuiteService from "services/larksuite/lark";
 
-export const NOTIFICATION_CHAT_IDS = [CHAT_GROUPS.PROMOTION_SYNC_NOTIFICATION.chat_id];
+export const NOTIFICATION_CHAT_IDS = [
+  CHAT_GROUPS.PROMOTION_SYNC_NOTIFICATION.chat_id
+];
 
 export async function sendPromotionSyncNotification(env, text) {
   try {

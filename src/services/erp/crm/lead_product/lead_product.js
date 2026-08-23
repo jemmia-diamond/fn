@@ -19,7 +19,10 @@ export default class LeadProductService {
   }
 
   static async syncLeadProductToDatabase(env) {
-    const timeThreshold = dayjs().subtract(1, "day").utc().format("YYYY-MM-DD HH:mm:ss");
+    const timeThreshold = dayjs()
+      .subtract(1, "day")
+      .utc()
+      .format("YYYY-MM-DD HH:mm:ss");
     const leadProductService = new LeadProductService(env);
 
     const leadProducts = [];
@@ -27,11 +30,14 @@ export default class LeadProductService {
     let hasMore = true;
 
     while (hasMore) {
-      const pageResults = await leadProductService.frappeClient.getList("Lead Product", {
-        filters: [["modified", ">=", timeThreshold]],
-        limit_start: limitStart,
-        limit_page_length: LeadProductService.ERPNEXT_PAGE_SIZE
-      });
+      const pageResults = await leadProductService.frappeClient.getList(
+        "Lead Product",
+        {
+          filters: [["modified", ">=", timeThreshold]],
+          limit_start: limitStart,
+          limit_page_length: LeadProductService.ERPNEXT_PAGE_SIZE
+        }
+      );
 
       leadProducts.push(...pageResults);
 

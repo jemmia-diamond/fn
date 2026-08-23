@@ -1,6 +1,9 @@
 import { createFetchAdapter } from "@haverstack/axios-fetch-adapter";
 import * as lark from "@larksuiteoapi/node-sdk";
-import { createAxiosClient, DEFAULT_RETRY_CONFIG } from "services/utils/http-client";
+import {
+  createAxiosClient,
+  DEFAULT_RETRY_CONFIG
+} from "services/utils/http-client";
 
 const fetchAdapter = createFetchAdapter();
 let clientV2Instance = null;
@@ -20,7 +23,8 @@ export default class LarksuiteService {
     }
 
     const { appId, appSecret } = await LarksuiteService._getCredentials(env);
-    const larkApiEndpoint = env.LARK_API_ENDPOINT || "https://open.larksuite.com";
+    const larkApiEndpoint =
+      env.LARK_API_ENDPOINT || "https://open.larksuite.com";
 
     clientV2Instance = new lark.Client({
       appId: appId,
@@ -74,7 +78,9 @@ export default class LarksuiteService {
         _payload.params.page_token = pageToken;
       } while (pageToken);
     } catch (err) {
-      throw new Error(`Lark pagination request failed: ${err?.message || String(err)}`);
+      throw new Error(
+        `Lark pagination request failed: ${err?.message || String(err)}`
+      );
     }
     return responses;
   }

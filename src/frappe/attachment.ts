@@ -35,7 +35,10 @@ export async function getDocumentAttachments(
     });
     return attachments || [];
   } catch (error) {
-    console.warn(`Error fetching attachments for ${doctype} ${docname}:`, error);
+    console.warn(
+      `Error fetching attachments for ${doctype} ${docname}:`,
+      error
+    );
     return [];
   }
 }

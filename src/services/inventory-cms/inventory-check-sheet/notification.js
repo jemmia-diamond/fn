@@ -23,20 +23,28 @@ const CHAT_IDS = {
 export default class CheckSheetNotificationService {
   static async processInventoryCheck(payload, env) {
     const { warehouse, staff: staffId, lines = [] } = payload;
-    const targetChatId = CheckSheetNotificationService.getTargetChatId(warehouse);
+    const targetChatId =
+      CheckSheetNotificationService.getTargetChatId(warehouse);
     const alertedLines = lines.filter(
       (l) => l.count_in_book > l.count_for_real || l.count_extra_for_real
     );
     if (targetChatId == CHAT_IDS["[ALL]"])
       return { success: true, alertedLines: alertedLines.length };
 
-    const staffName = await CheckSheetNotificationService.getStaffName(staffId, env);
+    const staffName = await CheckSheetNotificationService.getStaffName(
+      staffId,
+      env
+    );
     const messageText = CheckSheetNotificationService.composeMessage(
       payload,
       alertedLines,
       staffName
     );
-    await CheckSheetNotificationService.sendNotification(env, targetChatId, messageText);
+    await CheckSheetNotificationService.sendNotification(
+      env,
+      targetChatId,
+      messageText
+    );
 
     return { success: true, alertedLines: alertedLines.length };
   }
@@ -49,7 +57,9 @@ export default class CheckSheetNotificationService {
     if (staff) {
       return `${staff.last_name || ""} ${staff.first_name || ""}`.trim();
     } else {
-      Sentry.captureMessage(`InventoryNotificationService: Staff not found: ${staffId}`);
+      Sentry.captureMessage(
+        `InventoryNotificationService: Staff not found: ${staffId}`
+      );
       return "Không thấy thông tin nhân viên";
     }
   }
@@ -64,10 +74,13 @@ export default class CheckSheetNotificationService {
     } = payload;
 
     const timeToFormat = createdAt || new Date();
-    const dateStr = dayjs(timeToFormat).tz(TIMEZONE_VIETNAM).format("DD/MM/YYYY HH:mm:ss");
+    const dateStr = dayjs(timeToFormat)
+      .tz(TIMEZONE_VIETNAM)
+      .format("DD/MM/YYYY HH:mm:ss");
 
     const gap = countForReal - countInBook;
-    const gapText = gap > 0 ? `Dư ${gap}` : gap < 0 ? `Thiếu ${-gap}` : "đủ hàng";
+    const gapText =
+      gap > 0 ? `Dư ${gap}` : gap < 0 ? `Thiếu ${-gap}` : "đủ hàng";
 
     const headInfo = {
       [`[${dateStr}]`]: `<b>${warehouse}</b> | <b>${code}</b>`,
@@ -78,7 +91,10 @@ export default class CheckSheetNotificationService {
     const messageHead = CheckSheetNotificationService.textJoin(headInfo, "\n");
     const messageLines = alertedLines
       .map((l) =>
-        CheckSheetNotificationService.textJoin(CheckSheetNotificationService.lineMapping(l), "\n")
+        CheckSheetNotificationService.textJoin(
+          CheckSheetNotificationService.lineMapping(l),
+          "\n"
+        )
       )
       .join("\n\n");
 

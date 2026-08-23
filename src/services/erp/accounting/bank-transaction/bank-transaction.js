@@ -33,7 +33,11 @@ const EXCLUDED_TRANSACTION_PATTERNS = [
 ];
 
 const LOCATION_CC_RULES = [
-  { pattern: "Hồ Chí Minh", label: "Hồ Chí Minh", email: "trinh.ngo@jemmia.vn" },
+  {
+    pattern: "Hồ Chí Minh",
+    label: "Hồ Chí Minh",
+    email: "trinh.ngo@jemmia.vn"
+  },
   { pattern: "Hà Nội", label: "Hà Nội", email: "hue.phan@jemmia.vn" },
   { pattern: "Cần Thơ", label: "Cần Thơ", email: "tien.chau@jemmia.vn" }
 ];
@@ -77,18 +81,21 @@ export default class BankTransactionService {
         filters.push(["sepay_transaction_content", "not like", `%${pattern}%`]);
       });
 
-      const bankTransactions = await this.frappeClient.getList("Bank Transaction", {
-        fields: [
-          "name",
-          "date",
-          "deposit",
-          "sepay_transaction_content",
-          "bank_account",
-          "sepay_transaction_date"
-        ],
-        filters,
-        limit_page_length: 100
-      });
+      const bankTransactions = await this.frappeClient.getList(
+        "Bank Transaction",
+        {
+          fields: [
+            "name",
+            "date",
+            "deposit",
+            "sepay_transaction_content",
+            "bank_account",
+            "sepay_transaction_date"
+          ],
+          filters,
+          limit_page_length: 100
+        }
+      );
 
       if (!bankTransactions || bankTransactions.length === 0) {
         return [];
@@ -148,7 +155,10 @@ export default class BankTransactionService {
 
       return user?.user_id || null;
     } catch (error) {
-      console.warn("Error fetching user by email from database:", error.message);
+      console.warn(
+        "Error fetching user by email from database:",
+        error.message
+      );
       Sentry.captureException(error);
       return null;
     }
@@ -172,7 +182,9 @@ export default class BankTransactionService {
         });
 
         // Remove matches from remaining
-        remainingTransactions = remainingTransactions.filter((t) => !groupTransactions.includes(t));
+        remainingTransactions = remainingTransactions.filter(
+          (t) => !groupTransactions.includes(t)
+        );
       }
     }
 
@@ -185,7 +197,11 @@ export default class BankTransactionService {
       });
     }
 
-    const message = this.formatNotificationMessage(groupedTransactions, transactions.length, date);
+    const message = this.formatNotificationMessage(
+      groupedTransactions,
+      transactions.length,
+      date
+    );
     const larkClient = await LarksuiteService.createClientV2(this.env);
 
     await larkClient.im.message.create({
@@ -218,9 +234,13 @@ export default class BankTransactionService {
         .map((transaction) => {
           globalIndex++;
           const link = `https://erp.jemmia.vn/app/bank-transaction/${transaction.name}`;
-          const amount = new Intl.NumberFormat("vi-VN").format(transaction.amount_in || 0);
+          const amount = new Intl.NumberFormat("vi-VN").format(
+            transaction.amount_in || 0
+          );
           const formattedDate = transaction.sepay_transaction_date
-            ? dayjs(transaction.sepay_transaction_date).format("DD-MM-YYYY HH:mm:ss")
+            ? dayjs(transaction.sepay_transaction_date).format(
+                "DD-MM-YYYY HH:mm:ss"
+              )
             : dayjs(transaction.date).format("DD-MM-YYYY");
 
           return (

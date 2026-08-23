@@ -4,13 +4,22 @@ import { randomUUID } from "crypto";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import { mapCustomersToDatabase } from "src/services/erp/selling/customer/utils/customer-mappers";
-import { escapeSqlValue, fetchChildRecordsFromERP } from "src/services/utils/sql-helpers";
+import {
+  escapeSqlValue,
+  fetchChildRecordsFromERP
+} from "src/services/utils/sql-helpers";
 
 dayjs.extend(utc);
 
 const CHUNK_SIZE = 50;
 
-export async function fetchCustomersFromERP(frappeClient, doctype, fromDate, toDate, pageSize) {
+export async function fetchCustomersFromERP(
+  frappeClient,
+  doctype,
+  fromDate,
+  toDate,
+  pageSize
+) {
   try {
     const filters = {};
     filters["modified"] = [">=", fromDate];
@@ -32,7 +41,11 @@ export async function fetchCustomersFromERP(frappeClient, doctype, fromDate, toD
       if (customersBatch?.length) {
         const customerNames = customersBatch.map((customer) => customer.name);
         const customerCoupons =
-          (await fetchChildRecordsFromERP(frappeClient, customerNames, "tabCoupon")) || [];
+          (await fetchChildRecordsFromERP(
+            frappeClient,
+            customerNames,
+            "tabCoupon"
+          )) || [];
 
         // group customer coupons by customer name
         const customerCouponsMap = {};
@@ -77,7 +90,8 @@ export async function saveCustomersToDatabase(db, customers) {
       const fields = [
         "uuid",
         ...Object.keys(chunk[0]).filter(
-          (field) => field !== "database_created_at" && field !== "database_updated_at"
+          (field) =>
+            field !== "database_created_at" && field !== "database_updated_at"
         ),
         "database_created_at",
         "database_updated_at"
@@ -94,14 +108,21 @@ export async function saveCustomersToDatabase(db, customers) {
             database_created_at: currentTimestamp,
             database_updated_at: currentTimestamp
           };
-          const fieldValues = fields.map((field) => escapeSqlValue(customerWithTimestamps[field]));
+          const fieldValues = fields.map((field) =>
+            escapeSqlValue(customerWithTimestamps[field])
+          );
           return `(${fieldValues.join(", ")})`;
         })
         .join(",\n  ");
 
       // Create UPDATE SET clause for ON CONFLICT (exclude "name", "uuid", and "database_created_at")
       const updateSetSql = fields
-        .filter((field) => field !== "name" && field !== "uuid" && field !== "database_created_at")
+        .filter(
+          (field) =>
+            field !== "name" &&
+            field !== "uuid" &&
+            field !== "database_created_at"
+        )
         .map((field) => {
           if (field === "database_updated_at") {
             return `"${field}" = CURRENT_TIMESTAMP`;

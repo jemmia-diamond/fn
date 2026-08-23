@@ -6,7 +6,9 @@ export class GetTemplateZalo {
     switch (templateId) {
       case ZALO_TEMPLATE.orderConfirmed:
         return {
-          phone: GetTemplateZalo.convertPhoneNumber(data.billing_address?.phone),
+          phone: GetTemplateZalo.convertPhoneNumber(
+            data.billing_address?.phone
+          ),
           templateData: {
             name: data.billing_address?.name,
             order_number: String(data.id),
@@ -22,7 +24,9 @@ export class GetTemplateZalo {
       case ZALO_TEMPLATE.delivering: {
         const trackingRedirectPath = extraParams.trackingRedirectPath || "";
         return {
-          phone: GetTemplateZalo.convertPhoneNumber(data.billing_address?.phone),
+          phone: GetTemplateZalo.convertPhoneNumber(
+            data.billing_address?.phone
+          ),
           templateData: {
             customer_name: data.billing_address?.name,
             order_number: String(data.id),
@@ -34,9 +38,13 @@ export class GetTemplateZalo {
         // For ViettinBank, Transfer Note must have prefix "SEVQR "
         const bankTransferNote = `SEVQR ${data.order_number}`;
         const messageNote = "Thanh toán cọc 30% đơn hàng";
-        const transferAmount = Math.round((parseInt(data.total_price) / 100) * 30);
+        const transferAmount = Math.round(
+          (parseInt(data.total_price) / 100) * 30
+        );
         return {
-          phone: GetTemplateZalo.convertPhoneNumber(data.billing_address?.phone),
+          phone: GetTemplateZalo.convertPhoneNumber(
+            data.billing_address?.phone
+          ),
           templateData: {
             customer_name: data.billing_address?.name,
             price: data.total_price.toLocaleString("vi-VN"),

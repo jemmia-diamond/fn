@@ -17,7 +17,8 @@ import Database from "src/services/database";
 dayjs.extend(utc);
 const ZERO = 0;
 const REFERENCE_SCHEMA = {
-  haravan_order_id: (ref) => parseInt(ref.sales_order_details.haravan_order_id, 10),
+  haravan_order_id: (ref) =>
+    parseInt(ref.sales_order_details.haravan_order_id, 10),
   haravan_ref_order_id: (ref) => {
     const value = parseInt(ref.sales_order_details?.haravan_ref_order_id, 10);
     return value == ZERO ? null : value;
@@ -27,7 +28,8 @@ const REFERENCE_SCHEMA = {
   allocated_amount: (ref) => ref.allocated_amount,
   outstanding_amount: (ref) => ref.outstanding_amount,
   unallocated_amount: (ref) => ref.unallocated_amount,
-  payment_date: (ref) => (ref?.payment_date ? dayjs.utc(ref?.payment_date).toISOString() : null)
+  payment_date: (ref) =>
+    ref?.payment_date ? dayjs.utc(ref?.payment_date).toISOString() : null
 };
 
 export default class PaymentEntryService {
@@ -63,7 +65,8 @@ export default class PaymentEntryService {
 
   _getSalesOrderReference(references) {
     return (references || []).find(
-      (ref) => ref.reference_doctype === Constants.REFERENCE_DOCTYPES.SALES_ORDER
+      (ref) =>
+        ref.reference_doctype === Constants.REFERENCE_DOCTYPES.SALES_ORDER
     );
   }
 
@@ -73,7 +76,9 @@ export default class PaymentEntryService {
     const salesOrderReferences = references.filter(
       (ref) => ref.reference_doctype === "Sales Order"
     );
-    const primaryOrder = salesOrderReferences[0] ? rawToReference(salesOrderReferences[0]) : null;
+    const primaryOrder = salesOrderReferences[0]
+      ? rawToReference(salesOrderReferences[0])
+      : null;
     const haravan_order_id = primaryOrder?.sales_order_details?.haravan_order_id
       ? parseInt(primaryOrder.sales_order_details.haravan_order_id, 10)
       : null;
@@ -82,9 +87,12 @@ export default class PaymentEntryService {
     const receive_date = paymentEntry.payment_date
       ? dayjs(paymentEntry.payment_date).utc().toDate()
       : null;
-    const created_date = paymentEntry.creation ? dayjs(paymentEntry.creation).utc().toDate() : null;
+    const created_date = paymentEntry.creation
+      ? dayjs(paymentEntry.creation).utc().toDate()
+      : null;
 
-    let transferAmount = paymentEntry.paid_amount || paymentEntry.received_amount || 0;
+    let transferAmount =
+      paymentEntry.paid_amount || paymentEntry.received_amount || 0;
 
     if (
       primaryOrder &&
@@ -159,10 +167,13 @@ export default class PaymentEntryService {
     );
 
     const payment_references = this._transformReferences(references);
-    const primaryOrder = salesOrderReferences[0] ? rawToReference(salesOrderReferences[0]) : null;
+    const primaryOrder = salesOrderReferences[0]
+      ? rawToReference(salesOrderReferences[0])
+      : null;
     const customer_name = paymentEntry?.customer_details?.name;
     const customer_phone_number =
-      paymentEntry?.customer_details?.phone || paymentEntry?.customer_details?.mobile_no;
+      paymentEntry?.customer_details?.phone ||
+      paymentEntry?.customer_details?.mobile_no;
     const qrGeneratorPayload = {
       bank_code: paymentEntry?.bank_details?.bank_code,
       bank_account_number: paymentEntry?.bank_account_no,
@@ -172,14 +183,18 @@ export default class PaymentEntryService {
       customer_name,
       customer_phone_number,
       transfer_amount: paymentEntry.paid_amount,
-      haravan_order_total_price: primaryOrder ? primaryOrder.total_amount : null,
+      haravan_order_total_price: primaryOrder
+        ? primaryOrder.total_amount
+        : null,
       haravan_order_number: primaryOrder
         ? primaryOrder.sales_order_details.haravan_order_number
         : paymentEntry.haravan_order_number || "Đơn hàng cọc",
       haravan_order_status: primaryOrder
         ? primaryOrder.sales_order_details.haravan_financial_status
         : null,
-      haravan_order_id: primaryOrder ? primaryOrder.sales_order_details.haravan_order_id : null,
+      haravan_order_id: primaryOrder
+        ? primaryOrder.sales_order_details.haravan_order_id
+        : null,
       lark_record_id: paymentEntry.lark_record_id || "",
       payment_entry_name: paymentEntry.name || "",
       customer_phone_order_later: customer_phone_number,
@@ -294,7 +309,9 @@ export default class PaymentEntryService {
     const salesOrderReferences = references.filter(
       (ref) => ref.reference_doctype === "Sales Order"
     );
-    const primaryOrder = salesOrderReferences[0] ? rawToReference(salesOrderReferences[0]) : null;
+    const primaryOrder = salesOrderReferences[0]
+      ? rawToReference(salesOrderReferences[0])
+      : null;
     const haravan_order_id = primaryOrder?.sales_order_details?.haravan_order_id
       ? parseInt(primaryOrder.sales_order_details.haravan_order_id, 10)
       : null;
@@ -313,10 +330,13 @@ export default class PaymentEntryService {
       branch: this._mapBranch(paymentEntry.bank_account_branch),
       bank_account: paymentEntry.bank_account_no || null,
       bank_name: paymentEntry?.bank_details?.bank_code,
-      transfer_amount: paymentEntry.paid_amount || paymentEntry.received_amount || null,
+      transfer_amount:
+        paymentEntry.paid_amount || paymentEntry.received_amount || null,
       transfer_note: primaryOrder?.order_number || "ORDERLATER",
       haravan_order_id: isOrderLinking ? haravan_order_id : null,
-      haravan_order_name: isOrderLinking ? primaryOrder.order_number : "Đơn hàng cọc",
+      haravan_order_name: isOrderLinking
+        ? primaryOrder.order_number
+        : "Đơn hàng cọc",
       transfer_status,
       gateway: paymentEntry.gateway,
       payment_entry_name: paymentEntry.name,
@@ -324,7 +344,9 @@ export default class PaymentEntryService {
       refund_amount: paymentEntry.refund_amount
     };
 
-    const existingRefs = this._normalizeReferences(existingPayment.payment_references);
+    const existingRefs = this._normalizeReferences(
+      existingPayment.payment_references
+    );
     const newRefs = this._normalizeReferences(payment_references);
     if (existingRefs !== newRefs) {
       data.payment_references = payment_references;
@@ -333,7 +355,9 @@ export default class PaymentEntryService {
     const existingReceiveDateStr = existingPayment.receive_date
       ? dayjs(existingPayment.receive_date).format("YYYY-MM-DD")
       : null;
-    const newReceiveDateStr = receive_date ? dayjs(receive_date).format("YYYY-MM-DD") : null;
+    const newReceiveDateStr = receive_date
+      ? dayjs(receive_date).format("YYYY-MM-DD")
+      : null;
 
     if (
       !existingReceiveDateStr ||
@@ -341,10 +365,15 @@ export default class PaymentEntryService {
     ) {
       data.receive_date =
         receive_date ||
-        (paymentEntry.verified_by ? dayjs().utc().toDate() : existingPayment.receive_date);
+        (paymentEntry.verified_by
+          ? dayjs().utc().toDate()
+          : existingPayment.receive_date);
     }
 
-    const result = await this.manualPaymentService.updateManualPayment(manualPaymentUuid, data);
+    const result = await this.manualPaymentService.updateManualPayment(
+      manualPaymentUuid,
+      data
+    );
 
     if (result && result.payment_entry_name) {
       const isConfirmed = paymentEntry.verified_by != null;
@@ -363,15 +392,24 @@ export default class PaymentEntryService {
         payment_order_status,
         ...(!paymentEntry.payment_date &&
           result?.receive_date && {
-            payment_date: dayjs(result.receive_date).format("YYYY-MM-DD HH:mm:ss")
+            payment_date: dayjs(result.receive_date).format(
+              "YYYY-MM-DD HH:mm:ss"
+            )
           })
       };
 
       await this.frappeClient.upsert(updateData, "name");
 
-      if (isConfirmed && isOrderLinking && paymentEntry.verified_by && haravan_order_id) {
+      if (
+        isConfirmed &&
+        isOrderLinking &&
+        paymentEntry.verified_by &&
+        haravan_order_id
+      ) {
         const jobType = Misa.Constants.JOB_TYPE.CREATE_MANUAL_VOUCHER;
-        await this._enqueueMisaBackgroundJob(jobType, { manual_payment_uuid: manualPaymentUuid });
+        await this._enqueueMisaBackgroundJob(jobType, {
+          manual_payment_uuid: manualPaymentUuid
+        });
       }
     }
 
@@ -404,7 +442,9 @@ export default class PaymentEntryService {
     );
     const refund_amount = paymentEntry.refund_amount;
 
-    const primaryOrder = salesOrderReferences[0] ? rawToReference(salesOrderReferences[0]) : null;
+    const primaryOrder = salesOrderReferences[0]
+      ? rawToReference(salesOrderReferences[0])
+      : null;
     let qrPaymentId = paymentEntry?.custom_transaction_id;
 
     const whereConditions = [];
@@ -457,7 +497,10 @@ export default class PaymentEntryService {
       const toPayAmount = parseFloat(qrPayment.transfer_amount);
       const outstandingAmount = parseFloat(primaryOrder.outstanding_amount);
 
-      if (toPayAmount > outstandingAmount && (refund_amount == 0 || refund_amount == null)) {
+      if (
+        toPayAmount > outstandingAmount &&
+        (refund_amount == 0 || refund_amount == null)
+      ) {
         throw new Error(
           JSON.stringify({
             error_msg: `Payment amount ${toPayAmount} exceeds remaining amount ${outstandingAmount}`,
@@ -470,13 +513,17 @@ export default class PaymentEntryService {
     let updateQr = qrPayment;
     if (qrPayment.haravan_order_number === "ORDERLATER" && primaryOrder) {
       updateQr = await this.updateOrderLater(qrPaymentId, {
-        haravan_order_number: primaryOrder?.sales_order_details?.haravan_order_number || null,
-        haravan_order_id: primaryOrder?.sales_order_details?.haravan_order_id || null,
-        haravan_order_status: primaryOrder?.sales_order_details?.haravan_financial_status || null,
+        haravan_order_number:
+          primaryOrder?.sales_order_details?.haravan_order_number || null,
+        haravan_order_id:
+          primaryOrder?.sales_order_details?.haravan_order_id || null,
+        haravan_order_status:
+          primaryOrder?.sales_order_details?.haravan_financial_status || null,
         haravan_order_total_price: primaryOrder?.total_amount || null,
         customer_name: paymentEntry.customer_details.name,
         customer_phone_number:
-          paymentEntry.customer_details.phone || paymentEntry.customer_details.mobile_no,
+          paymentEntry.customer_details.phone ||
+          paymentEntry.customer_details.mobile_no,
         payment_references,
         refund_amount
       });
@@ -491,11 +538,16 @@ export default class PaymentEntryService {
     }
 
     if (
-      parseFloat(paymentEntry.paid_amount) !== parseFloat(updateQr.transfer_amount) ||
+      parseFloat(paymentEntry.paid_amount) !==
+        parseFloat(updateQr.transfer_amount) ||
       paymentEntry.bank_details.bank_code !== updateQr.bank_code ||
       paymentEntry.bank_account_no !== updateQr.bank_account_number
     ) {
-      updateQr = await this._updateQRAmount(qrPaymentId, paymentEntry, updateQr);
+      updateQr = await this._updateQRAmount(
+        qrPaymentId,
+        paymentEntry,
+        updateQr
+      );
     }
 
     const existingRefs = this._normalizeReferences(updateQr.payment_references);
@@ -511,7 +563,9 @@ export default class PaymentEntryService {
     const existingUpdatedAtStr = updateQr.updated_at
       ? dayjs(updateQr.updated_at).format("YYYY-MM-DD")
       : null;
-    const newPaymentDateStr = dayjs(paymentEntry.payment_date).format("YYYY-MM-DD");
+    const newPaymentDateStr = dayjs(paymentEntry.payment_date).format(
+      "YYYY-MM-DD"
+    );
     if (existingUpdatedAtStr !== newPaymentDateStr) {
       updateQr = await this.db.qrPaymentTransaction.update({
         where: { id: qrPaymentId },
@@ -519,7 +573,8 @@ export default class PaymentEntryService {
       });
     }
 
-    const isSuccess = paymentEntry.bank_transactions?.length >= 1 && updateQr.haravan_order_id;
+    const isSuccess =
+      paymentEntry.bank_transactions?.length >= 1 && updateQr.haravan_order_id;
     const payment_order_status = isSuccess
       ? PaymentOrderStatus.SUCCESS
       : PaymentOrderStatus.PENDING;
@@ -535,13 +590,18 @@ export default class PaymentEntryService {
 
     if (isSuccess && updateQr.haravan_order_id) {
       const jobType = Misa.Constants.JOB_TYPE.CREATE_QR_VOUCHER;
-      await this._enqueueMisaBackgroundJob(jobType, { qr_transaction_id: qrPaymentId });
+      await this._enqueueMisaBackgroundJob(jobType, {
+        qr_transaction_id: qrPaymentId
+      });
     }
     return updateQr;
   }
 
   async verifyPaymentEntryBankTransaction(paymentEntry) {
-    if (!paymentEntry.bank_transactions || paymentEntry.bank_transactions.length !== 1) {
+    if (
+      !paymentEntry.bank_transactions ||
+      paymentEntry.bank_transactions.length !== 1
+    ) {
       return;
     }
 
@@ -562,7 +622,9 @@ export default class PaymentEntryService {
       } else if (erpTopic === Constants.PAYMENT_ENTRY_WEBHOOK_TOPIC.UPDATE) {
         await paymentEntryService.updatePaymentEntry(rawPaymentEntry);
       } else if (erpTopic === Constants.PAYMENT_ENTRY_WEBHOOK_TOPIC.VERIFY) {
-        await paymentEntryService.verifyPaymentEntryBankTransaction(rawPaymentEntry);
+        await paymentEntryService.verifyPaymentEntryBankTransaction(
+          rawPaymentEntry
+        );
       }
     }
   }
@@ -619,7 +681,9 @@ export default class PaymentEntryService {
 
   async _enqueueMisaBackgroundJob(job_type, data) {
     const payload = { job_type, data };
-    await this.env["MISA_QUEUE"].send(payload, { delaySeconds: Misa.Constants.DELAYS.ONE_MINUTE });
+    await this.env["MISA_QUEUE"].send(payload, {
+      delaySeconds: Misa.Constants.DELAYS.ONE_MINUTE
+    });
   }
 
   _transformReferences(references) {

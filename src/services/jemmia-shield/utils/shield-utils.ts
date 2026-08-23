@@ -80,7 +80,10 @@ export class ShieldUtils {
     if (!mentions || mentions.length === 0) return text;
     let resolved = text;
     for (const mention of mentions) {
-      const id = mention.id && typeof mention.id === "object" ? mention.id.open_id : mention.id;
+      const id =
+        mention.id && typeof mention.id === "object"
+          ? mention.id.open_id
+          : mention.id;
       if (mention.key && id) {
         resolved = resolved.split(mention.key).join(`<at id="${id}"></at>`);
       }

@@ -54,7 +54,9 @@ export default class ZNSMessageService {
 
       if (!response.ok) {
         Sentry.captureException(
-          new Error(`Zalo API request failed: ${response.status} - ${JSON.stringify(data)}`)
+          new Error(
+            `Zalo API request failed: ${response.status} - ${JSON.stringify(data)}`
+          )
         );
         throw new Error(`Zalo API error: ${text}`);
       }

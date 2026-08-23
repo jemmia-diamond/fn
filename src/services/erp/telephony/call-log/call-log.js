@@ -58,12 +58,17 @@ export default class CallLogService {
 
   mapVbotCallLogFields = (callLog) => {
     const id = callLog.group_id || callLog.external_call_id;
-    const allParticipants = [...(callLog.caller || []), ...(callLog.callee || [])];
+    const allParticipants = [
+      ...(callLog.caller || []),
+      ...(callLog.callee || [])
+    ];
     const agents = allParticipants.filter((p) => p.member_no);
-    const agent = agents.find((p) => p.disposition === "ANSWER") || agents[FIRST_ITEM];
+    const agent =
+      agents.find((p) => p.disposition === "ANSWER") || agents[FIRST_ITEM];
     const agent_id = agent?.member_no;
 
-    const isIncoming = callLog.type_call === "INCALL" || callLog.type_call === "MISSCALL";
+    const isIncoming =
+      callLog.type_call === "INCALL" || callLog.type_call === "MISSCALL";
     const type = isIncoming ? "Incoming" : "Outgoing";
 
     const customerPhone = isIncoming
@@ -74,10 +79,17 @@ export default class CallLogService {
     const to = isIncoming ? callLog.hotline_number : customerPhone;
 
     const start_time = dayjs(callLog.date_create).utc().format(DATETIME_FORMAT);
-    const [hours, minutes, seconds] = (callLog.duration_call || "00:00:00").split(":").map(Number);
-    const duration = hours * SECONDS_IN_HOUR + minutes * SECONDS_IN_MINUTE + seconds;
-    const end_time = dayjs(start_time).add(duration, "second").format(DATETIME_FORMAT);
-    const recording_url = normalizeRecordingUrl(callLog.record_file?.[FIRST_ITEM]);
+    const [hours, minutes, seconds] = (callLog.duration_call || "00:00:00")
+      .split(":")
+      .map(Number);
+    const duration =
+      hours * SECONDS_IN_HOUR + minutes * SECONDS_IN_MINUTE + seconds;
+    const end_time = dayjs(start_time)
+      .add(duration, "second")
+      .format(DATETIME_FORMAT);
+    const recording_url = normalizeRecordingUrl(
+      callLog.record_file?.[FIRST_ITEM]
+    );
     const disposition = String(callLog?.disposition).toLowerCase();
 
     return {

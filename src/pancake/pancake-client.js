@@ -151,7 +151,11 @@ export default class PancakeClient {
       page_number: pageNumber,
       order_by: "updated_at"
     };
-    return await this.getRequest(pageId, `/public_api/v1/pages/${pageId}/conversations`, params);
+    return await this.getRequest(
+      pageId,
+      `/public_api/v1/pages/${pageId}/conversations`,
+      params
+    );
   }
 
   async getPageCustomers(pageId, sinceUnix, untilUnix, pageNumber, pageSize) {
@@ -162,11 +166,18 @@ export default class PancakeClient {
       page_size: pageSize,
       order_by: "updated_at"
     };
-    return await this.getRequest(pageId, `/public_api/v1/pages/${pageId}/page_customers`, params);
+    return await this.getRequest(
+      pageId,
+      `/public_api/v1/pages/${pageId}/page_customers`,
+      params
+    );
   }
 
   async getPageUsers(pageId) {
-    return await this.getRequest(pageId, `/public_api/v1/pages/${pageId}/users`);
+    return await this.getRequest(
+      pageId,
+      `/public_api/v1/pages/${pageId}/users`
+    );
   }
 
   async getPageTags(pageId) {

@@ -10,7 +10,13 @@ dayjs.extend(utc);
 
 const CHUNK_SIZE = 20;
 
-export async function fetchLeadsFromERP(frappeClient, doctype, fromDate, toDate, pageSize) {
+export async function fetchLeadsFromERP(
+  frappeClient,
+  doctype,
+  fromDate,
+  toDate,
+  pageSize
+) {
   try {
     const filters = {};
     filters["modified"] = [">=", fromDate];
@@ -31,7 +37,10 @@ export async function fetchLeadsFromERP(frappeClient, doctype, fromDate, toDate,
 
       if (leadsBatch?.length) {
         const leadNames = leadsBatch.map((lead) => lead.name);
-        const leadProductItems = await fetchLeadProductItemsFromERP(frappeClient, leadNames);
+        const leadProductItems = await fetchLeadProductItemsFromERP(
+          frappeClient,
+          leadNames
+        );
 
         // group leadProductItems by lead name
         const leadProductItemsMap = {};
@@ -85,7 +94,8 @@ export async function saveLeadsToDatabase(db, leads) {
       const fields = [
         "uuid",
         ...Object.keys(chunk[0]).filter(
-          (field) => field !== "database_created_at" && field !== "database_updated_at"
+          (field) =>
+            field !== "database_created_at" && field !== "database_updated_at"
         ),
         "database_created_at",
         "database_updated_at"
@@ -102,14 +112,21 @@ export async function saveLeadsToDatabase(db, leads) {
             database_created_at: currentTimestamp,
             database_updated_at: currentTimestamp
           };
-          const fieldValues = fields.map((field) => escapeSqlValue(leadWithTimestamps[field]));
+          const fieldValues = fields.map((field) =>
+            escapeSqlValue(leadWithTimestamps[field])
+          );
           return `(${fieldValues.join(", ")})`;
         })
         .join(",\n  ");
 
       // Create UPDATE SET clause for ON CONFLICT (exclude "name", "uuid", and "database_created_at")
       const updateSetSql = fields
-        .filter((field) => field !== "name" && field !== "uuid" && field !== "database_created_at")
+        .filter(
+          (field) =>
+            field !== "name" &&
+            field !== "uuid" &&
+            field !== "database_created_at"
+        )
         .map((field) => {
           if (field === "database_updated_at") {
             return `"${field}" = CURRENT_TIMESTAMP`;

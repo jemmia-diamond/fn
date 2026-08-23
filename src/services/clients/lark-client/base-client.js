@@ -5,7 +5,8 @@ const RETRY_CONFIG = {
   retries: 2,
   retryDelay: axiosRetry.exponentialDelay,
   retryCondition: (error) =>
-    axiosRetry.isNetworkOrIdempotentRequestError(error) || error.response?.status >= 500
+    axiosRetry.isNetworkOrIdempotentRequestError(error) ||
+    error.response?.status >= 500
 };
 
 export default class LarkBaseClient {
@@ -21,8 +22,11 @@ export default class LarkBaseClient {
    */
   constructor(env) {
     this.#env = env;
-    const endpoint = this.#env.LARK_API_ENDPOINT || "https://open.larksuite.com";
-    this.#baseUrl = endpoint.endsWith("/open-apis") ? endpoint : `${endpoint}/open-apis`;
+    const endpoint =
+      this.#env.LARK_API_ENDPOINT || "https://open.larksuite.com";
+    this.#baseUrl = endpoint.endsWith("/open-apis")
+      ? endpoint
+      : `${endpoint}/open-apis`;
   }
 
   async #getAppCredentials() {
@@ -44,7 +48,11 @@ export default class LarkBaseClient {
   }
 
   async #getAccessToken() {
-    if (this.#accessToken && this.#tokenExpiry && Date.now() < this.#tokenExpiry - 300000) {
+    if (
+      this.#accessToken &&
+      this.#tokenExpiry &&
+      Date.now() < this.#tokenExpiry - 300000
+    ) {
       return this.#accessToken;
     }
 
@@ -69,7 +77,9 @@ export default class LarkBaseClient {
 
       return this.#accessToken;
     } catch (error) {
-      throw new Error(`Authentication failed: ${error.message}`, { cause: error });
+      throw new Error(`Authentication failed: ${error.message}`, {
+        cause: error
+      });
     }
   }
 
@@ -104,7 +114,9 @@ export default class LarkBaseClient {
       });
 
       if (response.data.code !== 0) {
-        throw new Error(`Lark API error: ${response.data.msg} (code: ${response.data.code})`);
+        throw new Error(
+          `Lark API error: ${response.data.msg} (code: ${response.data.code})`
+        );
       }
 
       return response.data;

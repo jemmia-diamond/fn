@@ -86,7 +86,10 @@ export default class LeadService {
     if (!currentLead) {
       return { success: false, message: "Lead does not exists" };
     }
-    if (!currentLead.first_name || currentLead.first_name.toLowerCase() === "chưa rõ") {
+    if (
+      !currentLead.first_name ||
+      currentLead.first_name.toLowerCase() === "chưa rõ"
+    ) {
       currentLead.first_name = data.name;
     }
     if (!currentLead.phone) {
@@ -151,21 +154,33 @@ export default class LeadService {
     if (response?.failed_docs?.length) {
       for (const fd of response.failed_docs) {
         const conversationId = fd?.doc?.pancake_data?.conversation_id;
-        console.warn("update_lead_by_batch failure:", JSON.stringify(fd.exc || fd));
-        Sentry.captureMessage(`update_lead_by_batch failed for conversation ${conversationId}`, {
-          level: "error",
-          extra: { conversationId, exc: fd.exc }
-        });
+        console.warn(
+          "update_lead_by_batch failure:",
+          JSON.stringify(fd.exc || fd)
+        );
+        Sentry.captureMessage(
+          `update_lead_by_batch failed for conversation ${conversationId}`,
+          {
+            level: "error",
+            extra: { conversationId, exc: fd.exc }
+          }
+        );
       }
     }
     return response?.results || [];
   }
 
-  async updateLeadLastMessage({ frappeNameId, lastSalesMessageAt, lastCustomerMessageAt }) {
+  async updateLeadLastMessage({
+    frappeNameId,
+    lastSalesMessageAt,
+    lastCustomerMessageAt
+  }) {
     if (!frappeNameId) return null;
     const values = { doctype: this.doctype, name: frappeNameId };
     if (lastSalesMessageAt) {
-      values.last_sales_message_at = dayjs(lastSalesMessageAt).utc().format("YYYY-MM-DD HH:mm:ss");
+      values.last_sales_message_at = dayjs(lastSalesMessageAt)
+        .utc()
+        .format("YYYY-MM-DD HH:mm:ss");
     }
     if (lastCustomerMessageAt) {
       values.last_customer_message_at = dayjs(lastCustomerMessageAt)
@@ -242,7 +257,9 @@ export default class LeadService {
           first_name: fullName,
           email_id: data.raw_data.email?.trim() || null,
           province: provinces.length ? provinces[0].name : null,
-          first_reach_at: dayjs(data.database_created_at).utc().format("YYYY-MM-DD HH:mm:ss")
+          first_reach_at: dayjs(data.database_created_at)
+            .utc()
+            .format("YYYY-MM-DD HH:mm:ss")
         };
 
         if (String(provinces[0]?.code).toLowerCase().includes("website")) {
@@ -338,7 +355,9 @@ export default class LeadService {
         phone,
         first_name: phone,
         lead_owner: data.agent || this.defaultLeadOwner,
-        first_reach_at: dayjs(data.start_time).utc().format("YYYY-MM-DD HH:mm:ss")
+        first_reach_at: dayjs(data.start_time)
+          .utc()
+          .format("YYYY-MM-DD HH:mm:ss")
       };
     };
 
@@ -367,7 +386,8 @@ export default class LeadService {
   }
 
   async syncLeadsToDatabase(options = {}) {
-    const { isSyncType = LeadService.SYNC_TYPE_AUTO, minutesBack = 10 } = options;
+    const { isSyncType = LeadService.SYNC_TYPE_AUTO, minutesBack = 10 } =
+      options;
     const kv = this.env.FN_KV;
     const KV_KEY = "lead_sync:last_date";
     const toDate = dayjs().utc().format("YYYY-MM-DD HH:mm:ss");
@@ -376,9 +396,16 @@ export default class LeadService {
     if (isSyncType === LeadService.SYNC_TYPE_AUTO) {
       const lastDate = await kv.get(KV_KEY);
       fromDate =
-        lastDate || dayjs().utc().subtract(minutesBack, "minutes").format("YYYY-MM-DD HH:mm:ss");
+        lastDate ||
+        dayjs()
+          .utc()
+          .subtract(minutesBack, "minutes")
+          .format("YYYY-MM-DD HH:mm:ss");
     } else {
-      fromDate = dayjs().utc().subtract(minutesBack, "minutes").format("YYYY-MM-DD HH:mm:ss");
+      fromDate = dayjs()
+        .utc()
+        .subtract(minutesBack, "minutes")
+        .format("YYYY-MM-DD HH:mm:ss");
     }
 
     try {

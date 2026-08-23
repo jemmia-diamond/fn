@@ -27,8 +27,10 @@ export default class ProductSearchService {
       image_urls: Array
    */
   async searchForChatbot(searchKey, limit, page, priceFrom, priceTo) {
-    const normalizedLimit = Number.isFinite(limit) && limit > 0 ? Math.floor(limit) : 10;
-    const normalizedPage = Number.isFinite(page) && page > 0 ? Math.floor(page) : 1;
+    const normalizedLimit =
+      Number.isFinite(limit) && limit > 0 ? Math.floor(limit) : 10;
+    const normalizedPage =
+      Number.isFinite(page) && page > 0 ? Math.floor(page) : 1;
 
     // Query database directly
     const results = await this._queryDatabase(
@@ -53,7 +55,8 @@ export default class ProductSearchService {
     }
 
     const safePage = Number.isFinite(page) && page > 0 ? Math.floor(page) : 1;
-    const safeLimit = Number.isFinite(limit) && limit > 0 ? Math.floor(limit) : 20;
+    const safeLimit =
+      Number.isFinite(limit) && limit > 0 ? Math.floor(limit) : 20;
     const offset = (safePage - 1) * safeLimit;
 
     // Format values for SQL query
@@ -62,7 +65,9 @@ export default class ProductSearchService {
       .join(", ");
     const likePatternsSql = `ARRAY[${likePatternsArray}]`;
     const normalizedSearchKeyEscaped = normalizedSearchKey.replace(/'/g, "''");
-    const priceFromFilter = priceFrom ? `AND hv.price >= ${Number(priceFrom)}` : "";
+    const priceFromFilter = priceFrom
+      ? `AND hv.price >= ${Number(priceFrom)}`
+      : "";
     const priceToFilter = priceTo ? `AND hv.price <= ${Number(priceTo)}` : "";
 
     const query = `

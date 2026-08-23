@@ -77,7 +77,8 @@ export default class ConversationService {
     }
     await this.updateConversation(conversationId, pageId, insertedAt);
 
-    const frappeNameId = await this.leadService.getLeadNameByConversationId(conversationId);
+    const frappeNameId =
+      await this.leadService.getLeadNameByConversationId(conversationId);
     if (frappeNameId) {
       await this.leadService.updateLeadLastMessage({
         frappeNameId,
@@ -98,7 +99,8 @@ export default class ConversationService {
 
     await this.updateLastSalesMessageAt(conversationId, pageId, insertedAt);
 
-    const frappeNameId = await this.leadService.getLeadNameByConversationId(conversationId);
+    const frappeNameId =
+      await this.leadService.getLeadNameByConversationId(conversationId);
     if (frappeNameId) {
       await this.leadService.updateLeadLastMessage({
         frappeNameId,
@@ -153,7 +155,8 @@ export default class ConversationService {
     const conversationId = message?.conversation_id;
     if (!conversationId) return;
 
-    const frappeNameId = await this.leadService.getLeadNameByConversationId(conversationId);
+    const frappeNameId =
+      await this.leadService.getLeadNameByConversationId(conversationId);
 
     if (!frappeNameId) return;
 

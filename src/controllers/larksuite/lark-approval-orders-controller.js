@@ -15,7 +15,8 @@ export default class LarkApprovalOrdersController {
       }
 
       const service = new ApprovalOrderService(ctx.env);
-      const { options, i18nResources } = await service.searchOrders(linkage_params);
+      const { options, i18nResources } =
+        await service.searchOrders(linkage_params);
 
       return ctx.json({
         code: 0,

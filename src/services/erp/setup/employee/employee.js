@@ -21,18 +21,24 @@ export default class EmployeeService {
 
   static async syncEmployeesToDatabase(env) {
     try {
-      const timeThreshold = dayjs().subtract(1, "day").utc().format("YYYY-MM-DD HH:mm:ss");
+      const timeThreshold = dayjs()
+        .subtract(1, "day")
+        .utc()
+        .format("YYYY-MM-DD HH:mm:ss");
       const employeeService = new EmployeeService(env);
 
       let employees = [];
       let page = 1;
       const pageSize = EmployeeService.ERPNEXT_PAGE_SIZE;
       while (true) {
-        const result = await employeeService.frappeClient.getList(employeeService.doctype, {
-          limit_start: (page - 1) * pageSize,
-          limit_page_length: pageSize,
-          filters: [["modified", ">=", timeThreshold]]
-        });
+        const result = await employeeService.frappeClient.getList(
+          employeeService.doctype,
+          {
+            limit_start: (page - 1) * pageSize,
+            limit_page_length: pageSize,
+            filters: [["modified", ">=", timeThreshold]]
+          }
+        );
         employees = employees.concat(result);
         if (result.length < pageSize) break;
         page++;

@@ -22,24 +22,37 @@ export class ShieldOrderMentionLinker {
     if (orderCodes.length === 0) return;
 
     const frappeClient = ShieldOrderMentionLinker.createFrappeClient(env);
-    const orderLinks = await ShieldOrderMentionLinker.fetchOrderLinks(frappeClient, orderCodes);
+    const orderLinks = await ShieldOrderMentionLinker.fetchOrderLinks(
+      frappeClient,
+      orderCodes
+    );
 
     if (orderLinks.length === 0) return;
 
     await ShieldOrderMentionLinker.sendOrderInfoCard(env, event, orderLinks);
   }
 
-  static async saveOrderMappingsIfMentioned(env: any, event: any): Promise<void> {
+  static async saveOrderMappingsIfMentioned(
+    env: any,
+    event: any
+  ): Promise<void> {
     const messageText = ShieldOrderMentionLinker.extractTextFromMessage(event);
     const orderCodes = ShieldOrderMentionLinker.extractOrderCodes(messageText);
     if (orderCodes.length === 0) return;
 
     const frappeClient = ShieldOrderMentionLinker.createFrappeClient(env);
-    const orderLinks = await ShieldOrderMentionLinker.fetchOrderLinks(frappeClient, orderCodes);
+    const orderLinks = await ShieldOrderMentionLinker.fetchOrderLinks(
+      frappeClient,
+      orderCodes
+    );
     if (orderLinks.length === 0) return;
 
     const messageId = event.message.message_id;
-    await ShieldOrderMentionLinker.saveOrderMappings(env, messageId, orderLinks);
+    await ShieldOrderMentionLinker.saveOrderMappings(
+      env,
+      messageId,
+      orderLinks
+    );
   }
 
   private static async saveOrderMappings(
@@ -117,7 +130,10 @@ export class ShieldOrderMentionLinker {
     const results: ShieldOrderLinkInfo[] = [];
 
     for (const code of orderCodes) {
-      const linkInfo = await ShieldOrderMentionLinker.fetchSingleOrderLink(frappeClient, code);
+      const linkInfo = await ShieldOrderMentionLinker.fetchSingleOrderLink(
+        frappeClient,
+        code
+      );
       if (linkInfo) results.push(linkInfo);
     }
 
@@ -129,17 +145,21 @@ export class ShieldOrderMentionLinker {
     orderCode: string
   ): Promise<ShieldOrderLinkInfo | null> {
     try {
-      const orders = await getSalesOrdersByHaravanOrderId(frappeClient, orderCode, [
-        "name",
-        "haravan_order_id",
-        "split_order_group",
-        "grand_total",
-        "transaction_date",
-        "financial_status",
-        "fulfillment_status",
-        "cancelled_status",
-        "status"
-      ]);
+      const orders = await getSalesOrdersByHaravanOrderId(
+        frappeClient,
+        orderCode,
+        [
+          "name",
+          "haravan_order_id",
+          "split_order_group",
+          "grand_total",
+          "transaction_date",
+          "financial_status",
+          "fulfillment_status",
+          "cancelled_status",
+          "status"
+        ]
+      );
       if (!orders || orders.length === 0) return null;
 
       const order = orders[0];
@@ -176,8 +196,12 @@ export class ShieldOrderMentionLinker {
     const total = order ? Number(order.total_price) : link.total;
     const orderDate = order ? order.created_at : link.orderDate;
     const paymentStatus = order ? order.financial_status : link.paymentStatus;
-    const deliveryStatus = order ? order.fulfillment_status : link.deliveryStatus;
-    const cancelledStatus = order ? order.cancelled_status : link.cancelledStatus;
+    const deliveryStatus = order
+      ? order.fulfillment_status
+      : link.deliveryStatus;
+    const cancelledStatus = order
+      ? order.cancelled_status
+      : link.cancelledStatus;
 
     const formattedTotal = new Intl.NumberFormat("vi-VN", {
       style: "currency",
@@ -215,12 +239,18 @@ export class ShieldOrderMentionLinker {
       }
     };
 
-    const actionButtons = ShieldOrderMentionLinker.buildActionButtons(env, link);
+    const actionButtons = ShieldOrderMentionLinker.buildActionButtons(
+      env,
+      link
+    );
 
     return [header, contentElement, actionButtons];
   }
 
-  private static buildActionButtons(env: any, linkInfo: ShieldOrderLinkInfo): any {
+  private static buildActionButtons(
+    env: any,
+    linkInfo: ShieldOrderLinkInfo
+  ): any {
     const erpBaseUrl = `${env.JEMMIA_ERP_BASE_URL}/app/sales-order`;
     const haravanBaseUrl = `${env.HARAVAN_APP_URL}/admin/orders`;
 
@@ -257,7 +287,8 @@ export class ShieldOrderMentionLinker {
     const threadId = event.message.root_id ?? event.message.message_id;
 
     for (const link of orderLinks) {
-      const elements = await ShieldOrderMentionLinker.buildSingleOrderCardElements(env, link);
+      const elements =
+        await ShieldOrderMentionLinker.buildSingleOrderCardElements(env, link);
       const cardContent = JSON.stringify({ elements });
 
       await JemmiaShieldLarkService.sendMessageToThread(

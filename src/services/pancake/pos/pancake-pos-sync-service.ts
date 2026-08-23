@@ -1,7 +1,13 @@
 import * as Sentry from "@sentry/cloudflare";
 import Database from "services/database";
-import { HARAVAN_CANCELLED_STATUS, HARAVAN_TOPIC } from "services/ecommerce/enum";
-import { type HaravanOrderPayload, haravanMoneyToNumber } from "services/haravan/webhook-order";
+import {
+  HARAVAN_CANCELLED_STATUS,
+  HARAVAN_TOPIC
+} from "services/ecommerce/enum";
+import {
+  type HaravanOrderPayload,
+  haravanMoneyToNumber
+} from "services/haravan/webhook-order";
 import PancakePosClient, {
   type CreateOrderPayload,
   type OrderItem
@@ -15,8 +21,10 @@ const POS_STATUS = {
   CANCELED: 6
 } as const;
 
-const PANCAKE_POS_BASE_ORDER_VARIATION_ID = "1b756676-3314-43f5-b03e-4829a166f779";
-const PANCAKE_POS_BASE_ORDER_PRODUCT_ID = "2cc80df9-72ef-4267-8577-1ed9c1d2035d";
+const PANCAKE_POS_BASE_ORDER_VARIATION_ID =
+  "1b756676-3314-43f5-b03e-4829a166f779";
+const PANCAKE_POS_BASE_ORDER_PRODUCT_ID =
+  "2cc80df9-72ef-4267-8577-1ed9c1d2035d";
 
 export default class PancakePOSSyncService {
   private db: ReturnType<typeof Database.instance>;
@@ -72,7 +80,9 @@ export default class PancakePOSSyncService {
     return { lead, shopId };
   }
 
-  private async resolveAdsId(customerPhone: string): Promise<ResolvedLead | null> {
+  private async resolveAdsId(
+    customerPhone: string
+  ): Promise<ResolvedLead | null> {
     const target = normalizeToStandardFormat(customerPhone);
     if (!target) {
       return null;
@@ -175,7 +185,8 @@ export default class PancakePOSSyncService {
   }): CreateOrderPayload {
     const customer = order.customer;
     const fullName =
-      [customer?.first_name, customer?.last_name].filter(Boolean).join(" ") || undefined;
+      [customer?.first_name, customer?.last_name].filter(Boolean).join(" ") ||
+      undefined;
     const shippingFee = (order.shipping_lines ?? []).reduce(
       (total, line) => total + haravanMoneyToNumber(line.price),
       0
@@ -208,7 +219,10 @@ export default class PancakePOSSyncService {
     };
   }
 
-  private async syncOrderUpdate(order: HaravanOrderPayload, shopId: number): Promise<void> {
+  private async syncOrderUpdate(
+    order: HaravanOrderPayload,
+    shopId: number
+  ): Promise<void> {
     const sync = await this.db.pancakePOSOrderSync.findUnique({
       where: { haravan_order_id: BigInt(order.id) }
     });
@@ -221,7 +235,11 @@ export default class PancakePOSSyncService {
       return;
     }
 
-    await this.client.updateOrderStatus(sync.shop_id ?? shopId, sync.pancake_order_id, status);
+    await this.client.updateOrderStatus(
+      sync.shop_id ?? shopId,
+      sync.pancake_order_id,
+      status
+    );
     await this.db.pancakePOSOrderSync.update({
       where: { haravan_order_id: BigInt(order.id) },
       data: { status, updated_at: new Date() }
@@ -229,7 +247,10 @@ export default class PancakePOSSyncService {
   }
 
   private mapStatus(order: HaravanOrderPayload): number {
-    if (order.cancelled_status?.toLowerCase() === HARAVAN_CANCELLED_STATUS.CANCELLED)
+    if (
+      order.cancelled_status?.toLowerCase() ===
+      HARAVAN_CANCELLED_STATUS.CANCELLED
+    )
       return POS_STATUS.CANCELED;
     if (order.confirmed_at) return POS_STATUS.CONFIRMED;
     return POS_STATUS.NEW;

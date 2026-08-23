@@ -13,7 +13,13 @@ export default class HaravanWebhook {
       "*",
       verifyHmacBase64Auth("X-Haravan-Hmacsha256", "HARAVAN_WEBHOOK_SECRET")
     );
-    haravanWebhookNamespace.post("erp/orders", HaravanERPOrderController.create);
-    haravanWebhookNamespace.post("noco/products", HaravanNocoProductController.create);
+    haravanWebhookNamespace.post(
+      "erp/orders",
+      HaravanERPOrderController.create
+    );
+    haravanWebhookNamespace.post(
+      "noco/products",
+      HaravanNocoProductController.create
+    );
   }
 }

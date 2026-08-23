@@ -36,7 +36,9 @@ export default class CustomerService {
   }
 
   async processHaravanCustomer(customerData, contact, address, options = {}) {
-    const nameParts = [customerData.last_name, customerData.first_name].filter(Boolean);
+    const nameParts = [customerData.last_name, customerData.first_name].filter(
+      Boolean
+    );
     const customerName = nameParts.join(" ") || this.defaultCustomerName;
     const mappedCustomerData = {
       doctype: this.doctype,
@@ -74,13 +76,17 @@ export default class CustomerService {
     }
     let customer;
     try {
-      customer = await this.frappeClient.upsert(mappedCustomerData, "haravan_id");
+      customer = await this.frappeClient.upsert(
+        mappedCustomerData,
+        "haravan_id"
+      );
     } catch (error) {
       const isLinkError =
         (error.exc_type === "LinkValidationError" ||
           error.status === 417 ||
           (error.message && error.message.includes("417"))) &&
-        (error.message.includes("From Lead") || error.message.includes("Could not find Lead"));
+        (error.message.includes("From Lead") ||
+          error.message.includes("Could not find Lead"));
       if (!isLinkError) {
         throw error;
       }
@@ -96,13 +102,17 @@ export default class CustomerService {
       } else {
         mappedCustomerData.lead_name = "";
       }
-      customer = await this.frappeClient.upsert(mappedCustomerData, "haravan_id");
+      customer = await this.frappeClient.upsert(
+        mappedCustomerData,
+        "haravan_id"
+      );
     }
     return customer;
   }
 
   async syncCustomersToDatabase(options = {}) {
-    const { isSyncType = CustomerService.SYNC_TYPE_AUTO, minutesBack = 10 } = options;
+    const { isSyncType = CustomerService.SYNC_TYPE_AUTO, minutesBack = 10 } =
+      options;
     const kv = this.env.FN_KV;
     const KV_KEY = "customer_sync:last_date";
     const toDate = dayjs().utc().format("YYYY-MM-DD HH:mm:ss");
@@ -111,9 +121,16 @@ export default class CustomerService {
     if (isSyncType === CustomerService.SYNC_TYPE_AUTO) {
       const lastDate = await kv.get(KV_KEY);
       fromDate =
-        lastDate || dayjs().utc().subtract(minutesBack, "minutes").format("YYYY-MM-DD HH:mm:ss");
+        lastDate ||
+        dayjs()
+          .utc()
+          .subtract(minutesBack, "minutes")
+          .format("YYYY-MM-DD HH:mm:ss");
     } else {
-      fromDate = dayjs().utc().subtract(minutesBack, "minutes").format("YYYY-MM-DD HH:mm:ss");
+      fromDate = dayjs()
+        .utc()
+        .subtract(minutesBack, "minutes")
+        .format("YYYY-MM-DD HH:mm:ss");
     }
 
     try {
@@ -204,13 +221,21 @@ export default class CustomerService {
     };
 
     try {
-      const haravanResult = await haravanClient.customer.createCustomer(haravanPayload);
-      const contact = await contactService.processHaravanContact(haravanResult?.customer, null, {
-        phone: rawPhone,
-        is_new: true
-      });
+      const haravanResult =
+        await haravanClient.customer.createCustomer(haravanPayload);
+      const contact = await contactService.processHaravanContact(
+        haravanResult?.customer,
+        null,
+        {
+          phone: rawPhone,
+          is_new: true
+        }
+      );
       haravanResult.customer.created_by = customerData.modified_by;
-      const customer = await this.frappeClient.getDoc(this.doctype, customerData.name);
+      const customer = await this.frappeClient.getDoc(
+        this.doctype,
+        customerData.name
+      );
       customer.haravan_id = String(haravanResult.customer.id);
       customer.phone = contact.phone;
       customer.mobile_no = contact.phone;
@@ -222,12 +247,20 @@ export default class CustomerService {
 
         if (isDuplicate) {
           const searchPhone = rawPhone.replace(/^\+/, "");
-          const hrvCustomers = await haravanClient.customer.getCustomers(searchPhone);
-          await contactService.processHaravanContact(hrvCustomers.customers[0], null, {
-            phone: rawPhone,
-            is_new: true
-          });
-          const customer = await this.frappeClient.getDoc(this.doctype, customerData.name);
+          const hrvCustomers =
+            await haravanClient.customer.getCustomers(searchPhone);
+          await contactService.processHaravanContact(
+            hrvCustomers.customers[0],
+            null,
+            {
+              phone: rawPhone,
+              is_new: true
+            }
+          );
+          const customer = await this.frappeClient.getDoc(
+            this.doctype,
+            customerData.name
+          );
 
           if (customer && hrvCustomers?.customers?.[0]) {
             customer.haravan_id = String(hrvCustomers.customers[0].id);

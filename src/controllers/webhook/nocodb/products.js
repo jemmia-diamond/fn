@@ -5,6 +5,8 @@ export default class ProductsController {
     const payload = await ctx.req.json();
     const service = new ProductCreatorService(ctx.env);
     await service.handle(payload);
-    return ctx.json({ message: "Product created on Haravan and NocoDB updated" });
+    return ctx.json({
+      message: "Product created on Haravan and NocoDB updated"
+    });
   }
 }

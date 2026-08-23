@@ -34,8 +34,9 @@ export default class ConversationAssignmentService {
   async syncConversationAssigneesWithERPToDo(todo) {
     const leadName = todo.reference_name;
     const allocatedUser = todo.allocated_to;
-    const allocatedUserPancakeId = (await this.frappeClient.getDoc("User", allocatedUser))
-      .pancake_id;
+    const allocatedUserPancakeId = (
+      await this.frappeClient.getDoc("User", allocatedUser)
+    ).pancake_id;
     const contacts = await this.frappeClient.getList("Contact", {
       filters: [["Dynamic Link", "link_name", "=", leadName]]
     });
@@ -47,8 +48,11 @@ export default class ConversationAssignmentService {
     const contact = contacts[0];
     const pageId = contact.pancake_page_id;
     const conversationId = contact.pancake_conversation_id;
-    const assigneesHistory = await this.getLastConversationAssigneesHistory(conversationId);
-    const assignedUserIds = [...new Set([...assigneesHistory, allocatedUserPancakeId])];
+    const assigneesHistory =
+      await this.getLastConversationAssigneesHistory(conversationId);
+    const assignedUserIds = [
+      ...new Set([...assigneesHistory, allocatedUserPancakeId])
+    ];
     const res = await this.pancakeClient.assignConversation(
       pageId,
       conversationId,
@@ -62,7 +66,9 @@ export default class ConversationAssignmentService {
     const leadOwner = lead.lead_owner;
     if (!leadOwner) return null;
 
-    const leadOwnerPancakeId = (await this.frappeClient.getDoc("User", leadOwner)).pancake_id;
+    const leadOwnerPancakeId = (
+      await this.frappeClient.getDoc("User", leadOwner)
+    ).pancake_id;
     if (!leadOwnerPancakeId) return null;
 
     const contacts = await this.frappeClient.getList("Contact", {
@@ -73,8 +79,11 @@ export default class ConversationAssignmentService {
     const contact = contacts[0];
     const pageId = contact.pancake_page_id;
     const conversationId = contact.pancake_conversation_id;
-    const assigneesHistory = await this.getLastConversationAssigneesHistory(conversationId);
-    const assignedUserIds = [...new Set([...assigneesHistory, leadOwnerPancakeId])];
+    const assigneesHistory =
+      await this.getLastConversationAssigneesHistory(conversationId);
+    const assignedUserIds = [
+      ...new Set([...assigneesHistory, leadOwnerPancakeId])
+    ];
     const res = await this.pancakeClient.assignConversation(
       pageId,
       conversationId,

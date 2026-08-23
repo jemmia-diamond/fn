@@ -19,7 +19,9 @@ export default class JemmiaShieldLarkService {
       );
 
       if (!response.data.app_access_token) {
-        throw new Error(`Failed to get app token: ${JSON.stringify(response.data)}`);
+        throw new Error(
+          `Failed to get app token: ${JSON.stringify(response.data)}`
+        );
       }
 
       return response.data.app_access_token;
@@ -79,22 +81,24 @@ export default class JemmiaShieldLarkService {
     }
   }
 
-  static async getUserGroups(env: any, userAccessToken: string): Promise<any[]> {
+  static async getUserGroups(
+    env: any,
+    userAccessToken: string
+  ): Promise<any[]> {
     try {
       let allGroups: any[] = [];
       let pageToken = "";
       let hasMore = true;
 
       while (hasMore) {
-        const response: any = await JemmiaShieldLarkService.userClient(userAccessToken).get(
-          "/im/v1/chats",
-          {
-            params: {
-              page_token: pageToken,
-              page_size: 100
-            }
+        const response: any = await JemmiaShieldLarkService.userClient(
+          userAccessToken
+        ).get("/im/v1/chats", {
+          params: {
+            page_token: pageToken,
+            page_size: 100
           }
-        );
+        });
 
         if (response.data.code !== 0) {
           throw new Error(`Failed to fetch user groups: ${response.data.msg}`);
@@ -161,10 +165,16 @@ export default class JemmiaShieldLarkService {
     }
   }
 
-  static async addBotAsManager(env: any, chatId: string, userAccessToken: string): Promise<void> {
+  static async addBotAsManager(
+    env: any,
+    chatId: string,
+    userAccessToken: string
+  ): Promise<void> {
     try {
       const LARK_APP_ID = env.LARK_APP_SHIELD_ID;
-      const response = await JemmiaShieldLarkService.userClient(userAccessToken).post(
+      const response = await JemmiaShieldLarkService.userClient(
+        userAccessToken
+      ).post(
         `/im/v1/chats/${chatId}/managers/add_managers`,
         {
           manager_ids: [LARK_APP_ID]
@@ -177,7 +187,9 @@ export default class JemmiaShieldLarkService {
       );
 
       if (response.data.code !== 0) {
-        throw new Error(`Failed to add bot as manager to group ${chatId}: ${response.data.msg}`);
+        throw new Error(
+          `Failed to add bot as manager to group ${chatId}: ${response.data.msg}`
+        );
       }
     } catch (error: any) {
       if (error.response) {
@@ -186,15 +198,19 @@ export default class JemmiaShieldLarkService {
           JSON.stringify(error.response.data, null, 2)
         );
       }
-      console.warn(`Lark Service Error (addBotAsManager) for chat ${chatId}:`, error.message);
+      console.warn(
+        `Lark Service Error (addBotAsManager) for chat ${chatId}:`,
+        error.message
+      );
       throw error;
     }
   }
 
   static async getUserInfo(env: any, userAccessToken: string): Promise<any> {
     try {
-      const response =
-        await JemmiaShieldLarkService.userClient(userAccessToken).get("/authen/v1/user_info");
+      const response = await JemmiaShieldLarkService.userClient(
+        userAccessToken
+      ).get("/authen/v1/user_info");
 
       if (response.data.code !== 0) {
         throw new Error(`Failed to get user info: ${response.data.msg}`);
@@ -213,10 +229,16 @@ export default class JemmiaShieldLarkService {
     }
   }
 
-  static async addBotToGroup(env: any, chatId: string, userAccessToken: string): Promise<void> {
+  static async addBotToGroup(
+    env: any,
+    chatId: string,
+    userAccessToken: string
+  ): Promise<void> {
     try {
       const LARK_APP_ID = env.LARK_APP_SHIELD_ID;
-      const response = await JemmiaShieldLarkService.userClient(userAccessToken).post(
+      const response = await JemmiaShieldLarkService.userClient(
+        userAccessToken
+      ).post(
         `/im/v1/chats/${chatId}/members`,
         {
           id_list: [LARK_APP_ID]
@@ -230,7 +252,9 @@ export default class JemmiaShieldLarkService {
 
       if (response.data.code !== 0) {
         // Ignore if already in group (code might vary, but for now log and throw to be handled)
-        throw new Error(`Failed to add bot to group ${chatId}: ${response.data.msg}`);
+        throw new Error(
+          `Failed to add bot to group ${chatId}: ${response.data.msg}`
+        );
       }
     } catch (error: any) {
       if (error.response) {
@@ -239,12 +263,18 @@ export default class JemmiaShieldLarkService {
           JSON.stringify(error.response.data, null, 2)
         );
       }
-      console.warn(`Lark Service Error (addBotToGroup) for chat ${chatId}:`, error.message);
+      console.warn(
+        `Lark Service Error (addBotToGroup) for chat ${chatId}:`,
+        error.message
+      );
       throw error;
     }
   }
 
-  static async getAuthUrl(env: any, state: string = "random_state"): Promise<string> {
+  static async getAuthUrl(
+    env: any,
+    state: string = "random_state"
+  ): Promise<string> {
     const LARK_APP_ID = env.LARK_APP_SHIELD_ID;
     const LARK_REDIRECT_URI = env.LARK_REDIRECT_URI;
     const LARK_RECALL_REDIRECT_URI = env.LARK_RECALL_REDIRECT_URI;
@@ -266,22 +296,33 @@ export default class JemmiaShieldLarkService {
     const iv = Buffer.from(encrypted, "base64").subarray(0, 16);
     const encryptedData = Buffer.from(encrypted, "base64").subarray(16);
 
-    const decipher = crypto.createDecipheriv("aes-256-cbc", key as any, iv as any);
+    const decipher = crypto.createDecipheriv(
+      "aes-256-cbc",
+      key as any,
+      iv as any
+    );
     let decrypted = decipher.update(encryptedData as any);
     decrypted = Buffer.concat([decrypted, decipher.final()] as any);
 
     return decrypted.toString("utf8");
   }
 
-  static async getImage(env: any, messageId: string, imageKey: string): Promise<Buffer> {
+  static async getImage(
+    env: any,
+    messageId: string,
+    imageKey: string
+  ): Promise<Buffer> {
     try {
       const client = await JemmiaShieldLarkService.client(env);
-      const response = await client.get(`/im/v1/messages/${messageId}/resources/${imageKey}`, {
-        params: {
-          type: "image"
-        },
-        responseType: "arraybuffer"
-      });
+      const response = await client.get(
+        `/im/v1/messages/${messageId}/resources/${imageKey}`,
+        {
+          params: {
+            type: "image"
+          },
+          responseType: "arraybuffer"
+        }
+      );
 
       return Buffer.from(response.data);
     } catch (error: any) {
@@ -397,7 +438,9 @@ export default class JemmiaShieldLarkService {
       });
 
       if (response.data.code !== 0) {
-        throw new Error(`Failed to send message to thread: ${response.data.msg}`);
+        throw new Error(
+          `Failed to send message to thread: ${response.data.msg}`
+        );
       }
     } catch (error: any) {
       if (error.response) {
@@ -454,26 +497,33 @@ export default class JemmiaShieldLarkService {
 
   static async uploadImage(env: any, imageBuffer: Buffer): Promise<string> {
     try {
-      const appAccessToken = await JemmiaShieldLarkService.getAppAccessToken(env);
+      const appAccessToken =
+        await JemmiaShieldLarkService.getAppAccessToken(env);
       const formData = new FormData();
       const blob = new Blob([imageBuffer as any]);
       formData.append("image", blob, "image.jpg");
       formData.append("image_type", "message");
 
       // Use native fetch to avoid axios multipart issues
-      const response = await fetch(`${JemmiaShieldLarkService.API_BASE}/im/v1/images`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${appAccessToken}`
-          // Content-Type is intentionally omitted to let fetch set the boundary
-        },
-        body: formData
-      });
+      const response = await fetch(
+        `${JemmiaShieldLarkService.API_BASE}/im/v1/images`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${appAccessToken}`
+            // Content-Type is intentionally omitted to let fetch set the boundary
+          },
+          body: formData
+        }
+      );
 
       const responseData: any = await response.json();
 
       if (responseData.code !== 0) {
-        console.warn("Lark API Error Data (uploadImage):", JSON.stringify(responseData, null, 2));
+        console.warn(
+          "Lark API Error Data (uploadImage):",
+          JSON.stringify(responseData, null, 2)
+        );
         throw new Error(`Failed to upload image: ${responseData.msg}`);
       }
 
@@ -516,7 +566,9 @@ export default class JemmiaShieldLarkService {
       const response = await client.post("/ephemeral/v1/send", payload);
 
       if (response.data.code !== 0) {
-        throw new Error(`Failed to send ephemeral message: ${response.data.msg}`);
+        throw new Error(
+          `Failed to send ephemeral message: ${response.data.msg}`
+        );
       }
     } catch (error: any) {
       if (error.response) {
@@ -563,7 +615,10 @@ export default class JemmiaShieldLarkService {
       }
     }
 
-    const encryptedData = LarkCipher.encrypt(JSON.stringify(payload), encryptKey);
+    const encryptedData = LarkCipher.encrypt(
+      JSON.stringify(payload),
+      encryptKey
+    );
     const encodedData = encodeURIComponent(encryptedData);
 
     // Construct View URL

@@ -1,7 +1,13 @@
 import { Prisma } from "@prisma-cli";
 import { toSqlOrder } from "services/utils/sql-helpers";
 
-const ALLOWED_SORT_COLUMNS = new Set(["price", "color", "clarity", "shape", "fluorescence"]);
+const ALLOWED_SORT_COLUMNS = new Set([
+  "price",
+  "color",
+  "clarity",
+  "shape",
+  "fluorescence"
+]);
 
 export function buildFilterString(jsonParams) {
   const filterClauses = [];
@@ -15,19 +21,27 @@ export function buildFilterString(jsonParams) {
   }
 
   if (jsonParams.clarities && jsonParams.clarities.length > 0) {
-    filterClauses.push(Prisma.sql`AND d.clarity = ANY(${jsonParams.clarities})\n`);
+    filterClauses.push(
+      Prisma.sql`AND d.clarity = ANY(${jsonParams.clarities})\n`
+    );
   }
 
   if (jsonParams.fluorescence && jsonParams.fluorescence.length > 0) {
-    filterClauses.push(Prisma.sql`AND d.fluorescence = ANY(${jsonParams.fluorescence})\n`);
+    filterClauses.push(
+      Prisma.sql`AND d.fluorescence = ANY(${jsonParams.fluorescence})\n`
+    );
   }
 
   if (jsonParams.price?.min) {
-    filterClauses.push(Prisma.sql`AND d.price >= ${parseFloat(jsonParams.price.min)}\n`);
+    filterClauses.push(
+      Prisma.sql`AND d.price >= ${parseFloat(jsonParams.price.min)}\n`
+    );
   }
 
   if (jsonParams.price?.max) {
-    filterClauses.push(Prisma.sql`AND d.price <= ${parseFloat(jsonParams.price.max)}\n`);
+    filterClauses.push(
+      Prisma.sql`AND d.price <= ${parseFloat(jsonParams.price.max)}\n`
+    );
   }
 
   if (jsonParams.edge_size?.lower) {
@@ -42,7 +56,9 @@ export function buildFilterString(jsonParams) {
     );
   }
 
-  return filterClauses.length > 0 ? Prisma.join(filterClauses, " ") : Prisma.empty;
+  return filterClauses.length > 0
+    ? Prisma.join(filterClauses, " ")
+    : Prisma.empty;
 }
 
 export function buildSortString(jsonParams) {

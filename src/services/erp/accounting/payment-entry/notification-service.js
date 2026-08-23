@@ -12,9 +12,17 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 
 const BRANCH_MANAGERS = [
-  { pattern: "Cửa hàng HCM", label: "Hồ Chí Minh", email: "trinh.ngo@jemmia.vn" },
+  {
+    pattern: "Cửa hàng HCM",
+    label: "Hồ Chí Minh",
+    email: "trinh.ngo@jemmia.vn"
+  },
   { pattern: "Cửa hàng Hà Nội", label: "Hà Nội", email: "hue.phan@jemmia.vn" },
-  { pattern: "Cửa hàng Cần Thơ", label: "Cần Thơ", email: "tien.chau@jemmia.vn" }
+  {
+    pattern: "Cửa hàng Cần Thơ",
+    label: "Cần Thơ",
+    email: "tien.chau@jemmia.vn"
+  }
 ];
 const PAGE_LIMIT = 100;
 const ZERO = 0;
@@ -81,7 +89,10 @@ export default class PaymentEntryNotificationService {
         const partyName = entry.party_name;
         if (partyName.toLowerCase().includes("test")) continue;
 
-        const fullEntry = await this.frappeClient.getDoc("Payment Entry", entry.name);
+        const fullEntry = await this.frappeClient.getDoc(
+          "Payment Entry",
+          entry.name
+        );
         const hasReferences = fullEntry?.references?.length > ZERO;
         if (!hasReferences) entriesWithoutReferences.push(entry);
       }
@@ -102,7 +113,10 @@ export default class PaymentEntryNotificationService {
         created_by_display: entry.created_by_display
       }));
 
-      await this.sendNotification(pendingEntries, end.tz(TIMEZONE_VIETNAM).format("YYYY-MM-DD"));
+      await this.sendNotification(
+        pendingEntries,
+        end.tz(TIMEZONE_VIETNAM).format("YYYY-MM-DD")
+      );
       return pendingEntries;
     } catch (error) {
       Sentry.captureException(error);
@@ -123,7 +137,8 @@ export default class PaymentEntryNotificationService {
     const emailToUserIdMap = {};
     for (const user of users) {
       if (user.email) emailToUserIdMap[user.email] = user.user_id;
-      if (user.enterprise_email) emailToUserIdMap[user.enterprise_email] = user.user_id;
+      if (user.enterprise_email)
+        emailToUserIdMap[user.enterprise_email] = user.user_id;
     }
 
     return emailToUserIdMap;
@@ -145,7 +160,9 @@ export default class PaymentEntryNotificationService {
           userId: null
         });
 
-        remainingEntries = remainingEntries.filter((e) => !groupEntries.includes(e));
+        remainingEntries = remainingEntries.filter(
+          (e) => !groupEntries.includes(e)
+        );
       }
     }
 
@@ -157,7 +174,9 @@ export default class PaymentEntryNotificationService {
       });
     }
 
-    const uniqueEmails = [...new Set(entries.map((e) => e.created_by_display).filter(Boolean))];
+    const uniqueEmails = [
+      ...new Set(entries.map((e) => e.created_by_display).filter(Boolean))
+    ];
     const emailToUserIdMap = await this.getUserIdsByEmails(uniqueEmails);
 
     for (const group of groupedEntries) {
@@ -166,7 +185,11 @@ export default class PaymentEntryNotificationService {
       }
     }
 
-    const message = this.formatNotificationMessage(groupedEntries, entries.length, date);
+    const message = this.formatNotificationMessage(
+      groupedEntries,
+      entries.length,
+      date
+    );
     const larkClient = await LarksuiteService.createClientV2(this.env);
 
     await larkClient.im.message.create({
@@ -193,13 +216,17 @@ export default class PaymentEntryNotificationService {
         .map((entry) => {
           globalIndex++;
           const link = `${this.erpPEUrl}/${entry.name}`;
-          const formattedAmount = new Intl.NumberFormat("vi-VN").format(entry.amount || ZERO);
+          const formattedAmount = new Intl.NumberFormat("vi-VN").format(
+            entry.amount || ZERO
+          );
 
           let entryMessage =
             `\n${globalIndex}. Phiếu ${entry.name}\n` +
             `- Số tiền: ${formattedAmount}\n` +
             `- Loại thanh toán: ${entry.mode_of_payment}\n` +
-            (entry.payment_code !== "banking" ? `- Kênh thanh toán: ${entry.gateway}\n` : "") +
+            (entry.payment_code !== "banking"
+              ? `- Kênh thanh toán: ${entry.gateway}\n`
+              : "") +
             `- Khách hàng: ${entry?.party_name}\n` +
             `- Link: <b>${link}</b>`;
 

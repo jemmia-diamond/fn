@@ -19,10 +19,15 @@ export default class QRPaymentsMapBankTransactionController {
     const { sepay_transaction_id } = body;
 
     if (!sepay_transaction_id) {
-      return c.json({ error: "Missing 'sepay_transaction_id' in request body" }, 400);
+      return c.json(
+        { error: "Missing 'sepay_transaction_id' in request body" },
+        400
+      );
     }
 
-    const paymentService = new PaymentService.MapQRWithBankTransactionService(c.env);
+    const paymentService = new PaymentService.MapQRWithBankTransactionService(
+      c.env
+    );
 
     await paymentService.mapTransaction(id, sepay_transaction_id);
 

@@ -55,12 +55,19 @@ export default class OrderTrackingService {
 
       let nhattinTrackInfo = {};
       try {
-        nhattinTrackInfo = await this.getOrderDeliveryStatus(latestOrderId, bearerToken);
+        nhattinTrackInfo = await this.getOrderDeliveryStatus(
+          latestOrderId,
+          bearerToken
+        );
       } catch (e) {
         Sentry.captureException(e);
       }
 
-      return formatOrderTrackingResult(orderInfo, nhattinTrackInfo, isAuthorized);
+      return formatOrderTrackingResult(
+        orderInfo,
+        nhattinTrackInfo,
+        isAuthorized
+      );
     } catch (error) {
       Sentry.captureException(error);
       throw error;
@@ -70,7 +77,8 @@ export default class OrderTrackingService {
   getOriginalTotalPrice(order) {
     let totalOriginalPrice = 0;
     order.items.forEach((item) => {
-      totalOriginalPrice += Number(item.original_price || 0) * Number(item.quantity || 0);
+      totalOriginalPrice +=
+        Number(item.original_price || 0) * Number(item.quantity || 0);
     });
     return totalOriginalPrice;
   }
@@ -118,7 +126,12 @@ export default class OrderTrackingService {
       const nhattinBaseUrl = this.env.NHAT_TIN_API_URL;
       const nhattinPassword = password ?? this.env.NHAT_TIN_LOGISTIC_PASSWORD;
 
-      if (!nhattinEmail || !nhattinPartnerId || !nhattinBaseUrl || !nhattinPassword) {
+      if (
+        !nhattinEmail ||
+        !nhattinPartnerId ||
+        !nhattinBaseUrl ||
+        !nhattinPassword
+      ) {
         throw new Error("Missing Nhattin API credentials");
       }
 
@@ -228,7 +241,9 @@ export default class OrderTrackingService {
         return {
           ...trackInfo,
           status: status,
-          overall_status: status.find((step) => step.status === OrderTimelineStatus.ONGOING).key
+          overall_status: status.find(
+            (step) => step.status === OrderTimelineStatus.ONGOING
+          ).key
         };
       }
 
@@ -245,7 +260,8 @@ export default class OrderTrackingService {
       }
 
       const takeFromVendorLogs = nhattinTrackingLog.filter(
-        (log) => log.billStatusId === NhattinDeliveryStatus.TAKE_ORDER_FROM_VENDOR
+        (log) =>
+          log.billStatusId === NhattinDeliveryStatus.TAKE_ORDER_FROM_VENDOR
       );
 
       const transitLogs = nhattinTrackingLog.filter(
@@ -261,8 +277,9 @@ export default class OrderTrackingService {
       return {
         ...trackInfo,
         status: combinedSteps,
-        overall_status: combinedSteps.find((step) => step.status === OrderTimelineStatus.ONGOING)
-          .key
+        overall_status: combinedSteps.find(
+          (step) => step.status === OrderTimelineStatus.ONGOING
+        ).key
       };
     } catch (err) {
       Sentry.captureException(err);
@@ -280,12 +297,15 @@ export default class OrderTrackingService {
 
   combinedSteps({ haravanSteps, takeFromVendorLogs, transitLogs }) {
     // ready_to_confirm | confirmed | ready_to_pick
-    const ongoingStep = haravanSteps.find((step) => step.status === OrderTimelineStatus.ONGOING);
+    const ongoingStep = haravanSteps.find(
+      (step) => step.status === OrderTimelineStatus.ONGOING
+    );
 
     if (
-      [OrderOverallStatus.READY_TO_CONFIRM.key, OrderOverallStatus.CONFIRMED.key].includes(
-        ongoingStep.key
-      )
+      [
+        OrderOverallStatus.READY_TO_CONFIRM.key,
+        OrderOverallStatus.CONFIRMED.key
+      ].includes(ongoingStep.key)
     ) {
       return haravanSteps;
     }
@@ -302,13 +322,19 @@ export default class OrderTrackingService {
     const pickTime = takeFromVendorLogs?.[0]?.getDateTimeObject().toISOString();
 
     if (readyToPickIndex > -1 && pickTime) {
-      if (!haravanSteps[readyToPickIndex].time || haravanSteps[readyToPickIndex].time > pickTime) {
+      if (
+        !haravanSteps[readyToPickIndex].time ||
+        haravanSteps[readyToPickIndex].time > pickTime
+      ) {
         haravanSteps[readyToPickIndex].time = pickTime;
       }
     }
 
     if (pickingIndex > -1 && pickTime) {
-      if (!haravanSteps[pickingIndex].time || haravanSteps[pickingIndex].time > pickTime) {
+      if (
+        !haravanSteps[pickingIndex].time ||
+        haravanSteps[pickingIndex].time > pickTime
+      ) {
         haravanSteps[pickingIndex].time = pickTime;
       }
     }
@@ -318,7 +344,9 @@ export default class OrderTrackingService {
       (step) => step.key === OrderOverallStatus.DELIVERING.key
     );
     if (deliveringIndex > -1) {
-      const deliveringTime = transitLogs?.[0]?.getDateTimeObject().toISOString();
+      const deliveringTime = transitLogs?.[0]
+        ?.getDateTimeObject()
+        .toISOString();
       if (deliveringTime) {
         if (
           !haravanSteps[deliveringIndex].time ||
@@ -360,7 +388,8 @@ export default class OrderTrackingService {
     }
 
     return [...beforeDeliveringSteps, ...afterDeliveringSteps].filter(
-      (step) => !(step.time === null && step.status === OrderTimelineStatus.PAST)
+      (step) =>
+        !(step.time === null && step.status === OrderTimelineStatus.PAST)
     );
   }
 
@@ -412,7 +441,9 @@ export default class OrderTrackingService {
 
     let validSteps = [...orderedSteps];
 
-    const index = validSteps.findIndex((step) => step.title === OrderOverallStatus.CANCELLED.label);
+    const index = validSteps.findIndex(
+      (step) => step.title === OrderOverallStatus.CANCELLED.label
+    );
 
     if (index !== -1) {
       validSteps[index] = {
@@ -423,7 +454,9 @@ export default class OrderTrackingService {
     }
 
     validSteps = validSteps
-      .filter((step) => step.time !== null && new Date(step.time) <= cancelledTime)
+      .filter(
+        (step) => step.time !== null && new Date(step.time) <= cancelledTime
+      )
       .map((step) => ({
         ...step,
         status:
@@ -448,7 +481,12 @@ export default class OrderTrackingService {
       if (step.time !== null) {
         return this._createFilledStep(step, index, lastFilledIndex);
       } else {
-        return this._createUnfilledStep(step, index, lastFilledIndex, orderedSteps);
+        return this._createUnfilledStep(
+          step,
+          index,
+          lastFilledIndex,
+          orderedSteps
+        );
       }
     });
 
@@ -460,8 +498,12 @@ export default class OrderTrackingService {
    * @private
    */
   _findLastFilledStepIndex(orderedSteps) {
-    const lastFilledIndex = [...orderedSteps].reverse().findIndex((step) => step.time !== null);
-    return lastFilledIndex >= 0 ? orderedSteps.length - 1 - lastFilledIndex : -1;
+    const lastFilledIndex = [...orderedSteps]
+      .reverse()
+      .findIndex((step) => step.time !== null);
+    return lastFilledIndex >= 0
+      ? orderedSteps.length - 1 - lastFilledIndex
+      : -1;
   }
 
   _createFilledStep(step, index, lastFilledIndex) {
@@ -486,7 +528,8 @@ export default class OrderTrackingService {
     const deliveredIndex = orderedSteps.findIndex(
       (s) => s.key === OrderOverallStatus.DELIVERED.key
     );
-    const isBeforeDelivered = deliveredIndex >= 0 ? index <= deliveredIndex : true;
+    const isBeforeDelivered =
+      deliveredIndex >= 0 ? index <= deliveredIndex : true;
 
     if (isAfterOngoing && isBeforeDelivered) {
       return {
@@ -505,7 +548,9 @@ export default class OrderTrackingService {
       title: step.title,
       time: step.time,
       key: step.key,
-      status: isAfterOngoing ? OrderTimelineStatus.UPCOMING : OrderTimelineStatus.PAST
+      status: isAfterOngoing
+        ? OrderTimelineStatus.UPCOMING
+        : OrderTimelineStatus.PAST
     };
   }
 

@@ -23,7 +23,11 @@ export default class ProductClient extends BaseClient {
 
     while (hasMore) {
       const path = "/com/products.json";
-      const data = await this.makeGetRequest(path, { updated_at_min, page, limit });
+      const data = await this.makeGetRequest(path, {
+        updated_at_min,
+        page,
+        limit
+      });
       const products = data?.data?.products || [];
 
       if (products.length > 0) {

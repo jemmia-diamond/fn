@@ -156,8 +156,12 @@ export default class JewelryDiamondPairService {
           data: {
             haravan_product_id: oldPair.haravan_product_id,
             haravan_variant_id: oldPair.haravan_variant_id,
-            haravan_diamond_product_id: Number(newDiamond.new_diamond_product_id),
-            haravan_diamond_variant_id: Number(newDiamond.new_diamond_variant_id),
+            haravan_diamond_product_id: Number(
+              newDiamond.new_diamond_product_id
+            ),
+            haravan_diamond_variant_id: Number(
+              newDiamond.new_diamond_variant_id
+            ),
             is_active: true
           }
         })
@@ -187,7 +191,9 @@ export default class JewelryDiamondPairService {
       haravan_diamond_variant_id
     );
     if (!isOutOfStock) {
-      throw new BadRequestException("Diamond is not out of stock. No action taken.");
+      throw new BadRequestException(
+        "Diamond is not out of stock. No action taken."
+      );
     }
 
     const oldPairRecord = await this.db.jewelryDiamondPairing.findFirst({
@@ -206,7 +212,9 @@ export default class JewelryDiamondPairService {
     });
 
     if (!oldPairRecord) {
-      throw new BadRequestException("Active jewelry-diamond pair not found for the given IDs.");
+      throw new BadRequestException(
+        "Active jewelry-diamond pair not found for the given IDs."
+      );
     }
 
     const oldPair = {

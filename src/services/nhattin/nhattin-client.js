@@ -37,7 +37,9 @@ export default class NhattinClient {
 
       if (!response.ok) {
         const errorBody = await response.text();
-        throw new Error(`API Error: ${response.status} ${response.statusText} - ${errorBody}`);
+        throw new Error(
+          `API Error: ${response.status} ${response.statusText} - ${errorBody}`
+        );
       }
 
       const data = await response.json();

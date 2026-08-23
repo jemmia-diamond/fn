@@ -19,12 +19,18 @@ export default class LeadBudgetService {
   }
 
   static async syncLeadBudgetsToDatabase(env) {
-    const timeThreshold = dayjs().subtract(1, "day").utc().format("YYYY-MM-DD HH:mm:ss");
+    const timeThreshold = dayjs()
+      .subtract(1, "day")
+      .utc()
+      .format("YYYY-MM-DD HH:mm:ss");
     const leadBudgetService = new LeadBudgetService(env);
-    const leadBudgets = await leadBudgetService.frappeClient.getList("Lead Budget", {
-      limit_page_length: LeadBudgetService.ERPNEXT_PAGE_SIZE,
-      filters: [["modified", ">=", timeThreshold]]
-    });
+    const leadBudgets = await leadBudgetService.frappeClient.getList(
+      "Lead Budget",
+      {
+        limit_page_length: LeadBudgetService.ERPNEXT_PAGE_SIZE,
+        filters: [["modified", ">=", timeThreshold]]
+      }
+    );
     if (leadBudgets.length > 0) {
       for (const leadBudget of leadBudgets) {
         await leadBudgetService.db.erpnextLeadBudget.upsert({

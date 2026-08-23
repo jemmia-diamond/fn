@@ -35,7 +35,9 @@ export default class CollectionProductSyncService {
       orderBy: { updated_at: "desc" },
       select: { updated_at: true }
     });
-    const latestUpdatedAt = latestRecord?.updated_at ? dayjs(latestRecord.updated_at) : null;
+    const latestUpdatedAt = latestRecord?.updated_at
+      ? dayjs(latestRecord.updated_at)
+      : null;
 
     while (hasMore) {
       if (page > 1 && !skipNextSleep) {
@@ -44,7 +46,10 @@ export default class CollectionProductSyncService {
       skipNextSleep = false;
 
       try {
-        const response = await haravanClient.collect.getCollects({ page, limit });
+        const response = await haravanClient.collect.getCollects({
+          page,
+          limit
+        });
         const collects = response?.collects || [];
 
         if (collects.length > 0) {
@@ -74,7 +79,10 @@ export default class CollectionProductSyncService {
             const lastCollect = collects[collects.length - 1];
             const lastCollectUpdatedAt = dayjs(lastCollect.updated_at);
 
-            if (latestUpdatedAt && lastCollectUpdatedAt.isBefore(latestUpdatedAt)) {
+            if (
+              latestUpdatedAt &&
+              lastCollectUpdatedAt.isBefore(latestUpdatedAt)
+            ) {
               hasMore = false;
             } else {
               page++;
@@ -86,7 +94,8 @@ export default class CollectionProductSyncService {
       } catch (error) {
         if (error.status === 429) {
           const retryAfter = parseFloat(error.retryAfter || 2);
-          const allowedRetrySeconds = CollectionProductSyncService.MAX_RETRY_AFTER_SECONDS;
+          const allowedRetrySeconds =
+            CollectionProductSyncService.MAX_RETRY_AFTER_SECONDS;
 
           if (retryAfter > allowedRetrySeconds) {
             throw new Error(
@@ -121,7 +130,9 @@ export default class CollectionProductSyncService {
   }
 
   async _processCollectBatch(collects) {
-    const collectionProductsToUpsert = collects.map((item) => this._mapCollectionProduct(item));
+    const collectionProductsToUpsert = collects.map((item) =>
+      this._mapCollectionProduct(item)
+    );
 
     if (collectionProductsToUpsert.length === 0) return;
 

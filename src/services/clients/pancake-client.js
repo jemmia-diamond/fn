@@ -51,7 +51,10 @@ export default class PancakeClient {
       });
       return response.data.data || response.data;
     } catch (error) {
-      throw new Error("Failed to retrieve pages list.", error.response?.data || error.message);
+      throw new Error(
+        "Failed to retrieve pages list.",
+        error.response?.data || error.message
+      );
     }
   }
 
@@ -238,7 +241,12 @@ export default class PancakeClient {
     const url = `${this.baseUrl}/api/public_api/v1/pages/${pageId}/statistics/pages_campaigns`;
     try {
       const response = await axios.get(url, {
-        params: { page_id: pageId, page_access_token: pageAccessToken, since, until }
+        params: {
+          page_id: pageId,
+          page_access_token: pageAccessToken,
+          since,
+          until
+        }
       });
       return response.data.data || [];
     } catch (error) {
@@ -262,7 +270,13 @@ export default class PancakeClient {
     const url = `${this.baseUrl}/api/public_api/v1/pages/${pageId}/statistics/ads`;
     try {
       const response = await axios.get(url, {
-        params: { page_id: pageId, page_access_token: pageAccessToken, since, until, type }
+        params: {
+          page_id: pageId,
+          page_access_token: pageAccessToken,
+          since,
+          until,
+          type
+        }
       });
       return response.data.data || [];
     } catch (error) {
@@ -311,7 +325,12 @@ export default class PancakeClient {
     const url = `${this.baseUrl}/api/public_api/v1/pages/${pageId}/statistics/pages`;
     try {
       const response = await axios.get(url, {
-        params: { page_id: pageId, page_access_token: pageAccessToken, since, until }
+        params: {
+          page_id: pageId,
+          page_access_token: pageAccessToken,
+          since,
+          until
+        }
       });
       return response.data.data || [];
     } catch (error) {
@@ -387,7 +406,12 @@ export default class PancakeClient {
     const url = `${this.baseUrl}/api/public_api/v1/pages/${pageId}/statistics/tags`;
     try {
       const response = await axios.get(url, {
-        params: { page_id: pageId, page_access_token: pageAccessToken, since, until }
+        params: {
+          page_id: pageId,
+          page_access_token: pageAccessToken,
+          since,
+          until
+        }
       });
       return response.data.data || [];
     } catch (error) {
@@ -682,7 +706,12 @@ export default class PancakeClient {
   async sendPrivateReply(pageId, conversationId, postId, messageId, message) {
     const pageAccessToken = await this.getPageAccessToken(pageId);
     const url = `${this.baseUrl}/api/public_api/v1/pages/${pageId}/conversations/${conversationId}/messages`;
-    const payload = { action: "private_replies", post_id: postId, message_id: messageId, message };
+    const payload = {
+      action: "private_replies",
+      post_id: postId,
+      message_id: messageId,
+      message
+    };
     try {
       const response = await axios.post(url, payload, {
         params: { page_access_token: pageAccessToken },

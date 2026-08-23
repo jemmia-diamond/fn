@@ -1,7 +1,10 @@
 import Ecommerce from "services/ecommerce";
 import { parseNumber } from "services/utils/num-helper";
 import { splitParams } from "services/utils/param-helper";
-import { API_CONFIG, DEFAULT_JEWELRY_DISCOUNT } from "src/controllers/ecommerce/constant";
+import {
+  API_CONFIG,
+  DEFAULT_JEWELRY_DISCOUNT
+} from "src/controllers/ecommerce/constant";
 
 export default class JewelryControllerV2 {
   static async index(ctx) {
@@ -16,10 +19,16 @@ export default class JewelryControllerV2 {
       pages: splitParams(params.pages),
       is_in_stock: params.is_in_stock ? params.is_in_stock === "true" : null,
       pagination: {
-        from: Math.max(API_CONFIG.MIN_FROM, parseNumber(params.from, API_CONFIG.DEFAULT_FROM)),
+        from: Math.max(
+          API_CONFIG.MIN_FROM,
+          parseNumber(params.from, API_CONFIG.DEFAULT_FROM)
+        ),
         limit: Math.min(
           API_CONFIG.MAX_LIMIT,
-          Math.max(API_CONFIG.MIN_FROM, parseNumber(params.limit, API_CONFIG.DEFAULT_LIMIT))
+          Math.max(
+            API_CONFIG.MIN_FROM,
+            parseNumber(params.limit, API_CONFIG.DEFAULT_LIMIT)
+          )
         )
       },
       price: {

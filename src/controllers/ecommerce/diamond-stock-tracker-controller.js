@@ -59,7 +59,10 @@ export default class DiamondStockTrackerController {
 
     const { targets, warehouses } = validated.data;
     const diamondService = new DiamondService(ctx.env);
-    const result = await diamondService.getDiamondStockTracker(targets, warehouses);
+    const result = await diamondService.getDiamondStockTracker(
+      targets,
+      warehouses
+    );
 
     return ctx.json({ data: result }, 200);
   }

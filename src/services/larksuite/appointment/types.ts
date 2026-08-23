@@ -59,7 +59,8 @@ export interface LarksuiteAppointmentParsedFields {
   offline_response: string | null;
 }
 
-export interface ILarksuiteAppointment extends LarksuiteAppointmentParsedFields {
+export interface ILarksuiteAppointment
+  extends LarksuiteAppointmentParsedFields {
   record_id: string;
 }
 

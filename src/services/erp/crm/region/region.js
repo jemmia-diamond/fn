@@ -19,7 +19,10 @@ export default class RegionService {
   }
 
   static async syncRegionsToDatabase(env) {
-    const timeThreshold = dayjs().subtract(1, "day").utc().format("YYYY-MM-DD HH:mm:ss");
+    const timeThreshold = dayjs()
+      .subtract(1, "day")
+      .utc()
+      .format("YYYY-MM-DD HH:mm:ss");
     const regionService = new RegionService(env);
     const regions = await regionService.frappeClient.getList("Region", {
       limit_page_length: RegionService.ERPNEXT_PAGE_SIZE,

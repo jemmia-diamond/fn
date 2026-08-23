@@ -4,7 +4,10 @@ import { randomUUID } from "crypto";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import { mapSalesOrdersToDatabase } from "src/services/erp/selling/sales-order/utils/sales-order-mappers";
-import { escapeSqlValue, fetchChildRecordsFromERP } from "src/services/utils/sql-helpers";
+import {
+  escapeSqlValue,
+  fetchChildRecordsFromERP
+} from "src/services/utils/sql-helpers";
 
 dayjs.extend(utc);
 
@@ -31,7 +34,13 @@ export const getItemPromotions = (item) => {
 
 const CHUNK_SIZE = 30;
 
-export async function fetchSalesOrdersFromERP(frappeClient, doctype, fromDate, toDate, pageSize) {
+export async function fetchSalesOrdersFromERP(
+  frappeClient,
+  doctype,
+  fromDate,
+  toDate,
+  pageSize
+) {
   try {
     const filters = { modified: [">=", fromDate] };
     if (toDate) filters.modified = ["between", [fromDate, toDate]];
@@ -56,7 +65,11 @@ export async function fetchSalesOrdersFromERP(frappeClient, doctype, fromDate, t
         orderNames,
         "tabSales Order Item"
       );
-      const salesTeams = await fetchChildRecordsFromERP(frappeClient, orderNames, "tabSales Team");
+      const salesTeams = await fetchChildRecordsFromERP(
+        frappeClient,
+        orderNames,
+        "tabSales Team"
+      );
       const salesOrderPolicies = await fetchChildRecordsFromERP(
         frappeClient,
         orderNames,
@@ -99,7 +112,9 @@ export async function fetchSalesOrdersFromERP(frappeClient, doctype, fromDate, t
       const salesOrderPoliciesMap = groupByParent(salesOrderPolicies);
       const salesOrderPromotionsMap = groupByParent(salesOrderPromotions);
       const salesOrderPurposesMap = groupByParent(salesOrderPurposes);
-      const salesOrderProductCategoriesMap = groupByParent(salesOrderProductCategories);
+      const salesOrderProductCategoriesMap = groupByParent(
+        salesOrderProductCategories
+      );
       const debtHistoryMap = groupByParent(debtHistory);
       const paymentEntriesMap = groupByParent(paymentEntries);
 
@@ -110,7 +125,8 @@ export async function fetchSalesOrdersFromERP(frappeClient, doctype, fromDate, t
         item.policies = salesOrderPoliciesMap[item.name] || [];
         item.promotions = salesOrderPromotionsMap[item.name] || [];
         item.sales_order_purposes = salesOrderPurposesMap[item.name] || [];
-        item.product_categories = salesOrderProductCategoriesMap[item.name] || [];
+        item.product_categories =
+          salesOrderProductCategoriesMap[item.name] || [];
         item.debt_histories = debtHistoryMap[item.name] || [];
         item.payment_entries = paymentEntriesMap[item.name] || [];
       });
@@ -140,7 +156,8 @@ export async function saveSalesOrdersToDatabase(db, salesOrders) {
       const fields = [
         "uuid",
         ...Object.keys(chunk[0]).filter(
-          (field) => field !== "database_created_at" && field !== "database_updated_at"
+          (field) =>
+            field !== "database_created_at" && field !== "database_updated_at"
         ),
         "database_created_at",
         "database_updated_at"
@@ -166,7 +183,12 @@ export async function saveSalesOrdersToDatabase(db, salesOrders) {
 
       // Create UPDATE SET clause for ON CONFLICT (exclude "name", "uuid", and "database_created_at")
       const updateSetSql = fields
-        .filter((field) => field !== "name" && field !== "uuid" && field !== "database_created_at")
+        .filter(
+          (field) =>
+            field !== "name" &&
+            field !== "uuid" &&
+            field !== "database_created_at"
+        )
         .map((field) => {
           if (field === "database_updated_at") {
             return `"${field}" = CURRENT_TIMESTAMP`;
@@ -188,10 +210,16 @@ export async function saveSalesOrdersToDatabase(db, salesOrders) {
   }
 }
 
-export async function ensureSelfReference(frappeClient, order, doctype = "Sales Order") {
+export async function ensureSelfReference(
+  frappeClient,
+  order,
+  doctype = "Sales Order"
+) {
   // Update self-reference if missing (e.g. new order)
   if (order && order.name) {
-    const hasSelfRef = order.ref_sales_orders?.some((r) => r.sales_order === order.name);
+    const hasSelfRef = order.ref_sales_orders?.some(
+      (r) => r.sales_order === order.name
+    );
     if (!hasSelfRef) {
       const updatedRefs = [
         ...(order.ref_sales_orders || []),
@@ -278,7 +306,11 @@ export function normalizeUrlForAttachments(urlStr, envBaseUrl) {
   }
 }
 
-export async function fetchAndNormalizeAttachments(frappeClient, orderName, envBaseUrl) {
+export async function fetchAndNormalizeAttachments(
+  frappeClient,
+  orderName,
+  envBaseUrl
+) {
   const attachments = await frappeClient.getList("File", {
     filters: [
       ["attached_to_doctype", "=", "Sales Order"],

@@ -31,14 +31,19 @@ export default class DatabaseSyncService {
     const lastSyncDate = await kv.get(KV_KEY);
 
     const fromDate = lastSyncDate
-      ? dayjs(lastSyncDate).subtract(5, "minutes").format("YYYY-MM-DDTHH:mm:ss[Z]")
+      ? dayjs(lastSyncDate)
+          .subtract(5, "minutes")
+          .format("YYYY-MM-DDTHH:mm:ss[Z]")
       : dayjs().utc().subtract(1, "hour").format("YYYY-MM-DDTHH:mm:ss[Z]");
 
     try {
       const HRV_API_KEY = this.env.HARAVAN_TOKEN;
       const haravanClient = new HaravanAPI(HRV_API_KEY);
 
-      const variantIds = await this._fetchUpdatedVariantIds(haravanClient, fromDate);
+      const variantIds = await this._fetchUpdatedVariantIds(
+        haravanClient,
+        fromDate
+      );
       if (variantIds.length === 0) {
         await kv.put(KV_KEY, toDate);
         return;
@@ -48,10 +53,17 @@ export default class DatabaseSyncService {
       if (locationIds.length === 0) {
         throw new Error("No locations found");
       }
-      await this._processInventoryChunks(haravanClient, variantIds, locationIds);
+      await this._processInventoryChunks(
+        haravanClient,
+        variantIds,
+        locationIds
+      );
       await kv.put(KV_KEY, toDate);
     } catch {
-      if (lastSyncDate && dayjs(toDate).diff(dayjs(lastSyncDate), "hour") >= 1) {
+      if (
+        lastSyncDate &&
+        dayjs(toDate).diff(dayjs(lastSyncDate), "hour") >= 1
+      ) {
         await kv.put(KV_KEY, toDate);
       }
       return;
@@ -106,10 +118,11 @@ export default class DatabaseSyncService {
         const variantChunk = variantIds.slice(vi, vi + VARIANT_CHUNK_SIZE);
         const strVariantIds = variantChunk.join(",");
 
-        const response = await haravanClient.inventoryLocation.getInventoryLocations({
-          location_ids: strLocationIds,
-          variant_ids: strVariantIds
-        });
+        const response =
+          await haravanClient.inventoryLocation.getInventoryLocations({
+            location_ids: strLocationIds,
+            variant_ids: strVariantIds
+          });
 
         const inventoryLocations = response?.inventory_locations || [];
         if (inventoryLocations.length > 0) {
@@ -134,7 +147,9 @@ export default class DatabaseSyncService {
   }
 
   async _upsertBatch(inventoryLocations) {
-    const toUpsert = inventoryLocations.map((item) => this._mapInventoryLocation(item));
+    const toUpsert = inventoryLocations.map((item) =>
+      this._mapInventoryLocation(item)
+    );
     if (toUpsert.length === 0) return;
 
     const currentDateTime = dayjs().utc().toDate();

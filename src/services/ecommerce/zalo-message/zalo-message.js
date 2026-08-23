@@ -26,7 +26,10 @@ export default class SendZaloMessage {
   }
 
   static eligibleForSendingZaloMessage(message) {
-    if (SendZaloMessage.whitelistSource.includes(message?.source) && message.ref_order_id === 0) {
+    if (
+      SendZaloMessage.whitelistSource.includes(message?.source) &&
+      message.ref_order_id === 0
+    ) {
       return true;
     }
 
@@ -45,14 +48,22 @@ export default class SendZaloMessage {
         continue;
       }
 
-      if (order.financial_status !== "paid" && order.financial_status !== "partially_paid") {
+      if (
+        order.financial_status !== "paid" &&
+        order.financial_status !== "partially_paid"
+      ) {
         continue;
       }
 
       const templateId = ZALO_TEMPLATE.orderConfirmed;
       const result = GetTemplateZalo.getTemplateZalo(templateId, order);
       if (result) {
-        await SendZaloMessage.sendZaloMessage(result.phone, templateId, result.templateData, env);
+        await SendZaloMessage.sendZaloMessage(
+          result.phone,
+          templateId,
+          result.templateData,
+          env
+        );
       }
     }
   }
@@ -125,11 +136,20 @@ export default class SendZaloMessage {
           trackingRedirectPath: `order-tracking?order_id=${firstOrder.id}&token=${accessToken}`
         };
 
-        const result = GetTemplateZalo.getTemplateZalo(templateId, order, extraParams);
+        const result = GetTemplateZalo.getTemplateZalo(
+          templateId,
+          order,
+          extraParams
+        );
         console.warn("Zalo Delivery Template", result);
 
         if (result) {
-          await SendZaloMessage.sendZaloMessage(result.phone, templateId, result.templateData, env);
+          await SendZaloMessage.sendZaloMessage(
+            result.phone,
+            templateId,
+            result.templateData,
+            env
+          );
           await SendZaloMessage.makeOrderInDelivery(String(firstOrder.id), db);
         }
       } catch (error) {
@@ -192,7 +212,8 @@ export default class SendZaloMessage {
 
         // Get latest order data from Haravan API
         const haravanApiClient = new HaravanAPIClient(env);
-        const getOrderResponse = await haravanApiClient.orders.order.getOrder(latestOrderId);
+        const getOrderResponse =
+          await haravanApiClient.orders.order.getOrder(latestOrderId);
         if (!getOrderResponse || !getOrderResponse.data) {
           continue;
         }
@@ -218,14 +239,22 @@ export default class SendZaloMessage {
         }
 
         // Ignore if order is already paid or partially paid
-        if (order.financial_status === "paid" || order.financial_status === "partially_paid") {
+        if (
+          order.financial_status === "paid" ||
+          order.financial_status === "partially_paid"
+        ) {
           continue;
         }
 
         const templateId = ZALO_TEMPLATE.remindPay;
         const result = GetTemplateZalo.getTemplateZalo(templateId, order);
         if (result) {
-          await SendZaloMessage.sendZaloMessage(result.phone, templateId, result.templateData, env);
+          await SendZaloMessage.sendZaloMessage(
+            result.phone,
+            templateId,
+            result.templateData,
+            env
+          );
         }
       } catch (error) {
         Sentry.captureException(error);
@@ -236,7 +265,10 @@ export default class SendZaloMessage {
   static async createTokenForOrderTracking(payloadObject, secret, env) {
     const payloadString = `${payloadObject.order_id}|${payloadObject.order_number}|${JSON.stringify(payloadObject)}`;
     const base64Payload = Buffer.from(payloadString).toString("base64url");
-    const hashedToken = SendZaloMessage.createHashForOrderTracking(payloadString, secret);
+    const hashedToken = SendZaloMessage.createHashForOrderTracking(
+      payloadString,
+      secret
+    );
 
     const uuid = crypto.randomUUID();
     const accessToken = `${base64Payload}.${hashedToken}`;

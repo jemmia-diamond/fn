@@ -12,8 +12,14 @@ class RestfulRoutesValidator {
     return {
       "CallExpression[callee.property.name=/^(get|post|put|delete)$/]"(node) {
         const httpMethod = node.callee.property.name;
-        const allowedMethods = RestfulRoutesValidator.#methodsMap[httpMethod] || [];
-        RestfulRoutesValidator.#validateRouteMethod(context, node, httpMethod, allowedMethods);
+        const allowedMethods =
+          RestfulRoutesValidator.#methodsMap[httpMethod] || [];
+        RestfulRoutesValidator.#validateRouteMethod(
+          context,
+          node,
+          httpMethod,
+          allowedMethods
+        );
       }
     };
   }

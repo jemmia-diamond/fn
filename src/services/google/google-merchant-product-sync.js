@@ -42,7 +42,10 @@ export default class GoogleMerchantProductSyncService {
         for (const product of products) {
           if (product.variants && product.variants.length > 0) {
             for (const variant of product.variants) {
-              const merchantProduct = this._mapToMerchantProduct(product, variant);
+              const merchantProduct = this._mapToMerchantProduct(
+                product,
+                variant
+              );
               if (merchantProduct) {
                 batchMerchantProducts.push(merchantProduct);
                 break;
@@ -80,7 +83,8 @@ export default class GoogleMerchantProductSyncService {
 
   _mapToMerchantProduct(product, variant) {
     try {
-      const imageLink = variant.images && variant.images.length > 0 ? variant.images[0] : "";
+      const imageLink =
+        variant.images && variant.images.length > 0 ? variant.images[0] : "";
 
       let availability = "in_stock";
       let availabilityDate;
@@ -94,7 +98,10 @@ export default class GoogleMerchantProductSyncService {
 
       let priceValue = parseInt(variant.price || 0);
 
-      if (product.product_type && product.product_type.toLowerCase().includes("bông tai")) {
+      if (
+        product.product_type &&
+        product.product_type.toLowerCase().includes("bông tai")
+      ) {
         priceValue *= 2;
       }
 
@@ -128,7 +135,9 @@ export default class GoogleMerchantProductSyncService {
         ...new Set(product.variants.map((v) => v.fineness).filter(Boolean))
       ].join(", ");
       const allMaterials = [
-        ...new Set(product.variants.map((v) => v.material_color).filter(Boolean))
+        ...new Set(
+          product.variants.map((v) => v.material_color).filter(Boolean)
+        )
       ].join(", ");
 
       return {
@@ -164,7 +173,8 @@ export default class GoogleMerchantProductSyncService {
 
   _mapDiamondToMerchantProduct(diamond) {
     try {
-      const imageLink = diamond.images && diamond.images.length > 0 ? diamond.images[0] : "";
+      const imageLink =
+        diamond.images && diamond.images.length > 0 ? diamond.images[0] : "";
 
       const availability = "in_stock";
 

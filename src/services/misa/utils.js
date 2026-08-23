@@ -20,7 +20,9 @@ async function getJournalNote(
   haravanRefOrderId = null
 ) {
   const defaultNote =
-    payment?.haravan_order?.order_number || payment?.haravan_order_name || haravanOrderNumber;
+    payment?.haravan_order?.order_number ||
+    payment?.haravan_order_name ||
+    haravanOrderNumber;
   const orderId = payment?.haravan_order_id || haravanOrderId;
 
   if (!payment?.haravan_order?.ref_order_id || !haravanRefOrderId) {
@@ -42,7 +44,8 @@ async function getJournalNote(
   const previousOrders = chain.slice(0, -1);
   const firstPaidCanceledOrder = previousOrders.find(
     (order) =>
-      (order.financial_status === "paid" || order.financial_status === "partially_paid") &&
+      (order.financial_status === "paid" ||
+        order.financial_status === "partially_paid") &&
       order.order_processing_status === "cancel"
   );
 

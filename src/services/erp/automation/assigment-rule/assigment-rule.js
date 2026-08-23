@@ -3,7 +3,10 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import FrappeClient from "frappe/frappe-client";
 import Database from "services/database";
-import { ASSIGNMENT_RULES, SHIFTS } from "services/erp/automation/assigment-rule/enum";
+import {
+  ASSIGNMENT_RULES,
+  SHIFTS
+} from "services/erp/automation/assigment-rule/enum";
 
 dayjs.extend(utc);
 
@@ -44,7 +47,9 @@ export default class AssignmentRuleService {
       }
     }
 
-    const employeeNames = salesPeople.map((salesPerson) => salesPerson.employee);
+    const employeeNames = salesPeople.map(
+      (salesPerson) => salesPerson.employee
+    );
     const employees = [];
     for (const employeeName of employeeNames) {
       const employee = await this.frappeClient.getList("Employee", {
@@ -74,11 +79,24 @@ export default class AssignmentRuleService {
     return emails;
   }
 
-  async updateAssignmentRule(defaultAssignmentRule, shifts, dayNo, month, offUsers) {
-    const users = await this.getAssignedUsers(defaultAssignmentRule.regionNames);
-    const allAttendingUsers = await this.getAttendingUsers(dayNo, month, shifts);
+  async updateAssignmentRule(
+    defaultAssignmentRule,
+    shifts,
+    dayNo,
+    month,
+    offUsers
+  ) {
+    const users = await this.getAssignedUsers(
+      defaultAssignmentRule.regionNames
+    );
+    const allAttendingUsers = await this.getAttendingUsers(
+      dayNo,
+      month,
+      shifts
+    );
     const attendingUsers = allAttendingUsers.filter(
-      (attendedUser) => !offUsers.some((offUser) => offUser.user_id === attendedUser.user_id)
+      (attendedUser) =>
+        !offUsers.some((offUser) => offUser.user_id === attendedUser.user_id)
     );
     const assignedUsers = users.filter((userId) =>
       attendingUsers.some((attendedUser) => attendedUser.email === userId)
@@ -174,7 +192,8 @@ export default class AssignmentRuleService {
     });
     await assignmentRuleService.frappeClient.update({
       doctype: assignmentRuleService.doctype,
-      name: ASSIGNMENT_RULES.Lead_Facebook_Tiktok_ZaloKOC_Website_ZaloOA_HCM.name,
+      name: ASSIGNMENT_RULES.Lead_Facebook_Tiktok_ZaloKOC_Website_ZaloOA_HCM
+        .name,
       users: [{ user: assignmentRuleService.defaultUser }]
     });
   }
@@ -199,7 +218,9 @@ export default class AssignmentRuleService {
       limit_page_length: 1000
     });
 
-    const leadNames = [...new Set(toDos?.map((toDo) => toDo.reference_name).filter(Boolean))];
+    const leadNames = [
+      ...new Set(toDos?.map((toDo) => toDo.reference_name).filter(Boolean))
+    ];
     if (!leadNames.length) return;
 
     await assignmentRuleService.frappeClient.postRequest("", {

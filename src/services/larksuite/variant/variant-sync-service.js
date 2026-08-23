@@ -22,14 +22,23 @@ export default class VariantSyncService {
 
   async sync({ limit = null, offset = null, updatedAtMin = null } = {}) {
     const nowUtc = dayjs().utc();
-    const defaultUpdatedAtMin = nowUtc.subtract(TIME_INTERVAL_MINUTES, "minutes").toDate();
+    const defaultUpdatedAtMin = nowUtc
+      .subtract(TIME_INTERVAL_MINUTES, "minutes")
+      .toDate();
     const finalUpdatedAtMin = updatedAtMin || defaultUpdatedAtMin;
-    const variants = await this._fetchUpdatedVariants(finalUpdatedAtMin, limit, offset);
+    const variants = await this._fetchUpdatedVariants(
+      finalUpdatedAtMin,
+      limit,
+      offset
+    );
     if (!variants?.length) return;
 
     const larkVariants = await this._fetchLarkVariants(variants);
     const larkVariantMap = this._buildLarkVariantMap(larkVariants);
-    const { newVariants, oldVariants } = this._categorizeVariants(variants, larkVariantMap);
+    const { newVariants, oldVariants } = this._categorizeVariants(
+      variants,
+      larkVariantMap
+    );
 
     if (newVariants.length) await this._createLarkRecords(newVariants);
     if (oldVariants.length) await this._updateLarkRecords(oldVariants);
@@ -64,10 +73,14 @@ export default class VariantSyncService {
       }));
 
       const filter = { conjunction: "or", conditions };
-      const records = await RecordService.fetchRecords(this.env, this.tableConfig, {
-        filter,
-        pageSize: BATCH_SIZE
-      });
+      const records = await RecordService.fetchRecords(
+        this.env,
+        this.tableConfig,
+        {
+          filter,
+          pageSize: BATCH_SIZE
+        }
+      );
       if (records?.length) allLarkVariants.push(...records);
     }
 

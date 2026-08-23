@@ -31,7 +31,10 @@ export default class DebtTrackingNotificationService {
   async notifyWeeklyAnnouncement() {
     if (dayjs().tz(TIMEZONE_VIETNAM).day() !== VIETNAM_THURSDAY) return;
 
-    const nextWednesday = dayjs().tz(TIMEZONE_VIETNAM).add(6, "day").format("YYYY-MM-DD");
+    const nextWednesday = dayjs()
+      .tz(TIMEZONE_VIETNAM)
+      .add(6, "day")
+      .format("YYYY-MM-DD");
     const orders = await this._fetchDebtList(nextWednesday, false);
     if (!orders?.length) return;
 
@@ -107,7 +110,11 @@ export default class DebtTrackingNotificationService {
       else otherCount++;
     });
 
-    const adminEmails = ["trinh.ngo@jemmia.vn", "hue.phan@jemmia.vn", "tien.chau@jemmia.vn"];
+    const adminEmails = [
+      "trinh.ngo@jemmia.vn",
+      "hue.phan@jemmia.vn",
+      "tien.chau@jemmia.vn"
+    ];
     const users = await this.db.larksuite_users.findMany({
       where: { enterprise_email: { in: adminEmails } },
       select: { enterprise_email: true, user_id: true }

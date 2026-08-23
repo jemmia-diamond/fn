@@ -9,9 +9,10 @@ export default class ShieldMessageService {
   static async detectSensitiveInfoAndMask(env: any, event: any) {
     const content = JSON.parse(event.message.content);
 
-    await ShieldOrderMentionLinker.saveOrderMappingsIfMentioned(env, event).catch(
-      Sentry.captureException
-    );
+    await ShieldOrderMentionLinker.saveOrderMappingsIfMentioned(
+      env,
+      event
+    ).catch(Sentry.captureException);
     await ShieldOrderMentionLinker.replyOrderLinksIfMentioned(env, event);
 
     switch (event.message.message_type) {

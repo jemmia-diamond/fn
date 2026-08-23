@@ -19,17 +19,21 @@ export default class CustomerSyncService {
     this.env = env;
     this.db = Database.instance(env);
     this.pancakeClient = new PancakeClient(env);
-    this.phoneRegex = /(?:\+84|0)(?:3[2-9]|5[6|8|9]|7[0|6-9]|8[1-6|89]|9[0-4|6-9])(?:\d{7})/;
+    this.phoneRegex =
+      /(?:\+84|0)(?:3[2-9]|5[6|8|9]|7[0|6-9]|8[1-6|89]|9[0-4|6-9])(?:\d{7})/;
   }
 
   async syncCustomers({ batchTime } = {}) {
     try {
       console.warn("Starting syncCustomers...");
-      const { sinceUnix, untilUnix, now, KV_KEY } = await this.getSyncTimeframe(batchTime);
+      const { sinceUnix, untilUnix, now, KV_KEY } =
+        await this.getSyncTimeframe(batchTime);
 
       const pageData = await this.pancakeClient.getPages();
       if (isInvalidTokenError(pageData)) {
-        throw new Error("Pancake API Error [102]: Invalid access_token during page query");
+        throw new Error(
+          "Pancake API Error [102]: Invalid access_token during page query"
+        );
       }
 
       const pages = pageData?.categorized?.activated || [];
@@ -68,7 +72,9 @@ export default class CustomerSyncService {
 
         if (isInvalidTokenError(data)) {
           this.captureException(
-            new Error(`Pancake API Error [102]: Invalid access_token for page ${pageId}`),
+            new Error(
+              `Pancake API Error [102]: Invalid access_token for page ${pageId}`
+            ),
             pageId
           );
           break;
@@ -99,7 +105,11 @@ export default class CustomerSyncService {
         this.db.page_customer.upsert({
           where: { id: item.id },
           create: customerData,
-          update: { ...customerData, uuid: undefined, database_updated_at: dayjs().utc().toDate() }
+          update: {
+            ...customerData,
+            uuid: undefined,
+            database_updated_at: dayjs().utc().toDate()
+          }
         })
       );
     }
@@ -140,7 +150,9 @@ export default class CustomerSyncService {
       can_inbox: item.can_inbox ?? null,
       customer_id: item.customer_id || null,
       gender: item.gender || null,
-      inserted_at: item.inserted_at ? dayjs.utc(item.inserted_at).toDate() : null,
+      inserted_at: item.inserted_at
+        ? dayjs.utc(item.inserted_at).toDate()
+        : null,
       lives_in: item.lives_in || null,
       name: item.name || null,
       updated_at: item.updated_at ? dayjs.utc(item.updated_at).toDate() : null,

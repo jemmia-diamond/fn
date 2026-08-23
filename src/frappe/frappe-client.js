@@ -6,7 +6,15 @@ import { createAxiosClient } from "services/utils/http-client";
 const DEFAULT_HEADERS = { Accept: "application/json" };
 
 export default class FrappeClient {
-  constructor({ env, url, username, password, apiKey, apiSecret, verify = true } = {}) {
+  constructor({
+    env,
+    url,
+    username,
+    password,
+    apiKey,
+    apiSecret,
+    verify = true
+  } = {}) {
     this.url = url || env?.JEMMIA_ERP_BASE_URL;
     this.verify = verify;
     this.headers = { ...DEFAULT_HEADERS };
@@ -86,7 +94,9 @@ export default class FrappeClient {
   async insert(doc) {
     const url = `/api/resource/${encodeURIComponent(doc.doctype)}`;
     try {
-      const res = await this.axiosClient.post(url, { data: JSON.stringify(doc) });
+      const res = await this.axiosClient.post(url, {
+        data: JSON.stringify(doc)
+      });
       return this.postProcess(res);
     } catch (error) {
       return this.parseError(error);
@@ -113,7 +123,9 @@ export default class FrappeClient {
   async update(doc) {
     const url = `/api/resource/${encodeURIComponent(doc.doctype)}/${encodeURIComponent(doc.name)}`;
     try {
-      const res = await this.axiosClient.put(url, { data: JSON.stringify(doc) });
+      const res = await this.axiosClient.put(url, {
+        data: JSON.stringify(doc)
+      });
       return this.postProcess(res);
     } catch (error) {
       return this.parseError(error);
@@ -158,7 +170,10 @@ export default class FrappeClient {
     if (!docWithLinks.links) {
       docWithLinks.links = [];
     }
-    docWithLinks.links.push({ link_doctype: referencedDoctype, link_name: referencedDoc.name });
+    docWithLinks.links.push({
+      link_doctype: referencedDoctype,
+      link_name: referencedDoc.name
+    });
     docWithLinks.doctype = doctype;
     return this.update(docWithLinks);
   }
@@ -304,7 +319,9 @@ export default class FrappeClient {
       });
 
       if (res && res.output) {
-        return typeof res.output == "string" ? JSON.parse(res.output) : res.output;
+        return typeof res.output == "string"
+          ? JSON.parse(res.output)
+          : res.output;
       }
 
       return [];

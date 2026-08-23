@@ -32,13 +32,21 @@ export default class ShieldPostHandler {
     return false;
   }
 
-  private static async handlePostWithImages(env: any, event: any, content: any) {
+  private static async handlePostWithImages(
+    env: any,
+    event: any,
+    content: any
+  ) {
     const originalContent = JSON.parse(JSON.stringify(content));
     const mentions = event.message.mentions || [];
 
     ShieldPostHandler.resolvePostMentions(originalContent, mentions);
     ShieldPostHandler.resolvePostMentions(content, mentions);
-    const imageMap = await ShieldPostHandler.downloadPostImages(env, event, content);
+    const imageMap = await ShieldPostHandler.downloadPostImages(
+      env,
+      event,
+      content
+    );
 
     let postText = "";
     if (content.title) postText += content.title + " ";
@@ -53,7 +61,8 @@ export default class ShieldPostHandler {
     }
 
     const isTextSensitive =
-      !!postText && (await ShieldPresidioService.detectSensitiveInfo(env, postText));
+      !!postText &&
+      (await ShieldPresidioService.detectSensitiveInfo(env, postText));
 
     const sensitiveImageMap = new Map<string, boolean>();
     let hasSensitiveImage = false;
@@ -65,7 +74,9 @@ export default class ShieldPostHandler {
           const result = await ShieldPresidioService.analyzeImage(env, buffer);
           const isSensitive =
             result.ner_results.length > 0 &&
-            result.ner_results.some((result) => result.score >= JEMMIA_SHIELD_NER_SCORE_THRESHOLD);
+            result.ner_results.some(
+              (result) => result.score >= JEMMIA_SHIELD_NER_SCORE_THRESHOLD
+            );
           sensitiveImageMap.set(item.image_key, isSensitive);
           if (isSensitive) {
             hasSensitiveImage = true;
@@ -103,13 +114,19 @@ export default class ShieldPostHandler {
     await JemmiaShieldLarkService.recallMessage(env, event.message.message_id);
 
     if (content.title) {
-      content.title = await ShieldPresidioService.maskSensitiveInfo(env, content.title);
+      content.title = await ShieldPresidioService.maskSensitiveInfo(
+        env,
+        content.title
+      );
     }
 
     for (const line of content.content) {
       for (const item of line) {
         if (item.tag === JEMMIA_SHIELD_CONTENT_TAG.TEXT) {
-          item.text = await ShieldPresidioService.maskSensitiveInfo(env, item.text);
+          item.text = await ShieldPresidioService.maskSensitiveInfo(
+            env,
+            item.text
+          );
           item.text = ShieldUtils.resolveMentionsForCard(item.text, mentions);
         } else if (item.tag === JEMMIA_SHIELD_CONTENT_TAG.IMG) {
           const buffer = imageMap.get(item.image_key);
@@ -125,12 +142,18 @@ export default class ShieldPostHandler {
             const blurred = await ImageHelper.blurImage(buffer, {
               blurSize: 24
             });
-            const newKey = await JemmiaShieldLarkService.uploadImage(env, blurred);
+            const newKey = await JemmiaShieldLarkService.uploadImage(
+              env,
+              blurred
+            );
             item.image_key = newKey;
           }
         } else if (item.tag === JEMMIA_SHIELD_CONTENT_TAG.HREF) {
           if (await ShieldPresidioService.detectSensitiveInfo(env, item.text)) {
-            item.text = await ShieldPresidioService.maskSensitiveInfo(env, item.text);
+            item.text = await ShieldPresidioService.maskSensitiveInfo(
+              env,
+              item.text
+            );
             item.tag = JEMMIA_SHIELD_CONTENT_TAG.TEXT;
             delete item.href;
           }
@@ -173,7 +196,11 @@ export default class ShieldPostHandler {
     );
   }
 
-  private static async handlePostWithoutImages(env: any, event: any, content: any) {
+  private static async handlePostWithoutImages(
+    env: any,
+    event: any,
+    content: any
+  ) {
     const originalContent = JSON.parse(JSON.stringify(content));
     const mentions = event.message.mentions || [];
 
@@ -195,17 +222,28 @@ export default class ShieldPostHandler {
 
     if (text && (await ShieldPresidioService.detectSensitiveInfo(env, text))) {
       if (content.title) {
-        content.title = await ShieldPresidioService.maskSensitiveInfo(env, content.title);
+        content.title = await ShieldPresidioService.maskSensitiveInfo(
+          env,
+          content.title
+        );
       }
 
       for (const line of content.content) {
         for (const item of line) {
           if (item.tag === JEMMIA_SHIELD_CONTENT_TAG.TEXT) {
-            item.text = await ShieldPresidioService.maskSensitiveInfo(env, item.text);
+            item.text = await ShieldPresidioService.maskSensitiveInfo(
+              env,
+              item.text
+            );
             item.text = ShieldUtils.resolveMentionsForCard(item.text, mentions);
           } else if (item.tag === JEMMIA_SHIELD_CONTENT_TAG.HREF) {
-            if (await ShieldPresidioService.detectSensitiveInfo(env, item.text)) {
-              item.text = await ShieldPresidioService.maskSensitiveInfo(env, item.text);
+            if (
+              await ShieldPresidioService.detectSensitiveInfo(env, item.text)
+            ) {
+              item.text = await ShieldPresidioService.maskSensitiveInfo(
+                env,
+                item.text
+              );
               item.tag = JEMMIA_SHIELD_CONTENT_TAG.TEXT;
               delete item.href;
             }
@@ -247,7 +285,10 @@ export default class ShieldPostHandler {
         cardContent
       );
 
-      await JemmiaShieldLarkService.recallMessage(env, event.message.message_id);
+      await JemmiaShieldLarkService.recallMessage(
+        env,
+        event.message.message_id
+      );
     }
   }
 

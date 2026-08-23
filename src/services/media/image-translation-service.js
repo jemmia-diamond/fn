@@ -1,7 +1,10 @@
 import * as Sentry from "@sentry/cloudflare";
 import { generateImage, generateText } from "ai";
 import { WebsiteR2StorageService } from "services/r2-object/website/website-r2-storage-service";
-import { getGoogleGenerativeAIModel, getOpenAICompatibleModel } from "services/utils/llm-helper";
+import {
+  getGoogleGenerativeAIModel,
+  getOpenAICompatibleModel
+} from "services/utils/llm-helper";
 import { AI_MODELS } from "src/constants/ai-proxy";
 
 /**
@@ -138,7 +141,9 @@ export default class ImageTranslationService {
   async fetchImageFromUrl(imageUrl) {
     const response = await fetch(imageUrl);
     if (!response.ok) {
-      throw new Error(`Failed to fetch image from URL: ${imageUrl} (${response.status})`);
+      throw new Error(
+        `Failed to fetch image from URL: ${imageUrl} (${response.status})`
+      );
     }
 
     const arrayBuffer = await response.arrayBuffer();
@@ -146,7 +151,8 @@ export default class ImageTranslationService {
     const extension = contentType.split("/")[1]?.split(";")[0] || "jpg";
 
     const urlParts = imageUrl.split("/");
-    const filename = urlParts[urlParts.length - 1].split("?")[0] || `image.${extension}`;
+    const filename =
+      urlParts[urlParts.length - 1].split("?")[0] || `image.${extension}`;
 
     return {
       buffer: new Uint8Array(arrayBuffer),
@@ -233,7 +239,11 @@ export default class ImageTranslationService {
       return typeof image === "string" ? image : null;
     }
 
-    const translatedImageBuffer = await this.generateTranslatedImage(imageBuffer, metadata, env);
+    const translatedImageBuffer = await this.generateTranslatedImage(
+      imageBuffer,
+      metadata,
+      env
+    );
 
     const storage = new WebsiteR2StorageService(env);
     const publicUrl = await storage.upload(enFilename, translatedImageBuffer);

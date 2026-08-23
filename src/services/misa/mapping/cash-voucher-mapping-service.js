@@ -33,19 +33,31 @@ export default class CashVoucherMappingService {
       ? MANUAL_PAYMENT_DEBIT_MAP[v.branch] || null
       : getDebitAccount(v.bank_name, v.bank_account);
 
-    const creditInfo = getCreditInfo(orgUnitMap, v.haravan_order?.source, v.branch, isManual);
+    const creditInfo = getCreditInfo(
+      orgUnitMap,
+      v.haravan_order?.source,
+      v.branch,
+      isManual
+    );
 
     // Employee code ( from Amis ) and name
     const employee_code =
-      v.haravan_order?.user?.misa_user?.employee_code || v.haravan_order?.user?.misa_user?.email;
+      v.haravan_order?.user?.misa_user?.employee_code ||
+      v.haravan_order?.user?.misa_user?.email;
     const employee_name = `${v.haravan_order?.user?.last_name} ${v.haravan_order?.user?.first_name}`;
 
     if (!employee_code) {
-      throw new Error(`No employee code found for this order id: ${v.haravan_order?.id}`);
+      throw new Error(
+        `No employee code found for this order id: ${v.haravan_order?.id}`
+      );
     }
 
     // Customer's code, name and address
-    const customerInfo = await CashVoucherMappingService.fetchCustomer(v, v.haravan_order, env);
+    const customerInfo = await CashVoucherMappingService.fetchCustomer(
+      v,
+      v.haravan_order,
+      env
+    );
     const customerCode = customerInfo?.customer_id?.toString();
     const customerName = `${customerInfo?.customer_last_name} ${customerInfo?.customer_first_name}`;
     const street1 = customerInfo?.customer_default_address_address1;
@@ -53,7 +65,9 @@ export default class CashVoucherMappingService {
     const ward = customerInfo?.customer_default_address_ward;
     const district = customerInfo?.customer_default_address_district;
     const province = customerInfo?.customer_default_address_province;
-    const customerAddress = [street1, street2, ward, district, province].filter(Boolean).join(", ");
+    const customerAddress = [street1, street2, ward, district, province]
+      .filter(Boolean)
+      .join(", ");
 
     // Bank name mapping
     const bankInfo = bankMap[v.bank_account] || null;
@@ -119,7 +133,9 @@ export default class CashVoucherMappingService {
 
     const accessToken = env.HARAVAN_TOKEN;
     const haravanClient = new HaravanAPI(accessToken);
-    const haravanResult = await haravanClient.order.getOrder(v.haravan_order_id);
+    const haravanResult = await haravanClient.order.getOrder(
+      v.haravan_order_id
+    );
     const customerData = haravanResult?.order?.customer;
 
     if (!customerData) return null;

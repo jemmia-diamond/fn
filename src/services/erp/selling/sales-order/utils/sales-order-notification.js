@@ -4,7 +4,10 @@ import {
   getItemPromotions,
   normalizeUrlForAttachments
 } from "services/erp/selling/sales-order/utils/sales-order-helpers";
-import { SKU_LENGTH, SKU_PREFIX } from "services/haravan/products/product-variant/constant";
+import {
+  SKU_LENGTH,
+  SKU_PREFIX
+} from "services/haravan/products/product-variant/constant";
 import { numberToCurrency } from "services/utils/number-helper";
 import { stringSquishLarkMessage } from "services/utils/string-helper";
 
@@ -23,12 +26,16 @@ export const composeSalesOrderNotification = (
 ) => {
   const orderNumber = salesOrder.order_number;
 
-  const orderPromotionNames = salesOrder.promotions.map((promotion) => promotion.promotion);
+  const orderPromotionNames = salesOrder.promotions.map(
+    (promotion) => promotion.promotion
+  );
   const orderPromotions = promotionData.filter((promotion) =>
     orderPromotionNames.includes(promotion.name)
   );
 
-  const expectedPaymentDate = dayjs(salesOrder.expected_payment_date).format("DD-MM-YYYY");
+  const expectedPaymentDate = dayjs(salesOrder.expected_payment_date).format(
+    "DD-MM-YYYY"
+  );
 
   const realOrderDate = dayjs(salesOrder.real_order_date).format("DD-MM-YYYY");
 
@@ -49,7 +56,9 @@ export const composeSalesOrderNotification = (
     content += composeItemContent(
       item,
       idx + 1,
-      promotionData.filter((promotion) => getItemPromotions(item).includes(promotion.name))
+      promotionData.filter((promotion) =>
+        getItemPromotions(item).includes(promotion.name)
+      )
     );
   });
 
@@ -75,7 +84,9 @@ export const composeSalesOrderNotification = (
   `;
 
   const ordPromotion =
-    orderPromotions && Array.isArray(orderPromotions) && orderPromotions.length > 0
+    orderPromotions &&
+    Array.isArray(orderPromotions) &&
+    orderPromotions.length > 0
       ? composeChildrenContent(orderPromotions, "title")
       : " - Không";
   content += `
@@ -106,7 +117,9 @@ const composeItemContent = (item, idx, promotionData) => {
     `;
   }
 
-  const serialNumbers = item.serial_numbers ? item.serial_numbers.split("\n").join(", ") : "";
+  const serialNumbers = item.serial_numbers
+    ? item.serial_numbers.split("\n").join(", ")
+    : "";
   const content = `
     ${parentOrderInfo}
     ${idx}. ${item.item_name}
@@ -154,7 +167,11 @@ function extractVariantNameForJewelry(text) {
   return match ? match[1] : "";
 }
 
-export const composeOrderUpdateMessage = (prevOrder, salesOrder, promotionData) => {
+export const composeOrderUpdateMessage = (
+  prevOrder,
+  salesOrder,
+  promotionData
+) => {
   const diffAttachments = diffInAttachments(
     prevOrder.attachments || [],
     salesOrder.attachments || []
@@ -193,10 +210,16 @@ export const diffInAttachments = (prevAttachments, attachments) => {
   );
 
   const addedAttachments = validNew.filter(
-    (attachment) => !prevAttachmentUrls.includes(normalizeUrlForAttachments(attachment.file_url))
+    (attachment) =>
+      !prevAttachmentUrls.includes(
+        normalizeUrlForAttachments(attachment.file_url)
+      )
   );
   const removedAttachments = validPrev.filter(
-    (attachment) => !newAttachmentUrls.includes(normalizeUrlForAttachments(attachment.file_url))
+    (attachment) =>
+      !newAttachmentUrls.includes(
+        normalizeUrlForAttachments(attachment.file_url)
+      )
   );
   const modifiedAttachments = {};
 
@@ -264,7 +287,9 @@ const composeLineItemsChangeMessage = (oldItems, newItems, promotionData) => {
         const changes = [];
 
         if (newItem.variant_title !== oldItem.variant_title) {
-          changes.push(`Mã gốc: ${extractVariantTitle(oldItem)} → ${extractVariantTitle(newItem)}`);
+          changes.push(
+            `Mã gốc: ${extractVariantTitle(oldItem)} → ${extractVariantTitle(newItem)}`
+          );
         }
         if (newItem.sku !== oldItem.sku) {
           changes.push(`SKU: ${oldItem.sku} → ${newItem.sku}`);
@@ -292,15 +317,21 @@ const composeLineItemsChangeMessage = (oldItems, newItems, promotionData) => {
         const oldPromotions = getItemPromotions(oldItem);
         const newPromotions = getItemPromotions(newItem);
 
-        const addedPromotions = newPromotions.filter((promo) => !oldPromotions.includes(promo));
-        const removedPromotions = oldPromotions.filter((promo) => !newPromotions.includes(promo));
+        const addedPromotions = newPromotions.filter(
+          (promo) => !oldPromotions.includes(promo)
+        );
+        const removedPromotions = oldPromotions.filter(
+          (promo) => !newPromotions.includes(promo)
+        );
 
         if (addedPromotions.length > 0 || removedPromotions.length > 0) {
           let promotionChanges = "";
           if (newPromotions.length > 0) {
             promotionChanges += "CTKM: \n";
             promotionChanges += `${composeChildrenContent(
-              promotionData.filter((promotion) => newPromotions.includes(promotion.name)),
+              promotionData.filter((promotion) =>
+                newPromotions.includes(promotion.name)
+              ),
               "title"
             )}\n`;
           }
@@ -309,7 +340,9 @@ const composeLineItemsChangeMessage = (oldItems, newItems, promotionData) => {
 
         if (changes.length > 0) {
           const parentOrderInfo = `#${newItem.parent_order_number || "N/A"} <i>(tổng đơn: ${numberToCurrency(newItem.parent_grand_total || 0)})</i>`;
-          changes.unshift(`<i>${newItem.item_name} - ${newItem.variant_title}</i>`);
+          changes.unshift(
+            `<i>${newItem.item_name} - ${newItem.variant_title}</i>`
+          );
           changes.unshift(parentOrderInfo);
           changes.forEach((change) => {
             itemMessages += `${change}\n`;
@@ -332,7 +365,8 @@ const composeLineItemsChangeMessage = (oldItems, newItems, promotionData) => {
 const extractVariantTitle = (item) => {
   const title = item?.variant_title || "";
   const extracted =
-    item.sku?.startsWith(SKU_PREFIX.DIAMOND) || item.sku?.startsWith(SKU_PREFIX.DIAMOND_TEMPORARY)
+    item.sku?.startsWith(SKU_PREFIX.DIAMOND) ||
+    item.sku?.startsWith(SKU_PREFIX.DIAMOND_TEMPORARY)
       ? extractVariantNameForGIA(title)
       : extractVariantNameForJewelry(title);
 
@@ -345,14 +379,19 @@ const extractVariantTitle = (item) => {
  * @returns {{mainOrder: *, subOrders: *[]}}
  */
 export const findMainOrder = (orders) => {
-  const uncancelledOrders = orders.filter((o) => o.cancelled_status === "Uncancelled");
-  const ordersToProcess = uncancelledOrders.length > 0 ? uncancelledOrders : orders;
+  const uncancelledOrders = orders.filter(
+    (o) => o.cancelled_status === "Uncancelled"
+  );
+  const ordersToProcess =
+    uncancelledOrders.length > 0 ? uncancelledOrders : orders;
 
   let mainOrder = ordersToProcess.find((order) => isPrimaryOrder(order));
   if (!mainOrder) {
     mainOrder = ordersToProcess[0];
   }
-  const subOrders = ordersToProcess.filter((order) => order.name !== mainOrder.name);
+  const subOrders = ordersToProcess.filter(
+    (order) => order.name !== mainOrder.name
+  );
   return {
     mainOrder,
     subOrders
@@ -376,16 +415,21 @@ export const isGiftItem = (item) => {
 
 export const isJewelryItem = (item) => {
   return (
-    item.sku?.startsWith(SKU_PREFIX.TEMPORARY_JEWELRY) || item.sku?.length === SKU_LENGTH.JEWELRY
+    item.sku?.startsWith(SKU_PREFIX.TEMPORARY_JEWELRY) ||
+    item.sku?.length === SKU_LENGTH.JEWELRY
   );
 };
 
 export const isDiamondItem = (item) => {
   return (
-    item.sku?.startsWith(SKU_PREFIX.DIAMOND) || item.sku?.startsWith(SKU_PREFIX.DIAMOND_TEMPORARY)
+    item.sku?.startsWith(SKU_PREFIX.DIAMOND) ||
+    item.sku?.startsWith(SKU_PREFIX.DIAMOND_TEMPORARY)
   );
 };
 
 export const isMissingJewelrySerial = (item) => {
-  return isJewelryItem(item) && (!item.serial_numbers || item.serial_numbers.trim() === "");
+  return (
+    isJewelryItem(item) &&
+    (!item.serial_numbers || item.serial_numbers.trim() === "")
+  );
 };

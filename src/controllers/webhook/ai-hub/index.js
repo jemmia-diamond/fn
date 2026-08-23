@@ -9,6 +9,9 @@ export default class AIHubWebhook {
     const aiHubWebhookNamespace = webhook.basePath("/ai-hub");
 
     aiHubWebhookNamespace.use("*", verifyAIHubWebhook);
-    aiHubWebhookNamespace.post("erp/leads", AIHubERPUpdateLeadController.create);
+    aiHubWebhookNamespace.post(
+      "erp/leads",
+      AIHubERPUpdateLeadController.create
+    );
   }
 }

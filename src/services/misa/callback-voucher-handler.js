@@ -83,7 +83,9 @@ export default class MisaCallbackVoucherHandler {
         });
 
         if (!actualSuccess) {
-          const error = new Error(`MISA sync failed: [${actualErrorCode}] ${actualErrorMessage}`);
+          const error = new Error(
+            `MISA sync failed: [${actualErrorCode}] ${actualErrorMessage}`
+          );
           error.isMisaError = true;
           error.org_refid = org_refid;
           error.error_code = actualErrorCode;

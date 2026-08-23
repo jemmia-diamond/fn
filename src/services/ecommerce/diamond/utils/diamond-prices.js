@@ -19,7 +19,8 @@ function dataAgg(rows, title) {
     if (!temp[clarity]) temp[clarity] = {};
 
     const price_compare_at = row.price != null ? Number(row.price) : null;
-    const price = row.sale_off_price != null ? Number(row.sale_off_price) : null;
+    const price =
+      row.sale_off_price != null ? Number(row.sale_off_price) : null;
 
     if (price_compare_at !== null || price !== null) {
       temp[clarity][color] = { price_compare_at, price };

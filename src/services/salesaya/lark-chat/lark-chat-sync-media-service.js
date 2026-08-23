@@ -27,7 +27,9 @@ export default class LarkChatSyncMediaService {
     this.workplaceBaseId = this.env.NOCODB_MARKETING_BASE_ID;
     this.workplaceBaseUrl = this.env.NOCODB_WORKSPACE_BASE_URL;
     this.fetcher = new LarkChatResourceFetcher(env, larkAxiosClient);
-    this.uploader = new LarkChatMediaUploader(`${this.env.SALESAYA_API_BASE_URL}/files/upload`);
+    this.uploader = new LarkChatMediaUploader(
+      `${this.env.SALESAYA_API_BASE_URL}/files/upload`
+    );
     this.parser = new LarkChatParser(larkSdkClient);
   }
 
@@ -101,7 +103,10 @@ export default class LarkChatSyncMediaService {
 
             if (buffersCache[key]) {
               const filename = getFilename(parsed.codes[0], i + 1, "jpg");
-              const link = await this.uploader.upload(buffersCache[key], filename);
+              const link = await this.uploader.upload(
+                buffersCache[key],
+                filename
+              );
               if (link) imageLinks.push(link);
             }
           } catch (error) {
@@ -115,12 +120,19 @@ export default class LarkChatSyncMediaService {
             const key = `${f.message_id}_${f.key}`;
 
             if (!buffersCache[key]) {
-              buffersCache[key] = await this.fetcher.getBufferByKey(f.message_id, f.key, "file");
+              buffersCache[key] = await this.fetcher.getBufferByKey(
+                f.message_id,
+                f.key,
+                "file"
+              );
             }
 
             if (buffersCache[key]) {
               const filename = getFilename(parsed.codes[0], i + 1, "mp4");
-              const link = await this.uploader.upload(buffersCache[key], filename);
+              const link = await this.uploader.upload(
+                buffersCache[key],
+                filename
+              );
               if (link) fileLinks.push(link);
             }
           } catch (error) {
@@ -141,8 +153,12 @@ export default class LarkChatSyncMediaService {
 
           let updated = false;
           if (row) {
-            const mergedVideos = Array.from(new Set([...(row.videos || []), ...fileLinks]));
-            const mergedImages = Array.from(new Set([...(row.images || []), ...imageLinks]));
+            const mergedVideos = Array.from(
+              new Set([...(row.videos || []), ...fileLinks])
+            );
+            const mergedImages = Array.from(
+              new Set([...(row.images || []), ...imageLinks])
+            );
             await nocodb.updateRecords(designImageTableId, {
               id: row.id,
               videos: mergedVideos,
@@ -199,7 +215,13 @@ export default class LarkChatSyncMediaService {
               continue;
             }
           }
-          await this.writeRecord(uniqueCodes[0], links, "Thành công", "", msg.message_id);
+          await this.writeRecord(
+            uniqueCodes[0],
+            links,
+            "Thành công",
+            "",
+            msg.message_id
+          );
         } else {
           await this.writeRecord(
             uniqueCodes.join(", "),
@@ -220,9 +242,20 @@ export default class LarkChatSyncMediaService {
     try {
       const larkSdkClient = await LarksuiteService.createClientV2(env);
       const token = await LarksuiteService.getTenantAccessToken(env);
-      const larkAxiosClient = await LarksuiteService.createLarkAxiosClient(env, token);
-      const service = new LarkChatSyncMediaService(env, larkAxiosClient, larkSdkClient);
-      const startTime = dayjs().tz(TIMEZONE_VIETNAM).subtract(1, "day").startOf("day").unix();
+      const larkAxiosClient = await LarksuiteService.createLarkAxiosClient(
+        env,
+        token
+      );
+      const service = new LarkChatSyncMediaService(
+        env,
+        larkAxiosClient,
+        larkSdkClient
+      );
+      const startTime = dayjs()
+        .tz(TIMEZONE_VIETNAM)
+        .subtract(1, "day")
+        .startOf("day")
+        .unix();
       await service.syncChat(CHAT_GROUPS.MEDIA_GROUP.chat_id, startTime);
     } catch (error) {
       Sentry.captureException(error);

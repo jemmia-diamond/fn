@@ -4,7 +4,8 @@ import { API_CONFIG } from "src/controllers/ecommerce/constant";
 
 export function getDiscountMultiplier(customDiscount, fallbackPercent = 0) {
   const percent = Number(customDiscount ?? fallbackPercent);
-  const safePercent = Number.isFinite(percent) && percent >= 0 && percent <= 100 ? percent : 0;
+  const safePercent =
+    Number.isFinite(percent) && percent >= 0 && percent <= 100 ? percent : 0;
   return (100 - safePercent) / 100;
 }
 
@@ -23,7 +24,8 @@ export function buildInventoryMetricsSql(opts = {}) {
     return Prisma.sql``;
   }
   const limitSql =
-    opts.limit_selling_quantity !== null && opts.limit_selling_quantity !== undefined
+    opts.limit_selling_quantity !== null &&
+    opts.limit_selling_quantity !== undefined
       ? Prisma.sql`CAST(${opts.limit_selling_quantity} AS INT)`
       : Prisma.sql`NULL`;
   return Prisma.sql`
@@ -234,7 +236,9 @@ export function buildInterleavedQueryV2(jsonParams) {
         FROM (
           SELECT UNNEST(c_t.material_colors) AS color
           FROM (${Prisma.join(
-            countQueries.map((c) => Prisma.sql`SELECT material_colors FROM (${c}) AS sub_m`),
+            countQueries.map(
+              (c) => Prisma.sql`SELECT material_colors FROM (${c}) AS sub_m`
+            ),
             " UNION ALL "
           )}) AS c_t
         ) AS colors_sub
@@ -244,14 +248,18 @@ export function buildInterleavedQueryV2(jsonParams) {
         FROM (
           SELECT UNNEST(c_t.fineness) AS f
           FROM (${Prisma.join(
-            countQueries.map((c) => Prisma.sql`SELECT fineness FROM (${c}) AS sub_f`),
+            countQueries.map(
+              (c) => Prisma.sql`SELECT fineness FROM (${c}) AS sub_f`
+            ),
             " UNION ALL "
           )}) AS c_t
         ) AS fineness_sub
       ) AS fineness
     FROM (
       ${Prisma.join(
-        countQueries.map((c) => Prisma.sql`SELECT c_t.total FROM (${c}) AS c_t`),
+        countQueries.map(
+          (c) => Prisma.sql`SELECT c_t.total FROM (${c}) AS c_t`
+        ),
         " UNION ALL "
       )}
     ) AS sub_c

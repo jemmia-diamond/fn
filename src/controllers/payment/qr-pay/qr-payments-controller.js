@@ -65,11 +65,14 @@ export default class QRPaymentsController {
     // haravan_order_id
     const serializableData = { ...payment };
     if (serializableData.haravan_order_id != null) {
-      serializableData.haravan_order_id = serializableData.haravan_order_id.toString();
+      serializableData.haravan_order_id =
+        serializableData.haravan_order_id.toString();
     }
     // transfer_amount
     if (serializableData.transfer_amount != null) {
-      serializableData.transfer_amount = parseFloat(serializableData.transfer_amount);
+      serializableData.transfer_amount = parseFloat(
+        serializableData.transfer_amount
+      );
     }
     // haravan_order_total_price
     if (serializableData.haravan_order_total_price != null) {

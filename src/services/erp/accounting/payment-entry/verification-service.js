@@ -60,7 +60,9 @@ export default class BankTransactionVerificationService {
     const orConditions = [{ payment_entry_name: paymentEntryName }];
     if (qr_payment_id) orConditions.unshift({ id: qr_payment_id });
 
-    const qrPayment = await this.db.qrPaymentTransaction.findFirst({ where: { OR: orConditions } });
+    const qrPayment = await this.db.qrPaymentTransaction.findFirst({
+      where: { OR: orConditions }
+    });
 
     if (!qrPayment) {
       return this.failedPayload(
@@ -72,26 +74,39 @@ export default class BankTransactionVerificationService {
     }
 
     if (auto_updated == 1) {
-      if (qrPayment.haravan_order_number !== sepay_order_number && !qrPayment.haravan_order_id) {
-        return this.failedPayload("Order number mismatch", "ORDER_NUMBER_MISMATCH", {
-          payment_entry: paymentEntryName,
-          qr_order_number: qrPayment.haravan_order_number,
-          sepay_order_number: sepay_order_number
-        });
+      if (
+        qrPayment.haravan_order_number !== sepay_order_number &&
+        !qrPayment.haravan_order_id
+      ) {
+        return this.failedPayload(
+          "Order number mismatch",
+          "ORDER_NUMBER_MISMATCH",
+          {
+            payment_entry: paymentEntryName,
+            qr_order_number: qrPayment.haravan_order_number,
+            sepay_order_number: sepay_order_number
+          }
+        );
       }
 
       if (
         payload.modified_by === "tech@jemmia.vn" &&
         qrPayment.transfer_note !== sepay_order_description
       ) {
-        return this.failedPayload("Order description mismatch", "ORDER_DESC_MISMATCH", {
-          payment_entry: paymentEntryName,
-          qr_transfer_note: qrPayment.transfer_note,
-          sepay_order_description: sepay_order_description
-        });
+        return this.failedPayload(
+          "Order description mismatch",
+          "ORDER_DESC_MISMATCH",
+          {
+            payment_entry: paymentEntryName,
+            qr_transfer_note: qrPayment.transfer_note,
+            sepay_order_description: sepay_order_description
+          }
+        );
       }
 
-      if (parseFloat(qrPayment.transfer_amount) !== parseFloat(sepay_amount_in)) {
+      if (
+        parseFloat(qrPayment.transfer_amount) !== parseFloat(sepay_amount_in)
+      ) {
         return this.failedPayload("Amount mismatch", "AMOUNT_MISMATCH", {
           payment_entry: paymentEntryName,
           qr_amount: qrPayment.transfer_amount,
@@ -109,7 +124,9 @@ export default class BankTransactionVerificationService {
     });
 
     const successPayment =
-      references.length != 0 ? PaymentOrderStatus.SUCCESS : PaymentOrderStatus.PENDING;
+      references.length != 0
+        ? PaymentOrderStatus.SUCCESS
+        : PaymentOrderStatus.PENDING;
     await this.frappeClient.update({
       doctype: "Payment Entry",
       name: paymentEntryName,

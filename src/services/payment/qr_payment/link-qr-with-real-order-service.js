@@ -30,8 +30,10 @@ export default class LinkQRWithRealOrderService {
     const requiredFields = {
       customer_name: "Missing 'customer_name' in request body.",
       customer_phone_number: "Missing 'customer_phone_number' in request body.",
-      haravan_order_total_price: "Missing 'haravan_order_total_price' in request body.",
-      haravan_order_remain_pay: "Missing 'haravan_order_remain_pay' in request body.",
+      haravan_order_total_price:
+        "Missing 'haravan_order_total_price' in request body.",
+      haravan_order_remain_pay:
+        "Missing 'haravan_order_remain_pay' in request body.",
       haravan_order_number: "Missing 'haravan_order_number' in request body.",
       haravan_order_status: "Missing 'haravan_order_status' in request body.",
       haravan_order_id: "Missing 'haravan_order_id' in request body."
@@ -65,11 +67,15 @@ export default class LinkQRWithRealOrderService {
       return phoneNumber ? phoneNumber.replace(/\D/g, "") : "";
     };
 
-    const cleanedPhoneNumber = cleanPhoneNumber(qrPayment.customer_phone_number);
+    const cleanedPhoneNumber = cleanPhoneNumber(
+      qrPayment.customer_phone_number
+    );
     if (
       cleanedPhoneNumber !== cleanPhoneNumber(body.customer_phone_number) &&
-      cleanedPhoneNumber !== cleanPhoneNumber(body.customer_phone_number_billing) &&
-      cleanedPhoneNumber !== cleanPhoneNumber(body.customer_phone_number_shipping)
+      cleanedPhoneNumber !==
+        cleanPhoneNumber(body.customer_phone_number_billing) &&
+      cleanedPhoneNumber !==
+        cleanPhoneNumber(body.customer_phone_number_shipping)
     ) {
       throw new Error(
         JSON.stringify({
@@ -132,14 +138,15 @@ export default class LinkQRWithRealOrderService {
        * then update QR Payment to success
        * then update Larksuite Record to success
        */
-      const createdTransactionResponse = await haravanService.orderTransaction.createTransaction(
-        body.haravan_order_id,
-        {
-          amount: toPayAmount,
-          kind: "capture",
-          gateway: "Chuyển khoản ngân hàng (tự động xác nhận giao dịch)"
-        }
-      );
+      const createdTransactionResponse =
+        await haravanService.orderTransaction.createTransaction(
+          body.haravan_order_id,
+          {
+            amount: toPayAmount,
+            kind: "capture",
+            gateway: "Chuyển khoản ngân hàng (tự động xác nhận giao dịch)"
+          }
+        );
 
       if (createdTransactionResponse) {
         const updateQr = await this.updateOrderLater(qrPaymentId, body);
@@ -196,7 +203,9 @@ export default class LinkQRWithRealOrderService {
       }
     };
 
-    await this.env["MISA_QUEUE"].send(payload, { delaySeconds: Misa.Constants.DELAYS.ONE_MINUTE });
+    await this.env["MISA_QUEUE"].send(payload, {
+      delaySeconds: Misa.Constants.DELAYS.ONE_MINUTE
+    });
   }
 
   async updateLarksuiteRecordToSuccess(larkRecordId) {

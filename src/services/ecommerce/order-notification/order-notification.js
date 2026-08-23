@@ -49,7 +49,9 @@ export default class OrderNotificationService {
   }
 
   shouldSkipOrder(orderData) {
-    if (!OrderNotificationService.WHITELIST_SOURCES.includes(orderData.source)) {
+    if (
+      !OrderNotificationService.WHITELIST_SOURCES.includes(orderData.source)
+    ) {
       return true;
     }
 

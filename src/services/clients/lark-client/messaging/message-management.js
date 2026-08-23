@@ -40,7 +40,13 @@ export default class MessageManagementConnector extends LarkBaseClient {
    * @param {string} [uuid] - UUID for idempotency
    * @returns {Promise<object>} Reply message data
    */
-  async replyMessage(messageId, content, msgType, replyInThread = false, uuid = null) {
+  async replyMessage(
+    messageId,
+    content,
+    msgType,
+    replyInThread = false,
+    uuid = null
+  ) {
     const endpoint = `/im/v1/messages/${messageId}/reply`;
 
     const data = this._cleanParams({
@@ -109,7 +115,12 @@ export default class MessageManagementConnector extends LarkBaseClient {
    * @param {string} [uuid] - UUID for idempotency
    * @returns {Promise<object>} Forwarded messages data
    */
-  async mergeForwardMessages(receiveId, receiveIdType, messageIdList, uuid = null) {
+  async mergeForwardMessages(
+    receiveId,
+    receiveIdType,
+    messageIdList,
+    uuid = null
+  ) {
     const endpoint = "/im/v1/messages/merge_forward";
     const params = { receive_id_type: receiveIdType };
 
@@ -150,7 +161,12 @@ export default class MessageManagementConnector extends LarkBaseClient {
    * @param {string} [pageToken] - Page token
    * @returns {Promise<object>} Read status data
    */
-  async queryReadStatus(messageId, userIdType = "open_id", pageSize = 20, pageToken = null) {
+  async queryReadStatus(
+    messageId,
+    userIdType = "open_id",
+    pageSize = 20,
+    pageToken = null
+  ) {
     const endpoint = `/im/v1/messages/${messageId}/read_users`;
 
     const params = this._cleanParams({
@@ -218,6 +234,8 @@ export default class MessageManagementConnector extends LarkBaseClient {
    * @returns {object} Cleaned parameters
    */
   _cleanParams(params) {
-    return Object.fromEntries(Object.entries(params).filter(([_, value]) => value != null));
+    return Object.fromEntries(
+      Object.entries(params).filter(([_, value]) => value != null)
+    );
   }
 }

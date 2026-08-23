@@ -4,7 +4,11 @@ import dayjs from "dayjs";
 import MisaClient from "services/clients/misa-client";
 import Database from "services/database";
 import Misa from "services/misa";
-import { buildOrgUnitMap, VOUCHER_REF_TYPES, VOUCHER_TYPES } from "services/misa/constant";
+import {
+  buildOrgUnitMap,
+  VOUCHER_REF_TYPES,
+  VOUCHER_TYPES
+} from "services/misa/constant";
 import VoucherMappingService from "services/misa/mapping/voucher-mapping-service";
 import Payment from "services/payment";
 
@@ -15,12 +19,18 @@ export default class QrTransactionService {
   }
 
   async processTransaction(qrTransaction, is_retry = false) {
-    if (qrTransaction.misa_sync_guid && qrTransaction.misa_synced_at && !is_retry) {
+    if (
+      qrTransaction.misa_sync_guid &&
+      qrTransaction.misa_synced_at &&
+      !is_retry
+    ) {
       return true;
     }
 
     const currentTime = dayjs().utc().toDate();
-    const generatedGuid = is_retry ? qrTransaction.misa_sync_guid : crypto.randomUUID();
+    const generatedGuid = is_retry
+      ? qrTransaction.misa_sync_guid
+      : crypto.randomUUID();
 
     if (!is_retry) {
       const claimed = await this.db.qrPaymentTransaction.updateMany({
@@ -69,17 +79,18 @@ export default class QrTransactionService {
           ? this._multiOrderName(qrTransaction.payment_references)
           : await Misa.Utils.getJournalNote(this.db, qrTransaction);
 
-      const { misaVoucher, originalId } = await VoucherMappingService.transformQrToVoucher(
-        qrTransaction,
-        bankMap,
-        orgUnitMap,
-        VOUCHER_TYPES.QR_PAYMENT,
-        VOUCHER_REF_TYPES.QR_PAYMENT,
-        journalNote,
-        this.env,
-        generatedGuid,
-        this.db
-      );
+      const { misaVoucher, originalId } =
+        await VoucherMappingService.transformQrToVoucher(
+          qrTransaction,
+          bankMap,
+          orgUnitMap,
+          VOUCHER_TYPES.QR_PAYMENT,
+          VOUCHER_REF_TYPES.QR_PAYMENT,
+          journalNote,
+          this.env,
+          generatedGuid,
+          this.db
+        );
 
       const payload = {
         app_id: this.env.MISA_APP_ID,

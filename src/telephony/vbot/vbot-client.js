@@ -22,11 +22,17 @@ export default class VbotClient {
   }
 
   async getCallLogs(params = {}) {
-    const defaultParams = { page: DEFAULT_PAGE, size: DEFAULT_PAGE_SIZE, ...params };
+    const defaultParams = {
+      page: DEFAULT_PAGE,
+      size: DEFAULT_PAGE_SIZE,
+      ...params
+    };
     return await this.getRequest("/api/crm/historycall/getAll", defaultParams);
   }
 
   async getMemberByMemberNo(memberNo) {
-    return await this.getRequest("/api/member/getByMemberNo", { member_no: memberNo });
+    return await this.getRequest("/api/member/getByMemberNo", {
+      member_no: memberNo
+    });
   }
 }

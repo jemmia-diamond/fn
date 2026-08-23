@@ -23,7 +23,10 @@ export const mapSalesOrdersToDatabase = (salesOrders) => {
     amended_from: safeValue(salesOrder?.amended_from, "string"),
     is_split_order: safeValue(salesOrder?.is_split_order, "number"),
     split_order_group: safeValue(salesOrder?.split_order_group, "string"),
-    split_order_group_name: safeValue(salesOrder?.split_order_group_name, "string"),
+    split_order_group_name: safeValue(
+      salesOrder?.split_order_group_name,
+      "string"
+    ),
     split_reason: safeValue(salesOrder?.split_reason, "string"),
 
     // Customer information
@@ -34,7 +37,10 @@ export const mapSalesOrdersToDatabase = (salesOrders) => {
     cancelled_status: safeValue(salesOrder?.cancelled_status, "string"),
     financial_status: safeValue(salesOrder?.financial_status, "string"),
     fulfillment_status: safeValue(salesOrder?.fulfillment_status, "string"),
-    expected_delivery_date: safeValue(salesOrder?.expected_delivery_date, "date"),
+    expected_delivery_date: safeValue(
+      salesOrder?.expected_delivery_date,
+      "date"
+    ),
     cost_center: safeValue(salesOrder?.cost_center, "string"),
     project: safeValue(salesOrder?.project, "string"),
     consultation_date: safeValue(salesOrder?.consultation_date, "date"),
@@ -54,7 +60,10 @@ export const mapSalesOrdersToDatabase = (salesOrders) => {
     apply_discount_on: safeValue(salesOrder?.apply_discount_on, "string"),
     base_discount_amount: safeValue(salesOrder?.base_discount_amount, "number"),
     coupon_code: safeValue(salesOrder?.coupon_code, "string"),
-    additional_discount_percentage: safeValue(salesOrder?.additional_discount_percentage, "number"),
+    additional_discount_percentage: safeValue(
+      salesOrder?.additional_discount_percentage,
+      "number"
+    ),
     total_qty: safeValue(salesOrder?.total_qty, "number"),
     total: safeValue(salesOrder?.total, "number"),
     discount_amount: safeValue(salesOrder?.discount_amount, "number"),
@@ -70,18 +79,33 @@ export const mapSalesOrdersToDatabase = (salesOrders) => {
     shipping_rule: safeValue(salesOrder?.shipping_rule, "string"),
     incoterm: safeValue(salesOrder?.incoterm, "string"),
     named_place: safeValue(salesOrder?.named_place, "string"),
-    base_total_taxes_and_charges: safeValue(salesOrder?.base_total_taxes_and_charges, "number"),
-    total_taxes_and_charges: safeValue(salesOrder?.total_taxes_and_charges, "number"),
+    base_total_taxes_and_charges: safeValue(
+      salesOrder?.base_total_taxes_and_charges,
+      "number"
+    ),
+    total_taxes_and_charges: safeValue(
+      salesOrder?.total_taxes_and_charges,
+      "number"
+    ),
     base_grand_total: safeValue(salesOrder?.base_grand_total, "number"),
-    base_rounding_adjustment: safeValue(salesOrder?.base_rounding_adjustment, "number"),
+    base_rounding_adjustment: safeValue(
+      salesOrder?.base_rounding_adjustment,
+      "number"
+    ),
     base_rounded_total: safeValue(salesOrder?.base_rounded_total, "number"),
     base_in_words: safeValue(salesOrder?.base_in_words, "string"),
     rounding_adjustment: safeValue(salesOrder?.rounding_adjustment, "number"),
     rounded_total: safeValue(salesOrder?.rounded_total, "number"),
     in_words: safeValue(salesOrder?.in_words, "string"),
     advance_paid: safeValue(salesOrder?.advance_paid, "number"),
-    disable_rounded_total: safeValue(salesOrder?.disable_rounded_total, "string"),
-    other_charges_calculation: safeValue(salesOrder?.other_charges_calculation, "string"),
+    disable_rounded_total: safeValue(
+      salesOrder?.disable_rounded_total,
+      "string"
+    ),
+    other_charges_calculation: safeValue(
+      salesOrder?.other_charges_calculation,
+      "string"
+    ),
 
     // Contact and address information
     contact_person: safeValue(salesOrder?.contact_person, "string"),
@@ -93,7 +117,10 @@ export const mapSalesOrdersToDatabase = (salesOrders) => {
     address_display: safeValue(salesOrder?.address_display, "string"),
     customer_group: safeValue(salesOrder?.customer_group, "string"),
     territory: safeValue(salesOrder?.territory, "string"),
-    shipping_address_name: safeValue(salesOrder?.shipping_address_name, "string"),
+    shipping_address_name: safeValue(
+      salesOrder?.shipping_address_name,
+      "string"
+    ),
     shipping_address: safeValue(salesOrder?.shipping_address, "string"),
     customer: safeValue(salesOrder?.customer, "string"),
     gender: safeValue(salesOrder?.gender, "string"),
@@ -103,10 +130,19 @@ export const mapSalesOrdersToDatabase = (salesOrders) => {
     date_of_issuance: safeValue(salesOrder?.date_of_issuance, "date"),
     dispatch_address: safeValue(salesOrder?.dispatch_address, "string"),
     place_of_issuance: safeValue(salesOrder?.place_of_issuance, "string"),
-    dispatch_address_name: safeValue(salesOrder?.dispatch_address_name, "string"),
+    dispatch_address_name: safeValue(
+      salesOrder?.dispatch_address_name,
+      "string"
+    ),
     company_address: safeValue(salesOrder?.company_address, "string"),
-    company_address_display: safeValue(salesOrder?.company_address_display, "string"),
-    company_contact_person: safeValue(salesOrder?.company_contact_person, "string"),
+    company_address_display: safeValue(
+      salesOrder?.company_address_display,
+      "string"
+    ),
+    company_contact_person: safeValue(
+      salesOrder?.company_contact_person,
+      "string"
+    ),
 
     // Status information
     status: safeValue(salesOrder?.status, "string"),
@@ -118,7 +154,10 @@ export const mapSalesOrdersToDatabase = (salesOrders) => {
 
     // Sales and commission
     sales_partner: safeValue(salesOrder?.sales_partner, "string"),
-    amount_eligible_for_commission: safeValue(salesOrder?.amount_eligible_for_commission, "number"),
+    amount_eligible_for_commission: safeValue(
+      salesOrder?.amount_eligible_for_commission,
+      "number"
+    ),
     commission_rate: safeValue(salesOrder?.commission_rate, "number"),
     total_commission: safeValue(salesOrder?.total_commission, "number"),
     loyalty_points: safeValue(salesOrder?.loyalty_points, "number"),
@@ -136,16 +175,25 @@ export const mapSalesOrdersToDatabase = (salesOrders) => {
     is_internal_customer: safeValue(salesOrder?.is_internal_customer, "string"),
     represents_company: safeValue(salesOrder?.represents_company, "string"),
     source: safeValue(salesOrder?.source, "string"),
-    inter_company_order_reference: safeValue(salesOrder?.inter_company_order_reference, "string"),
+    inter_company_order_reference: safeValue(
+      salesOrder?.inter_company_order_reference,
+      "string"
+    ),
     campaign: safeValue(salesOrder?.campaign, "string"),
-    party_account_currency: safeValue(salesOrder?.party_account_currency, "string"),
+    party_account_currency: safeValue(
+      salesOrder?.party_account_currency,
+      "string"
+    ),
 
     // Payment information
     total_amount: safeValue(salesOrder?.total_amount, "number"),
     expected_payment_date: safeValue(salesOrder?.expected_payment_date, "date"),
     paid_amount: safeValue(salesOrder?.paid_amount, "number"),
     balance: safeValue(salesOrder?.balance, "number"),
-    payment_terms_template: safeValue(salesOrder?.payment_terms_template, "string"),
+    payment_terms_template: safeValue(
+      salesOrder?.payment_terms_template,
+      "string"
+    ),
     tc_name: safeValue(salesOrder?.tc_name, "string"),
     terms: safeValue(salesOrder?.terms, "string"),
 

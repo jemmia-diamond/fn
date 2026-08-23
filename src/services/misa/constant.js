@@ -76,8 +76,15 @@ export function buildOrgUnitMap(orgUnitDictionary) {
   }, {});
 }
 
-export function getCreditInfo(orgUnitMap, source, branch = null, isManualPayment = false) {
-  const sourceInfo = isManualPayment ? BRANCH_TO_UNIT_CODE[branch] : SOURCE_TO_UNIT_CODE[source];
+export function getCreditInfo(
+  orgUnitMap,
+  source,
+  branch = null,
+  isManualPayment = false
+) {
+  const sourceInfo = isManualPayment
+    ? BRANCH_TO_UNIT_CODE[branch]
+    : SOURCE_TO_UNIT_CODE[source];
 
   if (!sourceInfo) return {};
 

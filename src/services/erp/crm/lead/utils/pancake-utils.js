@@ -48,7 +48,8 @@ export function createUpdateLeadPayload(conversation) {
     first_name: conversation.customer_name?.trim() || "Chưa rõ",
     phone: conversation.customer_phone,
     image:
-      conversation.pancake_avatar_url && conversation.pancake_avatar_url !== "https:"
+      conversation.pancake_avatar_url &&
+      conversation.pancake_avatar_url !== "https:"
         ? conversation.pancake_avatar_url
         : null,
     pancake_data: {
@@ -65,11 +66,14 @@ export function createUpdateLeadPayload(conversation) {
         : null,
       can_inbox: conversation.can_inbox === true ? 1 : 0,
       latest_message_at: conversation.latest_message_at
-        ? dayjs(conversation.latest_message_at).utc().format("YYYY-MM-DD HH:mm:ss")
+        ? dayjs(conversation.latest_message_at)
+            .utc()
+            .format("YYYY-MM-DD HH:mm:ss")
         : null,
       pancake_user_id: conversation.pancake_user_id || null,
       pancake_avatar_url:
-        conversation.pancake_avatar_url && conversation.pancake_avatar_url !== "https:"
+        conversation.pancake_avatar_url &&
+        conversation.pancake_avatar_url !== "https:"
           ? conversation.pancake_avatar_url
           : null,
       ad_ids: conversation.ad_ids
@@ -78,10 +82,14 @@ export function createUpdateLeadPayload(conversation) {
     address: conversation.customer_lives_in,
     birth_date: birthDate,
     last_sales_message_at: conversation.last_sales_message_at
-      ? dayjs(conversation.last_sales_message_at).utc().format("YYYY-MM-DD HH:mm:ss")
+      ? dayjs(conversation.last_sales_message_at)
+          .utc()
+          .format("YYYY-MM-DD HH:mm:ss")
       : null,
     last_customer_message_at: conversation.last_customer_message_at
-      ? dayjs(conversation.last_customer_message_at).utc().format("YYYY-MM-DD HH:mm:ss")
+      ? dayjs(conversation.last_customer_message_at)
+          .utc()
+          .format("YYYY-MM-DD HH:mm:ss")
       : null
   };
 
