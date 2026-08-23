@@ -1,6 +1,7 @@
 
 import CollectController from "controllers/webhook/nocodb/collect";
 import DiamondsController from "controllers/webhook/nocodb/diamonds";
+import MoissaniteController from "controllers/webhook/nocodb/moissanite";
 import ProductsController from "controllers/webhook/nocodb/products";
 import SetsController from "controllers/webhook/nocodb/sets";
 
@@ -11,5 +12,6 @@ export default class NocoWebhook {
     nocoWebhookNamespace.post("sets", SetsController.handle);
     nocoWebhookNamespace.post("diamonds", DiamondsController.handle);
     nocoWebhookNamespace.post("products", ProductsController.handle);
+    nocoWebhookNamespace.post("moissanite", MoissaniteController.handle);
   }
 }
