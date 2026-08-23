@@ -22,6 +22,14 @@ function resolveProductType(row) {
   return "Đá Moissanite";
 }
 
+function parsePrice(value) {
+  if (value == null) return 0;
+  if (typeof value === "number") return value;
+  const cleaned = String(value).replace(/[^0-9.]/g, "");
+  const parsed = parseFloat(cleaned);
+  return isNaN(parsed) ? 0 : parsed;
+}
+
 function formatNumber(value, length) {
   return String(value).padStart(length, "0");
 }
@@ -64,6 +72,10 @@ export default class MoissaniteProductCreatorService {
       throw new Error("No data found in payload");
     }
 
+    if (data.haravan_product_id) {
+      return { skipped: true, reason: "haravan_product_id already exists" };
+    }
+
     const { id, title, price } = data;
     const sku = data["sku(formula)"] || data.sku;
 
@@ -93,7 +105,7 @@ export default class MoissaniteProductCreatorService {
         {
           sku,
           barcode,
-          price: price != null ? Number(price) : 0,
+          price: parsePrice(price),
           inventory_policy: "deny",
           inventory_management: "haravan",
           option1: sku
