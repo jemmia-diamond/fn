@@ -31,6 +31,7 @@ export default {
       await new Ecommerce.ProductG1PromotionSyncService(env).syncPromotions();
       await new Haravan.Collect.CollectionProductSyncService(env).syncCollectionProducts();
       await new Ecommerce.ProductVariantPromotionSyncService(env).syncVariantPromotions();
+      await new Larksuite.VariantSyncService(env).sync();
       break;
     case "*/5 * * * *": // At every 5th minute
       await new OneOffHandler(env).run();
@@ -50,6 +51,7 @@ export default {
       await new Ecommerce.VariantSyncService(env).syncVariants();
       await ERP.Selling.BuybackExchangeSyncService.cronSync(env);
       await new Haravan.Customer.DatabaseSyncService(env).sync();
+      await DatabaseOperations.MaterializedViewService.refresh10Minutes(env);
       break;
     case "*/15 * * * *": // At every 15th minute
       await ERP.Contacts.ContactService.cronSyncContactsToDatabase(env);
@@ -60,6 +62,7 @@ export default {
       await DatabaseOperations.MaterializedViewService.refresh20Minutes(env);
       break;
     case "*/30 * * * *": // At every 30th minute
+      await new ERP.CRM.AppointmentService(env).notifyUpcomingAppointments();
       await ERP.Contacts.AddressService.cronSyncAddressesToDatabase(env);
       await DatabaseOperations.MaterializedViewService.refresh30Minutes(env);
       await new Haravan.AccountingSalesOrders.LarkSyncService(env).sync();
@@ -74,6 +77,9 @@ export default {
       break;
     case "0 */6 * * *": // At every 6th hour
       await DatabaseOperations.MaterializedViewService.refresh6Hours(env);
+      break;
+    case "0 */10 * * *": // At every 10th hour (600 minutes)
+      await new Larksuite.SerialSyncService(env).sync();
       break;
     case "0 17 * * *": // 00:00
       await new Reporting.UptimeReportSyncService(env).dailySync();
