@@ -399,31 +399,6 @@ export default class PancakeClient {
   }
 
   /**
-   * Retrieves user (employee) statistics for a page in a specific date range.
-   * @param {string} pageId - The page ID.
-   * @param {string} dateRange - Date range string (e.g. '27/07/2021 00:00:00 - 26/08/2021 23:59:59').
-   * @returns {Promise<Array<object>>} Array of user statistics objects.
-   * API: GET /public_api/v1/pages/:page_id/statistics/users
-   */
-  async getUserStatistics(pageId, dateRange) {
-    const pageAccessToken = await this.getPageAccessToken(pageId);
-    const url = `${this.baseUrl}/api/public_api/v1/pages/${pageId}/statistics/users`;
-    try {
-      const params = {
-        page_access_token: pageAccessToken,
-        date_range: dateRange
-      };
-      const response = await axios.get(url, { params });
-      return response.data.data || [];
-    } catch (error) {
-      throw new Error(
-        `Failed to get user statistics for page ${pageId}.`,
-        error.response?.data || error.message
-      );
-    }
-  }
-
-  /**
    * Retrieves statistics of new customers over time for a given page.
    * @param {string} pageId - The page ID.
    * @param {string} dateRange - Date range (e.g. '20/07/2020 - 20/08/2020').

@@ -27,7 +27,6 @@
         "noExplicitAny": "off",
         "noGlobalIsNan": "off",
         "noDoubleEquals": "off",
-        "noDuplicateClassMembers": "off",
         "noAssignInExpressions": "off",
         "useIterableCallbackReturn": "off",
         "noShadowRestrictedNames": "off"
