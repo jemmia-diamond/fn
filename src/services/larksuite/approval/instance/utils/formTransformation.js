@@ -1,4 +1,5 @@
 import { APPROVALS } from "services/larksuite/approval/constant";
+import { normalizeToStandardFormat } from "services/utils/phone-utils";
 
 const widgetsArrayToObject = (form) => {
   const widgets = JSON.parse(form);
@@ -69,6 +70,8 @@ export const transformExchangeBuybackdData = (form) => {
 
   const phoneData = accessNestedKey(widgetsObj, widgetFieldMapper.phone_number);
   const phoneNumber = phoneData ? JSON.stringify(phoneData) : null;
+  const rawPhone = phoneData?.national_number || (typeof phoneData === "string" ? phoneData : null);
+  const normalizedPhone = rawPhone ? normalizeToStandardFormat(rawPhone) : null;
 
   const productsInfoRaw = accessNestedKey(widgetsObj, widgetFieldMapper.products_info);
   let productsInfo = null;
@@ -123,6 +126,7 @@ export const transformExchangeBuybackdData = (form) => {
     customer_name: accessNestedKey(widgetsObj, widgetFieldMapper.customer_name) ?
       accessNestedKey(widgetsObj, widgetFieldMapper.customer_name).toString().trim() : null,
     phone_number: phoneNumber,
+    normalized_phone: normalizedPhone,
     national_id: accessNestedKey(widgetsObj, widgetFieldMapper.national_id),
     reason: accessNestedKey(widgetsObj, widgetFieldMapper.reason) ?
       accessNestedKey(widgetsObj, widgetFieldMapper.reason).toString().trim() : null,
