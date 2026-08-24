@@ -12,7 +12,7 @@ export default class NocoWebhook {
     nocoWebhookNamespace.post("sets", SetsController.handle);
     nocoWebhookNamespace.post("diamonds", DiamondsController.handle);
     nocoWebhookNamespace.post("products", ProductsController.handle);
-    nocoWebhookNamespace.post("haravan-collections", HaravanCollectionsController.handle);
+    nocoWebhookNamespace.post("haravan-collections", HaravanCollectionsController.create);
     nocoWebhookNamespace.post("variants", VariantsController.handle);
   }
 }
