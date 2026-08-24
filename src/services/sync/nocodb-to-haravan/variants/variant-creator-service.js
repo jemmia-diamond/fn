@@ -133,7 +133,7 @@ export default class VariantCreatorService {
       requires_shipping: true
     };
 
-    const haravanApi = new HaravanAPI(this.env.HARAVAN_TOKEN);
+    const haravanApi = new HaravanAPI(this.env.HARAVAN_NOCODB_TOKEN);
     const haravanProduct = await haravanApi.product.getProduct(haravanProductId);
     const haravanVariants = haravanProduct?.product?.variants || [];
     const defaultVariant = haravanVariants.find(v => v.title === "Default Title");
