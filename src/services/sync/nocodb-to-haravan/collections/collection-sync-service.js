@@ -11,10 +11,7 @@ export default class CollectionSyncService {
     const data = payload?.data?.rows?.[0];
     const tableId = payload?.data?.table_id;
 
-    if (
-      tableId !== NOCODB_TABLES.MARKETING.HARAVAN_COLLECTIONS &&
-      tableId !== NOCODB_TABLES.SUPPLY.HARAVAN_COLLECTIONS
-    ) {
+    if (tableId !== NOCODB_TABLES.MARKETING.HARAVAN_COLLECTIONS) {
       throw new Error(`Ignored table ID: ${tableId}`);
     }
 
