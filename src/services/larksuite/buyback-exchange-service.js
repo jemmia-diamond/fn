@@ -1,6 +1,4 @@
-import { Prisma } from "@prisma-cli/client";
 import Database from "services/database";
-import normalizePhoneNumber from "services/utils/normalize-phone-number";
 
 const EXCHANGE_TYPE = {
   BUYBACK: "Thu Mua",
@@ -22,63 +20,42 @@ export default class BuybackExchangeService {
   }
 
   async find(params) {
-    const whereClauses = this.whereClauseGenerator(params);
-    if (whereClauses.length === 0) {
-      return [];
-    }
-
-    const query = Prisma.sql`
-      SELECT *
-      FROM larksuite.buyback_exchange_approval_instances
-      WHERE ${Prisma.join(whereClauses, " AND ")};
-    `;
-
-    return this.db.$queryRaw(query);
-  }
-
-  whereClauseGenerator(params) {
     const {
       phone_number,
+      normalized_phone,
       instance_type,
       status,
       submitted_date_start,
       submitted_date_end
     } = params;
+    const searchPhone = normalized_phone || phone_number;
 
-    if (!phone_number) {
+    if (!searchPhone) {
       return [];
     }
-    const whereClauses = [];
 
-    const digitsOnly = normalizePhoneNumber(phone_number);
-    const matchLength = digitsOnly.length;
+    const where = {
+      normalized_phone: searchPhone
+    };
 
-    whereClauses.push(
-      Prisma.sql`RIGHT(regexp_replace(phone_number::jsonb->>'national_number', '\\D', '', 'g'), ${matchLength}) = ${digitsOnly}`
-    );
-
-    if (instance_type != "none") {
-      whereClauses.push(
-        Prisma.sql`instance_type = ${instance_type || EXCHANGE_TYPE.BUYBACK}`
-      );
+    if (instance_type && instance_type !== "none") {
+      where.instance_type = instance_type || EXCHANGE_TYPE.BUYBACK;
     }
 
-    if (status != "none") {
-      whereClauses.push(
-        Prisma.sql`status = ${status?.toUpperCase() || EXCHANGE_STATUS.APPROVED}`
-      );
-    }
-    if (submitted_date_start) {
-      whereClauses.push(
-        Prisma.sql`submitted_date >= ${new Date(submitted_date_start)}`
-      );
-    }
-    if (submitted_date_end) {
-      whereClauses.push(
-        Prisma.sql`submitted_date <= ${new Date(submitted_date_end)}`
-      );
+    if (status && status !== "none") {
+      where.status = status?.toUpperCase() || EXCHANGE_STATUS.APPROVED;
     }
 
-    return whereClauses;
+    if (submitted_date_start || submitted_date_end) {
+      where.submitted_date = {};
+      if (submitted_date_start) {
+        where.submitted_date.gte = new Date(submitted_date_start);
+      }
+      if (submitted_date_end) {
+        where.submitted_date.lte = new Date(submitted_date_end);
+      }
+    }
+
+    return this.db.larksuiteBuybackExchangeApprovalInstance.findMany({ where });
   }
 }

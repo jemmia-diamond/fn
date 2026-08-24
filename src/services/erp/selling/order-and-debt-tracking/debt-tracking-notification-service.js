@@ -44,12 +44,11 @@ export default class DebtTrackingNotificationService {
     const message = stringSquishLarkMessage(`
       Jemmia Bot vừa cập nhật danh sách công nợ tuần này. Hiện có **${count}** đơn hàng cần cập nhật tình trạng thu tiền:
 
-      TP.HCM: **${stats.hcmCount}** đơn — ${stats.hcmTag}
-      Hà Nội: **${stats.hnCount}** đơn — ${stats.hnTag}
-      Cần Thơ: **${stats.ctCount}** đơn — ${stats.ctTag}
-      Khác: **${stats.otherCount}** đơn — ${stats.allTags}
+      ${stats.branchStatsMessage}
 
-      Các chị vào ERP cập nhật giúp Bot nhé!
+      📌 Lưu ý mục **Khác**: Các đơn tại đây chưa có địa chỉ thanh toán nên chưa thể phân loại theo khu vực.
+
+      Sau khi hoàn tất đơn khu vực mình phụ trách, nhờ các admin kiểm tra mục **Khác** và cập nhật các đơn thuộc khu vực quản lý để đảm bảo dữ liệu đầy đủ.
     `);
 
     await this._sendToLarksuite(message, {
@@ -64,19 +63,24 @@ export default class DebtTrackingNotificationService {
   async notifyUncheckedOrdersReminder() {
     if (dayjs().tz(TIMEZONE_VIETNAM).day() !== VIETNAM_THURSDAY) return;
 
-    const orders = await this._fetchDebtList(null, true);
+    const nextWednesday = dayjs()
+      .tz(TIMEZONE_VIETNAM)
+      .add(6, "day")
+      .format("YYYY-MM-DD");
+    const orders = await this._fetchDebtList(nextWednesday, true);
     const remainingOrders = orders?.length;
     if (!remainingOrders) return;
 
     const stats = await this._getBranchStatsAndTags(orders);
 
     const message = stringSquishLarkMessage(`
-      ⏰ Hôm nay còn **${remainingOrders}** đơn chưa được cập nhật. Các chị hoàn thành trước **14:00** giúp Bot nha, để kịp tổng hợp báo cáo cuối ngày!
+      ⏰ Hôm nay còn **${remainingOrders}** đơn chưa được cập nhật. Các chị hoàn thành trước **15:00** giúp Bot nha, để kịp tổng hợp báo cáo cuối ngày!
 
-      TP.HCM: **${stats.hcmCount}** đơn — ${stats.hcmTag}
-      Hà Nội: **${stats.hnCount}** đơn — ${stats.hnTag}
-      Cần Thơ: **${stats.ctCount}** đơn — ${stats.ctTag}
-      Khác: **${stats.otherCount}** đơn — ${stats.allTags}
+      ${stats.branchStatsMessage}
+
+      📌 Lưu ý mục **Khác**: Các đơn tại đây chưa có địa chỉ thanh toán nên chưa thể phân loại theo khu vực.
+
+      Sau khi hoàn tất đơn khu vực mình phụ trách, nhờ các admin kiểm tra mục **Khác** và cập nhật các đơn thuộc khu vực quản lý để đảm bảo dữ liệu đầy đủ.
     `);
 
     await this._sendToLarksuite(message, {
@@ -130,6 +134,15 @@ export default class DebtTrackingNotificationService {
     const ctTag = adminTags["tien.chau@jemmia.vn"];
     const allTags = `${hcmTag} ${hnTag} ${ctTag}`;
 
+    const branchStats = [];
+    if (hcmCount > 0)
+      branchStats.push(`TP.HCM: **${hcmCount}** đơn — ${hcmTag}`);
+    if (hnCount > 0) branchStats.push(`Hà Nội: **${hnCount}** đơn — ${hnTag}`);
+    if (ctCount > 0) branchStats.push(`Cần Thơ: **${ctCount}** đơn — ${ctTag}`);
+    if (otherCount > 0)
+      branchStats.push(`Khác: **${otherCount}** đơn — ${allTags}`);
+    const branchStatsMessage = branchStats.join("\n");
+
     return {
       hcmCount,
       hnCount,
@@ -138,7 +151,8 @@ export default class DebtTrackingNotificationService {
       hcmTag,
       hnTag,
       ctTag,
-      allTags
+      allTags,
+      branchStatsMessage
     };
   }
 

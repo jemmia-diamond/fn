@@ -1,7 +1,7 @@
-import ProductCreatorService from "services/sync/nocodb-to-haravan/products/product-creator-service";
+import MoissaniteProductCreatorService from "services/sync/nocodb-to-haravan/moissanite/moissanite-product-creator-service";
 
-export default class ProductsController {
-  static async handle(ctx) {
+export default class MoissaniteController {
+  static async create(ctx) {
     const payload = await ctx.req.json();
 
     if (
@@ -14,14 +14,14 @@ export default class ProductsController {
 
     const row = payload.data.rows?.[0];
 
-    if (!row?.auto_create_haravan) {
+    if (!row?.auto_create) {
       return ctx.json({ message: "Ignored" }, 200);
     }
 
-    const service = new ProductCreatorService(ctx.env);
+    const service = new MoissaniteProductCreatorService(ctx.env);
     await service.handle(payload);
     return ctx.json({
-      message: "Product created on Haravan and NocoDB updated"
+      message: "Moissanite product created on Haravan and NocoDB updated"
     });
   }
 }
