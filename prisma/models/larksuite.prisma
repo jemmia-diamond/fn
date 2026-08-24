@@ -21,6 +21,7 @@ model larksuiteBuybackExchangeApprovalInstance {
   status           String?   @db.VarChar
   customer_name    String?   @db.VarChar
   phone_number     String?   @db.VarChar
+  normalized_phone String?   @db.VarChar
   national_id      String?   @db.VarChar
   products_info    Json?
   reason           String?   @db.VarChar
