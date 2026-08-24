@@ -1,7 +1,7 @@
 import MoissaniteProductCreatorService from "services/sync/nocodb-to-haravan/moissanite/moissanite-product-creator-service";
 
 export default class MoissaniteController {
-  static async handle(ctx) {
+  static async create(ctx) {
     const payload = await ctx.req.json();
 
     if (!payload?.type || !payload?.data || payload.type !== "records.after.update") {
