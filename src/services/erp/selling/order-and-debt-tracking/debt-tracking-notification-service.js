@@ -142,7 +142,6 @@ export default class DebtTrackingNotificationService {
     if (otherCount > 0)
       branchStats.push(`Khác: **${otherCount}** đơn — ${allTags}`);
     const branchStatsMessage = branchStats.join("\n");
-
     return {
       hcmCount,
       hnCount,

@@ -13,7 +13,7 @@ export default class SetsSyncService {
   }
 
   async sync(payload) {
-    const hrvToken = this.env.HARAVAN_TOKEN;
+    const hrvToken = this.env.HARAVAN_NOCODB_TOKEN;
     const haravanApi = new HaravanAPI(hrvToken);
     const nocoClient = new NocoDBClient(this.env);
 

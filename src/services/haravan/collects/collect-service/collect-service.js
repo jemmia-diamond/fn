@@ -77,7 +77,7 @@ export default class CollectService {
       return;
     }
 
-    const HRV_API_KEY = this.env.HARAVAN_TOKEN;
+    const HRV_API_KEY = this.env.HARAVAN_NOCODB_TOKEN;
 
     if (!HRV_API_KEY) {
       throw new BadRequestException(
@@ -164,7 +164,7 @@ export default class CollectService {
       return;
     }
 
-    const HRV_API_KEY = this.env.HARAVAN_TOKEN;
+    const HRV_API_KEY = this.env.HARAVAN_NOCODB_TOKEN;
 
     if (!HRV_API_KEY) {
       throw new BadRequestException(

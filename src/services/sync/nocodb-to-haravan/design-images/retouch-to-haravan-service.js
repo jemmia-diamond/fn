@@ -89,7 +89,7 @@ export default class RetouchToHaravanService {
       );
     }
 
-    const haravanApi = new HaravanAPI(this.env.HARAVAN_TOKEN);
+    const haravanApi = new HaravanAPI(this.env.HARAVAN_NOCODB_TOKEN);
 
     // Get existing Haravan images and delete ones matching this color
     const existingImages =

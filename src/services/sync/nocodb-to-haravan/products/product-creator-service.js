@@ -61,7 +61,7 @@ export default class ProductCreatorService {
       tags: promotions || undefined
     };
 
-    const haravanApi = new HaravanAPI(this.env.HARAVAN_TOKEN);
+    const haravanApi = new HaravanAPI(this.env.HARAVAN_NOCODB_TOKEN);
     const created = await haravanApi.product.createProduct(productPayload);
     const productId = created?.product?.id;
 

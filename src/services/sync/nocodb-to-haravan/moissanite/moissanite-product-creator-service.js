@@ -99,7 +99,7 @@ export default class MoissaniteProductCreatorService {
     const nocoClient = new NocoDBClient(this.env);
     const barcode = await generateBarcode(nocoClient, config.barcode_prefix);
 
-    const haravanApi = new HaravanAPI(this.env.HARAVAN_TOKEN);
+    const haravanApi = new HaravanAPI(this.env.HARAVAN_NOCODB_TOKEN);
     const created = await haravanApi.product.createProduct({
       title,
       product_type: config.haravan_product_type,
