@@ -71,7 +71,7 @@ export default class RetouchToHaravanService {
       throw new Error(`Product has no haravan_product_id for design_id: ${designId}`);
     }
 
-    const haravanApi = new HaravanAPI(this.env.HARAVAN_TOKEN);
+    const haravanApi = new HaravanAPI(this.env.HARAVAN_NOCODB_TOKEN);
 
     // Get existing Haravan images and delete ones matching this color
     const existingImages = await haravanApi.productImage.getImages(haravanProductId);
