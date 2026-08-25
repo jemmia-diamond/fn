@@ -22,7 +22,7 @@ export default class CollectionSyncService {
     const { id, title, haravan_id: haravanId, auto_create: autoCreate } = data;
 
     const nocoClient = new NocoDBClient(this.env);
-    const haravanApi = new HaravanAPI(this.env.HARAVAN_TOKEN);
+    const haravanApi = new HaravanAPI(this.env.HARAVAN_NOCODB_TOKEN);
 
     if (haravanId) {
       await haravanApi.collectCustom.updateCustomCollect(haravanId, {

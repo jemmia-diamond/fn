@@ -9,7 +9,7 @@ export default class DiamondAutoCreateService {
   }
 
   async create(row, tableId) {
-    const haravanApi = new HaravanAPI(this.env.HARAVAN_TOKEN);
+    const haravanApi = new HaravanAPI(this.env.HARAVAN_NOCODB_TOKEN);
     const nocoClient = new NocoDBClient(this.env);
 
     const { id, product_name, vendor, shape, promotions, original_code, price, SKU } = row;

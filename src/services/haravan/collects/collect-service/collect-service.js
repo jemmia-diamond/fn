@@ -55,7 +55,7 @@ export default class CollectService {
       return;
     }
 
-    const HRV_API_KEY = this.env.HARAVAN_TOKEN;
+    const HRV_API_KEY = this.env.HARAVAN_NOCODB_TOKEN;
 
     if (!HRV_API_KEY) {
       throw new BadRequestException("Haravan API credentials or base URL are not configured in the environment.");
@@ -117,7 +117,7 @@ export default class CollectService {
       return;
     }
 
-    const HRV_API_KEY = this.env.HARAVAN_TOKEN;
+    const HRV_API_KEY = this.env.HARAVAN_NOCODB_TOKEN;
 
     if (!HRV_API_KEY) {
       throw new BadRequestException("Haravan API credentials or base URL are not configured in the environment.");
