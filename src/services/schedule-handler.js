@@ -113,10 +113,32 @@ export default {
       await ERP.Automation.AssignmentRuleService.updateAssignmentRulesStartDay(env);
       await ERP.Automation.AssignmentRuleService.reAssignOffHourLeads(env);
       break;
+    case "0 2 * * *": // 09:00
+      await ERP.Accounting.BankTransactionService.notifyUnlinkedBankTransactions(env, {
+        fromDate: dayjs().tz(TIMEZONE_VIETNAM).subtract(1, "day").hour(17).minute(0).second(0).toISOString(),
+        toDate: dayjs().tz(TIMEZONE_VIETNAM).hour(9).minute(0).second(0).toISOString()
+      });
+      await Larksuite.Ticket.TechTicketService.syncTechTickets(env, { mode: "daily" });
+      await new Google.GoogleMerchantProductSyncService(env).sync();
+      await new ERP.Accounting.PaymentEntryNotificationService(env).runMorningBatch();
+      await new ERP.Selling.MissingSerialNotificationService(env).notify({
+        fromDate: dayjs.tz(MISSING_SERIAL_START_DATE, TIMEZONE_VIETNAM).toISOString(),
+        toDate: dayjs().toISOString()
+      });
+      break;
+    case "30 2 * * *": // 09:30
+      await new ERP.Selling.DebtTrackingNotificationService(env).notifyWeeklyAnnouncement();
+      break;
+    case "30 4 * * *": // 11:30
+      await new ERP.Selling.DebtTrackingNotificationService(env).notifyUncheckedOrdersReminder();
+      break;
     case "30 5 * * *": // 12:30
       await ERP.Automation.AssignmentRuleService.updateAssignmentRulesMidDay(env);
       break;
     case "30 6 * * *": // 13:30
+      break;
+    case "30 7 * * *": // 14:30
+      await new ERP.Selling.DebtTrackingNotificationService(env).notifyUncheckedOrdersReminder();
       break;
     case "0 10 * * *": // 17:00
       await ERP.Automation.AssignmentRuleService.updateAssignmentRulesEndDay(env);
@@ -131,19 +153,6 @@ export default {
       });
       break;
     case "0 11 * * *": // 18:00
-      break;
-    case "0 2 * * *": // 09:00
-      await ERP.Accounting.BankTransactionService.notifyUnlinkedBankTransactions(env, {
-        fromDate: dayjs().tz(TIMEZONE_VIETNAM).subtract(1, "day").hour(17).minute(0).second(0).toISOString(),
-        toDate: dayjs().tz(TIMEZONE_VIETNAM).hour(9).minute(0).second(0).toISOString()
-      });
-      await Larksuite.Ticket.TechTicketService.syncTechTickets(env, { mode: "daily" });
-      await new Google.GoogleMerchantProductSyncService(env).sync();
-      await new ERP.Accounting.PaymentEntryNotificationService(env).runMorningBatch();
-      await new ERP.Selling.MissingSerialNotificationService(env).notify({
-        fromDate: dayjs.tz(MISSING_SERIAL_START_DATE, TIMEZONE_VIETNAM).toISOString(),
-        toDate: dayjs().toISOString()
-      });
       break;
     case "0 14 * * *": // 21:00
       await ERP.Automation.AssignmentRuleService.enableAssignmentRuleOffHour(env);
