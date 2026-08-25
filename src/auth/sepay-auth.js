@@ -1,5 +1,4 @@
 import { createMiddleware } from "hono/factory";
-import crypto from "crypto";
 
 export const verifySepayWebhook = createMiddleware(async (c, next) => {
   const secret = c.env.SEPAY_WEBHOOK_SECRET;
@@ -7,26 +6,19 @@ export const verifySepayWebhook = createMiddleware(async (c, next) => {
     return c.json({ error: "SePay Webhook Secret is not configured" }, 500);
   }
 
-  const signatureHeader = c.req.header("X-SePay-Signature") || "";
-  const timestamp = c.req.header("X-SePay-Timestamp");
-
-  if (!signatureHeader || !timestamp) {
-    return c.json({ error: "Missing signature or timestamp" }, 401);
+  const authHeader = c.req.header("Authorization");
+  if (!authHeader) {
+    return c.json({ error: "Unauthorized: Missing Authorization header" }, 401);
   }
 
-  const actualSignature = signatureHeader.replace("sha256=", "");
+  // SePay sends Authorization header as "Apikey YOUR_TOKEN" or sometimes just the raw token.
+  // We extract the key and compare it.
+  const token = authHeader.startsWith("Apikey ")
+    ? authHeader.slice(7)
+    : authHeader;
 
-  const body = await c.req.text();
-  const message = `${timestamp}.${body}`;
-
-  // Calculate HMAC-SHA256 hex signature
-  const expectedSignature = crypto
-    .createHmac("sha256", secret)
-    .update(message)
-    .digest("hex");
-
-  if (actualSignature !== expectedSignature) {
-    return c.json({ error: "Unauthorized" }, 401);
+  if (token !== secret) {
+    return c.json({ error: "Unauthorized: Invalid Authorization header" }, 401);
   }
 
   await next();
