@@ -1,5 +1,6 @@
-import { createMiddleware } from "hono/factory";
+import { timingSafeEqual } from "auth/utils";
 import crypto from "crypto";
+import { createMiddleware } from "hono/factory";
 
 export const verifySepayWebhook = createMiddleware(async (c, next) => {
   const secret = c.env.SEPAY_WEBHOOK_SECRET;
@@ -25,7 +26,7 @@ export const verifySepayWebhook = createMiddleware(async (c, next) => {
     .update(message)
     .digest("hex");
 
-  if (actualSignature !== expectedSignature) {
+  if (!timingSafeEqual(actualSignature, expectedSignature)) {
     return c.json({ error: "Unauthorized" }, 401);
   }
 

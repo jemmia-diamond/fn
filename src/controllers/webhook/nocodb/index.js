@@ -1,3 +1,5 @@
+
+import { verifyStaticTokenAuth } from "auth/static-token-auth";
 import CollectController from "controllers/webhook/nocodb/collect";
 import DesignImagesController from "controllers/webhook/nocodb/design-images";
 import DiamondsController from "controllers/webhook/nocodb/diamonds";
@@ -10,7 +12,7 @@ import VariantsController from "controllers/webhook/nocodb/variants";
 export default class NocoWebhook {
   static async register(webhook) {
     const nocoWebhookNamespace = webhook.basePath("/noco");
-    nocoWebhookNamespace.use("*", verifyNocoWebhook);
+    nocoWebhookNamespace.use("*", verifyStaticTokenAuth("X-Nocodb-Webhook-Signature", "NOCODB_WEBHOOK_SECRET"));
     nocoWebhookNamespace.post("collects", CollectController.create);
     nocoWebhookNamespace.post("sets", SetsController.handle);
     nocoWebhookNamespace.post("diamonds", DiamondsController.handle);
