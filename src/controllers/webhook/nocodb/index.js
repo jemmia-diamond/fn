@@ -10,6 +10,7 @@ import VariantsController from "controllers/webhook/nocodb/variants";
 export default class NocoWebhook {
   static async register(webhook) {
     const nocoWebhookNamespace = webhook.basePath("/noco");
+    nocoWebhookNamespace.use("*", verifyNocoWebhook);
     nocoWebhookNamespace.post("collects", CollectController.create);
     nocoWebhookNamespace.post("sets", SetsController.handle);
     nocoWebhookNamespace.post("diamonds", DiamondsController.handle);
