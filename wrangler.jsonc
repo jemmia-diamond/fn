@@ -71,6 +71,7 @@
     "AI_PROXY_URL": "https://aiproxy.jemmia.vn",
     "GOOGLE_GENERATIVE_AI_URL": "https://generativelanguage.googleapis.com/v1beta",
     "CUSTOMER_LENS_URL": "https://lens.jemmia.vn",
+    "ENABLE_CUSTOMER_LENS_CRAWL": "false",
     "VBOT_BASE_URL": "https://open-api-h01.vbot.vn/v3.0"
   },
   "secrets_store_secrets": [

@@ -22,7 +22,10 @@ export const shouldReceiveWebhook = (body, shouldIgnoreAdmin = true) => {
   return true;
 };
 
-export const shouldSendToCustomerLens = (body) => {
+export const shouldSendToCustomerLens = (body, env) => {
+  if (env?.ENABLE_CUSTOMER_LENS_CRAWL !== "true" && env?.ENABLE_CUSTOMER_LENS_CRAWL !== "1") {
+    return false;
+  }
   const isValidMessage = shouldReceiveWebhook(body, false);
   const from = body?.data?.conversation?.from?.email;
   if (isValidMessage && from?.endsWith("facebook.com")) {

@@ -5,7 +5,7 @@ export default class PancakeERPMessageController {
   static async create(ctx) {
     const data = await ctx.req.json();
     if (data.event_type === "messaging") {
-      if (shouldSendToCustomerLens(data)) {
+      if (shouldSendToCustomerLens(data, ctx.env)) {
         await ctx.env["CUSTOMER_LENS_QUEUE"].send(data);
       }
       const receiveWebhook = shouldReceiveWebhook(data);
