@@ -7,7 +7,8 @@ export const NOCODB_TABLES = {
     JEWELRIES: "mtg2xkx68h64drc",
     JEWELRY_HARAVAN_COLLECTIONS: "m0ndwr6sst0xywa",
     DESIGNS: "m8uoppedyaiwcmd",
-    COLLECTIONS: "muqhbu3bfkfhxpk"
+    COLLECTIONS: "muqhbu3bfkfhxpk",
+    SUBMITTED_CODES: "mlhvt0szxkxxhf4"
   },
   SUPPLY: {
     HARAVAN_COLLECTIONS: "mpgeruya41k3zcg",
@@ -21,6 +22,11 @@ export const NOCODB_TABLES = {
     JEWELRIES: "mhx7y71vqz64ydn",
     VARIANT_SERIALS_DIAMONDS: "mw50xuq1hl3fvls",
     TEMPORARY_PRODUCTS: "m87hzbjkusszj4q",
-    MOISSANITE: "mohak48lzcj6de0"
+    MOISSANITE: "mohak48lzcj6de0",
+    MOISSANITE_SERIALS: "mclycd3c777xn04"
+  },
+  RD: {
+    DESIGNS: "ma0vp8g1sv25mua",
+    SUBMITTED_CODES: "mp7oyyg2is7he2z"
   }
 };
