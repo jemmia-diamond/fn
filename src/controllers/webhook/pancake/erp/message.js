@@ -10,14 +10,21 @@ export default class PancakeERPMessageController {
       }
       const receiveWebhook = shouldReceiveWebhook(data);
 
+      const pageId = data?.page_id;
+      const senderId = data?.data?.message?.from?.id;
+      const conversationId = data?.data?.conversation?.id;
+      const isSalesMessage = pageId && senderId && pageId == senderId;
+
+      if (isSalesMessage && conversationId) {
+        await ctx.env["PANCAKE_SALES_MESSAGE_QUEUE"].send(data);
+      }
+
       if (!receiveWebhook) {
         return ctx.json({ message: "Message Ignored" });
       }
 
       await ctx.env["MESSAGE_QUEUE"].send(data);
       await ctx.env["PANCAKE_MESSAGE_WEBHOOK_DISPATCH_QUEUE"].send(data);
-
-      const conversationId = data?.data?.conversation?.id;
 
       await DebounceService.debounce({
         env: ctx.env,

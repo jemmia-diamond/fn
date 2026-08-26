@@ -49,6 +49,9 @@ export default {
     case "customer-lens":
       await Pancake.ConversationService.dequeueMessageCustomerLensQueue(batch, env);
       break;
+    case "pancake-sales-message":
+      await Pancake.ConversationService.dequeueSalesMessageQueue(batch, env);
+      break;
     case "zalo-message":
       await Ecommerce.SendZaloMessage.dequeueSendZaloDeliveryMessageQueue(batch, env);
       await Ecommerce.SendZaloMessage.dequeueSendZaloConfirmMessageQueue(batch, env);
@@ -90,6 +93,9 @@ export default {
       break;
     case "promotion-diamond-collect-sync":
       await new Ecommerce.DiamondCollectService(env).syncDiamondsToCollects(true);
+      break;
+    case "erpnext-crm":
+      await ERP.CRM.CRMService.dequeueCRMQueue(batch, env);
       break;
     default:
       break;

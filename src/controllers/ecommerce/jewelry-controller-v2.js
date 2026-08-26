@@ -1,7 +1,7 @@
 import Ecommerce from "services/ecommerce";
 import { parseNumber } from "services/utils/num-helper";
 import { splitParams } from "services/utils/param-helper";
-import { API_CONFIG } from "src/controllers/ecommerce/constant";
+import { API_CONFIG, DEFAULT_JEWELRY_DISCOUNT } from "src/controllers/ecommerce/constant";
 
 export default class JewelryControllerV2 {
   static async index(ctx) {
@@ -51,7 +51,8 @@ export default class JewelryControllerV2 {
       matched_diamonds: params.matched_diamonds === "true",
       ring_sizes: splitParams(params.ring_sizes),
       warehouse_ids: splitParams(params.warehouse_ids),
-      block_size: parseNumber(params.block_size, null)
+      block_size: parseNumber(params.block_size, null),
+      default_jewelry_discount: DEFAULT_JEWELRY_DISCOUNT
     };
 
     const productService = new Ecommerce.ProductService(ctx.env);
@@ -84,7 +85,8 @@ export default class JewelryControllerV2 {
     const result = await productService.getJewelryByIdV2(id, {
       matched_diamonds: params.matched_diamonds === "true",
       return_inventory_metrics: params.return_inventory_metrics === "true",
-      limit_selling_quantity: parseNumber(params.limit_selling_quantity, null)
+      limit_selling_quantity: parseNumber(params.limit_selling_quantity, null),
+      default_jewelry_discount: DEFAULT_JEWELRY_DISCOUNT
     });
     if (!result) {
       return ctx.json({ error: "Jewelry not found" }, 404);

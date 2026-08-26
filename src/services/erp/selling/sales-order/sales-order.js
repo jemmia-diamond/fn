@@ -222,6 +222,15 @@ export default class SalesOrderService {
   };
 
   mapLineItemsFields = (lineItemData) => {
+    const sku = lineItemData.sku || "";
+    let type = lineItemData.type;
+
+    if (sku.startsWith("GIA")) {
+      type = "Kim Cương Viên";
+    } else if (sku.startsWith("SPT-")) {
+      type = (lineItemData.variant_title || "").split(" - ")[1] || type;
+    }
+
     return {
       doctype: this.linkedTableDoctype.lineItems,
       haravan_variant_id: lineItemData.variant_id,
@@ -233,7 +242,7 @@ export default class SalesOrderService {
       price_list_rate: parseInt(lineItemData.price_original),
       discount_amount: parseInt(lineItemData.price_original - lineItemData.price),
       rate: parseInt(lineItemData.price),
-      type: lineItemData.type
+      type
     };
   };
 
@@ -312,9 +321,13 @@ export default class SalesOrderService {
 
     const customer = await this.frappeClient.getDoc("Customer", salesOrderData.customer);
 
-    const { isValid, message } = validateSalesOrder(salesOrderData, customer);
-    if (!isValid) {
-      return { success: false, message: message };
+    const validationResult = validateSalesOrder(salesOrderData, customer);
+    if (!validationResult.isValid) {
+      return {
+        success: false,
+        message: validationResult.message,
+        missing_serial_orders: validationResult?.missing_serial_orders
+      };
     }
 
     const allOrdersToProcess = [salesOrderData, ...childOrders];
@@ -771,7 +784,8 @@ export default class SalesOrderService {
       return;
     }
 
-    if (Math.abs(salesOrderData.grand_total - salesOrderData.paid_amount) <= 1000) {
+    const grandTotal = parseFloat(salesOrderData.grand_total) - parseFloat(salesOrderData.return_amount || 0);
+    if (Math.abs(grandTotal - salesOrderData.paid_amount) <= 1000) {
       const HRV_API_KEY = this.env.HARAVAN_TOKEN;
       if (!HRV_API_KEY) {
         return;

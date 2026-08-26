@@ -43,4 +43,26 @@ export default class ConversationAssignmentService {
     const res = await this.pancakeClient.assignConversation(pageId, conversationId, assignedUserIds);
     return res;
   }
+
+  async syncConversationAssigneesWithLeadOwner(lead) {
+    const leadName = lead.name;
+    const leadOwner = lead.lead_owner;
+    if (!leadOwner) return null;
+
+    const leadOwnerPancakeId = (await this.frappeClient.getDoc("User", leadOwner)).pancake_id;
+    if (!leadOwnerPancakeId) return null;
+
+    const contacts = await this.frappeClient.getList("Contact", {
+      filters: [["Dynamic Link", "link_name", "=", leadName]]
+    });
+    if (!contacts.length) return null;
+
+    const contact = contacts[0];
+    const pageId = contact.pancake_page_id;
+    const conversationId = contact.pancake_conversation_id;
+    const assigneesHistory = await this.getLastConversationAssigneesHistory(conversationId);
+    const assignedUserIds = [...new Set([...assigneesHistory, leadOwnerPancakeId])];
+    const res = await this.pancakeClient.assignConversation(pageId, conversationId, assignedUserIds);
+    return res;
+  }
 }
