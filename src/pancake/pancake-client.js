@@ -167,7 +167,7 @@ export default class PancakeClient {
   }
 
   async getConversationById(pageId, conId) {
-    const path = `/public_api/v1/pages/${pageId}/conversations/${conId}/messages`;
+    const path = `/public_api/v1/pages/${pageId}/conversations/${conId}`;
     return await this.getRequest(pageId, path);
   }
 }
