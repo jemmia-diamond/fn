@@ -172,7 +172,7 @@ export default class AppointmentNotificationService {
   }
 
   async formatModifiedBy(performedBy) {
-    if (!performedBy) return "ai đó";
+    if (!performedBy) return "Không xác định";
     if (performedBy === "Administrator") return "Administrator";
 
     const [user] = await this.getLarkUserIdsByEmails([performedBy]);
