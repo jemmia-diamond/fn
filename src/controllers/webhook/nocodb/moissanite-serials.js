@@ -25,33 +25,28 @@ export default class MoissaniteSerialsController {
 
     const nocoClient = new NocoDBClient(ctx.env);
 
-    try {
-      const response = await nocoClient.listRecords(tableId, {
-        where: `(final_encoded_rfid,like,${encodedBarcode}%)`,
-        sort: "-final_encoded_rfid",
-        limit: 1
-      });
+    const response = await nocoClient.listRecords(tableId, {
+      where: `(final_encoded_rfid,like,${encodedBarcode}%)`,
+      sort: "-final_encoded_rfid",
+      limit: 1
+    });
 
-      const records = response.list || [];
-      const maxRfid = records[0]?.final_encoded_rfid;
-      let newRfid;
-      if (maxRfid) {
-        const extension = maxRfid.replace(encodedBarcode, "");
-        const extensionValue = parseInt(extension, 10) + 1;
-        newRfid = encodedBarcode + String(extensionValue).padStart(11, "0");
-      } else {
-        newRfid = encodedBarcode + "00000000001";
-      }
-
-      await nocoClient.updateRecords(tableId, {
-        id: recordId,
-        final_encoded_rfid: newRfid
-      });
-
-      return ctx.json({ message: "RFID generated successfully", rfid: newRfid }, 200);
-    } catch (error) {
-      console.warn("Error generating moissanite RFID:", error);
-      return ctx.json({ error: error.message }, 500);
+    const records = response.list || [];
+    const maxRfid = records[0]?.final_encoded_rfid;
+    let newRfid;
+    if (maxRfid) {
+      const extension = maxRfid.replace(encodedBarcode, "");
+      const extensionValue = parseInt(extension, 10) + 1;
+      newRfid = encodedBarcode + String(extensionValue).padStart(11, "0");
+    } else {
+      newRfid = encodedBarcode + "00000000001";
     }
+
+    await nocoClient.updateRecords(tableId, {
+      id: recordId,
+      final_encoded_rfid: newRfid
+    });
+
+    return ctx.json({ message: "RFID generated successfully", rfid: newRfid }, 200);
   }
 }
