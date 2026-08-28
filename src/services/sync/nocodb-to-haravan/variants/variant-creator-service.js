@@ -139,12 +139,7 @@ export default class VariantCreatorService {
     const defaultVariant = haravanVariants.find(v => v.title === "Default Title");
 
     let haravanVariantId;
-    const existingVariant = haravanVariants.find(v => v.option1 === variantTitle || v.title === variantTitle);
-
-    if (existingVariant) {
-      haravanVariantId = existingVariant.id;
-      await haravanApi.productVariant.updateVariant(haravanVariantId, variantData);
-    } else if (defaultVariant) {
+    if (defaultVariant) {
       haravanVariantId = defaultVariant.id;
       await haravanApi.productVariant.updateVariant(haravanVariantId, variantData);
     } else {
