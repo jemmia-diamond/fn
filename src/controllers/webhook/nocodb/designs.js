@@ -80,25 +80,47 @@ export default class DesignsController {
       title: "images_not_found.jpg"
     };
 
-    const files = await driveClient.listFiles(folderId);
+    const PERMISSION_DENIED_IMAGE = {
+      url: "https://www.shutterstock.com/image-vector/stamp-text-permission-denied-inside-260nw-193068374.jpg",
+      title: "permission_denied.jpg"
+    };
 
-    let imageFiles = files.filter((f) => f.mimeType === "image/png");
-    if (imageFiles.length === 0) {
-      imageFiles = files.filter((f) => f.mimeType === "image/jpeg");
+    let files = [];
+    let isPermissionError = false;
+
+    try {
+      files = await driveClient.listFiles(folderId);
+    } catch (error) {
+      const status = error.cause?.response?.status || error.response?.status;
+      if (status === 404 || status === 403 || error.message.includes("404") || error.message.includes("403")) {
+        isPermissionError = true;
+      } else {
+        throw error;
+      }
     }
 
-    imageFiles.sort((a, b) => a.name.localeCompare(b.name));
-
-    if (imageFiles.length === 0) {
-      items = [IMAGES_NOT_FOUND];
+    let items;
+    if (isPermissionError) {
+      items = [PERMISSION_DENIED_IMAGE];
     } else {
-      items = imageFiles.map((f) => {
-        const ext = f.mimeType === "image/png" ? ".png" : ".jpg";
-        return {
-          url: `https://lh3.googleusercontent.com/d/${f.id}`,
-          title: f.name.split(".")[0] + ext
-        };
-      });
+      let imageFiles = files.filter((f) => f.mimeType === "image/png");
+      if (imageFiles.length === 0) {
+        imageFiles = files.filter((f) => f.mimeType === "image/jpeg");
+      }
+
+      imageFiles.sort((a, b) => a.name.localeCompare(b.name));
+
+      if (imageFiles.length === 0) {
+        items = [IMAGES_NOT_FOUND];
+      } else {
+        items = imageFiles.map((f) => {
+          const ext = f.mimeType === "image/png" ? ".png" : ".jpg";
+          return {
+            url: `https://lh3.googleusercontent.com/d/${f.id}`,
+            title: f.name.split(".")[0] + ext
+          };
+        });
+      }
     }
 
     await nocoClient.updateRecords(tableId, {
