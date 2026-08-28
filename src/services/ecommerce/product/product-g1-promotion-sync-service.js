@@ -79,7 +79,7 @@ export default class ProductG1PromotionSyncService {
           await this.db.collection_product.delete({
             where: { id: BigInt(collectId) }
           });
-          return;
+          continue;
         }
         Sentry.captureException(error);
       }
