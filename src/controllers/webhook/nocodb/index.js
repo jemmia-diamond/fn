@@ -34,10 +34,25 @@ export default class NocoWebhook {
       HaravanCollectionsController.create
     );
     nocoWebhookNamespace.post("variants", VariantsController.handle);
-    nocoWebhookNamespace.post("moissanite-serials/rfid", MoissaniteSerialsController.generateRfid);
-    nocoWebhookNamespace.post("variant-serials/rfid", VariantSerialsController.generateRfid);
-    nocoWebhookNamespace.post("submitted-codes/process", SubmittedCodesController.process);
-    nocoWebhookNamespace.post("designs/sync-4view", DesignsController.sync4View);
-    nocoWebhookNamespace.post("designs/sync-render", DesignsController.syncRender);
+    nocoWebhookNamespace.post(
+      "moissanite-serials/rfid",
+      MoissaniteSerialsController.generateRfid
+    );
+    nocoWebhookNamespace.post(
+      "variant-serials/rfid",
+      VariantSerialsController.generateRfid
+    );
+    nocoWebhookNamespace.post(
+      "submitted-codes/process",
+      SubmittedCodesController.process
+    );
+    nocoWebhookNamespace.post(
+      "designs/sync-4view",
+      DesignsController.sync4View
+    );
+    nocoWebhookNamespace.post(
+      "designs/sync-render",
+      DesignsController.syncRender
+    );
   }
 }

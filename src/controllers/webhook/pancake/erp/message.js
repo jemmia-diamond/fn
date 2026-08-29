@@ -1,5 +1,8 @@
 import { DebounceActions, DebounceService } from "src/durable-objects";
-import { shouldReceiveWebhook, shouldSendToCustomerLens } from "controllers/webhook/pancake/erp/utils";
+import {
+  shouldReceiveWebhook,
+  shouldSendToCustomerLens
+} from "controllers/webhook/pancake/erp/utils";
 
 export default class PancakeERPMessageController {
   static async create(ctx) {

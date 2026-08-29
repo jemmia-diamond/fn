@@ -1,4 +1,7 @@
-import { createAxiosClient, DEFAULT_RETRY_CONFIG } from "services/utils/http-client";
+import {
+  createAxiosClient,
+  DEFAULT_RETRY_CONFIG
+} from "services/utils/http-client";
 
 class CustomerLensClient {
   static createClient(env: any) {

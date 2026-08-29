@@ -52,6 +52,9 @@ export default class VariantSerialsController {
       final_encoded_barcode: newRfid
     });
 
-    return ctx.json({ message: "RFID generated successfully", rfid: newRfid }, 200);
+    return ctx.json(
+      { message: "RFID generated successfully", rfid: newRfid },
+      200
+    );
   }
 }

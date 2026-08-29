@@ -67,14 +67,21 @@ const validateOrderCompleteness = (salesOrderData, customer) => {
     return { isValid: false, message };
   }
 
-  const jewelryItems = lineItems.filter((item) => (item.sku?.length === SKU_LENGTH.JEWELRY || item.sku?.startsWith(SKU_PREFIX.TEMPORARY_JEWELRY)));
-  const missingSerialItems = jewelryItems.filter((item) => !item.serial_numbers || item.serial_numbers.trim() === "");
+  const jewelryItems = lineItems.filter(
+    (item) =>
+      item.sku?.length === SKU_LENGTH.JEWELRY ||
+      item.sku?.startsWith(SKU_PREFIX.TEMPORARY_JEWELRY)
+  );
+  const missingSerialItems = jewelryItems.filter(
+    (item) => !item.serial_numbers || item.serial_numbers.trim() === ""
+  );
 
   if (missingSerialItems.length > 0) {
     const ordersMap = {};
     for (const item of missingSerialItems) {
       const soName = item.parent || salesOrderData.name;
-      const orderNumber = item.parent_order_number || salesOrderData.order_number;
+      const orderNumber =
+        item.parent_order_number || salesOrderData.order_number;
       if (!ordersMap[soName]) {
         ordersMap[soName] = {
           order_name: soName,

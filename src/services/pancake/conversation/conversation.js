@@ -175,14 +175,19 @@ export default class ConversationService {
     const pageId = data?.page_id;
     const conversationId = data?.data?.conversation?.id;
     if (!pageId || !conversationId) return;
-    const globalId = await PancakeCache.getMessageGlobalId(this.pancakeClient, pageId, conversationId, this.env);
+    const globalId = await PancakeCache.getMessageGlobalId(
+      this.pancakeClient,
+      pageId,
+      conversationId,
+      this.env
+    );
     if (!globalId) {
       return;
     }
 
     await this.customerLensClient.post("/api/profile", {
-      "global_id": globalId,
-      "is_force": false
+      global_id: globalId,
+      is_force: false
     });
   }
 
