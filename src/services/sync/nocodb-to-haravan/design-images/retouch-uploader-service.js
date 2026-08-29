@@ -78,26 +78,53 @@ export default class RetouchUploaderService {
       throw new Error(`Unknown material color: ${materialColor}`);
     }
 
-    const driveClient = new GoogleDriveClient(this.env.GOOGLE_SERVICE_ACCOUNT_KEY);
+    const driveClient = new GoogleDriveClient(
+      this.env.GOOGLE_SERVICE_ACCOUNT_KEY
+    );
     const nocoClient = new NocoDBClient(this.env);
 
     // Try link_retouch first, fallback to link_render
     const linkRetouch = data.link_retouch;
     if (linkRetouch) {
       const folderId = extractFolderIdFromLink(linkRetouch);
-      const uploaded = await this.#uploadImagesFromDrive(driveClient, nocoClient, folderId, subFolderName, tableId, data.id);
+      const uploaded = await this.#uploadImagesFromDrive(
+        driveClient,
+        nocoClient,
+        folderId,
+        subFolderName,
+        tableId,
+        data.id
+      );
       if (uploaded) return { success: true, source: "link_retouch" };
     }
 
     const linkRender = data.link_render;
     const folderId = extractFolderIdFromLink(linkRender);
-    await this.#uploadImagesFromDrive(driveClient, nocoClient, folderId, subFolderName, tableId, data.id);
+    await this.#uploadImagesFromDrive(
+      driveClient,
+      nocoClient,
+      folderId,
+      subFolderName,
+      tableId,
+      data.id
+    );
 
     return { success: true, source: "link_render" };
   }
 
-  async #uploadImagesFromDrive(driveClient, nocoClient, folderId, subFolderName, tableId, recordId) {
-    const items = await this.#findRetouchImages(driveClient, folderId, subFolderName);
+  async #uploadImagesFromDrive(
+    driveClient,
+    nocoClient,
+    folderId,
+    subFolderName,
+    tableId,
+    recordId
+  ) {
+    const items = await this.#findRetouchImages(
+      driveClient,
+      folderId,
+      subFolderName
+    );
 
     if (items.length <= 1) return false;
 
@@ -122,7 +149,10 @@ export default class RetouchUploaderService {
           contentType: item.mimeType
         });
 
-        const res = await nocoClient.uploadAttachment({ path: storagePath }, form);
+        const res = await nocoClient.uploadAttachment(
+          { path: storagePath },
+          form
+        );
         if (Array.isArray(res) && res.length > 0) {
           const uploadedFile = res[0];
           uploadedFile.title = item.name;

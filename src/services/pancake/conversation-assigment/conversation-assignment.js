@@ -11,7 +11,11 @@ export default class ConversationAssignmentService {
     this.env = env;
     this.pancakeClient = new PancakeClient(env);
     this.db = Database.instance(env);
-    this.frappeClient = new FrappeClient({ url: env.JEMMIA_ERP_BASE_URL, apiKey: env.JEMMIA_ERP_API_KEY, apiSecret: env.JEMMIA_ERP_API_SECRET });
+    this.frappeClient = new FrappeClient({
+      url: env.JEMMIA_ERP_BASE_URL,
+      apiKey: env.JEMMIA_ERP_API_KEY,
+      apiSecret: env.JEMMIA_ERP_API_SECRET
+    });
   }
 
   async getLastConversationAssigneesHistory(conversationId) {
@@ -21,26 +25,39 @@ export default class ConversationAssignmentService {
           FROM pancake.conversation c
           WHERE c.id = ${conversationId};
     `;
-    const userIds = result.filter(result => result.added_users !== null).map(result => result.added_users[0].id);
+    const userIds = result
+      .filter((result) => result.added_users !== null)
+      .map((result) => result.added_users[0].id);
     return userIds;
   }
 
   async syncConversationAssigneesWithERPToDo(todo) {
     const leadName = todo.reference_name;
     const allocatedUser = todo.allocated_to;
-    const allocatedUserPancakeId = (await this.frappeClient.getDoc("User", allocatedUser)).pancake_id;
+    const allocatedUserPancakeId = (
+      await this.frappeClient.getDoc("User", allocatedUser)
+    ).pancake_id;
     const contacts = await this.frappeClient.getList("Contact", {
       filters: [["Dynamic Link", "link_name", "=", leadName]]
     });
 
-    if (!contacts.length) { return null; }
+    if (!contacts.length) {
+      return null;
+    }
 
     const contact = contacts[0];
     const pageId = contact.pancake_page_id;
     const conversationId = contact.pancake_conversation_id;
-    const assigneesHistory = await this.getLastConversationAssigneesHistory(conversationId);
-    const assignedUserIds = [...new Set([...assigneesHistory, allocatedUserPancakeId])];
-    const res = await this.pancakeClient.assignConversation(pageId, conversationId, assignedUserIds);
+    const assigneesHistory =
+      await this.getLastConversationAssigneesHistory(conversationId);
+    const assignedUserIds = [
+      ...new Set([...assigneesHistory, allocatedUserPancakeId])
+    ];
+    const res = await this.pancakeClient.assignConversation(
+      pageId,
+      conversationId,
+      assignedUserIds
+    );
     return res;
   }
 
@@ -49,7 +66,9 @@ export default class ConversationAssignmentService {
     const leadOwner = lead.lead_owner;
     if (!leadOwner) return null;
 
-    const leadOwnerPancakeId = (await this.frappeClient.getDoc("User", leadOwner)).pancake_id;
+    const leadOwnerPancakeId = (
+      await this.frappeClient.getDoc("User", leadOwner)
+    ).pancake_id;
     if (!leadOwnerPancakeId) return null;
 
     const contacts = await this.frappeClient.getList("Contact", {
@@ -60,9 +79,16 @@ export default class ConversationAssignmentService {
     const contact = contacts[0];
     const pageId = contact.pancake_page_id;
     const conversationId = contact.pancake_conversation_id;
-    const assigneesHistory = await this.getLastConversationAssigneesHistory(conversationId);
-    const assignedUserIds = [...new Set([...assigneesHistory, leadOwnerPancakeId])];
-    const res = await this.pancakeClient.assignConversation(pageId, conversationId, assignedUserIds);
+    const assigneesHistory =
+      await this.getLastConversationAssigneesHistory(conversationId);
+    const assignedUserIds = [
+      ...new Set([...assigneesHistory, leadOwnerPancakeId])
+    ];
+    const res = await this.pancakeClient.assignConversation(
+      pageId,
+      conversationId,
+      assignedUserIds
+    );
     return res;
   }
 }

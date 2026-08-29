@@ -10,7 +10,10 @@ export default class ProductCreatorService {
   async getDesignInfo(designId) {
     if (!designId) return null;
     const nocoClient = new NocoDBClient(this.env);
-    const design = await nocoClient.readRecord(NOCODB_TABLES.SUPPLY.DESIGNS, designId);
+    const design = await nocoClient.readRecord(
+      NOCODB_TABLES.SUPPLY.DESIGNS,
+      designId
+    );
     return design || null;
   }
 
@@ -90,4 +93,3 @@ function templateSuffixMapping(productType) {
   }
   return "product";
 }
-

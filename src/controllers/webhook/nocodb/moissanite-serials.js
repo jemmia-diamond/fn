@@ -47,6 +47,9 @@ export default class MoissaniteSerialsController {
       final_encoded_rfid: newRfid
     });
 
-    return ctx.json({ message: "RFID generated successfully", rfid: newRfid }, 200);
+    return ctx.json(
+      { message: "RFID generated successfully", rfid: newRfid },
+      200
+    );
   }
 }

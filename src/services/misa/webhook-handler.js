@@ -28,8 +28,13 @@ export default class MisaWebhookHandler {
       return await this._handleInternalJob(body);
     }
 
-    if (body.app_id !== this.env.MISA_APP_ID || body.org_company_code !== this.env.MISA_ORG_CODE) {
-      Sentry.captureMessage(`MISA Webhook: app_id = ${body.app_id} or org_company_code = ${body.org_company_code} mismatch. Ignoring.`);
+    if (
+      body.app_id !== this.env.MISA_APP_ID ||
+      body.org_company_code !== this.env.MISA_ORG_CODE
+    ) {
+      Sentry.captureMessage(
+        `MISA Webhook: app_id = ${body.app_id} or org_company_code = ${body.org_company_code} mismatch. Ignoring.`
+      );
       return;
     }
 
@@ -39,7 +44,10 @@ export default class MisaWebhookHandler {
       error_code: body?.error_code,
       error_message: body?.error_message
     };
-    if (body.data_type === CALLBACK_TYPE.SAVE_FUNCTION && dataPayload[0]?.voucher_type) {
+    if (
+      body.data_type === CALLBACK_TYPE.SAVE_FUNCTION &&
+      dataPayload[0]?.voucher_type
+    ) {
       await this.voucherHandler.process(dataPayload, outerPayload);
     }
   }
@@ -52,17 +60,17 @@ export default class MisaWebhookHandler {
     const { job_type, data, is_retry = false } = body;
 
     switch (job_type) {
-    case Misa.Constants.JOB_TYPE.CREATE_QR_VOUCHER:
-      await this._createQrVoucher(data.qr_transaction_id, is_retry);
-      break;
-    case Misa.Constants.JOB_TYPE.CREATE_MANUAL_VOUCHER:
-      await this._createManualVoucher(data.manual_payment_uuid, is_retry);
-      break;
-    case Misa.Constants.JOB_TYPE.SYNC_CUSTOMER:
-      await this._syncCustomerToMisa(data);
-      break;
-    default:
-      break;
+      case Misa.Constants.JOB_TYPE.CREATE_QR_VOUCHER:
+        await this._createQrVoucher(data.qr_transaction_id, is_retry);
+        break;
+      case Misa.Constants.JOB_TYPE.CREATE_MANUAL_VOUCHER:
+        await this._createManualVoucher(data.manual_payment_uuid, is_retry);
+        break;
+      case Misa.Constants.JOB_TYPE.SYNC_CUSTOMER:
+        await this._syncCustomerToMisa(data);
+        break;
+      default:
+        break;
     }
   }
 
@@ -94,7 +102,9 @@ export default class MisaWebhookHandler {
     const service = new Misa.ManualTransactionService(this.env);
     const manualPayment = await service.findManualPaymentByUuid(uuid);
     if (!manualPayment) {
-      Sentry.captureMessage(`MISA: Manual Payment record not found for UUID: ${uuid}`);
+      Sentry.captureMessage(
+        `MISA: Manual Payment record not found for UUID: ${uuid}`
+      );
       return;
     }
 

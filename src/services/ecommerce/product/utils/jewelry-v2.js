@@ -4,7 +4,8 @@ import { Prisma } from "@prisma-cli";
 
 export function getDiscountMultiplier(customDiscount, fallbackPercent = 0) {
   const percent = Number(customDiscount ?? fallbackPercent);
-  const safePercent = Number.isFinite(percent) && percent >= 0 && percent <= 100 ? percent : 0;
+  const safePercent =
+    Number.isFinite(percent) && percent >= 0 && percent <= 100 ? percent : 0;
   return (100 - safePercent) / 100;
 }
 
@@ -22,9 +23,11 @@ export function buildInventoryMetricsSql(opts = {}) {
   if (!opts.return_inventory_metrics) {
     return Prisma.sql``;
   }
-  const limitSql = opts.limit_selling_quantity !== null && opts.limit_selling_quantity !== undefined
-    ? Prisma.sql`CAST(${opts.limit_selling_quantity} AS INT)`
-    : Prisma.sql`NULL`;
+  const limitSql =
+    opts.limit_selling_quantity !== null &&
+    opts.limit_selling_quantity !== undefined
+      ? Prisma.sql`CAST(${opts.limit_selling_quantity} AS INT)`
+      : Prisma.sql`NULL`;
   return Prisma.sql`
     , CAST(COALESCE(p.sold_quantity, 0) AS INT) AS sold_quantity, ${limitSql} AS limit_selling_quantity
   `;
@@ -190,12 +193,14 @@ export function buildInterleavedQueryV2(jsonParams) {
   });
 
   const unionSql = Prisma.join(
-    queries.map(q => Prisma.sql`
+    queries.map(
+      (q) => Prisma.sql`
       SELECT *,
              ROW_NUMBER() OVER () as row_num,
              ${q.typeIdx}::integer as type_idx
       FROM (${q.subDataSql}) AS sub_t
-    `),
+    `
+    ),
     " UNION ALL "
   );
 
@@ -230,21 +235,33 @@ export function buildInterleavedQueryV2(jsonParams) {
         SELECT ARRAY_AGG(DISTINCT color) FILTER (WHERE color IS NOT NULL)
         FROM (
           SELECT UNNEST(c_t.material_colors) AS color
-          FROM (${Prisma.join(countQueries.map(c => Prisma.sql`SELECT material_colors FROM (${c}) AS sub_m`), " UNION ALL ")}) AS c_t
+          FROM (${Prisma.join(
+            countQueries.map(
+              (c) => Prisma.sql`SELECT material_colors FROM (${c}) AS sub_m`
+            ),
+            " UNION ALL "
+          )}) AS c_t
         ) AS colors_sub
       ) AS material_colors,
       (
         SELECT ARRAY_AGG(DISTINCT f) FILTER (WHERE f IS NOT NULL)
         FROM (
           SELECT UNNEST(c_t.fineness) AS f
-          FROM (${Prisma.join(countQueries.map(c => Prisma.sql`SELECT fineness FROM (${c}) AS sub_f`), " UNION ALL ")}) AS c_t
+          FROM (${Prisma.join(
+            countQueries.map(
+              (c) => Prisma.sql`SELECT fineness FROM (${c}) AS sub_f`
+            ),
+            " UNION ALL "
+          )}) AS c_t
         ) AS fineness_sub
       ) AS fineness
     FROM (
       ${Prisma.join(
-    countQueries.map(c => Prisma.sql`SELECT c_t.total FROM (${c}) AS c_t`),
-    " UNION ALL "
-  )}
+        countQueries.map(
+          (c) => Prisma.sql`SELECT c_t.total FROM (${c}) AS c_t`
+        ),
+        " UNION ALL "
+      )}
     ) AS sub_c
   `;
 

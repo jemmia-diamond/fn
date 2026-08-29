@@ -30,5 +30,5 @@ export default class WebhookRoutes {
     ZalopayTransactionWebhook.register(webhook);
     LarkWebhook.register(webhook);
     InfisicalWebhook.register(webhook);
-  };
-};
+  }
+}

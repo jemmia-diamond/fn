@@ -1,7 +1,10 @@
 import * as Sentry from "@sentry/cloudflare";
 import FrappeClient from "frappe/frappe-client";
 import Database from "services/database";
-import { fetchCustomersFromERP, saveCustomersToDatabase } from "src/services/erp/selling/customer/utils/customer-helppers";
+import {
+  fetchCustomersFromERP,
+  saveCustomersToDatabase
+} from "src/services/erp/selling/customer/utils/customer-helppers";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import HaravanAPI from "services/clients/haravan-client";
@@ -18,13 +21,11 @@ export default class CustomerService {
   constructor(env) {
     this.env = env;
     this.doctype = "Customer";
-    this.frappeClient = new FrappeClient(
-      {
-        url: env.JEMMIA_ERP_BASE_URL,
-        apiKey: env.JEMMIA_ERP_API_KEY,
-        apiSecret: env.JEMMIA_ERP_API_SECRET
-      }
-    );
+    this.frappeClient = new FrappeClient({
+      url: env.JEMMIA_ERP_BASE_URL,
+      apiKey: env.JEMMIA_ERP_API_KEY,
+      apiSecret: env.JEMMIA_ERP_API_SECRET
+    });
     this.defaultCustomerName = "Khách Vãng Lai";
     this.db = Database.instance(env);
     this.genderMap = {
@@ -32,10 +33,12 @@ export default class CustomerService {
       1: "Male"
     };
     this.genderMapReverse = reverseMap(this.genderMap);
-  };
+  }
 
   async processHaravanCustomer(customerData, contact, address, options = {}) {
-    const nameParts = [customerData.last_name, customerData.first_name].filter(Boolean);
+    const nameParts = [customerData.last_name, customerData.first_name].filter(
+      Boolean
+    );
     const customerName = nameParts.join(" ") || this.defaultCustomerName;
     const mappedCustomerData = {
       doctype: this.doctype,
@@ -57,20 +60,33 @@ export default class CustomerService {
       }
     }
 
-    const birthDate = customerData.birthday ? dayjs(customerData.birthday).format("YYYY-MM-DD") : null;
+    const birthDate = customerData.birthday
+      ? dayjs(customerData.birthday).format("YYYY-MM-DD")
+      : null;
     if (birthDate) {
       mappedCustomerData.birth_date = birthDate;
     }
 
-    const customerGender = customerData.gender !== null && customerData.gender !== undefined && this.genderMap[customerData.gender];
+    const customerGender =
+      customerData.gender !== null &&
+      customerData.gender !== undefined &&
+      this.genderMap[customerData.gender];
     if (customerGender) {
       mappedCustomerData.gender = customerGender;
     }
     let customer;
     try {
-      customer = await this.frappeClient.upsert(mappedCustomerData, "haravan_id");
+      customer = await this.frappeClient.upsert(
+        mappedCustomerData,
+        "haravan_id"
+      );
     } catch (error) {
-      const isLinkError = (error.exc_type === "LinkValidationError" || error.status === 417 || (error.message && error.message.includes("417"))) && (error.message.includes("From Lead") || error.message.includes("Could not find Lead"));
+      const isLinkError =
+        (error.exc_type === "LinkValidationError" ||
+          error.status === 417 ||
+          (error.message && error.message.includes("417"))) &&
+        (error.message.includes("From Lead") ||
+          error.message.includes("Could not find Lead"));
       if (!isLinkError) {
         throw error;
       }
@@ -86,13 +102,17 @@ export default class CustomerService {
       } else {
         mappedCustomerData.lead_name = "";
       }
-      customer = await this.frappeClient.upsert(mappedCustomerData, "haravan_id");
+      customer = await this.frappeClient.upsert(
+        mappedCustomerData,
+        "haravan_id"
+      );
     }
     return customer;
   }
 
   async syncCustomersToDatabase(options = {}) {
-    const { isSyncType = CustomerService.SYNC_TYPE_AUTO, minutesBack = 10 } = options;
+    const { isSyncType = CustomerService.SYNC_TYPE_AUTO, minutesBack = 10 } =
+      options;
     const kv = this.env.FN_KV;
     const KV_KEY = "customer_sync:last_date";
     const toDate = dayjs().utc().format("YYYY-MM-DD HH:mm:ss");
@@ -100,13 +120,27 @@ export default class CustomerService {
 
     if (isSyncType === CustomerService.SYNC_TYPE_AUTO) {
       const lastDate = await kv.get(KV_KEY);
-      fromDate = lastDate || dayjs().utc().subtract(minutesBack, "minutes").format("YYYY-MM-DD HH:mm:ss");
+      fromDate =
+        lastDate ||
+        dayjs()
+          .utc()
+          .subtract(minutesBack, "minutes")
+          .format("YYYY-MM-DD HH:mm:ss");
     } else {
-      fromDate = dayjs().utc().subtract(minutesBack, "minutes").format("YYYY-MM-DD HH:mm:ss");
+      fromDate = dayjs()
+        .utc()
+        .subtract(minutesBack, "minutes")
+        .format("YYYY-MM-DD HH:mm:ss");
     }
 
     try {
-      const customers = await fetchCustomersFromERP(this.frappeClient, this.doctype, fromDate, toDate, CustomerService.ERPNEXT_PAGE_SIZE);
+      const customers = await fetchCustomersFromERP(
+        this.frappeClient,
+        this.doctype,
+        fromDate,
+        toDate,
+        CustomerService.ERPNEXT_PAGE_SIZE
+      );
       if (Array.isArray(customers) && customers.length > 0) {
         await saveCustomersToDatabase(this.db, customers);
       }
@@ -117,7 +151,10 @@ export default class CustomerService {
     } catch (error) {
       Sentry.captureException(error);
       // Handle when cronjon failed in 2 hour => we need to update the last date to the current date
-      if (isSyncType === CustomerService.SYNC_TYPE_AUTO && dayjs(toDate).diff(dayjs(await kv.get(KV_KEY)), "hour") >= 2) {
+      if (
+        isSyncType === CustomerService.SYNC_TYPE_AUTO &&
+        dayjs(toDate).diff(dayjs(await kv.get(KV_KEY)), "hour") >= 2
+      ) {
         await kv.put(KV_KEY, toDate);
       }
     }
@@ -143,11 +180,11 @@ export default class CustomerService {
 
   async processPayload(data, erpTopic) {
     switch (erpTopic) {
-    case "create":
-      await this._createCustomer(data);
-      break;
-    default:
-      break;
+      case "create":
+        await this._createCustomer(data);
+        break;
+      default:
+        break;
     }
   }
 
@@ -184,11 +221,18 @@ export default class CustomerService {
     };
 
     try {
-      const haravanResult = await haravanClient.customer.createCustomer(haravanPayload);
-      const contact = await contactService.processHaravanContact(haravanResult?.customer, null,
-        { phone: rawPhone, is_new: true });
+      const haravanResult =
+        await haravanClient.customer.createCustomer(haravanPayload);
+      const contact = await contactService.processHaravanContact(
+        haravanResult?.customer,
+        null,
+        { phone: rawPhone, is_new: true }
+      );
       haravanResult.customer.created_by = customerData.modified_by;
-      const customer = await this.frappeClient.getDoc(this.doctype, customerData.name);
+      const customer = await this.frappeClient.getDoc(
+        this.doctype,
+        customerData.name
+      );
       customer.haravan_id = String(haravanResult.customer.id);
       customer.phone = contact.phone;
       customer.mobile_no = contact.phone;
@@ -200,11 +244,17 @@ export default class CustomerService {
 
         if (isDuplicate) {
           const searchPhone = rawPhone.replace(/^\+/, "");
-          const hrvCustomers = await haravanClient.customer.getCustomers(searchPhone);
-          await contactService.processHaravanContact(hrvCustomers.customers[0], null,
+          const hrvCustomers =
+            await haravanClient.customer.getCustomers(searchPhone);
+          await contactService.processHaravanContact(
+            hrvCustomers.customers[0],
+            null,
             { phone: rawPhone, is_new: true }
           );
-          const customer = await this.frappeClient.getDoc(this.doctype, customerData.name);
+          const customer = await this.frappeClient.getDoc(
+            this.doctype,
+            customerData.name
+          );
 
           if (customer && hrvCustomers?.customers?.[0]) {
             customer.haravan_id = String(hrvCustomers.customers[0].id);

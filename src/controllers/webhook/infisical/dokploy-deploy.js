@@ -9,6 +9,9 @@ export default class InfisicalDokployDeployController {
 
     await DokployService.triggerDeploy(c.env, deployPath);
 
-    return c.json({ message: "Dokploy deploy triggered successfully", deployPath }, 200);
+    return c.json(
+      { message: "Dokploy deploy triggered successfully", deployPath },
+      200
+    );
   }
 }

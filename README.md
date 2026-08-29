@@ -59,11 +59,13 @@ pnpm prisma db pull
 #### Migration Workflow
 
 1. **Sync your local/dev database:**
+
    ```bash
    pnpm prisma migrate deploy
    ```
 
 2. **After modifying models:**
+
    ```bash
    pnpm prisma migrate dev --name <MIGRATION_NAME>
    # Example: pnpm prisma migrate dev --name add_user_table
@@ -131,6 +133,7 @@ chmod +x fetch_dev_key.sh
 ```
 
 The script will print each key that was updated or added:
+
 ```
 Updated: PANCAKE_PATS_CONFIG_1
 Updated: PANCAKE_PATS_CONFIG_2
@@ -144,12 +147,11 @@ Done. .dev.vars updated.
 #### How Pancake PATs are generated
 
 The `Pancake.TokenRefresherService` runs daily at midnight (cron `0 17 * * *`). It:
+
 1. Generates fresh Page Access Tokens for all active Pancake pages
 2. Chunks them into groups of 20 and stores them as `PANCAKE_PATS_CONFIG_1`, `PANCAKE_PATS_CONFIG_2`, etc. in Infisical under `/commons/public`
 
 After this runs in production, pull the new values locally with `./fetch_dev_key.sh`.
-
-
 
 ### Project Structure
 
@@ -163,6 +165,7 @@ After this runs in production, pull the new values locally with `./fetch_dev_key
 ### Code Organization
 
 When building features:
+
 - Keep controllers focused on request handling and response formatting
 - Extract reusable business logic and utilities to files under the `services` folder
 - Follow a consistent naming pattern for related files
@@ -193,8 +196,8 @@ export class YourController {
 
   static async update(ctx) {
     // Update a specific resource
-    const id = ctx.req.param("id")
-    const body = await ctx.req.json()
+    const id = ctx.req.param("id");
+    const body = await ctx.req.json();
     return ctx.json({});
   }
 
@@ -211,14 +214,14 @@ export class YourController {
 1. Add your routes in `src/routes/index.js` following RESTful conventions:
 
 ```javascript
-import { YourController } from "../controllers/your-namespace/your-controller"
+import { YourController } from "../controllers/your-namespace/your-controller";
 
 // RESTful routes
-app.get("/resources", YourController.index)          // List all
-app.get("/resources/:id", YourController.show)       // Show one
-app.post("/resources", YourController.create)        // Create
-app.put("/resources/:id", YourController.update)     // Update
-app.delete("/resources/:id", YourController.destroy) // Delete
+app.get("/resources", YourController.index); // List all
+app.get("/resources/:id", YourController.show); // Show one
+app.post("/resources", YourController.create); // Create
+app.put("/resources/:id", YourController.update); // Update
+app.delete("/resources/:id", YourController.destroy); // Delete
 ```
 
 ## Contributing
@@ -226,17 +229,21 @@ app.delete("/resources/:id", YourController.destroy) // Delete
 1. Create a new branch for your feature
 2. Make your changes following the project structure
 3. Code quality check
+
 - Before each commit, ESLint will run automatically
 - If linting fails, please run this command or manually fix the lint errors:
   ```bash
   pnpm run format
   ```
+
 4. Commit your changes:
+
 - Instead of writing commit messages manually, run:
   ```bash
   git commit
   ```
 - This will open an interactive prompt where you select the commit type (feat, fix, docs, …), scope, and description.
+
 5. Push your changes and open a Pull Request
 
 ## Deployment

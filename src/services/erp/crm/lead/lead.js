@@ -4,7 +4,11 @@ import utc from "dayjs/plugin/utc.js";
 import FrappeClient from "frappe/frappe-client";
 import Database from "services/database";
 import ContactService from "services/erp/contacts/contact/contact";
-import { areAllFieldsEmpty, fetchLeadsFromERP, saveLeadsToDatabase } from "services/erp/crm/lead/utils/lead-helppers";
+import {
+  areAllFieldsEmpty,
+  fetchLeadsFromERP,
+  saveLeadsToDatabase
+} from "services/erp/crm/lead/utils/lead-helppers";
 import { createUpdateLeadPayload } from "services/erp/crm/lead/utils/pancake-utils";
 import { normalizeToStandardFormat } from "services/utils/phone-utils";
 
@@ -27,7 +31,6 @@ export default class LeadService {
   }
 
   async updateLeadInfoFromSummary(data, conversationId) {
-
     if (!data) return;
 
     const allowedFields = [
@@ -43,7 +46,7 @@ export default class LeadService {
     const summariedInfo = { ...data };
 
     // Remove any field not in allowedFields
-    Object.keys(summariedInfo).forEach(key => {
+    Object.keys(summariedInfo).forEach((key) => {
       if (!allowedFields.includes(key)) {
         delete summariedInfo[key];
       }
@@ -83,7 +86,10 @@ export default class LeadService {
     if (!currentLead) {
       return { success: false, message: "Lead does not exists" };
     }
-    if (!currentLead.first_name || currentLead.first_name.toLowerCase() === "chưa rõ") {
+    if (
+      !currentLead.first_name ||
+      currentLead.first_name.toLowerCase() === "chưa rõ"
+    ) {
       currentLead.first_name = data.name;
     }
     if (!currentLead.phone) {
@@ -116,22 +122,24 @@ export default class LeadService {
     pancakeAvatarUrl,
     adIds
   }) {
-    const leads = await this.updateLeads([{
-      customer_phone: customerPhone,
-      customer_name: customerName,
-      platform: platform,
-      conversation_id: conversationId,
-      customer_id: customerId,
-      page_id: pageId,
-      page_name: pageName,
-      inserted_at: insertedAt,
-      updated_at: updatedAt,
-      can_inbox: type === "INBOX",
-      latest_message_at: lastestMessageAt,
-      pancake_user_id: pancakeUserId,
-      pancake_avatar_url: pancakeAvatarUrl,
-      ad_ids: adIds
-    }]);
+    const leads = await this.updateLeads([
+      {
+        customer_phone: customerPhone,
+        customer_name: customerName,
+        platform: platform,
+        conversation_id: conversationId,
+        customer_id: customerId,
+        page_id: pageId,
+        page_name: pageName,
+        inserted_at: insertedAt,
+        updated_at: updatedAt,
+        can_inbox: type === "INBOX",
+        latest_message_at: lastestMessageAt,
+        pancake_user_id: pancakeUserId,
+        pancake_avatar_url: pancakeAvatarUrl,
+        ad_ids: adIds
+      }
+    ]);
 
     if (leads && Array.isArray(leads) && leads.length > 0) {
       return leads[0];
@@ -141,29 +149,43 @@ export default class LeadService {
 
   async updateLeads(leadsData) {
     if (!Array.isArray(leadsData) || leadsData.length === 0) return [];
-    const docs = leadsData.map(lead => createUpdateLeadPayload(lead));
+    const docs = leadsData.map((lead) => createUpdateLeadPayload(lead));
     const response = await this.syncLeadByBatchUpdate(docs);
     if (response?.failed_docs?.length) {
       for (const fd of response.failed_docs) {
         const conversationId = fd?.doc?.pancake_data?.conversation_id;
-        console.warn("update_lead_by_batch failure:", JSON.stringify(fd.exc || fd));
-        Sentry.captureMessage(`update_lead_by_batch failed for conversation ${conversationId}`, {
-          level: "error",
-          extra: { conversationId, exc: fd.exc }
-        });
+        console.warn(
+          "update_lead_by_batch failure:",
+          JSON.stringify(fd.exc || fd)
+        );
+        Sentry.captureMessage(
+          `update_lead_by_batch failed for conversation ${conversationId}`,
+          {
+            level: "error",
+            extra: { conversationId, exc: fd.exc }
+          }
+        );
       }
     }
     return response?.results || [];
   }
 
-  async updateLeadLastMessage({ frappeNameId, lastSalesMessageAt, lastCustomerMessageAt }) {
+  async updateLeadLastMessage({
+    frappeNameId,
+    lastSalesMessageAt,
+    lastCustomerMessageAt
+  }) {
     if (!frappeNameId) return null;
     const values = { doctype: this.doctype, name: frappeNameId };
     if (lastSalesMessageAt) {
-      values.last_sales_message_at = dayjs(lastSalesMessageAt).utc().format("YYYY-MM-DD HH:mm:ss");
+      values.last_sales_message_at = dayjs(lastSalesMessageAt)
+        .utc()
+        .format("YYYY-MM-DD HH:mm:ss");
     }
     if (lastCustomerMessageAt) {
-      values.last_customer_message_at = dayjs(lastCustomerMessageAt).utc().format("YYYY-MM-DD HH:mm:ss");
+      values.last_customer_message_at = dayjs(lastCustomerMessageAt)
+        .utc()
+        .format("YYYY-MM-DD HH:mm:ss");
     }
     if (Object.keys(values).length <= 2) return null;
     return await this.frappeClient.update(values);
@@ -220,9 +242,12 @@ export default class LeadService {
           filters: [["province_name", "LIKE", `%${location}%`]]
         });
 
-        const fullName = data.raw_data.name?.trim()
-          || [data.raw_data.lastname?.trim(), data.raw_data.firstname?.trim()].filter(Boolean).join(" ")
-          || "Chưa rõ";
+        const fullName =
+          data.raw_data.name?.trim() ||
+          [data.raw_data.lastname?.trim(), data.raw_data.firstname?.trim()]
+            .filter(Boolean)
+            .join(" ") ||
+          "Chưa rõ";
 
         const leadData = {
           doctype: this.doctype,
@@ -232,7 +257,9 @@ export default class LeadService {
           first_name: fullName,
           email_id: data.raw_data.email?.trim() || null,
           province: provinces.length ? provinces[0].name : null,
-          first_reach_at: dayjs(data.database_created_at).utc().format("YYYY-MM-DD HH:mm:ss")
+          first_reach_at: dayjs(data.database_created_at)
+            .utc()
+            .format("YYYY-MM-DD HH:mm:ss")
         };
 
         if (String(provinces[0]?.code).toLowerCase().includes("website")) {
@@ -342,11 +369,16 @@ export default class LeadService {
 
   static async syncCallLogLead(env) {
     const leadService = new LeadService(env);
-    const timeThreshold = dayjs().utc().subtract(3, "hours").subtract(5, "minutes").format("YYYY-MM-DD HH:mm:ss");
+    const timeThreshold = dayjs()
+      .utc()
+      .subtract(3, "hours")
+      .subtract(5, "minutes")
+      .format("YYYY-MM-DD HH:mm:ss");
     const callLogs = await leadService.frappeClient.getList("Call Log", {
       filters: [
         ["creation", ">=", timeThreshold],
-        ["type", "=", "Incoming"]]
+        ["type", "=", "Incoming"]
+      ]
     });
     for (const callLog of callLogs) {
       await leadService.processCallLogLead(callLog);
@@ -354,8 +386,8 @@ export default class LeadService {
   }
 
   async syncLeadsToDatabase(options = {}) {
-
-    const { isSyncType = LeadService.SYNC_TYPE_AUTO, minutesBack = 10 } = options;
+    const { isSyncType = LeadService.SYNC_TYPE_AUTO, minutesBack = 10 } =
+      options;
     const kv = this.env.FN_KV;
     const KV_KEY = "lead_sync:last_date";
     const toDate = dayjs().utc().format("YYYY-MM-DD HH:mm:ss");
@@ -363,13 +395,27 @@ export default class LeadService {
 
     if (isSyncType === LeadService.SYNC_TYPE_AUTO) {
       const lastDate = await kv.get(KV_KEY);
-      fromDate = lastDate || dayjs().utc().subtract(minutesBack, "minutes").format("YYYY-MM-DD HH:mm:ss");
+      fromDate =
+        lastDate ||
+        dayjs()
+          .utc()
+          .subtract(minutesBack, "minutes")
+          .format("YYYY-MM-DD HH:mm:ss");
     } else {
-      fromDate = dayjs().utc().subtract(minutesBack, "minutes").format("YYYY-MM-DD HH:mm:ss");
+      fromDate = dayjs()
+        .utc()
+        .subtract(minutesBack, "minutes")
+        .format("YYYY-MM-DD HH:mm:ss");
     }
 
     try {
-      const leads = await fetchLeadsFromERP(this.frappeClient, this.doctype, fromDate, toDate, LeadService.ERPNEXT_PAGE_SIZE);
+      const leads = await fetchLeadsFromERP(
+        this.frappeClient,
+        this.doctype,
+        fromDate,
+        toDate,
+        LeadService.ERPNEXT_PAGE_SIZE
+      );
       if (Array.isArray(leads) && leads.length > 0) {
         await saveLeadsToDatabase(this.db, leads);
       }
@@ -380,7 +426,10 @@ export default class LeadService {
     } catch (error) {
       Sentry.captureException(error);
       // Handle when cronjon failed in 1 hour => we need to update the last date to the current date
-      if (isSyncType === LeadService.SYNC_TYPE_AUTO && dayjs(toDate).diff(dayjs(await kv.get(KV_KEY)), "hour") >= 1) {
+      if (
+        isSyncType === LeadService.SYNC_TYPE_AUTO &&
+        dayjs(toDate).diff(dayjs(await kv.get(KV_KEY)), "hour") >= 1
+      ) {
         await kv.put(KV_KEY, toDate);
       }
     }
@@ -393,5 +442,4 @@ export default class LeadService {
       isSyncType: LeadService.SYNC_TYPE_AUTO
     });
   }
-
 }

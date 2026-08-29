@@ -12,7 +12,6 @@ const BATCH_SIZE = 20;
 const LARK_BATCH_SIZE = 500;
 
 export default class AccountingSalesOrderLarkSyncService {
-
   constructor(env) {
     this.env = env;
     this.db = Database.instance(env);
@@ -21,18 +20,28 @@ export default class AccountingSalesOrderLarkSyncService {
 
   async sync({ limit = null, offset = null, updatedAtMin = null } = {}) {
     const now = dayjs().utc();
-    const defaultUpdatedAtMin = now.subtract(TIME_INTERVAL_MINUTES, "minutes").toDate();
+    const defaultUpdatedAtMin = now
+      .subtract(TIME_INTERVAL_MINUTES, "minutes")
+      .toDate();
     const finalUpdatedAtMin = updatedAtMin || defaultUpdatedAtMin;
-    const orders = await this._fetchUpdatedOrders(finalUpdatedAtMin, limit, offset);
+    const orders = await this._fetchUpdatedOrders(
+      finalUpdatedAtMin,
+      limit,
+      offset
+    );
 
     if (!orders || orders.length === 0) return;
 
     const larkOrders = await this._fetchLarkOrders(orders);
     const larkOrderMap = this._buildLarkOrderMap(larkOrders);
-    const { newOrders, existingOrders } = this._categorizeOrders(orders, larkOrderMap);
+    const { newOrders, existingOrders } = this._categorizeOrders(
+      orders,
+      larkOrderMap
+    );
 
     if (newOrders.length > 0) await this._createLarkRecords(newOrders);
-    if (existingOrders.length > 0) await this._updateLarkRecords(existingOrders);
+    if (existingOrders.length > 0)
+      await this._updateLarkRecords(existingOrders);
   }
 
   async _fetchUpdatedOrders(updatedAtMin, limit = null, offset = null) {
@@ -54,15 +63,22 @@ export default class AccountingSalesOrderLarkSyncService {
 
     for (let i = 0; i < orders.length; i += BATCH_SIZE) {
       const batch = orders.slice(i, i + BATCH_SIZE);
-      const orderIds = batch.map(order => String(order.id));
-      const conditions = orderIds.map(id => ({
-        field_name: "id", operator: "is", value: [id]
+      const orderIds = batch.map((order) => String(order.id));
+      const conditions = orderIds.map((id) => ({
+        field_name: "id",
+        operator: "is",
+        value: [id]
       }));
 
       const filter = { conjunction: "or", conditions };
-      const records = await RecordService.fetchRecords(this.env, this.tableConfig, {
-        filter, pageSize: BATCH_SIZE
-      });
+      const records = await RecordService.fetchRecords(
+        this.env,
+        this.tableConfig,
+        {
+          filter,
+          pageSize: BATCH_SIZE
+        }
+      );
       allLarkOrders.push(...records);
     }
     return allLarkOrders;
@@ -94,7 +110,7 @@ export default class AccountingSalesOrderLarkSyncService {
   }
 
   async _createLarkRecords(orders) {
-    const records = orders.map(order => this._mapOrderToLarkFields(order));
+    const records = orders.map((order) => this._mapOrderToLarkFields(order));
 
     for (let i = 0; i < records.length; i += LARK_BATCH_SIZE) {
       const chunk = records.slice(i, i + LARK_BATCH_SIZE);
@@ -108,7 +124,7 @@ export default class AccountingSalesOrderLarkSyncService {
   }
 
   async _updateLarkRecords(orders) {
-    const records = orders.map(order => ({
+    const records = orders.map((order) => ({
       record_id: order.lark_record_id,
       ...this._mapOrderToLarkFields(order)
     }));
@@ -127,10 +143,16 @@ export default class AccountingSalesOrderLarkSyncService {
   _mapOrderToLarkFields(order) {
     return {
       id: order.id ? Number(order.id) : null,
-      created_at: order.created_at ? dayjs(order.created_at).toISOString() : null,
-      updated_at: order.updated_at ? dayjs(order.updated_at).toISOString() : null,
+      created_at: order.created_at
+        ? dayjs(order.created_at).toISOString()
+        : null,
+      updated_at: order.updated_at
+        ? dayjs(order.updated_at).toISOString()
+        : null,
       name: order.name,
-      real_created_at: order.real_created_at ? dayjs(order.real_created_at).toISOString() : null,
+      real_created_at: order.real_created_at
+        ? dayjs(order.real_created_at).toISOString()
+        : null,
       customer_type: order.customer_type,
       fulfillment_status: order.fulfillment_status,
       cancelled_status: order.cancelled_status,
@@ -143,8 +165,12 @@ export default class AccountingSalesOrderLarkSyncService {
       first_channel_label: order.first_channel_label,
       name_value: order.name_value,
       status: order.status,
-      fulfillment_created_at: order.fulfillment_created_at ? dayjs(order.fulfillment_created_at).toISOString() : null,
-      cancelled_at: order.cancelled_at ? dayjs(order.cancelled_at).toISOString() : null
+      fulfillment_created_at: order.fulfillment_created_at
+        ? dayjs(order.fulfillment_created_at).toISOString()
+        : null,
+      cancelled_at: order.cancelled_at
+        ? dayjs(order.cancelled_at).toISOString()
+        : null
     };
   }
 }

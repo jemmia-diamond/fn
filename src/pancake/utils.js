@@ -7,4 +7,3 @@
 export function isInvalidTokenError(data) {
   return data && data.success === false && data.error_code === 102;
 }
-

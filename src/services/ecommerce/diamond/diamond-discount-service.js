@@ -11,7 +11,6 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 
 export default class DiamondDiscountService {
-
   /**
    * Fetch active promotion rules from database
    * @param {Object} env - Environment variables
@@ -75,16 +74,17 @@ export default class DiamondDiscountService {
     if (!rules || rules.length === 0) return 0;
 
     for (const rule of rules) {
-      const hasMin = rule.min_value != null && rule.min_value !== "" && rule.min_value > 0;
-      const hasMax = rule.max_value != null && rule.max_value !== "" && rule.max_value > 0;
+      const hasMin =
+        rule.min_value != null && rule.min_value !== "" && rule.min_value > 0;
+      const hasMax =
+        rule.max_value != null && rule.max_value !== "" && rule.max_value > 0;
 
       if (hasMin && hasMax) {
-        if (diamondSize < rule.min_value || diamondSize >= rule.max_value) continue;
-      }
-      else if (hasMin && !hasMax) {
+        if (diamondSize < rule.min_value || diamondSize >= rule.max_value)
+          continue;
+      } else if (hasMin && !hasMax) {
         if (diamondSize < rule.min_value) continue;
-      }
-      else if (!hasMin && hasMax) {
+      } else if (!hasMin && hasMax) {
         if (diamondSize >= rule.max_value) continue;
       }
 
@@ -122,7 +122,9 @@ export default class DiamondDiscountService {
       const linkedColId = link.haravan_collection_id?.toString();
       if (!linkedColId) continue;
 
-      const isPercentCollection = allPercentCollectionIds.has(Number(linkedColId)) || allPercentCollectionIds.has(linkedColId);
+      const isPercentCollection =
+        allPercentCollectionIds.has(Number(linkedColId)) ||
+        allPercentCollectionIds.has(linkedColId);
       if (!isPercentCollection) {
         continue;
       }
@@ -139,7 +141,10 @@ export default class DiamondDiscountService {
       }
 
       if (!isTarget && !isDefault) {
-        linksToDelete.push({ diamond_id: diamond.id, haravan_collection_id: link.haravan_collection_id });
+        linksToDelete.push({
+          diamond_id: diamond.id,
+          haravan_collection_id: link.haravan_collection_id
+        });
       }
     }
 
@@ -148,8 +153,14 @@ export default class DiamondDiscountService {
         await nocodb.deleteRecords(tableId, linksToDelete);
       } catch (e) {
         const cause = e.cause || e.response?.data;
-        if (cause?.error !== "ERR_RECORD_NOT_FOUND" && e.response?.status !== 404) {
-          console.warn("Failed to cleanup old diamond discount collections:", e);
+        if (
+          cause?.error !== "ERR_RECORD_NOT_FOUND" &&
+          e.response?.status !== 404
+        ) {
+          console.warn(
+            "Failed to cleanup old diamond discount collections:",
+            e
+          );
         }
       }
     }
@@ -162,14 +173,21 @@ export default class DiamondDiscountService {
         });
       } catch (error) {
         const errorData = error.response?.data;
-        if (errorData?.code === "23505" || errorData?.message === "This record already exists.") {
+        if (
+          errorData?.code === "23505" ||
+          errorData?.message === "This record already exists."
+        ) {
         } else {
           throw error;
         }
       }
     }
 
-    if (!hasDefault && defaultCollectionId && defaultCollectionId !== targetCollectionId) {
+    if (
+      !hasDefault &&
+      defaultCollectionId &&
+      defaultCollectionId !== targetCollectionId
+    ) {
       try {
         await nocodb.createRecords(tableId, {
           diamonds: { id: diamond.id },
@@ -177,7 +195,10 @@ export default class DiamondDiscountService {
         });
       } catch (error) {
         const errorData = error.response?.data;
-        if (errorData?.code === "23505" || errorData?.message === "This record already exists.") {
+        if (
+          errorData?.code === "23505" ||
+          errorData?.message === "This record already exists."
+        ) {
         } else {
           throw error;
         }

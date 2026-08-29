@@ -20,15 +20,39 @@ export default class NocoWebhook {
     nocoWebhookNamespace.post("sets", SetsController.handle);
     nocoWebhookNamespace.post("diamonds", DiamondsController.handle);
     nocoWebhookNamespace.post("products", ProductsController.handle);
-    nocoWebhookNamespace.post("design-images/retouch-upload", DesignImagesController.uploadRetouch);
-    nocoWebhookNamespace.post("design-images/retouch-to-haravan", DesignImagesController.syncToHaravan);
+    nocoWebhookNamespace.post(
+      "design-images/retouch-upload",
+      DesignImagesController.uploadRetouch
+    );
+    nocoWebhookNamespace.post(
+      "design-images/retouch-to-haravan",
+      DesignImagesController.syncToHaravan
+    );
     nocoWebhookNamespace.post("moissanite", MoissaniteController.create);
-    nocoWebhookNamespace.post("haravan-collections", HaravanCollectionsController.create);
+    nocoWebhookNamespace.post(
+      "haravan-collections",
+      HaravanCollectionsController.create
+    );
     nocoWebhookNamespace.post("variants", VariantsController.handle);
-    nocoWebhookNamespace.post("moissanite-serials/rfid", MoissaniteSerialsController.generateRfid);
-    nocoWebhookNamespace.post("variant-serials/rfid", VariantSerialsController.generateRfid);
-    nocoWebhookNamespace.post("submitted-codes/process", SubmittedCodesController.process);
-    nocoWebhookNamespace.post("designs/sync-4view", DesignsController.sync4View);
-    nocoWebhookNamespace.post("designs/sync-render", DesignsController.syncRender);
+    nocoWebhookNamespace.post(
+      "moissanite-serials/rfid",
+      MoissaniteSerialsController.generateRfid
+    );
+    nocoWebhookNamespace.post(
+      "variant-serials/rfid",
+      VariantSerialsController.generateRfid
+    );
+    nocoWebhookNamespace.post(
+      "submitted-codes/process",
+      SubmittedCodesController.process
+    );
+    nocoWebhookNamespace.post(
+      "designs/sync-4view",
+      DesignsController.sync4View
+    );
+    nocoWebhookNamespace.post(
+      "designs/sync-render",
+      DesignsController.syncRender
+    );
   }
 }

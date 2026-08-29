@@ -9,7 +9,6 @@ import * as Sentry from "@sentry/cloudflare";
 dayjs.extend(utc);
 
 export default class TechTicketService {
-
   /**
    * Helper function to map LarkSuite fields to tech ticket database fields
    * @param {Object} fields - LarkSuite fields object
@@ -25,8 +24,12 @@ export default class TechTicketService {
     return {
       ticket_id: LarkHelper.extractText(fields["Ticket ID"]),
       ticket_name: LarkHelper.extractText(fields["Tên Vấn Đề"]),
-      ticket_type: LarkHelper.extractText(fields["Nhóm Vấn Đề"]) || LarkHelper.extractText(fields["Loại Yêu Cầu"]),
-      ticket_priority: LarkHelper.extractText(fields["Mức Độ Khẩn Cấp Ưu Tiên"]) || LarkHelper.extractText(fields["Mức Độ Khẩn Cấp"]),
+      ticket_type:
+        LarkHelper.extractText(fields["Nhóm Vấn Đề"]) ||
+        LarkHelper.extractText(fields["Loại Yêu Cầu"]),
+      ticket_priority:
+        LarkHelper.extractText(fields["Mức Độ Khẩn Cấp Ưu Tiên"]) ||
+        LarkHelper.extractText(fields["Mức Độ Khẩn Cấp"]),
       ticket_status: LarkHelper.extractText(fields["Tình Trạng Xử Lý"]),
       description: LarkHelper.extractText(fields["Mô Tả Vấn Đề"]),
       solution_update: LarkHelper.extractText(fields["Kết Quả/Cập Nhật Xử Lý"]),
@@ -35,15 +38,21 @@ export default class TechTicketService {
       manual_updated_time: toDate(fields["Ngày Cập Nhật (Manual)"]),
       completed_time: toDate(fields["Ngày Hoàn Thành"]),
       expected_completion_time: toDate(fields["Ngày Hoàn Thành Mong Đợi"]),
-      new_deadline: toDate(LarkHelper.extractInt(fields["Hạn chót - Deadline"])),
+      new_deadline: toDate(
+        LarkHelper.extractInt(fields["Hạn chót - Deadline"])
+      ),
       sla_50_percent: toDate(LarkHelper.extractInt(fields["Mốc 50% SLA"])),
       reminder_time: toDate(LarkHelper.extractInt(fields["Giờ nhắc nhở"])),
       manager: LarkHelper.extractText(fields["Quản lý"], "name"),
       ticket_no_in_month: LarkHelper.extractText(fields["Ticket No. In Month"]),
-      current_number_in_month: LarkHelper.extractInt(fields["Current Number In Month"]),
+      current_number_in_month: LarkHelper.extractInt(
+        fields["Current Number In Month"]
+      ),
       responded_at: toDate(LarkHelper.extractInt(fields["Thời gian phản hồi"])),
       processed_at: toDate(LarkHelper.extractInt(fields["Thời gian xử lý"])),
-      completed_at: toDate(LarkHelper.extractInt(fields["Thời gian hoàn thành"]))
+      completed_at: toDate(
+        LarkHelper.extractInt(fields["Thời gian hoàn thành"])
+      )
     };
   }
 
@@ -55,7 +64,12 @@ export default class TechTicketService {
    * @param {number} pageSize - Number of records per page (default: 200)
    * @returns {Promise<Object>} - Object with { items: [], hasMore: boolean, pageToken: string }
    */
-  static async fetchTechTicketsPage(env, filter, pageToken = null, pageSize = 100) {
+  static async fetchTechTicketsPage(
+    env,
+    filter,
+    pageToken = null,
+    pageSize = 100
+  ) {
     const larkClient = await LarksuiteService.createClientV2(env);
 
     const payload = {
@@ -81,7 +95,7 @@ export default class TechTicketService {
     if (response?.code && response.code !== 0) {
       throw new Error(
         `LarkSuite API error: ${response.msg || "Unknown error"} (code: ${response.code}). ` +
-        `Details: ${JSON.stringify(response.error || {})}`
+          `Details: ${JSON.stringify(response.error || {})}`
       );
     }
 
@@ -111,33 +125,35 @@ export default class TechTicketService {
     for (let i = 0; i < records.length; i += CHUNK_SIZE) {
       const chunk = records.slice(i, i + CHUNK_SIZE);
 
-      const results = await Promise.all(chunk.map(async (record) => {
-        try {
-          const fields = record.fields || {};
-          const mappedFields = this.mapFieldsToTicket(fields);
+      const results = await Promise.all(
+        chunk.map(async (record) => {
+          try {
+            const fields = record.fields || {};
+            const mappedFields = this.mapFieldsToTicket(fields);
 
-          const result = await db.larksuiteTechTicket.upsert({
-            where: {
-              record_id: record.record_id
-            },
-            update: {
-              ...mappedFields,
-              synced_at: new Date()
-            },
-            create: {
-              record_id: record.record_id,
-              ...mappedFields
-            }
-          });
+            const result = await db.larksuiteTechTicket.upsert({
+              where: {
+                record_id: record.record_id
+              },
+              update: {
+                ...mappedFields,
+                synced_at: new Date()
+              },
+              create: {
+                record_id: record.record_id,
+                ...mappedFields
+              }
+            });
 
-          return result ? "created" : "failed";
-        } catch {
-          return "failed";
-        }
-      }));
+            return result ? "created" : "failed";
+          } catch {
+            return "failed";
+          }
+        })
+      );
 
       // Count results
-      results.forEach(res => {
+      results.forEach((res) => {
         if (res === "created") created++;
         else failed++;
       });
@@ -204,12 +220,11 @@ export default class TechTicketService {
       // Fetch and save in batches
       do {
         // Fetch one page
-        const { items, hasMore, pageToken: nextPageToken } = await this.fetchTechTicketsPage(
-          env,
-          filter,
-          pageToken,
-          pageSize
-        );
+        const {
+          items,
+          hasMore,
+          pageToken: nextPageToken
+        } = await this.fetchTechTicketsPage(env, filter, pageToken, pageSize);
 
         if (items.length === 0) break;
 

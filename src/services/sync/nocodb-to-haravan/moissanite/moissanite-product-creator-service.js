@@ -35,11 +35,14 @@ function formatNumber(value, length) {
 }
 
 async function generateBarcode(nocoClient, prefix, length = 10) {
-  const records = await nocoClient.listRecords(NOCODB_TABLES.SUPPLY.MOISSANITE, {
-    where: `(barcode,like,${prefix}%)`,
-    sort: "-barcode",
-    limit: 100
-  });
+  const records = await nocoClient.listRecords(
+    NOCODB_TABLES.SUPPLY.MOISSANITE,
+    {
+      where: `(barcode,like,${prefix}%)`,
+      sort: "-barcode",
+      limit: 100
+    }
+  );
 
   const maxBarcode =
     records.list
