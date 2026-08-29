@@ -67,16 +67,29 @@ const validateOrderCompleteness = (salesOrderData, customer) => {
     return { isValid: false, message };
   }
 
-  const jewelryItems = lineItems.filter(
-    (item) =>
-      item.sku?.length === SKU_LENGTH.JEWELRY ||
-      item.sku?.startsWith(SKU_PREFIX.TEMPORARY_JEWELRY)
-  );
-  for (const jewelryItem of jewelryItems) {
-    if (!jewelryItem.serial_numbers) {
-      message = "Chưa nhập serial number";
-      return { isValid: false, message };
+  const jewelryItems = lineItems.filter((item) => (item.sku?.length === SKU_LENGTH.JEWELRY || item.sku?.startsWith(SKU_PREFIX.TEMPORARY_JEWELRY)));
+  const missingSerialItems = jewelryItems.filter((item) => !item.serial_numbers || item.serial_numbers.trim() === "");
+
+  if (missingSerialItems.length > 0) {
+    const ordersMap = {};
+    for (const item of missingSerialItems) {
+      const soName = item.parent || salesOrderData.name;
+      const orderNumber = item.parent_order_number || salesOrderData.order_number;
+      if (!ordersMap[soName]) {
+        ordersMap[soName] = {
+          order_name: soName,
+          order_number: orderNumber,
+          items: []
+        };
+      }
+      ordersMap[soName].items.push({ name: item?.item_name, sku: item?.sku });
     }
+
+    return {
+      isValid: false,
+      message: "Các sản phẩm sau chưa được nhập serial",
+      missing_serial_orders: Object.values(ordersMap)
+    };
   }
 
   return { isValid: true, message: null };

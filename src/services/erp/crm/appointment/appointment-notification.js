@@ -105,19 +105,10 @@ export default class AppointmentNotificationService {
   }
 
   async sendThreadReply(message_id, payload, existingFields) {
-    if (["tech@jemmia.vn", "Administrator"].includes(payload.performed_by))
-      return;
+    if (payload.performed_by === "tech@jemmia.vn") return;
 
     const larkClient = await this.larkClientPromise;
-    let modifiedByText = "ai đó";
-    if (payload.performed_by) {
-      const userIds = await this.getLarkUserIdsByEmails([payload.performed_by]);
-      if (userIds && userIds.length > 0) {
-        modifiedByText = `<at user_id="${userIds[0].id}"></at>`;
-      } else {
-        modifiedByText = payload.performed_by;
-      }
-    }
+    const modifiedByText = await this.formatModifiedBy(payload.performed_by);
 
     let textContent = `Trạng thái: <b>${payload.status}</b>\n`;
     if (existingFields) {
@@ -199,6 +190,14 @@ export default class AppointmentNotificationService {
       select: { open_id: true }
     });
     return users.filter((u) => u.open_id).map((u) => ({ id: u.open_id }));
+  }
+
+  async formatModifiedBy(performedBy) {
+    if (!performedBy) return "Không xác định";
+    if (performedBy === "Administrator") return "Administrator";
+
+    const [user] = await this.getLarkUserIdsByEmails([performedBy]);
+    return user ? `<at user_id="${user.id}"></at>` : performedBy;
   }
 
   shouldSendThreadReply(existingFields, fields) {

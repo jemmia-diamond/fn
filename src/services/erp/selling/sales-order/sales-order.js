@@ -407,9 +407,13 @@ export default class SalesOrderService {
       salesOrderData.customer
     );
 
-    const { isValid, message } = validateSalesOrder(salesOrderData, customer);
-    if (!isValid) {
-      return { success: false, message: message };
+    const validationResult = validateSalesOrder(salesOrderData, customer);
+    if (!validationResult.isValid) {
+      return {
+        success: false,
+        message: validationResult.message,
+        missing_serial_orders: validationResult?.missing_serial_orders
+      };
     }
 
     const allOrdersToProcess = [salesOrderData, ...childOrders];
