@@ -109,7 +109,8 @@ export default class LarkBaseClient {
       return response.data;
     } catch (error) {
       const context = `[${method}] ${endpoint}`;
-      throw new Error(`Lark API Request Failed ${context}: ${error.message}`, {
+      const detail = error.response?.data ? JSON.stringify(error.response.data) : error.message;
+      throw new Error(`Lark API Request Failed ${context}: ${detail}`, {
         cause: error.response?.data || error
       });
     }
