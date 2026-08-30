@@ -1,0 +1,8 @@
+{
+  "servers": {
+    "sentry": {
+      "type": "sse",
+      "url": "https://mcp.sentry.dev/mcp/jemmia/fn"
+    }
+  }
+}
