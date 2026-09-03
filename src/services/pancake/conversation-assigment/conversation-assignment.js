@@ -21,7 +21,9 @@ export default class ConversationAssignmentService {
           FROM pancake.conversation c
           WHERE c.id = ${conversationId};
     `;
-    const userIds = result.filter(result => result.added_users !== null).map(result => result.added_users[0].id);
+    const userIds = result
+      .map(r => r.added_users?.[0]?.id)
+      .filter(Boolean);
     return userIds;
   }
 
