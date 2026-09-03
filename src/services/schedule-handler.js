@@ -32,6 +32,7 @@ export default {
       await new Haravan.Collect.CollectionProductSyncService(env).syncCollectionProducts();
       await new Ecommerce.ProductVariantPromotionSyncService(env).syncVariantPromotions();
       await new Larksuite.VariantSyncService(env).sync();
+      await new Ecommerce.ProductAttributesSyncService(env).sync();
       break;
     case "*/5 * * * *": // At every 5th minute
       await new OneOffHandler(env).run();
@@ -74,6 +75,7 @@ export default {
       await WorkshopOrderServices.WorkshopOrderServices.cronJobSyncLarkToNocoDB(env);
       await DatabaseOperations.MaterializedViewService.refresh3Hours(env);
       await DatabaseOperations.DatabaseFunctionService.runUpdateOrderReferencesInVariantSerials(env);
+      await new Ecommerce.VariantAttributesSyncService(env).sync();
       break;
     case "0 */6 * * *": // At every 6th hour
       await DatabaseOperations.MaterializedViewService.refresh6Hours(env);
