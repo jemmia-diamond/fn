@@ -1,11 +1,23 @@
 import { DebounceActions, DebounceService } from "src/durable-objects";
-import { shouldReceiveWebhook } from "controllers/webhook/pancake/erp/utils";
+import { shouldReceiveWebhook, shouldSendToCustomerLens } from "controllers/webhook/pancake/erp/utils";
 
 export default class PancakeERPMessageController {
   static async create(ctx) {
     const data = await ctx.req.json();
     if (data.event_type === "messaging") {
+      if (shouldSendToCustomerLens(data, ctx.env)) {
+        await ctx.env["CUSTOMER_LENS_QUEUE"].send(data);
+      }
       const receiveWebhook = shouldReceiveWebhook(data);
+
+      const pageId = data?.page_id;
+      const senderId = data?.data?.message?.from?.id;
+      const conversationId = data?.data?.conversation?.id;
+      const isSalesMessage = pageId && senderId && pageId == senderId;
+
+      if (isSalesMessage && conversationId) {
+        await ctx.env["PANCAKE_SALES_MESSAGE_QUEUE"].send(data);
+      }
 
       if (!receiveWebhook) {
         return ctx.json({ message: "Message Ignored" });
@@ -13,8 +25,6 @@ export default class PancakeERPMessageController {
 
       await ctx.env["MESSAGE_QUEUE"].send(data);
       await ctx.env["PANCAKE_MESSAGE_WEBHOOK_DISPATCH_QUEUE"].send(data);
-
-      const conversationId = data?.data?.conversation?.id;
 
       await DebounceService.debounce({
         env: ctx.env,

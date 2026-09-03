@@ -24,13 +24,14 @@ export default {
   scheduled: async (controller, env, _ctx) => {
     switch (controller.cron) {
     case "0 * * * *": // At minute 0 every hour
-      await ERP.Telephony.CallLogService.syncStringeeCallLogs(env);
+      await new ERP.Telephony.CallLogService(env).syncVbotCallLogs();
       await ERP.CRM.LeadService.syncCallLogLead(env);
       await ERP.Selling.SalesOrderService.fillSerialNumbersToTemporaryOrderItems(env);
       await new Pancake.TagSyncService(env).syncTags();
       await new Ecommerce.ProductG1PromotionSyncService(env).syncPromotions();
       await new Haravan.Collect.CollectionProductSyncService(env).syncCollectionProducts();
       await new Ecommerce.ProductVariantPromotionSyncService(env).syncVariantPromotions();
+      await new Larksuite.VariantSyncService(env).sync();
       break;
     case "*/5 * * * *": // At every 5th minute
       await new OneOffHandler(env).run();
@@ -50,6 +51,7 @@ export default {
       await new Ecommerce.VariantSyncService(env).syncVariants();
       await ERP.Selling.BuybackExchangeSyncService.cronSync(env);
       await new Haravan.Customer.DatabaseSyncService(env).sync();
+      await DatabaseOperations.MaterializedViewService.refresh10Minutes(env);
       break;
     case "*/15 * * * *": // At every 15th minute
       await ERP.Contacts.ContactService.cronSyncContactsToDatabase(env);
@@ -60,8 +62,8 @@ export default {
       await DatabaseOperations.MaterializedViewService.refresh20Minutes(env);
       break;
     case "*/30 * * * *": // At every 30th minute
+      await new ERP.CRM.AppointmentService(env).notifyUpcomingAppointments();
       await ERP.Contacts.AddressService.cronSyncAddressesToDatabase(env);
-      await Ecommerce.ProductService.refreshMaterializedViews(env);
       await DatabaseOperations.MaterializedViewService.refresh30Minutes(env);
       await new Haravan.AccountingSalesOrders.LarkSyncService(env).sync();
       break;
@@ -75,6 +77,9 @@ export default {
       break;
     case "0 */6 * * *": // At every 6th hour
       await DatabaseOperations.MaterializedViewService.refresh6Hours(env);
+      break;
+    case "0 */10 * * *": // At every 10th hour (600 minutes)
+      await new Larksuite.SerialSyncService(env).sync();
       break;
     case "0 17 * * *": // 00:00
       await new Reporting.UptimeReportSyncService(env).dailySync();
@@ -108,10 +113,32 @@ export default {
       await ERP.Automation.AssignmentRuleService.updateAssignmentRulesStartDay(env);
       await ERP.Automation.AssignmentRuleService.reAssignOffHourLeads(env);
       break;
+    case "0 2 * * *": // 09:00
+      await ERP.Accounting.BankTransactionService.notifyUnlinkedBankTransactions(env, {
+        fromDate: dayjs().tz(TIMEZONE_VIETNAM).subtract(1, "day").hour(17).minute(0).second(0).toISOString(),
+        toDate: dayjs().tz(TIMEZONE_VIETNAM).hour(9).minute(0).second(0).toISOString()
+      });
+      await Larksuite.Ticket.TechTicketService.syncTechTickets(env, { mode: "daily" });
+      await new Google.GoogleMerchantProductSyncService(env).sync();
+      await new ERP.Accounting.PaymentEntryNotificationService(env).runMorningBatch();
+      await new ERP.Selling.MissingSerialNotificationService(env).notify({
+        fromDate: dayjs.tz(MISSING_SERIAL_START_DATE, TIMEZONE_VIETNAM).toISOString(),
+        toDate: dayjs().toISOString()
+      });
+      break;
+    case "30 2 * * *": // 09:30
+      await new ERP.Selling.DebtTrackingNotificationService(env).notifyWeeklyAnnouncement();
+      break;
+    case "30 4 * * *": // 11:30
+      await new ERP.Selling.DebtTrackingNotificationService(env).notifyUncheckedOrdersReminder();
+      break;
     case "30 5 * * *": // 12:30
       await ERP.Automation.AssignmentRuleService.updateAssignmentRulesMidDay(env);
       break;
     case "30 6 * * *": // 13:30
+      break;
+    case "30 7 * * *": // 14:30
+      await new ERP.Selling.DebtTrackingNotificationService(env).notifyUncheckedOrdersReminder();
       break;
     case "0 10 * * *": // 17:00
       await ERP.Automation.AssignmentRuleService.updateAssignmentRulesEndDay(env);
@@ -126,19 +153,6 @@ export default {
       });
       break;
     case "0 11 * * *": // 18:00
-      break;
-    case "0 2 * * *": // 09:00
-      await ERP.Accounting.BankTransactionService.notifyUnlinkedBankTransactions(env, {
-        fromDate: dayjs().tz(TIMEZONE_VIETNAM).subtract(1, "day").hour(17).minute(0).second(0).toISOString(),
-        toDate: dayjs().tz(TIMEZONE_VIETNAM).hour(9).minute(0).second(0).toISOString()
-      });
-      await Larksuite.Ticket.TechTicketService.syncTechTickets(env, { mode: "daily" });
-      await new Google.GoogleMerchantProductSyncService(env).sync();
-      await new ERP.Accounting.PaymentEntryNotificationService(env).runMorningBatch();
-      await new ERP.Selling.MissingSerialNotificationService(env).notify({
-        fromDate: dayjs.tz(MISSING_SERIAL_START_DATE, TIMEZONE_VIETNAM).toISOString(),
-        toDate: dayjs().toISOString()
-      });
       break;
     case "0 14 * * *": // 21:00
       await ERP.Automation.AssignmentRuleService.enableAssignmentRuleOffHour(env);

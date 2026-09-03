@@ -1,4 +1,4 @@
-export const shouldReceiveWebhook = (body) => {
+export const shouldReceiveWebhook = (body, shouldIgnoreAdmin = true) => {
   if (body?.event_type !== "messaging") {
     return false;
   }
@@ -6,7 +6,7 @@ export const shouldReceiveWebhook = (body) => {
   const senderId = body?.data?.message?.from?.id;
 
   // Ignore message from admin
-  if (pageId == senderId) {
+  if (pageId == senderId && shouldIgnoreAdmin) {
     return false;
   }
 
@@ -20,4 +20,16 @@ export const shouldReceiveWebhook = (body) => {
   }
 
   return true;
+};
+
+export const shouldSendToCustomerLens = (body, env) => {
+  if (env?.ENABLE_CUSTOMER_LENS_CRAWL !== "true" && env?.ENABLE_CUSTOMER_LENS_CRAWL !== "1") {
+    return false;
+  }
+  const isValidMessage = shouldReceiveWebhook(body, false);
+  const from = body?.data?.conversation?.from?.email;
+  if (isValidMessage && from?.endsWith("facebook.com")) {
+    return true;
+  }
+  return false;
 };
