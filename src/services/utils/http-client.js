@@ -12,10 +12,10 @@ export const DEFAULT_RETRY_CONFIG = {
 
 /**
  * Create an axios client with retry logic
- * @param {Object} config - Axios configuration object
- * @param {string} config.baseURL - Base URL for the API
- * @param {number} config.timeout - Req timeout in milliseconds
- * @param {Object} config.headers - Req headers
+ * @param {Object} [config] - Axios configuration object
+ * @param {string} [config.baseURL] - Base URL for the API
+ * @param {number} [config.timeout] - Req timeout in milliseconds
+ * @param {Object} [config.headers] - Req headers
  * @param {Object} [retryConfig] - Optional custom retry config
  * @returns {import('axios').AxiosInstance} Axios instance with retry logic configured
  */

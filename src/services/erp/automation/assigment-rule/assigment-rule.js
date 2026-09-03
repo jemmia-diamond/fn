@@ -151,36 +151,36 @@ export default class AssignmentRuleService {
       "name": assignmentRuleName,
       "disabled": 0
     });
+    await assignmentRuleService.frappeClient.update({
+      "doctype": assignmentRuleService.doctype,
+      "name": ASSIGNMENT_RULES.Lead_Facebook_Tiktok_ZaloKOC_Website_ZaloOA_HCM.name,
+      "users": [{ user: assignmentRuleService.defaultUser }]
+    });
   }
 
   static async reAssignOffHourLeads(env) {
     const assignmentRuleService = new AssignmentRuleService(env);
-    // Get all leads assigned to the default user
+    const fromDate = dayjs.utc()
+      .subtract(1, "day").hour(14).minute(0).second(0)
+      .format("YYYY-MM-DD HH:mm:ss");
     const toDos = await assignmentRuleService.frappeClient.getList("ToDo", {
       filters: [
-        ["allocated_to", "like", `%${assignmentRuleService.defaultUser}%`],
+        ["allocated_to", "=", assignmentRuleService.defaultUser],
         ["status", "=", "Open"],
-        ["reference_type", "=", "Lead"]
+        ["reference_type", "=", "Lead"],
+        ["creation", ">=", fromDate]
       ],
-      fields: ["name", "reference_name"],
-      limit_page_length: 100
+      fields: ["reference_name"],
+      limit_page_length: 1000
     });
-    if (!toDos.length) {return;}
-    // Cancel all toDos
-    const toDoDucuments = toDos.map((toDo) => {
-      return {
-        "doctype": "ToDo",
-        "name": toDo.name,
-        "status": "Cancelled"
-      };
-    });
-    await assignmentRuleService.frappeClient.bulkUpdate(toDoDucuments);
-    // Apply assignment rule
-    const leadNames = toDos.map((toDo) => toDo.reference_name);
+
+    const leadNames = [...new Set(toDos?.map((toDo) => toDo.reference_name).filter(Boolean))];
+    if (!leadNames.length) return;
+
     await assignmentRuleService.frappeClient.postRequest("", {
-      cmd: "frappe.automation.doctype.assignment_rule.assignment_rule.bulk_apply",
-      doctype: "Lead",
-      docnames: JSON.stringify(leadNames)
+      cmd: "erpnext.crm.doctype.lead.lead_methods.reassign_leads_in_bulk",
+      lead_names: JSON.stringify(leadNames),
+      enqueue: true
     });
   }
 }

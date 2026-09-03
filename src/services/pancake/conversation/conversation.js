@@ -1,9 +1,11 @@
+import { shouldReceiveWebhook } from "controllers/webhook/pancake/erp/utils";
 import PancakeClient from "pancake/pancake-client";
+import AIHUBClient from "services/clients/aihub";
 import Database from "services/database";
 import LeadService from "services/erp/crm/lead/lead";
-import AIHUBClient from "services/clients/aihub";
-import { shouldReceiveWebhook } from "controllers/webhook/pancake/erp/utils";
 import { EXTRA_HOOKS } from "services/pancake/constants/extra-hook.constant";
+import CustomerLensClient from "services/customer-lens-client";
+import { PancakeCache } from "services/pancake/conversation/pancakeCache";
 
 export default class ConversationService {
   constructor(env) {
@@ -11,6 +13,7 @@ export default class ConversationService {
     this.pancakeClient = new PancakeClient(env);
     this.leadService = new LeadService(env);
     this.db = Database.instance(env);
+    this.customerLensClient = CustomerLensClient.instance(env);
   }
 
   async updateConversation(conversationId, pageId, insertedAt) {
@@ -32,36 +35,6 @@ export default class ConversationService {
       WHERE c.id = ${conversationId} AND c.page_id = ${pageId};
     `;
     return result;
-  }
-
-  async upsertFrappeLeadConversation(
-    conversationId,
-    frappeNameId
-  ) {
-    if (!conversationId || !frappeNameId) return null;
-    const result = await this.db.$queryRaw`
-      INSERT INTO pancake.frappe_lead_conversation (conversation_id, frappe_name_id, updated_at, created_at)
-      VALUES (${conversationId}, ${frappeNameId}, NOW(), NOW())
-      ON CONFLICT (conversation_id) DO UPDATE SET
-        frappe_name_id = EXCLUDED.frappe_name_id,
-        updated_at = NOW();
-    `;
-    return result;
-  }
-
-  async findExistingLead({
-    conversationId
-  }) {
-    if (!conversationId) return null;
-    const result = await this.db.$queryRaw`
-      SELECT * FROM pancake.frappe_lead_conversation AS flc
-      WHERE flc.conversation_id = ${conversationId}
-      LIMIT 1;
-    `;
-    if (result && result.length > 0) {
-      return result[0];
-    }
-    return null;
   }
 
   async findPageInfo({
@@ -102,10 +75,10 @@ export default class ConversationService {
     }
     await this.updateConversation(conversationId, pageId, insertedAt);
 
-    const existing = await this.findExistingLead({ conversationId });
-    if (existing?.frappe_name_id) {
+    const frappeNameId = await this.leadService.getLeadNameByConversationId(conversationId);
+    if (frappeNameId) {
       await this.leadService.updateLeadLastMessage({
-        frappeNameId: existing.frappe_name_id,
+        frappeNameId,
         lastCustomerMessageAt: insertedAt
       });
     }
@@ -123,10 +96,10 @@ export default class ConversationService {
 
     await this.updateLastSalesMessageAt(conversationId, pageId, insertedAt);
 
-    const existing = await this.findExistingLead({ conversationId });
-    if (existing?.frappe_name_id) {
+    const frappeNameId = await this.leadService.getLeadNameByConversationId(conversationId);
+    if (frappeNameId) {
       await this.leadService.updateLeadLastMessage({
-        frappeNameId: existing.frappe_name_id,
+        frappeNameId,
         lastSalesMessageAt: insertedAt
       });
     }
@@ -148,53 +121,21 @@ export default class ConversationService {
       return;
     }
 
-    const existingDocName = await this.findExistingLead({
-      conversationId: conversationId
-    });
-
     const pancakePage = await this.findPageInfo({
       pageId: pageId
     });
     if (pancakePage === null) return;
 
-    let frappeNameId;
-    if (existingDocName !== null) {
-      frappeNameId = existingDocName.frappe_name_id;
-
-      const lead = await this.leadService.updateLead({
-        frappeNameId: existingDocName.frappe_name_id,
-        customerPhone: body?.data?.message?.phone_info?.[0]?.phone_number ?? "",
-        customerName: body?.data?.conversation?.from?.name ?? "",
-        platform: pancakePage.platform ?? "",
-        conversationId: conversationId ?? "",
-        pageId: pageId,
-        pageName: pancakePage.name ?? "",
-        type: body?.data?.conversation?.type ?? "",
-        pancakeUserId: body?.data?.conversation?.assignee_ids?.[0] ?? ""
-      });
-      if (lead) {
-        frappeNameId = lead.name;
-      }
-    } else {
-      const newLead = await this.leadService.insertLead({
-        customerName: body?.data?.conversation?.from?.name ?? "",
-        customerPhone: body?.data?.message?.phone_info?.[0].phone_number ?? "",
-        platform: pancakePage.platform ?? "",
-        conversationId: conversationId ?? "",
-        pageId: pageId,
-        pageName: pancakePage.name ?? "",
-        type: body?.data?.conversation?.type ?? "",
-        pancakeUserId: body?.data?.conversation?.assignee_ids?.[0] ?? ""
-      });
-
-      if (newLead) {
-        frappeNameId = newLead.name;
-      }
-    }
-
-    if (frappeNameId) {
-      await this.upsertFrappeLeadConversation(conversationId, frappeNameId);
-    }
+    await this.leadService.updateLead({
+      customerPhone: body?.data?.message?.phone_info?.[0]?.phone_number ?? "",
+      customerName: body?.data?.conversation?.from?.name ?? "",
+      platform: pancakePage.platform ?? "",
+      conversationId: conversationId ?? "",
+      pageId: pageId,
+      pageName: pancakePage.name ?? "",
+      type: body?.data?.conversation?.type ?? "",
+      pancakeUserId: body?.data?.conversation?.assignee_ids?.[0] ?? ""
+    });
   }
 
   async summarizeLead(env, body) {
@@ -210,17 +151,30 @@ export default class ConversationService {
     const conversationId = message?.conversation_id;
     if (!conversationId) return;
 
-    const existingDocName = await this.findExistingLead({
-      conversationId: conversationId
-    });
+    const frappeNameId = await this.leadService.getLeadNameByConversationId(conversationId);
 
-    if (!existingDocName) return;
+    if (!frappeNameId) return;
 
     const aihub = new AIHUBClient(env);
     return await aihub.makeRequest("/lead-info", {
       "pageId": body.page_id,
       "conversationId": conversationId,
       "webhookUrl": `${env.HOST}/webhook/ai-hub/erp/leads`
+    });
+  }
+
+  async sendToCustomerLens(data) {
+    const pageId = data?.page_id;
+    const conversationId = data?.data?.conversation?.id;
+    if (!pageId || !conversationId) return;
+    const globalId = await PancakeCache.getMessageGlobalId(this.pancakeClient, pageId, conversationId, this.env);
+    if (!globalId) {
+      return;
+    }
+
+    await this.customerLensClient.post("/api/profile", {
+      "global_id": globalId,
+      "is_force": false
     });
   }
 
@@ -268,6 +222,13 @@ export default class ConversationService {
     const conversationService = new ConversationService(env);
     for (const message of batch.messages) {
       await conversationService.triggerExtraHooks(message.body);
+    }
+  }
+
+  static async dequeueMessageCustomerLensQueue(batch, env) {
+    const conversationService = new ConversationService(env);
+    for (const message of batch.messages) {
+      await conversationService.sendToCustomerLens(message.body);
     }
   }
 }
