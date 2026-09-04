@@ -33,6 +33,7 @@
       "localConnectionString": "postgresql://user:pass@localhost:5432/db"
     }
   ],
+
   "secrets_store_secrets": [
     {
       "binding": "NHAT_TIN_JEMMIA_HCM_PASSWORD_SECRET",
