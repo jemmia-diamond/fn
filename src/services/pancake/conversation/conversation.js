@@ -1,11 +1,12 @@
 import { shouldReceiveWebhook } from "controllers/webhook/pancake/erp/utils";
 import PancakeClient from "pancake/pancake-client";
 import AIHUBClient from "services/clients/aihub";
+import CustomerLensClient from "services/customer-lens-client";
 import Database from "services/database";
 import LeadService from "services/erp/crm/lead/lead";
-import { EXTRA_HOOKS } from "services/pancake/constants/extra-hook.constant";
-import CustomerLensClient from "services/customer-lens-client";
 import { PancakeCache } from "services/pancake/conversation/pancakeCache";
+import { getSalesayaScoringWebhookUrl } from "services/salesaya/constants/constant";
+import { createAxiosClient } from "services/utils/http-client";
 
 export default class ConversationService {
   constructor(env) {
@@ -178,16 +179,8 @@ export default class ConversationService {
     });
   }
 
-  async triggerExtraHooks(body) {
-    const promises = EXTRA_HOOKS.map(url =>
-      fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body)
-      })
-    );
-
-    await Promise.all(promises);
+  async triggerSalesayaScoringHooks(body) {
+    await createAxiosClient({}).post(getSalesayaScoringWebhookUrl(this.env), body);
   }
 
   static async dequeueMessageSummaryQueue(batch, env) {
@@ -221,7 +214,7 @@ export default class ConversationService {
   static async dequeueExtraHooksQueue(batch, env) {
     const conversationService = new ConversationService(env);
     for (const message of batch.messages) {
-      await conversationService.triggerExtraHooks(message.body);
+      await conversationService.triggerSalesayaScoringHooks(message.body);
     }
   }
 
