@@ -68,6 +68,8 @@ export default class ProductCollectionSyncService {
           !existingSet.has(`${String(c.collection_id)}_${String(c.product_id)}`)
       );
 
+      if (!toCreate.length) return;
+
       for (const collect of toCreate) {
         try {
           await haravanClient.collect.createCollect({
