@@ -42,5 +42,9 @@ export const CHAT_GROUPS = {
   CUSTOMER_VISITING_GROUP: {
     chat_id: "oc_d5a6aeb3edaeb404aa6cf4e985270219",
     group_name: "Khách đến cửa hàng"
+  },
+  HOTLINE_GROUP: {
+    chat_id: "oc_9746683abbf63773f171bc24564d20b9",
+    group_name: "[OPS] Hotline"
   }
 };
