@@ -15,11 +15,15 @@ export default class ProductAttributesSyncService {
     try {
       const nocoClient = new NocoDBClient(this.env);
       const nocoProducts = await this._fetchNocoProducts(nocoClient);
-      const validNocoProducts = nocoProducts.filter(p => p.haravan_product_id);
+      const validNocoProducts = nocoProducts.filter(
+        (p) => p.haravan_product_id
+      );
 
-      if (validNocoProducts.length === 0) return;
+      if (!validNocoProducts.length) return;
 
-      const productIds = validNocoProducts.map(p => Number(p.haravan_product_id)).filter(Number.isFinite);
+      const productIds = validNocoProducts
+        .map((p) => Number(p.haravan_product_id))
+        .filter(Number.isFinite);
       const hrvProducts = await this.db.haravan_products.findMany({
         where: {
           id: {
@@ -43,7 +47,8 @@ export default class ProductAttributesSyncService {
         const hp = hrvProductMap.get(String(np.haravan_product_id));
         if (!hp) continue;
 
-        const scopeChanged = (np.published_scope || null) !== (hp.published_scope || null);
+        const scopeChanged =
+          (np.published_scope || null) !== (hp.published_scope || null);
         const handleChanged = (np.handle || null) !== (hp.handle || null);
 
         if (scopeChanged || handleChanged) {
@@ -54,6 +59,8 @@ export default class ProductAttributesSyncService {
           });
         }
       }
+
+      if (!updates.length) return;
 
       for (let i = 0; i < updates.length; i += BATCH_SIZE) {
         const chunk = updates.slice(i, i + BATCH_SIZE);

@@ -23,11 +23,11 @@ export default class VariantAttributesSyncService {
 
   async updateVariantAttributes(nocoClient) {
     const nocoVariants = await this._fetchNocoVariants(nocoClient);
-    const validVariants = nocoVariants.filter(v => v.haravan_variant_id);
+    const validVariants = nocoVariants.filter((v) => v.haravan_variant_id);
 
-    if (validVariants.length === 0) return;
+    if (!validVariants.length) return;
 
-    const variantIds = validVariants.map(v => BigInt(v.haravan_variant_id));
+    const variantIds = validVariants.map((v) => BigInt(v.haravan_variant_id));
     const hrvVariants = await this.db.haravan_variants.findMany({
       where: {
         id: {
@@ -53,12 +53,21 @@ export default class VariantAttributesSyncService {
       const hv = hrvVariantMap.get(String(nv.haravan_variant_id));
       if (!hv) continue;
 
-      const qtyAvailableChanged = (nv.qty_available ?? null) !== (hv.qty_available ?? null);
-      const qtyCommitedChanged = (nv.qty_commited ?? null) !== (hv.qty_commited ?? null);
-      const qtyIncomingChanged = (nv.qty_incoming ?? null) !== (hv.qty_incoming ?? null);
-      const qtyOnhandChanged = (nv.qty_onhand ?? null) !== (hv.qty_onhand ?? null);
+      const qtyAvailableChanged =
+        (nv.qty_available ?? null) !== (hv.qty_available ?? null);
+      const qtyCommitedChanged =
+        (nv.qty_commited ?? null) !== (hv.qty_commited ?? null);
+      const qtyIncomingChanged =
+        (nv.qty_incoming ?? null) !== (hv.qty_incoming ?? null);
+      const qtyOnhandChanged =
+        (nv.qty_onhand ?? null) !== (hv.qty_onhand ?? null);
 
-      if (qtyAvailableChanged || qtyCommitedChanged || qtyIncomingChanged || qtyOnhandChanged) {
+      if (
+        qtyAvailableChanged ||
+        qtyCommitedChanged ||
+        qtyIncomingChanged ||
+        qtyOnhandChanged
+      ) {
         updates.push({
           id: nv.id,
           qty_available: hv.qty_available ?? null,
@@ -68,6 +77,8 @@ export default class VariantAttributesSyncService {
         });
       }
     }
+
+    if (!updates.length) return;
 
     for (let i = 0; i < updates.length; i += BATCH_SIZE) {
       const chunk = updates.slice(i, i + BATCH_SIZE);
@@ -95,7 +106,7 @@ export default class VariantAttributesSyncService {
       }
     });
 
-    const warehouseMap = new Map(warehouses.map(w => [String(w.id), w.name]));
+    const warehouseMap = new Map(warehouses.map((w) => [String(w.id), w.name]));
     const productWarehouseNamesMap = new Map();
     for (const inv of inventories) {
       if (!inv.product_id || !inv.loc_id) continue;
@@ -115,7 +126,9 @@ export default class VariantAttributesSyncService {
       const designId = prod.design_id || prod.designs?.id || prod.designs;
       if (!designId || !prod.haravan_product_id) continue;
 
-      const whNames = productWarehouseNamesMap.get(String(prod.haravan_product_id));
+      const whNames = productWarehouseNamesMap.get(
+        String(prod.haravan_product_id)
+      );
       if (whNames && whNames.size > 0) {
         const dKey = String(designId);
         if (!designLocationsMap.has(dKey)) {
@@ -131,7 +144,10 @@ export default class VariantAttributesSyncService {
     const designUpdates = [];
     for (const design of nocoDesigns) {
       const namesSet = designLocationsMap.get(String(design.id));
-      const newLocations = namesSet && namesSet.size > 0 ? Array.from(namesSet).join(",") : null;
+      const newLocations =
+        namesSet && namesSet.size > 0
+          ? Array.from(namesSet).sort().join(",")
+          : null;
       if ((design.stock_locations || null) !== newLocations) {
         designUpdates.push({
           id: design.id,
@@ -139,6 +155,8 @@ export default class VariantAttributesSyncService {
         });
       }
     }
+
+    if (!designUpdates.length) return;
 
     for (let i = 0; i < designUpdates.length; i += BATCH_SIZE) {
       const chunk = designUpdates.slice(i, i + BATCH_SIZE);
@@ -154,7 +172,14 @@ export default class VariantAttributesSyncService {
       const res = await nocoClient.listRecords(NOCODB_TABLES.SUPPLY.VARIANTS, {
         limit,
         page,
-        fields: ["id", "haravan_variant_id", "qty_available", "qty_commited", "qty_incoming", "qty_onhand"]
+        fields: [
+          "id",
+          "haravan_variant_id",
+          "qty_available",
+          "qty_commited",
+          "qty_incoming",
+          "qty_onhand"
+        ]
       });
       const batch = res.list || [];
       list.push(...batch);
