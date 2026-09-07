@@ -24,8 +24,6 @@ export default {
   scheduled: async (controller, env, _ctx) => {
     switch (controller.cron) {
       case "0 * * * *": // At minute 0 every hour
-        await new ERP.Telephony.CallLogService(env).syncVbotCallLogs();
-        await ERP.CRM.LeadService.syncCallLogLead(env);
         await ERP.Selling.SalesOrderService.fillSerialNumbersToTemporaryOrderItems(
           env
         );
@@ -55,6 +53,11 @@ export default {
         await new Misa.InventoryItemSyncService(env).syncInventoryItems();
         await new Haravan.OrderModule.DatabaseSyncService(env).sync();
         await new Haravan.Product.DatabaseSyncService(env).sync();
+        await new ERP.Telephony.CallLogService(env).syncVbotCallLogs();
+        await ERP.CRM.LeadService.syncCallLogLead(env);
+        await new ERP.Telephony.MisscallNotificationService(
+          env
+        ).notifyMisscalls();
         break;
       case "*/10 * * * *": // At every 10th minute
         await ERP.Selling.SerialService.syncSerialsToERP(env);

@@ -2,15 +2,20 @@ import FrappeClient from "src/frappe/frappe-client";
 import VbotClient from "src/telephony/vbot/vbot-client";
 import { normalizeToStandardFormat } from "services/utils/phone-utils";
 import dayjs from "dayjs";
+import customParseFormat from "dayjs/plugin/customParseFormat.js";
+import timezone from "dayjs/plugin/timezone.js";
 import utc from "dayjs/plugin/utc.js";
+import { TIMEZONE_VIETNAM } from "src/constants";
 
 dayjs.extend(utc);
+dayjs.extend(timezone);
+dayjs.extend(customParseFormat);
 
 const FIRST_ITEM = 0;
 const FIRST_PAGE = 1;
 const DATETIME_FORMAT = "YYYY-MM-DD HH:mm:ss";
-const SYNC_LOOKBACK_HOURS = 1;
-const SYNC_LOOKBACK_MINUTES = 5;
+const VBOT_DATETIME_FORMAT = "MM/DD/YYYY HH:mm:ss";
+const SYNC_LOOKBACK_MINUTES = 10;
 const SECONDS_IN_HOUR = 3600;
 const SECONDS_IN_MINUTE = 60;
 
@@ -36,7 +41,6 @@ export default class CallLogService {
   async syncVbotCallLogs() {
     const currentTimestamp = dayjs
       .utc()
-      .subtract(SYNC_LOOKBACK_HOURS, "hour")
       .subtract(SYNC_LOOKBACK_MINUTES, "minutes")
       .unix();
     let page = FIRST_PAGE;
@@ -46,7 +50,10 @@ export default class CallLogService {
       if (!callLogs?.length) return;
 
       for (const callLog of callLogs) {
-        const callLogUtc = dayjs(callLog.date_create).utc().unix();
+        const callLogUtc = dayjs
+          .tz(callLog.date_create, VBOT_DATETIME_FORMAT, TIMEZONE_VIETNAM)
+          .utc()
+          .unix();
         if (callLogUtc < currentTimestamp) return;
 
         const mappedCallLog = this.mapVbotCallLogFields(callLog);
@@ -78,13 +85,17 @@ export default class CallLogService {
     const from = isIncoming ? customerPhone : callLog.hotline_number;
     const to = isIncoming ? callLog.hotline_number : customerPhone;
 
-    const start_time = dayjs(callLog.date_create).utc().format(DATETIME_FORMAT);
+    const start_time = dayjs
+      .tz(callLog.date_create, VBOT_DATETIME_FORMAT, TIMEZONE_VIETNAM)
+      .utc()
+      .format(DATETIME_FORMAT);
     const [hours, minutes, seconds] = (callLog.duration_call || "00:00:00")
       .split(":")
       .map(Number);
     const duration =
       hours * SECONDS_IN_HOUR + minutes * SECONDS_IN_MINUTE + seconds;
-    const end_time = dayjs(start_time)
+    const end_time = dayjs
+      .utc(start_time)
       .add(duration, "second")
       .format(DATETIME_FORMAT);
     const recording_url = normalizeRecordingUrl(
