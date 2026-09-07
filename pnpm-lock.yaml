@@ -133,6 +133,9 @@ importers:
       lint-staged:
         specifier: ^16.1.5
         version: 16.1.5
+      prettier:
+        specifier: ^3.9.6
+        version: 3.9.6
       prisma:
         specifier: ^6.15.0
         version: 6.15.0(typescript@5.9.3)
@@ -4156,6 +4159,14 @@ packages:
       }
     engines: { node: ">= 0.8.0" }
 
+  prettier@3.9.6:
+    resolution:
+      {
+        integrity: sha512-OpN0zzVdiaiAhxpuuj5efpIS4sY9j7bY6uR5mnj5yPzGkdkjNKSJeUThPb60Jw29QuAZgA4o+/iB49kFiaBX6g==
+      }
+    engines: { node: ">=14" }
+    hasBin: true
+
   prisma@6.15.0:
     resolution:
       {
@@ -7322,6 +7333,8 @@ snapshots:
       xtend: 4.0.2
 
   prelude-ls@1.2.1: {}
+
+  prettier@3.9.6: {}
 
   prisma@6.15.0(typescript@5.9.3):
     dependencies:
