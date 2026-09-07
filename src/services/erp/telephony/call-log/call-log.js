@@ -50,7 +50,10 @@ export default class CallLogService {
       if (!callLogs?.length) return;
 
       for (const callLog of callLogs) {
-        const callLogUtc = dayjs.tz(callLog.date_create, VBOT_DATETIME_FORMAT, TIMEZONE_VIETNAM).utc().unix();
+        const callLogUtc = dayjs
+          .tz(callLog.date_create, VBOT_DATETIME_FORMAT, TIMEZONE_VIETNAM)
+          .utc()
+          .unix();
         if (callLogUtc < currentTimestamp) return;
 
         const mappedCallLog = this.mapVbotCallLogFields(callLog);
@@ -62,12 +65,17 @@ export default class CallLogService {
 
   mapVbotCallLogFields = (callLog) => {
     const id = callLog.group_id || callLog.external_call_id;
-    const allParticipants = [...(callLog.caller || []), ...(callLog.callee || [])];
+    const allParticipants = [
+      ...(callLog.caller || []),
+      ...(callLog.callee || [])
+    ];
     const agents = allParticipants.filter((p) => p.member_no);
-    const agent = agents.find((p) => p.disposition === "ANSWER") || agents[FIRST_ITEM];
+    const agent =
+      agents.find((p) => p.disposition === "ANSWER") || agents[FIRST_ITEM];
     const agent_id = agent?.member_no;
 
-    const isIncoming = callLog.type_call === "INCALL" || callLog.type_call === "MISSCALL";
+    const isIncoming =
+      callLog.type_call === "INCALL" || callLog.type_call === "MISSCALL";
     const type = isIncoming ? "Incoming" : "Outgoing";
 
     const customerPhone = isIncoming
@@ -77,18 +85,37 @@ export default class CallLogService {
     const from = isIncoming ? customerPhone : callLog.hotline_number;
     const to = isIncoming ? callLog.hotline_number : customerPhone;
 
-    const start_time = dayjs.tz(callLog.date_create, VBOT_DATETIME_FORMAT, TIMEZONE_VIETNAM).utc().format(DATETIME_FORMAT);
-    const [hours, minutes, seconds] = (callLog.duration_call || "00:00:00").split(":").map(Number);
-    const duration = hours * SECONDS_IN_HOUR + minutes * SECONDS_IN_MINUTE + seconds;
-    const end_time = dayjs.utc(start_time).add(duration, "second").format(DATETIME_FORMAT);
-    const recording_url = normalizeRecordingUrl(callLog.record_file?.[FIRST_ITEM]);
+    const start_time = dayjs
+      .tz(callLog.date_create, VBOT_DATETIME_FORMAT, TIMEZONE_VIETNAM)
+      .utc()
+      .format(DATETIME_FORMAT);
+    const [hours, minutes, seconds] = (callLog.duration_call || "00:00:00")
+      .split(":")
+      .map(Number);
+    const duration =
+      hours * SECONDS_IN_HOUR + minutes * SECONDS_IN_MINUTE + seconds;
+    const end_time = dayjs
+      .utc(start_time)
+      .add(duration, "second")
+      .format(DATETIME_FORMAT);
+    const recording_url = normalizeRecordingUrl(
+      callLog.record_file?.[FIRST_ITEM]
+    );
     const disposition = String(callLog?.disposition).toLowerCase();
 
     return {
       doctype: this.doctype,
-      id, provider: "vbot",
-      from: normalizeToStandardFormat(from), to: normalizeToStandardFormat(to),
-      start_time, end_time, duration, type, recording_url, agent_id, disposition
+      id,
+      provider: "vbot",
+      from: normalizeToStandardFormat(from),
+      to: normalizeToStandardFormat(to),
+      start_time,
+      end_time,
+      duration,
+      type,
+      recording_url,
+      agent_id,
+      disposition
     };
   };
 }

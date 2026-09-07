@@ -3,7 +3,7 @@ import ApprovalOrderService from "services/larksuite/approval/approval-order-ser
 export default class LarkApprovalOrdersController {
   static async create(ctx) {
     try {
-      const { token, linkage_params } = await ctx.req.json() || {};
+      const { token, linkage_params } = (await ctx.req.json()) || {};
 
       const expectedToken = ctx.env.BEARER_TOKEN;
       if (token !== expectedToken) {
@@ -15,7 +15,8 @@ export default class LarkApprovalOrdersController {
       }
 
       const service = new ApprovalOrderService(ctx.env);
-      const { options, i18nResources } = await service.searchOrders(linkage_params);
+      const { options, i18nResources } =
+        await service.searchOrders(linkage_params);
 
       return ctx.json({
         code: 0,
@@ -27,7 +28,6 @@ export default class LarkApprovalOrdersController {
           }
         }
       });
-
     } catch (e) {
       console.warn(e);
       return ctx.json({
@@ -37,4 +37,4 @@ export default class LarkApprovalOrdersController {
       });
     }
   }
-};
+}

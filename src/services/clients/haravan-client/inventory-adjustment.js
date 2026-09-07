@@ -10,7 +10,9 @@ class InventoryAdjustmentConnector extends BaseConnector {
   }
 
   async createInventoryAdjustment(adjustmentData) {
-    return this.post("/inventory_adjustments.json", { inventory_adjustment: adjustmentData });
+    return this.post("/inventory_adjustments.json", {
+      inventory_adjustment: adjustmentData
+    });
   }
 }
 

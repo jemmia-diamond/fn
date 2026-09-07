@@ -27,7 +27,9 @@ export default class VariantSyncService {
     const lastSyncDate = await kv.get(KV_KEY);
 
     const fromDate = lastSyncDate
-      ? dayjs(lastSyncDate).subtract(5, "minutes").format("YYYY-MM-DDTHH:mm:ss[Z]")
+      ? dayjs(lastSyncDate)
+          .subtract(5, "minutes")
+          .format("YYYY-MM-DDTHH:mm:ss[Z]")
       : dayjs().utc().subtract(1, "hour").format("YYYY-MM-DDTHH:mm:ss[Z]");
 
     const updatedAtMin = fromDate;
@@ -39,7 +41,10 @@ export default class VariantSyncService {
       await this._fetchAndProcessVariants(haravanClient, updatedAtMin);
       await kv.put(KV_KEY, toDate);
     } catch (error) {
-      if (lastSyncDate && dayjs(toDate).diff(dayjs(lastSyncDate), "hour") >= 1) {
+      if (
+        lastSyncDate &&
+        dayjs(toDate).diff(dayjs(lastSyncDate), "hour") >= 1
+      ) {
         await kv.put(KV_KEY, toDate);
       }
       Sentry.captureException(error);
@@ -72,14 +77,16 @@ export default class VariantSyncService {
         } else {
           hasMore = false;
         }
-
       } catch (error) {
         if (error.status === 429) {
           const retryAfter = parseFloat(error.retryAfter || 2);
-          const allowedRetrySeconds = VariantSyncService.MAX_RETRY_AFTER_SECONDS;
+          const allowedRetrySeconds =
+            VariantSyncService.MAX_RETRY_AFTER_SECONDS;
 
           if (retryAfter > allowedRetrySeconds) {
-            throw new Error(`Rate limited for ${retryAfter}s (exceeds ${allowedRetrySeconds}s threshold)`);
+            throw new Error(
+              `Rate limited for ${retryAfter}s (exceeds ${allowedRetrySeconds}s threshold)`
+            );
           }
 
           await this._sleep(retryAfter * 1000);
@@ -92,7 +99,7 @@ export default class VariantSyncService {
   }
 
   _sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   _mapVariant(variant, product) {
@@ -106,8 +113,12 @@ export default class VariantSyncService {
       product_title: product.title,
       product_vendor: product.vendor,
       barcode: variant.barcode,
-      compare_at_price: variant.compare_at_price ? parseFloat(variant.compare_at_price) : null,
-      created_at: variant.created_at ? dayjs(variant.created_at).toDate() : null,
+      compare_at_price: variant.compare_at_price
+        ? parseFloat(variant.compare_at_price)
+        : null,
+      created_at: variant.created_at
+        ? dayjs(variant.created_at).toDate()
+        : null,
       fulfillment_service: variant.fulfillment_service,
       grams: variant.grams,
       inventory_management: variant.inventory_management,
@@ -119,7 +130,9 @@ export default class VariantSyncService {
       sku: variant.sku,
       taxable: variant.taxable === true,
       title: variant.title,
-      updated_at: variant.updated_at ? dayjs(variant.updated_at).toDate() : null,
+      updated_at: variant.updated_at
+        ? dayjs(variant.updated_at).toDate()
+        : null,
       image_id: variant.image_id ? BigInt(variant.image_id) : null,
       option1: variant.option1,
       option2: variant.option2,
@@ -149,7 +162,7 @@ export default class VariantSyncService {
 
     const currentDateTime = dayjs().utc().toDate();
     await this.db.$transaction(async (tx) => {
-      const operations = variantsToUpsert.map(variantData => {
+      const operations = variantsToUpsert.map((variantData) => {
         const id = variantData.id;
         delete variantData.id;
 

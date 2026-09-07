@@ -10,7 +10,7 @@ export default class BankOptionsService {
     const client = createAxiosClient({
       baseURL: "https://my.sepay.vn/userapi/bankaccounts/list",
       headers: {
-        "Authorization": `Bearer ${token}`
+        Authorization: `Bearer ${token}`
       }
     });
 
@@ -18,7 +18,7 @@ export default class BankOptionsService {
     const data = response.data;
 
     if (data && data.bankaccounts) {
-      return data.bankaccounts.map(account => ({
+      return data.bankaccounts.map((account) => ({
         bank: account.bank_full_name,
         bankCode: account.bank_code,
         bankAccountNumber: account.account_number,

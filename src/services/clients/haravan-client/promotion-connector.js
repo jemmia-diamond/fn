@@ -14,7 +14,9 @@ class PromotionConnector extends BaseConnector {
   }
 
   async updatePromotion(promotionId, promotionData) {
-    return this.put(`/promotions/${promotionId}.json`, { promotion: promotionData });
+    return this.put(`/promotions/${promotionId}.json`, {
+      promotion: promotionData
+    });
   }
 
   async deletePromotion(promotionId) {

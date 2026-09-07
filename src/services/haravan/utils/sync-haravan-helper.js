@@ -10,11 +10,19 @@ export default class SyncHaravanHelper {
         const hrefMatch = attrs.match(/href=["\x27]([^"\x27]+)["\x27]/i);
         let res = `<${tag}`;
         if (srcMatch) {
-          const filename = srcMatch[1].split("/").pop().split("?")[0].replace(/^en_/, "");
+          const filename = srcMatch[1]
+            .split("/")
+            .pop()
+            .split("?")[0]
+            .replace(/^en_/, "");
           res += ` src="${filename}"`;
         }
         if (hrefMatch) {
-          const filename = hrefMatch[1].split("/").pop().split("?")[0].replace(/^en_/, "");
+          const filename = hrefMatch[1]
+            .split("/")
+            .pop()
+            .split("?")[0]
+            .replace(/^en_/, "");
           res += ` href="${filename}"`;
         }
         return res + ">";

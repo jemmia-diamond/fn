@@ -67,7 +67,9 @@ export default class SubmittedCodesController {
         if (matches.length === 0) {
           notFoundCodes.push(code);
         } else {
-          const hasDuplicateDesign = matches.some((d) => designIdCounts[d.id] > 1);
+          const hasDuplicateDesign = matches.some(
+            (d) => designIdCounts[d.id] > 1
+          );
           if (hasDuplicateDesign || matches.length > 1) {
             duplicatesCodes.push(code);
           }
@@ -82,7 +84,8 @@ export default class SubmittedCodesController {
         return sorted.map((c) => `         ${c}`).join("\n");
       };
 
-      const notes = "Duplicates:\n" +
+      const notes =
+        "Duplicates:\n" +
         formatCodesList(uniqueDuplicates) +
         "\nNot Found in RnD Designs Table:\n" +
         formatCodesList(uniqueNotFound);
@@ -92,14 +95,21 @@ export default class SubmittedCodesController {
         notes: notes
       });
 
-      return ctx.json({ message: "Check out completed, notes updated", notes }, 200);
+      return ctx.json(
+        { message: "Check out completed, notes updated", notes },
+        200
+      );
     } else {
       const designIds = [...new Set(matchedRows.map((r) => r.id))];
-      const erpCodes = [...new Set(matchedRows.filter((r) => r.erp_code).map((r) => r.erp_code))];
+      const erpCodes = [
+        ...new Set(matchedRows.filter((r) => r.erp_code).map((r) => r.erp_code))
+      ];
 
       let applyFilter = `(id,in,${designIds.join(",")})`;
       if (erpCodes.length > 0) {
-        const escapedErpCodes = erpCodes.map((c) => encodeURIComponent(c)).join(",");
+        const escapedErpCodes = erpCodes
+          .map((c) => encodeURIComponent(c))
+          .join(",");
         applyFilter += `~or(erp_code,in,${escapedErpCodes})`;
       }
 
@@ -116,7 +126,10 @@ export default class SubmittedCodesController {
         await nocoClient.updateRecords(designsTableId, updatePayload);
       }
 
-      return ctx.json({ message: "Tag applied to matched designs successfully" }, 200);
+      return ctx.json(
+        { message: "Tag applied to matched designs successfully" },
+        200
+      );
     }
   }
 }

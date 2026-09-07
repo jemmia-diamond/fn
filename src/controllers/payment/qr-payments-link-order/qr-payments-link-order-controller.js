@@ -1,7 +1,6 @@
 import PaymentService from "services/payment";
 
 export default class QRPaymentsLinkOrderController {
-
   static async create(c) {
     const { id } = c.req.param();
     if (!id) {

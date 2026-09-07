@@ -1,4 +1,7 @@
-import { SKU_LENGTH, SKU_PREFIX } from "services/haravan/products/product-variant/constant";
+import {
+  SKU_LENGTH,
+  SKU_PREFIX
+} from "services/haravan/products/product-variant/constant";
 
 /**
  * Validates the completeness of the sales order data.
@@ -59,19 +62,26 @@ const validateOrderCompleteness = (salesOrderData, customer) => {
 
   const lineItems = salesOrderData.items;
 
-  if (lineItems.some(item => item.sku === null)) {
+  if (lineItems.some((item) => item.sku === null)) {
     message = "Chưa nhập SKU sản phẩm, vui lòng kiểm tra lại";
     return { isValid: false, message };
   }
 
-  const jewelryItems = lineItems.filter((item) => (item.sku?.length === SKU_LENGTH.JEWELRY || item.sku?.startsWith(SKU_PREFIX.TEMPORARY_JEWELRY)));
-  const missingSerialItems = jewelryItems.filter((item) => !item.serial_numbers || item.serial_numbers.trim() === "");
+  const jewelryItems = lineItems.filter(
+    (item) =>
+      item.sku?.length === SKU_LENGTH.JEWELRY ||
+      item.sku?.startsWith(SKU_PREFIX.TEMPORARY_JEWELRY)
+  );
+  const missingSerialItems = jewelryItems.filter(
+    (item) => !item.serial_numbers || item.serial_numbers.trim() === ""
+  );
 
   if (missingSerialItems.length > 0) {
     const ordersMap = {};
     for (const item of missingSerialItems) {
       const soName = item.parent || salesOrderData.name;
-      const orderNumber = item.parent_order_number || salesOrderData.order_number;
+      const orderNumber =
+        item.parent_order_number || salesOrderData.order_number;
       if (!ordersMap[soName]) {
         ordersMap[soName] = {
           order_name: soName,
@@ -93,7 +103,10 @@ const validateOrderCompleteness = (salesOrderData, customer) => {
 };
 
 export const validateSalesOrder = (salesOrderData, customer) => {
-  const completenessValidation = validateOrderCompleteness(salesOrderData, customer);
+  const completenessValidation = validateOrderCompleteness(
+    salesOrderData,
+    customer
+  );
   if (!completenessValidation.isValid) {
     return completenessValidation;
   }

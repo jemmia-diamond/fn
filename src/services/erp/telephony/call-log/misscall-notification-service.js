@@ -22,7 +22,10 @@ export default class MisscallNotificationService {
 
   formatCard(callLog, agentText) {
     const formattedTime = callLog.start_time
-      ? dayjs.utc(callLog.start_time).tz(TIMEZONE_VIETNAM).format("DD/MM/YYYY HH:mm:ss")
+      ? dayjs
+          .utc(callLog.start_time)
+          .tz(TIMEZONE_VIETNAM)
+          .format("DD/MM/YYYY HH:mm:ss")
       : dayjs().tz(TIMEZONE_VIETNAM).format("DD/MM/YYYY HH:mm:ss");
 
     const erpBaseUrl = this.env.JEMMIA_ERP_BASE_URL.replace(/\/$/, "");
@@ -89,7 +92,9 @@ export default class MisscallNotificationService {
     });
     if (!misscalls?.length) return;
 
-    const agentEmails = [...new Set(misscalls.map(c => c.agent).filter(Boolean))];
+    const agentEmails = [
+      ...new Set(misscalls.map((c) => c.agent).filter(Boolean))
+    ];
     const userTags = {};
 
     if (agentEmails?.length) {
@@ -103,8 +108,9 @@ export default class MisscallNotificationService {
         select: { enterprise_email: true, email: true, user_id: true }
       });
 
-      users.forEach(u => {
-        if (u.enterprise_email) userTags[u.enterprise_email] = `<at id="${u.user_id}"></at>`;
+      users.forEach((u) => {
+        if (u.enterprise_email)
+          userTags[u.enterprise_email] = `<at id="${u.user_id}"></at>`;
         if (u.email) userTags[u.email] = `<at id="${u.user_id}"></at>`;
       });
     }
@@ -112,18 +118,20 @@ export default class MisscallNotificationService {
     const larkClient = await LarksuiteService.createClientV2(this.env);
     for (const callLog of misscalls) {
       const agentText = callLog.agent
-        ? (userTags[callLog.agent] || callLog.agent_name || callLog.agent)
-        : (callLog.agent_name || null);
+        ? userTags[callLog.agent] || callLog.agent_name || callLog.agent
+        : callLog.agent_name || null;
 
       const card = this.formatCard(callLog, agentText);
-      const res = await retryRequest(() => larkClient.im.message.create({
-        params: { receive_id_type: "chat_id" },
-        data: {
-          receive_id: this.chatId,
-          msg_type: "interactive",
-          content: JSON.stringify(card)
-        }
-      }));
+      const res = await retryRequest(() =>
+        larkClient.im.message.create({
+          params: { receive_id_type: "chat_id" },
+          data: {
+            receive_id: this.chatId,
+            msg_type: "interactive",
+            content: JSON.stringify(card)
+          }
+        })
+      );
 
       const message_id = res?.data?.message_id;
       if (message_id) {

@@ -7,12 +7,12 @@ export default class WarehouseService {
   }
 
   /**
-     * Fetch list of warehouses from Salesaya service
-     *
-     * @returns {Promise<Array>} List of warehouses with format:
-     *   id: string,
-     *   name: string,
-     */
+   * Fetch list of warehouses from Salesaya service
+   *
+   * @returns {Promise<Array>} List of warehouses with format:
+   *   id: string,
+   *   name: string,
+   */
   async fetchWarehouses() {
     const warehouses = await this.db.haravanWarehouses.findMany({
       where: {
