@@ -326,7 +326,7 @@ export default class ConversationSyncService {
 
     const client = createAxiosClient(
       {
-        baseURL: "https://api.salesaya.com",
+        baseURL: this.env.SALESAYA_API_BASE_URL,
         headers: { "Content-Type": "application/json" },
         timeout: 5000
       },
