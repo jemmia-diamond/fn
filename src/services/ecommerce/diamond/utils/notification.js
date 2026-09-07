@@ -10,21 +10,23 @@ export async function sendPromotionSyncNotification(env, text) {
   try {
     const larkClient = await LarksuiteService.createClientV2(env);
 
-    const promises = NOTIFICATION_CHAT_IDS.map(receiveId =>
-      larkClient.im.message.create({
-        params: {
-          receive_id_type: "chat_id"
-        },
-        data: {
-          receive_id: receiveId,
-          msg_type: "text",
-          content: JSON.stringify({
-            text: text
-          })
-        }
-      }).catch(err => {
-        Sentry.captureException(err, { tags: { receiveId } });
-      })
+    const promises = NOTIFICATION_CHAT_IDS.map((receiveId) =>
+      larkClient.im.message
+        .create({
+          params: {
+            receive_id_type: "chat_id"
+          },
+          data: {
+            receive_id: receiveId,
+            msg_type: "text",
+            content: JSON.stringify({
+              text: text
+            })
+          }
+        })
+        .catch((err) => {
+          Sentry.captureException(err, { tags: { receiveId } });
+        })
     );
 
     await Promise.all(promises);

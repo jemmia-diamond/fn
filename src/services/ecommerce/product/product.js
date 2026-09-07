@@ -182,7 +182,9 @@ export default class ProductService {
     }
 
     const setProduct = setProducts[0];
-    const designIds = (setProduct.design_ids || []).filter(dId => dId != null);
+    const designIds = (setProduct.design_ids || []).filter(
+      (dId) => dId != null
+    );
 
     let linkedProductsData = [];
     if (designIds.length > 0) {
@@ -209,7 +211,8 @@ export default class ProductService {
     const { variantJsonBuildObject, lateralJoinClause } =
       buildQuerySingleV2(options);
 
-    const result = await retryQuery(() => this.db.$queryRaw`
+    const result = await retryQuery(
+      () => this.db.$queryRaw`
       SELECT
         CAST(p.haravan_product_id AS INT) AS id,
         p.title,
@@ -245,7 +248,8 @@ export default class ProductService {
           p.max_price, p.min_price, p.max_price_18, p.max_price_14,
           p.qty_onhand, p.has_360, p.estimated_gold_weight,
           p.primary_collection, p.primary_collection_handle, p.sold_quantity
-    `);
+    `
+    );
     return result?.[0] || null;
   }
 }

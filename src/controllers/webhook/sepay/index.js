@@ -5,6 +5,9 @@ export default class SepayWebhook {
   static async register(webhook) {
     const sepayWebhookNamespace = webhook.basePath("/sepay");
     sepayWebhookNamespace.use("*", verifySepayWebhook);
-    sepayWebhookNamespace.post("transactions", SepayTransactionController.create);
+    sepayWebhookNamespace.post(
+      "transactions",
+      SepayTransactionController.create
+    );
   }
 }

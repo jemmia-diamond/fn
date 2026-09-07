@@ -14,9 +14,6 @@ export default class LarkWebhook {
       "/approval/orders-options",
       LarkApprovalOrdersController.create
     );
-    namespace.post(
-      "/appointment",
-      LarkAppointmentController.create
-    );
+    namespace.post("/appointment", LarkAppointmentController.create);
   }
 }

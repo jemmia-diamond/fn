@@ -33,7 +33,7 @@ export default class UptimeReportSyncService {
       throw new Error(`No monitors found at ${endDate}`);
     }
 
-    const targetMonitors = monitorIds || allMonitors.map(m => m.id);
+    const targetMonitors = monitorIds || allMonitors.map((m) => m.id);
     const dates = [];
     let iterDate = startDate;
 
@@ -43,7 +43,11 @@ export default class UptimeReportSyncService {
     }
 
     for (const date of dates) {
-      const reports = await this._fetchDailyUptimeForAllMonitors(targetMonitors, date, allMonitors);
+      const reports = await this._fetchDailyUptimeForAllMonitors(
+        targetMonitors,
+        date,
+        allMonitors
+      );
 
       for (const report of reports) {
         await this.db.reportingUptimeReport.upsert({
@@ -72,13 +76,20 @@ export default class UptimeReportSyncService {
     const endTimestamp = dayjs(date).endOf("day").unix();
 
     const response = await this.client.getMonitors(
-      monitorIds, LOGS_LIMIT, DEFAULT_LOG_TYPE, `${startTimestamp}_${endTimestamp}`
+      monitorIds,
+      LOGS_LIMIT,
+      DEFAULT_LOG_TYPE,
+      `${startTimestamp}_${endTimestamp}`
     );
 
     const reports = [];
     for (const monitor of response.monitors) {
-      const uptimePercentage = parseFloat(monitor.custom_uptime_ranges || "100");
-      const uptime = Math.round((uptimePercentage / PERCENTAGE_DIVISOR) * SECONDS_IN_DAY);
+      const uptimePercentage = parseFloat(
+        monitor.custom_uptime_ranges || "100"
+      );
+      const uptime = Math.round(
+        (uptimePercentage / PERCENTAGE_DIVISOR) * SECONDS_IN_DAY
+      );
       const downtime = SECONDS_IN_DAY - uptime;
 
       reports.push({

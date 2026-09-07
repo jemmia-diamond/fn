@@ -10,7 +10,10 @@ export default class AvailabilityController {
     const locId = Number(locIdParam);
 
     if (!locIdParam || !Number.isInteger(locId)) {
-      return ctx.json({ success: false, error: "Location ID is missing or invalid" }, 400);
+      return ctx.json(
+        { success: false, error: "Location ID is missing or invalid" },
+        400
+      );
     }
 
     const availabilityService = new Inventory.AvailabilityService(ctx.env);

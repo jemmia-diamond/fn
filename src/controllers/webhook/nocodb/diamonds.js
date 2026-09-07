@@ -4,7 +4,11 @@ export default class DiamondsController {
   static async handle(ctx) {
     const payload = await ctx.req.json();
 
-    if (!payload?.type || !payload?.data || payload.type !== "records.after.update") {
+    if (
+      !payload?.type ||
+      !payload?.data ||
+      payload.type !== "records.after.update"
+    ) {
       return ctx.json({ message: "Invalid or ignored payload" }, 200);
     }
 

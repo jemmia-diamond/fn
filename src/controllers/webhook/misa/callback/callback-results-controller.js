@@ -7,15 +7,19 @@ export default class CallbackResultsController {
     const payload = await ctx.req.json();
     const firstVoucher = JSON.parse(payload.data)[0];
 
-    const isSaveFunction = payload.data_type === Misa.Constants.CALLBACK_TYPE.SAVE_FUNCTION;
+    const isSaveFunction =
+      payload.data_type === Misa.Constants.CALLBACK_TYPE.SAVE_FUNCTION;
     const isPaymentVoucher = [
-      Misa.Constants.VOUCHER_TYPES.MANUAL_PAYMENT, Misa.Constants.VOUCHER_TYPES.QR_PAYMENT
+      Misa.Constants.VOUCHER_TYPES.MANUAL_PAYMENT,
+      Misa.Constants.VOUCHER_TYPES.QR_PAYMENT
     ].includes(firstVoucher.voucher_type);
 
     if (isSaveFunction && isPaymentVoucher) {
-      await ctx.env["MISA_QUEUE"].send(payload, { delaySeconds: ONE_MINUTE_DELAY });
+      await ctx.env["MISA_QUEUE"].send(payload, {
+        delaySeconds: ONE_MINUTE_DELAY
+      });
     }
 
     return ctx.json({ message: "Message receive", status: 200 });
-  };
-};
+  }
+}

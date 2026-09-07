@@ -19,7 +19,7 @@ export default class LeadController {
     const leadService = new ERP.CRM.LeadService(ctx.env);
     const data = await ctx.req.json();
     const { id } = ctx.req.param();
-    if(!id) {
+    if (!id) {
       return ctx.json({ success: false, data: "Lead id is required" }, 400);
     }
     const response = await leadService.updateLeadFromSalesaya(id, data);

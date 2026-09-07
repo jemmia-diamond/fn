@@ -11,14 +11,44 @@ import FrappeERPAppointmentsController from "controllers/webhook/frappe/erp/appo
 export default class FrappeWebhook {
   static register(webhook) {
     const frappeWebhookNamespace = webhook.basePath("/frappe");
-    frappeWebhookNamespace.use("*", verifyHmacBase64Auth("X-Frappe-Webhook-Signature", "FRAPPE_WEBHOOK_SECRET"));
-    frappeWebhookNamespace.post("/pancake/conversation_assignments", FrappePancakeConversationAssignmentController.create);
-    frappeWebhookNamespace.post("/pancake/lead_owner_assignments", FrappePancakeLeadOwnerAssignmentController.create);
-    frappeWebhookNamespace.post("/erp/contacts", FrappeERPContactsController.create);
-    frappeWebhookNamespace.post("/erp/sales-orders", FrappeERPSalesOrderController.create);
-    frappeWebhookNamespace.post("/erp/payment-entries", FrappeERPPaymentEntryController.create);
-    frappeWebhookNamespace.post("/erp/customers", FrappeERPCustomerController.create);
-    frappeWebhookNamespace.post("/erp/sales-order-items", FrappeERPSalesOrderItemController.create);
-    frappeWebhookNamespace.post("/erp/appointments", FrappeERPAppointmentsController.create);
+    frappeWebhookNamespace.use(
+      "*",
+      verifyHmacBase64Auth(
+        "X-Frappe-Webhook-Signature",
+        "FRAPPE_WEBHOOK_SECRET"
+      )
+    );
+    frappeWebhookNamespace.post(
+      "/pancake/conversation_assignments",
+      FrappePancakeConversationAssignmentController.create
+    );
+    frappeWebhookNamespace.post(
+      "/pancake/lead_owner_assignments",
+      FrappePancakeLeadOwnerAssignmentController.create
+    );
+    frappeWebhookNamespace.post(
+      "/erp/contacts",
+      FrappeERPContactsController.create
+    );
+    frappeWebhookNamespace.post(
+      "/erp/sales-orders",
+      FrappeERPSalesOrderController.create
+    );
+    frappeWebhookNamespace.post(
+      "/erp/payment-entries",
+      FrappeERPPaymentEntryController.create
+    );
+    frappeWebhookNamespace.post(
+      "/erp/customers",
+      FrappeERPCustomerController.create
+    );
+    frappeWebhookNamespace.post(
+      "/erp/sales-order-items",
+      FrappeERPSalesOrderItemController.create
+    );
+    frappeWebhookNamespace.post(
+      "/erp/appointments",
+      FrappeERPAppointmentsController.create
+    );
   }
 }

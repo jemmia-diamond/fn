@@ -24,7 +24,7 @@ const barcodeConfig = {
   "Móc Khoá": "KC",
   "Nhẫn Unisex": "UR",
   "Nhẫn Unisex Nguyên Chiếc": "UF",
-  "Charm": "CH"
+  Charm: "CH"
 };
 
 export default class VariantCreatorService {
@@ -61,12 +61,20 @@ export default class VariantCreatorService {
 
     const nocoClient = new NocoDBClient(this.env);
 
-    const productId = data.products?.id || data.products_id || data.product_id || data.products || 0;
+    const productId =
+      data.products?.id ||
+      data.products_id ||
+      data.product_id ||
+      data.products ||
+      0;
     if (!productId) {
       throw new Error("Parent product ID is missing");
     }
 
-    const product = await nocoClient.readRecord(NOCODB_TABLES.SUPPLY.JEWELRIES, productId);
+    const product = await nocoClient.readRecord(
+      NOCODB_TABLES.SUPPLY.JEWELRIES,
+      productId
+    );
     const haravanProductId = product?.haravan_product_id;
     const productType = product?.haravan_product_type;
 
@@ -76,10 +84,13 @@ export default class VariantCreatorService {
 
     let designType = "";
     if (design_code) {
-      const designs = await nocoClient.listRecords(NOCODB_TABLES.SUPPLY.DESIGNS, {
-        where: `(design_code,eq,${design_code})`,
-        limit: 1
-      });
+      const designs = await nocoClient.listRecords(
+        NOCODB_TABLES.SUPPLY.DESIGNS,
+        {
+          where: `(design_code,eq,${design_code})`,
+          limit: 1
+        }
+      );
       const designInfo = designs.list?.[0] || null;
       if (designInfo) {
         designType = designInfo.design_type;
@@ -94,7 +105,13 @@ export default class VariantCreatorService {
       throw new Error(`Design type not found for design code: ${design_code}`);
     }
 
-    const { validated, note } = validate(designType, size_type, ring_size, fineness, material_color);
+    const { validated, note } = validate(
+      designType,
+      size_type,
+      ring_size,
+      fineness,
+      material_color
+    );
     if (!validated) {
       await nocoClient.updateRecords(tableId, {
         id: recordId,
@@ -110,7 +127,9 @@ export default class VariantCreatorService {
 
     const barcodePrefix = barcodeConfig[productType];
     if (!barcodePrefix) {
-      throw new Error(`No barcode prefix configured for product type: ${productType}`);
+      throw new Error(
+        `No barcode prefix configured for product type: ${productType}`
+      );
     }
     const barcode = await generateBarcode(nocoClient, barcodePrefix);
 
@@ -134,16 +153,25 @@ export default class VariantCreatorService {
     };
 
     const haravanApi = new HaravanAPI(this.env.HARAVAN_NOCODB_TOKEN);
-    const haravanProduct = await haravanApi.product.getProduct(haravanProductId);
+    const haravanProduct =
+      await haravanApi.product.getProduct(haravanProductId);
     const haravanVariants = haravanProduct?.product?.variants || [];
-    const defaultVariant = haravanVariants.find(v => v.title === "Default Title");
+    const defaultVariant = haravanVariants.find(
+      (v) => v.title === "Default Title"
+    );
 
     let haravanVariantId;
     if (defaultVariant) {
       haravanVariantId = defaultVariant.id;
-      await haravanApi.productVariant.updateVariant(haravanVariantId, variantData);
+      await haravanApi.productVariant.updateVariant(
+        haravanVariantId,
+        variantData
+      );
     } else {
-      const createdVariant = await haravanApi.productVariant.createVariant(haravanProductId, variantData);
+      const createdVariant = await haravanApi.productVariant.createVariant(
+        haravanProductId,
+        variantData
+      );
       haravanVariantId = createdVariant?.variant?.id;
     }
 
@@ -175,9 +203,10 @@ async function generateBarcode(nocoClient, prefix, length = 11) {
     limit: 100
   });
 
-  const maxBarcode = records.list
-    ?.filter(v => v.barcode && v.barcode.length === length)
-    ?.map(v => v.barcode)?.[0] || null;
+  const maxBarcode =
+    records.list
+      ?.filter((v) => v.barcode && v.barcode.length === length)
+      ?.map((v) => v.barcode)?.[0] || null;
 
   if (!maxBarcode) {
     return `${prefix}${formatNumber(1, length - prefix.length)}`;

@@ -1,7 +1,8 @@
 import HaravanAPI from "services/clients/haravan-client";
 import NocoDBClient from "services/clients/nocodb-client";
 
-const SHAPE_IMAGES_BASE_URL = "https://cdn.jemmia.vn/nc/uploads/noco/diamond-shapes";
+const SHAPE_IMAGES_BASE_URL =
+  "https://cdn.jemmia.vn/nc/uploads/noco/diamond-shapes";
 
 export default class DiamondAutoCreateService {
   constructor(env) {
@@ -12,7 +13,16 @@ export default class DiamondAutoCreateService {
     const haravanApi = new HaravanAPI(this.env.HARAVAN_NOCODB_TOKEN);
     const nocoClient = new NocoDBClient(this.env);
 
-    const { id, product_name, vendor, shape, promotions, original_code, price, SKU } = row;
+    const {
+      id,
+      product_name,
+      vendor,
+      shape,
+      promotions,
+      original_code,
+      price,
+      SKU
+    } = row;
 
     const created = await haravanApi.product.createProduct({
       title: product_name,

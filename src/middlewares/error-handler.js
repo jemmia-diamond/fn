@@ -6,7 +6,9 @@ export default async (c, next) => {
     await next();
 
     // Don't send 404 responses to Sentry
-    if (c.res.status === 404) { return; }
+    if (c.res.status === 404) {
+      return;
+    }
   } catch (error) {
     Sentry.captureException(error, {
       fingerprint: [error.name || "Error", error.message || "Unknown error"]

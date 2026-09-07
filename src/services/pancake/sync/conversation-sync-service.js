@@ -192,7 +192,10 @@ export default class ConversationSyncService {
     }
 
     let lastSentAt = null;
-    if (item.page_id && !PAGES_EXCLUDED_FROM_LAST_SENT_AT_UPDATE.includes(item.page_id)) {
+    if (
+      item.page_id &&
+      !PAGES_EXCLUDED_FROM_LAST_SENT_AT_UPDATE.includes(item.page_id)
+    ) {
       lastSentAt = item.updated_at ? dayjs.utc(item.updated_at).toDate() : null;
     }
 

@@ -26,7 +26,9 @@ class CustomerConnector extends BaseConnector {
   }
 
   async updateCustomer(customerId, customerData) {
-    return this.put(`/customers/${customerId}.json`, { customer: customerData });
+    return this.put(`/customers/${customerId}.json`, {
+      customer: customerData
+    });
   }
 
   async deleteCustomer(customerId) {

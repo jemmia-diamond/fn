@@ -38,9 +38,7 @@ export default class ConversationService {
     return result;
   }
 
-  async findPageInfo({
-    pageId
-  }) {
+  async findPageInfo({ pageId }) {
     if (!pageId) return null;
     const result = await this.db.$queryRaw`
       SELECT * FROM pancake.page AS p
@@ -71,12 +69,20 @@ export default class ConversationService {
     const insertedAt = message.inserted_at;
 
     if (!insertedAt || !conversationId || !pageId) {
-      console.warn("Missing required fields for processLastCustomerMessage. Page ID: " + pageId + ", Conversation ID: " + conversationId + ", Inserted At: " + insertedAt);
+      console.warn(
+        "Missing required fields for processLastCustomerMessage. Page ID: " +
+          pageId +
+          ", Conversation ID: " +
+          conversationId +
+          ", Inserted At: " +
+          insertedAt
+      );
       return;
     }
     await this.updateConversation(conversationId, pageId, insertedAt);
 
-    const frappeNameId = await this.leadService.getLeadNameByConversationId(conversationId);
+    const frappeNameId =
+      await this.leadService.getLeadNameByConversationId(conversationId);
     if (frappeNameId) {
       await this.leadService.updateLeadLastMessage({
         frappeNameId,
@@ -97,7 +103,8 @@ export default class ConversationService {
 
     await this.updateLastSalesMessageAt(conversationId, pageId, insertedAt);
 
-    const frappeNameId = await this.leadService.getLeadNameByConversationId(conversationId);
+    const frappeNameId =
+      await this.leadService.getLeadNameByConversationId(conversationId);
     if (frappeNameId) {
       await this.leadService.updateLeadLastMessage({
         frappeNameId,
@@ -152,15 +159,16 @@ export default class ConversationService {
     const conversationId = message?.conversation_id;
     if (!conversationId) return;
 
-    const frappeNameId = await this.leadService.getLeadNameByConversationId(conversationId);
+    const frappeNameId =
+      await this.leadService.getLeadNameByConversationId(conversationId);
 
     if (!frappeNameId) return;
 
     const aihub = new AIHUBClient(env);
     return await aihub.makeRequest("/lead-info", {
-      "pageId": body.page_id,
-      "conversationId": conversationId,
-      "webhookUrl": `${env.HOST}/webhook/ai-hub/erp/leads`
+      pageId: body.page_id,
+      conversationId: conversationId,
+      webhookUrl: `${env.HOST}/webhook/ai-hub/erp/leads`
     });
   }
 
@@ -168,19 +176,27 @@ export default class ConversationService {
     const pageId = data?.page_id;
     const conversationId = data?.data?.conversation?.id;
     if (!pageId || !conversationId) return;
-    const globalId = await PancakeCache.getMessageGlobalId(this.pancakeClient, pageId, conversationId, this.env);
+    const globalId = await PancakeCache.getMessageGlobalId(
+      this.pancakeClient,
+      pageId,
+      conversationId,
+      this.env
+    );
     if (!globalId) {
       return;
     }
 
     await this.customerLensClient.post("/api/profile", {
-      "global_id": globalId,
-      "is_force": false
+      global_id: globalId,
+      is_force: false
     });
   }
 
   async triggerSalesayaScoringHooks(body) {
-    await createAxiosClient({}).post(getSalesayaScoringWebhookUrl(this.env), body);
+    await createAxiosClient({}).post(
+      getSalesayaScoringWebhookUrl(this.env),
+      body
+    );
   }
 
   static async dequeueMessageSummaryQueue(batch, env) {
