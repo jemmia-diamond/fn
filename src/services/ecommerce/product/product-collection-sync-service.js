@@ -1,7 +1,7 @@
-import HaravanAPI from "services/clients/haravan-client";
-import Database from "services/database";
-import NocoDBClient from "services/clients/nocodb-client";
 import * as Sentry from "@sentry/cloudflare";
+import HaravanAPI from "services/clients/haravan-client";
+import NocoDBClient from "services/clients/nocodb-client";
+import Database from "services/database";
 import { sleep } from "services/utils/sleep";
 import { NOCODB_TABLES } from "src/constants/nocodb-tables";
 
@@ -71,15 +71,10 @@ export default class ProductCollectionSyncService {
       if (!toCreate.length) return;
 
       for (const collect of toCreate) {
-        try {
-          await haravanClient.collect.createCollect({
-            product_id: collect.product_id,
-            collection_id: collect.collection_id
-          });
-        } catch (error) {
-          Sentry.captureException(error);
-        }
-
+        await haravanClient.collect.createCollect({
+          product_id: collect.product_id,
+          collection_id: collect.collection_id
+        });
         await sleep(200);
       }
     } catch (error) {
