@@ -342,7 +342,7 @@ export default class LeadService {
 
   static async syncCallLogLead(env) {
     const leadService = new LeadService(env);
-    const timeThreshold = dayjs().utc().subtract(3, "hours").subtract(5, "minutes").format("YYYY-MM-DD HH:mm:ss");
+    const timeThreshold = dayjs().utc().subtract(10, "minutes").format("YYYY-MM-DD HH:mm:ss");
     const callLogs = await leadService.frappeClient.getList("Call Log", {
       filters: [
         ["creation", ">=", timeThreshold],
