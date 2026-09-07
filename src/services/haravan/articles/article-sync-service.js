@@ -39,10 +39,13 @@ export default class ArticleSyncService {
   }
 
   getSignature(article) {
-    const time = HaravanSyncHelper.normalizeDate(article.published_at) || "no-time";
+    const time =
+      HaravanSyncHelper.normalizeDate(article.published_at) || "no-time";
     const imgPart = article.image
-      ? (article.image.src.match(/([a-f0-9]{32})/i)?.[1] ||
-        article.image.src.split("/").pop().split("?")[0]).replace(/^en_/, "")
+      ? (
+          article.image.src.match(/([a-f0-9]{32})/i)?.[1] ||
+          article.image.src.split("/").pop().split("?")[0]
+        ).replace(/^en_/, "")
       : "no-img";
     return `${time}|${imgPart}`;
   }
@@ -104,14 +107,8 @@ export default class ArticleSyncService {
   }
 
   async compareBlogArticles(haravanClient, viBlogId, enBlogId) {
-    let viArticles = await this.fetchAllArticles(
-      haravanClient,
-      viBlogId
-    );
-    let enArticles = await this.fetchAllArticles(
-      haravanClient,
-      enBlogId
-    );
+    let viArticles = await this.fetchAllArticles(haravanClient, viBlogId);
+    let enArticles = await this.fetchAllArticles(haravanClient, enBlogId);
 
     viArticles = viArticles.filter(
       (a) => !a.title.toLowerCase().includes("ladipage")
@@ -126,26 +123,26 @@ export default class ArticleSyncService {
 
     // 1. Build map of VI articles by ID
     const viById = {};
-    viArticles.forEach(a => {
+    viArticles.forEach((a) => {
       viById[a.id] = a;
     });
 
-    const unmatchedViIds = new Set(viArticles.map(a => a.id));
+    const unmatchedViIds = new Set(viArticles.map((a) => a.id));
     const unmatchedEn = [];
 
     // Helper to extract vi_id from tags
     const getViIdFromTags = (tagsStr) => {
       if (!tagsStr) return null;
-      const tags = tagsStr.split(",").map(t => t.trim());
+      const tags = tagsStr.split(",").map((t) => t.trim());
 
       // Find the first tag that contains only digits
-      const idTag = tags.find(t => /^\d+$/.test(t));
+      const idTag = tags.find((t) => /^\d+$/.test(t));
       return idTag ? parseInt(idTag, 10) : null;
     };
 
     // 2. First pass: Match by tag
     const matchedViIds = new Set();
-    enArticles.forEach(enArticle => {
+    enArticles.forEach((enArticle) => {
       const viId = getViIdFromTags(enArticle.tags);
       if (viId && viById[viId] && !matchedViIds.has(viId)) {
         matchedPairs.push({ vi: viById[viId], en: enArticle });
@@ -158,7 +155,7 @@ export default class ArticleSyncService {
 
     // 3. Group remaining unmatched VI articles by signature
     const viGroups = {};
-    unmatchedViIds.forEach(viId => {
+    unmatchedViIds.forEach((viId) => {
       const v = viById[viId];
       const s = this.getSignature(v);
       if (!viGroups[s]) viGroups[s] = [];
@@ -203,9 +200,13 @@ export default class ArticleSyncService {
     let fullSrc = src.startsWith("//") ? "https:" + src : src;
 
     return retryQuery(async () => {
-      const imageUrl = await imageService.translateImage(fullSrc, this.env, false);
+      const imageUrl = await imageService.translateImage(
+        fullSrc,
+        this.env,
+        false
+      );
       return { src, newUrl: imageUrl || fullSrc, success: true };
-    }).catch(error => {
+    }).catch((error) => {
       Sentry.captureException(error, {
         extra: { src, action: "translateImageWithRetry" }
       });
@@ -224,9 +225,11 @@ export default class ArticleSyncService {
     for (let i = 0; i < images.length; i += batchSize) {
       const batch = images.slice(i, i + batchSize);
       const batchResults = await Promise.allSettled(
-        batch.map(src => this.translateImageWithRetry(src, imageService))
+        batch.map((src) => this.translateImageWithRetry(src, imageService))
       );
-      results.push(...batchResults.map(r => r.status === "fulfilled" ? r.value : null));
+      results.push(
+        ...batchResults.map((r) => (r.status === "fulfilled" ? r.value : null))
+      );
     }
 
     let updatedHtml = html;
@@ -254,7 +257,10 @@ export default class ArticleSyncService {
     const viIdTag = `${viId}`;
     if (!viTags) return viIdTag;
 
-    const tagsArray = viTags.split(",").map(t => t.trim()).filter(Boolean);
+    const tagsArray = viTags
+      .split(",")
+      .map((t) => t.trim())
+      .filter(Boolean);
     if (!tagsArray.includes(viIdTag)) {
       tagsArray.push(viIdTag);
     }
@@ -271,9 +277,11 @@ export default class ArticleSyncService {
         const enId = ArticleSyncService.BLOG_ID_MAP[viId];
 
         try {
-          const { matchedPairs, missingArticles, orphanEnArticles } = await this.compareBlogArticles(haravanClient, viId, enId);
+          const { matchedPairs, missingArticles, orphanEnArticles } =
+            await this.compareBlogArticles(haravanClient, viId, enId);
 
-          const articleBatchSize = ArticleSyncService.CONFIG.ARTICLE_TRANSLATE_BATCH_SIZE;
+          const articleBatchSize =
+            ArticleSyncService.CONFIG.ARTICLE_TRANSLATE_BATCH_SIZE;
 
           for (let i = 0; i < matchedPairs.length; i += articleBatchSize) {
             const batch = matchedPairs.slice(i, i + articleBatchSize);
@@ -283,29 +291,52 @@ export default class ArticleSyncService {
                   const viUpdated = new Date(pair.vi.updated_at).getTime();
                   const enUpdated = new Date(pair.en.updated_at).getTime();
                   const sourceUpdated =
-                    viUpdated - enUpdated > ArticleSyncService.CONFIG.SYNC_THRESHOLD_MS;
+                    viUpdated - enUpdated >
+                    ArticleSyncService.CONFIG.SYNC_THRESHOLD_MS;
 
-                  const hasViIdTag = pair.en.tags && pair.en.tags.split(",").map(t => t.trim()).includes(`${pair.vi.id}`);
+                  const hasViIdTag =
+                    pair.en.tags &&
+                    pair.en.tags
+                      .split(",")
+                      .map((t) => t.trim())
+                      .includes(`${pair.vi.id}`);
 
                   if (sourceUpdated) {
-                    const enTitle = await this.translateText(pair.vi.title, false);
-                    let enBody = await this.translateText(pair.vi.body_html, true);
-                    enBody = await this.translateImagesInHtml(enBody, imageService);
+                    const enTitle = await this.translateText(
+                      pair.vi.title,
+                      false
+                    );
+                    let enBody = await this.translateText(
+                      pair.vi.body_html,
+                      true
+                    );
+                    enBody = await this.translateImagesInHtml(
+                      enBody,
+                      imageService
+                    );
                     const featuredImage = await this.translateFeaturedImage(
                       pair.vi.image?.src,
                       imageService
                     );
-                    await haravanClient.article.updateArticle(enId, pair.en.id, {
-                      title: enTitle,
-                      body_html: enBody,
-                      author: pair.vi.author,
-                      image: featuredImage ? { src: featuredImage } : null,
-                      tags: this.buildEnTags(pair.en.tags, pair.vi.id)
-                    });
+                    await haravanClient.article.updateArticle(
+                      enId,
+                      pair.en.id,
+                      {
+                        title: enTitle,
+                        body_html: enBody,
+                        author: pair.vi.author,
+                        image: featuredImage ? { src: featuredImage } : null,
+                        tags: this.buildEnTags(pair.en.tags, pair.vi.id)
+                      }
+                    );
                   } else if (!hasViIdTag) {
-                    await haravanClient.article.updateArticle(enId, pair.en.id, {
-                      tags: this.buildEnTags(pair.en.tags, pair.vi.id)
-                    });
+                    await haravanClient.article.updateArticle(
+                      enId,
+                      pair.en.id,
+                      {
+                        tags: this.buildEnTags(pair.en.tags, pair.vi.id)
+                      }
+                    );
                   }
                 } catch (error) {
                   Sentry.captureException(error, {
@@ -352,7 +383,10 @@ export default class ArticleSyncService {
                 try {
                   const enTitle = await this.translateText(vi.title, false);
                   let enBody = await this.translateText(vi.body_html, true);
-                  enBody = await this.translateImagesInHtml(enBody, imageService);
+                  enBody = await this.translateImagesInHtml(
+                    enBody,
+                    imageService
+                  );
                   const featuredImage = await this.translateFeaturedImage(
                     vi.image?.src,
                     imageService

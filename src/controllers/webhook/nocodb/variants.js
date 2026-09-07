@@ -5,6 +5,8 @@ export default class VariantsController {
     const payload = await ctx.req.json();
     const service = new VariantCreatorService(ctx.env);
     await service.handle(payload);
-    return ctx.json({ message: "Variant created on Haravan and NocoDB updated" });
+    return ctx.json({
+      message: "Variant created on Haravan and NocoDB updated"
+    });
   }
 }

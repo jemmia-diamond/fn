@@ -5,4 +5,4 @@ export function isInteger(id) {
 export function parseNumber(value, defaultValue, asFloat = false) {
   const num = asFloat ? parseFloat(value) : parseInt(value, 10);
   return Number.isFinite(num) ? num : defaultValue;
-};
+}

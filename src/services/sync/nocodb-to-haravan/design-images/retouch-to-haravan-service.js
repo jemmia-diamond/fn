@@ -7,7 +7,10 @@ import { NOCODB_TABLES } from "src/constants/nocodb-tables";
  * Remove Vietnamese diacritical marks from a string.
  */
 function removeVietnameseChars(text) {
-  return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").normalize("NFC");
+  return text
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .normalize("NFC");
 }
 
 /**
@@ -19,7 +22,10 @@ function imageNameNormalizer(designCode, color) {
     .replace(/ - /g, "-")
     .replace(/ /g, "-")
     .toLowerCase();
-  return [`${designCode}--${normColor}--`.toLowerCase(), `${normColor}--`.toLowerCase()];
+  return [
+    `${designCode}--${normColor}--`.toLowerCase(),
+    `${normColor}--`.toLowerCase()
+  ];
 }
 
 export default class RetouchToHaravanService {
@@ -47,18 +53,28 @@ export default class RetouchToHaravanService {
     if (!designId) throw new Error("design_id is missing");
     if (!designCode) throw new Error("design_code is missing");
     if (!materialColor) throw new Error("material_color is missing");
-    if (!retouchImages || !Array.isArray(retouchImages) || retouchImages.length === 0) {
+    if (
+      !retouchImages ||
+      !Array.isArray(retouchImages) ||
+      retouchImages.length === 0
+    ) {
       throw new Error("No retouch images found");
     }
 
-    const [imageNameNorm, colorNorm] = imageNameNormalizer(designCode, materialColor);
+    const [imageNameNorm, colorNorm] = imageNameNormalizer(
+      designCode,
+      materialColor
+    );
 
     // Look up the Haravan product ID from NocoDB products table RESTfully
     const nocoClient = new NocoDBClient(this.env);
-    const response = await nocoClient.listRecords(NOCODB_TABLES.MARKETING.JEWELRIES, {
-      where: `(design_id,eq,${Number(designId)})`,
-      limit: 1
-    });
+    const response = await nocoClient.listRecords(
+      NOCODB_TABLES.MARKETING.JEWELRIES,
+      {
+        where: `(design_id,eq,${Number(designId)})`,
+        limit: 1
+      }
+    );
 
     const products = response.list || [];
 
@@ -68,13 +84,16 @@ export default class RetouchToHaravanService {
 
     const haravanProductId = products[0].haravan_product_id;
     if (!haravanProductId) {
-      throw new Error(`Product has no haravan_product_id for design_id: ${designId}`);
+      throw new Error(
+        `Product has no haravan_product_id for design_id: ${designId}`
+      );
     }
 
     const haravanApi = new HaravanAPI(this.env.HARAVAN_NOCODB_TOKEN);
 
     // Get existing Haravan images and delete ones matching this color
-    const existingImages = await haravanApi.productImage.getImages(haravanProductId);
+    const existingImages =
+      await haravanApi.productImage.getImages(haravanProductId);
     const imagesToDelete = (existingImages?.images || []).filter(
       (img) => img.src && img.src.includes(colorNorm)
     );
@@ -108,6 +127,10 @@ export default class RetouchToHaravanService {
       });
     }
 
-    return { success: true, haravanProductId, imagesUploaded: retouchImages.length };
+    return {
+      success: true,
+      haravanProductId,
+      imagesUploaded: retouchImages.length
+    };
   }
 }

@@ -8,7 +8,10 @@ export default class DesignsController {
     const recordId = payload?.data?.rows?.[0]?.id;
 
     if (!tableId || !recordId) {
-      return ctx.json({ error: "Invalid payload: table_id or record id is missing" }, 400);
+      return ctx.json(
+        { error: "Invalid payload: table_id or record id is missing" },
+        400
+      );
     }
 
     const nocoClient = new NocoDBClient(ctx.env);
@@ -56,7 +59,10 @@ export default class DesignsController {
     const recordId = payload?.data?.rows?.[0]?.id;
 
     if (!tableId || !recordId) {
-      return ctx.json({ error: "Invalid payload: table_id or record id is missing" }, 400);
+      return ctx.json(
+        { error: "Invalid payload: table_id or record id is missing" },
+        400
+      );
     }
 
     const nocoClient = new NocoDBClient(ctx.env);
@@ -73,7 +79,9 @@ export default class DesignsController {
       folderId = folderId.split("?")[0];
     }
 
-    const driveClient = new GoogleDriveClient(ctx.env.GOOGLE_SERVICE_ACCOUNT_KEY);
+    const driveClient = new GoogleDriveClient(
+      ctx.env.GOOGLE_SERVICE_ACCOUNT_KEY
+    );
 
     const IMAGES_NOT_FOUND = {
       url: "https://demofree.sirv.com/nope-not-here.jpg",

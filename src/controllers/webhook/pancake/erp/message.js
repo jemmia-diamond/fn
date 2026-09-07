@@ -1,5 +1,8 @@
 import { DebounceActions, DebounceService } from "src/durable-objects";
-import { shouldReceiveWebhook, shouldSendToCustomerLens } from "controllers/webhook/pancake/erp/utils";
+import {
+  shouldReceiveWebhook,
+  shouldSendToCustomerLens
+} from "controllers/webhook/pancake/erp/utils";
 
 export default class PancakeERPMessageController {
   static async create(ctx) {
@@ -38,7 +41,8 @@ export default class PancakeERPMessageController {
         env: ctx.env,
         key: `interaction-conversation-${conversationId}`,
         data: data,
-        actionType: DebounceActions.SEND_TO_PANCAKE_MESSAGE_LAST_INTERACTION_QUEUE,
+        actionType:
+          DebounceActions.SEND_TO_PANCAKE_MESSAGE_LAST_INTERACTION_QUEUE,
         delay: 30000
       });
     }

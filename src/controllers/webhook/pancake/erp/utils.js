@@ -23,7 +23,10 @@ export const shouldReceiveWebhook = (body, shouldIgnoreAdmin = true) => {
 };
 
 export const shouldSendToCustomerLens = (body, env) => {
-  if (env?.ENABLE_CUSTOMER_LENS_CRAWL !== "true" && env?.ENABLE_CUSTOMER_LENS_CRAWL !== "1") {
+  if (
+    env?.ENABLE_CUSTOMER_LENS_CRAWL !== "true" &&
+    env?.ENABLE_CUSTOMER_LENS_CRAWL !== "1"
+  ) {
     return false;
   }
   const isValidMessage = shouldReceiveWebhook(body, false);

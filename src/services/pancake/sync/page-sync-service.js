@@ -21,7 +21,9 @@ export default class PageSyncService {
 
       const pageData = await this.pancakeClient.getPages();
       if (isInvalidTokenError(pageData)) {
-        throw new Error("Pancake API Error [102]: Invalid access_token during page query");
+        throw new Error(
+          "Pancake API Error [102]: Invalid access_token during page query"
+        );
       }
 
       const categorized = pageData?.categorized;
@@ -60,7 +62,12 @@ export default class PageSyncService {
       const userListData = await this.pancakeClient.getPageUsers(pageId);
 
       if (isInvalidTokenError(userListData)) {
-        this.captureException(new Error(`Pancake API Error [102]: Invalid access_token for users in page ${pageId}`), pageId);
+        this.captureException(
+          new Error(
+            `Pancake API Error [102]: Invalid access_token for users in page ${pageId}`
+          ),
+          pageId
+        );
         return;
       }
 
@@ -79,11 +86,17 @@ export default class PageSyncService {
       if (!item.id) continue;
       const pageData = this.mapToPageModel(item);
 
-      pageUpserts.push(this.db.page.upsert({
-        where: { id: item.id },
-        create: pageData,
-        update: { ...pageData, uuid: undefined, database_updated_at: dayjs().utc().toDate() }
-      }));
+      pageUpserts.push(
+        this.db.page.upsert({
+          where: { id: item.id },
+          create: pageData,
+          update: {
+            ...pageData,
+            uuid: undefined,
+            database_updated_at: dayjs().utc().toDate()
+          }
+        })
+      );
     }
 
     const chunkSize = 50;
@@ -102,11 +115,17 @@ export default class PageSyncService {
 
     for (const user of uniqueUsersMap.values()) {
       const userData = this.mapToUserModel(user);
-      userUpserts.push(this.db.pancake_user.upsert({
-        where: { id: user.id },
-        create: { ...userData, database_created_at: dayjs().utc().toDate(), database_updated_at: dayjs().utc().toDate() },
-        update: { ...userData, database_updated_at: dayjs().utc().toDate() }
-      }));
+      userUpserts.push(
+        this.db.pancake_user.upsert({
+          where: { id: user.id },
+          create: {
+            ...userData,
+            database_created_at: dayjs().utc().toDate(),
+            database_updated_at: dayjs().utc().toDate()
+          },
+          update: { ...userData, database_updated_at: dayjs().utc().toDate() }
+        })
+      );
     }
 
     const chunkSize = 50;
@@ -119,7 +138,9 @@ export default class PageSyncService {
     return {
       uuid: crypto.randomUUID(),
       id: item.id,
-      inserted_at: item.inserted_at ? dayjs.utc(item.inserted_at).toDate() : null,
+      inserted_at: item.inserted_at
+        ? dayjs.utc(item.inserted_at).toDate()
+        : null,
       connected: item.connected ?? null,
       is_activated: item.is_activated ?? null,
       name: item.name || null,
