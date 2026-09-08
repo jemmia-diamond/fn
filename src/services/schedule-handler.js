@@ -70,6 +70,7 @@ export default {
         await ERP.Selling.BuybackExchangeSyncService.cronSync(env);
         await new Haravan.Customer.DatabaseSyncService(env).sync();
         await DiamondSyncService.cronSync(env, controller);
+        await new Haravan.WarehouseInventory.LarkSyncService(env).sync();
         await DatabaseOperations.MaterializedViewService.refresh10Minutes(env);
         break;
       case "*/15 * * * *": // At every 15th minute
