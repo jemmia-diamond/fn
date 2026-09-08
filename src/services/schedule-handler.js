@@ -15,6 +15,7 @@ import ProductQuote from "services/product_quote";
 import Reporting from "services/reporting";
 import Salesaya from "services/salesaya";
 import WorkshopOrderServices from "services/sync/lark-to-nocodb/workshop-orders";
+import DiamondSyncService from "services/sync/haravan-to-nocodb/diamonds/diamond-sync-service";
 import { MISSING_SERIAL_START_DATE, TIMEZONE_VIETNAM } from "src/constants";
 
 dayjs.extend(utc);
@@ -37,6 +38,7 @@ export default {
         ).syncVariantPromotions();
         await new Larksuite.VariantSyncService(env).sync();
         await new Ecommerce.ProductAttributesSyncService(env).sync();
+        await new Ecommerce.ProductCollectionSyncService(env).syncCollections();
         break;
       case "*/5 * * * *": // At every 5th minute
         await new OneOffHandler(env).run();
@@ -67,6 +69,7 @@ export default {
         await new Ecommerce.VariantSyncService(env).syncVariants();
         await ERP.Selling.BuybackExchangeSyncService.cronSync(env);
         await new Haravan.Customer.DatabaseSyncService(env).sync();
+        await DiamondSyncService.cronSync(env, controller);
         await DatabaseOperations.MaterializedViewService.refresh10Minutes(env);
         break;
       case "*/15 * * * *": // At every 15th minute

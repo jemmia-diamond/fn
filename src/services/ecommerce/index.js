@@ -14,6 +14,7 @@ import ProductG1PromotionSyncService from "services/ecommerce/product/product-g1
 import ProductVariantPromotionSyncService from "services/ecommerce/product/product-variant-promotion-sync-service";
 import ProductAttributesSyncService from "services/ecommerce/product/product-attributes-sync-service";
 import VariantAttributesSyncService from "services/ecommerce/variant/variant-attributes-sync-service";
+import ProductCollectionSyncService from "services/ecommerce/product/product-collection-sync-service";
 
 export default {
   ProductService: ProductService,
@@ -31,5 +32,6 @@ export default {
   ProductG1PromotionSyncService,
   ProductVariantPromotionSyncService,
   ProductAttributesSyncService,
-  VariantAttributesSyncService
+  VariantAttributesSyncService,
+  ProductCollectionSyncService
 };
