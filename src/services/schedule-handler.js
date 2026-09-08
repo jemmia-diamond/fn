@@ -37,6 +37,7 @@ export default {
           env
         ).syncVariantPromotions();
         await new Larksuite.VariantSyncService(env).sync();
+        await new Ecommerce.ProductAttributesSyncService(env).sync();
         await new Ecommerce.ProductCollectionSyncService(env).syncCollections();
         break;
       case "*/5 * * * *": // At every 5th minute
@@ -102,6 +103,7 @@ export default {
         await DatabaseOperations.DatabaseFunctionService.runUpdateOrderReferencesInVariantSerials(
           env
         );
+        await new Ecommerce.VariantAttributesSyncService(env).sync();
         break;
       case "0 */6 * * *": // At every 6th hour
         await DatabaseOperations.MaterializedViewService.refresh6Hours(env);
