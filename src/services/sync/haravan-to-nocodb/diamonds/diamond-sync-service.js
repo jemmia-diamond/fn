@@ -3,7 +3,7 @@ import utc from "dayjs/plugin/utc.js";
 import HaravanAPI from "services/clients/haravan-client";
 import NocoDBClient from "services/clients/nocodb-client";
 import { NOCODB_TABLES } from "src/constants/nocodb-tables";
-import * as Sentry from "@hono/sentry";
+import * as Sentry from "@sentry/cloudflare";
 
 dayjs.extend(utc);
 

@@ -42,6 +42,10 @@ export const TABLES = {
   VARIANTS_V2: {
     table_id: "tblLiU4ltbrhjpis",
     app_token: "RxoxbZ12GaE0RQsRPu9lMFEjgaf"
+  },
+  WAREHOUSE_INVENTORIES: {
+    table_id: "tblif6L7EpT9keF5",
+    app_token: "TK6fwEBDtiZgGdkP2E3lCV77gIe"
   }
 };
 
