@@ -37,6 +37,7 @@ export default {
           env
         ).syncVariantPromotions();
         await new Larksuite.VariantSyncService(env).sync();
+        await new Ecommerce.ProductCollectionSyncService(env).syncCollections();
         break;
       case "*/5 * * * *": // At every 5th minute
         await new OneOffHandler(env).run();
