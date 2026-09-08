@@ -10,8 +10,7 @@ dayjs.extend(utc);
 export default class DiamondSyncService {
   constructor(env) {
     this.env = env;
-    const hrvAccessToken = env.HARAVAN_NOCODB_TOKEN || env.HARAVAN_TOKEN;
-    this.client = new HaravanAPI(hrvAccessToken);
+    this.client = new HaravanAPI(env.HARAVAN_TOKEN);
     this.nocoClient = new NocoDBClient(env);
   }
 
