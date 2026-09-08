@@ -11,6 +11,8 @@ export default class VariantSyncService {
   static RATE_LIMIT_DELAY_MS = 500;
   static MAX_RETRY_AFTER_SECONDS = 3;
   static DEFAULT_VARIANT_SYNC_KV_KEY = "ecommerce_variant_sync:last_date";
+  static PRODUCT_PAGE_LIMIT = 10;
+  static VARIANT_CHUNK_SIZE = 50;
   constructor(env) {
     this.env = env;
     this.db = Database.instance(env);
@@ -55,7 +57,7 @@ export default class VariantSyncService {
     let page = 1;
     let hasMore = true;
     let skipNextSleep = false;
-    const limit = 50;
+    const limit = VariantSyncService.PRODUCT_PAGE_LIMIT;
 
     while (hasMore) {
       if (page > 1 && !skipNextSleep) {
@@ -71,7 +73,7 @@ export default class VariantSyncService {
         });
         const products = response?.products || [];
 
-        if (products.length > 0) {
+        if (products?.length) {
           await this._processVariantBatch(products, updatedAtMin);
           page++;
         } else {
@@ -156,32 +158,40 @@ export default class VariantSyncService {
       }
     }
 
-    if (variantsToUpsert.length === 0) {
-      return;
-    }
+    if (!variantsToUpsert?.length) return;
 
     const currentDateTime = dayjs().utc().toDate();
-    await this.db.$transaction(async (tx) => {
-      const operations = variantsToUpsert.map((variantData) => {
-        const id = variantData.id;
-        delete variantData.id;
 
-        return tx.haravan_variants.upsert({
-          where: { id },
-          create: {
-            uuid: crypto.randomUUID(),
-            id,
-            ...variantData,
-            database_created_at: currentDateTime,
-            database_updated_at: currentDateTime
-          },
-          update: {
-            ...variantData,
-            database_updated_at: currentDateTime
-          }
+    for (
+      let i = 0;
+      i < variantsToUpsert.length;
+      i += VariantSyncService.VARIANT_CHUNK_SIZE
+    ) {
+      const chunk = variantsToUpsert.slice(
+        i,
+        i + VariantSyncService.VARIANT_CHUNK_SIZE
+      );
+      await this.db.$transaction(async (tx) => {
+        const operations = chunk.map((variantData) => {
+          const { id, ...data } = variantData;
+
+          return tx.haravan_variants.upsert({
+            where: { id },
+            create: {
+              uuid: crypto.randomUUID(),
+              id,
+              ...data,
+              database_created_at: currentDateTime,
+              database_updated_at: currentDateTime
+            },
+            update: {
+              ...data,
+              database_updated_at: currentDateTime
+            }
+          });
         });
-      });
-      await Promise.all(operations);
-    }, this.dbConnection);
+        await Promise.all(operations);
+      }, this.dbConnection);
+    }
   }
 }
