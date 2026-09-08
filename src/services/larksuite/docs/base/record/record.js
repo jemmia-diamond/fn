@@ -300,4 +300,20 @@ export default class RecordService {
 
     return response.data.records;
   }
+
+  static async deleteLarksuiteRecords({ env, appToken, tableId, records }) {
+    const larkClient = await LarksuiteService.createClientV2(env);
+
+    const response = await larkClient.bitable.appTableRecord.batchDelete({
+      path: {
+        app_token: appToken,
+        table_id: tableId
+      },
+      data: {
+        records
+      }
+    });
+
+    return response?.data?.records;
+  }
 }
