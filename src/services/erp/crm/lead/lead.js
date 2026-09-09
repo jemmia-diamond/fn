@@ -262,9 +262,9 @@ export default class LeadService {
             .format("YYYY-MM-DD HH:mm:ss")
         };
 
-        if (String(provinces[0]?.code).toLowerCase().includes("website")) {
+        if (leadData.phone && leadData.province) {
           leadData.qualification_status = "Qualified";
-          leadData.qualified_on = first_reach_at;
+          leadData.qualified_on = leadData.first_reach_at;
           leadData.qualified_by = lead_owner;
         }
 
