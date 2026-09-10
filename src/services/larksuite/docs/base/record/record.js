@@ -298,7 +298,7 @@ export default class RecordService {
       }
     });
 
-    return response.data.records;
+    return response?.data?.records;
   }
 
   static async deleteLarksuiteRecords({ env, appToken, tableId, records }) {
