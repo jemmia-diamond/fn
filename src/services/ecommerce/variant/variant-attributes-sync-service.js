@@ -5,6 +5,19 @@ import { NOCODB_TABLES } from "src/constants/nocodb-tables";
 
 const BATCH_SIZE = 100;
 
+const SELECT_OPTION_COLORS = [
+  "#cfdffe",
+  "#d0f1fd",
+  "#c2f5e8",
+  "#ffdaf6",
+  "#ffdce5",
+  "#fee2d5",
+  "#ffeab6",
+  "#d1f7c4",
+  "#ede2fe",
+  "#eeeeee"
+];
+
 export default class VariantAttributesSyncService {
   constructor(env) {
     this.env = env;
@@ -146,8 +159,22 @@ export default class VariantAttributesSyncService {
     const stockCol = designsMeta.columns?.find(
       (c) => c.column_name === "stock_locations"
     );
-    const validLocationOptions = new Set(
-      (stockCol?.colOptions?.options || []).map((o) => o.title)
+    if (!stockCol) {
+      console.warn(
+        "updateDesignStockLocations: stock_locations column not found; skipping"
+      );
+      return;
+    }
+
+    const neededNames = new Set();
+    for (const names of designLocationsMap.values()) {
+      for (const name of names) neededNames.add(name);
+    }
+
+    const validLocationOptions = await this._ensureStockLocationOptions(
+      nocoClient,
+      stockCol,
+      neededNames
     );
     if (!validLocationOptions.size) {
       console.warn(
@@ -179,7 +206,7 @@ export default class VariantAttributesSyncService {
     }
     if (droppedNames.size > 0) {
       console.warn(
-        `updateDesignStockLocations: dropped warehouse names not in stock_locations options: ${Array.from(
+        `updateDesignStockLocations: could not register warehouse names as options, skipped: ${Array.from(
           droppedNames
         ).join(", ")}`
       );
@@ -191,6 +218,46 @@ export default class VariantAttributesSyncService {
       const chunk = designUpdates.slice(i, i + BATCH_SIZE);
       await nocoClient.updateRecords(NOCODB_TABLES.SUPPLY.DESIGNS, chunk);
     }
+  }
+
+  async _ensureStockLocationOptions(nocoClient, stockCol, neededNames) {
+    const existingOptions = stockCol.colOptions?.options || [];
+    const validTitles = new Set(existingOptions.map((o) => o.title));
+    const missing = Array.from(neededNames).filter(
+      (name) => !validTitles.has(name)
+    );
+    if (!missing.length) return validTitles;
+
+    const options = [
+      ...existingOptions.map((o) => ({
+        id: o.id,
+        title: o.title,
+        color: o.color,
+        order: o.order
+      })),
+      ...missing.map((title, i) => ({
+        title,
+        color:
+          SELECT_OPTION_COLORS[
+            (existingOptions.length + i) % SELECT_OPTION_COLORS.length
+          ]
+      }))
+    ];
+
+    try {
+      await nocoClient.updateColumn(stockCol.id, {
+        uidt: stockCol.uidt,
+        colOptions: { options }
+      });
+      for (const title of missing) validTitles.add(title);
+    } catch (error) {
+      console.warn(
+        `updateDesignStockLocations: failed to add stock_locations options [${missing.join(
+          ", "
+        )}]: ${error.message}`
+      );
+    }
+    return validTitles;
   }
 
   async _fetchNocoVariants(nocoClient) {

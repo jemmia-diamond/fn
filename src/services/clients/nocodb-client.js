@@ -90,6 +90,10 @@ export default class NocoDBClient {
     return this.#request("GET", `/api/v2/meta/tables/${tableId}`);
   }
 
+  async updateColumn(columnId, data) {
+    return this.#request("PATCH", `/api/v2/meta/columns/${columnId}`, { data });
+  }
+
   async listRecords(tableId, params = {}) {
     return this.#request("GET", `/api/v2/tables/${tableId}/records`, {
       params
