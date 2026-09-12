@@ -1,4 +1,7 @@
-import { extractCodes, flattenContentText } from "services/salesaya/lark-chat/lark-chat-helper";
+import {
+  extractCodes,
+  flattenContentText
+} from "services/salesaya/lark-chat/lark-chat-helper";
 
 export default class LarkChatParser {
   constructor(larkClient) {
@@ -47,7 +50,10 @@ export default class LarkChatParser {
           for (const block of blocks) {
             for (const item of block) {
               if (item.tag === "img") {
-                images.push({ message_id: msg.message_id, key: item.image_key });
+                images.push({
+                  message_id: msg.message_id,
+                  key: item.image_key
+                });
               }
               if (item.tag === "media") {
                 files.push({
@@ -60,7 +66,10 @@ export default class LarkChatParser {
           }
         }
         if (contentObj?.image_key) {
-          images.push({ message_id: msg.message_id, key: contentObj.image_key });
+          images.push({
+            message_id: msg.message_id,
+            key: contentObj.image_key
+          });
         }
         if (contentObj?.file_key) {
           files.push({

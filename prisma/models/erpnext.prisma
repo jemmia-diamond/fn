@@ -716,6 +716,7 @@ model erpnextBuybackExchange {
   submitted_date   DateTime? @db.Timestamp(6)
   customer_name    String?   @db.VarChar(255)
   phone_number     String?   @db.VarChar(50)
+  normalized_phone String?   @db.VarChar(50)
   national_id      String?   @db.VarChar(255)
   order_code       String?   @db.VarChar(255)
   new_order_code   String?   @db.VarChar(255)

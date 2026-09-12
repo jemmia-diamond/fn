@@ -10,11 +10,15 @@ class CustomCollectConnector extends BaseConnector {
   }
 
   async createCustomCollect(collectData) {
-    return this.post("/custom_collections.json", { custom_collection: collectData });
+    return this.post("/custom_collections.json", {
+      custom_collection: collectData
+    });
   }
 
   async updateCustomCollect(collectId, collectData) {
-    return this.put(`/custom_collections/${collectId}.json`, { custom_collection: collectData });
+    return this.put(`/custom_collections/${collectId}.json`, {
+      custom_collection: collectData
+    });
   }
 
   async deleteCustomCollect(collectId) {

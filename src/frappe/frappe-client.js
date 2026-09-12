@@ -6,20 +6,31 @@ import { createAxiosClient } from "services/utils/http-client";
 const DEFAULT_HEADERS = { Accept: "application/json" };
 
 export default class FrappeClient {
-  constructor({ url, username, password, apiKey, apiSecret, verify = true }) {
-    this.url = url;
+  constructor({
+    env,
+    url,
+    username,
+    password,
+    apiKey,
+    apiSecret,
+    verify = true
+  } = {}) {
+    this.url = url || env?.JEMMIA_ERP_BASE_URL;
     this.verify = verify;
     this.headers = { ...DEFAULT_HEADERS };
     this.canDownload = [];
     this.timeout = 60000;
 
-    if (apiKey && apiSecret) {
-      const token = btoa(`${apiKey}:${apiSecret}`);
+    const activeApiKey = apiKey || env?.JEMMIA_ERP_API_KEY;
+    const activeApiSecret = apiSecret || env?.JEMMIA_ERP_API_SECRET;
+
+    if (activeApiKey && activeApiSecret) {
+      const token = btoa(`${activeApiKey}:${activeApiSecret}`);
       this.headers["Authorization"] = `Basic ${token}`;
     }
 
     this.axiosClient = createAxiosClient({
-      baseURL: url,
+      baseURL: this.url,
       headers: this.headers,
       timeout: this.timeout
     });
@@ -42,14 +53,17 @@ export default class FrappeClient {
     await this.getRequest("", { cmd: "logout" });
   }
 
-  async getList(doctype, {
-    fields = ["*"],
-    filters = null,
-    or_filters = null,
-    limit_start = 0,
-    limit_page_length = 0,
-    order_by = null
-  } = {}) {
+  async getList(
+    doctype,
+    {
+      fields = ["*"],
+      filters = null,
+      or_filters = null,
+      limit_start = 0,
+      limit_page_length = 0,
+      order_by = null
+    } = {}
+  ) {
     const params = {
       fields: JSON.stringify(fields),
       ...(filters && { filters: JSON.stringify(filters) }),
@@ -80,7 +94,9 @@ export default class FrappeClient {
   async insert(doc) {
     const url = `/api/resource/${encodeURIComponent(doc.doctype)}`;
     try {
-      const res = await this.axiosClient.post(url, { data: JSON.stringify(doc) });
+      const res = await this.axiosClient.post(url, {
+        data: JSON.stringify(doc)
+      });
       return this.postProcess(res);
     } catch (error) {
       return this.parseError(error);
@@ -107,7 +123,9 @@ export default class FrappeClient {
   async update(doc) {
     const url = `/api/resource/${encodeURIComponent(doc.doctype)}/${encodeURIComponent(doc.name)}`;
     try {
-      const res = await this.axiosClient.put(url, { data: JSON.stringify(doc) });
+      const res = await this.axiosClient.put(url, {
+        data: JSON.stringify(doc)
+      });
       return this.postProcess(res);
     } catch (error) {
       return this.parseError(error);
@@ -117,7 +135,7 @@ export default class FrappeClient {
   async upsert(doc, key, ignoredFields = []) {
     let filters;
     if (Array.isArray(key)) {
-      filters = key.map(k => [k, "=", doc[k]]);
+      filters = key.map((k) => [k, "=", doc[k]]);
     } else {
       filters = [[key, "=", doc[key]]];
     }
@@ -127,7 +145,7 @@ export default class FrappeClient {
     } else if (documents.length === 1) {
       if (documents[0].docstatus === 2) {
         return documents[0];
-      };
+      }
       doc.name = documents[0].name;
       // Remove ignored fields before update
       for (const field of ignoredFields) {
@@ -140,7 +158,7 @@ export default class FrappeClient {
   }
 
   async bulkUpdate(docs) {
-    const docsWithDocNames = docs.map(doc => ({ ...doc, docname: doc.name }));
+    const docsWithDocNames = docs.map((doc) => ({ ...doc, docname: doc.name }));
     return this.postRequest("", {
       cmd: "frappe.client.bulk_update",
       docs: JSON.stringify(docsWithDocNames)
@@ -152,7 +170,10 @@ export default class FrappeClient {
     if (!docWithLinks.links) {
       docWithLinks.links = [];
     }
-    docWithLinks.links.push({ "link_doctype": referencedDoctype, "link_name": referencedDoc.name });
+    docWithLinks.links.push({
+      link_doctype: referencedDoctype,
+      link_name: referencedDoc.name
+    });
     docWithLinks.doctype = doctype;
     return this.update(docWithLinks);
   }
@@ -171,9 +192,17 @@ export default class FrappeClient {
     return this.postProcess(res);
   }
 
-  async createComment({ referenceDoctype, referenceName, content, commentType = "Comment", mentionPerson = "" }) {
-    let commentContent = mentionPerson === "" ? content :
-      `
+  async createComment({
+    referenceDoctype,
+    referenceName,
+    content,
+    commentType = "Comment",
+    mentionPerson = ""
+  }) {
+    let commentContent =
+      mentionPerson === ""
+        ? content
+        : `
         ${content}<br><br>cc: <a class="mention" href="/app/user/${encodeURIComponent(mentionPerson)}"
               data-id="${mentionPerson}"
               data-value="${mentionPerson}"
@@ -224,7 +253,10 @@ export default class FrappeClient {
       const line = lines[i].trim();
       if (line.includes(":")) {
         const parts = line.split(":");
-        if (parts[0].toLowerCase().includes("error") || parts[0].toLowerCase().includes("exception")) {
+        if (
+          parts[0].toLowerCase().includes("error") ||
+          parts[0].toLowerCase().includes("exception")
+        ) {
           return parts.slice(1).join(":").trim();
         }
       }
@@ -278,16 +310,18 @@ export default class FrappeClient {
       const res = await this.postRequest("", {
         cmd: "frappe.desk.doctype.system_console.system_console.execute_code",
         doc: JSON.stringify({
-          "name": "System Console",
-          "docstatus": 0,
-          "type": "SQL",
-          "doctype": "System Console",
-          "console": sql
+          name: "System Console",
+          docstatus: 0,
+          type: "SQL",
+          doctype: "System Console",
+          console: sql
         })
       });
 
       if (res && res.output) {
-        return typeof res.output == "string" ? JSON.parse(res.output) : res.output;
+        return typeof res.output == "string"
+          ? JSON.parse(res.output)
+          : res.output;
       }
 
       return [];
@@ -308,7 +342,7 @@ export default class FrappeClient {
       const res = await fetch(`${this.axiosClient.defaults.baseURL}${url}`, {
         method: "POST",
         headers: {
-          "Authorization": this.headers["Authorization"]
+          Authorization: this.headers["Authorization"]
         },
         body: formData
       }).then((response) => response.json());

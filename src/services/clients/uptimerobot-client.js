@@ -47,7 +47,9 @@ export default class UptimeRobotClient {
     const response = await this.client.post("/getMonitors", params.toString());
 
     if (response.data?.stat !== "ok") {
-      throw new Error(`UptimeRobot API error: ${response.data?.error?.message || "Unknown error"}`);
+      throw new Error(
+        `UptimeRobot API error: ${response.data?.error?.message || "Unknown error"}`
+      );
     }
 
     return response.data;
@@ -61,7 +63,9 @@ export default class UptimeRobotClient {
     const response = await this.client.post("/getMonitors", params.toString());
 
     if (response.data?.stat !== "ok") {
-      throw new Error(`UptimeRobot API error: ${response.data?.error?.message || "Unknown error"}`);
+      throw new Error(
+        `UptimeRobot API error: ${response.data?.error?.message || "Unknown error"}`
+      );
     }
 
     return response.data.monitors || [];

@@ -12,7 +12,9 @@ export class DebounceDurableObject extends DurableObject {
       [DebounceActions.SEND_TO_MESSAGE_SUMMARY_QUEUE]: async (data) => {
         await this.env["MESSAGE_SUMMARY_QUEUE"].send(data);
       },
-      [DebounceActions.SEND_TO_PANCAKE_MESSAGE_LAST_INTERACTION_QUEUE]: async (data) => {
+      [DebounceActions.SEND_TO_PANCAKE_MESSAGE_LAST_INTERACTION_QUEUE]: async (
+        data
+      ) => {
         await this.env["PANCAKE_MESSAGE_LAST_INTERACTION_QUEUE"].send(data);
       },
       [DebounceActions.SEND_TO_HARAVAN_PRODUCT_QUEUE]: async (data) => {
@@ -65,7 +67,6 @@ export class DebounceDurableObject extends DurableObject {
       if (storedTasks.size === 50) {
         await this.state.storage.setAlarm(Date.now() + 100);
       }
-
     } catch (error) {
       Sentry.captureException(error);
     }

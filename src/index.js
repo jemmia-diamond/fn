@@ -31,12 +31,13 @@ api.use("*", CorsService.createCorsConfig());
 publicApi.use("*", CorsService.createCorsConfig());
 
 // Authentication
-api.use("*",
+api.use(
+  "*",
   bearerAuth({
     verifyToken: async (token, c) => {
       const bearerToken = c.env.BEARER_TOKEN;
 
-      return (token === bearerToken) || (token === c.env.BEARER_TOKEN);
+      return token === bearerToken || token === c.env.BEARER_TOKEN;
     }
   })
 );

@@ -25,8 +25,8 @@ export default class WeddingRingController {
       material_colors: splitParams(params.material_colors),
       is_in_stock: params.is_in_stock ? params.is_in_stock === "true" : null,
       sort: {
-        by: params.sort_by || "price",
-        order: params.sort_order || "asc"
+        by: params.sort_by,
+        order: params.sort_order
       },
       price: {
         min: params.min_price ? Number(params.min_price) : null,

@@ -38,5 +38,13 @@ export const CHAT_GROUPS = {
   ACCOUNTS_RECEIVABLE: {
     chat_id: "oc_4117da9b37c4b5a82d92f1e712505c3c",
     group_name: "[OPS] Công nợ khách hàng"
+  },
+  CUSTOMER_VISITING_GROUP: {
+    chat_id: "oc_d5a6aeb3edaeb404aa6cf4e985270219",
+    group_name: "Khách đến cửa hàng"
+  },
+  HOTLINE_GROUP: {
+    chat_id: "oc_9746683abbf63773f171bc24564d20b9",
+    group_name: "[OPS] Hotline"
   }
 };

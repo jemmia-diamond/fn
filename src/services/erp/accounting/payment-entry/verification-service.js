@@ -60,34 +60,53 @@ export default class BankTransactionVerificationService {
     const orConditions = [{ payment_entry_name: paymentEntryName }];
     if (qr_payment_id) orConditions.unshift({ id: qr_payment_id });
 
-    const qrPayment = await this.db.qrPaymentTransaction.findFirst({ where: { OR: orConditions } });
+    const qrPayment = await this.db.qrPaymentTransaction.findFirst({
+      where: { OR: orConditions }
+    });
 
     if (!qrPayment) {
       return this.failedPayload(
-        `QR Payment with payment_entry_name ${paymentEntryName} not found`, "QR_NOT_FOUND",
-        { payment_entry: paymentEntryName }, NOT_FOUND);
+        `QR Payment with payment_entry_name ${paymentEntryName} not found`,
+        "QR_NOT_FOUND",
+        { payment_entry: paymentEntryName },
+        NOT_FOUND
+      );
     }
 
-    if(auto_updated == 1){
-      if (qrPayment.haravan_order_number !== sepay_order_number && !qrPayment.haravan_order_id) {
-        return this.failedPayload("Order number mismatch", "ORDER_NUMBER_MISMATCH",
+    if (auto_updated == 1) {
+      if (
+        qrPayment.haravan_order_number !== sepay_order_number &&
+        !qrPayment.haravan_order_id
+      ) {
+        return this.failedPayload(
+          "Order number mismatch",
+          "ORDER_NUMBER_MISMATCH",
           {
             payment_entry: paymentEntryName,
             qr_order_number: qrPayment.haravan_order_number,
             sepay_order_number: sepay_order_number
-          });
+          }
+        );
       }
 
-      if (payload.modified_by === "tech@jemmia.vn" && qrPayment.transfer_note !== sepay_order_description) {
-        return this.failedPayload("Order description mismatch", "ORDER_DESC_MISMATCH",
+      if (
+        payload.modified_by === "tech@jemmia.vn" &&
+        qrPayment.transfer_note !== sepay_order_description
+      ) {
+        return this.failedPayload(
+          "Order description mismatch",
+          "ORDER_DESC_MISMATCH",
           {
             payment_entry: paymentEntryName,
             qr_transfer_note: qrPayment.transfer_note,
             sepay_order_description: sepay_order_description
-          });
+          }
+        );
       }
 
-      if (parseFloat(qrPayment.transfer_amount) !== parseFloat(sepay_amount_in)) {
+      if (
+        parseFloat(qrPayment.transfer_amount) !== parseFloat(sepay_amount_in)
+      ) {
         return this.failedPayload("Amount mismatch", "AMOUNT_MISMATCH", {
           payment_entry: paymentEntryName,
           qr_amount: qrPayment.transfer_amount,
@@ -104,7 +123,10 @@ export default class BankTransactionVerificationService {
       }
     });
 
-    const successPayment = references.length != 0 ? PaymentOrderStatus.SUCCESS : PaymentOrderStatus.PENDING;
+    const successPayment =
+      references.length != 0
+        ? PaymentOrderStatus.SUCCESS
+        : PaymentOrderStatus.PENDING;
     await this.frappeClient.update({
       doctype: "Payment Entry",
       name: paymentEntryName,
@@ -113,7 +135,11 @@ export default class BankTransactionVerificationService {
       verified_by: auto_updated == 1 ? "tech@jemmia.vn" : payload?.modified_by
     });
 
-    if (updatedQrPayment.transfer_status == "success" && updatedQrPayment.haravan_order_id && auto_updated == 1) {
+    if (
+      updatedQrPayment.transfer_status == "success" &&
+      updatedQrPayment.haravan_order_id &&
+      auto_updated == 1
+    ) {
       await this.enqueueMisaBackgroundJob(qrPayment);
     }
 
@@ -130,11 +156,21 @@ export default class BankTransactionVerificationService {
     const { sepay_id, payment_entry_name } = payload;
 
     if (!sepay_id) {
-      return this.failedPayload("Bank transaction has no sepay_id", "BANK_TRANSACTION_NO_SEPAY_ID", { sepay_id }, OK);
+      return this.failedPayload(
+        "Bank transaction has no sepay_id",
+        "BANK_TRANSACTION_NO_SEPAY_ID",
+        { sepay_id },
+        OK
+      );
     }
 
     if (!payment_entry_name) {
-      return this.failedPayload("No payment_entry_name provided", "NO_PAYMENT_ENTRY_NAME", { payment_entry_name }, BAD_REQUEST);
+      return this.failedPayload(
+        "No payment_entry_name provided",
+        "NO_PAYMENT_ENTRY_NAME",
+        { payment_entry_name },
+        BAD_REQUEST
+      );
     }
 
     return {

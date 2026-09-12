@@ -162,29 +162,16 @@ export default class ImageTranslationService {
   }
 
   /**
-   * Build the expected EN filename from VI filename and content hash.
-   * VI: {filename}.png → EN: en_{filename}_{hash}.png
+   * Build the expected EN filename from VI filename.
+   * VI: {filename}.png → EN: en_{filename}.png
    *
    * @param {string} viFilename
-   * @param {string} hash
    * @returns {string}
    */
-  getTranslatedFilename(viFilename, hash) {
+  getTranslatedFilename(viFilename) {
     const nameWithoutExt = viFilename.substring(0, viFilename.lastIndexOf("."));
     const extension = viFilename.split(".").pop();
-    return `en_${nameWithoutExt}_${hash}.${extension}`;
-  }
-
-  /**
-   * Compute SHA-256 hash of image buffer.
-   *
-   * @param {Uint8Array} buffer
-   * @returns {Promise<string>}
-   */
-  async computeHash(buffer) {
-    const hashBuffer = await crypto.subtle.digest("SHA-256", buffer);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(b => b.toString(16).padStart(2, "0")).join("").substring(0, 8);
+    return `en_${nameWithoutExt}.${extension}`;
   }
 
   async isTranslatedImageExists(filename, env) {
@@ -199,7 +186,34 @@ export default class ImageTranslationService {
     return `${env.R2_JEMMIA_WEBSITE_PUBLIC_URL}/${key}`;
   }
 
-  async translateImage(image, env) {
+  async getTranslatedImageIfExists(image, env) {
+    let imageName;
+
+    if (typeof image === "string") {
+      const urlParts = image.split("/");
+      imageName = urlParts[urlParts.length - 1].split("?")[0] || "image.jpg";
+    } else {
+      imageName = image.name || "image.jpg";
+    }
+
+    const enFilename = this.getTranslatedFilename(imageName);
+
+    if (await this.isTranslatedImageExists(enFilename, env)) {
+      return this.getTranslatedImageUrl(enFilename, env);
+    }
+
+    return null;
+  }
+
+  async translateImage(image, env, useAI = true) {
+    if (!useAI) {
+      const translatedUrl = await this.getTranslatedImageIfExists(image, env);
+      if (translatedUrl) {
+        return translatedUrl;
+      }
+      return typeof image === "string" ? image : null;
+    }
+
     let imageBuffer;
     let imageName;
 
@@ -213,8 +227,7 @@ export default class ImageTranslationService {
       imageName = image.name || "image.jpg";
     }
 
-    const hash = await this.computeHash(imageBuffer);
-    const enFilename = this.getTranslatedFilename(imageName, hash);
+    const enFilename = this.getTranslatedFilename(imageName);
 
     if (await this.isTranslatedImageExists(enFilename, env)) {
       return this.getTranslatedImageUrl(enFilename, env);

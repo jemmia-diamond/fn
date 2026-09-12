@@ -20,7 +20,7 @@ class BaseConnector {
   getHeaders() {
     return {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${this.accessToken}`
+      Authorization: `Bearer ${this.accessToken}`
     };
   }
 
