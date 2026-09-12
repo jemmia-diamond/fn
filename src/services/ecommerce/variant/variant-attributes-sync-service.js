@@ -140,20 +140,49 @@ export default class VariantAttributesSyncService {
       }
     }
 
+    const designsMeta = await nocoClient.getTableMeta(
+      NOCODB_TABLES.SUPPLY.DESIGNS
+    );
+    const stockCol = designsMeta.columns?.find(
+      (c) => c.column_name === "stock_locations"
+    );
+    const validLocationOptions = new Set(
+      (stockCol?.colOptions?.options || []).map((o) => o.title)
+    );
+    if (!validLocationOptions.size) {
+      console.warn(
+        "updateDesignStockLocations: no stock_locations options resolved; skipping to avoid clearing data"
+      );
+      return;
+    }
+
     const nocoDesigns = await this._fetchNocoDesigns(nocoClient);
+    const droppedNames = new Set();
     const designUpdates = [];
     for (const design of nocoDesigns) {
       const namesSet = designLocationsMap.get(String(design.id));
+      const validNames = [];
+      if (namesSet) {
+        for (const name of namesSet) {
+          if (validLocationOptions.has(name)) validNames.push(name);
+          else droppedNames.add(name);
+        }
+      }
       const newLocations =
-        namesSet && namesSet.size > 0
-          ? Array.from(namesSet).sort().join(",")
-          : null;
+        validNames.length > 0 ? validNames.sort().join(",") : null;
       if ((design.stock_locations || null) !== newLocations) {
         designUpdates.push({
           id: design.id,
           stock_locations: newLocations
         });
       }
+    }
+    if (droppedNames.size > 0) {
+      console.warn(
+        `updateDesignStockLocations: dropped warehouse names not in stock_locations options: ${Array.from(
+          droppedNames
+        ).join(", ")}`
+      );
     }
 
     if (!designUpdates.length) return;
