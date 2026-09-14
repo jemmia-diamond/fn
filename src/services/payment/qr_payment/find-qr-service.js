@@ -5,7 +5,6 @@ import Database from "services/database";
 dayjs.extend(utc);
 
 export default class FindQRService {
-
   constructor(env) {
     this.env = env;
     this.db = Database.instance(env);

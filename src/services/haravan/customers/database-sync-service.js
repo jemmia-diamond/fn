@@ -29,7 +29,9 @@ export default class CustomerDatabaseSyncService {
     const lastSyncDate = await kv.get(KV_KEY);
 
     const fromDate = lastSyncDate
-      ? dayjs(lastSyncDate).subtract(5, "minutes").format("YYYY-MM-DDTHH:mm:ss[Z]")
+      ? dayjs(lastSyncDate)
+          .subtract(5, "minutes")
+          .format("YYYY-MM-DDTHH:mm:ss[Z]")
       : dayjs().utc().subtract(1, "hour").format("YYYY-MM-DDTHH:mm:ss[Z]");
 
     try {
@@ -39,7 +41,10 @@ export default class CustomerDatabaseSyncService {
       await this._fetchAndProcessCustomers(haravanClient, fromDate);
       await kv.put(KV_KEY, toDate);
     } catch {
-      if (lastSyncDate && dayjs(toDate).diff(dayjs(lastSyncDate), "hour") >= 1) {
+      if (
+        lastSyncDate &&
+        dayjs(toDate).diff(dayjs(lastSyncDate), "hour") >= 1
+      ) {
         await kv.put(KV_KEY, toDate);
       }
     }
@@ -74,7 +79,9 @@ export default class CustomerDatabaseSyncService {
       } catch (error) {
         if (error.status === 429) {
           const retryAfter = parseFloat(error.retryAfter || 2);
-          if (retryAfter > CustomerDatabaseSyncService.MAX_RETRY_AFTER_SECONDS) {
+          if (
+            retryAfter > CustomerDatabaseSyncService.MAX_RETRY_AFTER_SECONDS
+          ) {
             throw new Error(
               `Rate limited for ${retryAfter}s (exceeds ${CustomerDatabaseSyncService.MAX_RETRY_AFTER_SECONDS}s threshold)`
             );
@@ -93,7 +100,7 @@ export default class CustomerDatabaseSyncService {
 
     const currentDateTime = dayjs().utc().toDate();
     await this.db.$transaction(async (tx) => {
-      const operations = customers.map(customer => {
+      const operations = customers.map((customer) => {
         const data = CustomerMapper.mapCustomer(customer);
         const id = data.id;
         delete data.id;

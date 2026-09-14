@@ -10,7 +10,9 @@ class TransactionOrderConnector extends BaseConnector {
   }
 
   async createTransaction(orderId, transactionData) {
-    return this.post(`/orders/${orderId}/transactions.json`, { transaction: transactionData });
+    return this.post(`/orders/${orderId}/transactions.json`, {
+      transaction: transactionData
+    });
   }
 }
 

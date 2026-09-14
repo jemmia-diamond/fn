@@ -20,7 +20,14 @@ export default class BuybackExchangeService {
   }
 
   async find(params) {
-    const { phone_number, normalized_phone, instance_type, status, submitted_date_start, submitted_date_end } = params;
+    const {
+      phone_number,
+      normalized_phone,
+      instance_type,
+      status,
+      submitted_date_start,
+      submitted_date_end
+    } = params;
     const searchPhone = normalized_phone || phone_number;
 
     if (!searchPhone) {

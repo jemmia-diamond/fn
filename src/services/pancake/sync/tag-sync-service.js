@@ -21,7 +21,9 @@ export default class TagSyncService {
 
       const pageData = await this.pancakeClient.getPages();
       if (isInvalidTokenError(pageData)) {
-        throw new Error("Pancake API Error [102]: Invalid access_token during page query");
+        throw new Error(
+          "Pancake API Error [102]: Invalid access_token during page query"
+        );
       }
 
       const pages = pageData?.categorized?.activated || [];
@@ -48,7 +50,12 @@ export default class TagSyncService {
       const data = await this.pancakeClient.getPageTags(pageId);
 
       if (isInvalidTokenError(data)) {
-        this.captureException(new Error(`Pancake API Error [102]: Invalid access_token for tags in page ${pageId}`), pageId);
+        this.captureException(
+          new Error(
+            `Pancake API Error [102]: Invalid access_token for tags in page ${pageId}`
+          ),
+          pageId
+        );
         return;
       }
 
@@ -72,11 +79,13 @@ export default class TagSyncService {
 
       const tagData = this.mapToTagModel(item, pageId, tagId);
 
-      tagUpserts.push(this.db.tag_page.upsert({
-        where: { page_id_id: { page_id: String(pageId), id: tagId } },
-        create: { ...tagData, database_created_at: dayjs().utc().toDate() },
-        update: { ...tagData, database_updated_at: dayjs().utc().toDate() }
-      }));
+      tagUpserts.push(
+        this.db.tag_page.upsert({
+          where: { page_id_id: { page_id: String(pageId), id: tagId } },
+          create: { ...tagData, database_created_at: dayjs().utc().toDate() },
+          update: { ...tagData, database_updated_at: dayjs().utc().toDate() }
+        })
+      );
 
       if (tagUpserts.length >= 50) {
         await Promise.all(tagUpserts);

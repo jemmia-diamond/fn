@@ -3,7 +3,11 @@ import * as crypto from "crypto";
 import Database from "services/database";
 import MisaClient from "services/clients/misa-client";
 import VoucherMappingService from "services/misa/mapping/voucher-mapping-service";
-import { VOUCHER_TYPES, VOUCHER_REF_TYPES, buildOrgUnitMap } from "services/misa/constant";
+import {
+  VOUCHER_TYPES,
+  VOUCHER_REF_TYPES,
+  buildOrgUnitMap
+} from "services/misa/constant";
 import Misa from "services/misa";
 import Payment from "services/payment";
 import dayjs from "dayjs";
@@ -15,14 +19,20 @@ export default class QrTransactionService {
   }
 
   async processTransaction(qrTransaction, is_retry = false) {
-    if (qrTransaction.misa_sync_guid && qrTransaction.misa_synced_at && !is_retry) {
+    if (
+      qrTransaction.misa_sync_guid &&
+      qrTransaction.misa_synced_at &&
+      !is_retry
+    ) {
       return true;
     }
 
     const currentTime = dayjs().utc().toDate();
-    const generatedGuid = is_retry ? qrTransaction.misa_sync_guid : crypto.randomUUID();
+    const generatedGuid = is_retry
+      ? qrTransaction.misa_sync_guid
+      : crypto.randomUUID();
 
-    if (!is_retry){
+    if (!is_retry) {
       const claimed = await this.db.qrPaymentTransaction.updateMany({
         where: {
           id: qrTransaction.id,
@@ -42,7 +52,12 @@ export default class QrTransactionService {
       const misaClient = new MisaClient(this.env);
       await misaClient.getAccessToken();
 
-      const bankDictionary = await misaClient.getDictionary(8, 0, MisaClient.RETRIEVABLE_LIMIT, null);
+      const bankDictionary = await misaClient.getDictionary(
+        8,
+        0,
+        MisaClient.RETRIEVABLE_LIMIT,
+        null
+      );
       const bankMap = bankDictionary.reduce((map, bank) => {
         map[bank.bank_account_number] = {
           bank_name: bank.bank_name,
@@ -51,24 +66,31 @@ export default class QrTransactionService {
         return map;
       }, {});
 
-      const orgUnitDictionary = await misaClient.getDictionary(6, 0, MisaClient.RETRIEVABLE_LIMIT, null);
+      const orgUnitDictionary = await misaClient.getDictionary(
+        6,
+        0,
+        MisaClient.RETRIEVABLE_LIMIT,
+        null
+      );
       const orgUnitMap = buildOrgUnitMap(orgUnitDictionary);
 
-      const journalNote = qrTransaction.payment_references.length > 1
-        ? this._multiOrderName(qrTransaction.payment_references)
-        : await Misa.Utils.getJournalNote(this.db, qrTransaction);
+      const journalNote =
+        qrTransaction.payment_references.length > 1
+          ? this._multiOrderName(qrTransaction.payment_references)
+          : await Misa.Utils.getJournalNote(this.db, qrTransaction);
 
-      const { misaVoucher, originalId } = await VoucherMappingService.transformQrToVoucher(
-        qrTransaction,
-        bankMap,
-        orgUnitMap,
-        VOUCHER_TYPES.QR_PAYMENT,
-        VOUCHER_REF_TYPES.QR_PAYMENT,
-        journalNote,
-        this.env,
-        generatedGuid,
-        this.db
-      );
+      const { misaVoucher, originalId } =
+        await VoucherMappingService.transformQrToVoucher(
+          qrTransaction,
+          bankMap,
+          orgUnitMap,
+          VOUCHER_TYPES.QR_PAYMENT,
+          VOUCHER_REF_TYPES.QR_PAYMENT,
+          journalNote,
+          this.env,
+          generatedGuid,
+          this.db
+        );
 
       const payload = {
         app_id: this.env.MISA_APP_ID,
@@ -110,12 +132,14 @@ export default class QrTransactionService {
       }
     } catch (error) {
       if (!is_retry) {
-        await this.db.qrPaymentTransaction.update({
-          where: { id: qrTransaction.id },
-          data: {
-            misa_sync_guid: null
-          }
-        }).catch(() => {});
+        await this.db.qrPaymentTransaction
+          .update({
+            where: { id: qrTransaction.id },
+            data: {
+              misa_sync_guid: null
+            }
+          })
+          .catch(() => {});
       }
       throw error;
     }
@@ -133,6 +157,6 @@ export default class QrTransactionService {
   }
 
   _multiOrderName(references) {
-    return references.map(item => item?.order_number).join(", ");
+    return references.map((item) => item?.order_number).join(", ");
   }
 }

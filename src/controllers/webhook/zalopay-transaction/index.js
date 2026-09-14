@@ -3,6 +3,9 @@ import ZaloPayTransactionController from "controllers/webhook/zalopay-transactio
 export default class ZalopayTransactionWebhook {
   static async register(webhook) {
     const zalopayWebhookNamespace = webhook.basePath("/zalopay");
-    zalopayWebhookNamespace.post("/transactions", ZaloPayTransactionController.create);
+    zalopayWebhookNamespace.post(
+      "/transactions",
+      ZaloPayTransactionController.create
+    );
   }
 }

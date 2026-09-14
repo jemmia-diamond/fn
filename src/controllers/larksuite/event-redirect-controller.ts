@@ -30,24 +30,24 @@ export default class EventRedirectController {
 
     if (eventPayload) {
       switch (eventPayload.approval_code) {
-      case APPROVALS.BUYBACK_EXCHANGE.code:
-        c.executionCtx.waitUntil(
-          BuyBackInstanceService.handleApprovalWebhook(c.env, eventPayload)
-        );
-        break;
-      case APPROVALS.AFFILIATE_PAYOUT_APPROVAL.code:
-        await axios.post(
-          "https://partners.jemmia.vn/lark/event",
-          eventPayload
-        );
-        break;
-      default:
-        Sentry.captureException(new Error("Unknown approval code"), {
-          extra: {
-            approval_code: eventPayload.approval_code
-          }
-        });
-        break;
+        case APPROVALS.BUYBACK_EXCHANGE.code:
+          c.executionCtx.waitUntil(
+            BuyBackInstanceService.handleApprovalWebhook(c.env, eventPayload)
+          );
+          break;
+        case APPROVALS.AFFILIATE_PAYOUT_APPROVAL.code:
+          await axios.post(
+            "https://partners.jemmia.vn/lark/event",
+            eventPayload
+          );
+          break;
+        default:
+          Sentry.captureException(new Error("Unknown approval code"), {
+            extra: {
+              approval_code: eventPayload.approval_code
+            }
+          });
+          break;
       }
     }
 

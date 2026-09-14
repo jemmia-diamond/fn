@@ -38,12 +38,16 @@ export default class GoogleDriveClient {
 
     const jwt = await this.#signJwt(header, payload);
 
-    const response = await axios.post(GOOGLE_TOKEN_URL, new URLSearchParams({
-      grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
-      assertion: jwt
-    }), {
-      headers: { "Content-Type": "application/x-www-form-urlencoded" }
-    });
+    const response = await axios.post(
+      GOOGLE_TOKEN_URL,
+      new URLSearchParams({
+        grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
+        assertion: jwt
+      }),
+      {
+        headers: { "Content-Type": "application/x-www-form-urlencoded" }
+      }
+    );
 
     this.#accessToken = response.data.access_token;
     this.#tokenExpiry = Date.now() + (response.data.expires_in - 60) * 1000;
@@ -57,7 +61,9 @@ export default class GoogleDriveClient {
     const payloadB64 = this.#base64UrlEncode(JSON.stringify(payload));
     const unsignedToken = `${headerB64}.${payloadB64}`;
 
-    const privateKey = await this.#importPrivateKey(this.#serviceAccountKey.private_key);
+    const privateKey = await this.#importPrivateKey(
+      this.#serviceAccountKey.private_key
+    );
     const signature = await crypto.subtle.sign(
       { name: "RSASSA-PKCS1-v1_5" },
       privateKey,
@@ -74,7 +80,9 @@ export default class GoogleDriveClient {
       .replace(/-----END PRIVATE KEY-----/, "")
       .replace(/\n/g, "");
 
-    const binaryDer = Uint8Array.from(atob(pemContents), (c) => c.charCodeAt(0));
+    const binaryDer = Uint8Array.from(atob(pemContents), (c) =>
+      c.charCodeAt(0)
+    );
 
     return crypto.subtle.importKey(
       "pkcs8",

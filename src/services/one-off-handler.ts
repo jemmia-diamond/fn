@@ -10,9 +10,13 @@ export default class OneOffHandler {
     for (const { name, handler } of ONE_OFF_SCRIPTS) {
       const status = await this.env.FN_KV.get(`one-off:${name}`);
       if (status) continue;
-      await this.env.FN_KV.put(`one-off:${name}`, "running", { expirationTtl: LOCK_TTL_SECONDS });
+      await this.env.FN_KV.put(`one-off:${name}`, "running", {
+        expirationTtl: LOCK_TTL_SECONDS
+      });
       await handler(this.env);
-      await this.env.FN_KV.put(`one-off:${name}`, "done", { expirationTtl: KV_TTL_SECONDS });
+      await this.env.FN_KV.put(`one-off:${name}`, "done", {
+        expirationTtl: KV_TTL_SECONDS
+      });
     }
   }
 }

@@ -22,14 +22,23 @@ export default class VariantSyncService {
 
   async sync({ limit = null, offset = null, updatedAtMin = null } = {}) {
     const nowUtc = dayjs().utc();
-    const defaultUpdatedAtMin = nowUtc.subtract(TIME_INTERVAL_MINUTES, "minutes").toDate();
+    const defaultUpdatedAtMin = nowUtc
+      .subtract(TIME_INTERVAL_MINUTES, "minutes")
+      .toDate();
     const finalUpdatedAtMin = updatedAtMin || defaultUpdatedAtMin;
-    const variants = await this._fetchUpdatedVariants(finalUpdatedAtMin, limit, offset);
+    const variants = await this._fetchUpdatedVariants(
+      finalUpdatedAtMin,
+      limit,
+      offset
+    );
     if (!variants?.length) return;
 
     const larkVariants = await this._fetchLarkVariants(variants);
     const larkVariantMap = this._buildLarkVariantMap(larkVariants);
-    const { newVariants, oldVariants } = this._categorizeVariants(variants, larkVariantMap);
+    const { newVariants, oldVariants } = this._categorizeVariants(
+      variants,
+      larkVariantMap
+    );
 
     if (newVariants.length) await this._createLarkRecords(newVariants);
     if (oldVariants.length) await this._updateLarkRecords(oldVariants);
@@ -56,18 +65,22 @@ export default class VariantSyncService {
 
     for (let i = 0; i < variants.length; i += BATCH_SIZE) {
       const batch = variants.slice(i, i + BATCH_SIZE);
-      const variantIds = batch.map(item => String(item.variant_id));
-      const conditions = variantIds.map(vid => ({
+      const variantIds = batch.map((item) => String(item.variant_id));
+      const conditions = variantIds.map((vid) => ({
         field_name: "variant_id",
         operator: "is",
         value: [vid]
       }));
 
       const filter = { conjunction: "or", conditions };
-      const records = await RecordService.fetchRecords(this.env, this.tableConfig, {
-        filter,
-        pageSize: BATCH_SIZE
-      });
+      const records = await RecordService.fetchRecords(
+        this.env,
+        this.tableConfig,
+        {
+          filter,
+          pageSize: BATCH_SIZE
+        }
+      );
       if (records?.length) allLarkVariants.push(...records);
     }
 
@@ -125,7 +138,7 @@ export default class VariantSyncService {
   }
 
   async _createLarkRecords(variants) {
-    const records = variants.map(variant => this._composeLarkRecord(variant));
+    const records = variants.map((variant) => this._composeLarkRecord(variant));
 
     for (let i = 0; i < records.length; i += LARK_BATCH_SIZE) {
       const chunk = records.slice(i, i + LARK_BATCH_SIZE);
@@ -139,7 +152,7 @@ export default class VariantSyncService {
   }
 
   async _updateLarkRecords(variants) {
-    const records = variants.map(variant => ({
+    const records = variants.map((variant) => ({
       record_id: variant.lark_record_id,
       ...this._composeLarkRecord(variant)
     }));

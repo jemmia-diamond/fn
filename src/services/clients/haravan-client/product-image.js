@@ -10,11 +10,15 @@ class ProductImageConnector extends BaseConnector {
   }
 
   async createImage(productId, imageData) {
-    return this.post(`/products/${productId}/images.json`, { image: imageData });
+    return this.post(`/products/${productId}/images.json`, {
+      image: imageData
+    });
   }
 
   async updateImage(productId, imageId, imageData) {
-    return this.put(`/products/${productId}/images/${imageId}.json`, { image: imageData });
+    return this.put(`/products/${productId}/images/${imageId}.json`, {
+      image: imageData
+    });
   }
 
   async deleteImage(productId, imageId) {

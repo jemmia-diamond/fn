@@ -24,7 +24,13 @@ export default class SetsSyncService {
       const variantTitle = this.formatVariantTitle(row.design_codes);
 
       if (payload.type === "records.after.insert") {
-        await this.handleInsert(row, variantTitle, haravanApi, nocoClient, tableId);
+        await this.handleInsert(
+          row,
+          variantTitle,
+          haravanApi,
+          nocoClient,
+          tableId
+        );
       } else if (payload.type === "records.after.update") {
         await this.handleUpdate(row, variantTitle, haravanApi);
       } else if (payload.type === "records.after.delete") {
@@ -38,7 +44,10 @@ export default class SetsSyncService {
     if (Array.isArray(designCodes)) {
       return designCodes.join("/");
     }
-    return String(designCodes).split(",").map(s => s.trim()).join("/");
+    return String(designCodes)
+      .split(",")
+      .map((s) => s.trim())
+      .join("/");
   }
 
   async handleInsert(row, variantTitle, haravanApi, nocoClient, tableId) {

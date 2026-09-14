@@ -27,7 +27,10 @@ export default class PancakeLeadSyncService {
     if (lastSyncTimeStr) {
       updatedTime = lastSyncTimeStr;
     } else {
-      updatedTime = now.subtract(5, "minutes").subtract(1, "minute").format("YYYY-MM-DD HH:mm:ss");
+      updatedTime = now
+        .subtract(5, "minutes")
+        .subtract(1, "minute")
+        .format("YYYY-MM-DD HH:mm:ss");
     }
 
     return { now, updatedTime, KV_KEY };
@@ -46,7 +49,12 @@ export default class PancakeLeadSyncService {
     let hasError = false;
 
     while (true) {
-      const leadsData = await this.getLeadData(offset, this.BATCH_SIZE, updatedTime, defaultTimeMark);
+      const leadsData = await this.getLeadData(
+        offset,
+        this.BATCH_SIZE,
+        updatedTime,
+        defaultTimeMark
+      );
 
       if (!leadsData || leadsData.length === 0) {
         break;
@@ -62,9 +70,11 @@ export default class PancakeLeadSyncService {
         const updateResponse = await this.leadService.updateLeads(leadsData);
 
         if (updateResponse && Array.isArray(updateResponse)) {
-          updateResponse.forEach(result => {
+          updateResponse.forEach((result) => {
             if (result && result.name === null) {
-              console.warn(`Lead sync failed for conversation ${result.conversation_id}`);
+              console.warn(
+                `Lead sync failed for conversation ${result.conversation_id}`
+              );
               hasError = true;
             }
           });
@@ -81,9 +91,13 @@ export default class PancakeLeadSyncService {
     await this.env.FN_KV.put(KV_KEY, currentTime);
 
     if (hasError) {
-      console.warn(`Finished sync with errors. Total processed: ${totalProcessed}. Checkpoint advanced to ${currentTime} (with overlap).`);
+      console.warn(
+        `Finished sync with errors. Total processed: ${totalProcessed}. Checkpoint advanced to ${currentTime} (with overlap).`
+      );
     } else {
-      console.warn(`Finished sync. Total processed: ${totalProcessed}. Checkpoint saved: ${currentTime}`);
+      console.warn(
+        `Finished sync. Total processed: ${totalProcessed}. Checkpoint saved: ${currentTime}`
+      );
     }
   }
 

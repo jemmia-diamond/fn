@@ -53,7 +53,7 @@ export default class ShieldOnboardingService {
       <tr>
           <td>${group.name}</td>
           <td id="status-${group.chat_id}" class="status-cell">
-              ${isAdded ? "<span class=\"status-success\">Active</span>" : ""}
+              ${isAdded ? '<span class="status-success">Active</span>' : ""}
           </td>
           <td>
               <button 
@@ -134,11 +134,11 @@ export default class ShieldOnboardingService {
                   </thead>
                   <tbody>
                   ${ownedGroups
-    .map((group) => {
-      const isAdded = botGroupIds.has(group.chat_id);
-      return this.renderGroupRow(group, isAdded);
-    })
-    .join("")}
+                    .map((group) => {
+                      const isAdded = botGroupIds.has(group.chat_id);
+                      return this.renderGroupRow(group, isAdded);
+                    })
+                    .join("")}
                   </tbody>
               </table>
 

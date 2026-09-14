@@ -76,18 +76,36 @@ export default class NocoDBClient {
       return response.data;
     } catch (error) {
       const context = `[${method}] ${url}`;
-      throw new Error(`NocoDB Request Failed ${context}: ${error.message}`, {
-        cause: error.response?.data || error
-      });
+      const status = error.response?.status;
+      const body = error.response?.data;
+      const detail = body ? JSON.stringify(body) : error.message;
+      throw new Error(
+        `NocoDB Request Failed ${context}${status ? ` (${status})` : ""}: ${detail}`,
+        { cause: error.response?.data || error }
+      );
     }
   }
 
+  async getTableMeta(tableId) {
+    return this.#request("GET", `/api/v2/meta/tables/${tableId}`);
+  }
+
+  async updateColumn(columnId, data) {
+    return this.#request("PATCH", `/api/v2/meta/columns/${columnId}`, { data });
+  }
+
   async listRecords(tableId, params = {}) {
-    return this.#request("GET", `/api/v2/tables/${tableId}/records`, { params });
+    return this.#request("GET", `/api/v2/tables/${tableId}/records`, {
+      params
+    });
   }
 
   async readRecord(tableId, recordId, params = {}) {
-    return this.#request("GET", `/api/v2/tables/${tableId}/records/${recordId}`, { params });
+    return this.#request(
+      "GET",
+      `/api/v2/tables/${tableId}/records/${recordId}`,
+      { params }
+    );
   }
 
   async createRecords(tableId, data) {
@@ -95,19 +113,28 @@ export default class NocoDBClient {
   }
 
   async updateRecords(tableId, data) {
-    return this.#request("PATCH", `/api/v2/tables/${tableId}/records`, { data });
+    return this.#request("PATCH", `/api/v2/tables/${tableId}/records`, {
+      data
+    });
   }
 
   async deleteRecords(tableId, data) {
-    return this.#request("DELETE", `/api/v2/tables/${tableId}/records`, { data });
+    return this.#request("DELETE", `/api/v2/tables/${tableId}/records`, {
+      data
+    });
   }
 
   async countRecords(tableId, params = {}) {
-    return this.#request("GET", `/api/v2/tables/${tableId}/records/count`, { params });
+    return this.#request("GET", `/api/v2/tables/${tableId}/records/count`, {
+      params
+    });
   }
 
   async upsert(tableId, data, params = {}) {
-    const records = await this.listRecords(tableId, { where: params.where, limit: 1 });
+    const records = await this.listRecords(tableId, {
+      where: params.where,
+      limit: 1
+    });
     if (records.list && records.list.length > 0) {
       // Update
       const record = records.list[0];
@@ -121,15 +148,27 @@ export default class NocoDBClient {
   }
 
   async listLinkedRecords(tableId, linkFieldId, recordId, params = {}) {
-    return this.#request("GET", `/api/v2/tables/${tableId}/links/${linkFieldId}/records/${recordId}`, { params });
+    return this.#request(
+      "GET",
+      `/api/v2/tables/${tableId}/links/${linkFieldId}/records/${recordId}`,
+      { params }
+    );
   }
 
   async linkRecords(tableId, linkFieldId, recordId, data) {
-    return this.#request("POST", `/api/v2/tables/${tableId}/links/${linkFieldId}/records/${recordId}`, { data });
+    return this.#request(
+      "POST",
+      `/api/v2/tables/${tableId}/links/${linkFieldId}/records/${recordId}`,
+      { data }
+    );
   }
 
   async unlinkRecords(tableId, linkFieldId, recordId, data) {
-    return this.#request("DELETE", `/api/v2/tables/${tableId}/links/${linkFieldId}/records/${recordId}`, { data });
+    return this.#request(
+      "DELETE",
+      `/api/v2/tables/${tableId}/links/${linkFieldId}/records/${recordId}`,
+      { data }
+    );
   }
 
   async uploadAttachment(params, fileData) {

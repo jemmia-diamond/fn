@@ -1,12 +1,14 @@
 import * as lark from "@larksuiteoapi/node-sdk";
 import { createFetchAdapter } from "@haverstack/axios-fetch-adapter";
-import { createAxiosClient, DEFAULT_RETRY_CONFIG } from "services/utils/http-client";
+import {
+  createAxiosClient,
+  DEFAULT_RETRY_CONFIG
+} from "services/utils/http-client";
 const fetchAdapter = createFetchAdapter();
 let clientV2Instance = null;
 export const LARK_WIKI_URL = "https://jemmiadiamond.sg.larksuite.com/wiki";
 
 export default class LarksuiteService {
-
   static async _getCredentials(env) {
     const appId = env.LARK_APP_ID;
     const appSecret = env.LARK_APP_SECRET;
@@ -20,7 +22,8 @@ export default class LarksuiteService {
     }
 
     const { appId, appSecret } = await this._getCredentials(env);
-    const larkApiEndpoint = env.LARK_API_ENDPOINT || "https://open.larksuite.com";
+    const larkApiEndpoint =
+      env.LARK_API_ENDPOINT || "https://open.larksuite.com";
 
     clientV2Instance = new lark.Client({
       appId: appId,
@@ -32,13 +35,16 @@ export default class LarksuiteService {
   }
 
   static async createLarkAxiosClient(env, token) {
-    const client = createAxiosClient({
-      baseURL: env.LARK_API_ENDPOINT,
-      timeout: 15000,
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    }, { ...DEFAULT_RETRY_CONFIG, retries: 6 });
+    const client = createAxiosClient(
+      {
+        baseURL: env.LARK_API_ENDPOINT,
+        timeout: 15000,
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      },
+      { ...DEFAULT_RETRY_CONFIG, retries: 6 }
+    );
     client.defaults.adapter = fetchAdapter;
     return client;
   }
@@ -71,7 +77,9 @@ export default class LarksuiteService {
         _payload.params.page_token = pageToken;
       } while (pageToken);
     } catch (err) {
-      throw new Error(`Lark pagination request failed: ${err?.message || String(err)}`);
+      throw new Error(
+        `Lark pagination request failed: ${err?.message || String(err)}`
+      );
     }
     return responses;
   }
@@ -88,4 +96,4 @@ export default class LarksuiteService {
     });
     return res.data?.user;
   }
-};
+}

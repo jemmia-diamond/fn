@@ -9,7 +9,13 @@ dayjs.extend(utc);
 
 const CHUNK_SIZE = 20;
 
-export async function fetchLeadsFromERP(frappeClient, doctype, fromDate, toDate, pageSize) {
+export async function fetchLeadsFromERP(
+  frappeClient,
+  doctype,
+  fromDate,
+  toDate,
+  pageSize
+) {
   try {
     const filters = {};
     filters["modified"] = [">=", fromDate];
@@ -29,12 +35,15 @@ export async function fetchLeadsFromERP(frappeClient, doctype, fromDate, toDate,
       });
 
       if (leadsBatch?.length) {
-        const leadNames = leadsBatch.map(lead => lead.name);
-        const leadProductItems = await fetchLeadProductItemsFromERP(frappeClient, leadNames);
+        const leadNames = leadsBatch.map((lead) => lead.name);
+        const leadProductItems = await fetchLeadProductItemsFromERP(
+          frappeClient,
+          leadNames
+        );
 
         // group leadProductItems by lead name
         const leadProductItemsMap = {};
-        leadProductItems.forEach(item => {
+        leadProductItems.forEach((item) => {
           if (!leadProductItemsMap[item.parent]) {
             leadProductItemsMap[item.parent] = [];
           }
@@ -42,7 +51,7 @@ export async function fetchLeadsFromERP(frappeClient, doctype, fromDate, toDate,
         });
 
         // add leadProductItems to each lead in leadsBatch
-        leadsBatch.forEach(lead => {
+        leadsBatch.forEach((lead) => {
           lead.preferred_product_type = leadProductItemsMap[lead.name] || [];
         });
 
@@ -63,7 +72,7 @@ export async function fetchLeadProductItemsFromERP(frappeClient, leadNames) {
   if (!Array.isArray(leadNames) || leadNames.length === 0) {
     return [];
   }
-  const quotedNames = leadNames.map(name => `"${name}"`).join(", ");
+  const quotedNames = leadNames.map((name) => `"${name}"`).join(", ");
   const sql = `SELECT * FROM \`tabLead Product Item\` WHERE parent IN (${quotedNames})`;
   const leadProductItems = await frappeClient.executeSQL(sql);
   return leadProductItems || [];
@@ -81,28 +90,43 @@ export async function saveLeadsToDatabase(db, leads) {
       const chunk = leadsData.slice(i, i + CHUNK_SIZE);
 
       // Get fields including both database timestamp columns for INSERT
-      const fields = ["uuid", ...Object.keys(chunk[0]).filter(field =>
-        field !== "database_created_at" && field !== "database_updated_at"
-      ), "database_created_at", "database_updated_at"];
-      const fieldsSql = fields.map(field => `"${field}"`).join(", ");
+      const fields = [
+        "uuid",
+        ...Object.keys(chunk[0]).filter(
+          (field) =>
+            field !== "database_created_at" && field !== "database_updated_at"
+        ),
+        "database_created_at",
+        "database_updated_at"
+      ];
+      const fieldsSql = fields.map((field) => `"${field}"`).join(", ");
 
       // Create VALUES clause with generated UUIDs and timestamps
       const currentTimestamp = new Date();
-      const values = chunk.map(lead => {
-        const leadWithTimestamps = {
-          uuid: randomUUID(),
-          ...lead,
-          database_created_at: currentTimestamp,
-          database_updated_at: currentTimestamp
-        };
-        const fieldValues = fields.map(field => escapeSqlValue(leadWithTimestamps[field]));
-        return `(${fieldValues.join(", ")})`;
-      }).join(",\n  ");
+      const values = chunk
+        .map((lead) => {
+          const leadWithTimestamps = {
+            uuid: randomUUID(),
+            ...lead,
+            database_created_at: currentTimestamp,
+            database_updated_at: currentTimestamp
+          };
+          const fieldValues = fields.map((field) =>
+            escapeSqlValue(leadWithTimestamps[field])
+          );
+          return `(${fieldValues.join(", ")})`;
+        })
+        .join(",\n  ");
 
       // Create UPDATE SET clause for ON CONFLICT (exclude "name", "uuid", and "database_created_at")
       const updateSetSql = fields
-        .filter(field => field !== "name" && field !== "uuid" && field !== "database_created_at")
-        .map(field => {
+        .filter(
+          (field) =>
+            field !== "name" &&
+            field !== "uuid" &&
+            field !== "database_created_at"
+        )
+        .map((field) => {
           if (field === "database_updated_at") {
             return `"${field}" = CURRENT_TIMESTAMP`;
           }
@@ -118,7 +142,6 @@ export async function saveLeadsToDatabase(db, leads) {
       `;
       await db.$queryRaw`${Prisma.raw(query)}`;
     }
-
   } catch (error) {
     Sentry.captureException(error);
   }
@@ -130,11 +153,10 @@ export function areAllFieldsEmpty(obj) {
   }
 
   return Object.values(obj).every(
-    value =>
+    (value) =>
       value === null ||
       value === undefined ||
       (typeof value === "string" && value.trim() === "") ||
       (Array.isArray(value) && value.length === 0)
   );
 }
-

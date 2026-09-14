@@ -52,7 +52,10 @@ export default class ProductQuoteOrderService {
       const variantId = lineItem.variant_id;
       if (!variantId) continue;
 
-      const dbTempVariant = await this._findTemporaryProductByVariantId(db, variantId);
+      const dbTempVariant = await this._findTemporaryProductByVariantId(
+        db,
+        variantId
+      );
 
       if (dbTempVariant?.lark_base_record_id) {
         const recordId = dbTempVariant.lark_base_record_id;
@@ -77,7 +80,10 @@ export default class ProductQuoteOrderService {
         }
 
         const fieldsToUpdate = {
-          [LARK_LINK_ORDER_KEY]: { link: `https://jemmiavn.myharavan.com/admin/orders/${orderId}`, text: String(orderNumber) },
+          [LARK_LINK_ORDER_KEY]: {
+            link: `https://jemmiavn.myharavan.com/admin/orders/${orderId}`,
+            text: String(orderNumber)
+          },
           [LARK_ORDER_KEY]: multiOrders
         };
 

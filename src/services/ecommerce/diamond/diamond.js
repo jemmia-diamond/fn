@@ -65,11 +65,11 @@ export default class DiamondService {
       );
       return result?.[0]
         ? {
-          ...result[0],
-          gia_url: result[0].simple_encrypted_report_no
-            ? `${this.env.R2_JEMMIA_WEBSITE_PUBLIC_URL}/website/gia-reports/${result[0].simple_encrypted_report_no}.png`
-            : null
-        }
+            ...result[0],
+            gia_url: result[0].simple_encrypted_report_no
+              ? `${this.env.R2_JEMMIA_WEBSITE_PUBLIC_URL}/website/gia-reports/${result[0].simple_encrypted_report_no}.png`
+              : null
+          }
         : null;
     } catch (e) {
       Sentry.captureException(e);

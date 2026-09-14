@@ -9,7 +9,8 @@ export const verifyHmacBase64Auth = (signatureheaderkey, secretEnvKey) =>
 
     const body = await c.req.text();
     const computedHmac = generateHmacBase64(body, secret);
-    if (signature !== computedHmac) return c.json({ error: "Unauthorized" }, 401);
+    if (signature !== computedHmac)
+      return c.json({ error: "Unauthorized" }, 401);
 
     await next();
   });

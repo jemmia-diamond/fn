@@ -1,5 +1,7 @@
 export function getFulfillmentStatus(status) {
-  const key = String(status ?? "").trim().toLowerCase();
+  const key = String(status ?? "")
+    .trim()
+    .toLowerCase();
 
   const map = {
     notfulfilled: "Chưa giao hàng",

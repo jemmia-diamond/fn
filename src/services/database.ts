@@ -7,7 +7,8 @@ import { PrismaPg } from "@prisma/adapter-pg";
 class Database {
   static createClient(env: any) {
     // If DATABASE_URL is set, use it directly. Otherwise, use Hyperdrive.
-    const connectionString = env.DATABASE_URL || env.HYPERDRIVE.connectionString;
+    const connectionString =
+      env.DATABASE_URL || env.HYPERDRIVE.connectionString;
     const adapter = new PrismaPg({ connectionString });
 
     return new PrismaClient({

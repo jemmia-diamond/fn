@@ -101,9 +101,11 @@ export function aggregateQuery(jsonParams) {
   const order = toSqlOrder(jsonParams.sort?.order);
 
   const sortStrategies = {
-    price: () => Prisma.sql`ORDER BY ${jsonParams.sort?.order === "asc" ? Prisma.raw("wr.min_price") : Prisma.raw("wr.max_price")} ${order}\n`,
+    price: () =>
+      Prisma.sql`ORDER BY ${jsonParams.sort?.order === "asc" ? Prisma.raw("wr.min_price") : Prisma.raw("wr.max_price")} ${order}\n`,
     stock: () => Prisma.sql`ORDER BY wr.qty_onhand ${order}\n`,
-    sold_quantity: () => Prisma.sql`ORDER BY COALESCE(wr.sold_quantity, 0) ${order}\n`,
+    sold_quantity: () =>
+      Prisma.sql`ORDER BY COALESCE(wr.sold_quantity, 0) ${order}\n`,
     created_date: () => Prisma.sql`ORDER BY wr.id ${order}\n`
   };
 
@@ -112,7 +114,9 @@ export function aggregateQuery(jsonParams) {
   }
 
   if (jsonParams.product_ids && jsonParams.product_ids.length > 0) {
-    const productIds = jsonParams.product_ids.map(id => typeof id === "string" ? BigInt(id) : id);
+    const productIds = jsonParams.product_ids.map((id) =>
+      typeof id === "string" ? BigInt(id) : id
+    );
     filterSql = Prisma.sql`
       ${filterSql}
       AND EXISTS (

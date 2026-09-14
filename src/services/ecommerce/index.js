@@ -12,6 +12,9 @@ import DiamondCollectService from "services/ecommerce/diamond/diamond-collect-se
 import VariantSyncService from "services/ecommerce/variant/variant-sync-service";
 import ProductG1PromotionSyncService from "services/ecommerce/product/product-g1-promotion-sync-service";
 import ProductVariantPromotionSyncService from "services/ecommerce/product/product-variant-promotion-sync-service";
+import ProductAttributesSyncService from "services/ecommerce/product/product-attributes-sync-service";
+import VariantAttributesSyncService from "services/ecommerce/variant/variant-attributes-sync-service";
+import ProductCollectionSyncService from "services/ecommerce/product/product-collection-sync-service";
 
 export default {
   ProductService: ProductService,
@@ -27,5 +30,8 @@ export default {
   DiamondCollectService: DiamondCollectService,
   VariantSyncService,
   ProductG1PromotionSyncService,
-  ProductVariantPromotionSyncService
+  ProductVariantPromotionSyncService,
+  ProductAttributesSyncService,
+  VariantAttributesSyncService,
+  ProductCollectionSyncService
 };

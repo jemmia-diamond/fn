@@ -11,7 +11,10 @@ export default class CardController {
       return ctx.json(result, 201);
     } catch (error) {
       Sentry.captureException(error);
-      throw new HTTPException(500, { message: "Failed to create data", error: error.message });
+      throw new HTTPException(500, {
+        message: "Failed to create data",
+        error: error.message
+      });
     }
   }
 
@@ -27,7 +30,10 @@ export default class CardController {
     } catch (error) {
       if (error instanceof HTTPException) throw error;
       Sentry.captureException(error);
-      throw new HTTPException(500, { message: "Failed to fetch data", error: error.message });
+      throw new HTTPException(500, {
+        message: "Failed to fetch data",
+        error: error.message
+      });
     }
   }
 
@@ -40,7 +46,10 @@ export default class CardController {
       return ctx.json(result, 200);
     } catch (error) {
       Sentry.captureException(error);
-      throw new HTTPException(500, { message: "Failed to update data", error: error.message });
+      throw new HTTPException(500, {
+        message: "Failed to update data",
+        error: error.message
+      });
     }
   }
 }

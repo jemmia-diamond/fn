@@ -1,9 +1,16 @@
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc.js";
 import { shouldReceiveWebhook } from "controllers/webhook/pancake/erp/utils";
 import PancakeClient from "pancake/pancake-client";
 import AIHUBClient from "services/clients/aihub";
+import CustomerLensClient from "services/customer-lens-client";
 import Database from "services/database";
 import LeadService from "services/erp/crm/lead/lead";
-import { EXTRA_HOOKS } from "services/pancake/constants/extra-hook.constant";
+import { PancakeCache } from "services/pancake/conversation/pancakeCache";
+import { getSalesayaScoringWebhookUrl } from "services/salesaya/constants/constant";
+import { createAxiosClient } from "services/utils/http-client";
+
+dayjs.extend(utc);
 
 export default class ConversationService {
   constructor(env) {
@@ -11,42 +18,29 @@ export default class ConversationService {
     this.pancakeClient = new PancakeClient(env);
     this.leadService = new LeadService(env);
     this.db = Database.instance(env);
+    this.customerLensClient = CustomerLensClient.instance(env);
   }
 
   async updateConversation(conversationId, pageId, insertedAt) {
     if (!conversationId || !pageId || !insertedAt) return null;
-    const result = await this.db.$queryRaw`
-      UPDATE pancake.conversation c
-      SET last_sent_at = ${insertedAt},
-          last_customer_message_at = ${insertedAt}
-      WHERE c.id = ${conversationId} AND c.page_id = ${pageId};
-    `;
-    return result;
+    const at = dayjs.utc(insertedAt).toDate();
+    return this.db.conversation.updateMany({
+      where: { id: conversationId, page_id: pageId },
+      data: { last_sent_at: at, last_customer_message_at: at }
+    });
   }
 
   async updateLastSalesMessageAt(conversationId, pageId, insertedAt) {
     if (!conversationId || !pageId || !insertedAt) return null;
-    const result = await this.db.$queryRaw`
-      UPDATE pancake.conversation c
-      SET last_sales_message_at = ${insertedAt}
-      WHERE c.id = ${conversationId} AND c.page_id = ${pageId};
-    `;
-    return result;
+    return this.db.conversation.updateMany({
+      where: { id: conversationId, page_id: pageId },
+      data: { last_sales_message_at: dayjs.utc(insertedAt).toDate() }
+    });
   }
 
-  async findPageInfo({
-    pageId
-  }) {
+  async findPageInfo({ pageId }) {
     if (!pageId) return null;
-    const result = await this.db.$queryRaw`
-      SELECT * FROM pancake.page AS p
-      WHERE p.id = ${pageId}
-      LIMIT 1;
-    `;
-    if (result && result.length > 0) {
-      return result[0];
-    }
-    return null;
+    return this.db.page.findFirst({ where: { id: pageId } });
   }
 
   async processLastCustomerMessage(body) {
@@ -67,12 +61,20 @@ export default class ConversationService {
     const insertedAt = message.inserted_at;
 
     if (!insertedAt || !conversationId || !pageId) {
-      console.warn("Missing required fields for processLastCustomerMessage. Page ID: " + pageId + ", Conversation ID: " + conversationId + ", Inserted At: " + insertedAt);
+      console.warn(
+        "Missing required fields for processLastCustomerMessage. Page ID: " +
+          pageId +
+          ", Conversation ID: " +
+          conversationId +
+          ", Inserted At: " +
+          insertedAt
+      );
       return;
     }
     await this.updateConversation(conversationId, pageId, insertedAt);
 
-    const frappeNameId = await this.leadService.getLeadNameByConversationId(conversationId);
+    const frappeNameId =
+      await this.leadService.getLeadNameByConversationId(conversationId);
     if (frappeNameId) {
       await this.leadService.updateLeadLastMessage({
         frappeNameId,
@@ -93,7 +95,8 @@ export default class ConversationService {
 
     await this.updateLastSalesMessageAt(conversationId, pageId, insertedAt);
 
-    const frappeNameId = await this.leadService.getLeadNameByConversationId(conversationId);
+    const frappeNameId =
+      await this.leadService.getLeadNameByConversationId(conversationId);
     if (frappeNameId) {
       await this.leadService.updateLeadLastMessage({
         frappeNameId,
@@ -148,28 +151,44 @@ export default class ConversationService {
     const conversationId = message?.conversation_id;
     if (!conversationId) return;
 
-    const frappeNameId = await this.leadService.getLeadNameByConversationId(conversationId);
+    const frappeNameId =
+      await this.leadService.getLeadNameByConversationId(conversationId);
 
     if (!frappeNameId) return;
 
     const aihub = new AIHUBClient(env);
     return await aihub.makeRequest("/lead-info", {
-      "pageId": body.page_id,
-      "conversationId": conversationId,
-      "webhookUrl": `${env.HOST}/webhook/ai-hub/erp/leads`
+      pageId: body.page_id,
+      conversationId: conversationId,
+      webhookUrl: `${env.HOST}/webhook/ai-hub/erp/leads`
     });
   }
 
-  async triggerExtraHooks(body) {
-    const promises = EXTRA_HOOKS.map(url =>
-      fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body)
-      })
+  async sendToCustomerLens(data) {
+    const pageId = data?.page_id;
+    const conversationId = data?.data?.conversation?.id;
+    if (!pageId || !conversationId) return;
+    const globalId = await PancakeCache.getMessageGlobalId(
+      this.pancakeClient,
+      pageId,
+      conversationId,
+      this.env
     );
+    if (!globalId) {
+      return;
+    }
 
-    await Promise.all(promises);
+    await this.customerLensClient.post("/api/profile", {
+      global_id: globalId,
+      is_force: false
+    });
+  }
+
+  async triggerSalesayaScoringHooks(body) {
+    await createAxiosClient({}).post(
+      getSalesayaScoringWebhookUrl(this.env),
+      body
+    );
   }
 
   static async dequeueMessageSummaryQueue(batch, env) {
@@ -203,7 +222,14 @@ export default class ConversationService {
   static async dequeueExtraHooksQueue(batch, env) {
     const conversationService = new ConversationService(env);
     for (const message of batch.messages) {
-      await conversationService.triggerExtraHooks(message.body);
+      await conversationService.triggerSalesayaScoringHooks(message.body);
+    }
+  }
+
+  static async dequeueMessageCustomerLensQueue(batch, env) {
+    const conversationService = new ConversationService(env);
+    for (const message of batch.messages) {
+      await conversationService.sendToCustomerLens(message.body);
     }
   }
 }

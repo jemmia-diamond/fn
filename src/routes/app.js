@@ -15,5 +15,5 @@ export default class AppRoutes {
     app.get("/jemmia-shield/callback", JemmiaShieldCallbackController.index);
     app.post("/jemmia-shield/add-bot", ShieldGroupBotGrantController.create);
     app.get("/jemmia-shield/message-recall/view", ShieldMessageController.show);
-  };
-};
+  }
+}

@@ -3,7 +3,11 @@ import * as crypto from "crypto";
 import Database from "services/database";
 import MisaClient from "services/clients/misa-client";
 import CashVoucherMappingService from "services/misa/mapping/cash-voucher-mapping-service";
-import { VOUCHER_TYPES, VOUCHER_REF_TYPES, buildOrgUnitMap } from "services/misa/constant";
+import {
+  VOUCHER_TYPES,
+  VOUCHER_REF_TYPES,
+  buildOrgUnitMap
+} from "services/misa/constant";
 import Misa from "services/misa";
 import Payment from "services/payment";
 import dayjs from "dayjs";
@@ -15,14 +19,20 @@ export default class ManualTransactionService {
   }
 
   async processTransaction(manualPayment, is_retry = false) {
-    if (manualPayment.misa_sync_guid && manualPayment.misa_synced_at && !is_retry) {
+    if (
+      manualPayment.misa_sync_guid &&
+      manualPayment.misa_synced_at &&
+      !is_retry
+    ) {
       return true;
     }
 
     const currentTime = dayjs().utc().toDate();
-    const generatedGuid = is_retry ? manualPayment.misa_sync_guid : crypto.randomUUID();
+    const generatedGuid = is_retry
+      ? manualPayment.misa_sync_guid
+      : crypto.randomUUID();
 
-    if (!is_retry){
+    if (!is_retry) {
       const claimed = await this.db.manualPaymentTransaction.updateMany({
         where: {
           uuid: manualPayment.uuid,
@@ -42,7 +52,12 @@ export default class ManualTransactionService {
       const misaClient = new MisaClient(this.env);
       await misaClient.getAccessToken();
 
-      const bankDictionary = await misaClient.getDictionary(8, 0, MisaClient.RETRIEVABLE_LIMIT, null);
+      const bankDictionary = await misaClient.getDictionary(
+        8,
+        0,
+        MisaClient.RETRIEVABLE_LIMIT,
+        null
+      );
       const bankMap = bankDictionary.reduce((map, bank) => {
         map[bank.bank_account_number] = {
           bank_name: bank.bank_name,
@@ -51,27 +66,38 @@ export default class ManualTransactionService {
         return map;
       }, {});
 
-      const orgUnitDictionary = await misaClient.getDictionary(6, 0, MisaClient.RETRIEVABLE_LIMIT, null);
+      const orgUnitDictionary = await misaClient.getDictionary(
+        6,
+        0,
+        MisaClient.RETRIEVABLE_LIMIT,
+        null
+      );
       const orgUnitMap = buildOrgUnitMap(orgUnitDictionary);
 
-      const journalNote = manualPayment.payment_references.length > 1
-        ? this._multiOrderName(manualPayment.payment_references)
-        : await Misa.Utils.getJournalNote(this.db, manualPayment);
+      const journalNote =
+        manualPayment.payment_references.length > 1
+          ? this._multiOrderName(manualPayment.payment_references)
+          : await Misa.Utils.getJournalNote(this.db, manualPayment);
       const isCash = manualPayment.payment_type === "Tiền Mặt";
-      const voucherType = isCash ? VOUCHER_TYPES.MANUAL_PAYMENT : VOUCHER_TYPES.OTHER_MANUAL_PAYMENT;
-      const refType = isCash ? VOUCHER_REF_TYPES.MANUAL_PAYMENT : VOUCHER_REF_TYPES.OTHER_MANUAL_PAYMENT;
+      const voucherType = isCash
+        ? VOUCHER_TYPES.MANUAL_PAYMENT
+        : VOUCHER_TYPES.OTHER_MANUAL_PAYMENT;
+      const refType = isCash
+        ? VOUCHER_REF_TYPES.MANUAL_PAYMENT
+        : VOUCHER_REF_TYPES.OTHER_MANUAL_PAYMENT;
 
-      const { misaVoucher, originalId } = await CashVoucherMappingService.transforManualToVoucher(
-        manualPayment,
-        bankMap,
-        orgUnitMap,
-        voucherType,
-        refType,
-        journalNote,
-        this.env,
-        generatedGuid,
-        this.db
-      );
+      const { misaVoucher, originalId } =
+        await CashVoucherMappingService.transforManualToVoucher(
+          manualPayment,
+          bankMap,
+          orgUnitMap,
+          voucherType,
+          refType,
+          journalNote,
+          this.env,
+          generatedGuid,
+          this.db
+        );
 
       const payload = {
         app_id: this.env.MISA_APP_ID,
@@ -113,12 +139,14 @@ export default class ManualTransactionService {
       }
     } catch (error) {
       if (!is_retry) {
-        await this.db.manualPaymentTransaction.update({
-          where: { uuid: manualPayment.uuid },
-          data: {
-            misa_sync_guid: null
-          }
-        }).catch(() => {});
+        await this.db.manualPaymentTransaction
+          .update({
+            where: { uuid: manualPayment.uuid },
+            data: {
+              misa_sync_guid: null
+            }
+          })
+          .catch(() => {});
       }
       throw error;
     }
@@ -135,6 +163,6 @@ export default class ManualTransactionService {
   }
 
   _multiOrderName(references) {
-    return references.map(item => item?.order_number).join(", ");
+    return references.map((item) => item?.order_number).join(", ");
   }
 }

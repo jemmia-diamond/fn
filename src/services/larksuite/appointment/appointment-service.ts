@@ -13,7 +13,10 @@ import LarksuiteService from "src/services/larksuite/lark";
 import { fetchLeadInfoByPhoneNumber } from "frappe/lead";
 import { mapLarkToFrappe } from "frappe/utils/utils-lark";
 import { saveAppointmentToPrismaDb } from "services/larksuite/appointment/appointment-save";
-import { getDocumentAttachments, removeFileAttachment } from "frappe/attachment";
+import {
+  getDocumentAttachments,
+  removeFileAttachment
+} from "frappe/attachment";
 import { APPOINTMENTS } from "services/larksuite/appointment/constant";
 export default class AppointmentService {
   env: any;

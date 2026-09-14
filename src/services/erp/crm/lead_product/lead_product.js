@@ -10,18 +10,19 @@ export default class LeadProductService {
   constructor(env) {
     this.env = env;
     this.doctype = "Lead Product";
-    this.frappeClient = new FrappeClient(
-      {
-        url: env.JEMMIA_ERP_BASE_URL,
-        apiKey: env.JEMMIA_ERP_API_KEY,
-        apiSecret: env.JEMMIA_ERP_API_SECRET
-      }
-    );
+    this.frappeClient = new FrappeClient({
+      url: env.JEMMIA_ERP_BASE_URL,
+      apiKey: env.JEMMIA_ERP_API_KEY,
+      apiSecret: env.JEMMIA_ERP_API_SECRET
+    });
     this.db = Database.instance(env);
   }
 
   static async syncLeadProductToDatabase(env) {
-    const timeThreshold = dayjs().subtract(1, "day").utc().format("YYYY-MM-DD HH:mm:ss");
+    const timeThreshold = dayjs()
+      .subtract(1, "day")
+      .utc()
+      .format("YYYY-MM-DD HH:mm:ss");
     const leadProductService = new LeadProductService(env);
 
     const leadProducts = [];
@@ -29,11 +30,14 @@ export default class LeadProductService {
     let hasMore = true;
 
     while (hasMore) {
-      const pageResults = await leadProductService.frappeClient.getList("Lead Product", {
-        filters: [["modified", ">=", timeThreshold]],
-        limit_start: limitStart,
-        limit_page_length: LeadProductService.ERPNEXT_PAGE_SIZE
-      });
+      const pageResults = await leadProductService.frappeClient.getList(
+        "Lead Product",
+        {
+          filters: [["modified", ">=", timeThreshold]],
+          limit_start: limitStart,
+          limit_page_length: LeadProductService.ERPNEXT_PAGE_SIZE
+        }
+      );
 
       leadProducts.push(...pageResults);
 

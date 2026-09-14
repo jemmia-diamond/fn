@@ -22,8 +22,11 @@ export default class LarkBaseClient {
    */
   constructor(env) {
     this.#env = env;
-    const endpoint = this.#env.LARK_API_ENDPOINT || "https://open.larksuite.com";
-    this.#baseUrl = endpoint.endsWith("/open-apis") ? endpoint : `${endpoint}/open-apis`;
+    const endpoint =
+      this.#env.LARK_API_ENDPOINT || "https://open.larksuite.com";
+    this.#baseUrl = endpoint.endsWith("/open-apis")
+      ? endpoint
+      : `${endpoint}/open-apis`;
   }
 
   async #getAppCredentials() {
@@ -36,14 +39,20 @@ export default class LarkBaseClient {
     this.#appSecret = this.#env.LARK_APP_SECRET;
 
     if (!this.#appId || !this.#appSecret) {
-      throw new Error(`LARK_APP_ID or LARK_APP_SECRET is missing. AppID: ${this.#appId}, Secret defined: ${!!this.#appSecret}`);
+      throw new Error(
+        `LARK_APP_ID or LARK_APP_SECRET is missing. AppID: ${this.#appId}, Secret defined: ${!!this.#appSecret}`
+      );
     }
 
     return { appId: this.#appId, appSecret: this.#appSecret };
   }
 
   async #getAccessToken() {
-    if (this.#accessToken && this.#tokenExpiry && Date.now() < this.#tokenExpiry - 300000) {
+    if (
+      this.#accessToken &&
+      this.#tokenExpiry &&
+      Date.now() < this.#tokenExpiry - 300000
+    ) {
       return this.#accessToken;
     }
 
@@ -64,11 +73,13 @@ export default class LarkBaseClient {
       }
 
       this.#accessToken = response.data.tenant_access_token;
-      this.#tokenExpiry = Date.now() + (response.data.expire * 1000); // Usually 2 hours
+      this.#tokenExpiry = Date.now() + response.data.expire * 1000; // Usually 2 hours
 
       return this.#accessToken;
     } catch (error) {
-      throw new Error(`Authentication failed: ${error.message}`, { cause: error });
+      throw new Error(`Authentication failed: ${error.message}`, {
+        cause: error
+      });
     }
   }
 
@@ -79,7 +90,7 @@ export default class LarkBaseClient {
       baseURL: this.#baseUrl,
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
+        Authorization: `Bearer ${token}`
       },
       timeout: 30000
     });
@@ -103,7 +114,9 @@ export default class LarkBaseClient {
       });
 
       if (response.data.code !== 0) {
-        throw new Error(`Lark API error: ${response.data.msg} (code: ${response.data.code})`);
+        throw new Error(
+          `Lark API error: ${response.data.msg} (code: ${response.data.code})`
+        );
       }
 
       return response.data;

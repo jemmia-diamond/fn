@@ -14,7 +14,9 @@ class InventoryPurchaseOrderConnector extends BaseConnector {
   }
 
   async updatePurchaseOrder(orderId, orderData) {
-    return this.put(`/purchase_orders/${orderId}.json`, { purchase_order: orderData });
+    return this.put(`/purchase_orders/${orderId}.json`, {
+      purchase_order: orderData
+    });
   }
 }
 

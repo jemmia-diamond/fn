@@ -14,21 +14,17 @@ const RETRYABLE_ERROR_CODES = [
   "DBAmisNotConnectDBACT"
 ];
 
-const SUCCESS_ERROR_CODES = [
-  "IsCreatedVoucher"
-];
+const SUCCESS_ERROR_CODES = ["IsCreatedVoucher"];
 
 export default class MisaCallbackVoucherHandler {
   constructor(env) {
     this.env = env;
     this.db = Database.instance(env);
-    this.frappeClient = new FrappeClient(
-      {
-        url: env.JEMMIA_ERP_BASE_URL,
-        apiKey: env.JEMMIA_ERP_API_KEY,
-        apiSecret: env.JEMMIA_ERP_API_SECRET
-      }
-    );
+    this.frappeClient = new FrappeClient({
+      url: env.JEMMIA_ERP_BASE_URL,
+      apiKey: env.JEMMIA_ERP_API_KEY,
+      apiSecret: env.JEMMIA_ERP_API_SECRET
+    });
     this.doctype = "Payment Entry";
   }
 
@@ -40,7 +36,10 @@ export default class MisaCallbackVoucherHandler {
     const modelName = await this._determineModelName(results[0]);
 
     if (!modelName) {
-      Sentry.captureMessage("MISA Callback: Could not determine model for batch. Skipping.", results[0]);
+      Sentry.captureMessage(
+        "MISA Callback: Could not determine model for batch. Skipping.",
+        results[0]
+      );
       return;
     }
 
@@ -48,18 +47,26 @@ export default class MisaCallbackVoucherHandler {
     for (const result of results) {
       const { org_refid, success, error_message, error_code = "" } = result;
 
-      if (SUCCESS_ERROR_CODES.includes(outerPayload?.error_code) || SUCCESS_ERROR_CODES.includes(error_code)){
+      if (
+        SUCCESS_ERROR_CODES.includes(outerPayload?.error_code) ||
+        SUCCESS_ERROR_CODES.includes(error_code)
+      ) {
         Sentry.captureMessage("MISA Callback: Voucher already created", result);
         continue;
       }
 
       try {
         const actualSuccess = outerFailed ? false : success;
-        const actualErrorCode = outerFailed ? (outerPayload?.error_code || "No error code") : error_code;
+        const actualErrorCode = outerFailed
+          ? outerPayload?.error_code || "No error code"
+          : error_code;
         const actualErrorMessage = outerFailed
-          ? (outerPayload?.error_message || "No failed message") : error_message;
-        const formattedError = actualErrorCode && actualErrorMessage
-          ? `[${actualErrorCode}] ${actualErrorMessage}` : actualErrorMessage;
+          ? outerPayload?.error_message || "No failed message"
+          : error_message;
+        const formattedError =
+          actualErrorCode && actualErrorMessage
+            ? `[${actualErrorCode}] ${actualErrorMessage}`
+            : actualErrorMessage;
 
         const dataToUpdate = {
           misa_synced: actualSuccess,
@@ -76,7 +83,9 @@ export default class MisaCallbackVoucherHandler {
         });
 
         if (!actualSuccess) {
-          const error = new Error(`MISA sync failed: [${actualErrorCode}] ${actualErrorMessage}`);
+          const error = new Error(
+            `MISA sync failed: [${actualErrorCode}] ${actualErrorMessage}`
+          );
           error.isMisaError = true;
           error.org_refid = org_refid;
           error.error_code = actualErrorCode;
@@ -88,27 +97,33 @@ export default class MisaCallbackVoucherHandler {
         }
 
         if (record?.payment_entry_name) {
-          await this.frappeClient.update({
-            doctype: this.doctype,
-            name: record.payment_entry_name,
-            misa_sync_error_msg: record.misa_sync_error_msg,
-            misa_synced: record.misa_synced,
-            misa_synced_at: record.misa_synced_at ? dayjs(record.misa_synced_at).format("YYYY-MM-DD HH:mm:ss") : null,
-            misa_sync_guid: org_refid
-          }, "name");
+          await this.frappeClient.update(
+            {
+              doctype: this.doctype,
+              name: record.payment_entry_name,
+              misa_sync_error_msg: record.misa_sync_error_msg,
+              misa_synced: record.misa_synced,
+              misa_synced_at: record.misa_synced_at
+                ? dayjs(record.misa_synced_at).format("YYYY-MM-DD HH:mm:ss")
+                : null,
+              misa_sync_guid: org_refid
+            },
+            "name"
+          );
         }
-
       } catch (error) {
         if (error?.isMisaError) {
           if (RETRYABLE_ERROR_CODES.includes(error?.error_code)) {
             if (error.recordId) {
-              const jobType = error.modelName === QR_RECORD
-                ? Misa.Constants.JOB_TYPE.CREATE_QR_VOUCHER
-                : Misa.Constants.JOB_TYPE.CREATE_MANUAL_VOUCHER;
+              const jobType =
+                error.modelName === QR_RECORD
+                  ? Misa.Constants.JOB_TYPE.CREATE_QR_VOUCHER
+                  : Misa.Constants.JOB_TYPE.CREATE_MANUAL_VOUCHER;
 
-              const data = error.modelName === QR_RECORD
-                ? { qr_transaction_id: error.recordId }
-                : { manual_payment_uuid: error.recordId };
+              const data =
+                error.modelName === QR_RECORD
+                  ? { qr_transaction_id: error.recordId }
+                  : { manual_payment_uuid: error.recordId };
 
               const payload = { job_type: jobType, data, is_retry: true };
               await this.env["MISA_QUEUE"].send(payload);

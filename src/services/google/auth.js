@@ -1,4 +1,3 @@
-
 function pemToArrayBuffer(pem) {
   const b64Lines = pem.replace(/-----[^-]+-----/g, "").replace(/\s+/g, "");
   const b64 = atob(b64Lines);
@@ -92,7 +91,9 @@ export default class GoogleAuth {
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`Failed to fetch access token: ${response.status} ${errorText}`);
+      throw new Error(
+        `Failed to fetch access token: ${response.status} ${errorText}`
+      );
     }
 
     const data = await response.json();
