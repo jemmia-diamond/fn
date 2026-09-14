@@ -76,10 +76,22 @@ export default class NocoDBClient {
       return response.data;
     } catch (error) {
       const context = `[${method}] ${url}`;
-      throw new Error(`NocoDB Request Failed ${context}: ${error.message}`, {
-        cause: error.response?.data || error
-      });
+      const status = error.response?.status;
+      const body = error.response?.data;
+      const detail = body ? JSON.stringify(body) : error.message;
+      throw new Error(
+        `NocoDB Request Failed ${context}${status ? ` (${status})` : ""}: ${detail}`,
+        { cause: error.response?.data || error }
+      );
     }
+  }
+
+  async getTableMeta(tableId) {
+    return this.#request("GET", `/api/v2/meta/tables/${tableId}`);
+  }
+
+  async updateColumn(columnId, data) {
+    return this.#request("PATCH", `/api/v2/meta/columns/${columnId}`, { data });
   }
 
   async listRecords(tableId, params = {}) {

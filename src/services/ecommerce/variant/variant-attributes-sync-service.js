@@ -140,20 +140,63 @@ export default class VariantAttributesSyncService {
       }
     }
 
+    const designsMeta = await nocoClient.getTableMeta(
+      NOCODB_TABLES.SUPPLY.DESIGNS
+    );
+    const stockCol = designsMeta.columns?.find(
+      (c) => c.column_name === "stock_locations"
+    );
+    if (!stockCol) {
+      console.warn(
+        "updateDesignStockLocations: stock_locations column not found; skipping"
+      );
+      return;
+    }
+
+    const neededNames = new Set();
+    for (const names of designLocationsMap.values()) {
+      for (const name of names) neededNames.add(name);
+    }
+
+    const validLocationOptions = await this._ensureStockLocationOptions(
+      nocoClient,
+      stockCol,
+      neededNames
+    );
+    if (!validLocationOptions.size) {
+      console.warn(
+        "updateDesignStockLocations: no stock_locations options resolved; skipping to avoid clearing data"
+      );
+      return;
+    }
+
     const nocoDesigns = await this._fetchNocoDesigns(nocoClient);
+    const droppedNames = new Set();
     const designUpdates = [];
     for (const design of nocoDesigns) {
       const namesSet = designLocationsMap.get(String(design.id));
+      const validNames = [];
+      if (namesSet) {
+        for (const name of namesSet) {
+          if (validLocationOptions.has(name)) validNames.push(name);
+          else droppedNames.add(name);
+        }
+      }
       const newLocations =
-        namesSet && namesSet.size > 0
-          ? Array.from(namesSet).sort().join(",")
-          : null;
+        validNames.length > 0 ? validNames.sort().join(",") : null;
       if ((design.stock_locations || null) !== newLocations) {
         designUpdates.push({
           id: design.id,
           stock_locations: newLocations
         });
       }
+    }
+    if (droppedNames.size > 0) {
+      console.warn(
+        `updateDesignStockLocations: could not register warehouse names as options, skipped: ${Array.from(
+          droppedNames
+        ).join(", ")}`
+      );
     }
 
     if (!designUpdates.length) return;
@@ -162,6 +205,33 @@ export default class VariantAttributesSyncService {
       const chunk = designUpdates.slice(i, i + BATCH_SIZE);
       await nocoClient.updateRecords(NOCODB_TABLES.SUPPLY.DESIGNS, chunk);
     }
+  }
+
+  async _ensureStockLocationOptions(nocoClient, stockCol, neededNames) {
+    const existingOptions = stockCol.colOptions?.options || [];
+    const validTitles = new Set(existingOptions.map((o) => o.title));
+    const missing = [];
+    for (const name of neededNames) {
+      if (!validTitles.has(name) && !missing.includes(name)) missing.push(name);
+    }
+    if (!missing.length) return validTitles;
+
+    const options = [
+      ...existingOptions.map((o) => ({
+        id: o.id,
+        title: o.title,
+        color: o.color,
+        order: o.order
+      })),
+      ...missing.map((title) => ({ title }))
+    ];
+
+    await nocoClient.updateColumn(stockCol.id, {
+      uidt: stockCol.uidt,
+      colOptions: { options }
+    });
+    for (const title of missing) validTitles.add(title);
+    return validTitles;
   }
 
   async _fetchNocoVariants(nocoClient) {
