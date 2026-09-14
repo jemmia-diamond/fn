@@ -5,19 +5,6 @@ import { NOCODB_TABLES } from "src/constants/nocodb-tables";
 
 const BATCH_SIZE = 100;
 
-const SELECT_OPTION_COLORS = [
-  "#cfdffe",
-  "#d0f1fd",
-  "#c2f5e8",
-  "#ffdaf6",
-  "#ffdce5",
-  "#fee2d5",
-  "#ffeab6",
-  "#d1f7c4",
-  "#ede2fe",
-  "#eeeeee"
-];
-
 export default class VariantAttributesSyncService {
   constructor(env) {
     this.env = env;
@@ -220,14 +207,20 @@ export default class VariantAttributesSyncService {
     }
   }
 
+  // NOTE: this mutates shared table schema on every run. The cron is single-flight,
+  // so the read-modify-write of column options is not guarded against a concurrent
+  // sync; if this ever runs in parallel, add a lock before the updateColumn call.
   async _ensureStockLocationOptions(nocoClient, stockCol, neededNames) {
     const existingOptions = stockCol.colOptions?.options || [];
     const validTitles = new Set(existingOptions.map((o) => o.title));
-    const missing = Array.from(neededNames).filter(
-      (name) => !validTitles.has(name)
-    );
+    const missing = [];
+    for (const name of neededNames) {
+      if (!validTitles.has(name) && !missing.includes(name)) missing.push(name);
+    }
     if (!missing.length) return validTitles;
 
+    // Existing options are resent with their ids so NocoDB preserves them;
+    // new options carry only a title and let NocoDB assign a color.
     const options = [
       ...existingOptions.map((o) => ({
         id: o.id,
@@ -235,13 +228,7 @@ export default class VariantAttributesSyncService {
         color: o.color,
         order: o.order
       })),
-      ...missing.map((title, i) => ({
-        title,
-        color:
-          SELECT_OPTION_COLORS[
-            (existingOptions.length + i) % SELECT_OPTION_COLORS.length
-          ]
-      }))
+      ...missing.map((title) => ({ title }))
     ];
 
     try {
