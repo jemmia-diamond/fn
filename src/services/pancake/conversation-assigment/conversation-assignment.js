@@ -19,14 +19,16 @@ export default class ConversationAssignmentService {
   }
 
   async getLastConversationAssigneesHistory(conversationId) {
-    const result = await this.db.$queryRaw`
-      SELECT 
-          (c.assignee_histories -> (jsonb_array_length(COALESCE(c.assignee_histories, '[]'::jsonb)) - 1)) ->'payload'->'added_users' AS added_users
-          FROM pancake.conversation c
-          WHERE c.id = ${conversationId};
-    `;
-    const userIds = result.map((r) => r.added_users?.[0]?.id).filter(Boolean);
-    return userIds;
+    const row = await this.db.conversation.findFirst({
+      where: { id: String(conversationId) },
+      select: { assignee_histories: true }
+    });
+    const histories = Array.isArray(row?.assignee_histories)
+      ? row.assignee_histories
+      : [];
+    const last = histories.length ? histories[histories.length - 1] : null;
+    const firstAddedId = last?.payload?.added_users?.[0]?.id;
+    return firstAddedId ? [firstAddedId] : [];
   }
 
   async syncConversationAssigneesWithERPToDo(todo) {
