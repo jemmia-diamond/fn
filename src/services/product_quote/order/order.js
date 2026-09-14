@@ -1,6 +1,8 @@
 import Database from "services/database";
+import NocoDBClient from "services/clients/nocodb-client";
 import RecordService from "services/larksuite/docs/base/record/record";
 import { TABLES } from "services/larksuite/docs/constant";
+import { NOCODB_TABLES } from "src/constants/nocodb-tables";
 import { isTestOrder } from "services/utils/order-intercepter";
 
 export default class ProductQuoteOrderService {
@@ -41,8 +43,7 @@ export default class ProductQuoteOrderService {
       throw new Error("orderId and orderNumber cannot be null or undefined");
     }
 
-    const productQuoteOrderService = new ProductQuoteOrderService(env);
-    const db = productQuoteOrderService.db;
+    const nocoClient = new NocoDBClient(env);
     const LARK_ORDER_KEY = "Đơn hàng";
     const LARK_LINK_ORDER_KEY = "Link Đơn hàng";
     const APP_TOKEN = TABLES.TEMP_PRODUCT_QUOTE.app_token;
@@ -53,7 +54,7 @@ export default class ProductQuoteOrderService {
       if (!variantId) continue;
 
       const dbTempVariant = await this._findTemporaryProductByVariantId(
-        db,
+        nocoClient,
         variantId
       );
 
@@ -100,24 +101,25 @@ export default class ProductQuoteOrderService {
   }
 
   /**
-   * Finds a temporary product by its Haravan variant ID from the database.
+   * Finds a temporary product by its Haravan variant ID via the NocoDB REST API.
+   * The workplace tables are NocoDB-managed and must be accessed through it, not
+   * via direct Postgres queries.
    * Note: This is a private helper method.
-   * @param {object} db - The database client instance.
+   * @param {NocoDBClient} nocoClient - The NocoDB client instance.
    * @param {number} haravanVariantId - The variant ID from Haravan.
-   * @returns {Promise<object|null>} - The temporary product record or null if not found.
+   * @returns {Promise<{lark_base_record_id: string}|null>} - The temporary product record or null if not found.
    */
-  static async _findTemporaryProductByVariantId(db, haravanVariantId) {
-    const results = await db.$queryRaw`
-      SELECT 
-        lark_base_record_id
-      FROM "workplace"."temporary_products"
-      WHERE haravan_variant_id = ${haravanVariantId} 
-      LIMIT 1;
-    `;
+  static async _findTemporaryProductByVariantId(nocoClient, haravanVariantId) {
+    const res = await nocoClient.listRecords(
+      NOCODB_TABLES.SUPPLY.TEMPORARY_PRODUCTS,
+      {
+        where: `(haravan_variant_id,eq,${haravanVariantId})`,
+        fields: "lark_base_record_id",
+        limit: 1
+      }
+    );
 
-    if (results && results.length > 0) {
-      return results[0];
-    }
-    return null;
+    const record = res.list?.[0];
+    return record ? { lark_base_record_id: record.lark_base_record_id } : null;
   }
 }
