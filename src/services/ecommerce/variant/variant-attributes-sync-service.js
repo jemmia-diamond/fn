@@ -207,9 +207,6 @@ export default class VariantAttributesSyncService {
     }
   }
 
-  // NOTE: this mutates shared table schema on every run. The cron is single-flight,
-  // so the read-modify-write of column options is not guarded against a concurrent
-  // sync; if this ever runs in parallel, add a lock before the updateColumn call.
   async _ensureStockLocationOptions(nocoClient, stockCol, neededNames) {
     const existingOptions = stockCol.colOptions?.options || [];
     const validTitles = new Set(existingOptions.map((o) => o.title));
@@ -219,8 +216,6 @@ export default class VariantAttributesSyncService {
     }
     if (!missing.length) return validTitles;
 
-    // Existing options are resent with their ids so NocoDB preserves them;
-    // new options carry only a title and let NocoDB assign a color.
     const options = [
       ...existingOptions.map((o) => ({
         id: o.id,
@@ -231,19 +226,11 @@ export default class VariantAttributesSyncService {
       ...missing.map((title) => ({ title }))
     ];
 
-    try {
-      await nocoClient.updateColumn(stockCol.id, {
-        uidt: stockCol.uidt,
-        colOptions: { options }
-      });
-      for (const title of missing) validTitles.add(title);
-    } catch (error) {
-      console.warn(
-        `updateDesignStockLocations: failed to add stock_locations options [${missing.join(
-          ", "
-        )}]: ${error.message}`
-      );
-    }
+    await nocoClient.updateColumn(stockCol.id, {
+      uidt: stockCol.uidt,
+      colOptions: { options }
+    });
+    for (const title of missing) validTitles.add(title);
     return validTitles;
   }
 
