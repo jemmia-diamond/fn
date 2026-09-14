@@ -17,13 +17,13 @@ The app talks to **two separate stores**. Using the wrong one is the top source 
 
 Prisma models cover schemas listed in `prisma/schema.prisma` `datasource.schemas` (e.g. `pancake`, `haravan`, `larksuite`, `ecom`, `payment`, `promotion`, …). Models live in `prisma/models/*.prisma`. Client built in `src/services/database.ts` (`Database.instance(env)`).
 
-- **Prefer the Prisma ORM (`findFirst`/`updateMany`/…) over `` db.$queryRaw` ``.** On the Cloudflare edge WASM engine, `$queryRaw` tagged templates can throw `PrismaClientUnknownRequestError: Invalid array buffer length` (Sentry JEMMIA-FN-K4/-SZ). The ORM binds params through a safe path. Use raw only for things the ORM can't express (JSONB paths, `REFRESH MATERIALIZED VIEW`), and fetch the column + compute in JS where feasible.
+- **Prefer the Prisma ORM (`findFirst`/`updateMany`/…) over `` db.$queryRaw` ``.** Parameterized `$queryRaw` tagged templates are unreliable on the Workers runtime; the ORM binds params safely. Use raw only for what the ORM can't express (JSONB paths, `REFRESH MATERIALIZED VIEW`), and prefer fetching the column + computing in JS.
 
 ### 2. NocoDB — workspace/"workplace" bases (source of truth)
 
 The **Supply, Marketing, and R&D** workspace bases (tables like `designs`, `variants`, `variant_serials`, `temporary_products`, `jewelries`, `diamonds`, `submitted_codes`, …) are **NocoDB-managed**. They back onto a Postgres `workplace` schema, but that schema is **NOT modeled in Prisma** and is **not** in `datasource.schemas`.
 
-- **Never `$queryRaw` against `workplace.*`.** There is no Prisma model (`db.temporaryProducts` etc. is `undefined`), and direct Postgres access bypasses NocoDB validation/webhooks and hits the same WASM crash (Sentry JEMMIA-FN-SW).
+- **Never `$queryRaw` against `workplace.*`.** There is no Prisma model for these tables (`db.temporaryProducts` etc. is `undefined`), and direct Postgres access bypasses NocoDB validation and webhooks.
 - **Access these tables via the NocoDB REST client:** `src/services/clients/nocodb-client.js` (`NocoDBClient` — `listRecords`, `getTableMeta`, `updateRecords`, `updateColumn`, …), with table ids from `src/constants/nocodb-tables.js` (`NOCODB_TABLES.{SUPPLY,MARKETING,RD}.*`).
 - Filter syntax: `listRecords(tableId, { where: "(field,eq,value)", fields: "col1,col2", limit: 1 })`.
 - NocoDB emits webhooks to `https://fn.jemmia.vn/webhook/noco/*` on record changes; handlers live under `src/controllers/webhook/nocodb/` (routed in `src/routes/webhook.js`).
