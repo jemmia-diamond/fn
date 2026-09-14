@@ -298,8 +298,8 @@ model larksuiteAppointment {
 view larksuiteSerialNumbersView {
   id                       BigInt    @unique
   serial_number            String?   @db.VarChar
-  gold_weight              Decimal?  @db.Decimal
-  diamond_weight           Decimal?  @db.Decimal
+  gold_weight              Float?
+  diamond_weight           Float?
   size_type                String?   @db.VarChar
   ring_size                String?   @db.VarChar
   supplier                 String?   @db.VarChar
@@ -314,7 +314,7 @@ view larksuiteSerialNumbersView {
   applique_material        String?   @db.VarChar
   fineness                 String?   @db.VarChar
   material_color           String?   @db.VarChar
-  price                    Decimal?  @db.Decimal
+  price                    Float?
   sku                      String?   @db.VarChar
   haravan_variant_id       BigInt?
   haravan_product_id       BigInt?
@@ -325,7 +325,7 @@ view larksuiteSerialNumbersView {
   customer_name            String?   @db.VarChar
   customer_phone           String?   @db.VarChar
   temporary_code           String?   @db.VarChar
-  temporary_price          Decimal?  @db.Decimal
+  temporary_price          Float?
   fulfillment_status_value String?   @db.VarChar
   wvs_database_updated_at  DateTime? @db.Timestamp(6)
 
