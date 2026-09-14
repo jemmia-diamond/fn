@@ -1,3 +1,5 @@
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc.js";
 import { shouldReceiveWebhook } from "controllers/webhook/pancake/erp/utils";
 import PancakeClient from "pancake/pancake-client";
 import AIHUBClient from "services/clients/aihub";
@@ -7,6 +9,8 @@ import LeadService from "services/erp/crm/lead/lead";
 import { PancakeCache } from "services/pancake/conversation/pancakeCache";
 import { getSalesayaScoringWebhookUrl } from "services/salesaya/constants/constant";
 import { createAxiosClient } from "services/utils/http-client";
+
+dayjs.extend(utc);
 
 export default class ConversationService {
   constructor(env) {
@@ -19,36 +23,24 @@ export default class ConversationService {
 
   async updateConversation(conversationId, pageId, insertedAt) {
     if (!conversationId || !pageId || !insertedAt) return null;
-    const result = await this.db.$queryRaw`
-      UPDATE pancake.conversation c
-      SET last_sent_at = ${insertedAt},
-          last_customer_message_at = ${insertedAt}
-      WHERE c.id = ${conversationId} AND c.page_id = ${pageId};
-    `;
-    return result;
+    const at = dayjs.utc(insertedAt).toDate();
+    return this.db.conversation.updateMany({
+      where: { id: conversationId, page_id: pageId },
+      data: { last_sent_at: at, last_customer_message_at: at }
+    });
   }
 
   async updateLastSalesMessageAt(conversationId, pageId, insertedAt) {
     if (!conversationId || !pageId || !insertedAt) return null;
-    const result = await this.db.$queryRaw`
-      UPDATE pancake.conversation c
-      SET last_sales_message_at = ${insertedAt}
-      WHERE c.id = ${conversationId} AND c.page_id = ${pageId};
-    `;
-    return result;
+    return this.db.conversation.updateMany({
+      where: { id: conversationId, page_id: pageId },
+      data: { last_sales_message_at: dayjs.utc(insertedAt).toDate() }
+    });
   }
 
   async findPageInfo({ pageId }) {
     if (!pageId) return null;
-    const result = await this.db.$queryRaw`
-      SELECT * FROM pancake.page AS p
-      WHERE p.id = ${pageId}
-      LIMIT 1;
-    `;
-    if (result && result.length > 0) {
-      return result[0];
-    }
-    return null;
+    return this.db.page.findFirst({ where: { id: pageId } });
   }
 
   async processLastCustomerMessage(body) {
