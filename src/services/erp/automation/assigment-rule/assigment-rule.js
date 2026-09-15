@@ -7,6 +7,7 @@ import {
   SHIFTS,
   ASSIGNMENT_RULES
 } from "services/erp/automation/assigment-rule/enum";
+import { shuffle } from "services/utils/random-utils";
 
 dayjs.extend(utc);
 
@@ -109,7 +110,7 @@ export default class AssignmentRuleService {
     const updatedAssignmentRule = await this.frappeClient.update({
       doctype: this.doctype,
       name: defaultAssignmentRule.name,
-      users: assignedUsers.map((user) => ({ user }))
+      users: shuffle(assignedUsers).map((user) => ({ user }))
     });
     return updatedAssignmentRule;
   }
