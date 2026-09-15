@@ -63,6 +63,10 @@ export default class ProductService {
         ) var ON TRUE
 
       WHERE lower(concat(p.title, p.design_code, p.haravan_product_type)) LIKE ${likePattern}
+        AND (
+          p.haravan_product_type <> 'Nhẫn Cưới'
+          OR p.wedding_ring_id IN (SELECT id FROM marts_ecom.fct_ecom_wedding_rings)
+        )
       LIMIT ${limit}
       OFFSET ${offset};
     `;
