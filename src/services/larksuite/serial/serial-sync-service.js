@@ -130,7 +130,9 @@ export default class SerialSyncService {
         const num = Number(val);
         recordItem[field] = Number.isNaN(num) ? 0 : num;
       } else if (val instanceof Date) {
-        recordItem[field] = val.toISOString();
+        recordItem[field] = Number.isNaN(val.getTime())
+          ? null
+          : val.toISOString();
       } else {
         recordItem[field] = val;
       }

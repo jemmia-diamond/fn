@@ -307,7 +307,7 @@ view larksuiteSerialNumbersView {
   storage_size_type        String?   @db.VarChar
   storage_size_1           String?   @db.VarChar
   storage_size_2           String?   @db.VarChar
-  stock_at                 DateTime? @db.Timestamp(6)
+  stock_at                 String?   @db.VarChar
   order_reference          String?   @db.VarChar
   last_rfid_scan_time      DateTime? @db.Timestamp(6)
   category                 String?   @db.VarChar
