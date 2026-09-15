@@ -180,7 +180,7 @@ model erpnextCustomer {
   date_of_issuance               DateTime? @db.Timestamp(6)
   first_source                   String?   @db.VarChar(255)
   customer_website               String?   @db.VarChar(255)
-  customer_journey               String?   @db.VarChar(255)
+  customer_journey               String?   @db.Text
   default_currency               String?   @db.VarChar(255)
   default_bank_account           String?   @db.VarChar(255)
   default_price_list             String?   @db.VarChar(255)
