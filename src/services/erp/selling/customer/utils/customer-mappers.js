@@ -43,7 +43,7 @@ export const mapCustomersToDatabase = (customers) => {
     date_of_issuance: safeValue(customer.date_of_issuance, "date"),
     first_source: safeValue(customer.first_source, "string"),
     customer_website: safeValue(customer.customer_website, "string"),
-    customer_journey: safeValue(customer.customer_journey, "string"),
+    customer_journey: safeValue(customer.customer_journey, "string", 255),
     default_currency: safeValue(customer.default_currency, "string"),
     default_bank_account: safeValue(customer.default_bank_account, "string"),
     default_price_list: safeValue(customer.default_price_list, "string"),

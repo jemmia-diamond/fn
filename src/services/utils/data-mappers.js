@@ -1,4 +1,4 @@
-export const safeValue = (value, type = "string") => {
+export const safeValue = (value, type = "string", maxLength = null) => {
   if (value === null || value === undefined || value === "") return null;
   switch (type) {
     case "number":
@@ -9,6 +9,9 @@ export const safeValue = (value, type = "string") => {
     case "date":
       return new Date(value);
     default:
+      if (maxLength && typeof value === "string" && value.length > maxLength) {
+        return value.slice(0, maxLength);
+      }
       return value;
   }
 };
