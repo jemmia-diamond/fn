@@ -5,6 +5,8 @@ import DiamondDiscountService from "services/ecommerce/diamond/diamond-discount-
 import { sendPromotionSyncNotification } from "services/ecommerce/diamond/utils/notification";
 import { NOCODB_TABLES } from "src/constants/nocodb-tables";
 import Database from "src/services/database";
+import { fetchComboTargets } from "services/ecommerce/promotion/combo-targets";
+import { syncVariantPromotions } from "services/ecommerce/promotion/variant-promotions";
 import { isDuplicateRecordError } from "services/utils/nocodb-errors";
 
 export default class DiamondCollectService {
@@ -33,13 +35,26 @@ export default class DiamondCollectService {
       const { ruleCollections, allPercentCollectionIds } =
         this._buildRuleCollectionsMap(allCollections);
 
+      const comboTargets = await fetchComboTargets(nocoClient);
+      const comboDiamondIds = new Set(
+        comboTargets.map((t) => t.diamond_workplace_id)
+      );
+
       await this._processDiamondBatches({
         db,
         nocoClient,
         haravanApi,
         activeRules,
         ruleCollections,
-        allPercentCollectionIds
+        allPercentCollectionIds,
+        comboDiamondIds
+      });
+
+      await syncVariantPromotions({
+        env: this.env,
+        nocodb: nocoClient,
+        haravanApi,
+        comboTargets
       });
 
       if (notify) {
@@ -297,6 +312,15 @@ export default class DiamondCollectService {
     try {
       const { activeRules, ruleCollections, nocoClient, haravanApi } = context;
 
+      if (context.comboDiamondIds?.has(diamond.id)) {
+        await this._removeDiamondFromBasePromos(
+          diamond,
+          context,
+          existingEntries
+        );
+        return;
+      }
+
       const discountPercent = DiamondDiscountService.calculateDiscountPercent({
         diamondSize: parseFloat(diamond.edge_size_2 || 0),
         rules: activeRules
@@ -325,6 +349,43 @@ export default class DiamondCollectService {
       }
       console.warn("Error processing diamond:", diamond.id, error);
       Sentry.captureException(error);
+    }
+  }
+
+  async _removeDiamondFromBasePromos(diamond, context, existingEntries) {
+    const { nocoClient, haravanApi, ruleCollections, allPercentCollectionIds } =
+      context;
+
+    await DiamondDiscountService.syncNocoDBDiscountCollections({
+      diamond,
+      targetCollectionId: null,
+      allPercentCollectionIds,
+      defaultCollectionId: null,
+      nocodb: nocoClient,
+      existingEntries
+    });
+
+    const baseHaravanIds = new Set(
+      Object.values(ruleCollections)
+        .map((r) => r.haravanId)
+        .filter(Boolean)
+        .map(Number)
+    );
+    if (!baseHaravanIds.size || !diamond.product_id) return;
+
+    try {
+      const collectsResponse = await haravanApi.collect.getCollects({
+        product_id: parseInt(diamond.product_id)
+      });
+      const collects = collectsResponse?.collects || [];
+      for (const collect of collects) {
+        if (baseHaravanIds.has(Number(collect.collection_id))) {
+          await haravanApi.collect.deleteCollect(collect.id);
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+        }
+      }
+    } catch (err) {
+      if (!this._isIgnorableError(err)) Sentry.captureException(err);
     }
   }
 

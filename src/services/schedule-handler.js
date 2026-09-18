@@ -33,9 +33,6 @@ export default {
         await new Haravan.Collect.CollectionProductSyncService(
           env
         ).syncCollectionProducts();
-        await new Ecommerce.ProductVariantPromotionSyncService(
-          env
-        ).syncVariantPromotions();
         await new Larksuite.VariantSyncService(env).sync();
         await new Ecommerce.ProductAttributesSyncService(env).sync();
         await new Ecommerce.ProductCollectionSyncService(env).syncCollections();
