@@ -97,6 +97,7 @@ export default class DesignsController {
 
     imageFiles.sort((a, b) => a.name.localeCompare(b.name));
 
+    let items;
     if (imageFiles.length === 0) {
       items = [IMAGES_NOT_FOUND];
     } else {
