@@ -5,7 +5,8 @@ import DiamondDiscountService from "services/ecommerce/diamond/diamond-discount-
 import { sendPromotionSyncNotification } from "services/ecommerce/diamond/utils/notification";
 import { NOCODB_TABLES } from "src/constants/nocodb-tables";
 import Database from "src/services/database";
-import { fetchComboDiamondIds } from "services/ecommerce/promotion/combo-targets";
+import { fetchComboTargets } from "services/ecommerce/promotion/combo-targets";
+import { syncVariantPromotions } from "services/ecommerce/promotion/variant-promotions";
 
 export default class DiamondCollectService {
   constructor(env) {
@@ -33,11 +34,14 @@ export default class DiamondCollectService {
       const { ruleCollections, allPercentCollectionIds } =
         this._buildRuleCollectionsMap(allCollections);
 
-      // Combo diamonds (variant_serials_diamonds) are promoted ONLY at variant
-      // level by syncVariantPromotions. Exclude + clean them here so a combo
-      // diamond is never double-discounted (base collection + variant promo)
-      // and the two flows stop churning each other.
-      const comboDiamondIds = await fetchComboDiamondIds(nocoClient);
+      // Combo items (variant_serials_diamonds) are the single arbiter: combo
+      // diamonds are promoted ONLY at variant level (below), so they are
+      // excluded + stripped from base collections here — no double-discount,
+      // no cross-flow churn.
+      const comboTargets = await fetchComboTargets(nocoClient);
+      const comboDiamondIds = new Set(
+        comboTargets.map((t) => t.diamond_workplace_id)
+      );
 
       await this._processDiamondBatches({
         db,
@@ -47,6 +51,15 @@ export default class DiamondCollectService {
         ruleCollections,
         allPercentCollectionIds,
         comboDiamondIds
+      });
+
+      // Combo variant-level promotions — merged in from the retired
+      // ProductVariantPromotionSyncService so this is the one promotion flow.
+      await syncVariantPromotions({
+        env: this.env,
+        nocodb: nocoClient,
+        haravanApi,
+        comboTargets
       });
 
       if (notify) {
