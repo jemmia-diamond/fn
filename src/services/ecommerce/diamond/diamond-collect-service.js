@@ -5,6 +5,7 @@ import DiamondDiscountService from "services/ecommerce/diamond/diamond-discount-
 import { sendPromotionSyncNotification } from "services/ecommerce/diamond/utils/notification";
 import { NOCODB_TABLES } from "src/constants/nocodb-tables";
 import Database from "src/services/database";
+import { fetchComboDiamondIds } from "services/ecommerce/promotion/combo-targets";
 
 export default class DiamondCollectService {
   constructor(env) {
@@ -32,13 +33,20 @@ export default class DiamondCollectService {
       const { ruleCollections, allPercentCollectionIds } =
         this._buildRuleCollectionsMap(allCollections);
 
+      // Combo diamonds (variant_serials_diamonds) are promoted ONLY at variant
+      // level by syncVariantPromotions. Exclude + clean them here so a combo
+      // diamond is never double-discounted (base collection + variant promo)
+      // and the two flows stop churning each other.
+      const comboDiamondIds = await fetchComboDiamondIds(nocoClient);
+
       await this._processDiamondBatches({
         db,
         nocoClient,
         haravanApi,
         activeRules,
         ruleCollections,
-        allPercentCollectionIds
+        allPercentCollectionIds,
+        comboDiamondIds
       });
 
       if (notify) {
@@ -296,6 +304,17 @@ export default class DiamondCollectService {
     try {
       const { activeRules, ruleCollections, nocoClient, haravanApi } = context;
 
+      // Combo diamond → owned by the variant-promo flow. Never base-promote it;
+      // strip any existing base collection links/collects to avoid double discount.
+      if (context.comboDiamondIds?.has(diamond.id)) {
+        await this._removeDiamondFromBasePromos(
+          diamond,
+          context,
+          existingEntries
+        );
+        return;
+      }
+
       const discountPercent = DiamondDiscountService.calculateDiscountPercent({
         diamondSize: parseFloat(diamond.edge_size_2 || 0),
         rules: activeRules
@@ -324,6 +343,48 @@ export default class DiamondCollectService {
       }
       console.warn("Error processing diamond:", diamond.id, error);
       Sentry.captureException(error);
+    }
+  }
+
+  /**
+   * Combo diamonds belong to the variant-level promo. Remove them from all
+   * base size collections — NocoDB links (target/default = null) and the
+   * matching Haravan collects — so they aren't double-discounted.
+   */
+  async _removeDiamondFromBasePromos(diamond, context, existingEntries) {
+    const { nocoClient, haravanApi, ruleCollections, allPercentCollectionIds } =
+      context;
+
+    await DiamondDiscountService.syncNocoDBDiscountCollections({
+      diamond,
+      targetCollectionId: null,
+      allPercentCollectionIds,
+      defaultCollectionId: null,
+      nocodb: nocoClient,
+      existingEntries
+    });
+
+    const baseHaravanIds = new Set(
+      Object.values(ruleCollections)
+        .map((r) => r.haravanId)
+        .filter(Boolean)
+        .map(Number)
+    );
+    if (!baseHaravanIds.size || !diamond.product_id) return;
+
+    try {
+      const collectsResponse = await haravanApi.collect.getCollects({
+        product_id: parseInt(diamond.product_id)
+      });
+      const collects = collectsResponse?.collects || [];
+      for (const collect of collects) {
+        if (baseHaravanIds.has(Number(collect.collection_id))) {
+          await haravanApi.collect.deleteCollect(collect.id);
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+        }
+      }
+    } catch (err) {
+      if (!this._isIgnorableError(err)) Sentry.captureException(err);
     }
   }
 

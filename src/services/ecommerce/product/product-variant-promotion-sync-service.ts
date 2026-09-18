@@ -3,6 +3,7 @@ import NocoDBClient from "services/clients/nocodb-client";
 import { NOCODB_TABLES } from "src/constants/nocodb-tables";
 import * as Sentry from "@sentry/cloudflare";
 import { sleep } from "services/utils/sleep";
+import { fetchComboTargets } from "services/ecommerce/promotion/combo-targets";
 
 interface CustomTarget {
   diamonds_id: number;
@@ -66,112 +67,6 @@ export default class ProductVariantPromotionSyncService {
     }
 
     return results;
-  }
-
-  /**
-   * Fetch the first valid custom target from variant_serials_diamonds,
-   * resolving diamond → serial → variant chain.
-   */
-  private async fetchCustomTargets(
-    nocodb: NocoDBClient
-  ): Promise<CustomTarget[]> {
-    const allVsd = await this.fetchAllRecords(
-      nocodb,
-      NOCODB_TABLES.SUPPLY.VARIANT_SERIALS_DIAMONDS,
-      { sort: "variant_serials_id" }
-    );
-
-    if (!allVsd.length) return [];
-
-    const diamondIds = [
-      ...new Set(allVsd.map((v) => v.diamonds_id).filter(Boolean))
-    ];
-    const serialIds = [
-      ...new Set(allVsd.map((v) => v.variant_serials_id).filter(Boolean))
-    ];
-
-    // Batch fetch Diamonds and Serials
-    const [diamondsRes, serialsRes] = await Promise.all([
-      this.fetchBatchRecords(
-        nocodb,
-        NOCODB_TABLES.SUPPLY.DIAMONDS,
-        diamondIds,
-        "id,variant_id,product_id"
-      ),
-      this.fetchBatchRecords(
-        nocodb,
-        NOCODB_TABLES.SUPPLY.SERIALS,
-        serialIds,
-        "id,variant_id"
-      )
-    ]);
-
-    const diamondMap = new Map<number, any>(diamondsRes.map((d) => [d.id, d]));
-    const serialMap = new Map<number, any>(serialsRes.map((s) => [s.id, s]));
-
-    const variantIds = [
-      ...new Set(serialsRes.map((s) => s.variant_id).filter(Boolean))
-    ];
-    const variantsRes = await this.fetchBatchRecords(
-      nocodb,
-      NOCODB_TABLES.SUPPLY.VARIANTS,
-      variantIds,
-      "id,haravan_variant_id,haravan_product_id,product_id"
-    );
-    const variantMap = new Map<number, any>(variantsRes.map((v) => [v.id, v]));
-
-    const targets: CustomTarget[] = [];
-    for (const vsd of allVsd) {
-      const diamond = diamondMap.get(vsd.diamonds_id);
-      if (
-        !diamond ||
-        !diamond.variant_id ||
-        diamond.variant_id <= 0 ||
-        !diamond.product_id ||
-        diamond.product_id <= 0
-      )
-        continue;
-
-      const serial = serialMap.get(vsd.variant_serials_id);
-      if (!serial || !serial.variant_id) continue;
-
-      const variant = variantMap.get(serial.variant_id);
-      if (
-        !variant ||
-        !variant.haravan_variant_id ||
-        variant.haravan_variant_id <= 0 ||
-        !variant.haravan_product_id ||
-        variant.haravan_product_id <= 0
-      )
-        continue;
-
-      targets.push({
-        diamonds_id: vsd.diamonds_id,
-        variant_serials_id: vsd.variant_serials_id,
-        diamond_haravan_variant_id: diamond.variant_id,
-        diamond_haravan_product_id: diamond.product_id,
-        jewelry_haravan_variant_id: variant.haravan_variant_id,
-        jewelry_haravan_product_id: variant.haravan_product_id,
-        jewelry_product_workplace_id: variant.product_id,
-        diamond_workplace_id: diamond.id
-      });
-    }
-    return targets;
-  }
-
-  private async fetchBatchRecords(
-    nocodb: NocoDBClient,
-    table: string,
-    ids: any[],
-    fields: string
-  ): Promise<any[]> {
-    if (!ids.length) return [];
-    const res = await nocodb.listRecords(table, {
-      where: `(id,in,${ids.join(",")})`,
-      limit: ids.length,
-      fields
-    });
-    return res.list || [];
   }
 
   /**
@@ -494,8 +389,8 @@ export default class ProductVariantPromotionSyncService {
       const haravanClient = new HaravanAPI(HRV_API_KEY);
       const nocodb = new NocoDBClient(this.env);
 
-      // 1. Resolve custom targets from variant_serials_diamonds
-      const customTargets = await this.fetchCustomTargets(nocodb);
+      // 1. Resolve custom targets from variant_serials_diamonds (shared arbiter)
+      const customTargets = await fetchComboTargets(nocodb);
       if (!customTargets.length) {
         return;
       }
