@@ -7,6 +7,7 @@ import { NOCODB_TABLES } from "src/constants/nocodb-tables";
 import Database from "src/services/database";
 import { fetchComboTargets } from "services/ecommerce/promotion/combo-targets";
 import { syncVariantPromotions } from "services/ecommerce/promotion/variant-promotions";
+import { isDuplicateRecordError } from "services/utils/nocodb-errors";
 
 export default class DiamondCollectService {
   constructor(env) {
@@ -475,10 +476,6 @@ export default class DiamondCollectService {
   }
 
   _isIgnorableError(error) {
-    const errorData = error.response?.data;
-    return (
-      errorData?.code === "23505" ||
-      errorData?.message === "This record already exists."
-    );
+    return isDuplicateRecordError(error);
   }
 }
