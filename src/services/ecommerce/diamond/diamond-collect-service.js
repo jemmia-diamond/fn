@@ -34,10 +34,6 @@ export default class DiamondCollectService {
       const { ruleCollections, allPercentCollectionIds } =
         this._buildRuleCollectionsMap(allCollections);
 
-      // Combo items (variant_serials_diamonds) are the single arbiter: combo
-      // diamonds are promoted ONLY at variant level (below), so they are
-      // excluded + stripped from base collections here — no double-discount,
-      // no cross-flow churn.
       const comboTargets = await fetchComboTargets(nocoClient);
       const comboDiamondIds = new Set(
         comboTargets.map((t) => t.diamond_workplace_id)
@@ -53,8 +49,6 @@ export default class DiamondCollectService {
         comboDiamondIds
       });
 
-      // Combo variant-level promotions — merged in from the retired
-      // ProductVariantPromotionSyncService so this is the one promotion flow.
       await syncVariantPromotions({
         env: this.env,
         nocodb: nocoClient,
@@ -317,8 +311,6 @@ export default class DiamondCollectService {
     try {
       const { activeRules, ruleCollections, nocoClient, haravanApi } = context;
 
-      // Combo diamond → owned by the variant-promo flow. Never base-promote it;
-      // strip any existing base collection links/collects to avoid double discount.
       if (context.comboDiamondIds?.has(diamond.id)) {
         await this._removeDiamondFromBasePromos(
           diamond,
@@ -359,11 +351,6 @@ export default class DiamondCollectService {
     }
   }
 
-  /**
-   * Combo diamonds belong to the variant-level promo. Remove them from all
-   * base size collections — NocoDB links (target/default = null) and the
-   * matching Haravan collects — so they aren't double-discounted.
-   */
   async _removeDiamondFromBasePromos(diamond, context, existingEntries) {
     const { nocoClient, haravanApi, ruleCollections, allPercentCollectionIds } =
       context;

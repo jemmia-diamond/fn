@@ -2,11 +2,6 @@ import { NOCODB_TABLES } from "src/constants/nocodb-tables";
 import * as Sentry from "@sentry/cloudflare";
 import { sleep } from "services/utils/sleep";
 
-// Combo variant-level promotions. Ported out of the retired
-// ProductVariantPromotionSyncService so the single promotion flow
-// (DiamondCollectService.syncDiamondsToCollects) owns it. Takes pre-resolved
-// combo targets (from combo-targets.fetchComboTargets) and shared clients.
-
 const CONFIG = {
   API_REQUEST_DELAY: 200,
   JEWELRY_PROMOTION_COLLECTION_ID: "1004602299",
@@ -252,14 +247,6 @@ async function cleanupJewelryHaravanCollects(
   }
 }
 
-/**
- * Sync combo variant-level promotions for pre-resolved combo targets.
- * @param {object} args
- * @param {any} args.env
- * @param {import("services/clients/nocodb-client").default} args.nocodb
- * @param {any} args.haravanApi
- * @param {Array} args.comboTargets - from combo-targets.fetchComboTargets
- */
 export async function syncVariantPromotions({
   env,
   nocodb,

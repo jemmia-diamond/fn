@@ -1,15 +1,5 @@
 import { NOCODB_TABLES } from "src/constants/nocodb-tables";
 
-/**
- * Shared resolver for "combo" targets — jewelry+diamond pairs defined in NocoDB
- * variant_serials_diamonds. Single source of truth so the base diamond-collect
- * flow (diamond-collect-service) and the variant-combo flow
- * (product-variant-promotion-sync-service) agree on which items are combos.
- *
- * A combo item is promoted ONLY at variant level; it must be excluded from the
- * size-based base collections to avoid double-discount / cross-flow churn.
- */
-
 async function fetchAllRecords(nocodb, table, params = {}, pageSize = 100) {
   const results = [];
   let offset = 0;
@@ -37,17 +27,6 @@ async function fetchBatchRecords(nocodb, table, ids, fields) {
   return res.list || [];
 }
 
-/**
- * Resolve the diamond → serial → variant chain for every variant_serials_diamonds
- * row into fully-qualified combo targets.
- * @param {import("services/clients/nocodb-client").default} nocodb
- * @returns {Promise<Array<{
- *   diamonds_id:number, variant_serials_id:number,
- *   diamond_haravan_variant_id:number, diamond_haravan_product_id:number,
- *   jewelry_haravan_variant_id:number, jewelry_haravan_product_id:number,
- *   jewelry_product_workplace_id:number, diamond_workplace_id:number
- * }>>}
- */
 export async function fetchComboTargets(nocodb) {
   const allVsd = await fetchAllRecords(
     nocodb,
@@ -131,11 +110,6 @@ export async function fetchComboTargets(nocodb) {
   return targets;
 }
 
-/**
- * Set of combo diamond workplace ids (workplace.diamonds.id) — used by the base
- * diamond-collect flow to exclude combo diamonds from size collections.
- * @returns {Promise<Set<number>>}
- */
 export async function fetchComboDiamondIds(nocodb) {
   const targets = await fetchComboTargets(nocodb);
   return new Set(targets.map((t) => t.diamond_workplace_id));
