@@ -114,9 +114,17 @@ erDiagram
 
 The following webhooks are configured across the NocoDB tables:
 
-| Source Table        | Webhook Title | Event / Operation     | Active | Method | Destination / Path                                                        | Condition |
-| ------------------- | ------------- | --------------------- | ------ | ------ | ------------------------------------------------------------------------- | --------- |
-| **designs**         | sync 4view    | `manual` on `trigger` | ✅ Yes | `POST` | `https://fn.jemmia.vn/webhook/noco/designs/sync-4view`                    | `false`   |
-| **designs**         | Sync render   | `manual` on `trigger` | ✅ Yes | `POST` | `https://fn.jemmia.vn/webhook/noco/designs/sync-render`                   | `false`   |
-| **submitted_codes** | Check Out     | `manual` on `trigger` | ✅ Yes | `POST` | `https://fn.jemmia.vn/webhook/noco/submitted-codes/process?type=checkout` | `false`   |
-| **submitted_codes** | Apply         | `manual` on `trigger` | ✅ Yes | `POST` | `https://fn.jemmia.vn/webhook/noco/submitted-codes/process`               | `false`   |
+> **Auth**: every `/webhook/noco/*` endpoint is guarded by `verifyNocoWebhook`
+> (`src/auth/nocodb-auth.js`), which requires the request header
+> `X-Nocodb-Webhook-Signature` to equal the `NOCODB_WEBHOOK_SECRET` env var,
+> else it returns `401`. Each hook below must therefore carry that header
+> (enabled) in its NocoDB config; a hook missing it is silently rejected.
+> The **Auth Header** column records the live state (verified via the NocoDB
+> meta API — `GET /api/v2/meta/tables/{tableId}/hooks`).
+
+| Source Table        | Webhook Title | Event / Operation     | Active | Auth Header                     | Method | Destination / Path                                                        | Condition |
+| ------------------- | ------------- | --------------------- | ------ | ------------------------------- | ------ | ------------------------------------------------------------------------- | --------- |
+| **designs**         | sync 4view    | `manual` on `trigger` | ✅ Yes | ✅ `X-Nocodb-Webhook-Signature` | `POST` | `https://fn.jemmia.vn/webhook/noco/designs/sync-4view`                    | `false`   |
+| **designs**         | Sync render   | `manual` on `trigger` | ✅ Yes | ✅ `X-Nocodb-Webhook-Signature` | `POST` | `https://fn.jemmia.vn/webhook/noco/designs/sync-render`                   | `false`   |
+| **submitted_codes** | Check Out     | `manual` on `trigger` | ✅ Yes | ✅ `X-Nocodb-Webhook-Signature` | `POST` | `https://fn.jemmia.vn/webhook/noco/submitted-codes/process?type=checkout` | `false`   |
+| **submitted_codes** | Apply         | `manual` on `trigger` | ✅ Yes | ✅ `X-Nocodb-Webhook-Signature` | `POST` | `https://fn.jemmia.vn/webhook/noco/submitted-codes/process`               | `false`   |

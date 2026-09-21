@@ -99,14 +99,27 @@ erDiagram
 
 The following webhooks are configured across the NocoDB tables:
 
-| Source Table                    | Webhook Title                | Event / Operation                   | Active | Method | Destination / Path                                                        | Condition |
-| ------------------------------- | ---------------------------- | ----------------------------------- | ------ | ------ | ------------------------------------------------------------------------- | --------- |
-| **diamonds_haravan_collection** | Collect Haravan              | `after` on `insert, update, delete` | ✅ Yes | `POST` | `https://fn.jemmia.vn/webhook/noco/collects`                              | `false`   |
-| **sets**                        | Tạo bộ trang sức             | `after` on `insert, update, delete` | ✅ Yes | `POST` | `https://fn.jemmia.vn/webhook/noco/sets`                                  | `false`   |
-| **submitted_codes**             | Check Out                    | `manual` on `trigger`               | ✅ Yes | `POST` | `https://fn.jemmia.vn/webhook/noco/submitted-codes/process?type=checkout` | `false`   |
-| **submitted_codes**             | Apply                        | `manual` on `trigger`               | ✅ Yes | `POST` | `https://fn.jemmia.vn/webhook/noco/submitted-codes/process`               | `false`   |
-| **haravan_collections**         | Create Collection            | `after` on `update`                 | ✅ Yes | `POST` | `https://fn.jemmia.vn/webhook/noco/haravan-collections`                   | `true`    |
-| **haravan_collections**         | Update collection            | `manual` on `trigger`               | ✅ Yes | `POST` | `https://fn.jemmia.vn/webhook/noco/haravan-collections`                   | `false`   |
-| **design_images**               | sync retouch images          | `manual` on `trigger`               | ✅ Yes | `POST` | `https://fn.jemmia.vn/webhook/noco/design-images/retouch-upload`          | `false`   |
-| **design_images**               | Retouch to haravan           | `manual` on `trigger`               | ✅ Yes | `POST` | `https://fn.jemmia.vn/webhook/noco/design-images/retouch-to-haravan`      | `false`   |
-| **design_images**               | Tick to Sync Haravan Retouch | `after` on `update`                 | ✅ Yes | `POST` | `https://fn.jemmia.vn/webhook/noco/design-images/retouch-to-haravan`      | `true`    |
+> **Auth**: every `/webhook/noco/*` endpoint is guarded by `verifyNocoWebhook`
+> (`src/auth/nocodb-auth.js`), which requires the request header
+> `X-Nocodb-Webhook-Signature` to equal the `NOCODB_WEBHOOK_SECRET` env var,
+> else it returns `401`. Each hook below must therefore carry that header
+> (enabled) in its NocoDB config; a hook missing it is silently rejected.
+> The **Auth Header** column records the live state (verified via the NocoDB
+> meta API — `GET /api/v2/meta/tables/{tableId}/hooks`).
+>
+> **Source-table note**: the _Collect Haravan_ hook (path `/webhook/noco/collects`)
+> is what turns both `diamonds_haravan_collection` **and** the jewelry
+> `products`↔`haravan_collections` link inserts into Haravan collects — jewelry
+> discount-collection membership depends on it.
+
+| Source Table                    | Webhook Title                | Event / Operation                   | Active | Auth Header                     | Method | Destination / Path                                                        | Condition |
+| ------------------------------- | ---------------------------- | ----------------------------------- | ------ | ------------------------------- | ------ | ------------------------------------------------------------------------- | --------- |
+| **diamonds_haravan_collection** | Collect Haravan              | `after` on `insert, update, delete` | ✅ Yes | ✅ `X-Nocodb-Webhook-Signature` | `POST` | `https://fn.jemmia.vn/webhook/noco/collects`                              | `false`   |
+| **sets**                        | Tạo bộ trang sức             | `after` on `insert, update, delete` | ✅ Yes | ✅ `X-Nocodb-Webhook-Signature` | `POST` | `https://fn.jemmia.vn/webhook/noco/sets`                                  | `false`   |
+| **submitted_codes**             | Check Out                    | `manual` on `trigger`               | ✅ Yes | ✅ `X-Nocodb-Webhook-Signature` | `POST` | `https://fn.jemmia.vn/webhook/noco/submitted-codes/process?type=checkout` | `false`   |
+| **submitted_codes**             | Apply                        | `manual` on `trigger`               | ✅ Yes | ✅ `X-Nocodb-Webhook-Signature` | `POST` | `https://fn.jemmia.vn/webhook/noco/submitted-codes/process`               | `false`   |
+| **haravan_collections**         | Create Collection            | `after` on `update`                 | ✅ Yes | ✅ `X-Nocodb-Webhook-Signature` | `POST` | `https://fn.jemmia.vn/webhook/noco/haravan-collections`                   | `true`    |
+| **haravan_collections**         | Update collection            | `manual` on `trigger`               | ✅ Yes | ✅ `X-Nocodb-Webhook-Signature` | `POST` | `https://fn.jemmia.vn/webhook/noco/haravan-collections`                   | `false`   |
+| **design_images**               | sync retouch images          | `manual` on `trigger`               | ✅ Yes | ✅ `X-Nocodb-Webhook-Signature` | `POST` | `https://fn.jemmia.vn/webhook/noco/design-images/retouch-upload`          | `false`   |
+| **design_images**               | Retouch to haravan           | `manual` on `trigger`               | ✅ Yes | ✅ `X-Nocodb-Webhook-Signature` | `POST` | `https://fn.jemmia.vn/webhook/noco/design-images/retouch-to-haravan`      | `false`   |
+| **design_images**               | Tick to Sync Haravan Retouch | `after` on `update`                 | ✅ Yes | ✅ `X-Nocodb-Webhook-Signature` | `POST` | `https://fn.jemmia.vn/webhook/noco/design-images/retouch-to-haravan`      | `true`    |
