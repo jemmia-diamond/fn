@@ -48,6 +48,7 @@ Routes.AppRoutes.register(app);
 Routes.APIRoutes.register(api);
 Routes.PublicAPIRoutes.register(publicApi);
 Routes.WebhookRoutes.register(webhook);
+Routes.KocRoutes.register(app);
 
 // Cron trigger and Queue Integrations, wrapped with Sentry
 export default Sentry.withSentry(
