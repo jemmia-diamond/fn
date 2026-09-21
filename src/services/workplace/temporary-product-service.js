@@ -200,19 +200,19 @@ export default class TemporaryProductService {
       throw new Error("Missing design_code");
     }
 
-    // temp-product create and serial insert are independent — run concurrently.
-    const [temporaryProduct, variantSerial] = await Promise.all([
-      this.addTemporaryProduct(tempProductData).catch(() =>
-        this.getTemporaryProductByLarkRecordId(
-          tempProductData.lark_base_record_id
-        )
-      ),
-      this.insertVariantSerial()
-    ]);
+    const temporaryProduct = await this.addTemporaryProduct(
+      tempProductData
+    ).catch(() =>
+      this.getTemporaryProductByLarkRecordId(
+        tempProductData.lark_base_record_id
+      )
+    );
 
     if (!temporaryProduct) {
       throw new Error("Could not fetch or create Temporary Product");
     }
+
+    const variantSerial = await this.insertVariantSerial();
 
     const tempProductId = temporaryProduct.id;
     const sku = "SPT-" + tempProductId;
