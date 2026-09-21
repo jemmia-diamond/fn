@@ -212,8 +212,6 @@ export default class TemporaryProductService {
       throw new Error("Could not fetch or create Temporary Product");
     }
 
-    const variantSerial = await this.insertVariantSerial();
-
     const tempProductId = temporaryProduct.id;
     const sku = "SPT-" + tempProductId;
 
@@ -239,6 +237,8 @@ export default class TemporaryProductService {
     );
 
     await this.setCurrentTempProductId(productId);
+
+    const variantSerial = await this.insertVariantSerial();
 
     await this.updateTemporaryProductById(tempProductId, {
       haravan_variant_id: result?.data?.variant?.id,
