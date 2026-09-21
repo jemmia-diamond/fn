@@ -41,7 +41,7 @@ export default class TemporaryProductService {
       FROM raw_haravan.products p
       WHERE p.title = 'Sản Phẩm Tạm'
         AND jsonb_typeof(p.variants) = 'array'
-        AND jsonb_array_length(p.variants) < 470
+        AND jsonb_array_length(p.variants) < 120
       LIMIT 1
     `;
     return result;
@@ -205,14 +205,15 @@ export default class TemporaryProductService {
       throw new Error("Missing design_code");
     }
 
-    let temporaryProduct;
-    try {
-      temporaryProduct = await this.addTemporaryProduct(tempProductData);
-    } catch {
-      temporaryProduct = await this.getTemporaryProductByLarkRecordId(
-        tempProductData.lark_base_record_id
-      );
-    }
+    // temp-product create and serial insert are independent — run concurrently.
+    const [temporaryProduct, variantSerial] = await Promise.all([
+      this.addTemporaryProduct(tempProductData).catch(() =>
+        this.getTemporaryProductByLarkRecordId(
+          tempProductData.lark_base_record_id
+        )
+      ),
+      this.insertVariantSerial()
+    ]);
 
     if (!temporaryProduct) {
       throw new Error("Could not fetch or create Temporary Product");
@@ -241,7 +242,6 @@ export default class TemporaryProductService {
       haravanProductId,
       variantData
     );
-    const variantSerial = await this.insertVariantSerial();
 
     await this.updateTemporaryProductById(tempProductId, {
       haravan_variant_id: result?.data?.variant?.id,
