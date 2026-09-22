@@ -1,12 +1,15 @@
 import { sign, verify } from "hono/jwt";
 import KocAffiliateService from "services/koc/koc-affiliate-service";
 
-const DEFAULT_SECRET = "jemmia-koc-affiliate-secret-2026";
-const SEVEN_DAYS_IN_SECONDS = 60 * 60 * 24 * 7;
+const EIGHT_HOURS_IN_SECONDS = 8 * 60 * 60;
 
 export default class KocAuthController {
   static getSecret(env) {
-    return env.KOC_JWT_SECRET || env.JWT_SECRET || DEFAULT_SECRET;
+    const secret = env.KOC_JWT_SECRET || env.JWT_SECRET;
+    if (!secret) {
+      throw new Error("Missing KOC_JWT_SECRET environment variable");
+    }
+    return secret;
   }
 
   static async generateToken(env, koc) {
@@ -14,10 +17,41 @@ export default class KocAuthController {
       kocId: koc.id,
       name: koc.name,
       kocDocname: koc.koc_docname,
-      exp: Math.floor(Date.now() / 1000) + SEVEN_DAYS_IN_SECONDS
+      exp: Math.floor(Date.now() / 1000) + EIGHT_HOURS_IN_SECONDS
     };
 
     return sign(payload, KocAuthController.getSecret(env));
+  }
+
+  static async checkRateLimit(c, identifier) {
+    const kv = c.env?.FN_KV;
+    if (!kv) return true;
+
+    const ip =
+      c.req.header("cf-connecting-ip") ||
+      c.req.header("x-forwarded-for") ||
+      "unknown";
+    const key = `koc_login_attempts:${identifier || ip}`;
+    const attempts = parseInt((await kv.get(key)) || "0", 10);
+
+    if (attempts >= 5) {
+      return false;
+    }
+
+    await kv.put(key, String(attempts + 1), { expirationTtl: 15 * 60 });
+    return true;
+  }
+
+  static async resetRateLimit(c, identifier) {
+    const kv = c.env?.FN_KV;
+    if (!kv) return;
+
+    const ip =
+      c.req.header("cf-connecting-ip") ||
+      c.req.header("x-forwarded-for") ||
+      "unknown";
+    const key = `koc_login_attempts:${identifier || ip}`;
+    await kv.delete(key);
   }
 
   static async create(c) {
@@ -34,6 +68,19 @@ export default class KocAuthController {
       );
     }
 
+    const isAllowed = await KocAuthController.checkRateLimit(c, username);
+    if (!isAllowed) {
+      return c.json(
+        {
+          error: "too_many_requests",
+          message: "Too Many Requests",
+          full_message:
+            "Quá nhiều lần thử đăng nhập. Vui lòng thử lại sau 15 phút."
+        },
+        429
+      );
+    }
+
     const res = await new KocAffiliateService(c.env).verifyLogin(
       username,
       password
@@ -42,9 +89,11 @@ export default class KocAuthController {
     if (!res || !res.authenticated) {
       return KocAuthController.unauthorized(
         c,
-        res?.message || "Đăng nhập thất bại"
+        "Tên đăng nhập hoặc mật khẩu không chính xác"
       );
     }
+
+    await KocAuthController.resetRateLimit(c, username);
 
     const token = await KocAuthController.generateToken(c.env, res.koc);
 
@@ -58,6 +107,15 @@ export default class KocAuthController {
         attributionWindowDays: res.koc.attribution_window_days,
         commissionRate: res.koc.commission_rate
       }
+    });
+  }
+
+  static async show(c) {
+    const koc = c.get("koc");
+    return c.json({
+      id: koc.kocId,
+      name: koc.name,
+      kocDocname: koc.kocDocname
     });
   }
 

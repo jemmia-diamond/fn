@@ -16,6 +16,7 @@ export default class KocRoutes {
     const protectedKoc = new Hono();
     protectedKoc.use("*", Koc.KocAuthController.requireAuth);
 
+    protectedKoc.get("/auth/me", Koc.KocAuthController.show);
     protectedKoc.get("/sessions", Koc.KocSessionsController.index);
     protectedKoc.get("/dashboard/stats", Koc.KocDashboardStatsController.show);
     protectedKoc.get("/leads", Koc.KocLeadsController.index);

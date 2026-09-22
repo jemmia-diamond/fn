@@ -9,8 +9,7 @@ export function maskName(fullName) {
   if (!fullName) return "";
   const parts = fullName.trim().split(/\s+/);
   if (parts.length === 1) return parts[0][0] + "***";
-  const last = parts.pop();
-  return `${parts.join(" ")} ${last[0]}***`;
+  return `${parts[0]} ***`;
 }
 
 export default class KocAffiliateService {
@@ -47,7 +46,7 @@ export default class KocAffiliateService {
       recordedLeads: res?.recorded_leads ?? 0,
       orderedLeads: res?.ordered_leads ?? 0,
       activeLeads: res?.active_leads ?? 0,
-      activeWindowDays: res?.active_window_days ?? 30,
+      activeWindowDays: res?.active_window_days ?? 45,
       totalOrderValue: res?.total_order_value ?? 0,
       commissionEarned: res?.commission_earned ?? 0,
       lastUpdated: res?.last_updated ?? null
