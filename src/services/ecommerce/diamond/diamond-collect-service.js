@@ -3,11 +3,12 @@ import HaravanAPI from "services/clients/haravan-client";
 import NocoDBClient from "services/clients/nocodb-client";
 import DiamondDiscountService from "services/ecommerce/diamond/diamond-discount-service";
 import { sendPromotionSyncNotification } from "services/ecommerce/diamond/utils/notification";
-import { NOCODB_TABLES } from "src/constants/nocodb-tables";
-import Database from "src/services/database";
 import { fetchComboTargets } from "services/ecommerce/promotion/combo-targets";
 import { syncVariantPromotions } from "services/ecommerce/promotion/variant-promotions";
 import { isDuplicateRecordError } from "services/utils/nocodb-errors";
+import CollectionSyncService from "services/sync/nocodb-to-haravan/collections/collection-sync-service";
+import { NOCODB_TABLES } from "src/constants/nocodb-tables";
+import Database from "src/services/database";
 
 export default class DiamondCollectService {
   constructor(env) {
@@ -165,24 +166,13 @@ export default class DiamondCollectService {
 
   async _triggerCollectionWebhook(col) {
     try {
-      await fetch(
-        "https://fagwjdzlfqwwyul2ij6ehvug3e0vhowc.lambda-url.ap-southeast-1.on.aws/",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            type: "records.after.update",
-            version: "v3",
-            data: {
-              table_id: NOCODB_TABLES.MARKETING.HARAVAN_COLLECTIONS,
-              table_name: "haravan_collections",
-              rows: [col]
-            }
-          })
+      await new CollectionSyncService(this.env).handle({
+        data: {
+          table_id: NOCODB_TABLES.MARKETING.HARAVAN_COLLECTIONS,
+          table_name: "haravan_collections",
+          rows: [col]
         }
-      );
+      });
     } catch (error) {
       Sentry.captureException(error, {
         tags: {
