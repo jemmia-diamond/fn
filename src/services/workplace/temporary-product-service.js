@@ -1,5 +1,5 @@
 import NocoDBClient from "services/clients/nocodb-client";
-import HaravanAPIClient from "services/haravan/api-client/api-client";
+import HaravanAPI from "services/clients/haravan-client";
 import { NOCODB_TABLES } from "src/constants/nocodb-tables";
 
 const CURRENT_TEMP_PRODUCT_KV_KEY = "temp-product:current-fill-product-id";
@@ -102,53 +102,52 @@ export default class TemporaryProductService {
   }
 
   async _createHaravanProduct(haravanClient) {
-    const result = await haravanClient.products.product.createProduct({
+    const result = await haravanClient.product.createProduct({
       title: "Sản Phẩm Tạm",
       vendor: "Jemmia",
       product_type: "virtual",
       options: [{ name: "Tiêu đề" }]
     });
-    const productId = result?.data?.product?.id;
+    const productId = result?.product?.id;
     if (!productId) {
       throw new Error("Could not create Haravan product");
     }
     return productId;
   }
 
-  _isVariantLimitError(result) {
-    if (result.status !== 422) return false;
-    const body = JSON.stringify(result.error || "").toLowerCase();
+  _isVariantLimitError(error) {
+    if (error?.response?.status !== 422) return false;
+    const body = JSON.stringify(error?.response?.data || "").toLowerCase();
     return body.includes("variant");
   }
 
   async _createVariantWithFallback(haravanClient, productId, variantData) {
-    let result = await haravanClient.products.productVariant.createVariant(
-      productId,
-      variantData
-    );
-
-    if (!result.success) {
-      if (!this._isVariantLimitError(result)) {
-        throw new Error(`Could not create Haravan variant: ${result.message}`);
-      }
-      productId = await this._createHaravanProduct(haravanClient);
-      result = await haravanClient.products.productVariant.createVariant(
+    try {
+      const result = await haravanClient.productVariant.createVariant(
         productId,
         variantData
       );
-      if (!result.success) {
-        throw new Error(`Could not create Haravan variant: ${result.message}`);
+      return { result, productId };
+    } catch (error) {
+      // Only roll over to a fresh product on Haravan's variant-limit 422;
+      // any other failure is a real error.
+      if (!this._isVariantLimitError(error)) {
+        throw new Error(`Could not create Haravan variant: ${error.message}`);
       }
+      productId = await this._createHaravanProduct(haravanClient);
+      const result = await haravanClient.productVariant.createVariant(
+        productId,
+        variantData
+      );
+      return { result, productId };
     }
-
-    return { result, productId };
   }
 
   async processTemporaryProduct(event) {
     const data = event;
     const tempProductData = tempProductMapper(data);
 
-    const haravanClient = new HaravanAPIClient(this.env);
+    const haravanClient = new HaravanAPI(this.env.HARAVAN_TOKEN);
 
     let haravanProductId = await this.getCurrentTempProductId();
 
@@ -182,7 +181,7 @@ export default class TemporaryProductService {
         variantData
       );
 
-      tempProductData.haravan_variant_id = result?.data?.variant?.id;
+      tempProductData.haravan_variant_id = result?.variant?.id;
       tempProductData.haravan_product_id = productId;
 
       await this.setCurrentTempProductId(productId);
@@ -190,7 +189,7 @@ export default class TemporaryProductService {
       await this.upsertTemporaryProduct(tempProductData);
 
       return {
-        sku: result?.data?.variant?.sku,
+        sku: result?.variant?.sku,
         serial_number: ""
       };
     }
@@ -241,13 +240,13 @@ export default class TemporaryProductService {
     const variantSerial = await this.insertVariantSerial();
 
     await this.updateTemporaryProductById(tempProductId, {
-      haravan_variant_id: result?.data?.variant?.id,
+      haravan_variant_id: result?.variant?.id,
       haravan_product_id: productId,
       variant_serial_id: variantSerial.id
     });
 
     return {
-      sku: result?.data?.variant?.sku,
+      sku: result?.variant?.sku,
       serial_number: variantSerial.serial_number
     };
   }
