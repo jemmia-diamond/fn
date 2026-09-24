@@ -2,7 +2,7 @@ import * as Sentry from "@sentry/cloudflare";
 import ZNSMessageService from "services/zalo-message/zalo-message";
 import { GetTemplateZalo } from "services/ecommerce/zalo-message/utils/format-template-zalo";
 import { ZALO_TEMPLATE } from "services/ecommerce/zalo-message/enums/zalo-template.enum";
-import HaravanAPIClient from "services/haravan/api-client/api-client";
+import HaravanAPI from "services/clients/haravan-client";
 import { getLatestOrderId } from "services/ecommerce/order-tracking/queries/get-latest-orderid";
 import Database from "services/database";
 import crypto from "crypto";
@@ -211,14 +211,17 @@ export default class SendZaloMessage {
         const latestOrderId = await getLatestOrderId(db, orderData.id);
 
         // Get latest order data from Haravan API
-        const haravanApiClient = new HaravanAPIClient(env);
-        const getOrderResponse =
-          await haravanApiClient.orders.order.getOrder(latestOrderId);
-        if (!getOrderResponse || !getOrderResponse.data) {
+        const haravanApiClient = new HaravanAPI(env.HARAVAN_TOKEN);
+        let getOrderResponse;
+        try {
+          getOrderResponse =
+            await haravanApiClient.order.getOrder(latestOrderId);
+        } catch (err) {
+          Sentry.captureException(err);
           continue;
         }
 
-        const order = getOrderResponse.data.order;
+        const order = getOrderResponse?.order;
 
         if (!order) {
           continue;
