@@ -1,7 +1,8 @@
-import Database from "services/database";
-import HaravanAPIClient from "services/haravan/api-client/api-client";
 import NocoDBClient from "services/clients/nocodb-client";
+import HaravanAPIClient from "services/haravan/api-client/api-client";
 import { NOCODB_TABLES } from "src/constants/nocodb-tables";
+
+const CURRENT_TEMP_PRODUCT_KV_KEY = "temp-product:current-fill-product-id";
 
 function tempProductMapper(data) {
   return {
@@ -29,22 +30,16 @@ function tempProductMapper(data) {
 export default class TemporaryProductService {
   constructor(env) {
     this.env = env;
-    this.db = Database.instance(env);
     this.nocodb = new NocoDBClient(env);
   }
 
-  async getHaravanTempProduct() {
-    const result = await this.db.$queryRaw`
-      SELECT
-        p.id AS product_id,
-        jsonb_array_length(p.variants) AS sum
-      FROM raw_haravan.products p
-      WHERE p.title = 'Sản Phẩm Tạm'
-        AND jsonb_typeof(p.variants) = 'array'
-        AND jsonb_array_length(p.variants) < 470
-      LIMIT 1
-    `;
-    return result;
+  async getCurrentTempProductId() {
+    return (await this.env.FN_KV.get(CURRENT_TEMP_PRODUCT_KV_KEY)) || null;
+  }
+
+  async setCurrentTempProductId(productId) {
+    if (!productId) return;
+    await this.env.FN_KV.put(CURRENT_TEMP_PRODUCT_KV_KEY, String(productId));
   }
 
   async insertVariantSerial() {
@@ -155,13 +150,11 @@ export default class TemporaryProductService {
 
     const haravanClient = new HaravanAPIClient(this.env);
 
-    const haravanTempProducts = await this.getHaravanTempProduct();
-    let haravanProductId;
+    let haravanProductId = await this.getCurrentTempProductId();
 
-    if (!haravanTempProducts || haravanTempProducts.length === 0) {
+    if (!haravanProductId) {
       haravanProductId = await this._createHaravanProduct(haravanClient);
-    } else {
-      haravanProductId = haravanTempProducts[0].product_id;
+      await this.setCurrentTempProductId(haravanProductId);
     }
 
     if (tempProductData.product_group?.toLowerCase() === "kim cương") {
@@ -192,6 +185,8 @@ export default class TemporaryProductService {
       tempProductData.haravan_variant_id = result?.data?.variant?.id;
       tempProductData.haravan_product_id = productId;
 
+      await this.setCurrentTempProductId(productId);
+
       await this.upsertTemporaryProduct(tempProductData);
 
       return {
@@ -205,14 +200,13 @@ export default class TemporaryProductService {
       throw new Error("Missing design_code");
     }
 
-    let temporaryProduct;
-    try {
-      temporaryProduct = await this.addTemporaryProduct(tempProductData);
-    } catch {
-      temporaryProduct = await this.getTemporaryProductByLarkRecordId(
+    const temporaryProduct = await this.addTemporaryProduct(
+      tempProductData
+    ).catch(() =>
+      this.getTemporaryProductByLarkRecordId(
         tempProductData.lark_base_record_id
-      );
-    }
+      )
+    );
 
     if (!temporaryProduct) {
       throw new Error("Could not fetch or create Temporary Product");
@@ -241,6 +235,9 @@ export default class TemporaryProductService {
       haravanProductId,
       variantData
     );
+
+    await this.setCurrentTempProductId(productId);
+
     const variantSerial = await this.insertVariantSerial();
 
     await this.updateTemporaryProductById(tempProductId, {
