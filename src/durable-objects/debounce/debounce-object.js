@@ -26,6 +26,22 @@ export class DebounceDurableObject extends DurableObject {
     };
   }
 
+  async acquire(key, ttlMs = 120000) {
+    const lockKey = `lock:${key}`;
+    const held = await this.state.storage.get(lockKey);
+
+    if (held && held.expiresAt > Date.now()) {
+      return false;
+    }
+
+    await this.state.storage.put(lockKey, { expiresAt: Date.now() + ttlMs });
+    return true;
+  }
+
+  async release(key) {
+    await this.state.storage.delete(`lock:${key}`);
+  }
+
   async debounce({ key, data, delay, actionType }) {
     await this.state.storage.put(key, { data, actionType });
 
@@ -44,6 +60,10 @@ export class DebounceDurableObject extends DurableObject {
       const keysToDelete = [];
 
       for (const [key, storedTask] of storedTasks) {
+        if (key.startsWith("lock:")) {
+          continue;
+        }
+
         try {
           const { data, actionType } = storedTask;
 
