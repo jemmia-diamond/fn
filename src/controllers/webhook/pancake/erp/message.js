@@ -40,21 +40,25 @@ export default class PancakeERPMessageController {
     const conversationId = data?.data?.conversation?.id;
     const isSalesMessage = pageId && senderId && pageId == senderId;
 
-    const tasks = [];
+    // Queue sends report nothing on their own, so their failures are captured
+    // below. DebounceService already reports to Sentry before it rethrows, so
+    // capturing those again would double-count every debounce failure.
+    const sends = [];
+    const debounces = [];
 
     if (shouldSendToCustomerLens(data, env)) {
-      tasks.push(env["CUSTOMER_LENS_QUEUE"].send(data));
+      sends.push(env["CUSTOMER_LENS_QUEUE"].send(data));
     }
 
     if (isSalesMessage && conversationId) {
-      tasks.push(env["PANCAKE_SALES_MESSAGE_QUEUE"].send(data));
+      sends.push(env["PANCAKE_SALES_MESSAGE_QUEUE"].send(data));
     }
 
     if (receiveWebhook) {
-      tasks.push(env["MESSAGE_QUEUE"].send(data));
-      tasks.push(env["PANCAKE_MESSAGE_WEBHOOK_DISPATCH_QUEUE"].send(data));
+      sends.push(env["MESSAGE_QUEUE"].send(data));
+      sends.push(env["PANCAKE_MESSAGE_WEBHOOK_DISPATCH_QUEUE"].send(data));
 
-      tasks.push(
+      debounces.push(
         DebounceService.debounce({
           env,
           key: `summary-conversation-${conversationId}`,
@@ -64,7 +68,7 @@ export default class PancakeERPMessageController {
         })
       );
 
-      tasks.push(
+      debounces.push(
         DebounceService.debounce({
           env,
           key: `interaction-conversation-${conversationId}`,
@@ -76,10 +80,13 @@ export default class PancakeERPMessageController {
       );
     }
 
-    // Settled, not all: one failing queue must not drop the others.
-    const results = await Promise.allSettled(tasks);
+    // Settled, not all: one failing task must not drop the others.
+    const [sendResults] = await Promise.all([
+      Promise.allSettled(sends),
+      Promise.allSettled(debounces)
+    ]);
 
-    for (const result of results) {
+    for (const result of sendResults) {
       if (result.status === "rejected") {
         Sentry.captureException(result.reason);
       }
