@@ -3,6 +3,10 @@ import HaravanAPI from "services/clients/haravan-client";
 import NocoDBClient from "services/clients/nocodb-client";
 import DiamondDiscountService from "services/ecommerce/diamond/diamond-discount-service";
 import { sendPromotionSyncNotification } from "services/ecommerce/diamond/utils/notification";
+import { fetchComboTargets } from "services/ecommerce/promotion/combo-targets";
+import { syncVariantPromotions } from "services/ecommerce/promotion/variant-promotions";
+import { isDuplicateRecordError } from "services/utils/nocodb-errors";
+import CollectionSyncService from "services/sync/nocodb-to-haravan/collections/collection-sync-service";
 import { NOCODB_TABLES } from "src/constants/nocodb-tables";
 import Database from "src/services/database";
 
@@ -32,13 +36,26 @@ export default class DiamondCollectService {
       const { ruleCollections, allPercentCollectionIds } =
         this._buildRuleCollectionsMap(allCollections);
 
+      const comboTargets = await fetchComboTargets(nocoClient);
+      const comboDiamondIds = new Set(
+        comboTargets.map((t) => t.diamond_workplace_id)
+      );
+
       await this._processDiamondBatches({
         db,
         nocoClient,
         haravanApi,
         activeRules,
         ruleCollections,
-        allPercentCollectionIds
+        allPercentCollectionIds,
+        comboDiamondIds
+      });
+
+      await syncVariantPromotions({
+        env: this.env,
+        nocodb: nocoClient,
+        haravanApi,
+        comboTargets
       });
 
       if (notify) {
@@ -149,24 +166,13 @@ export default class DiamondCollectService {
 
   async _triggerCollectionWebhook(col) {
     try {
-      await fetch(
-        "https://fagwjdzlfqwwyul2ij6ehvug3e0vhowc.lambda-url.ap-southeast-1.on.aws/",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            type: "records.after.update",
-            version: "v3",
-            data: {
-              table_id: NOCODB_TABLES.MARKETING.HARAVAN_COLLECTIONS,
-              table_name: "haravan_collections",
-              rows: [col]
-            }
-          })
+      await new CollectionSyncService(this.env).handle({
+        data: {
+          table_id: NOCODB_TABLES.MARKETING.HARAVAN_COLLECTIONS,
+          table_name: "haravan_collections",
+          rows: [col]
         }
-      );
+      });
     } catch (error) {
       Sentry.captureException(error, {
         tags: {
@@ -296,6 +302,15 @@ export default class DiamondCollectService {
     try {
       const { activeRules, ruleCollections, nocoClient, haravanApi } = context;
 
+      if (context.comboDiamondIds?.has(diamond.id)) {
+        await this._removeDiamondFromBasePromos(
+          diamond,
+          context,
+          existingEntries
+        );
+        return;
+      }
+
       const discountPercent = DiamondDiscountService.calculateDiscountPercent({
         diamondSize: parseFloat(diamond.edge_size_2 || 0),
         rules: activeRules
@@ -324,6 +339,43 @@ export default class DiamondCollectService {
       }
       console.warn("Error processing diamond:", diamond.id, error);
       Sentry.captureException(error);
+    }
+  }
+
+  async _removeDiamondFromBasePromos(diamond, context, existingEntries) {
+    const { nocoClient, haravanApi, ruleCollections, allPercentCollectionIds } =
+      context;
+
+    await DiamondDiscountService.syncNocoDBDiscountCollections({
+      diamond,
+      targetCollectionId: null,
+      allPercentCollectionIds,
+      defaultCollectionId: null,
+      nocodb: nocoClient,
+      existingEntries
+    });
+
+    const baseHaravanIds = new Set(
+      Object.values(ruleCollections)
+        .map((r) => r.haravanId)
+        .filter(Boolean)
+        .map(Number)
+    );
+    if (!baseHaravanIds.size || !diamond.product_id) return;
+
+    try {
+      const collectsResponse = await haravanApi.collect.getCollects({
+        product_id: parseInt(diamond.product_id)
+      });
+      const collects = collectsResponse?.collects || [];
+      for (const collect of collects) {
+        if (baseHaravanIds.has(Number(collect.collection_id))) {
+          await haravanApi.collect.deleteCollect(collect.id);
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+        }
+      }
+    } catch (err) {
+      if (!this._isIgnorableError(err)) Sentry.captureException(err);
     }
   }
 
@@ -414,10 +466,6 @@ export default class DiamondCollectService {
   }
 
   _isIgnorableError(error) {
-    const errorData = error.response?.data;
-    return (
-      errorData?.code === "23505" ||
-      errorData?.message === "This record already exists."
-    );
+    return isDuplicateRecordError(error);
   }
 }

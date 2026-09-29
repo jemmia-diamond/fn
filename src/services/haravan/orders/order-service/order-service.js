@@ -1,6 +1,5 @@
 import * as Sentry from "@sentry/cloudflare";
 import Database from "services/database";
-import HaravanAPIClient from "services/haravan/api-client/api-client";
 import LarksuiteService from "services/larksuite/lark";
 import RecordService from "services/larksuite/docs/base/record/record";
 import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/constant";
@@ -19,7 +18,7 @@ export default class OrderService {
   constructor(env) {
     this.env = env;
     this.db = Database.instance(env);
-    this.hrvClient = new HaravanAPIClient(env);
+    this.hrvClient = new HaravanAPI(env.HARAVAN_TOKEN);
   }
 
   async invalidOrderNotification(order) {
@@ -30,10 +29,8 @@ export default class OrderService {
     const negativeOrderedVariants = [];
     for (const jewelryVariant of jewelryVariants) {
       const productData = (
-        await this.hrvClient.products.product.getProduct(
-          jewelryVariant.product_id
-        )
-      ).data.product;
+        await this.hrvClient.product.getProduct(jewelryVariant.product_id)
+      ).product;
       const variants = productData.variants;
       const targetVariant = variants.find(
         (variant) => variant.id === jewelryVariant.variant_id

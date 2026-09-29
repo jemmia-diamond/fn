@@ -4,6 +4,7 @@ import Database from "services/database";
 import HaravanAPI from "services/clients/haravan-client";
 import OrderMapper from "services/haravan/orders/order-mapper";
 import * as crypto from "crypto";
+import * as Sentry from "@sentry/cloudflare";
 import { sleep } from "services/utils/sleep.js";
 import { isTestOrder } from "services/utils/order-intercepter";
 
@@ -41,7 +42,8 @@ export default class OrderDatabaseSyncService {
 
       await this._fetchAndProcessOrders(haravanClient, fromDate);
       await kv.put(KV_KEY, toDate);
-    } catch {
+    } catch (error) {
+      Sentry.captureException(error);
       if (
         lastSyncDate &&
         dayjs(toDate).diff(dayjs(lastSyncDate), "hour") >= 1

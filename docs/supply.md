@@ -6,7 +6,7 @@ This document provides a complete reference of the NocoDB workspace tables, rela
 
 - **Base ID**: `pl4e7zwnui0k8y1`
 - **Total Tables**: 39
-- **Active Webhooks**: 7
+- **Active Webhooks**: 6
 
 ---
 
@@ -77,12 +77,19 @@ erDiagram
 
 The following webhooks are configured across the NocoDB tables:
 
-| Source Table           | Webhook Title                          | Event / Operation     | Active | Method | Destination / Path                                                           | Condition |
-| ---------------------- | -------------------------------------- | --------------------- | ------ | ------ | ---------------------------------------------------------------------------- | --------- |
-| **diamonds**           | Create Product Haravan                 | `after` on `update`   | ✅ Yes | `POST` | `https://fn.jemmia.vn/webhook/noco/diamonds`                                 | `true`    |
-| **moissanite_serials** | Tạo rFID                               | `manual` on `trigger` | ✅ Yes | `POST` | `https://fn.jemmia.vn/webhook/noco/moissanite-serials/rfid`                  | `false`   |
-| **moissanite**         | product creator                        | `after` on `update`   | ✅ Yes | `POST` | `https://fn.jemmia.vn/webhook/noco/moissanite`                               | `true`    |
-| **products**           | Auto create Product On Haravan         | `after` on `update`   | ✅ Yes | `POST` | `https://fn.jemmia.vn/webhook/noco/products`                                 | `true`    |
-| **variants**           | Create variant                         | `after` on `update`   | ✅ Yes | `POST` | `https://fn.jemmia.vn/webhook/noco/variants`                                 | `true`    |
-| **variant_serials**    | Generate RFID                          | `manual` on `trigger` | ✅ Yes | `POST` | `https://fn.jemmia.vn/webhook/noco/variant-serials/rfid`                     | `false`   |
-| **jewelries**          | Auto create Jewelry Product On Haravan | `after` on `update`   | ✅ Yes | `POST` | `https://uphnasg2pi5bab4vsfeuxr2qfu0wmyqu.lambda-url.ap-southeast-1.on.aws/` | `true`    |
+> **Auth**: every `/webhook/noco/*` endpoint is guarded by `verifyNocoWebhook`
+> (`src/auth/nocodb-auth.js`), which requires the request header
+> `X-Nocodb-Webhook-Signature` to equal the `NOCODB_WEBHOOK_SECRET` env var,
+> else it returns `401`. Each hook below must therefore carry that header
+> (enabled) in its NocoDB config; a hook missing it is silently rejected.
+> The **Auth Header** column records the live state (verified via the NocoDB
+> meta API — `GET /api/v2/meta/tables/{tableId}/hooks`).
+
+| Source Table           | Webhook Title                  | Event / Operation     | Active | Auth Header                     | Method | Destination / Path                                          | Condition |
+| ---------------------- | ------------------------------ | --------------------- | ------ | ------------------------------- | ------ | ----------------------------------------------------------- | --------- |
+| **diamonds**           | Create Product Haravan         | `after` on `update`   | ✅ Yes | ✅ `X-Nocodb-Webhook-Signature` | `POST` | `https://fn.jemmia.vn/webhook/noco/diamonds`                | `true`    |
+| **moissanite_serials** | Tạo rFID                       | `manual` on `trigger` | ✅ Yes | ✅ `X-Nocodb-Webhook-Signature` | `POST` | `https://fn.jemmia.vn/webhook/noco/moissanite-serials/rfid` | `false`   |
+| **moissanite**         | product creator                | `after` on `update`   | ✅ Yes | ✅ `X-Nocodb-Webhook-Signature` | `POST` | `https://fn.jemmia.vn/webhook/noco/moissanite`              | `true`    |
+| **products**           | Auto create Product On Haravan | `after` on `update`   | ✅ Yes | ✅ `X-Nocodb-Webhook-Signature` | `POST` | `https://fn.jemmia.vn/webhook/noco/products`                | `true`    |
+| **variants**           | Create variant                 | `after` on `update`   | ✅ Yes | ✅ `X-Nocodb-Webhook-Signature` | `POST` | `https://fn.jemmia.vn/webhook/noco/variants`                | `true`    |
+| **variant_serials**    | Generate RFID                  | `manual` on `trigger` | ✅ Yes | ✅ `X-Nocodb-Webhook-Signature` | `POST` | `https://fn.jemmia.vn/webhook/noco/variant-serials/rfid`    | `false`   |

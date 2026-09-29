@@ -19,7 +19,7 @@ export default class ConfigTranslatorService {
   };
 
   static IMAGE_URL_REGEX =
-    /https?:\/\/[^\s"']+\.(?:png|jpe?g|gif|svg|webp)(?:\?[^\s"']*)?/gi;
+    /https?:\/\/[^\s"']+\.(?:png|jpe?g|gif|svg|webp)(?:\?[^\s"']*)?/i;
 
   constructor(env) {
     this.env = env;

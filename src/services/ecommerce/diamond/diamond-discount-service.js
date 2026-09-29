@@ -5,6 +5,7 @@ import timezone from "dayjs/plugin/timezone.js";
 import utc from "dayjs/plugin/utc.js";
 import { NOCODB_TABLES } from "src/constants/nocodb-tables";
 import FrappeClient from "src/frappe/frappe-client";
+import { isDuplicateRecordError } from "services/utils/nocodb-errors";
 
 dayjs.extend(isBetween);
 dayjs.extend(utc);
@@ -172,12 +173,7 @@ export default class DiamondDiscountService {
           haravan_collections: { id: targetCollectionId }
         });
       } catch (error) {
-        const errorData = error.response?.data;
-        if (
-          errorData?.code === "23505" ||
-          errorData?.message === "This record already exists."
-        ) {
-        } else {
+        if (!isDuplicateRecordError(error)) {
           throw error;
         }
       }
@@ -194,12 +190,7 @@ export default class DiamondDiscountService {
           haravan_collections: { id: defaultCollectionId }
         });
       } catch (error) {
-        const errorData = error.response?.data;
-        if (
-          errorData?.code === "23505" ||
-          errorData?.message === "This record already exists."
-        ) {
-        } else {
+        if (!isDuplicateRecordError(error)) {
           throw error;
         }
       }
