@@ -5,7 +5,6 @@ import Dashboard from "controllers/dashboard";
 import Ecommerce from "controllers/ecommerce";
 import Delivery from "controllers/delivery";
 import Payment from "controllers/payment";
-import Salesaya from "controllers/salesaya";
 import Larksuite from "controllers/larksuite";
 import Media from "controllers/media";
 import Inventory from "controllers/inventory";
@@ -88,13 +87,6 @@ export default class APIRoutes {
     );
     paymentApi.get("/qr-payments/:id", Payment.QRPaymentsController.show);
     paymentApi.get("/bank-options", Payment.BankOptionsController.index);
-
-    const salesayaNamespaceApi = api.basePath("/salesaya");
-    salesayaNamespaceApi.get(
-      "/product-searches",
-      Salesaya.ProductSearchController.index
-    );
-    salesayaNamespaceApi.get("/warehouses", Salesaya.WarehouseController.index);
 
     const larksuiteApi = api.basePath("/larksuites");
     larksuiteApi.get(
