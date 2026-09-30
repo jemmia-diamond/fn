@@ -331,8 +331,5 @@
       "tag": "v1",
       "new_classes": ["DebounceDurableObject"]
     }
-  ],
-  "version_metadata": {
-    "binding": "CF_VERSION_METADATA"
-  }
+  ]
 }
