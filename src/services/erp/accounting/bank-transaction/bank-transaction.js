@@ -33,7 +33,11 @@ const EXCLUDED_TRANSACTION_PATTERNS = [
 ];
 
 const LOCATION_CC_RULES = [
-  { pattern: "Hồ Chí Minh", label: "Hồ Chí Minh", email: "trinh.ngo@jemmia.vn" },
+  {
+    pattern: "Hồ Chí Minh",
+    label: "Hồ Chí Minh",
+    email: "trinh.ngo@jemmia.vn"
+  },
   { pattern: "Hà Nội", label: "Hà Nội", email: "hue.phan@jemmia.vn" },
   { pattern: "Cần Thơ", label: "Cần Thơ", email: "tien.chau@jemmia.vn" }
 ];
@@ -73,15 +77,25 @@ export default class BankTransactionService {
         ["transaction_type", "=", "SePay"]
       ];
 
-      EXCLUDED_TRANSACTION_PATTERNS.forEach(pattern => {
+      EXCLUDED_TRANSACTION_PATTERNS.forEach((pattern) => {
         filters.push(["sepay_transaction_content", "not like", `%${pattern}%`]);
       });
 
-      const bankTransactions = await this.frappeClient.getList("Bank Transaction", {
-        fields: ["name", "date", "deposit", "sepay_transaction_content", "bank_account", "sepay_transaction_date"],
-        filters,
-        limit_page_length: 100
-      });
+      const bankTransactions = await this.frappeClient.getList(
+        "Bank Transaction",
+        {
+          fields: [
+            "name",
+            "date",
+            "deposit",
+            "sepay_transaction_content",
+            "bank_account",
+            "sepay_transaction_date"
+          ],
+          filters,
+          limit_page_length: 100
+        }
+      );
 
       if (!bankTransactions || bankTransactions.length === 0) {
         return [];
@@ -90,10 +104,14 @@ export default class BankTransactionService {
       const unlinkedTransactions = [];
       for (const transaction of bankTransactions) {
         try {
-          const fullTransaction = await this.frappeClient.getDoc("Bank Transaction", transaction.name);
-          const hasPaymentEntry = fullTransaction.payment_entries &&
-                                   Array.isArray(fullTransaction.payment_entries) &&
-                                   fullTransaction.payment_entries.length > 0;
+          const fullTransaction = await this.frappeClient.getDoc(
+            "Bank Transaction",
+            transaction.name
+          );
+          const hasPaymentEntry =
+            fullTransaction.payment_entries &&
+            Array.isArray(fullTransaction.payment_entries) &&
+            fullTransaction.payment_entries.length > 0;
 
           if (!hasPaymentEntry) {
             unlinkedTransactions.push({
@@ -111,7 +129,10 @@ export default class BankTransactionService {
       }
 
       if (unlinkedTransactions.length > 0) {
-        await this.sendNotification(unlinkedTransactions, dayjs(toDateUTC).tz(TIMEZONE_VIETNAM).format("YYYY-MM-DD"));
+        await this.sendNotification(
+          unlinkedTransactions,
+          dayjs(toDateUTC).tz(TIMEZONE_VIETNAM).format("YYYY-MM-DD")
+        );
       }
 
       return unlinkedTransactions;
@@ -125,10 +146,7 @@ export default class BankTransactionService {
     try {
       const user = await this.db.larksuite_users.findFirst({
         where: {
-          OR: [
-            { email: email },
-            { enterprise_email: email }
-          ]
+          OR: [{ email: email }, { enterprise_email: email }]
         },
         select: {
           user_id: true
@@ -137,7 +155,10 @@ export default class BankTransactionService {
 
       return user?.user_id || null;
     } catch (error) {
-      console.warn("Error fetching user by email from database:", error.message);
+      console.warn(
+        "Error fetching user by email from database:",
+        error.message
+      );
       Sentry.captureException(error);
       return null;
     }
@@ -148,7 +169,9 @@ export default class BankTransactionService {
     let remainingTransactions = [...transactions];
 
     for (const rule of LOCATION_CC_RULES) {
-      const groupTransactions = remainingTransactions.filter(t => t.bank_account && t.bank_account.includes(rule.pattern));
+      const groupTransactions = remainingTransactions.filter(
+        (t) => t.bank_account && t.bank_account.includes(rule.pattern)
+      );
 
       if (groupTransactions.length > 0) {
         const userId = await this.getUserIdByEmail(rule.email);
@@ -159,7 +182,9 @@ export default class BankTransactionService {
         });
 
         // Remove matches from remaining
-        remainingTransactions = remainingTransactions.filter(t => !groupTransactions.includes(t));
+        remainingTransactions = remainingTransactions.filter(
+          (t) => !groupTransactions.includes(t)
+        );
       }
     }
 
@@ -172,7 +197,11 @@ export default class BankTransactionService {
       });
     }
 
-    const message = this.formatNotificationMessage(groupedTransactions, transactions.length, date);
+    const message = this.formatNotificationMessage(
+      groupedTransactions,
+      transactions.length,
+      date
+    );
     const larkClient = await LarksuiteService.createClientV2(this.env);
 
     await larkClient.im.message.create({
@@ -191,7 +220,8 @@ export default class BankTransactionService {
 
   formatNotificationMessage(groupedTransactions, totalCount, date) {
     const formattedHeaderDate = dayjs(date).format("DD-MM-YYYY");
-    let message = `⚠️ [${formattedHeaderDate}] Có ${totalCount} giao dịch chưa được liên kết với phiếu thu ⚠️:\n` +
+    let message =
+      `⚠️ [${formattedHeaderDate}] Có ${totalCount} giao dịch chưa được liên kết với phiếu thu ⚠️:\n` +
       "Lý do: Không thể tự động tìm thấy phiếu thu để gắn giao dịch. Vui lòng tìm và tự gắn lại\n";
 
     let globalIndex = 0;
@@ -200,21 +230,29 @@ export default class BankTransactionService {
       message += "\n";
       message += `📍 <b>KHU VỰC: ${group.label.toUpperCase()}</b>\n`;
 
-      const groupList = group.transactions.map(transaction => {
-        globalIndex++;
-        const link = `https://erp.jemmia.vn/app/bank-transaction/${transaction.name}`;
-        const amount = new Intl.NumberFormat("vi-VN").format(transaction.amount_in || 0);
-        const formattedDate = transaction.sepay_transaction_date
-          ? dayjs(transaction.sepay_transaction_date).format("DD-MM-YYYY HH:mm:ss")
-          : dayjs(transaction.date).format("DD-MM-YYYY");
+      const groupList = group.transactions
+        .map((transaction) => {
+          globalIndex++;
+          const link = `https://erp.jemmia.vn/app/bank-transaction/${transaction.name}`;
+          const amount = new Intl.NumberFormat("vi-VN").format(
+            transaction.amount_in || 0
+          );
+          const formattedDate = transaction.sepay_transaction_date
+            ? dayjs(transaction.sepay_transaction_date).format(
+                "DD-MM-YYYY HH:mm:ss"
+              )
+            : dayjs(transaction.date).format("DD-MM-YYYY");
 
-        return `\n${globalIndex}. Giao dịch ${transaction.name}\n` +
-               `- Tiền vào: +${amount} ₫\n` +
-               `- Tài khoản: ${transaction.bank_account || "N/A"}\n` +
-               `- Lúc: ${formattedDate}\n` +
-               `- Nội dung CK: ${transaction.sepay_transaction_content || "N/A"}\n` +
-               `- Link: ${link}`;
-      }).join("\n");
+          return (
+            `\n${globalIndex}. Giao dịch ${transaction.name}\n` +
+            `- Tiền vào: +${amount} ₫\n` +
+            `- Tài khoản: ${transaction.bank_account || "N/A"}\n` +
+            `- Lúc: ${formattedDate}\n` +
+            `- Nội dung CK: ${transaction.sepay_transaction_content || "N/A"}\n` +
+            `- Link: ${link}`
+          );
+        })
+        .join("\n");
 
       message += groupList;
 

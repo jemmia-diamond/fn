@@ -1,12 +1,27 @@
-import FrappeClient from "src/frappe/frappe-client";
-import Database from "src/services/database";
-import LarksuiteService from "services/larksuite/lark";
-import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/constant";
-import { isMissingJewelrySerial, isJewelryItem, isDiamondItem } from "services/erp/selling/sales-order/utils/sales-order-notification";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
+import {
+  isDiamondItem,
+  isJewelryItem,
+  isMissingJewelrySerial
+} from "services/erp/selling/sales-order/utils/sales-order-notification";
+import { CHAT_GROUPS } from "services/larksuite/group-chat/group-management/constant";
+import LarksuiteService from "services/larksuite/lark";
+import FrappeClient from "src/frappe/frappe-client";
+import Database from "src/services/database";
 
 dayjs.extend(utc);
+
+const EXCLUDING_SOURCES = [
+  "web",
+  "harafunnel",
+  "staff",
+  "bhsc-cua-hang-hn",
+  "bhsc-cua-hang-hcm",
+  "sendo"
+];
+const EXCLUDED_ITEM_KEYWORDS = ["quà tặng", "bảo hành", "khách gửi"];
+
 export default class MissingSerialNotificationService {
   constructor(env) {
     this.env = env;
@@ -24,34 +39,80 @@ export default class MissingSerialNotificationService {
     const filters = [
       ["cancelled_status", "=", "Uncancelled"],
       ["grand_total", ">", 1000],
-      ["source_name", "!=", "web"]
+      ["source_name", "not in", EXCLUDING_SOURCES],
+      ["primary_sales_person", "is", "set"]
     ];
 
     if (fromDate && toDate) {
-      filters.push(["creation", ">=", dayjs(fromDate).utc().format("YYYY-MM-DD HH:mm:ss")]);
-      filters.push(["creation", "<=", dayjs(toDate).utc().format("YYYY-MM-DD HH:mm:ss")]);
+      filters.push([
+        "creation",
+        ">=",
+        dayjs(fromDate).utc().format("YYYY-MM-DD HH:mm:ss")
+      ]);
+      filters.push([
+        "creation",
+        "<=",
+        dayjs(toDate).utc().format("YYYY-MM-DD HH:mm:ss")
+      ]);
     }
 
-    const salesOrders = await this.frappeClient.getList("Sales Order", {
-      filters,
-      fields: ["name", "order_number", "customer_name", "primary_sales_person"],
-      limit_page_length: 200
-    });
+    let allSalesOrders = [];
+    let limitStart = 0;
+    const limitPageLength = 200;
+    let hasMore = true;
 
-    if (!salesOrders || salesOrders.length === 0) return;
+    while (hasMore) {
+      const salesOrders = await this.frappeClient.getList("Sales Order", {
+        filters,
+        fields: [
+          "name",
+          "order_number",
+          "customer_name",
+          "primary_sales_person"
+        ],
+        limit_start: limitStart,
+        limit_page_length: limitPageLength,
+        order_by: "creation desc"
+      });
+
+      if (!salesOrders || salesOrders.length === 0) {
+        break;
+      }
+
+      allSalesOrders = allSalesOrders.concat(salesOrders);
+      limitStart += limitPageLength;
+
+      if (salesOrders.length < limitPageLength) {
+        hasMore = false;
+      }
+    }
+
+    if (allSalesOrders.length === 0) return;
 
     const ordersWithIssues = [];
-    for (const order of salesOrders) {
-      const fullOrder = await this.frappeClient.getDoc("Sales Order", order.name);
-      const items = fullOrder.items || [];
+    for (const order of allSalesOrders) {
+      const fullOrder = await this.frappeClient.getDoc(
+        "Sales Order",
+        order.name
+      );
+      const allItems = fullOrder.items || [];
 
-      const missingSerialItems = items.filter(isMissingJewelrySerial);
+      const validItems = allItems.filter((item) => {
+        const itemName = (item.item_name || "").toLowerCase();
+        return !EXCLUDED_ITEM_KEYWORDS.some((keyword) =>
+          itemName.includes(keyword)
+        );
+      });
 
-      const missingPromotionItems = items.filter(item => {
+      const missingSerialItems = validItems.filter(isMissingJewelrySerial);
+
+      const missingPromotionItems = validItems.filter((item) => {
         if (!isJewelryItem(item) && !isDiamondItem(item)) return false;
 
         // Check if there is a price difference (meaning it was discounted)
-        const priceDiff = Math.abs((item.price_list_rate || 0) - (item.rate || 0));
+        const priceDiff = Math.abs(
+          (item.price_list_rate || 0) - (item.rate || 0)
+        );
         if (priceDiff <= 5000) return false;
 
         // Check if new_promotions is empty or "[]"
@@ -66,10 +127,18 @@ export default class MissingSerialNotificationService {
         return false;
       });
 
-      const isOrderMissingPromotion = (fullOrder.discount_amount || 0) > 5000 && (!fullOrder.promotions || fullOrder.promotions.length === 0);
+      const isOrderMissingPromotion =
+        (fullOrder.discount_amount || 0) > 5000 &&
+        (!fullOrder.promotions || fullOrder.promotions.length === 0);
 
-      if (missingSerialItems.length > 0 || missingPromotionItems.length > 0 || isOrderMissingPromotion) {
-        const larkUserId = await this.getLarkUserIdBySalesPerson(order.primary_sales_person);
+      if (
+        missingSerialItems.length > 0 ||
+        missingPromotionItems.length > 0 ||
+        isOrderMissingPromotion
+      ) {
+        const larkUserId = await this.getLarkUserIdBySalesPerson(
+          order.primary_sales_person
+        );
         ordersWithIssues.push({
           name: order.name,
           order_number: order.order_number,
@@ -98,7 +167,10 @@ export default class MissingSerialNotificationService {
 
   async getLarkUserIdBySalesPerson(salesPersonName) {
     if (!salesPersonName) return null;
-    const salesPerson = await this.frappeClient.getDoc("Sales Person", salesPersonName);
+    const salesPerson = await this.frappeClient.getDoc(
+      "Sales Person",
+      salesPersonName
+    );
     if (!salesPerson?.employee_email) return null;
     const user = await this.db.larksuite_users.findFirst({
       where: {

@@ -29,7 +29,10 @@ export class ShieldOrderMentionLinker {
     await this.sendOrderInfoCard(env, event, orderLinks);
   }
 
-  static async saveOrderMappingsIfMentioned(env: any, event: any): Promise<void> {
+  static async saveOrderMappingsIfMentioned(
+    env: any,
+    event: any
+  ): Promise<void> {
     const messageText = this.extractTextFromMessage(event);
     const orderCodes = this.extractOrderCodes(messageText);
     if (orderCodes.length === 0) return;
@@ -180,8 +183,12 @@ export class ShieldOrderMentionLinker {
     const total = order ? Number(order.total_price) : link.total;
     const orderDate = order ? order.created_at : link.orderDate;
     const paymentStatus = order ? order.financial_status : link.paymentStatus;
-    const deliveryStatus = order ? order.fulfillment_status : link.deliveryStatus;
-    const cancelledStatus = order ? order.cancelled_status : link.cancelledStatus;
+    const deliveryStatus = order
+      ? order.fulfillment_status
+      : link.deliveryStatus;
+    const cancelledStatus = order
+      ? order.cancelled_status
+      : link.cancelledStatus;
 
     const formattedTotal = new Intl.NumberFormat("vi-VN", {
       style: "currency",

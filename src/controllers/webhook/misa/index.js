@@ -3,6 +3,9 @@ import CallbackResultsController from "controllers/webhook/misa/callback/callbac
 export default class MisaWebhook {
   static async register(webhook) {
     const misaWebhookNamespace = webhook.basePath("/misa");
-    misaWebhookNamespace.post("/callback_results", CallbackResultsController.create);
+    misaWebhookNamespace.post(
+      "/callback_results",
+      CallbackResultsController.create
+    );
   }
 }

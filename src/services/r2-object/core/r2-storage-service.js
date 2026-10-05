@@ -7,7 +7,9 @@ export class R2StorageService {
    */
   constructor(env, bindingName) {
     if (!env) {
-      throw new Error("R2StorageService initialization failed: env is required.");
+      throw new Error(
+        "R2StorageService initialization failed: env is required."
+      );
     }
 
     this.env = env;
@@ -52,7 +54,9 @@ export class R2StorageService {
     try {
       const object = await this.bucket.get(key);
       if (!object) {
-        Sentry.captureMessage(`Object with key "${key}" not found in R2 (${this.bindingName}).`);
+        Sentry.captureMessage(
+          `Object with key "${key}" not found in R2 (${this.bindingName}).`
+        );
         return null;
       }
       return await object.arrayBuffer();

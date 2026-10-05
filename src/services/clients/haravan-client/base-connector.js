@@ -2,7 +2,7 @@ import axios from "axios";
 import axiosRetry from "axios-retry";
 
 const RETRY_CONFIG = {
-  retries: 5,
+  retries: 2,
   retryDelay: axiosRetry.exponentialDelay,
   shouldResetTimeout: true,
   retryCondition: (error) =>
@@ -20,7 +20,7 @@ class BaseConnector {
   getHeaders() {
     return {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${this.accessToken}`
+      Authorization: `Bearer ${this.accessToken}`
     };
   }
 

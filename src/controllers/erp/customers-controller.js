@@ -8,8 +8,12 @@ export default class CustomersController {
 
     const service = new ERP.Selling.CustomerService(ctx.env);
     const customer = await service.fetchCustomerByHrvID(id);
-    if (!customer) return ctx.json({ success: false, error: "Customer not found" }, 404);
+    if (!customer)
+      return ctx.json({ success: false, error: "Customer not found" }, 404);
 
-    return ctx.json({ success: true, data: CustomerSerializer.filteredPII(customer) });
+    return ctx.json({
+      success: true,
+      data: CustomerSerializer.filteredPII(customer)
+    });
   }
 }

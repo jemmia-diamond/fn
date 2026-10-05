@@ -32,45 +32,63 @@ export default class ProductSearchController {
     const priceTo = priceToParam ? Number(priceToParam) : null;
 
     if (!searchKey || searchKey.trim().length === 0) {
-      return ctx.json({
-        success: false,
-        error: "Query parameter 'q' or 'search_key' is required"
-      }, 400);
+      return ctx.json(
+        {
+          success: false,
+          error: "Query parameter 'q' or 'search_key' is required"
+        },
+        400
+      );
     }
 
     if (limit < 1) {
-      return ctx.json({
-        success: false,
-        error: "limit must be greater than 0"
-      }, 400);
+      return ctx.json(
+        {
+          success: false,
+          error: "limit must be greater than 0"
+        },
+        400
+      );
     }
 
     if (page < 1) {
-      return ctx.json({
-        success: false,
-        error: "page must be greater than 0"
-      }, 400);
+      return ctx.json(
+        {
+          success: false,
+          error: "page must be greater than 0"
+        },
+        400
+      );
     }
 
     if (priceFrom !== null && (isNaN(priceFrom) || priceFrom < 0)) {
-      return ctx.json({
-        success: false,
-        error: "priceFrom must be a valid positive number"
-      }, 400);
+      return ctx.json(
+        {
+          success: false,
+          error: "priceFrom must be a valid positive number"
+        },
+        400
+      );
     }
 
     if (priceTo !== null && (isNaN(priceTo) || priceTo < 0)) {
-      return ctx.json({
-        success: false,
-        error: "priceTo must be a valid positive number"
-      }, 400);
+      return ctx.json(
+        {
+          success: false,
+          error: "priceTo must be a valid positive number"
+        },
+        400
+      );
     }
 
     if (priceFrom !== null && priceTo !== null && priceFrom > priceTo) {
-      return ctx.json({
-        success: false,
-        error: "priceFrom must be less than or equal to priceTo"
-      }, 400);
+      return ctx.json(
+        {
+          success: false,
+          error: "priceFrom must be less than or equal to priceTo"
+        },
+        400
+      );
     }
 
     const productSearchService = new Salesaya.ProductSearchService(ctx.env);

@@ -14,6 +14,6 @@ export default class OrderStatusController {
     } catch (e) {
       Sentry.captureException(e);
       return ctx.json({ message: e.message, status: 500 });
-    };
-  };
-};
+    }
+  }
+}

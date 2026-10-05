@@ -31,12 +31,13 @@ api.use("*", CorsService.createCorsConfig());
 publicApi.use("*", CorsService.createCorsConfig());
 
 // Authentication
-api.use("*",
+api.use(
+  "*",
   bearerAuth({
     verifyToken: async (token, c) => {
       const bearerToken = c.env.BEARER_TOKEN;
 
-      return (token === bearerToken) || (token === c.env.BEARER_TOKEN);
+      return token === bearerToken || token === c.env.BEARER_TOKEN;
     }
   })
 );
@@ -47,6 +48,7 @@ Routes.AppRoutes.register(app);
 Routes.APIRoutes.register(api);
 Routes.PublicAPIRoutes.register(publicApi);
 Routes.WebhookRoutes.register(webhook);
+Routes.KocRoutes.register(app);
 
 // Cron trigger and Queue Integrations, wrapped with Sentry
 export default Sentry.withSentry(

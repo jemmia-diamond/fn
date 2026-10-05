@@ -1,6 +1,14 @@
 import * as crypto from "crypto";
 import HaravanAPI from "services/clients/haravan-client";
-import { EXCHANGE_RATE, REASON_TYPES, SORT_ORDER, VOUCHER_REF_TYPES, VOUCHER_TYPES, getCreditInfo, getDebitAccount } from "services/misa/constant";
+import {
+  EXCHANGE_RATE,
+  REASON_TYPES,
+  SORT_ORDER,
+  VOUCHER_REF_TYPES,
+  VOUCHER_TYPES,
+  getCreditInfo,
+  getDebitAccount
+} from "services/misa/constant";
 import Misa from "services/misa";
 import Database from "services/database";
 
@@ -14,32 +22,58 @@ export default class VoucherMappingService {
    * @param {Number} ref_type reference type - check here https://actdocs.misa.vn/g2/graph/ACTOpenAPIHelp/index.html#3-9
    * @returns
    */
-  static async transformQrToVoucher(v, bankMap, orgUnitMap, voucher_type = VOUCHER_TYPES.QR_PAYMENT, ref_type = VOUCHER_REF_TYPES.QR_PAYMENT, order_chain = null, env, preGeneratedGuid = null, db = null) {
+  static async transformQrToVoucher(
+    v,
+    bankMap,
+    orgUnitMap,
+    voucher_type = VOUCHER_TYPES.QR_PAYMENT,
+    ref_type = VOUCHER_REF_TYPES.QR_PAYMENT,
+    order_chain = null,
+    env,
+    preGeneratedGuid = null,
+    db = null
+  ) {
     const creditInfo = getCreditInfo(orgUnitMap, v.haravan_order?.source);
     const debitAccount = getDebitAccount(v.bank_code, v.bank_account_number);
 
     // Employee code ( from Amis ) and name
-    const employee_code = v.haravan_order?.user?.misa_user?.employee_code || v.haravan_order?.user?.misa_user?.email;
+    const employee_code =
+      v.haravan_order?.user?.misa_user?.employee_code ||
+      v.haravan_order?.user?.misa_user?.email;
     const employee_name = `${v.haravan_order?.user?.last_name} ${v.haravan_order?.user?.first_name}`;
 
     if (!employee_code) {
-      throw new Error(`No employee code found for this order id: ${v.haravan_order?.id}`);
+      throw new Error(
+        `No employee code found for this order id: ${v.haravan_order?.id}`
+      );
     }
 
     // Customer's code, name and address
-    const customerInfo = await VoucherMappingService.fetchCustomer(v, v.haravan_order, env);
+    const customerInfo = await VoucherMappingService.fetchCustomer(
+      v,
+      v.haravan_order,
+      env
+    );
     const customerCode = customerInfo?.customer_id?.toString();
-    const customerName = v?.customer_name || `${customerInfo?.customer_last_name} ${customerInfo?.customer_first_name}`;
+    const customerName =
+      v?.customer_name ||
+      `${customerInfo?.customer_last_name} ${customerInfo?.customer_first_name}`;
     const street1 = customerInfo?.customer_default_address_address1;
     const street2 = customerInfo?.customer_default_address_address2;
     const ward = customerInfo?.customer_default_address_ward;
     const district = customerInfo?.customer_default_address_district;
     const province = customerInfo?.customer_default_address_province;
-    const customerAddress = [street1, street2, ward, district, province].filter(Boolean).join(", ");
+    const customerAddress = [street1, street2, ward, district, province]
+      .filter(Boolean)
+      .join(", ");
 
     // Bank name mapping
     const bankInfo = bankMap[v.bank_account_number];
-    const bankName = bankInfo ? (bankInfo.bank_branch_name ? `${bankInfo.bank_name} - ${bankInfo.bank_branch_name}` : bankInfo.bank_name) : "Bank name not found";
+    const bankName = bankInfo
+      ? bankInfo.bank_branch_name
+        ? `${bankInfo.bank_name} - ${bankInfo.bank_branch_name}`
+        : bankInfo.bank_name
+      : "Bank name not found";
     const generatedGuid = preGeneratedGuid || crypto.randomUUID();
     const orderNumbers = order_chain || v.haravan_order_number;
 
@@ -86,14 +120,16 @@ export default class VoucherMappingService {
   }
 
   static async fetchCustomer(v, haravanOrder, env) {
-    if(haravanOrder && haravanOrder?.customer_id) return haravanOrder;
+    if (haravanOrder && haravanOrder?.customer_id) return haravanOrder;
 
     const accessToken = env.HARAVAN_TOKEN;
     const haravanClient = new HaravanAPI(accessToken);
-    const haravanResult = await haravanClient.order.getOrder(v.haravan_order_id);
+    const haravanResult = await haravanClient.order.getOrder(
+      v.haravan_order_id
+    );
     const customerData = haravanResult?.order?.customer;
 
-    if(!customerData) return null;
+    if (!customerData) return null;
 
     return {
       customer_id: customerData.id,
@@ -107,7 +143,17 @@ export default class VoucherMappingService {
     };
   }
 
-  static async _craftingDetail(references, v, orderNumbers, debitAccount, creditInfo, customerCode, customerName, db, env) {
+  static async _craftingDetail(
+    references,
+    v,
+    orderNumbers,
+    debitAccount,
+    creditInfo,
+    customerCode,
+    customerName,
+    db,
+    env
+  ) {
     const createDetailItem = (orderNumber, amount, index) => ({
       sort_order: index,
       amount_oc: Number(amount),
@@ -129,7 +175,14 @@ export default class VoucherMappingService {
     const dbInstance = db || Database.instance(env);
     const details = await Promise.all(
       references.map(async (ref, idx) => {
-        const orderNumber = await Misa.Utils.getJournalNote(dbInstance, null, null, ref?.haravan_order_id, ref?.order_number, ref?.haravan_ref_order_id);
+        const orderNumber = await Misa.Utils.getJournalNote(
+          dbInstance,
+          null,
+          null,
+          ref?.haravan_order_id,
+          ref?.order_number,
+          ref?.haravan_ref_order_id
+        );
         return createDetailItem(orderNumber, ref?.allocated_amount, idx);
       })
     );

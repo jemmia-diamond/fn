@@ -167,8 +167,8 @@ model inventory_logs {
 
 model haravan_line_items {
   uuid                 String    @id @db.VarChar(36)
-  id                   Int?      @unique(map: "ix_haravan_line_items_id")
-  order_id             Int?
+  id                   BigInt?      @unique(map: "ix_haravan_line_items_id")
+  order_id             BigInt?
   fulfillable_quantity Int?
   fulfillment_service  String?   @db.VarChar
   fulfillment_status   String?   @db.VarChar
@@ -474,7 +474,7 @@ model transactions {
   created_at          DateTime? @db.Timestamp(6)
   device_id           BigInt?
   gateway             String?   @db.VarChar(100)
-  kind                String?   @db.VarChar(10)
+  kind                String?   @db.VarChar(50)
   receipt             String?   @db.VarChar(255)
   status              String?   @db.VarChar(10)
   test                Boolean?

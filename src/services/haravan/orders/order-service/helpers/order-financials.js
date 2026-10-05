@@ -1,7 +1,7 @@
 export function getOrderFinancials(order) {
   const paidAmount =
     order?.transactions
-      ?.filter(t =>
+      ?.filter((t) =>
         ["capture", "authorization", "sale"].includes(t?.kind?.toLowerCase())
       )
       .reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0) || 0;

@@ -10,6 +10,7 @@ dist/
 .idea/workspace.xml
 .idea/usage.statistics.xml
 .idea/shelf
+.kilo
 
 # deps
 node_modules/
@@ -38,3 +39,4 @@ lerna-debug.log*
 
 # Sentry Config File
 .sentryclirc
+functions_misc/

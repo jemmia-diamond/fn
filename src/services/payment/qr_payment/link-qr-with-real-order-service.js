@@ -29,21 +29,25 @@ export default class LinkQRWithRealOrderService {
 
   async mapTransaction(qrPaymentId, body) {
     const requiredFields = {
-      "customer_name": "Missing 'customer_name' in request body.",
-      "customer_phone_number": "Missing 'customer_phone_number' in request body.",
-      "haravan_order_total_price": "Missing 'haravan_order_total_price' in request body.",
-      "haravan_order_remain_pay": "Missing 'haravan_order_remain_pay' in request body.",
-      "haravan_order_number": "Missing 'haravan_order_number' in request body.",
-      "haravan_order_status": "Missing 'haravan_order_status' in request body.",
-      "haravan_order_id": "Missing 'haravan_order_id' in request body."
+      customer_name: "Missing 'customer_name' in request body.",
+      customer_phone_number: "Missing 'customer_phone_number' in request body.",
+      haravan_order_total_price:
+        "Missing 'haravan_order_total_price' in request body.",
+      haravan_order_remain_pay:
+        "Missing 'haravan_order_remain_pay' in request body.",
+      haravan_order_number: "Missing 'haravan_order_number' in request body.",
+      haravan_order_status: "Missing 'haravan_order_status' in request body.",
+      haravan_order_id: "Missing 'haravan_order_id' in request body."
     };
 
     for (const [field, errorMessage] of Object.entries(requiredFields)) {
       if (!(field in body)) {
-        throw new Error(JSON.stringify({
-          error_msg: errorMessage,
-          error_code: LinkQRWithRealOrderService.MISSING_FIELD
-        }));
+        throw new Error(
+          JSON.stringify({
+            error_msg: errorMessage,
+            error_code: LinkQRWithRealOrderService.MISSING_FIELD
+          })
+        );
       }
     }
 
@@ -52,37 +56,51 @@ export default class LinkQRWithRealOrderService {
     });
 
     if (!qrPayment) {
-      throw new Error(JSON.stringify({
-        error_msg: `QR with id ${qrPaymentId} not found`,
-        error_code: LinkQRWithRealOrderService.NOT_FOUND
-      }));
+      throw new Error(
+        JSON.stringify({
+          error_msg: `QR with id ${qrPaymentId} not found`,
+          error_code: LinkQRWithRealOrderService.NOT_FOUND
+        })
+      );
     }
 
     const cleanPhoneNumber = (phoneNumber) => {
       return phoneNumber ? phoneNumber.replace(/\D/g, "") : "";
     };
 
-    const cleanedPhoneNumber = cleanPhoneNumber(qrPayment.customer_phone_number);
+    const cleanedPhoneNumber = cleanPhoneNumber(
+      qrPayment.customer_phone_number
+    );
     if (
       cleanedPhoneNumber !== cleanPhoneNumber(body.customer_phone_number) &&
-      cleanedPhoneNumber !== cleanPhoneNumber(body.customer_phone_number_billing) &&
-      cleanedPhoneNumber !== cleanPhoneNumber(body.customer_phone_number_shipping)
+      cleanedPhoneNumber !==
+        cleanPhoneNumber(body.customer_phone_number_billing) &&
+      cleanedPhoneNumber !==
+        cleanPhoneNumber(body.customer_phone_number_shipping)
     ) {
-      throw new Error(JSON.stringify({
-        error_msg: `Customer name or phone number of QR with id ${qrPaymentId} does not match`,
-        error_code: LinkQRWithRealOrderService.CUSTOMER_MISMATCH
-      }));
+      throw new Error(
+        JSON.stringify({
+          error_msg: `Customer name or phone number of QR with id ${qrPaymentId} does not match`,
+          error_code: LinkQRWithRealOrderService.CUSTOMER_MISMATCH
+        })
+      );
     }
 
-    if (qrPayment.haravan_order_number !== "ORDERLATER" && qrPayment.haravan_order_number && qrPayment.haravan_order_number !== "") {
+    if (
+      qrPayment.haravan_order_number !== "ORDERLATER" &&
+      qrPayment.haravan_order_number &&
+      qrPayment.haravan_order_number !== ""
+    ) {
       if (qrPayment.haravan_order_number === body.haravan_order_number) {
         return;
       }
 
-      throw new Error(JSON.stringify({
-        error_msg: `QR with id ${qrPaymentId} is not order later`,
-        error_code: LinkQRWithRealOrderService.ORDER_NOT_LATER
-      }));
+      throw new Error(
+        JSON.stringify({
+          error_msg: `QR with id ${qrPaymentId} is not order later`,
+          error_code: LinkQRWithRealOrderService.ORDER_NOT_LATER
+        })
+      );
     }
 
     let toPayAmount = parseFloat(qrPayment.transfer_amount);
@@ -98,16 +116,20 @@ export default class LinkQRWithRealOrderService {
     });
 
     if (!existingOrder) {
-      throw new Error(JSON.stringify({
-        error_msg: `Order with id ${haravanOrderId} not found`,
-        error_code: LinkQRWithRealOrderService.NOT_FOUND
-      }));
+      throw new Error(
+        JSON.stringify({
+          error_msg: `Order with id ${haravanOrderId} not found`,
+          error_code: LinkQRWithRealOrderService.NOT_FOUND
+        })
+      );
     }
 
     try {
       const HRV_API_KEY = this.env.HARAVAN_TOKEN;
       if (!HRV_API_KEY) {
-        throw new BadRequestException("Haravan API credentials or base URL are not configured in the environment.");
+        throw new BadRequestException(
+          "Haravan API credentials or base URL are not configured in the environment."
+        );
       }
 
       const haravanService = new HaravanAPI(HRV_API_KEY);
@@ -117,32 +139,37 @@ export default class LinkQRWithRealOrderService {
        * then update QR Payment to success
        * then update Larksuite Record to success
        */
-      const createdTransactionResponse = await haravanService.orderTransaction.createTransaction(
-        body.haravan_order_id,
-        {
-          amount: toPayAmount,
-          kind: "capture",
-          gateway: "Chuyển khoản ngân hàng (tự động xác nhận giao dịch)"
-        }
-      );
+      const createdTransactionResponse =
+        await haravanService.orderTransaction.createTransaction(
+          body.haravan_order_id,
+          {
+            amount: toPayAmount,
+            kind: "capture",
+            gateway: "Chuyển khoản ngân hàng (tự động xác nhận giao dịch)"
+          }
+        );
 
       if (createdTransactionResponse) {
         const updateQr = await this.updateOrderLater(qrPaymentId, body);
         if (!updateQr) {
-          throw new Error(JSON.stringify({
-            error_msg: `Failed to update order later with id ${qrPaymentId}`,
-            error_code: LinkQRWithRealOrderService.INTERNAL_ERROR
-          }));
+          throw new Error(
+            JSON.stringify({
+              error_msg: `Failed to update order later with id ${qrPaymentId}`,
+              error_code: LinkQRWithRealOrderService.INTERNAL_ERROR
+            })
+          );
         }
 
         await this.updateLarksuiteRecordToSuccess(qrPayment.lark_record_id);
         await this.enqueueMisaBackgroundJob(qrPayment);
       }
     } catch (e) {
-      throw new Error(JSON.stringify({
-        error_msg: `Error creating Haravan transaction: ${e.message}`,
-        error_code: LinkQRWithRealOrderService.TRANSACTION_CREATION_ERROR
-      }));
+      throw new Error(
+        JSON.stringify({
+          error_msg: `Error creating Haravan transaction: ${e.message}`,
+          error_code: LinkQRWithRealOrderService.TRANSACTION_CREATION_ERROR
+        })
+      );
     }
   }
 
@@ -177,7 +204,9 @@ export default class LinkQRWithRealOrderService {
       }
     };
 
-    await this.env["MISA_QUEUE"].send(payload, { delaySeconds: Misa.Constants.DELAYS.ONE_MINUTE });
+    await this.env["MISA_QUEUE"].send(payload, {
+      delaySeconds: Misa.Constants.DELAYS.ONE_MINUTE
+    });
   }
 
   async updateLarksuiteRecordToSuccess(larkRecordId) {

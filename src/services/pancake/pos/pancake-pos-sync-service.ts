@@ -1,7 +1,13 @@
 import * as Sentry from "@sentry/cloudflare";
 import Database from "services/database";
-import PancakePosClient, { CreateOrderPayload, OrderItem } from "services/pancake/pos/pancake-pos-client";
-import { haravanMoneyToNumber, HaravanOrderPayload } from "services/haravan/webhook-order";
+import PancakePosClient, {
+  CreateOrderPayload,
+  OrderItem
+} from "services/pancake/pos/pancake-pos-client";
+import {
+  haravanMoneyToNumber,
+  HaravanOrderPayload
+} from "services/haravan/webhook-order";
 import { ResolvedLead } from "services/pancake/pos/types";
 import {
   HARAVAN_CANCELLED_STATUS,
@@ -11,11 +17,14 @@ import { normalizeToStandardFormat } from "services/utils/phone-utils";
 
 const POS_STATUS = {
   NEW: 0,
+  CONFIRMED: 1,
   CANCELED: 6
 } as const;
 
-const PANCAKE_POS_BASE_ORDER_VARIATION_ID = "1b756676-3314-43f5-b03e-4829a166f779";
-const PANCAKE_POS_BASE_ORDER_PRODUCT_ID = "2cc80df9-72ef-4267-8577-1ed9c1d2035d";
+const PANCAKE_POS_BASE_ORDER_VARIATION_ID =
+  "1b756676-3314-43f5-b03e-4829a166f779";
+const PANCAKE_POS_BASE_ORDER_PRODUCT_ID =
+  "2cc80df9-72ef-4267-8577-1ed9c1d2035d";
 
 export default class PancakePOSSyncService {
   private db: ReturnType<typeof Database.instance>;
@@ -33,7 +42,6 @@ export default class PancakePOSSyncService {
         await service.processOrder(msg.body);
         msg.ack();
       } catch (e) {
-        console.warn(`[PancakePOSSync] dequeueOrderQueue error order=${msg.body?.id}`, e);
         Sentry.captureException(e);
         msg.retry();
       }
@@ -41,12 +49,8 @@ export default class PancakePOSSyncService {
   }
 
   async processOrder(order: HaravanOrderPayload): Promise<void> {
-    const tag = `[PancakePOSSync] order=${order.id} topic=${order.haravan_topic}`;
-    console.warn(`${tag} start`);
-
     const ctx = await this.resolveSyncContext(order);
     if (!ctx) {
-      console.warn(`${tag} skip: resolveSyncContext returned null`);
       return;
     }
     const { shopId, lead } = ctx;
@@ -55,40 +59,32 @@ export default class PancakePOSSyncService {
       await this.syncOrderCreate(order, shopId, lead);
     } else if (order.haravan_topic === HARAVAN_TOPIC.UPDATED) {
       await this.syncOrderUpdate(order, shopId);
-    } else {
-      console.warn(`${tag} skip: topic not handled`);
     }
   }
 
   private async resolveSyncContext(order: HaravanOrderPayload) {
-    const tag = `[PancakePOSSync] order=${order.id}`;
-
     if (!order.customer?.phone) {
-      console.warn(`${tag} skip: no customer phone`);
-      return;
+      return null;
     }
 
     const lead = await this.resolveAdsId(order.customer.phone);
     if (!lead) {
-      console.warn(`${tag} skip: resolveAdsId returned null for phone=${order.customer.phone}`);
-      return;
+      return null;
     }
 
     const shopId = await this.resolveShopId(lead.pageId);
     if (!shopId) {
-      console.warn(`${tag} skip: no pos_shop_id for pageId=${lead.pageId}`);
-      return;
+      return null;
     }
 
     return { lead, shopId };
   }
 
-  private async resolveAdsId(customerPhone: string): Promise<ResolvedLead | null> {
-    const tag = `[PancakePOSSync] resolveAdsId phone=${customerPhone}`;
-
+  private async resolveAdsId(
+    customerPhone: string
+  ): Promise<ResolvedLead | null> {
     const target = normalizeToStandardFormat(customerPhone);
     if (!target) {
-      console.warn(`${tag} skip: normalizeToStandardFormat returned empty`);
       return null;
     }
 
@@ -102,7 +98,6 @@ export default class PancakePOSSyncService {
       select: { customer_id: true }
     });
     if (!pageCustomer?.customer_id) {
-      console.warn(`${tag} skip: no page_customer found for normalized=${target}`);
       return null;
     }
 
@@ -115,7 +110,6 @@ export default class PancakePOSSyncService {
       select: { id: true, page_id: true, ad_ids: true }
     });
     if (!conversation?.ad_ids) {
-      console.warn(`${tag} skip: no conversation with ad_ids for customer_id=${pageCustomer.customer_id}`);
       return null;
     }
 
@@ -123,7 +117,6 @@ export default class PancakePOSSyncService {
       ? (conversation.ad_ids as string[]).filter(Boolean)
       : [];
     if (adIds.length === 0) {
-      console.warn(`${tag} skip: ad_ids is empty for customer_id=${pageCustomer.customer_id}`);
       return null;
     }
 
@@ -142,23 +135,23 @@ export default class PancakePOSSyncService {
     return page?.pos_shop_id ?? null;
   }
 
-  private async syncOrderCreate(order: HaravanOrderPayload, shopId: number, lead: ResolvedLead): Promise<void> {
-    const tag = `[PancakePOSSync] syncOrderCreate order=${order.id} shopId=${shopId}`;
-
+  private async syncOrderCreate(
+    order: HaravanOrderPayload,
+    shopId: number,
+    lead: ResolvedLead
+  ): Promise<void> {
     const existing = await this.db.pancakePOSOrderSync.findUnique({
       where: { haravan_order_id: BigInt(order.id) }
     });
     if (existing?.pancake_order_id) {
-      console.warn(`${tag} skip: already synced pancake_order_id=${existing.pancake_order_id}`);
+      await this.syncOrderUpdate(order, shopId);
       return;
     }
 
-    const status = this.mapStatus(order.cancelled_status);
+    const status = this.mapStatus(order);
     const payload = this.buildCreatePayload({ order, lead, status });
 
-    console.warn(`${tag} creating POS order conversationId=${lead.conversationId} adId=${lead.adIds[0]}`);
     const posOrder = await this.client.createOrder(shopId, payload);
-    console.warn(`${tag} created pancake_order_id=${posOrder.id}`);
 
     await this.db.pancakePOSOrderSync.upsert({
       where: { haravan_order_id: BigInt(order.id) },
@@ -191,7 +184,9 @@ export default class PancakePOSSyncService {
     status: number;
   }): CreateOrderPayload {
     const customer = order.customer;
-    const fullName = [customer?.first_name, customer?.last_name].filter(Boolean).join(" ") || undefined;
+    const fullName =
+      [customer?.first_name, customer?.last_name].filter(Boolean).join(" ") ||
+      undefined;
     const shippingFee = (order.shipping_lines ?? []).reduce(
       (total, line) => total + haravanMoneyToNumber(line.price),
       0
@@ -201,12 +196,13 @@ export default class PancakePOSSyncService {
       bill_full_name: fullName,
       bill_phone_number: customer?.phone ?? undefined,
       conversation_id: lead.conversationId,
-      note: order.note,
+      note: order.note ?? undefined,
       status,
       shipping_fee: shippingFee,
       ad_id: lead.adIds[0],
       page_id: lead.pageId,
-      items: [this.buildBaseProductItem(order)]
+      items: [this.buildBaseProductItem(order)],
+      inserted_at: order.created_at ?? undefined
     };
   }
 
@@ -223,36 +219,40 @@ export default class PancakePOSSyncService {
     };
   }
 
-  private async syncOrderUpdate(order: HaravanOrderPayload, shopId: number): Promise<void> {
-    const tag = `[PancakePOSSync] syncOrderUpdate order=${order.id}`;
-
+  private async syncOrderUpdate(
+    order: HaravanOrderPayload,
+    shopId: number
+  ): Promise<void> {
     const sync = await this.db.pancakePOSOrderSync.findUnique({
       where: { haravan_order_id: BigInt(order.id) }
     });
     if (!sync?.pancake_order_id) {
-      console.warn(`${tag} skip: no pancake_pos_order_syncs record found`);
       return;
     }
 
-    const status = this.mapStatus(order.cancelled_status);
+    const status = this.mapStatus(order);
     if (sync.status === status) {
-      console.warn(`${tag} skip: status unchanged (${status})`);
       return;
     }
 
-    console.warn(`${tag} updating status ${sync.status} → ${status} pancake_order_id=${sync.pancake_order_id}`);
-    await this.client.updateOrderStatus(sync.shop_id ?? shopId, sync.pancake_order_id, status);
+    await this.client.updateOrderStatus(
+      sync.shop_id ?? shopId,
+      sync.pancake_order_id,
+      status
+    );
     await this.db.pancakePOSOrderSync.update({
       where: { haravan_order_id: BigInt(order.id) },
       data: { status, updated_at: new Date() }
     });
   }
 
-  private mapStatus(cancelledStatus: string | null): number {
-    const normalizedCancelledStatus = cancelledStatus?.toLowerCase() ?? null;
-
-    if (normalizedCancelledStatus === HARAVAN_CANCELLED_STATUS.CANCELLED) return POS_STATUS.CANCELED;
-
+  private mapStatus(order: HaravanOrderPayload): number {
+    if (
+      order.cancelled_status?.toLowerCase() ===
+      HARAVAN_CANCELLED_STATUS.CANCELLED
+    )
+      return POS_STATUS.CANCELED;
+    if (order.confirmed_at) return POS_STATUS.CONFIRMED;
     return POS_STATUS.NEW;
   }
 }

@@ -4,6 +4,7 @@ import Database from "services/database";
 import HaravanAPI from "services/clients/haravan-client";
 import OrderMapper from "services/haravan/orders/order-mapper";
 import * as crypto from "crypto";
+import * as Sentry from "@sentry/cloudflare";
 import { sleep } from "services/utils/sleep.js";
 import { isTestOrder } from "services/utils/order-intercepter";
 
@@ -30,7 +31,9 @@ export default class OrderDatabaseSyncService {
     const lastSyncDate = await kv.get(KV_KEY);
 
     const fromDate = lastSyncDate
-      ? dayjs(lastSyncDate).subtract(5, "minutes").format("YYYY-MM-DDTHH:mm:ss[Z]")
+      ? dayjs(lastSyncDate)
+          .subtract(5, "minutes")
+          .format("YYYY-MM-DDTHH:mm:ss[Z]")
       : dayjs().utc().subtract(1, "hour").format("YYYY-MM-DDTHH:mm:ss[Z]");
 
     try {
@@ -39,8 +42,12 @@ export default class OrderDatabaseSyncService {
 
       await this._fetchAndProcessOrders(haravanClient, fromDate);
       await kv.put(KV_KEY, toDate);
-    } catch {
-      if (lastSyncDate && dayjs(toDate).diff(dayjs(lastSyncDate), "hour") >= 1) {
+    } catch (error) {
+      Sentry.captureException(error);
+      if (
+        lastSyncDate &&
+        dayjs(toDate).diff(dayjs(lastSyncDate), "hour") >= 1
+      ) {
         await kv.put(KV_KEY, toDate);
       }
     }
@@ -92,7 +99,7 @@ export default class OrderDatabaseSyncService {
   async _processOrderBatch(orders) {
     if (!orders || orders.length === 0) return;
 
-    const validOrders = orders.filter(order => !isTestOrder(order));
+    const validOrders = orders.filter((order) => !isTestOrder(order));
     if (validOrders.length === 0) return;
 
     const lineItems = [];
@@ -132,7 +139,7 @@ export default class OrderDatabaseSyncService {
 
     const currentDateTime = dayjs().utc().toDate();
     await this.db.$transaction(async (tx) => {
-      const operations = orders.map(order => {
+      const operations = orders.map((order) => {
         const data = OrderMapper.mapOrder(order);
         const id = data.id;
         delete data.id;
@@ -161,7 +168,7 @@ export default class OrderDatabaseSyncService {
 
     const currentDateTime = dayjs().utc().toDate();
     await this.db.$transaction(async (tx) => {
-      const operations = lineItems.map(item => {
+      const operations = lineItems.map((item) => {
         const data = OrderMapper.mapLineItem(item);
         const id = data.id;
         delete data.id;
@@ -190,7 +197,7 @@ export default class OrderDatabaseSyncService {
 
     const currentDateTime = dayjs().utc().toDate();
     await this.db.$transaction(async (tx) => {
-      const operations = transactions.map(item => {
+      const operations = transactions.map((item) => {
         const data = OrderMapper.mapTransaction(item);
         const id = data.id;
         delete data.id;
@@ -219,7 +226,7 @@ export default class OrderDatabaseSyncService {
 
     const currentDateTime = dayjs().utc().toDate();
     await this.db.$transaction(async (tx) => {
-      const operations = fulfillments.map(item => {
+      const operations = fulfillments.map((item) => {
         const data = OrderMapper.mapFulfillment(item);
         const id = data.id;
         delete data.id;
@@ -248,7 +255,7 @@ export default class OrderDatabaseSyncService {
 
     const currentDateTime = dayjs().utc().toDate();
     await this.db.$transaction(async (tx) => {
-      const operations = refunds.map(item => {
+      const operations = refunds.map((item) => {
         const data = OrderMapper.mapRefund(item);
         const id = data.id;
         delete data.id;

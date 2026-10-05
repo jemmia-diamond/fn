@@ -1,5 +1,6 @@
-import PancakeClient from "pancake/pancake-client";
 import * as Sentry from "@sentry/cloudflare";
+import PancakeClient from "pancake/pancake-client";
+import { DISABLE_FEATURE_FLAG } from "src/constants";
 
 export default class PancakeTokenRefresherService {
   constructor(env) {
@@ -8,6 +9,10 @@ export default class PancakeTokenRefresherService {
   }
 
   async run() {
+    const tokenRefresh = this.env.PANCAKE_TOKEN_REFRESH;
+    if (tokenRefresh == DISABLE_FEATURE_FLAG) {
+      return;
+    }
     try {
       console.warn("Starting Pancake Token Refresher...");
 
@@ -26,7 +31,9 @@ export default class PancakeTokenRefresherService {
       const patsConfig = {};
       for (const page of pages) {
         try {
-          const pat = await this.pancakeClient.generateNewPageAccessToken(page.id);
+          const pat = await this.pancakeClient.generateNewPageAccessToken(
+            page.id
+          );
           if (pat) {
             patsConfig[page.id] = pat;
           }
@@ -37,21 +44,28 @@ export default class PancakeTokenRefresherService {
       }
 
       if (Object.keys(patsConfig).length === 0) {
-        console.warn("Failed to generate any new PATs, aborting sync to Infisical.");
+        console.warn(
+          "Failed to generate any new PATs, aborting sync to Infisical."
+        );
         return;
       }
 
-      const infisicalApiUrl = this.env.INFISICAL_API_URL || "https://infisical.jemmia.vn";
+      const infisicalApiUrl =
+        this.env.INFISICAL_API_URL || "https://infisical.jemmia.vn";
       const accessToken = this.env.INFISICAL_TOKEN;
       const projectId = this.env.INFISICAL_PROJECT_ID;
       const environment = this.env.INFISICAL_ENVIRONMENT || "prod";
 
       if (!accessToken || !projectId) {
-        throw new Error("Missing required Infisical environment variables (INFISICAL_TOKEN, INFISICAL_PROJECT_ID).");
+        throw new Error(
+          "Missing required Infisical environment variables (INFISICAL_TOKEN, INFISICAL_PROJECT_ID)."
+        );
       }
 
       const entries = Object.entries(patsConfig);
-      console.warn(`Generated ${entries.length} new PATs. Syncing to Infisical...`);
+      console.warn(
+        `Generated ${entries.length} new PATs. Syncing to Infisical...`
+      );
 
       const CHUNK_SIZE = 20;
       let chunkIndex = 1;
@@ -64,32 +78,45 @@ export default class PancakeTokenRefresherService {
         const body = JSON.stringify({
           workspaceId: projectId,
           environment: environment,
-          secretPath: "/commons",
+          secretPath: "/commons/public",
           secretValue: secretValue
         });
 
         const headers = {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${accessToken}`
+          Authorization: `Bearer ${accessToken}`
         };
 
-        let res = await fetch(`${infisicalApiUrl}/api/v3/secrets/raw/${secretName}`, {
-          method: "PATCH",
-          headers,
-          body
-        });
+        if (this.env.CF_ACCESS_CLIENT_ID && this.env.CF_ACCESS_CLIENT_SECRET) {
+          headers["CF-Access-Client-Id"] = this.env.CF_ACCESS_CLIENT_ID;
+          headers["CF-Access-Client-Secret"] = this.env.CF_ACCESS_CLIENT_SECRET;
+        }
 
-        if (res.status === 404 || res.status === 400) {
-          res = await fetch(`${infisicalApiUrl}/api/v3/secrets/raw/${secretName}`, {
-            method: "POST",
+        let res = await fetch(
+          `${infisicalApiUrl}/api/v3/secrets/raw/${secretName}`,
+          {
+            method: "PATCH",
             headers,
             body
-          });
+          }
+        );
+
+        if (res.status === 404 || res.status === 400) {
+          res = await fetch(
+            `${infisicalApiUrl}/api/v3/secrets/raw/${secretName}`,
+            {
+              method: "POST",
+              headers,
+              body
+            }
+          );
         }
 
         if (!res.ok) {
           const errorText = await res.text();
-          throw new Error(`Failed to upsert secret ${secretName} in Infisical: ${res.status} - ${errorText}`);
+          throw new Error(
+            `Failed to upsert secret ${secretName} in Infisical: ${res.status} - ${errorText}`
+          );
         }
 
         console.warn(`Successfully updated ${secretName} in Infisical.`);

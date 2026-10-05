@@ -13,7 +13,10 @@ import LarksuiteService from "src/services/larksuite/lark";
 import { fetchLeadInfoByPhoneNumber } from "frappe/lead";
 import { mapLarkToFrappe } from "frappe/utils/utils-lark";
 import { saveAppointmentToPrismaDb } from "services/larksuite/appointment/appointment-save";
-import { getDocumentAttachments, removeFileAttachment } from "frappe/attachment";
+import {
+  getDocumentAttachments,
+  removeFileAttachment
+} from "frappe/attachment";
 import { APPOINTMENTS } from "services/larksuite/appointment/constant";
 export default class AppointmentService {
   env: any;
@@ -56,10 +59,7 @@ export default class AppointmentService {
       tableId: this.tableId,
       recordId
     });
-
-    if (!record) {
-      throw new Error("Lark record not found");
-    }
+    if (!record) throw new Error("Lark record not found");
 
     const rawFields = (record.fields || {}) as LarksuiteAppointmentRawFields;
     const fields: LarksuiteAppointmentParsedFields = {
@@ -76,8 +76,11 @@ export default class AppointmentService {
       customer_response: rawFields["Offlie Phản hồi"],
       main_sales: rawFields["Sale chính"],
       offline_sales: rawFields["Sale Offline tiếp nhận"],
-      status: rawFields["Trạng thái đơn hàng"],
-      policy: rawFields["Chính sách thu mua thu đổi"]
+      order_status: rawFields["Trạng thái đơn hàng"],
+      status: "Open",
+      policy: rawFields["Chính sách thu mua thu đổi"],
+      budget: Number(rawFields["Ngân Sách Uớc Tính"]),
+      offline_response: rawFields["Offlie Phản hồi"]
     };
 
     const data: ILarksuiteAppointment = {
@@ -203,9 +206,8 @@ export default class AppointmentService {
     for (const message of messages) {
       const messageBody = message.body;
       const recordId = messageBody.record_id;
-      if (!recordId) {
-        continue;
-      }
+      if (!recordId) continue;
+
       await appointmentService.createOrUpdateAppointment(recordId);
     }
   }

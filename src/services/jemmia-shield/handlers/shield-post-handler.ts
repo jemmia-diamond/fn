@@ -57,7 +57,8 @@ export default class ShieldPostHandler {
     }
 
     const isTextSensitive =
-      !!postText && (await ShieldPresidioService.detectSensitiveInfo(env, postText));
+      !!postText &&
+      (await ShieldPresidioService.detectSensitiveInfo(env, postText));
 
     const sensitiveImageMap = new Map<string, boolean>();
     let hasSensitiveImage = false;
@@ -137,7 +138,10 @@ export default class ShieldPostHandler {
             const blurred = await ImageHelper.blurImage(buffer, {
               blurSize: 24
             });
-            const newKey = await JemmiaShieldLarkService.uploadImage(env, blurred);
+            const newKey = await JemmiaShieldLarkService.uploadImage(
+              env,
+              blurred
+            );
             item.image_key = newKey;
           }
         } else if (item.tag === JEMMIA_SHIELD_CONTENT_TAG.HREF) {

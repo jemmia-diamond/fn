@@ -10,7 +10,9 @@ class ProductVariantConnector extends BaseConnector {
   }
 
   async createVariant(productId, variantData) {
-    return this.post(`/products/${productId}/variants.json`, { variant: variantData });
+    return this.post(`/products/${productId}/variants.json`, {
+      variant: variantData
+    });
   }
 
   async updateVariant(variantId, variantData) {

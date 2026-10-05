@@ -10,7 +10,7 @@ Before starting development, you need to create a dedicated schema-only branch f
 
 1. **Access Neon Console**: Log into your [Neon Console](https://console.neon.tech)
 
-2. **Create Schema-Only Branch**: 
+2. **Create Schema-Only Branch**:
    - Navigate to your project dashboard
    - Create a new child branch from the `staging` branch
    - **Important**: Select "Schema-only" option when creating the branch
@@ -40,6 +40,7 @@ pnpx prisma migrate deploy
 ```
 
 This command:
+
 - Applies all pending migrations to your database
 - Ensures your local schema matches the remote database
 - Should be run before starting any new development work
@@ -53,6 +54,7 @@ pnpx prisma migrate dev --name MODEL_NAME-DATE-MONTH-YEAR
 ```
 
 **Examples**:
+
 - `pnpx prisma migrate dev --name user-15-12-2024`
 - `pnpx prisma migrate dev --name product-inventory-20-12-2024`
 - `pnpx prisma migrate dev --name order-status-update-25-12-2024`
@@ -82,7 +84,7 @@ All database operations MUST go through Prisma migrations and be deployed proper
 ✅ **ALWAYS** use Prisma schema files for changes  
 ✅ **ALWAYS** create migrations using `prisma migrate dev`  
 ✅ **ALWAYS** deploy migrations using `prisma migrate deploy`  
-✅ **ALWAYS** commit migration files to version control  
+✅ **ALWAYS** commit migration files to version control
 
 ### Why This Matters
 
@@ -112,6 +114,7 @@ All database operations MUST go through Prisma migrations and be deployed proper
 ### Recovery Steps
 
 If you encounter issues:
+
 1. Check migration status: `pnpx prisma migrate status`
 2. Reset if needed: `pnpx prisma migrate reset` (development only)
 3. Regenerate client: `pnpx prisma generate`

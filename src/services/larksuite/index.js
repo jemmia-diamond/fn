@@ -9,6 +9,8 @@ import Ticket from "services/larksuite/tech-ticket";
 import ShieldMessageService from "services/jemmia-shield/shield-message-service";
 import JemmiaShieldLarkService from "services/jemmia-shield/jemmia-shield-lark-service";
 import AppointmentService from "services/larksuite/appointment/appointment-service";
+import SerialSyncService from "services/larksuite/serial/serial-sync-service";
+import VariantSyncService from "services/larksuite/variant/variant-sync-service";
 
 export default {
   AppointmentService,
@@ -21,5 +23,7 @@ export default {
   BuybackExchangeService,
   Ticket,
   ShieldMessageService,
-  JemmiaShieldLarkService
+  JemmiaShieldLarkService,
+  SerialSyncService,
+  VariantSyncService
 };

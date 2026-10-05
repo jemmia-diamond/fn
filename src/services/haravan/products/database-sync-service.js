@@ -4,6 +4,7 @@ import Database from "services/database";
 import HaravanAPI from "services/clients/haravan-client";
 import ProductMapper from "services/haravan/products/product-mapper";
 import * as crypto from "crypto";
+import * as Sentry from "@sentry/cloudflare";
 import { sleep } from "services/utils/sleep.js";
 
 dayjs.extend(utc);
@@ -29,7 +30,9 @@ export default class ProductDatabaseSyncService {
     const lastSyncDate = await kv.get(KV_KEY);
 
     const fromDate = lastSyncDate
-      ? dayjs(lastSyncDate).subtract(5, "minutes").format("YYYY-MM-DDTHH:mm:ss[Z]")
+      ? dayjs(lastSyncDate)
+          .subtract(5, "minutes")
+          .format("YYYY-MM-DDTHH:mm:ss[Z]")
       : dayjs().utc().subtract(1, "hour").format("YYYY-MM-DDTHH:mm:ss[Z]");
 
     try {
@@ -38,8 +41,12 @@ export default class ProductDatabaseSyncService {
 
       await this._fetchAndProcessProducts(haravanClient, fromDate);
       await kv.put(KV_KEY, toDate);
-    } catch {
-      if (lastSyncDate && dayjs(toDate).diff(dayjs(lastSyncDate), "hour") >= 1) {
+    } catch (error) {
+      Sentry.captureException(error);
+      if (
+        lastSyncDate &&
+        dayjs(toDate).diff(dayjs(lastSyncDate), "hour") >= 1
+      ) {
         await kv.put(KV_KEY, toDate);
       }
     }
@@ -104,7 +111,7 @@ export default class ProductDatabaseSyncService {
 
     const currentDateTime = dayjs().utc().toDate();
     await this.db.$transaction(async (tx) => {
-      const operations = products.map(product => {
+      const operations = products.map((product) => {
         const data = ProductMapper.mapProduct(product);
         const id = data.id;
         delete data.id;
@@ -133,7 +140,7 @@ export default class ProductDatabaseSyncService {
 
     const currentDateTime = dayjs().utc().toDate();
     await this.db.$transaction(async (tx) => {
-      const operations = images.map(image => {
+      const operations = images.map((image) => {
         const data = ProductMapper.mapImage(image);
         const id = data.id;
         delete data.id;

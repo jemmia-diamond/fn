@@ -10,15 +10,35 @@ import { fetchChildRecordsFromERP } from "src/services/utils/sql-helpers";
 dayjs.extend(utc);
 
 export const getItemPromotions = (item) => {
-  if (item.new_promotions && typeof item.new_promotions === "string" && item.new_promotions.startsWith("[")) {
-    try { return JSON.parse(item.new_promotions) || []; } catch { return []; }
+  if (
+    item.new_promotions &&
+    typeof item.new_promotions === "string" &&
+    item.new_promotions.startsWith("[")
+  ) {
+    try {
+      return JSON.parse(item.new_promotions) || [];
+    } catch {
+      return [];
+    }
   }
-  return [item.promotion_1, item.promotion_2, item.promotion_3, item.promotion_4, item.promotion_5].filter(Boolean);
+  return [
+    item.promotion_1,
+    item.promotion_2,
+    item.promotion_3,
+    item.promotion_4,
+    item.promotion_5
+  ].filter(Boolean);
 };
 
 const CHUNK_SIZE = 30;
 
-export async function fetchSalesOrdersFromERP(frappeClient, doctype, fromDate, toDate, pageSize) {
+export async function fetchSalesOrdersFromERP(
+  frappeClient,
+  doctype,
+  fromDate,
+  toDate,
+  pageSize
+) {
   try {
     const filters = { modified: [">=", fromDate] };
     if (toDate) filters.modified = ["between", [fromDate, toDate]];
@@ -37,38 +57,74 @@ export async function fetchSalesOrdersFromERP(frappeClient, doctype, fromDate, t
       if (!Array.isArray(batch) || batch.length === 0) break;
 
       // fetch data from child tables of sales order
-      const orderNames = batch.map(item => item.name);
-      const salesOrderItems = await fetchChildRecordsFromERP(frappeClient, orderNames, "tabSales Order Item");
-      const salesTeams = await fetchChildRecordsFromERP(frappeClient, orderNames, "tabSales Team");
-      const salesOrderPolicies = await fetchChildRecordsFromERP(frappeClient, orderNames, "tabSales Order Policy");
-      const salesOrderPromotions = await fetchChildRecordsFromERP(frappeClient, orderNames, "tabSales Order Promotion");
-      const salesOrderPurposes = await fetchChildRecordsFromERP(frappeClient, orderNames, "tabSales Order Purpose");
-      const salesOrderProductCategories = await fetchChildRecordsFromERP(frappeClient, orderNames, "tabSales Order Product Category");
-      const debtHistory = await fetchChildRecordsFromERP(frappeClient, orderNames, "tabOrder and Debt Tracking");
-      const paymentEntries = await fetchChildRecordsFromERP(frappeClient, orderNames, "tabPayment Entry Reference");
+      const orderNames = batch.map((item) => item.name);
+      const salesOrderItems = await fetchChildRecordsFromERP(
+        frappeClient,
+        orderNames,
+        "tabSales Order Item"
+      );
+      const salesTeams = await fetchChildRecordsFromERP(
+        frappeClient,
+        orderNames,
+        "tabSales Team"
+      );
+      const salesOrderPolicies = await fetchChildRecordsFromERP(
+        frappeClient,
+        orderNames,
+        "tabSales Order Policy"
+      );
+      const salesOrderPromotions = await fetchChildRecordsFromERP(
+        frappeClient,
+        orderNames,
+        "tabSales Order Promotion"
+      );
+      const salesOrderPurposes = await fetchChildRecordsFromERP(
+        frappeClient,
+        orderNames,
+        "tabSales Order Purpose"
+      );
+      const salesOrderProductCategories = await fetchChildRecordsFromERP(
+        frappeClient,
+        orderNames,
+        "tabSales Order Product Category"
+      );
+      const debtHistory = await fetchChildRecordsFromERP(
+        frappeClient,
+        orderNames,
+        "tabOrder and Debt Tracking"
+      );
+      const paymentEntries = await fetchChildRecordsFromERP(
+        frappeClient,
+        orderNames,
+        "tabPayment Entry Reference"
+      );
 
       // group records by sales order name
-      const groupByParent = arr => arr.reduce((acc, item) => {
-        (acc[item.parent] = acc[item.parent] || []).push(item);
-        return acc;
-      }, {});
+      const groupByParent = (arr) =>
+        arr.reduce((acc, item) => {
+          (acc[item.parent] = acc[item.parent] || []).push(item);
+          return acc;
+        }, {});
       const salesOrderItemsMap = groupByParent(salesOrderItems);
       const salesTeamMap = groupByParent(salesTeams);
       const salesOrderPoliciesMap = groupByParent(salesOrderPolicies);
       const salesOrderPromotionsMap = groupByParent(salesOrderPromotions);
       const salesOrderPurposesMap = groupByParent(salesOrderPurposes);
-      const salesOrderProductCategoriesMap = groupByParent(salesOrderProductCategories);
+      const salesOrderProductCategoriesMap = groupByParent(
+        salesOrderProductCategories
+      );
       const debtHistoryMap = groupByParent(debtHistory);
       const paymentEntriesMap = groupByParent(paymentEntries);
 
       // add sales order items and sales team to each sales order
-      batch.forEach(item => {
+      batch.forEach((item) => {
         item.items = salesOrderItemsMap[item.name] || [];
         item.sales_team = salesTeamMap[item.name] || [];
         item.policies = salesOrderPoliciesMap[item.name] || [];
         item.promotions = salesOrderPromotionsMap[item.name] || [];
         item.sales_order_purposes = salesOrderPurposesMap[item.name] || [];
-        item.product_categories = salesOrderProductCategoriesMap[item.name] || [];
+        item.product_categories =
+          salesOrderProductCategoriesMap[item.name] || [];
         item.debt_histories = debtHistoryMap[item.name] || [];
         item.payment_entries = paymentEntriesMap[item.name] || [];
       });
@@ -95,28 +151,43 @@ export async function saveSalesOrdersToDatabase(db, salesOrders) {
       const chunk = mappedData.slice(i, i + CHUNK_SIZE);
 
       // Get fields including both database timestamp columns for INSERT
-      const fields = ["uuid", ...Object.keys(chunk[0]).filter(field =>
-        field !== "database_created_at" && field !== "database_updated_at"
-      ), "database_created_at", "database_updated_at"];
-      const fieldsSql = fields.map(field => `"${field}"`).join(", ");
+      const fields = [
+        "uuid",
+        ...Object.keys(chunk[0]).filter(
+          (field) =>
+            field !== "database_created_at" && field !== "database_updated_at"
+        ),
+        "database_created_at",
+        "database_updated_at"
+      ];
+      const fieldsSql = fields.map((field) => `"${field}"`).join(", ");
 
       // Create VALUES clause with generated UUIDs and timestamps
       const currentTimestamp = new Date();
-      const values = chunk.map(salesOrder => {
-        const salesOrderWithTimestamps = {
-          uuid: randomUUID(),
-          ...salesOrder,
-          database_created_at: currentTimestamp,
-          database_updated_at: currentTimestamp
-        };
-        const fieldValues = fields.map(field => escapeSqlValue(salesOrderWithTimestamps[field]));
-        return `(${fieldValues.join(", ")})`;
-      }).join(",\n  ");
+      const values = chunk
+        .map((salesOrder) => {
+          const salesOrderWithTimestamps = {
+            uuid: randomUUID(),
+            ...salesOrder,
+            database_created_at: currentTimestamp,
+            database_updated_at: currentTimestamp
+          };
+          const fieldValues = fields.map((field) =>
+            escapeSqlValue(salesOrderWithTimestamps[field])
+          );
+          return `(${fieldValues.join(", ")})`;
+        })
+        .join(",\n  ");
 
       // Create UPDATE SET clause for ON CONFLICT (exclude "name", "uuid", and "database_created_at")
       const updateSetSql = fields
-        .filter(field => field !== "name" && field !== "uuid" && field !== "database_created_at")
-        .map(field => {
+        .filter(
+          (field) =>
+            field !== "name" &&
+            field !== "uuid" &&
+            field !== "database_created_at"
+        )
+        .map((field) => {
           if (field === "database_updated_at") {
             return `"${field}" = CURRENT_TIMESTAMP`;
           }
@@ -132,50 +203,21 @@ export async function saveSalesOrdersToDatabase(db, salesOrders) {
       `;
       await db.$queryRaw`${Prisma.raw(query)}`;
     }
-
   } catch (error) {
     Sentry.captureException(error);
   }
 }
 
-const PAYMENT_GATEWAY_ERP = "Thanh toán qua ERP";
-const PAYMENT_GATEWAY_QR_MB = "Chuyển khoản qua QR - MBBank";
-const PAYMENT_BEFORE_RELEASE_DATE = "2025-12-14 16:59:59.999";
-
-export function calculateOrderPaymentRecordsTotal(orderDoc) {
-  if (!orderDoc) return 0;
-
-  const paymentRecords = (orderDoc.payment_records || []).filter(r => {
-    if (typeof r.kind !== "string" || !["capture", "authorization"].includes(r.kind.toLowerCase())) {
-      return false;
-    }
-
-    if (r.gateway === PAYMENT_GATEWAY_ERP) return false;
-
-    if (r.gateway === PAYMENT_GATEWAY_QR_MB) {
-      if (dayjs(r.date).isAfter(dayjs(PAYMENT_BEFORE_RELEASE_DATE))) {
-        return false;
-      }
-    }
-
-    return true;
-  });
-  const paymentRecordsTotal = paymentRecords.reduce((sum, r) => sum + parseFloat(r.amount || 0), 0);
-  return paymentRecordsTotal;
-}
-
-export function calculateGroupOrderPaymentRecordsTotal(orderDocs) {
-  if (!orderDocs || orderDocs.length === 0) return 0;
-
-  return orderDocs.reduce((total, order) => {
-    return total + calculateOrderPaymentRecordsTotal(order);
-  }, 0);
-}
-
-export async function ensureSelfReference(frappeClient, order, doctype = "Sales Order") {
+export async function ensureSelfReference(
+  frappeClient,
+  order,
+  doctype = "Sales Order"
+) {
   // Update self-reference if missing (e.g. new order)
   if (order && order.name) {
-    const hasSelfRef = order.ref_sales_orders?.some(r => r.sales_order === order.name);
+    const hasSelfRef = order.ref_sales_orders?.some(
+      (r) => r.sales_order === order.name
+    );
     if (!hasSelfRef) {
       const updatedRefs = [
         ...(order.ref_sales_orders || []),
@@ -192,27 +234,6 @@ export async function ensureSelfReference(frappeClient, order, doctype = "Sales 
     }
   }
   return order;
-}
-
-export async function getAllRelatedPaymentEntries(frappeClient, relatedOrderNames) {
-  if (!relatedOrderNames || relatedOrderNames.length === 0) {
-    return [];
-  }
-  const paymentEntries = await frappeClient.getList("Payment Entry", {
-    filters: [
-      ["Payment Entry Reference", "reference_doctype", "=", "Sales Order"],
-      ["Payment Entry Reference", "reference_name", "in", relatedOrderNames],
-      ["docstatus", "<", 2],
-      ["payment_order_status", "=", "Success"]
-    ],
-    fields: ["name", "payment_type"]
-  });
-  return paymentEntries;
-}
-
-export function shouldSkipSharedPayment(referenceName, currentOrderName, isSplitOrder, isFirstSplitOrder) {
-  const isShared = referenceName !== currentOrderName;
-  return isShared && isSplitOrder && !isFirstSplitOrder;
 }
 
 /**
@@ -232,9 +253,7 @@ export async function getSalesOrdersByHaravanOrderId(
   }
 
   const salesOrders = await frappeClient.getList("Sales Order", {
-    filters: [
-      ["order_number", "=", String(haravanOrderId)]
-    ],
+    filters: [["order_number", "=", String(haravanOrderId)]],
     fields: fields
   });
 
@@ -262,4 +281,73 @@ export async function getLeadSource(frappeClient, sourceCode) {
     Sentry.captureException(e);
   }
   return null;
+}
+
+export function normalizeUrlForAttachments(urlStr, envBaseUrl) {
+  if (!urlStr) return urlStr;
+
+  let finalUrl = urlStr;
+  if (envBaseUrl && !urlStr.startsWith("http")) {
+    finalUrl = `${envBaseUrl.replace(/\/+$/, "")}/${urlStr.replace(/^\/+/, "")}`;
+  }
+
+  try {
+    const urlObj = new URL(finalUrl);
+    urlObj.pathname = urlObj.pathname.replace(/\/+/g, "/");
+    return urlObj.toString();
+  } catch (error) {
+    console.warn(
+      `[URL Normalization Failed] original: "${urlStr}", base: "${envBaseUrl}". Error:`,
+      error
+    );
+    return finalUrl;
+  }
+}
+
+export async function fetchAndNormalizeAttachments(
+  frappeClient,
+  orderName,
+  envBaseUrl
+) {
+  const attachments = await frappeClient.getList("File", {
+    filters: [
+      ["attached_to_doctype", "=", "Sales Order"],
+      ["attached_to_name", "=", orderName]
+    ],
+    fields: ["file_name", "file_url", "is_private"]
+  });
+
+  return (attachments || []).map((file) => {
+    const finalUrl = normalizeUrlForAttachments(file.file_url, envBaseUrl);
+
+    return {
+      file_name: file.file_name,
+      file_url: finalUrl,
+      is_private: file.is_private
+    };
+  });
+}
+
+export function calculateGroupPayments(salesOrderData, childOrders = []) {
+  const result = {
+    paid_amount: salesOrderData.paid_amount || 0,
+    deposit_amount: salesOrderData.deposit_amount || 0
+  };
+  if (
+    salesOrderData.is_split_order &&
+    salesOrderData.total_allocated_group_payment !== undefined &&
+    salesOrderData.total_allocated_group_payment !== null
+  ) {
+    result.paid_amount = salesOrderData.total_allocated_group_payment;
+    result.deposit_amount = salesOrderData.total_allocated_group_payment;
+  } else {
+    let totalPaid = result.paid_amount;
+    for (const childOrder of childOrders) {
+      totalPaid += childOrder.paid_amount || 0;
+    }
+    result.paid_amount = totalPaid;
+    result.deposit_amount = totalPaid;
+  }
+
+  return result;
 }

@@ -24,15 +24,24 @@ export default class SalesOrderItemService {
   }
 
   async processItemPolicy(itemData) {
-    const { variant_id, variant_title, real_order_date, serial_numbers, name } = itemData;
+    const { variant_id, variant_title, real_order_date, serial_numbers, name } =
+      itemData;
     const defaultPolicy = "Chưa có chính sách";
     const isGiaItem = variant_title?.toUpperCase().startsWith("GIA");
 
     // Check if the item is a diamond
     if (isGiaItem) {
-      const record = await this._findRecordInTable(NOCODB_TABLES.SUPPLY.DIAMONDS, "variant_id", variant_id);
+      const record = await this._findRecordInTable(
+        NOCODB_TABLES.SUPPLY.DIAMONDS,
+        "variant_id",
+        variant_id
+      );
       const policy = record
-        ? this.processDiamondPolicy(record.policy_rules, real_order_date, defaultPolicy)
+        ? this.processDiamondPolicy(
+            record.policy_rules,
+            real_order_date,
+            defaultPolicy
+          )
         : defaultPolicy;
       return this.updatePolicy(name, policy);
     }
@@ -44,8 +53,14 @@ export default class SalesOrderItemService {
     }
 
     // Check if the item has serial number
-    const record = await this._findRecordInTable(NOCODB_TABLES.SUPPLY.SERIALS, "serial_number", serialNumber);
-    const policy = record ? this.processSerialPolicy(record.policy) : defaultPolicy;
+    const record = await this._findRecordInTable(
+      NOCODB_TABLES.SUPPLY.SERIALS,
+      "serial_number",
+      serialNumber
+    );
+    const policy = record
+      ? this.processSerialPolicy(record.policy)
+      : defaultPolicy;
     return this.updatePolicy(name, policy);
   }
 
@@ -73,7 +88,9 @@ export default class SalesOrderItemService {
     if (!value) return defaultPolicy;
 
     if (value.includes("-") && value.includes("%")) {
-      const [buy, exchange] = value.split("-").map((v) => v.replace(/%/g, "").trim());
+      const [buy, exchange] = value
+        .split("-")
+        .map((v) => v.replace(/%/g, "").trim());
       if (!isNaN(buy) && !isNaN(exchange)) {
         return `Thu mua ${buy}% - Thu đổi ${exchange}%`;
       }
@@ -91,7 +108,10 @@ export default class SalesOrderItemService {
 
     const matchingRules = rules
       .map((rule) => this._parseRule(rule))
-      .filter((parsed) => parsed && this._isDateInRange(orderDate, parsed.start, parsed.end))
+      .filter(
+        (parsed) =>
+          parsed && this._isDateInRange(orderDate, parsed.start, parsed.end)
+      )
       .map((parsed) => parsed.policy);
 
     return matchingRules.length > 0 ? matchingRules.join("\n") : fallback;
@@ -129,5 +149,4 @@ export default class SalesOrderItemService {
   _isDateInRange(date, start, end) {
     return date >= start && date <= end;
   }
-
 }

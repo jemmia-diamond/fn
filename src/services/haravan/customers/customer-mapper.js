@@ -32,10 +32,16 @@ export default class CustomerMapper {
       phone: customer.phone,
       first_name: customer.first_name,
       last_name: customer.last_name,
-      created_at: customer.created_at ? dayjs(customer.created_at).toDate() : null,
-      updated_at: customer.updated_at ? dayjs(customer.updated_at).toDate() : null,
+      created_at: customer.created_at
+        ? dayjs(customer.created_at).toDate()
+        : null,
+      updated_at: customer.updated_at
+        ? dayjs(customer.updated_at).toDate()
+        : null,
       multipass_identifier: customer.multipass_identifier,
-      last_order_id: customer.last_order_id ? BigInt(customer.last_order_id) : null,
+      last_order_id: customer.last_order_id
+        ? BigInt(customer.last_order_id)
+        : null,
       last_order_name: customer.last_order_name,
       published: customer.published,
       note: customer.note,

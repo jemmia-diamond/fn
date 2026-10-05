@@ -55,7 +55,7 @@ export default class UserSyncService {
       const batch = users.slice(i, i + UPSERT_BATCH_SIZE);
 
       await this.db.$transaction(async (tx) => {
-        const operations = batch.map(user => {
+        const operations = batch.map((user) => {
           const data = this._mapUser(user);
           const id = data.id;
           delete data.id;

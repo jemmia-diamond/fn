@@ -2,26 +2,26 @@
  * This constant also relies on the mapping file below.
  */
 export const DEBIT_ACCOUNT_MAP = {
-  "MB": {
-    "default": "1121002",
-    "2222602899999": "1121002",
-    "1121699999": "1121010"
+  MB: {
+    default: "1121002",
+    2222602899999: "1121002",
+    1121699999: "1121010"
   },
-  "VCB": {
-    "default": "1121003",
-    "1054449999": "1121003",
-    "1063499999": "1121011",
-    "1054499999": "1121012"
+  VCB: {
+    default: "1121003",
+    1054449999: "1121003",
+    1063499999: "1121011",
+    1054499999: "1121012"
   },
-  "TCB": {
-    "default": "1121007",
-    "50503333": "1121007"
+  TCB: {
+    default: "1121007",
+    50503333: "1121007"
   },
-  "ACB": {
-    "default": "1121009",
-    "33399968868": "1121009"
+  ACB: {
+    default: "1121009",
+    33399968868: "1121009"
   },
-  "CTG": { "default": "1121001" }
+  CTG: { default: "1121001" }
 };
 
 export function getDebitAccount(bankCode, accountNumber) {
@@ -44,11 +44,11 @@ export const SOURCE_TO_UNIT_CODE = {
   "pos-cua-hang-hcm": { unit_code: "0302_001", credit_account: "1310001" },
   "pos-cua-hang-hn": { unit_code: "0302_002", credit_account: "1310101" },
   "pos cua hang can tho": { unit_code: "0302_003", credit_account: "1310002" },
-  "tiktokshop": { unit_code: "0700", credit_account: "1310301" },
-  "web": { unit_code: "0700", credit_account: "1310301" },
-  "fbshop": { unit_code: "0700", credit_account: "1310301" },
-  "phone": { unit_code: "0301", credit_account: "1310302" },
-  "zalo": { unit_code: "0301", credit_account: "1310302" },
+  tiktokshop: { unit_code: "0700", credit_account: "1310301" },
+  web: { unit_code: "0700", credit_account: "1310301" },
+  fbshop: { unit_code: "0700", credit_account: "1310301" },
+  phone: { unit_code: "0301", credit_account: "1310302" },
+  zalo: { unit_code: "0301", credit_account: "1310302" },
   "zalo-cong-ty-cap": { unit_code: "0301", credit_account: "1310302" },
   "fb-jemmia-hcm": { unit_code: "0301", credit_account: "1310302" },
   "fb-jemmia-hn": { unit_code: "0301", credit_account: "1310302" },
@@ -76,7 +76,12 @@ export function buildOrgUnitMap(orgUnitDictionary) {
   }, {});
 }
 
-export function getCreditInfo(orgUnitMap, source, branch = null, isManualPayment = false) {
+export function getCreditInfo(
+  orgUnitMap,
+  source,
+  branch = null,
+  isManualPayment = false
+) {
   const sourceInfo = isManualPayment
     ? BRANCH_TO_UNIT_CODE[branch]
     : SOURCE_TO_UNIT_CODE[source];

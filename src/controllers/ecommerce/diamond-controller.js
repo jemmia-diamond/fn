@@ -2,21 +2,28 @@ import DiamondService from "services/ecommerce/diamond/diamond";
 import { API_CONFIG } from "src/controllers/ecommerce/constant";
 
 export default class DiamondController {
-
   static async show(ctx) {
     const params = await ctx.req.query();
 
-    const limit = params.limit ? parseInt(params.limit, 10) : API_CONFIG.DEFAULT_LIMIT;
+    const limit = params.limit
+      ? parseInt(params.limit, 10)
+      : API_CONFIG.DEFAULT_LIMIT;
     const from = params.from ? parseInt(params.from, 10) : API_CONFIG.MIN_FROM;
 
     const jsonParams = {
       shapes: params.shapes ? params.shapes.split(",") : undefined,
       colors: params.colors ? params.colors.split(",") : undefined,
       clarities: params.clarities ? params.clarities.split(",") : undefined,
-      fluorescence: params.fluorescence ? params.fluorescence.split(",") : undefined,
+      fluorescence: params.fluorescence
+        ? params.fluorescence.split(",")
+        : undefined,
       edge_size: {
-        lower: params["edge_size.lower"] ? parseFloat(params["edge_size.lower"]) : undefined,
-        upper: params["edge_size.upper"] ? parseFloat(params["edge_size.upper"]) : undefined
+        lower: params["edge_size.lower"]
+          ? parseFloat(params["edge_size.lower"])
+          : undefined,
+        upper: params["edge_size.upper"]
+          ? parseFloat(params["edge_size.upper"])
+          : undefined
       },
       price: {
         min: params["price.min"] ? parseFloat(params["price.min"]) : undefined,
@@ -27,10 +34,15 @@ export default class DiamondController {
         order: params["sort.order"]
       },
       pagination: {
-        limit: isNaN(limit) || limit <= 0 ? API_CONFIG.DEFAULT_LIMIT : Math.min(limit, API_CONFIG.MAX_LIMIT),
+        limit:
+          isNaN(limit) || limit <= 0
+            ? API_CONFIG.DEFAULT_LIMIT
+            : Math.min(limit, API_CONFIG.MAX_LIMIT),
         from: isNaN(from) || from <= 0 ? API_CONFIG.MIN_FROM : from
       },
-      linked_collections: params.linked_collections ? params.linked_collections.split(",") : []
+      linked_collections: params.linked_collections
+        ? params.linked_collections.split(",")
+        : []
     };
 
     const diamondService = new DiamondService(ctx.env);
@@ -41,7 +53,10 @@ export default class DiamondController {
   static async index(ctx) {
     const variantId = parseInt(ctx.req.param("id"), 10);
     if (!variantId || isNaN(variantId)) {
-      return ctx.json({ message: "Invalid or missing diamond 'id' parameter" }, 400);
+      return ctx.json(
+        { message: "Invalid or missing diamond 'id' parameter" },
+        400
+      );
     }
 
     const diamondService = new DiamondService(ctx.env);

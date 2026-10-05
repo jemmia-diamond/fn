@@ -4,7 +4,10 @@ export default class BuybackExchangeController {
   static async index(ctx) {
     const params = await ctx.req.query();
     if (!params.phone_number) {
-      return ctx.json({ sucess: false, message: "Phone number is required" }, 400);
+      return ctx.json(
+        { sucess: false, message: "Phone number is required" },
+        400
+      );
     }
 
     const service = new Larksuite.BuybackExchangeService(ctx.env);

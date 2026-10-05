@@ -17,6 +17,7 @@ import CustomCollectConnector from "services/clients/haravan-client/collect-cust
 import UserConnector from "services/clients/haravan-client/user";
 import ArticleConnector from "services/clients/haravan-client/article";
 import ThemeConnector from "services/clients/haravan-client/theme";
+import PromotionConnector from "services/clients/haravan-client/promotion-connector";
 
 class HaravanAPI {
   constructor(accessToken) {
@@ -29,9 +30,15 @@ class HaravanAPI {
     this.orderTransaction = new TransactionOrderConnector(accessToken);
     this.inventoryAdjustment = new InventoryAdjustmentConnector(accessToken);
     this.inventoryLocation = new InventoryLocationConnector(accessToken);
-    this.inventoryPurchaseOrder = new InventoryPurchaseOrderConnector(accessToken);
-    this.inventoryPurchaseReceive = new InventoryPurchaseReceiveConnector(accessToken);
-    this.inventoryPurchaseReturn = new InventoryPurchaseReturnConnector(accessToken);
+    this.inventoryPurchaseOrder = new InventoryPurchaseOrderConnector(
+      accessToken
+    );
+    this.inventoryPurchaseReceive = new InventoryPurchaseReceiveConnector(
+      accessToken
+    );
+    this.inventoryPurchaseReturn = new InventoryPurchaseReturnConnector(
+      accessToken
+    );
     this.inventoryTransfer = new InventoryTransferConnector(accessToken);
     this.location = new LocationConnector(accessToken);
     this.collect = new CollectConnector(accessToken);
@@ -39,6 +46,7 @@ class HaravanAPI {
     this.user = new UserConnector(accessToken);
     this.article = new ArticleConnector(accessToken);
     this.theme = new ThemeConnector(accessToken);
+    this.promotion = new PromotionConnector(accessToken);
   }
 }
 

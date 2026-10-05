@@ -10,7 +10,9 @@ class InventoryTransferConnector extends BaseConnector {
   }
 
   async createInventoryTransfer(transferData) {
-    return this.post("/inventory_transfers.json", { inventory_transfer: transferData });
+    return this.post("/inventory_transfers.json", {
+      inventory_transfer: transferData
+    });
   }
 }
 

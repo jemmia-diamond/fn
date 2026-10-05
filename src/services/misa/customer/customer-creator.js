@@ -43,7 +43,7 @@ export default class CustomerCreator {
 
   async syncCustomer(customerData) {
     const tags = customerData?.tags?.split(",") || [];
-    if (tags.some(tag => IGNORE_TAGS.includes(tag))) return;
+    if (tags.some((tag) => IGNORE_TAGS.includes(tag))) return;
 
     const haravanId = String(customerData.id);
 
@@ -54,36 +54,41 @@ export default class CustomerCreator {
     if (existing?.last_synced_at) return;
 
     if (!customerData.phone) {
-      throw new Error(`Can’t sync customer to MISA without a phone number, Haravan ID: ${haravanId}`);
+      throw new Error(
+        `Can’t sync customer to MISA without a phone number, Haravan ID: ${haravanId}`
+      );
     }
 
     const accountObjectId = crypto.randomUUID();
     const fullName = customerData.last_name + " " + customerData.first_name;
 
-    await this.db.$transaction(
-      async (tx) => {
-        await tx.misaCustomer.upsert({
-          where: { haravan_id: haravanId },
-          update: {
-            database_updated_at: dayjs().utc().toDate()
-          },
-          create: {
-            uuid: accountObjectId,
-            haravan_id: haravanId,
-            full_name: fullName,
-            first_name: customerData.first_name,
-            last_name: customerData.last_name,
-            phone: customerData.phone,
-            email: customerData?.email,
-            haravan_created_at: customerData.created_at ? dayjs(customerData.created_at).utc().toDate() : null,
-            last_synced_at: null
-          }
-        });
-      }, this.dbConnection
-    );
+    await this.db.$transaction(async (tx) => {
+      await tx.misaCustomer.upsert({
+        where: { haravan_id: haravanId },
+        update: {
+          database_updated_at: dayjs().utc().toDate()
+        },
+        create: {
+          uuid: accountObjectId,
+          haravan_id: haravanId,
+          full_name: fullName,
+          first_name: customerData.first_name,
+          last_name: customerData.last_name,
+          phone: customerData.phone,
+          email: customerData?.email,
+          haravan_created_at: customerData.created_at
+            ? dayjs(customerData.created_at).utc().toDate()
+            : null,
+          last_synced_at: null
+        }
+      });
+    }, this.dbConnection);
 
     await this.misaClient.getAccessToken();
-    const address = customerData?.default_address?.address1 || customerData?.addresses[0]?.address1 || "Không có dữ liệu";
+    const address =
+      customerData?.default_address?.address1 ||
+      customerData?.addresses[0]?.address1 ||
+      "Không có dữ liệu";
     const erpCustomer = await this.fetchCustomerByHaravanId(haravanId);
     const created_by = erpCustomer?.modified_by;
     const description = !created_by
