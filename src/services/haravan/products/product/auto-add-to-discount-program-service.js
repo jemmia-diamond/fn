@@ -82,10 +82,13 @@ export default class AutoAddToDiscountProgramService {
       NOCODB_TABLES.MARKETING.DIAMONDS,
       {
         where: `(product_id,eq,${haravanProductId})`,
-        fields: "id,edge_size_2"
+        fields: "id,edge_size_2,exclude_base_promotion"
       }
     );
-    const diamonds = diamondsQuery.list || [];
+
+    const diamonds = (diamondsQuery.list || []).filter(
+      (d) => !d.exclude_base_promotion
+    );
 
     if (!diamonds || diamonds.length === 0) {
       return;

@@ -302,6 +302,10 @@ export default class DiamondCollectService {
     try {
       const { activeRules, ruleCollections, nocoClient, haravanApi } = context;
 
+      if (diamond.exclude_base_promotion) {
+        return;
+      }
+
       if (context.comboDiamondIds?.has(diamond.id)) {
         await this._removeDiamondFromBasePromos(
           diamond,
