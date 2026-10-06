@@ -2,6 +2,7 @@ import NocoDBClient from "services/clients/nocodb-client";
 import DiamondCollectService from "services/ecommerce/diamond/diamond-collect-service";
 import DiamondDiscountService from "services/ecommerce/diamond/diamond-discount-service";
 import { HARAVAN_TOPIC } from "services/ecommerce/enum";
+import { BASE_DISCOUNT_PERCENT } from "services/ecommerce/promotion/constant";
 import {
   HRV_PRODUCT_TYPE,
   SKU_LENGTH
@@ -82,10 +83,13 @@ export default class AutoAddToDiscountProgramService {
       NOCODB_TABLES.MARKETING.DIAMONDS,
       {
         where: `(product_id,eq,${haravanProductId})`,
-        fields: "id,edge_size_2"
+        fields: "id,edge_size_2,auto_create_haravan_product"
       }
     );
-    const diamonds = diamondsQuery.list || [];
+
+    const diamonds = (diamondsQuery.list || []).filter(
+      (d) => d.auto_create_haravan_product
+    );
 
     if (!diamonds || diamonds.length === 0) {
       return;
@@ -106,7 +110,7 @@ export default class AutoAddToDiscountProgramService {
 
       const DIAMOND_COLLECTION_ID = ruleCollections[discountPercent]?.nocodbId;
       const defaultCollectionId =
-        this.env.DEFAULT_HARAVAN_DIAMOND_DISCOUNT_COLLECTION_ID;
+        ruleCollections[BASE_DISCOUNT_PERCENT.DIAMOND]?.nocodbId;
 
       await DiamondDiscountService.syncNocoDBDiscountCollections({
         diamond,
@@ -130,13 +134,17 @@ export default class AutoAddToDiscountProgramService {
       {
         where: `(haravan_product_id,eq,${haravanProductId})`,
         limit: 1,
-        fields: "id,design_id"
+        fields: "id,design_id,exclude_base_promotion"
       }
     );
 
     const product = productsQuery.list?.[0];
 
     if (!product) {
+      return;
+    }
+
+    if (product.exclude_base_promotion) {
       return;
     }
 
@@ -171,8 +179,19 @@ export default class AutoAddToDiscountProgramService {
       }
     }
 
-    const JEWELRY_COLLECTION_ID =
-      this.env.DEFAULT_HARAVAN_JEWELRY_DISCOUNT_COLLECTION_ID;
+    const baselineRes = await nocodb.listRecords(
+      NOCODB_TABLES.MARKETING.HARAVAN_COLLECTIONS,
+      {
+        where: `(discount_type,eq,percent)~and(discount_value,eq,${BASE_DISCOUNT_PERCENT.JEWELRY})`,
+        limit: 1,
+        fields: "id"
+      }
+    );
+    const JEWELRY_COLLECTION_ID = baselineRes.list?.[0]?.id;
+    if (!JEWELRY_COLLECTION_ID) {
+      return;
+    }
+
     const jewelryHaravanCollectionsTableId =
       NOCODB_TABLES.MARKETING.JEWELRY_HARAVAN_COLLECTIONS;
 

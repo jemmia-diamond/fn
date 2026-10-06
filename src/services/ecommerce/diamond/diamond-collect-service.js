@@ -4,6 +4,7 @@ import NocoDBClient from "services/clients/nocodb-client";
 import DiamondDiscountService from "services/ecommerce/diamond/diamond-discount-service";
 import { sendPromotionSyncNotification } from "services/ecommerce/diamond/utils/notification";
 import { fetchComboTargets } from "services/ecommerce/promotion/combo-targets";
+import { BASE_DISCOUNT_PERCENT } from "services/ecommerce/promotion/constant";
 import { syncVariantPromotions } from "services/ecommerce/promotion/variant-promotions";
 import { isDuplicateRecordError } from "services/utils/nocodb-errors";
 import CollectionSyncService from "services/sync/nocodb-to-haravan/collections/collection-sync-service";
@@ -14,8 +15,6 @@ export default class DiamondCollectService {
   constructor(env) {
     this.env = env;
   }
-
-  static DEFAULT_DISCOUNT_PERCENT = 8;
 
   async syncDiamondsToCollects(notify) {
     try {
@@ -387,7 +386,7 @@ export default class DiamondCollectService {
   ) {
     const { ruleCollections, nocoClient, allPercentCollectionIds } = context;
     const defaultCollectionId =
-      ruleCollections[DiamondCollectService.DEFAULT_DISCOUNT_PERCENT]?.nocodbId;
+      ruleCollections[BASE_DISCOUNT_PERCENT.DIAMOND]?.nocodbId;
 
     await DiamondDiscountService.syncNocoDBDiscountCollections({
       diamond,
