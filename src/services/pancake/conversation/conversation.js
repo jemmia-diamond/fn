@@ -1,11 +1,14 @@
+import * as Sentry from "@sentry/cloudflare";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import { shouldReceiveWebhook } from "controllers/webhook/pancake/erp/utils";
 import PancakeClient from "pancake/pancake-client";
-import AIHUBClient from "services/clients/aihub";
 import CustomerLensClient from "services/customer-lens-client";
 import Database from "services/database";
 import LeadService from "services/erp/crm/lead/lead";
+import LeadExtractorService, {
+  sendLeadExtractionFailureAlert
+} from "services/pancake/conversation/lead-extractor";
 import { PancakeCache } from "services/pancake/conversation/pancakeCache";
 import { getSalesayaScoringWebhookUrl } from "services/salesaya/constants/constant";
 import { createAxiosClient } from "services/utils/http-client";
@@ -156,12 +159,12 @@ export default class ConversationService {
 
     if (!frappeNameId) return;
 
-    const aihub = new AIHUBClient(env);
-    return await aihub.makeRequest("/lead-info", {
-      pageId: body.page_id,
-      conversationId: conversationId,
-      webhookUrl: `${env.HOST}/webhook/ai-hub/erp/leads`
-    });
+    const extractor = new LeadExtractorService(
+      env,
+      this.pancakeClient,
+      this.leadService
+    );
+    return await extractor.run(body?.page_id, conversationId);
   }
 
   async sendToCustomerLens(data) {
@@ -191,10 +194,29 @@ export default class ConversationService {
     );
   }
 
+  static MESSAGE_SUMMARY_MAX_ATTEMPTS = 3;
+
   static async dequeueMessageSummaryQueue(batch, env) {
     const conversationService = new ConversationService(env);
     for (const message of batch.messages) {
-      await conversationService.summarizeLead(env, message.body);
+      try {
+        await conversationService.summarizeLead(env, message.body);
+        message.ack();
+      } catch (error) {
+        Sentry.captureException(error);
+        const body = message.body;
+        const conversationId = body?.data?.message?.conversation_id;
+        const pageId = body?.page_id;
+        if (
+          message.attempts >= ConversationService.MESSAGE_SUMMARY_MAX_ATTEMPTS
+        ) {
+          // Final attempt failed → alert Lark and stop retrying.
+          await sendLeadExtractionFailureAlert(env, pageId, conversationId);
+          message.ack();
+        } else {
+          message.retry();
+        }
+      }
     }
   }
 
