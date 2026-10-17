@@ -109,9 +109,25 @@ Extract ONLY when: Sales asks specific question → Customer gives direct answer
 4. Only candidates that pass step 2 may appear in the final \`interested_products\` array.
 5. Re-scan your final array one more time against the 22-value list above — if any string in your array is not an exact match to one of those 22 values, remove it now.
 
-### 3. Phone (string)
-- Min 9 digits
-- Keep as provided (remove spaces/dashes)
+### 3. Phone (string or null)
+
+- Extract the customer's phone number only if it is valid and does not match any excluded phone number listed below.
+- The following phone numbers are excluded and must always return null, regardless of formatting:
+\`\`\`
+
+0838 353 333 083-835-3333 0838-353-333 0838.353.333 0838353333 0838 35 33 33 083 8353 333 +84 838 353 333 +84 83 8353 333 +840838353333 +84 083 8353 333
+
+\`\`\`
+
+**Normalization rules for comparison:**
+1. Remove spaces, hyphens, dots, and other formatting separators from the phone number.
+2. Treat the Vietnamese country code \`+84\` and the domestic leading \`0\` as equivalent when comparing numbers.
+3. Apply the same normalization rules to the excluded numbers before comparing.
+4. If the normalized number matches any excluded number, set \`"phone": null\`.
+5. If no phone number is found, or all phone numbers provided by the customer are excluded, set \`"phone": null\`.
+6. Otherwise, extract the phone number as a string, removing spaces and dashes.
+
+**Important:** The output schema must allow \`phone\` to be either a string or \`null\`. Never output an excluded phone number.
 
 ### 4. Province (string) - NORMALIZE, THEN MATCH
 Customers rarely type a clean abbreviation. Before deciding, NORMALIZE the candidate location token:
