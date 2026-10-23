@@ -1,6 +1,26 @@
 import * as Sentry from "@sentry/cloudflare";
 
 export class DebounceService {
+  static async withLock({ env, key, ttlMs }, fn, onBusy) {
+    const durableObjectId = env.DEBOUNCE.idFromName(key);
+    const durableObject = env.DEBOUNCE.get(durableObjectId);
+
+    const acquired = await durableObject.acquire(key, ttlMs);
+    if (!acquired) {
+      return onBusy();
+    }
+
+    try {
+      return await fn();
+    } finally {
+      try {
+        await durableObject.release(key);
+      } catch (error) {
+        Sentry.captureException(error);
+      }
+    }
+  }
+
   /**
    * Debounce data and execute a predefined action
    *
