@@ -209,7 +209,8 @@
       {
         "queue": "message-summary",
         "max_batch_size": 1,
-        "retry_delay": 600
+        "max_retries": 3,
+        "retry_delay": 180
       },
       {
         "queue": "pancake-message-last-interaction",
