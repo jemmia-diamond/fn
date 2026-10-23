@@ -26,6 +26,7 @@ import {
   calculateGroupPayments
 } from "src/services/erp/selling/sales-order/utils/sales-order-helpers";
 import { getRefOrderChain } from "services/ecommerce/order-tracking/queries/get-initial-order";
+import { DebounceService } from "src/durable-objects/debounce/debounce-service";
 import Larksuite from "services/larksuite";
 import { getOrderFinancials } from "services/haravan/orders/order-service/helpers/order-financials";
 import { ERPR2StorageService } from "services/r2-object/erp/erp-r2-storage-service";
@@ -34,14 +35,6 @@ import { retryQuery } from "src/services/utils/retry-utils";
 import { isTestOrder } from "services/utils/order-intercepter";
 
 dayjs.extend(utc);
-
-const buildTrackedOrderData = (salesOrderData, { attachments }) => ({
-  items: salesOrderData.items,
-  attachments: attachments || [],
-  paid_amount: salesOrderData.paid_amount,
-  deposit_amount: salesOrderData.deposit_amount,
-  last_sent_at: new Date().toISOString()
-});
 
 export default class SalesOrderService {
   static ERPNEXT_PAGE_SIZE = 100;
@@ -226,7 +219,17 @@ export default class SalesOrderService {
     const salesOrderService = new SalesOrderService(env);
     for (const message of batch.messages) {
       const orderData = message.body;
-      await salesOrderService.sendNotificationToLark(orderData, true);
+      const result = await salesOrderService.sendNotificationToLark(
+        orderData,
+        true
+      );
+
+      if (result?.busy) {
+        throw new Error(
+          `Sales order ${orderData.name} notification is already in flight`
+        );
+      }
+
       await salesOrderService.syncHaravanFinancialStatus(orderData);
     }
   }
@@ -326,8 +329,12 @@ export default class SalesOrderService {
   };
 
   async sendNotificationToLark(initialSalesOrderData, isUpdateMessage = false) {
-    let salesOrderData = structuredClone(initialSalesOrderData);
     const larkClient = await LarksuiteService.createClientV2(this.env);
+
+    let salesOrderData = await this.frappeClient.getDoc(
+      "Sales Order",
+      initialSalesOrderData.name
+    );
 
     salesOrderData.attachments = await fetchAndNormalizeAttachments(
       this.frappeClient,
@@ -435,249 +442,194 @@ export default class SalesOrderService {
       });
     }
 
-    if (haravanRefOrderId && Number(haravanRefOrderId) > 0) {
-      // find the very first order in history
-      const refOrders = await getRefOrderChain(
-        this.db,
-        Number(salesOrderData.haravan_order_id)
-      );
+    const family = SalesOrderService._buildOrderFamily(
+      salesOrderData,
+      allRelatedOrders
+    );
 
-      if (!refOrders || refOrders.length === 0) {
-        return {
-          success: false,
-          message: `Không tìm thấy đơn gốc của đơn ${salesOrderData.order_number}`
-        };
-      }
+    return await DebounceService.withLock(
+      { env: this.env, key: `erp-sales-order-noti-${[...family].sort()[0]}` },
+      async () => {
+        const { anchor, ownTracking } = await this.findThreadAnchor(
+          salesOrderData,
+          family
+        );
 
-      const refOrderstNotificationOrderTracking =
-        await this.db.erpnextSalesOrderNotificationTracking.findMany({
-          where: {
-            haravan_order_id: {
-              in: refOrders?.map((order) => String(order.id))
-            }
-          },
-          orderBy: {
-            database_created_at: "asc"
-          }
-        });
-
-      if (
-        refOrderstNotificationOrderTracking &&
-        refOrderstNotificationOrderTracking.length > 0
-      ) {
-        const currentOrderTracking =
-          await this.db.erpnextSalesOrderNotificationTracking.findFirst({
-            where: {
-              order_name: salesOrderData.name
-            }
-          });
-
-        const isOrderTracked = !!currentOrderTracking;
-
-        let content = null;
-        let diffAttachments = null;
-        if (isOrderTracked) {
-          ({ content, diffAttachments } = await this.composeUpdateOrderContent(
-            currentOrderTracking.order_data,
-            salesOrderData,
-            promotionData
-          ));
-        } else {
-          content = await this.composeNewOrderContent(
+        if (anchor) {
+          return await this._replyToThread({
+            larkClient,
+            anchor,
+            ownTracking,
             salesOrderData,
             customer,
-            promotionData,
-            true
-          );
-        }
-
-        const attachmentsToSend = diffAttachments?.added_file || [];
-        if (!content && attachmentsToSend.length === 0) {
-          return { success: true, message: "Không có gì thay đổi!" };
-        }
-
-        const anchorMessageId =
-          refOrderstNotificationOrderTracking[0].lark_message_id;
-
-        let replyResponse = null;
-        if (content) {
-          replyResponse = await larkClient.im.message.reply({
-            path: {
-              message_id: anchorMessageId
-            },
-            data: {
-              receive_id: CHAT_GROUPS.CUSTOMER_INFO.chat_id,
-              msg_type: "text",
-              reply_in_thread: true,
-              content: JSON.stringify({
-                text: content
-              })
-            }
+            promotionData
           });
-
-          if (replyResponse.msg !== "success") {
-            return {
-              success: false,
-              message: isOrderTracked
-                ? "Cập nhật đơn thất bại!"
-                : "Thông báo đơn đặt lại thất bại!"
-            };
-          }
         }
 
-        const trackedOrderData = buildTrackedOrderData(salesOrderData, {
-          attachments: currentOrderTracking?.order_data?.attachments || []
-        });
-
-        const trackingUuid = isOrderTracked
-          ? currentOrderTracking.uuid
-          : (
-              await retryQuery(() =>
-                this.db.erpnextSalesOrderNotificationTracking.create({
-                  data: {
-                    lark_message_id: replyResponse?.data?.message_id,
-                    order_name: salesOrderData.name,
-                    haravan_order_id: salesOrderData.haravan_order_id,
-                    order_data: trackedOrderData
-                  }
-                })
-              )
-            ).uuid;
-
-        if (isOrderTracked) {
-          await retryQuery(() =>
-            this.db.erpnextSalesOrderNotificationTracking.updateMany({
-              where: { uuid: trackingUuid },
-              data: { order_data: trackedOrderData }
-            })
+        if (
+          haravanRefOrderId &&
+          Number(haravanRefOrderId) > 0 &&
+          family.length <= 1
+        ) {
+          Sentry.captureMessage(
+            `Sales order ${salesOrderData.name} has haravan_ref_order_id ${haravanRefOrderId} but no ref_sales_orders`
           );
+          return {
+            success: false,
+            message: `Không tìm thấy đơn gốc của đơn ${salesOrderData.order_number}`
+          };
         }
 
-        const isSendImagesSuccess = await this._sendAttachmentsToLark(
+        if (isUpdateMessage) {
+          return { success: true, message: "Ok" };
+        }
+
+        return await this._startThread({
           larkClient,
-          attachmentsToSend,
-          anchorMessageId,
-          CHAT_GROUPS.CUSTOMER_INFO.chat_id
-        );
-        const attachmentsSent =
-          attachmentsToSend.length === 0 || isSendImagesSuccess.every(Boolean);
+          salesOrderData,
+          customer,
+          promotionData
+        });
+      },
+      () => ({
+        success: false,
+        busy: true,
+        message: "Đang gửi thông báo cho đơn này, vui lòng thử lại sau!"
+      })
+    );
+  }
 
-        if (attachmentsSent) {
-          await retryQuery(() =>
-            this.db.erpnextSalesOrderNotificationTracking.updateMany({
-              where: { uuid: trackingUuid },
-              data: {
-                order_data: {
-                  ...trackedOrderData,
-                  attachments: salesOrderData.attachments
-                }
-              }
-            })
-          );
-        }
+  static _buildOrderFamily(salesOrderData, allRelatedOrders = []) {
+    return [
+      ...new Set(
+        [
+          salesOrderData.name,
+          ...(salesOrderData.ref_sales_orders || []).map((r) => r.sales_order),
+          ...allRelatedOrders.map((o) => o.name)
+        ].filter(Boolean)
+      )
+    ];
+  }
 
-        if (!content && !attachmentsSent) {
-          return { success: false, message: "Gửi hình ảnh đơn hàng thất bại!" };
-        }
-
-        if (isOrderTracked) {
-          return { success: true, message: "Cập nhật đơn thành công!" };
-        }
-        return {
-          success: true,
-          message: "Thông báo đơn đặt lại thành công!"
-        };
-      }
-    }
-
-    const notificationTracking =
-      await this.db.erpnextSalesOrderNotificationTracking.findFirst({
-        where: {
-          order_name: salesOrderData.name
-        }
+  async findThreadAnchor(salesOrderData, family) {
+    const trackingRows =
+      await this.db.erpnextSalesOrderNotificationTracking.findMany({
+        where: { order_name: { in: family } },
+        orderBy: [{ database_created_at: "asc" }, { uuid: "asc" }]
       });
 
-    if (notificationTracking) {
-      const { content, diffAttachments } = await this.composeUpdateOrderContent(
-        notificationTracking.order_data || {},
+    return {
+      anchor: trackingRows[0] || null,
+      ownTracking:
+        trackingRows.find((row) => row.order_name === salesOrderData.name) ||
+        null
+    };
+  }
+
+  async _replyToThread({
+    larkClient,
+    anchor,
+    ownTracking,
+    salesOrderData,
+    customer,
+    promotionData
+  }) {
+    const isOwnThread = anchor.order_name === salesOrderData.name;
+
+    let content = null;
+    let diffAttachments = null;
+
+    if (ownTracking) {
+      ({ content, diffAttachments } = composeOrderUpdateMessage(
+        ownTracking.order_data || {},
         salesOrderData,
         promotionData
+      ));
+    } else {
+      content = await this.composeNewOrderContent(
+        salesOrderData,
+        customer,
+        promotionData,
+        true
       );
+    }
 
-      const attachmentsToSend = diffAttachments?.added_file || [];
-      if (!content && attachmentsToSend.length === 0) {
-        return {
-          success: false,
-          message: "Đơn hàng này đã được gửi thông báo từ trước đó!"
-        };
-      }
+    const attachmentsToSend = ownTracking
+      ? diffAttachments?.added_file || []
+      : salesOrderData.attachments || [];
 
-      // Reply to the root message in the group chat
-      if (content) {
-        const replyResponse = await larkClient.im.message.reply({
-          path: {
-            message_id: notificationTracking.lark_message_id
-          },
-          data: {
-            receive_id: CHAT_GROUPS.CUSTOMER_INFO.chat_id,
-            msg_type: "text",
-            reply_in_thread: true,
-            content: JSON.stringify({
-              text: content
-            })
+    if (!content && attachmentsToSend.length === 0) {
+      return isOwnThread
+        ? {
+            success: false,
+            message: "Đơn hàng này đã được gửi thông báo từ trước đó!"
           }
-        });
+        : { success: true, message: "Không có gì thay đổi!" };
+    }
 
-        if (replyResponse.msg !== "success") {
-          return { success: false, message: "Gửi cập nhật đơn thất bại!" };
+    let replyResponse = null;
+    if (content) {
+      replyResponse = await larkClient.im.message.reply({
+        path: {
+          message_id: anchor.lark_message_id
+        },
+        data: {
+          receive_id: CHAT_GROUPS.CUSTOMER_INFO.chat_id,
+          msg_type: "text",
+          reply_in_thread: true,
+          content: JSON.stringify({
+            text: content
+          })
         }
-      }
-
-      const trackedOrderData = buildTrackedOrderData(salesOrderData, {
-        attachments: notificationTracking.order_data?.attachments || []
       });
 
-      await retryQuery(() =>
-        this.db.erpnextSalesOrderNotificationTracking.updateMany({
-          where: { uuid: notificationTracking.uuid },
-          data: { order_data: trackedOrderData }
-        })
-      );
-
-      const isSendImagesSuccess = await this._sendAttachmentsToLark(
-        larkClient,
-        attachmentsToSend,
-        notificationTracking.lark_message_id,
-        CHAT_GROUPS.CUSTOMER_INFO.chat_id
-      );
-      const attachmentsSent =
-        attachmentsToSend.length === 0 || isSendImagesSuccess.every(Boolean);
-
-      if (attachmentsSent) {
-        await retryQuery(() =>
-          this.db.erpnextSalesOrderNotificationTracking.updateMany({
-            where: { uuid: notificationTracking.uuid },
-            data: {
-              order_data: {
-                ...trackedOrderData,
-                attachments: salesOrderData.attachments
-              }
-            }
-          })
-        );
+      if (replyResponse.msg !== "success") {
+        return {
+          success: false,
+          message: ownTracking
+            ? "Cập nhật đơn thất bại!"
+            : "Thông báo đơn đặt lại thất bại!"
+        };
       }
-
-      if (!content && !attachmentsSent) {
-        return { success: false, message: "Gửi hình ảnh đơn hàng thất bại!" };
-      }
-
-      return { success: true, message: "Gửi cập nhật đơn thành công!" };
     }
 
-    if (isUpdateMessage) {
-      return { success: true, message: "Ok" };
+    const tracking = await this._persistTracking({
+      ownTracking,
+      salesOrderData,
+      larkMessageId: replyResponse?.data?.message_id || anchor.lark_message_id,
+      attachments: ownTracking?.order_data?.attachments || []
+    });
+
+    const sendResults = await this._sendAttachmentsToLark(
+      larkClient,
+      attachmentsToSend,
+      anchor.lark_message_id,
+      CHAT_GROUPS.CUSTOMER_INFO.chat_id
+    );
+    const attachmentsSent =
+      attachmentsToSend.length === 0 || sendResults.every(Boolean);
+
+    if (attachmentsSent) {
+      await this._saveSentAttachments(tracking, salesOrderData.attachments);
     }
 
+    if (!content && !attachmentsSent) {
+      return { success: false, message: "Gửi hình ảnh đơn hàng thất bại!" };
+    }
+
+    if (!ownTracking) {
+      return { success: true, message: "Thông báo đơn đặt lại thành công!" };
+    }
+
+    return {
+      success: true,
+      message: isOwnThread
+        ? "Gửi cập nhật đơn thành công!"
+        : "Cập nhật đơn thành công!"
+    };
+  }
+
+  async _startThread({ larkClient, salesOrderData, customer, promotionData }) {
     const content = await this.composeNewOrderContent(
       salesOrderData,
       customer,
@@ -699,43 +651,87 @@ export default class SalesOrderService {
 
     const messageId = _response.data.message_id;
 
-    const trackedOrderData = buildTrackedOrderData(salesOrderData, {
+    const tracking = await this._persistTracking({
+      ownTracking: null,
+      salesOrderData,
+      larkMessageId: messageId,
       attachments: []
     });
 
-    const tracking = await retryQuery(() =>
-      this.db.erpnextSalesOrderNotificationTracking.create({
-        data: {
-          lark_message_id: messageId,
-          order_name: salesOrderData.name,
-          haravan_order_id: salesOrderData.haravan_order_id,
-          order_data: trackedOrderData
-        }
-      })
-    );
-
     const attachments = salesOrderData.attachments || [];
     if (attachments.length > 0) {
-      const isSendImagesSuccess = await this._sendAttachmentsToLark(
+      const sendResults = await this._sendAttachmentsToLark(
         larkClient,
         attachments,
         messageId,
         CHAT_GROUPS.CUSTOMER_INFO.chat_id
       );
 
-      if (isSendImagesSuccess.every(Boolean)) {
-        await retryQuery(() =>
-          this.db.erpnextSalesOrderNotificationTracking.updateMany({
-            where: { uuid: tracking.uuid },
-            data: {
-              order_data: { ...trackedOrderData, attachments }
-            }
-          })
-        );
+      if (sendResults.every(Boolean)) {
+        await this._saveSentAttachments(tracking, attachments);
       }
     }
 
     return { success: true, message: "Đã gửi thông báo thành công!" };
+  }
+
+  async _persistTracking({
+    ownTracking,
+    salesOrderData,
+    larkMessageId,
+    attachments
+  }) {
+    const orderData = {
+      items: salesOrderData.items,
+      attachments: attachments || [],
+      paid_amount: salesOrderData.paid_amount,
+      deposit_amount: salesOrderData.deposit_amount,
+      last_sent_at: new Date().toISOString()
+    };
+
+    if (ownTracking) {
+      await retryQuery(() =>
+        this.db.erpnextSalesOrderNotificationTracking.updateMany({
+          where: { uuid: ownTracking.uuid },
+          data: { order_data: orderData }
+        })
+      );
+      return { uuid: ownTracking.uuid, orderData };
+    }
+
+    const created = await retryQuery(() =>
+      this.db.erpnextSalesOrderNotificationTracking.create({
+        data: {
+          lark_message_id: larkMessageId,
+          order_name: salesOrderData.name,
+          haravan_order_id: String(salesOrderData.haravan_order_id ?? ""),
+          order_data: orderData
+        }
+      })
+    );
+
+    return { uuid: created.uuid, orderData };
+  }
+
+  async _saveSentAttachments(tracking, attachments) {
+    if (!tracking?.uuid) {
+      return;
+    }
+
+    const attachmentList = attachments || [];
+    const stored = tracking.orderData?.attachments || [];
+    if (JSON.stringify(stored) === JSON.stringify(attachmentList)) {
+      return;
+    }
+
+    await retryQuery(() =>
+      this.db.erpnextSalesOrderNotificationTracking.updateMany({
+        where: { uuid: tracking.uuid },
+        data: {
+          order_data: { ...tracking.orderData, attachments: attachmentList }
+        }
+      })
+    );
   }
 
   async syncSalesOrdersToDatabase(options = {}) {
@@ -834,18 +830,6 @@ export default class SalesOrderService {
         Sentry.captureException(error);
       }
     }
-  }
-
-  async composeUpdateOrderContent(
-    oldSalesOrderData,
-    salesOrderData,
-    promotionData
-  ) {
-    return composeOrderUpdateMessage(
-      oldSalesOrderData,
-      salesOrderData,
-      promotionData
-    );
   }
 
   async _getLarkUserIdByEmail(email) {
