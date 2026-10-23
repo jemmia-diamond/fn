@@ -29,7 +29,6 @@ export default {
           env
         );
         await new Pancake.TagSyncService(env).syncTags();
-        await new Ecommerce.ProductG1PromotionSyncService(env).syncPromotions();
         await new Haravan.Collect.CollectionProductSyncService(
           env
         ).syncCollectionProducts();
@@ -58,6 +57,9 @@ export default {
         await new ERP.Telephony.MisscallNotificationService(
           env
         ).notifyMisscalls();
+        await new Haravan.OrderModule.ERPNextOrderCreationSyncService(
+          env
+        ).sync();
         break;
       case "*/10 * * * *": // At every 10th minute
         await ERP.Selling.SerialService.syncSerialsToERP(env);

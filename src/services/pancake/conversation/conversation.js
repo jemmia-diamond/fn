@@ -16,8 +16,8 @@ export default class ConversationService {
   constructor(env) {
     this.env = env;
     this.pancakeClient = new PancakeClient(env);
-    this.leadService = new LeadService(env);
     this.db = Database.instance(env);
+    this.leadService = new LeadService(env, this.db);
     this.customerLensClient = CustomerLensClient.instance(env);
   }
 

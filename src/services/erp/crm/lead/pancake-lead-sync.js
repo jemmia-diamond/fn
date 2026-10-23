@@ -11,7 +11,7 @@ export default class PancakeLeadSyncService {
   constructor(env) {
     this.env = env;
     this.db = Database.instance(env);
-    this.leadService = new LeadService(env);
+    this.leadService = new LeadService(env, this.db);
     this.DEFAULT_TIME_MARK = "2020-05-31 17:00:00";
     this.BATCH_SIZE = 50;
   }

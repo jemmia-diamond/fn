@@ -18,7 +18,7 @@ export default class LeadService {
   static ERPNEXT_PAGE_SIZE = 100;
   static SYNC_TYPE_AUTO = 1; // auto sync when deploy app
   static SYNC_TYPE_MANUAL = 0; // manual sync when call function
-  constructor(env) {
+  constructor(env, db = Database.instance(env)) {
     this.env = env;
     this.doctype = "Lead";
     this.frappeClient = new FrappeClient({
@@ -26,7 +26,7 @@ export default class LeadService {
       apiKey: this.env.JEMMIA_ERP_API_KEY,
       apiSecret: this.env.JEMMIA_ERP_API_SECRET
     });
-    this.db = Database.instance(env);
+    this.db = db;
     this.defaultLeadOwner = "tech@jemmia.vn";
   }
 

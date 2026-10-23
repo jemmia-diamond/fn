@@ -6,7 +6,7 @@ This document provides a complete reference of the NocoDB workspace tables, rela
 
 - **Base ID**: `pbzopuiobhc8xf1`
 - **Total Tables**: 39
-- **Active Webhooks**: 9
+- **Active Webhooks**: 10
 
 ---
 
@@ -107,14 +107,18 @@ The following webhooks are configured across the NocoDB tables:
 > The **Auth Header** column records the live state (verified via the NocoDB
 > meta API — `GET /api/v2/meta/tables/{tableId}/hooks`).
 >
-> **Source-table note**: the _Collect Haravan_ hook (path `/webhook/noco/collects`)
-> is what turns both `diamonds_haravan_collection` **and** the jewelry
-> `products`↔`haravan_collections` link inserts into Haravan collects — jewelry
-> discount-collection membership depends on it.
+> **Source-table note**: _Collect Haravan_ hooks (path `/webhook/noco/collects`)
+> live on **two** junction tables — `diamonds_haravan_collection` **and**
+> `products_haravan_collection` (the jewelry `products`↔`haravan_collections`
+> link). Both insert/update/delete events route to the same handler
+> (`CollectService`), which mirrors the link to a Haravan collect
+> (create on insert, delete on delete). Jewelry discount-collection membership
+> depends on the `products_haravan_collection` hook.
 
 | Source Table                    | Webhook Title                | Event / Operation                   | Active | Auth Header                     | Method | Destination / Path                                                        | Condition |
 | ------------------------------- | ---------------------------- | ----------------------------------- | ------ | ------------------------------- | ------ | ------------------------------------------------------------------------- | --------- |
 | **diamonds_haravan_collection** | Collect Haravan              | `after` on `insert, update, delete` | ✅ Yes | ✅ `X-Nocodb-Webhook-Signature` | `POST` | `https://fn.jemmia.vn/webhook/noco/collects`                              | `false`   |
+| **products_haravan_collection** | Collect Haravan              | `after` on `insert, update, delete` | ✅ Yes | ✅ `X-Nocodb-Webhook-Signature` | `POST` | `https://fn.jemmia.vn/webhook/noco/collects`                              | `false`   |
 | **sets**                        | Tạo bộ trang sức             | `after` on `insert, update, delete` | ✅ Yes | ✅ `X-Nocodb-Webhook-Signature` | `POST` | `https://fn.jemmia.vn/webhook/noco/sets`                                  | `false`   |
 | **submitted_codes**             | Check Out                    | `manual` on `trigger`               | ✅ Yes | ✅ `X-Nocodb-Webhook-Signature` | `POST` | `https://fn.jemmia.vn/webhook/noco/submitted-codes/process?type=checkout` | `false`   |
 | **submitted_codes**             | Apply                        | `manual` on `trigger`               | ✅ Yes | ✅ `X-Nocodb-Webhook-Signature` | `POST` | `https://fn.jemmia.vn/webhook/noco/submitted-codes/process`               | `false`   |
