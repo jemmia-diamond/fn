@@ -462,7 +462,8 @@ export default class SalesOrderService {
             ownTracking,
             salesOrderData,
             customer,
-            promotionData
+            promotionData,
+            isUpdateMessage
           });
         }
 
@@ -512,11 +513,12 @@ export default class SalesOrderService {
   }
 
   async findThreadAnchor(salesOrderData, family) {
-    const trackingRows =
-      await this.db.erpnextSalesOrderNotificationTracking.findMany({
+    const [trackingRows] = await this.db.$transaction([
+      this.db.erpnextSalesOrderNotificationTracking.findMany({
         where: { order_name: { in: family } },
         orderBy: [{ database_created_at: "asc" }, { uuid: "asc" }]
-      });
+      })
+    ]);
 
     return {
       anchor: trackingRows[0] || null,
@@ -532,8 +534,13 @@ export default class SalesOrderService {
     ownTracking,
     salesOrderData,
     customer,
-    promotionData
+    promotionData,
+    isUpdateMessage = false
   }) {
+    if (!ownTracking && isUpdateMessage) {
+      return { success: true, message: "Ok" };
+    }
+
     const isOwnThread = anchor.order_name === salesOrderData.name;
 
     let content = null;
