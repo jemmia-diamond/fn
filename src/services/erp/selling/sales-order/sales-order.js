@@ -271,6 +271,10 @@ export default class SalesOrderService {
 
       addId(orderId);
 
+      if (haravanIds.length === 0) {
+        return [];
+      }
+
       const erpRefOrders = await this.frappeClient.getList("Sales Order", {
         filters: [["haravan_order_id", "in", haravanIds]],
         fields: ["name", "haravan_order_id"]
