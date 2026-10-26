@@ -192,7 +192,10 @@ export default class SalesOrderService {
           .utc()
           .add(7, "hour")
           .format("YYYY-MM-DD"),
-      ref_sales_orders: await this.mapRefSalesOrder(haravanOrderData.id),
+      ref_sales_orders: await this.mapRefSalesOrder(
+        haravanOrderData.id,
+        haravanOrderData.ref_order_id
+      ),
       tracking_number: trackingNumber
     };
     const order = await this.frappeClient.upsert(
@@ -245,29 +248,42 @@ export default class SalesOrderService {
     };
   };
 
-  mapRefSalesOrder = async (refOrderId) => {
+  mapRefSalesOrder = async (orderId, refOrderId) => {
     try {
-      const refOrders = await getRefOrderChain(
-        this.db,
-        Number(refOrderId),
-        true
-      );
+      const haravanIds = [];
+      const addId = (value) => {
+        const id = String(value ?? "");
+        if (id && id !== "0" && !haravanIds.includes(id)) {
+          haravanIds.push(id);
+        }
+      };
 
-      if (!refOrders) {
+      if (refOrderId && Number(refOrderId) > 0) {
+        const ancestors = await getRefOrderChain(
+          this.db,
+          Number(refOrderId),
+          true
+        );
+
+        (ancestors || []).forEach((ancestor) => addId(ancestor.id));
+        addId(refOrderId);
+      }
+
+      addId(orderId);
+
+      if (haravanIds.length === 0) {
         return [];
       }
 
       const erpRefOrders = await this.frappeClient.getList("Sales Order", {
-        filters: [
-          ["haravan_order_id", "in", refOrders.map((order) => String(order.id))]
-        ],
+        filters: [["haravan_order_id", "in", haravanIds]],
         fields: ["name", "haravan_order_id"]
       });
 
-      return refOrders
-        .map((o) => {
+      return haravanIds
+        .map((id) => {
           const refOrder = erpRefOrders.find(
-            (order) => String(order.haravan_order_id) === String(o.id)
+            (order) => String(order.haravan_order_id) === id
           );
 
           if (!refOrder) {
