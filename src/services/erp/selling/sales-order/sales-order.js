@@ -228,9 +228,8 @@ export default class SalesOrderService {
       );
 
       if (result?.busy) {
-        throw new Error(
-          `Sales order ${orderData.name} notification is already in flight`
-        );
+        message.retry({ delaySeconds: 30 });
+        continue;
       }
 
       await salesOrderService.syncHaravanFinancialStatus(orderData);
