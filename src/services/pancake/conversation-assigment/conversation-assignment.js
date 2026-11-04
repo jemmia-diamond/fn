@@ -6,6 +6,11 @@ import Database from "services/database";
 
 dayjs.extend(utc);
 
+// Leads still owned by the tech default and first reached before this cutoff
+// are old leads; don't push their owner onto the Pancake conversation.
+const OLD_LEAD_DEFAULT_OWNER = "tech@jemmia.vn";
+const OLD_LEAD_CUTOFF_UTC = dayjs.utc("2026-07-31T14:00:00Z");
+
 export default class ConversationAssignmentService {
   constructor(env) {
     this.env = env;
@@ -65,6 +70,11 @@ export default class ConversationAssignmentService {
     const leadName = lead.name;
     const leadOwner = lead.lead_owner;
     if (!leadOwner) return null;
+    if (
+      leadOwner === OLD_LEAD_DEFAULT_OWNER &&
+      dayjs.utc(lead?.first_reach_at)?.isBefore(OLD_LEAD_CUTOFF_UTC)
+    )
+      return null;
 
     const leadOwnerPancakeId = (
       await this.frappeClient.getDoc("User", leadOwner)
