@@ -132,6 +132,10 @@ export default class RetouchUploaderService {
       subFolderName
     );
 
+    // `<= 1` (not `=== 0`) is carried over verbatim from the lambda, where it
+    // had no stated rationale; a one-image folder therefore uploads nothing.
+    // Left as-is for faithfulness — no such folder has been observed, and the
+    // bail is now reported rather than silent.
     if (items.length <= 1)
       return { ok: false, found: items.length, errors: [] };
 
