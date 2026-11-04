@@ -1,4 +1,3 @@
-import FormData from "form-data";
 import GoogleDriveClient from "services/clients/google-drive-client";
 import NocoDBClient from "services/clients/nocodb-client";
 import { NOCODB_TABLES } from "src/constants/nocodb-tables";
@@ -84,32 +83,39 @@ export default class RetouchUploaderService {
     const nocoClient = new NocoDBClient(this.env);
 
     // Try link_retouch first, fallback to link_render
-    const linkRetouch = data.link_retouch;
-    if (linkRetouch) {
-      const folderId = extractFolderIdFromLink(linkRetouch);
-      const uploaded = await this.#uploadImagesFromDrive(
+    const attempts = [];
+
+    for (const [source, link] of [
+      ["link_retouch", data.link_retouch],
+      ["link_render", data.link_render]
+    ]) {
+      if (!link) continue;
+
+      const result = await this.#uploadImagesFromDrive(
         driveClient,
         nocoClient,
-        folderId,
+        extractFolderIdFromLink(link),
         subFolderName,
         tableId,
         data.id
       );
-      if (uploaded) return { success: true, source: "link_retouch" };
+      if (result.ok) return { success: true, source };
+      attempts.push({ source, ...result });
     }
 
-    const linkRender = data.link_render;
-    const folderId = extractFolderIdFromLink(linkRender);
-    await this.#uploadImagesFromDrive(
-      driveClient,
-      nocoClient,
-      folderId,
-      subFolderName,
-      tableId,
-      data.id
-    );
+    // Nothing made it into `retouch`; reporting success here would send the
+    // operator on to "Sync to Haravan" against an empty row.
+    const failed = attempts.filter((a) => a.errors.length > 0);
+    const detail = failed.length
+      ? failed
+          .map((a) => `${a.source}: ${a.found} found, ${a.errors[0]}`)
+          .join("; ")
+      : `no ${subFolderName} images found in link_retouch or link_render`;
 
-    return { success: true, source: "link_render" };
+    return {
+      success: false,
+      reason: `design_images ${data.id}: ${detail}`
+    };
   }
 
   async #uploadImagesFromDrive(
@@ -126,7 +132,8 @@ export default class RetouchUploaderService {
       subFolderName
     );
 
-    if (items.length <= 1) return false;
+    if (items.length <= 1)
+      return { ok: false, found: items.length, errors: [] };
 
     // Ensure file names have extensions
     for (const item of items) {
@@ -140,14 +147,19 @@ export default class RetouchUploaderService {
     const uploadedFiles = [];
     const storagePath = `noco/${NOCODB_BASE_ID}/${tableId}/${RETOUCH_COLUMN_ID}`;
 
+    const errors = [];
+
     for (const item of items) {
       try {
         const fileData = await driveClient.downloadFile(item.id);
         const form = new FormData();
-        form.append("file", Buffer.from(fileData), {
-          filename: item.name,
-          contentType: item.mimeType
-        });
+        // Platform FormData: the filename is the 3rd argument, and the part's
+        // own Content-Type comes from the Blob — an options object is ignored.
+        form.append(
+          "file",
+          new Blob([fileData], { type: item.mimeType }),
+          item.name
+        );
 
         const res = await nocoClient.uploadAttachment(
           { path: storagePath },
@@ -157,13 +169,18 @@ export default class RetouchUploaderService {
           const uploadedFile = res[0];
           uploadedFile.title = item.name;
           uploadedFiles.push(uploadedFile);
+        } else {
+          errors.push(`${item.name}: upload returned no attachment`);
         }
       } catch (error) {
         console.warn(`Failed to process file ${item.name}: ${error.message}`);
+        errors.push(`${item.name}: ${error.message}`);
       }
     }
 
-    if (uploadedFiles.length === 0) return false;
+    if (uploadedFiles.length === 0) {
+      return { ok: false, found: items.length, errors };
+    }
 
     // Update the record's retouch attachment field
     await nocoClient.updateRecords(tableId, {
@@ -171,7 +188,7 @@ export default class RetouchUploaderService {
       retouch: uploadedFiles
     });
 
-    return true;
+    return { ok: true, found: items.length, errors };
   }
 
   async #findRetouchImages(driveClient, folderId, subFolderName) {
