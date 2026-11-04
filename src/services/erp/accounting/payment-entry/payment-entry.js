@@ -101,13 +101,15 @@ export default class PaymentEntryService {
       references.length == 1
     ) {
       const leftAmountToPaid = parseFloat(primaryOrder.balance);
-      const paid = parseFloat(transferAmount);
+      // The refunded part is not allocated to the order, so exclude it
+      const refundAmount = parseFloat(paymentEntry.refund_amount || 0);
+      const paid = parseFloat(transferAmount) - refundAmount;
 
       // Temporary skip validation if balance is negative
       if (leftAmountToPaid > 0) {
         // ONLY ACCEPT 1000 VND DIFFERENCE
         if (Math.abs(paid - leftAmountToPaid) <= 1000) {
-          transferAmount = leftAmountToPaid;
+          transferAmount = leftAmountToPaid + refundAmount;
         } else if (paid > leftAmountToPaid) {
           throw new Error(
             `Overpayment: Payment amount ${paid} exceeds outstanding amount ${leftAmountToPaid}`
@@ -260,8 +262,7 @@ export default class PaymentEntryService {
     }
   }
 
-  async updateManualPayment(rawPaymentEntry) {
-    const paymentEntry = rawToPaymentEntry(rawPaymentEntry);
+  async updateManualPayment(paymentEntry) {
     let manualPaymentUuid = paymentEntry?.custom_transaction_id;
 
     const whereConditions = [];
