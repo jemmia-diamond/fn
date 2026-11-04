@@ -105,12 +105,18 @@ export default class RetouchUploaderService {
 
     // Nothing made it into `retouch`; reporting success here would send the
     // operator on to "Sync to Haravan" against an empty row.
-    const failed = attempts.filter((a) => a.errors.length > 0);
-    const detail = failed.length
-      ? failed
-          .map((a) => `${a.source}: ${a.found} found, ${a.errors[0]}`)
-          .join("; ")
-      : `no ${subFolderName} images found in link_retouch or link_render`;
+    const describe = (a) => {
+      if (a.errors.length)
+        return `${a.source}: ${a.found} found, ${a.errors[0]}`;
+      // Drive returns an empty listing for a folder the service account
+      // cannot see, so "none found" and "no access" are indistinguishable here.
+      if (a.found === 0)
+        return `${a.source}: no ${subFolderName} images found (folder empty, missing, or not shared with the service account)`;
+      return `${a.source}: only ${a.found} ${subFolderName} image(s) found, needs more than 1`;
+    };
+    const detail = attempts.length
+      ? attempts.map(describe).join("; ")
+      : "row has neither link_retouch nor link_render";
 
     return {
       success: false,
@@ -187,9 +193,12 @@ export default class RetouchUploaderService {
     }
 
     // Update the record's retouch attachment field
+    // Clearing `note` reopens the de-dup latch that RetouchToHaravanService
+    // closes: these are new images, so the row needs syncing to Haravan again.
     await nocoClient.updateRecords(tableId, {
       id: recordId,
-      retouch: uploadedFiles
+      retouch: uploadedFiles,
+      note: null
     });
 
     return { ok: true, found: items.length, errors };
