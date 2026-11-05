@@ -37,7 +37,7 @@ export default class DiamondDiscountService {
           ["is_expired", "=", 1],
           ["start_date", "<=", now],
           ["end_date", ">=", now],
-          ["title", "like", "%mới%"]
+          ["for_new_customer", "=", 1]
         ],
         or_filters: [
           ["min_value", ">", 0],
