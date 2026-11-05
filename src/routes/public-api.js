@@ -1,8 +1,18 @@
 import Ecommerce from "controllers/ecommerce";
 import RSS from "controllers/rss";
 
+import Database from "services/database";
+
 export default class PublicAPIRoutes {
   static register(publicApi) {
+    // Disconnect every Prisma client a request creates. Clients that are never
+    // disconnected leak WASM memory, and once the heap has grown enough the
+    // isolate throws `Invalid array buffer length` on every query until it is
+    // recycled (prisma/prisma#28012). Registered before any route so it wraps
+    // all of them; safe here because nothing under /public-api defers work
+    // past the response with `ctx.waitUntil`.
+    publicApi.use("*", (_c, next) => Database.withScope(() => next()));
+
     const ecommerceNamespaceApi = publicApi.basePath("/ecommerce");
 
     ecommerceNamespaceApi.get(
