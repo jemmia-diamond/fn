@@ -19,22 +19,3 @@ export function shuffle(arr) {
 export function shuffled(arr) {
   return shuffle([...arr]);
 }
-
-/**
- * Pick one random element from array.
- * @param {Array} arr
- * @returns {*}
- */
-export function sample(arr) {
-  return arr[Math.floor(Math.random() * arr.length)];
-}
-
-/**
- * Pick n random elements (no repeat) from array.
- * @param {Array} arr
- * @param {number} n
- * @returns {Array}
- */
-export function sampleN(arr, n) {
-  return shuffled(arr).slice(0, n);
-}

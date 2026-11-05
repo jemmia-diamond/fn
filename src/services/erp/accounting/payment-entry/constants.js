@@ -58,8 +58,3 @@ export const BRANCH_MAPPING = {
 export const REFERENCE_DOCTYPES = {
   SALES_ORDER: "Sales Order"
 };
-
-export const HARAVAN_DEFAULTS = {
-  DEPOSIT_ORDER: "Đơn hàng cọc",
-  ORDER_LATER: "ORDERLATER"
-};

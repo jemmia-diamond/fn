@@ -109,8 +109,3 @@ export async function fetchComboTargets(nocodb) {
   }
   return targets;
 }
-
-export async function fetchComboDiamondIds(nocodb) {
-  const targets = await fetchComboTargets(nocodb);
-  return new Set(targets.map((t) => t.diamond_workplace_id));
-}
