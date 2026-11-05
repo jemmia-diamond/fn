@@ -3,6 +3,10 @@ import NocoDBClient from "services/clients/nocodb-client";
 import Database from "services/database";
 import { NOCODB_TABLES } from "src/constants/nocodb-tables";
 
+// Must match the `note` filter on the NocoDB "Tick to Sync Haravan Retouch"
+// hook byte for byte, diacritics included.
+const SYNCED_NOTE = "Đã đồng bộ thành công";
+
 /**
  * Remove Vietnamese diacritical marks from a string.
  */
@@ -34,15 +38,25 @@ export default class RetouchToHaravanService {
   }
 
   async handle(payload) {
-    const data = payload?.data?.rows?.[0];
     const tableId = payload?.data?.table_id;
+    const recordId = payload?.data?.rows?.[0]?.id;
 
     if (tableId !== NOCODB_TABLES.MARKETING.DESIGN_IMAGES) {
       throw new Error(`Ignored table ID: ${tableId}`);
     }
 
-    if (!data) {
+    if (!recordId) {
       throw new Error("No data found in payload");
+    }
+
+    const nocoClient = new NocoDBClient(this.env);
+
+    // Read the row back rather than trusting the webhook payload: attachment
+    // `signedUrl`s are minted per read and are what Haravan downloads from.
+    const data = await nocoClient.readRecord(tableId, recordId);
+
+    if (!data) {
+      throw new Error(`design_images record not found: ${recordId}`);
     }
 
     const designId = data.designs?.id || data.design_id;
@@ -67,7 +81,6 @@ export default class RetouchToHaravanService {
     );
 
     // Look up the Haravan product ID from NocoDB products table RESTfully
-    const nocoClient = new NocoDBClient(this.env);
     const response = await nocoClient.listRecords(
       NOCODB_TABLES.MARKETING.JEWELRIES,
       {
@@ -126,6 +139,14 @@ export default class RetouchToHaravanService {
         filename: fileName
       });
     }
+
+    // Close the de-dup latch. The "Tick to Sync Haravan Retouch" hook fires on
+    // `note != SYNCED_NOTE`, so without this write every later update to the row
+    // re-runs the whole delete-and-re-upload against Haravan.
+    await nocoClient.updateRecords(tableId, {
+      id: recordId,
+      note: SYNCED_NOTE
+    });
 
     return {
       success: true,

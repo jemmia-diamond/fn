@@ -10,7 +10,14 @@ export default class DesignImagesController {
     }
 
     const service = new RetouchUploaderService(ctx.env);
-    await service.handle(payload);
+    const result = await service.handle(payload);
+
+    // Nothing landed in `retouch`: answer 4xx so the operator sees it in
+    // NocoDB rather than being told the upload worked.
+    if (result?.success === false) {
+      return ctx.json({ error: result.reason }, 422);
+    }
+
     return ctx.json({ message: "Retouch images uploaded to NocoDB" });
   }
 
