@@ -114,6 +114,19 @@ The following webhooks are configured across the NocoDB tables:
 > (`CollectService`), which mirrors the link to a Haravan collect
 > (create on insert, delete on delete). Jewelry discount-collection membership
 > depends on the `products_haravan_collection` hook.
+>
+> **Rule — change promo membership only by adding/deleting rows in
+> `products_haravan_collection` or `diamonds_haravan_collection`.** Do not use
+> the link cells on `products` / `haravan_collections` ("Link record" /
+> unlink). NocoDB writes link-cell changes straight to the junction table
+> without firing webhooks (true up to at least NocoDB 2026.10.1), so Haravan is
+> never updated and the promo keeps applying (or never applies).
+>
+> **Opting a product out of the base promotion** (jewelry 16% / diamond 8% +
+> size tier): tick `exclude_base_promotion` on the `products` / `diamonds`
+> record **first**, then delete its junction row. Without the flag, the next
+> Haravan product webhook re-adds the baseline link. Non-baseline collections
+> (e.g. a 20% program) are never auto-added, so deleting the row is enough.
 
 | Source Table                    | Webhook Title                | Event / Operation                   | Active | Auth Header                     | Method | Destination / Path                                                        | Condition |
 | ------------------------------- | ---------------------------- | ----------------------------------- | ------ | ------------------------------- | ------ | ------------------------------------------------------------------------- | --------- |
