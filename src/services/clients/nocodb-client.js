@@ -1,5 +1,6 @@
 import axios from "axios";
 import axiosRetry from "axios-retry";
+import { createAxiosClient } from "services/utils/http-client";
 
 const RETRY_CONFIG = {
   retries: 2,
@@ -183,12 +184,16 @@ export default class NocoDBClient {
   }
 
   async uploadAttachment(params, fileData) {
-    // For FormData headers
-    const headers = fileData.getHeaders ? fileData.getHeaders() : {};
-    return this.#request("POST", "/api/v2/storage/upload", {
-      params,
-      data: fileData,
-      headers
+    const client = createAxiosClient({
+      baseURL: await this.#getBaseUrl(),
+      headers: { "xc-token": await this.#getApiToken() }
     });
+
+    const response = await client.post("/api/v2/storage/upload", fileData, {
+      params,
+      headers: { "Content-Type": false }
+    });
+
+    return response.data;
   }
 }

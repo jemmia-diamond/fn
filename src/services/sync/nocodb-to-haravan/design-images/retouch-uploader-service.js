@@ -1,4 +1,3 @@
-import FormData from "form-data";
 import GoogleDriveClient from "services/clients/google-drive-client";
 import NocoDBClient from "services/clients/nocodb-client";
 import { NOCODB_TABLES } from "src/constants/nocodb-tables";
@@ -144,10 +143,11 @@ export default class RetouchUploaderService {
       try {
         const fileData = await driveClient.downloadFile(item.id);
         const form = new FormData();
-        form.append("file", Buffer.from(fileData), {
-          filename: item.name,
-          contentType: item.mimeType
-        });
+        form.append(
+          "file",
+          new Blob([fileData], { type: item.mimeType }),
+          item.name
+        );
 
         const res = await nocoClient.uploadAttachment(
           { path: storagePath },
