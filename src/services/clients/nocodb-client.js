@@ -6,8 +6,19 @@ const RETRY_CONFIG = {
   retryDelay: axiosRetry.exponentialDelay,
   retryCondition: (error) =>
     axiosRetry.isNetworkOrIdempotentRequestError(error) ||
-    error.response?.status >= 500
+    error.response?.status >= 500 ||
+    isTransientDbError(error)
 };
+
+// NocoDB reports its own DB timeouts as 400 ERR_DATABASE_OP_FAILED; retry reads only.
+function isTransientDbError(error) {
+  const body = error.response?.data;
+  return (
+    error.config?.method?.toLowerCase() === "get" &&
+    body?.error === "ERR_DATABASE_OP_FAILED" &&
+    ["ETIMEDOUT", "ECONNRESET"].includes(body?.code)
+  );
+}
 
 export default class NocoDBClient {
   #env;
