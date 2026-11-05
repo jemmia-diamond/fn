@@ -163,8 +163,6 @@ export default class RetouchUploaderService {
       try {
         const fileData = await driveClient.downloadFile(item.id);
         const form = new FormData();
-        // Platform FormData: the filename is the 3rd argument, and the part's
-        // own Content-Type comes from the Blob — an options object is ignored.
         form.append(
           "file",
           new Blob([fileData], { type: item.mimeType }),

@@ -1,13 +1,25 @@
 import axios from "axios";
 import axiosRetry from "axios-retry";
+import { createAxiosClient } from "services/utils/http-client";
 
 const RETRY_CONFIG = {
   retries: 2,
   retryDelay: axiosRetry.exponentialDelay,
   retryCondition: (error) =>
     axiosRetry.isNetworkOrIdempotentRequestError(error) ||
-    error.response?.status >= 500
+    error.response?.status >= 500 ||
+    isTransientDbError(error)
 };
+
+// NocoDB reports its own DB timeouts as 400 ERR_DATABASE_OP_FAILED; retry reads only.
+function isTransientDbError(error) {
+  const body = error.response?.data;
+  return (
+    error.config?.method?.toLowerCase() === "get" &&
+    body?.error === "ERR_DATABASE_OP_FAILED" &&
+    ["ETIMEDOUT", "ECONNRESET"].includes(body?.code)
+  );
+}
 
 export default class NocoDBClient {
   #env;
@@ -183,10 +195,16 @@ export default class NocoDBClient {
    * @param {FormData} fileData
    */
   async uploadAttachment(params, fileData) {
-    return this.#request("POST", "/api/v2/storage/upload", {
-      params,
-      data: fileData,
-      headers: { "Content-Type": null }
+    const client = createAxiosClient({
+      baseURL: await this.#getBaseUrl(),
+      headers: { "xc-token": await this.#getApiToken() }
     });
+
+    const response = await client.post("/api/v2/storage/upload", fileData, {
+      params,
+      headers: { "Content-Type": false }
+    });
+
+    return response.data;
   }
 }
