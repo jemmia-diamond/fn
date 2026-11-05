@@ -248,6 +248,21 @@ export default {
         await new Haravan.Articles.ArticleSyncService(env).sync();
         await new Haravan.ConfigTranslator.ConfigTranslatorService(env).sync();
         break;
+      case "backfill-pancake-sync": {
+        // Dedicated, isolated entrypoint for backfill-pancake-sync.sh — runs ONLY
+        // the three Pancake syncs (conversations -> customers -> leads). This is
+        // NOT a real cron string, so it never fires on a schedule; it is invoked
+        // manually via `/__scheduled?cron=backfill-pancake-sync` during a backfill.
+        const batchTime = dayjs().utc();
+        await new Pancake.ConversationSyncService(env, _ctx).syncConversations({
+          batchTime
+        });
+        await new Pancake.CustomerSyncService(env).syncCustomers({ batchTime });
+        await new ERP.CRM.PancakeLeadSyncService(env).syncPancakeLeads({
+          batchTime
+        });
+        break;
+      }
       default:
         break;
     }
