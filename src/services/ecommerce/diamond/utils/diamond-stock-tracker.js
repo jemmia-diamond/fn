@@ -54,7 +54,7 @@ export function buildStockTrackerQuery(targets, warehouseNames) {
       SELECT 
         hwi.variant_id,
         SUM(hwi.qty_available) as retail_stock
-      FROM haravan.warehouse_inventories hwi
+      FROM raw_haravan.inventory_locations hwi
       JOIN haravan.warehouses hw ON hwi.loc_id = hw.id
       ${warehouseFilter}
       GROUP BY hwi.variant_id
