@@ -1,4 +1,0 @@
-export const BASE_DISCOUNT_PERCENT = {
-  DIAMOND: 8,
-  JEWELRY: 16
-};

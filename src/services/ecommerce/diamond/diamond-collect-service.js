@@ -4,7 +4,10 @@ import NocoDBClient from "services/clients/nocodb-client";
 import DiamondDiscountService from "services/ecommerce/diamond/diamond-discount-service";
 import { sendPromotionSyncNotification } from "services/ecommerce/diamond/utils/notification";
 import { fetchComboTargets } from "services/ecommerce/promotion/combo-targets";
-import { BASE_DISCOUNT_PERCENT } from "services/ecommerce/promotion/constant";
+import {
+  DIAMOND_PROGRAM_WHERE,
+  PROMOTION_PROGRAM
+} from "services/ecommerce/promotion/programs";
 import { syncVariantPromotions } from "services/ecommerce/promotion/variant-promotions";
 import { isDuplicateRecordError } from "services/utils/nocodb-errors";
 import CollectionSyncService from "services/sync/nocodb-to-haravan/collections/collection-sync-service";
@@ -32,7 +35,7 @@ export default class DiamondCollectService {
         activeRules
       );
 
-      const { ruleCollections, allPercentCollectionIds } =
+      const { ruleCollections, allPercentCollectionIds, baselineCollectionId } =
         this._buildRuleCollectionsMap(allCollections);
 
       const comboTargets = await fetchComboTargets(nocoClient);
@@ -47,6 +50,7 @@ export default class DiamondCollectService {
         activeRules,
         ruleCollections,
         allPercentCollectionIds,
+        baselineCollectionId,
         comboDiamondIds
       });
 
@@ -93,7 +97,7 @@ export default class DiamondCollectService {
       return { list: [] };
     }
 
-    const where = "(discount_type,eq,percent)~and(discount_value,gt,0)";
+    const where = DIAMOND_PROGRAM_WHERE;
     let collections = await nocoClient.listRecords(
       NOCODB_TABLES.MARKETING.HARAVAN_COLLECTIONS,
       {
@@ -129,7 +133,8 @@ export default class DiamondCollectService {
       discount_type: "percent",
       discount_value: percent,
       title: `Chương trình nền KCV ${percent}%`,
-      auto_create: true
+      auto_create: true,
+      program: PROMOTION_PROGRAM.DIAMOND_TIER
     }));
 
     try {
@@ -185,6 +190,7 @@ export default class DiamondCollectService {
   _buildRuleCollectionsMap(allCollections) {
     const ruleCollections = {};
     const allPercentCollectionIds = new Set();
+    let baselineCollectionId = null;
 
     for (const col of allCollections.list || []) {
       if (col.discount_value) {
@@ -197,6 +203,9 @@ export default class DiamondCollectService {
         if (col.id) {
           ruleCollections[discountVal].nocodbId = col.id;
           allPercentCollectionIds.add(col.id);
+          if (col.program === PROMOTION_PROGRAM.DIAMOND_BASELINE) {
+            baselineCollectionId = col.id;
+          }
         }
 
         if (col.haravan_id) {
@@ -205,7 +214,7 @@ export default class DiamondCollectService {
       }
     }
 
-    return { ruleCollections, allPercentCollectionIds };
+    return { ruleCollections, allPercentCollectionIds, baselineCollectionId };
   }
 
   async _processDiamondBatches(context) {
@@ -388,9 +397,9 @@ export default class DiamondCollectService {
     context,
     existingEntries
   ) {
-    const { ruleCollections, nocoClient, allPercentCollectionIds } = context;
-    const defaultCollectionId =
-      ruleCollections[BASE_DISCOUNT_PERCENT.DIAMOND]?.nocodbId;
+    const { nocoClient, allPercentCollectionIds, baselineCollectionId } =
+      context;
+    const defaultCollectionId = baselineCollectionId;
 
     await DiamondDiscountService.syncNocoDBDiscountCollections({
       diamond,

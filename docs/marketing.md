@@ -127,6 +127,23 @@ The following webhooks are configured across the NocoDB tables:
 > record **first**, then delete its junction row. Without the flag, the next
 > Haravan product webhook re-adds the baseline link. Non-baseline collections
 > (e.g. a 20% program) are never auto-added, so deleting the row is enough.
+>
+> **Promotion programs and rates are configured in NocoDB, not code.** fn and
+> salesaya both read them:
+>
+> - `haravan_collections.program` (SingleSelect) marks the collections fn manages:
+>   `jewelry_base` (#31, jewelry base rate = its `discount_value`),
+>   `diamond_baseline` (#32, 8%), `diamond_tier` (size tiers; new tiers are
+>   auto-created with this value), and `combo` (a config row with no Haravan
+>   collection; its `discount_value` is the combo rate). Combo jewelry's
+>   non-paired variants use the `jewelry_base` rate. The diamond sync only adds
+>   or removes links to `diamond_baseline` / `diamond_tier` collections.
+> - `collections.exclude_base_promotion` (Checkbox) on the design collections:
+>   jewelry whose design belongs to a ticked collection is not auto-added to the
+>   jewelry base.
+>
+> To change a rate, edit the program row's `discount_value` (and the matching
+> Haravan promotion). Do not hard-code rates or collection ids.
 
 | Source Table                    | Webhook Title                | Event / Operation                   | Active | Auth Header                     | Method | Destination / Path                                                        | Condition |
 | ------------------------------- | ---------------------------- | ----------------------------------- | ------ | ------------------------------- | ------ | ------------------------------------------------------------------------- | --------- |
