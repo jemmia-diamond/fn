@@ -2,24 +2,16 @@ import NocoDBClient from "services/clients/nocodb-client";
 import DiamondCollectService from "services/ecommerce/diamond/diamond-collect-service";
 import DiamondDiscountService from "services/ecommerce/diamond/diamond-discount-service";
 import { HARAVAN_TOPIC } from "services/ecommerce/enum";
-import { BASE_DISCOUNT_PERCENT } from "services/ecommerce/promotion/constant";
+import {
+  fetchPromotionPrograms,
+  findProgram,
+  PROMOTION_PROGRAM
+} from "services/ecommerce/promotion/programs";
 import {
   HRV_PRODUCT_TYPE,
   SKU_LENGTH
 } from "services/haravan/products/product-variant/constant";
 import { NOCODB_TABLES } from "src/constants/nocodb-tables";
-
-const EXCLUDED_COLLECTION_TITLES = [
-  "Lotus Essence",
-  "Lotus Brilliance",
-  "Lotus Elegance",
-  "Sen Quý Hiển",
-  "Vũ Khúc Thiên Phượng",
-  "BRILLIANCE GLORY",
-  "Ngũ Phúc",
-  "Mai - The Golden Bloom",
-  "Đào - Cultivated Grace"
-];
 
 export default class AutoAddToDiscountProgramService {
   constructor(env) {
@@ -100,7 +92,7 @@ export default class AutoAddToDiscountProgramService {
     const dcs = new DiamondCollectService(this.env);
     const collections = await dcs._fetchCollections(nocodb, activeRules);
     const dcsContext = dcs._buildRuleCollectionsMap(collections);
-    const { ruleCollections } = dcsContext;
+    const { ruleCollections, baselineCollectionId } = dcsContext;
 
     for (const diamond of diamonds) {
       const discountPercent = DiamondDiscountService.calculateDiscountPercent({
@@ -109,8 +101,7 @@ export default class AutoAddToDiscountProgramService {
       });
 
       const DIAMOND_COLLECTION_ID = ruleCollections[discountPercent]?.nocodbId;
-      const defaultCollectionId =
-        ruleCollections[BASE_DISCOUNT_PERCENT.DIAMOND]?.nocodbId;
+      const defaultCollectionId = baselineCollectionId;
 
       await DiamondDiscountService.syncNocoDBDiscountCollections({
         diamond,
@@ -165,29 +156,22 @@ export default class AutoAddToDiscountProgramService {
           {
             where: `(id,eq,${design.collections_id})`,
             limit: 1,
-            fields: "id,collection_name"
+            fields: "id,exclude_base_promotion"
           }
         );
         const collection = collectionRes.list?.[0] ?? null;
 
-        if (
-          collection &&
-          EXCLUDED_COLLECTION_TITLES.includes(collection.collection_name)
-        ) {
+        if (collection?.exclude_base_promotion) {
           return;
         }
       }
     }
 
-    const baselineRes = await nocodb.listRecords(
-      NOCODB_TABLES.MARKETING.HARAVAN_COLLECTIONS,
-      {
-        where: `(discount_type,eq,percent)~and(discount_value,eq,${BASE_DISCOUNT_PERCENT.JEWELRY})`,
-        limit: 1,
-        fields: "id"
-      }
-    );
-    const JEWELRY_COLLECTION_ID = baselineRes.list?.[0]?.id;
+    const programs = await fetchPromotionPrograms(this.env, { fresh: true });
+    const JEWELRY_COLLECTION_ID = findProgram(
+      programs,
+      PROMOTION_PROGRAM.JEWELRY_BASE
+    )?.id;
     if (!JEWELRY_COLLECTION_ID) {
       return;
     }

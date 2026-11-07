@@ -1,13 +1,15 @@
 import { NOCODB_TABLES } from "src/constants/nocodb-tables";
 import * as Sentry from "@sentry/cloudflare";
 import { sleep } from "services/utils/sleep";
+import {
+  fetchPromotionPrograms,
+  findProgram,
+  PROMOTION_PROGRAM
+} from "services/ecommerce/promotion/programs";
 
 const CONFIG = {
   API_REQUEST_DELAY: 200,
-  JEWELRY_PROMOTION_COLLECTION_ID: "1004602299",
-  PROMOTION_NAME_PREFIX: "CTKM Biến Thể",
-  DEFAULT_TARGET_COMBO_DISCOUNT: 12,
-  DEFAULT_JEWELRY_DISCOUNT: 16
+  PROMOTION_NAME_PREFIX: "CTKM Biến Thể"
 };
 
 async function fetchAllRecords(nocodb, table, params = {}, pageSize = 100) {
@@ -224,7 +226,8 @@ async function cleanupJewelryCollectionLinks(
 
 async function cleanupJewelryHaravanCollects(
   haravanClient,
-  affectedJewelryHaravanProductIds
+  affectedJewelryHaravanProductIds,
+  jewelryCollectionHaravanId
 ) {
   for (const hProductId of affectedJewelryHaravanProductIds) {
     try {
@@ -234,8 +237,7 @@ async function cleanupJewelryHaravanCollects(
       const collects = collectsResponse?.collects || [];
       for (const collect of collects) {
         if (
-          String(collect.collection_id) ===
-          CONFIG.JEWELRY_PROMOTION_COLLECTION_ID
+          String(collect.collection_id) === String(jewelryCollectionHaravanId)
         ) {
           await haravanClient.collect.deleteCollect(collect.id);
           await sleep(CONFIG.API_REQUEST_DELAY);
@@ -255,12 +257,20 @@ export async function syncVariantPromotions({
 }) {
   if (!comboTargets || !comboTargets.length) return;
 
-  const targetDiscount = Number(
-    env.TARGET_COMBO_DISCOUNT || CONFIG.DEFAULT_TARGET_COMBO_DISCOUNT
-  );
-  const jewelryDiscount = Number(
-    env.DEFAULT_JEWELRY_DISCOUNT || CONFIG.DEFAULT_JEWELRY_DISCOUNT
-  );
+  const programs = await fetchPromotionPrograms(env, { fresh: true });
+  const comboProgram = findProgram(programs, PROMOTION_PROGRAM.COMBO);
+  const jewelryProgram = findProgram(programs, PROMOTION_PROGRAM.JEWELRY_BASE);
+  const targetDiscount = Number(comboProgram?.discount_value);
+  const jewelryDiscount = Number(jewelryProgram?.discount_value);
+  if (
+    !(targetDiscount > 0) ||
+    !(jewelryDiscount > 0) ||
+    !jewelryProgram?.haravan_id
+  ) {
+    throw new Error(
+      "Combo or jewelry_base promotion program is not configured in NocoDB"
+    );
+  }
 
   const {
     targetVariants,
@@ -296,6 +306,7 @@ export async function syncVariantPromotions({
   );
   await cleanupJewelryHaravanCollects(
     haravanApi,
-    affectedJewelryHaravanProductIds
+    affectedJewelryHaravanProductIds,
+    jewelryProgram.haravan_id
   );
 }
