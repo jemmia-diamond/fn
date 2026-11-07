@@ -28,7 +28,7 @@ export default class JewelryDiamondPairService {
         WHERE jdp.is_active = TRUE
           AND NOT EXISTS (
             SELECT 1
-            FROM haravan.warehouse_inventories inven
+            FROM raw_haravan.inventory_locations inven
             INNER JOIN haravan.warehouses house 
               ON house.id = inven.loc_id
             WHERE inven.product_id = dia.product_id
@@ -56,7 +56,7 @@ export default class JewelryDiamondPairService {
           AND dia.variant_id = ${diamondVariantId}
           AND NOT EXISTS (
             SELECT 1
-            FROM haravan.warehouse_inventories inven
+            FROM raw_haravan.inventory_locations inven
             INNER JOIN haravan.warehouses house 
               ON house.id = inven.loc_id
             WHERE inven.product_id = dia.product_id
@@ -90,7 +90,7 @@ export default class JewelryDiamondPairService {
         FROM haravan.variants AS hv
         JOIN workplace.diamonds AS wdi
           ON hv.id = wdi.variant_id
-        JOIN haravan.warehouse_inventories AS hwi
+        JOIN raw_haravan.inventory_locations AS hwi
           ON hv.id = hwi.variant_id
         JOIN haravan.warehouses AS hw
           ON hwi.loc_id = hw.id

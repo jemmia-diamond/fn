@@ -1,5 +1,6 @@
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
+import { Prisma } from "@prisma-cli";
 import Database from "services/database";
 import { TABLES } from "services/larksuite/docs/constant";
 import RecordService from "services/larksuite/docs/base/record/record";
@@ -64,14 +65,15 @@ export default class WarehouseInventoryLarkSyncService {
   }
 
   async _fetchWarehouseInventories(updatedAtMin, limit = null, offset = null) {
-    const options = {
-      where: { database_updated_at: { gte: updatedAtMin } }
-    };
-    if (limit !== null) options.take = limit;
-    if (offset !== null) options.skip = offset;
-
-    const inventories =
-      await this.db.haravan_warehouse_inventories.findMany(options);
+    const inventories = await this.db.$queryRaw`
+      SELECT id, loc_id, product_id, variant_id, qty_onhand,
+        qty_commited AS qty_committed, qty_available, qty_incoming, updated_at
+      FROM raw_haravan.inventory_locations
+      WHERE updated_at >= ${updatedAtMin}
+      ORDER BY id
+      ${limit !== null ? Prisma.sql`LIMIT ${limit}` : Prisma.empty}
+      ${offset !== null ? Prisma.sql`OFFSET ${offset}` : Prisma.empty}
+    `;
     if (!inventories?.length) return [];
 
     const ids = inventories
