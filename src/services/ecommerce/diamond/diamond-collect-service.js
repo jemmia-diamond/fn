@@ -279,7 +279,7 @@ export default class DiamondCollectService {
         workplace.diamonds d
       LEFT JOIN (
         SELECT variant_id, SUM(qty_available) as total_qty
-        FROM haravan.warehouse_inventories
+        FROM raw_haravan.inventory_locations
         GROUP BY variant_id
       ) i ON d.variant_id = i.variant_id
       WHERE

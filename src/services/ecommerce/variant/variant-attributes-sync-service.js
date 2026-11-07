@@ -87,17 +87,11 @@ export default class VariantAttributesSyncService {
   }
 
   async updateDesignStockLocations(nocoClient) {
-    const inventories = await this.db.haravan_warehouse_inventories.findMany({
-      where: {
-        qty_onhand: {
-          gt: 0n
-        }
-      },
-      select: {
-        product_id: true,
-        loc_id: true
-      }
-    });
+    const inventories = await this.db.$queryRaw`
+      SELECT product_id, loc_id
+      FROM raw_haravan.inventory_locations
+      WHERE qty_onhand > 0
+    `;
 
     const warehouses = await this.db.haravanWarehouses.findMany({
       select: {

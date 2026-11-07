@@ -229,7 +229,7 @@ export function aggregateQuery(jsonParams) {
 
   if (jsonParams.warehouse_ids && jsonParams.warehouse_ids.length > 0) {
     warehouseJoinClause = `
-      INNER JOIN haravan.warehouse_inventories wi
+      INNER JOIN raw_haravan.inventory_locations wi
         ON wi.variant_id = v.haravan_variant_id
       INNER JOIN haravan.warehouses w
         ON w.id = wi.loc_id

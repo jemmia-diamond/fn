@@ -7,7 +7,7 @@ export function buildQuery(productId) {
       wi.loc_id,
       w.name,
       SUM(wi.qty_available) AS qty_available
-    FROM haravan.warehouse_inventories AS wi
+    FROM raw_haravan.inventory_locations AS wi
     LEFT JOIN haravan.warehouses AS w ON w.id = wi.loc_id
     WHERE wi.product_id = ${productId}
     GROUP BY wi.variant_id, wi.loc_id, w.name
