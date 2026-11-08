@@ -1,8 +1,4 @@
 import Ecommerce from "services/ecommerce";
-import {
-  getProgramDiscount,
-  PROMOTION_PROGRAM
-} from "services/ecommerce/promotion/programs";
 import { parseNumber } from "services/utils/num-helper";
 import { API_CONFIG } from "src/controllers/ecommerce/constant";
 
@@ -22,11 +18,7 @@ export default class SearchController {
     const productService = new Ecommerce.ProductService(ctx.env);
     const result = await productService.searchJewelry(searchKey, limit, page, {
       return_inventory_metrics: params.return_inventory_metrics === "true",
-      limit_selling_quantity: parseNumber(params.limit_selling_quantity, null),
-      default_jewelry_discount: await getProgramDiscount(
-        ctx.env,
-        PROMOTION_PROGRAM.JEWELRY_BASE
-      )
+      limit_selling_quantity: parseNumber(params.limit_selling_quantity, null)
     });
     const responseBody = {
       data: result

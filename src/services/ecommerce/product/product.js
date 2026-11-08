@@ -27,7 +27,7 @@ export default class ProductService {
     const likePattern = `%${lowerSearchKey}%`;
     const offset = (page - 1) * limit;
 
-    const priceField = buildJewelryPriceSql(options.default_jewelry_discount);
+    const priceField = buildJewelryPriceSql();
 
     const result = await this.db.$queryRaw`
       SELECT
