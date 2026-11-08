@@ -2,21 +2,8 @@ import { aggregateQuery } from "services/ecommerce/product/utils/jewelry";
 import { API_CONFIG } from "src/controllers/ecommerce/constant";
 import { Prisma } from "@prisma-cli";
 
-export function getDiscountMultiplier(customDiscount, fallbackPercent = 0) {
-  const percent = Number(customDiscount ?? fallbackPercent);
-  const safePercent =
-    Number.isFinite(percent) && percent >= 0 && percent <= 100 ? percent : 0;
-  return (100 - safePercent) / 100;
-}
-
-export function buildJewelryPriceSql(discountParam) {
-  const defaultJewelryMultiplier = getDiscountMultiplier(discountParam);
-  return Prisma.sql`
-    CASE
-      WHEN v.price < v.price_compare_at THEN CAST(v.price AS DECIMAL)
-      ELSE CAST(v.price_compare_at * ${defaultJewelryMultiplier} AS DECIMAL)
-    END
-  `;
+export function buildJewelryPriceSql() {
+  return Prisma.sql`CAST(v.price AS DECIMAL)`;
 }
 
 export function buildInventoryMetricsSql(opts = {}) {
@@ -47,7 +34,7 @@ function buildBaseQueryV2(jsonParams) {
 
   const finenessOrder = handleFinenessPriority === "14K" ? "ASC" : "DESC";
 
-  const priceField = buildJewelryPriceSql(jsonParams.default_jewelry_discount);
+  const priceField = buildJewelryPriceSql();
 
   let lateralJoinClause;
   let variantJsonBuildObject;
@@ -280,7 +267,7 @@ export function buildQueryV2(jsonParams) {
 }
 
 export function buildQuerySingleV2(params = {}) {
-  const priceField = buildJewelryPriceSql(params.default_jewelry_discount);
+  const priceField = buildJewelryPriceSql();
 
   let lateralJoinClause;
   let variantJsonBuildObject;

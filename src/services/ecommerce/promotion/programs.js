@@ -35,14 +35,3 @@ export async function fetchPromotionPrograms(env, { fresh = false } = {}) {
 export function findProgram(rows, program) {
   return rows.find((row) => row.program === program) || null;
 }
-
-export async function getProgramDiscount(env, program, options) {
-  const row = findProgram(await fetchPromotionPrograms(env, options), program);
-  const value = Number(row?.discount_value);
-  if (!row || !Number.isFinite(value) || value <= 0) {
-    throw new Error(
-      `Promotion program "${program}" is not configured in NocoDB`
-    );
-  }
-  return value;
-}
