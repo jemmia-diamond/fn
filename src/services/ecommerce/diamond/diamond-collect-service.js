@@ -54,6 +54,13 @@ export default class DiamondCollectService {
         comboDiamondIds
       });
 
+      await this._removeComboDiamondsFromBasePromos(comboTargets, {
+        nocoClient,
+        haravanApi,
+        ruleCollections,
+        allPercentCollectionIds
+      });
+
       await syncVariantPromotions({
         env: this.env,
         nocodb: nocoClient,
@@ -315,11 +322,6 @@ export default class DiamondCollectService {
       }
 
       if (context.comboDiamondIds?.has(diamond.id)) {
-        await this._removeDiamondFromBasePromos(
-          diamond,
-          context,
-          existingEntries
-        );
         return;
       }
 
@@ -351,6 +353,22 @@ export default class DiamondCollectService {
       }
       console.warn("Error processing diamond:", diamond.id, error);
       Sentry.captureException(error);
+    }
+  }
+
+  async _removeComboDiamondsFromBasePromos(comboTargets, context) {
+    const diamonds = new Map(
+      comboTargets.map((target) => [
+        target.diamond_workplace_id,
+        {
+          id: target.diamond_workplace_id,
+          product_id: target.diamond_haravan_product_id
+        }
+      ])
+    );
+
+    for (const diamond of diamonds.values()) {
+      await this._removeDiamondFromBasePromos(diamond, context, null);
     }
   }
 

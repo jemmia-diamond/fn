@@ -3,6 +3,7 @@ import dayjs from "dayjs";
 import isBetween from "dayjs/plugin/isBetween.js";
 import timezone from "dayjs/plugin/timezone.js";
 import utc from "dayjs/plugin/utc.js";
+import { TIMEZONE_VIETNAM } from "src/constants";
 import { NOCODB_TABLES } from "src/constants/nocodb-tables";
 import FrappeClient from "src/frappe/frappe-client";
 import { isDuplicateRecordError } from "services/utils/nocodb-errors";
@@ -10,6 +11,11 @@ import { isDuplicateRecordError } from "services/utils/nocodb-errors";
 dayjs.extend(isBetween);
 dayjs.extend(utc);
 dayjs.extend(timezone);
+
+function parsePriority(priority) {
+  const rank = parseInt(String(priority ?? "").replace(/\D/g, ""), 10);
+  return Number.isNaN(rank) ? Number.MAX_SAFE_INTEGER : rank;
+}
 
 export default class DiamondDiscountService {
   /**
@@ -25,7 +31,7 @@ export default class DiamondDiscountService {
         apiSecret: env.JEMMIA_ERP_API_SECRET
       });
 
-      const now = dayjs().format("YYYY-MM-DD");
+      const now = dayjs().tz(TIMEZONE_VIETNAM).format("YYYY-MM-DD");
 
       const promotions = await frappeClient.getList("Promotion", {
         fields: "*",
@@ -46,16 +52,12 @@ export default class DiamondDiscountService {
         limit_page_length: 1000
       });
 
-      const rules = promotions.sort((a, b) => {
-        const priorityA = a.priority;
-        const priorityB = b.priority;
-
-        if (priorityA == null && priorityB == null) return 0;
-        if (priorityA == null) return 1;
-        if (priorityB == null) return -1;
-
-        return priorityA - priorityB;
-      });
+      const rules = promotions.sort(
+        (a, b) =>
+          parsePriority(a.priority) - parsePriority(b.priority) ||
+          String(b.start_date).localeCompare(String(a.start_date)) ||
+          b.discount_percent - a.discount_percent
+      );
 
       return rules;
     } catch (error) {
