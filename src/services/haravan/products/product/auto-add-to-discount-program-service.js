@@ -2,6 +2,7 @@ import NocoDBClient from "services/clients/nocodb-client";
 import DiamondCollectService from "services/ecommerce/diamond/diamond-collect-service";
 import DiamondDiscountService from "services/ecommerce/diamond/diamond-discount-service";
 import { HARAVAN_TOPIC } from "services/ecommerce/enum";
+import { fetchComboTargets } from "services/ecommerce/promotion/combo-targets";
 import {
   fetchPromotionPrograms,
   findProgram,
@@ -79,8 +80,13 @@ export default class AutoAddToDiscountProgramService {
       }
     );
 
+    const comboTargets = await fetchComboTargets(nocodb);
+    const comboDiamondIds = new Set(
+      comboTargets.map((target) => target.diamond_workplace_id)
+    );
+
     const diamonds = (diamondsQuery.list || []).filter(
-      (d) => !d.exclude_base_promotion
+      (d) => !d.exclude_base_promotion && !comboDiamondIds.has(d.id)
     );
 
     if (!diamonds || diamonds.length === 0) {
