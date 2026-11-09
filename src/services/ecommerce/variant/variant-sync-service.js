@@ -43,12 +43,6 @@ export default class VariantSyncService {
       await this._fetchAndProcessVariants(haravanClient, updatedAtMin);
       await kv.put(KV_KEY, toDate);
     } catch (error) {
-      if (
-        lastSyncDate &&
-        dayjs(toDate).diff(dayjs(lastSyncDate), "hour") >= 1
-      ) {
-        await kv.put(KV_KEY, toDate);
-      }
       Sentry.captureException(error);
     }
   }
@@ -74,7 +68,7 @@ export default class VariantSyncService {
         const products = response?.products || [];
 
         if (products?.length) {
-          await this._processVariantBatch(products, updatedAtMin);
+          await this._processVariantBatch(products);
           page++;
         } else {
           hasMore = false;
@@ -146,17 +140,12 @@ export default class VariantSyncService {
     };
   }
 
-  async _processVariantBatch(products, updatedAtMin) {
-    const variantsToUpsert = [];
-    const minDate = dayjs(updatedAtMin);
-
-    for (const product of products) {
-      for (const variant of product?.variants || []) {
-        if (dayjs(variant.updated_at).isAfter(minDate)) {
-          variantsToUpsert.push(this._mapVariant(variant, product));
-        }
-      }
-    }
+  async _processVariantBatch(products) {
+    const variantsToUpsert = products.flatMap((product) =>
+      (product?.variants || []).map((variant) =>
+        this._mapVariant(variant, product)
+      )
+    );
 
     if (!variantsToUpsert?.length) return;
 
