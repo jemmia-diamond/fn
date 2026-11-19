@@ -120,5 +120,6 @@ export default class APIRoutes {
 
     const inventoryApi = api.basePath("/inventory");
     inventoryApi.get("/availability", Inventory.AvailabilityController.index);
+    inventoryApi.get("/serials", Inventory.SerialsController.index);
   }
 }
