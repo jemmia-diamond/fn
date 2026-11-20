@@ -1,6 +1,5 @@
 // FrappeClient.js
 import * as Sentry from "@sentry/cloudflare";
-import FormData from "form-data";
 import { createAxiosClient } from "services/utils/http-client";
 
 const DEFAULT_HEADERS = { Accept: "application/json" };

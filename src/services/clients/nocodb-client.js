@@ -183,6 +183,17 @@ export default class NocoDBClient {
     );
   }
 
+  /**
+   * Upload a file to NocoDB storage.
+   *
+   * `fileData` must be a platform `FormData`. Content-Type is nulled so the
+   * runtime sets it along with the multipart boundary: axios would otherwise
+   * default to `application/x-www-form-urlencoded`, leaving the server unable
+   * to find the boundary and parsing zero files.
+   *
+   * @param {object} params
+   * @param {FormData} fileData
+   */
   async uploadAttachment(params, fileData) {
     const client = createAxiosClient({
       baseURL: await this.#getBaseUrl(),
